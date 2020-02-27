@@ -27,26 +27,31 @@ openstoreman主要做了签名方案的替换, 用schnorr签名替换了ECDSA签
  
 
 ## 三 storeman合约(jiaqinggang) 
-
- 
+stakeIn
+stakeOut
+refund(storeman 任期结束后退款)(或者这个接口不放在合约里) 
 
  
 
 ## 四 storeman合约delegation(zhanglihua) 
+delegateIn
+delegateout
 
  
 
  
 
 ## 五 奖惩机制(zhaoxiaofeng) 
-
+1. storeman的工作记录, 放在mpc leader的数据库里.
+1. 数据记录如何备份.
+1. 提供一个api接口输出工作记录, 线下小工具处理. 
  
 
  
 
 ## 六 与pos的结合(zhangwei) 
-
- 
+1. pos validator任期与storeman任期不一致怎么半.
+1. pos delegation退出怎么半.
 
  
 
@@ -74,9 +79,18 @@ openstoreman主要做了签名方案的替换, 用schnorr签名替换了ECDSA签
 
  
 ## 十 疑问
-1) openstoreman group 的任期是固定的, 还是人工控制的, 现在下一期的storeman是自动的(写在合约里的),还是需要人发交易发起.
-2) 在某个时间窗口, 允许注册打钱, 没有退出机制, 选不上的自动退钱. storeman任期结束自动退款(Yes or No)
-3) 奖励的分配, 是合约自动处理的的, 还是线下有人工发起的. (应该是人工算好了奖励,发送交易执行的, 原因是storeman的工作情况存储在MPC里面, 合约是拿不到的.) 同样的问题, 退还本金的数额,是否是中心化控制的.
-4) 私钥片段和nodekey是leader生成后, 线下发给别人的, 与合约无关(YES)
+
+1. 奖励的分配, 是合约自动处理的的, 还是线下有人工发起的. (应该是人工算好了奖励,发送交易执行的, 原因是storeman的工作情况存储在MPC里面, 合约是拿不到的.) 同样的问题, 退还本金的数额,本金会否被扣, 是否是中心化控制的.
+1. 私钥片段和nodekey是leader生成后, 线下发给别人的, 与合约无关(YES)
+集资成功后, 集资人怎么证明是自己打的钱, 从而要求Leader把私钥片段发给他.
+1. openstoreman group 的任期是固定的, 还是人工控制的, 发起下一期的storeman注册是自动的(写在合约里的),还是需要人发交易发起.
+1. 在某个时间窗口, 允许注册打钱, 选不上的自动退钱.
+1. 需要支持续约
+1. delegation不能随时退出
+1. delegation委托的storeman退出 则所有相关delegation退出
+1. 由于storeman的工作表现只存在于leader 的MPC的数据库里, 要防止单点问题, 比如硬盘损坏. 
+
+
+
 
  
