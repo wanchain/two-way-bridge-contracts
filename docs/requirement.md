@@ -27,9 +27,22 @@ openstoreman主要做了签名方案的替换, 用schnorr签名替换了ECDSA签
  
 
 ## 三 storeman合约(jiaqinggang) 
-stakeIn
-stakeOut
-refund(storeman 任期结束后退款)(或者这个接口不放在合约里) 
+* stakeIn  
+参与者通过这个接口加入openstoreman计划.
+* stakeOut  
+声明退出openstoreman计划
+* refund  
+storeman 任期结束后退款及发放奖励.
+未声明退出者, 不退款, 继续参与下一期.
+* txRecord  
+mpc Leader使用此接口, 发送storeman工作记录, 用于发放奖励.
+* registerStart:
+ 开放注册窗口, 允许如下交易  
+ stakeIn, stakeOut, delegateIn, delegateOut,
+* registerStop  
+结束注册窗口, 生成被选中的注册者列表, 未选中的退款; 同时禁止如下交易:
+ stakeIn, stakeOut, delegateIn, delegateOut,
+
 
  
 
@@ -45,13 +58,15 @@ delegateout
 1. storeman的工作记录, 放在mpc leader的数据库里.
 1. 数据记录如何备份.
 1. 提供一个api接口输出工作记录, 线下小工具处理. 
+1. 发送交易提交工作记录给合约, 需要确定有那些数据提交.
+
  
 
  
 
 ## 六 与pos的结合(zhangwei) 
 1. pos validator任期与storeman任期不一致怎么半.
-1. pos delegation退出怎么半.
+1. pos delegation退出怎么办.
 
  
 
