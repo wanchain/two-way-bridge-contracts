@@ -47,7 +47,7 @@ contract MetricDelegate is MetricStorage, Halt {
      *
      */
 
-    function getPrdInctMetric(bytes32 xHash)
+    function getPrdInctMetric(bytes grpId,uint256 startEpId, uint256 endEpId)
     external
     initialized
     notHalted
@@ -55,7 +55,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
-    function getPrdSlshMetric(bytes32 xHash)
+    function getPrdSlshMetric(bytes grpId,uint256 startEpId, uint256 endEpId)
     external
     initialized
     notHalted
@@ -63,7 +63,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
-    function getSmSuccCntByEpId(bytes32 xHash)
+    function getSmSuccCntByEpId(bytes grpId,uint256 epId,uint8 smIndex)
     external
     initialized
     notHalted
@@ -71,7 +71,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
-    function getSmRSlshCntByEpId(bytes32 xHash)
+    function getSmRSlshCntByEpId(bytes grpId,uint256 epId,uint8 smIndex)
     external
     initialized
     notHalted
@@ -79,7 +79,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
-    function getSmRNWCntByEpId(bytes32 xHash)
+    function getSmRNWCntByEpId(bytes grpId,uint256 epId,uint8 smIndex)
     external
     initialized
     notHalted
@@ -87,7 +87,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
-    function getSmSSlshCntByEpId(bytes32 xHash)
+    function getSmSSlshCntByEpId(bytes grpId,uint256 epId,uint8 smIndex)
     external
     initialized
     notHalted
@@ -95,7 +95,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
-    function getSmSNWCntByEpId(bytes32 xHash)
+    function getSmSNWCntByEpId(bytes grpId,uint256 epId,uint8 smIndex)
     external
     initialized
     notHalted
@@ -159,7 +159,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
-    function checkRProof(bytes32 xHash)
+    function checkRProof(bytes grpId,bytes32 hashX,uint8 smIndex)
     external
     initialized
     notHalted
@@ -167,7 +167,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
-    function checkSProof(bytes32 xHash)
+    function checkSProof(bytes grpId,bytes32 hashX,uint8 smIndex)
     external
     initialized
     notHalted

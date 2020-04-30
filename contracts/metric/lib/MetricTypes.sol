@@ -33,19 +33,80 @@ library MetricTypes {
      * EVENTS
      *
      **/
-    event SMSlshLogger(bytes indexed groupId,bytes32 indexed xHash, uint8 indexed smIndex,  SlshReason slshReason);
+    event SMSlshLogger(bytes indexed grpId,bytes32 indexed hashX, uint8 indexed smIndex,  SlshReason slshReason);
 
-    enum SlshReason {CM, R, RNK, S, SNK}
+    enum SlshReason{CM, R, RNK, S, SNK};
     /**
      *
      * STRUCTURES
      *
      */
+        // check sig:
+        // 1. h = hash(polyCMData.polyCM[0]||polyCMData.polyCM[1]...polyCMData.polyCM[n])
+        // 2. check h, polyCMData.polyCMR , polyCMData.polyCMS, senderPk
+        // cm
+        struct PolyCMData{
+            []bytes             polyCM;
+            bytes               polyCMR;
+            bytes               polyCMS;
+        };
+
+        // s[i][j]
+        struct PolyDataPln{
+            bytes               polyData;
+            bytes               polyDataR;
+            bytes               polyDataS;
+        };
+
+        // judge s[i][j]
+        // check sig:
+        // 1. h = hash(polyCMData.polyCM[0]||polyCMData.polyCM[1]...polyCMData.polyCM[n])
+        // 2. check h, polyCMData.polyCMR , polyCMData.polyCMS, senderPk
+        // 3. h = hash(polyDataPln.polyData)
+        // 4. check h, polyDataPln.polyDataR, polyDataPln.polyDataS, senderPk
+
+        // check content:
+        //  1. compute left point =  user sender CMG, xvalue = hash(rcvrPK)
+        //  2. compute right point =  s[i][j]*G
+        //  3. check left Point == right point
+        struct RSlshData{
+            PolyCMData          polyCMData;
+            PolyDataPln         polyDataPln;
+            uint8               sndrIndex;
+            uint8               rcvrIndex;
+            bool                becauseSndr;
+        }
+
+        // sshare
+        // check sig
+        // 1. h = hash(polyDataPln.polyData)
+        // 2. check h, polyDataPln.polyDataR, polyDataPln.polyDataS, senderPK
+
+        // check content: polyDataPln.polyData *G = rpkShare + m * gpkShare
+        struct SSlshData{
+            PolyDataPln         polyDataPln;
+            bytes               m;          // hash(R|| hash(M))
+            bytes               rpkShare;   // sender's rpkshare
+            bytes               gpkShare;   // sender's gpkshare
+            uint8               sndrIndex;
+            uint8               rcvrIndex;
+            bool                becauseSndr;
+        }
+
+        struct InctData{
+            uint256  smIndexes;
+        }
+
+        struct RNWData{
+            uint256  smIndexes;
+        }
+
+        struct SNWData{
+            uint256  smIndexes;
+        }
+
 
     struct MetricStorageData {
-
-        /// @notice the fee ratio of revoking operation
-        uint revokeFeeRatio;
 
         /// @notice transaction fee, hashX => fee
         /// groupId -> hashx -> InctData
@@ -84,9 +145,9 @@ library MetricTypes {
         *
         */
         /// grpId -> epochId -> smIndex -> slsh count
-        mapping(bytes => mapping(bytes32 => mapping(uint8  => uint256)))   mapSlshCount;
+        mapping(bytes => mapping(uint256 => mapping(uint8  => uint256)))   mapSlshCount;
         /// grpId -> epochId -> smIndex -> incentive count
-        /// mapping(bytes => mapping(bytes32 => mapping(uint8  => uint256)))   mapInctCount;
+        mapping(bytes => mapping(uint256 => mapping(uint8  => uint256)))   mapInctCount;
 
     }
 

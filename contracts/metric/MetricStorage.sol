@@ -30,8 +30,6 @@ import "../components/BasicStorage.sol";
 import "./lib/MetricTypes.sol";
 
 contract MetricStorage is BasicStorage {
-    //using QuotaLib for QuotaLib.Data;
-    //using MetricLib for HTLCLib.Data;
 
     /************************************************************
      **
