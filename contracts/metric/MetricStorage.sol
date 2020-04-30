@@ -28,8 +28,15 @@ pragma solidity ^0.4.24;
 
 import "../components/BasicStorage.sol";
 import "./lib/MetricTypes.sol";
+import "../interfaces/IConfig.sol";
+import "../interfaces/IMortgage.sol";
 
 contract MetricStorage is BasicStorage {
+
+    /// config instance address
+    IConfig public config;
+    /// mortgage instance address
+    IMortgage public mortgage;
 
     /************************************************************
      **

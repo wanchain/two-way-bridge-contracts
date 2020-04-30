@@ -30,6 +30,8 @@ pragma experimental ABIEncoderV2;
 import "../components/Halt.sol";
 import "./MetricStorage.sol";
 import "./lib/MetricLib.sol";
+import "../interfaces/IMortgage.sol";
+import "../lib/SafeMath.sol";
 
 contract MetricDelegate is MetricStorage, Halt {
     using SafeMath for uint;
@@ -39,7 +41,16 @@ contract MetricDelegate is MetricStorage, Halt {
      * MODIFIERS
      *
      */
+    modifier onlyValidGrpId(bytes grpId) {
+        require( grpId.length > 0 , "Invalid group ID");
+        _;
+    };
 
+    modifier initialized {
+        require(config != IConfig(address(0)), "Global configure is null");
+        require(mortgage != IMortage(address(0)), "Mortage is null");
+        _;
+    };
 
     /**
      *
@@ -47,131 +58,169 @@ contract MetricDelegate is MetricStorage, Halt {
      *
      */
 
-    function getPrdInctMetric(bytes grpId,uint256 startEpId, uint256 endEpId)
+    ///=======================================statistic=============================================
+    function getPrdInctMetric(bytes grpId, uint startEpId, uint endEpId)
     external
-    initialized
+    view
     notHalted
-    {
+    initialized
+    onlyValidGrpId(grpId)
+    returns (uint[]) {
+        require(endEpId > startEpId, "End epochId should be more than start epochId");
+        uint[] memory ret;
+        uint8 memory n = mortage.getTotalNumber(grpId);
 
+
+        for (uint i = 0; i < n; i++) {
+            ret.push(0)
+            for (uint j = startEpId; j < startEpId; j++){
+                ret[i] += mapInctCount[grpId, j, i]
+            }
+        }
+        return ret;
     }
 
-    function getPrdSlshMetric(bytes grpId,uint256 startEpId, uint256 endEpId)
+    function getPrdSlshMetric(bytes grpId, uint startEpId, uint endEpId)
     external
-    initialized
+    view
     notHalted
+    initialized
+    onlyValidGrpId(grpId)
+    returns(uint[])
     {
+        require(endEpId > startEpId, "End epochId should be more than start epochId");
+        uint[] memory ret;
+        uint8 memory n = mortage.getTotalNumber(grpId);
 
+
+        for (uint i = 0; i < n; i++) {
+            ret.push(0)
+            for (uint j = startEpId; j < startEpId; j++){
+                ret[i] += mapSlshCount[grpId, j, i]
+            }
+        }
+        return ret;
+    };
+
+    function getSmSuccCntByEpId(bytes grpId, uint epId, uint8 smIndex)
+    external
+    view
+    notHalted
+    initialized
+    onlyValidGrpId(grpId)
+    returns (uint)
+    {
+        return mapInctCount[grpId][epId][smIndex];
+    };
+
+    function getSlshCntByEpId(bytes grpId, uint epId, uint8 smIndex)
+    external
+    view
+    notHalted
+    initialized
+    onlyValidGrpId(grpId)
+    returns (uint)
+    {
+        return mapSlshCount[grpId][epId][smIndex];
     }
 
-    function getSmSuccCntByEpId(bytes grpId,uint256 epId,uint8 smIndex)
-    external
-    initialized
-    notHalted
-    {
-
-    }
-
-    function getSmRSlshCntByEpId(bytes grpId,uint256 epId,uint8 smIndex)
-    external
-    initialized
-    notHalted
-    {
-
-    }
-
-    function getSmRNWCntByEpId(bytes grpId,uint256 epId,uint8 smIndex)
-    external
-    initialized
-    notHalted
-    {
-
-    }
-
-    function getSmSSlshCntByEpId(bytes grpId,uint256 epId,uint8 smIndex)
-    external
-    initialized
-    notHalted
-    {
-
-    }
-
-    function getSmSNWCntByEpId(bytes grpId,uint256 epId,uint8 smIndex)
-    external
-    initialized
-    notHalted
-    {
-
-    }
 
     function getRSlshProof(bytes32 xHash)
     external
-    initialized
+    view
     notHalted
+    initialized
+    onlyValidGrpId(grpId)
     {
 
     }
 
     function getSSlshProof(bytes32 xHash)
     external
-    initialized
+    view
     notHalted
+    initialized
+    onlyValidGrpId(grpId)
     {
 
     }
 
     function wrInct(bytes32 xHash)
     external
-    initialized
     notHalted
+    initialized
+    onlyValidGrpId(grpId)
     {
 
     }
-
+///=======================================write incentive and slash=============================================
     function wrRSlsh(bytes32 xHash)
     external
-    initialized
     notHalted
+    initialized
+    onlyValidGrpId(grpId)
     {
 
     }
 
     function wrRNW(bytes32 xHash)
     external
-    initialized
     notHalted
+    initialized
+    onlyValidGrpId(grpId)
     {
 
     }
 
     function wrSSlsh(bytes32 xHash)
     external
-    initialized
     notHalted
+    initialized
+    onlyValidGrpId(grpId)
     {
 
     }
 
     function wrSNW(bytes32 xHash)
     external
-    initialized
     notHalted
+    initialized
+    onlyValidGrpId(grpId)
+    {
+
+    }
+///=======================================check proof =============================================
+    function checkRProof(bytes grpId, bytes32 hashX, uint8 smIndex)
+    external
+    notHalted
+    initialized
+    onlyValidGrpId(grpId)
     {
 
     }
 
-    function checkRProof(bytes grpId,bytes32 hashX,uint8 smIndex)
+    function checkSProof(bytes grpId, bytes32 hashX, uint8 smIndex)
     external
-    initialized
     notHalted
+    initialized
+    onlyValidGrpId(grpId)
     {
 
     }
 
-    function checkSProof(bytes grpId,bytes32 hashX,uint8 smIndex)
-    external
-    initialized
-    notHalted
-    {
 
+/// @notice                           function for set config and mortgage contract address
+/// @param configAddr                 config contract address
+/// @param mortgageAddr               mortgage contract address
+    function setDependence(address configAddr, address mortgageAddr)
+    external
+    onlyOwner
+    {
+        require(configAddr != address(0), "Invalid config address");
+        require(mortgageAddr != address(0), "Invalid mortgage address");
+
+        config = IConfig(configAddr);
+        mortgage = IMortgage(mortgageAddr);
     }
 }
+
