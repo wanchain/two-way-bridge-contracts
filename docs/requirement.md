@@ -50,30 +50,47 @@ storemanGroup组织好以后, Leader发起产生公共私钥的过程,生成共�
  接口名: registerStart:  
  作用  : 开放一个storemanGroup的注册窗口, 允许注册(stakeIn,  delegateIn)  
  需要指定如下参数:
-    - groupIndex: group的编号.  
+    - groupId: group的编号.   
     - enodeIDs:   白名单定节点的enodeId数组,白名单包含内定和备选两类  
-    - workDuration: storeman工作时长  
-    - registerDuration: 开放注册窗口的时间长度.  
+    - senders:   白名单对应的钱包地址, 只有从这个地址注册才能认领白订单的enodeID.
+    - workStart: 起始工作时间. 从1970年开始的秒数.
+    - workDuration: storeman工作时长(天)  
+    - registerDuration: 开放注册窗口的时间长度. (天)
+    - chain: 工作的chain的名字.
+    - minStake: 该group允许的最小投资额度.  
     - crossFee: 该group收取的跨链手续费.  
+    - preGroupIndex: 上一个group编号. 如果指定了这个参数, 上一个group如果有人退出, 则没有退出的人, 自动进入当前group参与竞选.     
     
 注意: 这个接口里只指定了白名单,但是并不打入资金. 
 
+``` 
+ function registerStart(bytes32 groupId, string chain, bytes[] enodeIDs, address[] senders, uint minStake,  
+     uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupIndex)            
 ```
- function registerStart(uint groupIndex, bytes[] enodeIDs, uint workDuration, uint registerDuration, uint crossFee)   
- ```
- //todo:  add chain标志
- //todo:  add pk和钱包地址.
- //todo: 基金会打钱接口.
- check?? 怎么slash, 因为资金是随时进入的.可能作恶时, delegate还没进入.
- 然后是否flash delegation.
-// todo 奖励能否提取到投注资金里面去.
-//  奖励是否与group的工作量额度挂钩.
 
+
+### 基金会向storeman管理合约注入资金
+接口名: contribute  
+作用:   基金会向storeman管理合约注入资金  
+不需要参数.  
+```$xslt
+function contribute()
+```
+
+### 设置delegation资金与stake资金的比例. 
+接口名: setDelegationRate  
+作用:   修改最大delegation资金与stake自有资金的比值. 默认为10:1  
+需要制定如下参数:  
+    -rate:    修改最大delegation资金与stake自有资金的比值
+```
+function setDelegationRate(uint rate)
+```    
 
 ### 注资参与独立节点竞选  
 接口名:  stakeIn  
 作用  :  参与者通过这个接口加入openstoreman计划.同时打钱.
 需要指定如下参数:
+    - groupIndex: 要参加的group的index.
     - enodeID: 注册自己的enodeID.  
     - PK:      节点对应的mpc身份标志公钥, 不复用p2p层的标志.  
     - fee:     打算收取的delegateIn的手续费. 单位是万分之. 范围是 0 ~ 10000  
@@ -118,7 +135,8 @@ function registerStop(uint groupIndex)
 委托资金:自有资金为10:1  
 需要指定如下参数:  
     - groupIndex: 指定要参与的group index  
-    - enodeID:    指定要参与的group中的节点的标志  
+    //- enodeID:    指定要参与的group中的节点的标志
+    - staker:     指定投给哪个staker的地址.  
 ```
 function delegateIn(uint groupIndex, bytes enodeID)
 ```
