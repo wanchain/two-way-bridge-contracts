@@ -1,0 +1,23 @@
+{
+  "name": "open-storeman-agent",
+  "version": "1.0.0",
+  "description": "Open Storeman Agent",
+  "url": "https://www.wanchain.org",
+  "author": {
+    "name": "wanchain",
+    "email": "techsupport@wanchain.org"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "node ./src/gpkAgent.js"
+  },
+  "dependencies": {
+    "web3": "^1.2.1",
+    "keythereum": "^1.0.4",
+    "ethereumjs-util": "^6.2.0",
+    "secp256k1": "^4.0.1",
+    "eccrypto": "^1.1.3",
+    "bigi": "^1.4.2",
+    "ecurve": "^1.0.6"
+  }
+}
