@@ -9,7 +9,7 @@ const pu = require('promisefy-util')
 const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
 //const Tx = require("ethereumjs-tx")
-let contractAddress =  undefined //  "0xdE28d2A57c3bDfB872e9F601268CfcdC7E352761";//"0xCa3DACe8958B20006E25F63643c47Ad4177f282f" //   
+let contractAddress =   "0x82Ee15a21e8a584aF87EdDC9f32E22F1Ca22f37b";//"0xCa3DACe8958B20006E25F63643c47Ad4177f282f" //   undefined // 
 
 let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
 let gGasLimit=900000;

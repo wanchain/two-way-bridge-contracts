@@ -1,4 +1,4 @@
-
+/*
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const Secp256k1 = artifacts.require('Secp256k1');
@@ -12,9 +12,15 @@ const HTLCProxy = artifacts.require('HTLCProxy');
 const HTLCDelegate = artifacts.require('HTLCDelegate');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
+*/
+//const TestStoremanGroup = artifacts.require('TestStoremanGroup');
 
 
 module.exports = async function(deployer){
+    // test
+   // await deployer.deploy(TestStoremanGroup);
+
+/*
     // token manager sc
     await deployer.deploy(TokenManagerProxy);
     let tmProxy = await TokenManagerProxy.deployed();
@@ -74,4 +80,5 @@ module.exports = async function(deployer){
     // storm group admin dependence
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
     await smg.setDependence(tmProxy.address, htlcProxy.address)
+*/
 }

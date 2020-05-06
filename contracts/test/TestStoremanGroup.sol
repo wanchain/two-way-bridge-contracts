@@ -1,4 +1,5 @@
 pragma solidity ^0.4.24;
+
 pragma experimental ABIEncoderV2;
 
 contract TestStoremanGroup {
@@ -52,10 +53,12 @@ contract TestStoremanGroup {
         mapping(address=>bytes) whiteEnodeID;
     }
 
-    function setBackupCount(uint backup){
+    function setBackupCount(uint backup) public{
         backupCount = backup;
     }
-
+    function getBackupCount() public view returns (uint) {
+        return backupCount;
+    }
 /*
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param groupId                 the building storeman group index.
@@ -99,22 +102,22 @@ contract TestStoremanGroup {
         return (sk.PK, sk.delegateFee, sk.delegatorCount);
     }
 
-    function calIncentive(uint p, uint deposit, bool isDelegator) returns (uint) {
+    function calIncentive(uint p, uint deposit, bool isDelegator) public returns (uint) {
         return deposit*p/10000;
     }
-    function calSkWeight(uint deposit) returns(uint) {
+    function calSkWeight(uint deposit) public  returns(uint) {
         return deposit*15/10;
     }
     event incentive(bytes32 indexed index, address indexed to, uint indexed delegatorCount);
-    function testIncentiveAll(bytes32 index){
+    function testIncentiveAll(bytes32 index) public  {
         StoremanGroup group = groups[index];
-        for(uint i=0; i<group.memberCountDesign; i++) { //todo change to working.
+        for(uint i = 0; i<group.memberCountDesign; i++) { //todo change to working.
             address skAddr = group.selectedNode[i];
             Candidate sk = group.candidates[skAddr];
             sk.incentive += calIncentive(1000, sk.deposit,false);
             emit incentive(index, sk.sender, sk.delegatorCount);
 
-            for(uint j=0; j<sk.delegatorCount; j++){
+            for(uint j = 0; j < sk.delegatorCount; j++){
                 address deAddr = sk.addrMap[j];
                 Delegator de = sk.delegators[deAddr];
                 de.incentive += calIncentive(1000, de.deposit, true);
@@ -146,15 +149,15 @@ contract TestStoremanGroup {
         // first, select the sm from white list.
         group.whiteCount = 5;
 
-        for(uint i=0; i<group.memberCount; i++){
+        for(uint i = 0; i<group.memberCount; i++){
             uint j;
-            for(j=group.memberCountDesign-1; j>group.whiteCount; j--) {
+            for(j = group.memberCountDesign-1; j>group.whiteCount; j--) {
                 if(group.candidates[group.addrMap[i]].depositWeight > group.candidates[group.addrMap[j]].depositWeight){
                     continue;
                 }
             }
             if(j<group.memberCountDesign-1){
-                for(uint k=group.memberCountDesign-2; k>=j; k--){
+                for(uint k = group.memberCountDesign-2; k>=j; k--){
                     group.selectedNode[k+1] = group.selectedNode[k];
                 }
                 group.selectedNode[j] = group.addrMap[i];
@@ -163,7 +166,7 @@ contract TestStoremanGroup {
         group.status = GroupStatus.selected;
         return;
     }
-    function getSelectedSmAddress(bytes32 groupId, uint index)view  public returns(address, bytes){
+    function getSelectedSmAddress(bytes32 groupId, uint index) public view   returns(address, bytes){
         StoremanGroup group = groups[groupId];
         address addr = group.selectedNode[index];
         Candidate sk = group.candidates[addr];
@@ -171,7 +174,7 @@ contract TestStoremanGroup {
     }
 
 
-    function getSmInfo(bytes32 groupId, address wkAddress) view public returns(address sender,bytes PK,
+    function getSmInfo(bytes32 groupId, address wkAddress) public view  returns(address sender,bytes PK,
         bool quited, bool  isWorking,uint  delegateFee,uint  deposit,uint  depositWeight,
         uint incentive, uint delegatorCount
         ){
