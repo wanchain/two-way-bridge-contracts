@@ -1,0 +1,23 @@
+{
+  "name": "openstoreman",
+  "version": "1.0.0",
+  "description": "",
+  "main": "t.js",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "dependencies": {
+    "chai": "^4.2.0",
+    "ethereumjs-tx": "^2",
+    "promisefy-util": "^1.2.0",
+    "wanchain-util": "^1.2.0",
+    "web3": "^1.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

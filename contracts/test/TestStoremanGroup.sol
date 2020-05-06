@@ -135,7 +135,7 @@ contract TestStoremanGroup {
 
     function getSelectedSmNumber(bytes32 groupId) public view returns(uint) {
         StoremanGroup group = groups[groupId];
-        return group.memberCountDesign;
+        return group.memberCount;
     }
     function toSelect(bytes32 groupId) public {
         StoremanGroup group = groups[groupId];
@@ -167,7 +167,7 @@ contract TestStoremanGroup {
         StoremanGroup group = groups[groupId];
         address addr = group.selectedNode[index];
         Candidate sk = group.candidates[addr];
-        return addr, sk.PK;
+        return (addr, sk.PK);
     }
 
 

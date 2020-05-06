@@ -173,4 +173,12 @@ contract('TestStoremanGroup', async (accounts) => {
         }
 
     })
+    /*
+    it('test incentive', async ()=>{
+        for(let i=0; i<1; i++) {
+            let tx = await testInstance.testIncentiveAll(id,{from: tester})
+            console.log("incentive tx:", tx)
+        }
+    })
+    */
 })
