@@ -27,6 +27,7 @@
 pragma solidity ^0.4.24;
 
 library MetricTypes {
+    enum SlshReason {CM, R, RNK, S, SNK}
 
     /**
      *
@@ -35,7 +36,7 @@ library MetricTypes {
      **/
     event SMSlshLogger(bytes indexed grpId, bytes32 indexed hashX, uint8 indexed smIndex, SlshReason slshReason);
 
-    enum SlshReason{CM, R, RNK, S, SNK}
+
 /**
  *
  * STRUCTURES
@@ -46,17 +47,17 @@ library MetricTypes {
 // 2. check h, polyCMData.polyCMR , polyCMData.polyCMS, senderPk
 // cm
 struct PolyCMData{
-[]bytes             polyCM;
+bytes[]             polyCM;
 bytes               polyCMR;
 bytes               polyCMS;
-};
+}
 
 // s[i][j]
 struct PolyDataPln{
 bytes               polyData;
 bytes               polyDataR;
 bytes               polyDataS;
-};
+}
 
 // judge s[i][j]
 // check sig:

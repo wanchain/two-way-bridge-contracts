@@ -29,7 +29,7 @@ pragma experimental ABIEncoderV2;
 
 import "../components/Halt.sol";
 import "./MetricStorage.sol";
-import "./lib/MetricLib.sol";
+import "./lib/MetricTypes.sol";
 import "../interfaces/IMortgage.sol";
 import "../lib/SafeMath.sol";
 
@@ -41,16 +41,16 @@ contract MetricDelegate is MetricStorage, Halt {
      * MODIFIERS
      *
      */
-    modifier onlyValidGrpId(bytes grpId) {
+    modifier onlyValidGrpId (bytes grpId) {
         require( grpId.length > 0 , "Invalid group ID");
         _;
-    };
+    }
 
     modifier initialized {
         require(config != IConfig(address(0)), "Global configure is null");
         require(mortgage != IMortage(address(0)), "Mortage is null");
         _;
-    };
+    }
 
     /**
      *
@@ -72,9 +72,9 @@ contract MetricDelegate is MetricStorage, Halt {
 
 
         for (uint i = 0; i < n; i++) {
-            ret.push(0)
+            ret.push(0);
             for (uint j = startEpId; j < startEpId; j++){
-                ret[i] += mapInctCount[grpId, j, i]
+                ret[i] += mapInctCount[grpId][j][i];
             }
         }
         return ret;
@@ -94,13 +94,13 @@ contract MetricDelegate is MetricStorage, Halt {
 
 
         for (uint i = 0; i < n; i++) {
-            ret.push(0)
+            ret.push(0);
             for (uint j = startEpId; j < startEpId; j++){
-                ret[i] += mapSlshCount[grpId, j, i]
+                ret[i] += mapSlshCount[grpId][j][i];
             }
         }
         return ret;
-    };
+    }
 
     function getSmSuccCntByEpId(bytes grpId, uint epId, uint8 smIndex)
     external
@@ -111,7 +111,7 @@ contract MetricDelegate is MetricStorage, Halt {
     returns (uint)
     {
         return mapInctCount[grpId][epId][smIndex];
-    };
+    }
 
     function getSlshCntByEpId(bytes grpId, uint epId, uint8 smIndex)
     external
