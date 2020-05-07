@@ -53,3 +53,7 @@ contract CallSM {
         Assert.equal(t2, types[1],  "t2");
     }
 }
+
+
+
+
