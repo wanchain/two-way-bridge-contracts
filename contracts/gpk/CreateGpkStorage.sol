@@ -57,25 +57,24 @@ contract CreateGpkStorage is BasicStorage {
     struct Round {
         GroupStatus status;
         uint statusTime;
-        uint pkNumber;
+        uint smNumber;
         /// index->txAddress
         mapping(uint => address) indexMap;
         /// txAddress->pk
         mapping(address => bytes) addressMap;
         uint polyCommitCount;
-        uint gpkCount;
-        /// submitted by trustable node
         bytes gpk;
         /// txAddress->Src
         mapping(address => Src) srcMap;
         uint checkValidCount;
     }
 
-    enum GroupStatus {Init, PolyCommit, Gpk, Negotiate, Complete, Close}
+    enum GroupStatus {Init, PolyCommit, Negotiate, Complete, Close}
 
     struct Src {
         bytes polyCommit;
         bytes pkShare;
+        uint checkValidCount;
         /// txAddress->Dest
         mapping(address => Dest) destMap;
     }
@@ -91,5 +90,10 @@ contract CreateGpkStorage is BasicStorage {
 
     enum CheckStatus {Init, Valid, Invalid}
 
-    enum SlashType {PolyCommitTimeout, GpkTimeout, EncSijTimout, CheckTimeout, SijTimeout, GpkInvalid, EncSijInvalid, CheckInvalid}
+    enum SlashType {PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, EncSijInvalid, CheckInvalid, Connive}
+
+    struct SlashInfo {
+        SlashType slashType;
+        address storeman;
+    }
 }
