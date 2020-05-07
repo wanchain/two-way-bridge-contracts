@@ -152,37 +152,36 @@ contract MetricDelegate is MetricStorage, Halt {
 ///=======================================write incentive and slash=============================================
 
     /// todo white list can write the working record
-    function wrInct(bytes grpId, bytes32 hashX, MetricTypes.InctData inctData)
+    function wrInct(bytes grpId, bytes32 hashX, uint  inctData)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
-        metricData.mapInct[grpId][hashX] = inctData;
-
+        metricData.mapInct[grpId][hashX].smIndexes = inctData;
         uint8 smCount = getSMCount();
         uint epochId = getEpochId();
 
         for (uint8 i = 0; i < smCount; i++) {
-            if (checkHamming(inctData.smIndexes,i)){
+            if (checkHamming(inctData,i)){
                 metricData.mapInctCount[grpId][epochId][i] += 1;
             }
         }
     }
 
-    function wrRNW(bytes grpId, bytes32 hashX, MetricTypes.RNWData rnwData)
+    function wrRNW(bytes grpId, bytes32 hashX, uint rnwData)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
-        metricData.mapRNW[grpId][hashX] = rnwData;
+        metricData.mapRNW[grpId][hashX].smIndexes = rnwData;
 
         uint8 smCount = getSMCount();
         uint epochId = getEpochId();
 
         for (uint8 i = 0; i < smCount; i++) {
-            if (checkHamming(rnwData.smIndexes,i)){
+            if (checkHamming(rnwData,i)){
                 metricData.mapSlshCount[grpId][epochId][i] += 1;
 
                 emit SMSlshLogger(grpId, hashX, i, MetricTypes.SlshReason.RNK);
@@ -190,19 +189,19 @@ contract MetricDelegate is MetricStorage, Halt {
         }
     }
 
-    function wrSNW(bytes grpId, bytes32 hashX, MetricTypes.SNWData snwData)
+    function wrSNW(bytes grpId, bytes32 hashX, uint snwData)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
-        metricData.mapSNW[grpId][hashX] = snwData;
+        metricData.mapSNW[grpId][hashX].smIndexes = snwData;
 
         uint8 smCount = getSMCount();
         uint epochId = getEpochId();
 
         for (uint8 i = 0; i < smCount; i++) {
-            if (checkHamming(snwData.smIndexes,i)){
+            if (checkHamming(snwData,i)){
                 metricData.mapSlshCount[grpId][epochId][i] += 1;
 
                 emit SMSlshLogger(grpId, hashX, i, MetricTypes.SlshReason.SNK);
@@ -212,14 +211,67 @@ contract MetricDelegate is MetricStorage, Halt {
 
 
 
-    function wrRSlsh(bytes grpId, bytes32 hashX, uint8 smIndex,MetricTypes.RSlshData rsslshData)
+    function wrRSlshPolyCM(bytes grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
+        bytes polyCM,bytes polyCMR,bytes polyCMS)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
+
+        require( sndrAndRcvrIndex.length == uint(2), "sender or receiver index missing.");
+
+        uint8 smIndex;
+        if(becauseSndr){
+            smIndex = sndrAndRcvrIndex[0];
+        }else{
+            smIndex = sndrAndRcvrIndex[1];
+        }
+
+        //todo dupilicate? allow users update the proof?
+        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+
         // write working record
-        metricData.mapRSlsh[grpId][hashX][smIndex] = rsslshData;
+
+        rslshData.polyCMData.polyCM = polyCM;
+        rslshData.polyCMData.polyCMR = polyCMR;
+        rslshData.polyCMData.polyCMS = polyCMS;
+
+
+        rslshData.sndrIndex = sndrAndRcvrIndex[0];
+        rslshData.rcvrIndex = sndrAndRcvrIndex[1];
+        rslshData.becauseSndr = becauseSndr;
+
+    }
+
+    function wrRSlshPolyData(bytes grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
+        bytes polyData,bytes polyDataR,bytes polyDataS)
+    external
+    notHalted
+    initialized
+    onlyValidGrpId(grpId)
+    {
+        require( sndrAndRcvrIndex.length == uint(2), "sender or receiver index missing.");
+
+        uint8 smIndex;
+        if(becauseSndr){
+            smIndex = sndrAndRcvrIndex[0];
+        }else{
+            smIndex = sndrAndRcvrIndex[1];
+        }
+
+        //todo dupilicate? allow users update the proof?
+        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+
+        require( rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
+        require( rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
+        require( rslshData.polyCMData.polyCMS.length != 0, "polyCMS is empty");
+
+        // write working record
+
+        rslshData.polyDataPln.polyData = polyData;
+        rslshData.polyDataPln.polyDataR = polyDataR;
+        rslshData.polyDataPln.polyDataS = polyDataS;
 
         // update the  count
         metricData.mapSlshCount[grpId][getEpochId()][smIndex] += 1;
@@ -227,19 +279,71 @@ contract MetricDelegate is MetricStorage, Halt {
         emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.R);
     }
 
-    function wrSSlsh(bytes grpId, bytes32 hashX, uint8 smIndex,MetricTypes.SSlshData sslshData)
+
+    function wrSSlshShare(bytes grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
+        bytes gpkShare,bytes rpkShare,bytes m)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
+        require( sndrAndRcvrIndex.length == uint(2), "sender or receiver index missing.");
+        uint8 smIndex;
+        if(becauseSndr){
+            smIndex = sndrAndRcvrIndex[0];
+        }else{
+            smIndex = sndrAndRcvrIndex[1];
+        }
+
+        //todo dupilicate? allow users update the proof?
+        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
         // write working record
-        metricData.mapSSlsh[grpId][hashX][smIndex] = sslshData;
+
+        sslshData.m  = m;
+        sslshData.rpkShare = rpkShare;
+        sslshData.gpkShare = gpkShare;
+
+
+        sslshData.sndrIndex = sndrAndRcvrIndex[0];
+        sslshData.rcvrIndex = sndrAndRcvrIndex[1];
+        sslshData.becauseSndr = becauseSndr;
+
+    }
+
+    function wrSSlshPolyPln(bytes grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
+        bytes polyData,bytes polyDataR,bytes polyDataS)
+    external
+    notHalted
+    initialized
+    onlyValidGrpId(grpId)
+    {
+        require( sndrAndRcvrIndex.length == uint(2), "sender or receiver index missing.");
+
+        uint8 smIndex;
+        if(becauseSndr){
+            smIndex = sndrAndRcvrIndex[0];
+        }else{
+            smIndex = sndrAndRcvrIndex[1];
+        }
+
+        //todo dupilicate? allow users update the proof?
+        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+
+        require( sslshData.m.length != 0, "m is empty");
+        require( sslshData.rpkShare.length != 0, "rpkShare is empty");
+        require( sslshData.gpkShare.length != 0, "gpkShare is empty");
+        // write working record
+
+        sslshData.polyDataPln.polyData  = polyData;
+        sslshData.polyDataPln.polyDataR  = polyDataR;
+        sslshData.polyDataPln.polyDataS  = polyDataS;
+
 
         // update the  count
         metricData.mapSlshCount[grpId][getEpochId()][smIndex] += 1;
         // emit the event
         emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
+
     }
 
 
@@ -306,7 +410,6 @@ contract MetricDelegate is MetricStorage, Halt {
     pure
     returns (bool)
     {
-        return (indexes &= (1<<smIndex)) != uint(0);
-    }
+        return (indexes &= (uint(1)<<smIndex)) != uint(0);
+   }
 }
-

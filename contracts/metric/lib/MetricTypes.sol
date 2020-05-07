@@ -25,6 +25,7 @@
 //
 
 pragma solidity ^0.4.24;
+pragma experimental ABIEncoderV2;
 
 library MetricTypes {
     enum SlshReason {CM, R, RNK, S, SNK}
@@ -42,9 +43,10 @@ library MetricTypes {
 // 2. check h, polyCMData.polyCMR , polyCMData.polyCMS, senderPk
 // cm
 struct PolyCMData{
-bytes[]             polyCM;
-bytes               polyCMR;
-bytes               polyCMS;
+//bytes[]              polyCM;
+    bytes             polyCM;   // todo shoudl all degree polyCM concat to one long bytes?
+    bytes             polyCMR;
+    bytes             polyCMS;
 }
 
 // s[i][j]

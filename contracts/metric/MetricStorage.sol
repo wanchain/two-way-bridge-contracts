@@ -25,6 +25,7 @@
 //
 
 pragma solidity ^0.4.24;
+pragma experimental ABIEncoderV2;
 
 import "../components/BasicStorage.sol";
 import "./lib/MetricTypes.sol";
