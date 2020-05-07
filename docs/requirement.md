@@ -59,13 +59,13 @@ storemanGroup组织好以后, Leader发起产生公共私钥的过程,生成共�
     - chain: 工作的chain的名字.
     - minStake: 该group允许的最小投资额度.  
     - crossFee: 该group收取的跨链手续费.  
-    - preGroupIndex: 上一个group编号. 如果指定了这个参数, 上一个group如果有人退出, 则没有退出的人, 自动进入当前group参与竞选.     
+    - preGroupId: 上一个group编号. 如果指定了这个参数, 上一个group如果有人退出, 则没有退出的人, 自动进入当前group参与竞选.     
     
 注意: 这个接口里只指定了白名单,但是并不打入资金. 
 
 ``` 
  function registerStart(bytes32 groupId, string chain, bytes[] enodeIDs, address[] senders, uint minStake,  
-     uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupIndex)            
+     uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupId)            
 ```
 
 
