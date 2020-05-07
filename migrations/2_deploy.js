@@ -13,12 +13,12 @@ const HTLCDelegate = artifacts.require('HTLCDelegate');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 */
-//const TestStoremanGroup = artifacts.require('TestStoremanGroup');
+const TestStoremanGroup = artifacts.require('TestStoremanGroup');
 
 
 module.exports = async function(deployer){
     // test
-   // await deployer.deploy(TestStoremanGroup);
+    await deployer.deploy(TestStoremanGroup);
 
 /*
     // token manager sc

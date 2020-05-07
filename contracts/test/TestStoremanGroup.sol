@@ -5,6 +5,8 @@ pragma experimental ABIEncoderV2;
 contract TestStoremanGroup {
     mapping(bytes32 => StoremanGroup) public groups;
     uint backupCount = 3;
+    address[] public badAddrs;
+    uint[] public badTypes;
     enum GroupStatus {initial,failed,selected,ready,retired,dismissed}
     struct Delegator {
         address sender; // the delegator wallet address
@@ -178,17 +180,23 @@ contract TestStoremanGroup {
         bool quited, bool  isWorking,uint  delegateFee,uint  deposit,uint  depositWeight,
         uint incentive, uint delegatorCount
         ){
-        StoremanGroup group = groups[groupId];
-        Candidate sk = group.candidates[wkAddress];
+            StoremanGroup group = groups[groupId];
+            Candidate sk = group.candidates[wkAddress];
 
-        return (sk.sender,   sk.PK, sk.quited,
-        sk.isWorking,  sk.delegateFee, sk.deposit,
-        sk.depositWeight, sk.incentive,  sk.delegatorCount
-        );
+            return (sk.sender,   sk.PK, sk.quited,
+                sk.isWorking,  sk.delegateFee, sk.deposit,
+                sk.depositWeight, sk.incentive,  sk.delegatorCount
+            );
     }
     function setGpk(bytes32 groupId, bytes gpk) public {
     }
-    function setInvalidSm(bytes32 groupId, uint slashType, uint txAddress) public returns(bool isContinue){
+    function testArray(uint[] types, address[] addrs) public {
+        for(uint i = 0; i<types.length; i++) {
+            badAddrs.push(addrs[i]);
+            badTypes.push(types[i]);
+        }
+    }
+    function setInvalidSm(bytes32 groupId, uint[] slashType,  address[] badAddrs) public returns(bool isContinue){
         return true;
     }
 
