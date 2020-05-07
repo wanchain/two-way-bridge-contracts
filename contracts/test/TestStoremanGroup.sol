@@ -167,7 +167,7 @@ contract TestStoremanGroup {
         StoremanGroup group = groups[groupId];
         address addr = group.selectedNode[index];
         Candidate sk = group.candidates[addr];
-        return addr, sk.PK;
+        return (addr, sk.PK);
     }
 
 
