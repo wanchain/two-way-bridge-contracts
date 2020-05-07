@@ -48,7 +48,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     modifier initialized {
         require(config != IConfig(address(0)), "Global configure is null");
-        require(mortgage != IMortage(address(0)), "Mortage is null");
+        require(mortgage != IMortgage(address(0)), "Mortage is null");
         _;
     }
 
@@ -68,11 +68,10 @@ contract MetricDelegate is MetricStorage, Halt {
     returns (uint[]) {
         require(endEpId > startEpId, "End epochId should be more than start epochId");
         uint[] memory ret;
-        uint8 memory n = mortage.getTotalNumber(grpId);
+        uint8 n = mortgage.getTotalNumber(grpId);
 
-
-        for (uint i = 0; i < n; i++) {
-            ret.push(0);
+        ret = new uint[](n);
+        for (uint8 i = 0; i < n; i++) {
             for (uint j = startEpId; j < startEpId; j++){
                 ret[i] += metricData.mapInctCount[grpId][j][i];
             }
@@ -90,11 +89,10 @@ contract MetricDelegate is MetricStorage, Halt {
     {
         require(endEpId > startEpId, "End epochId should be more than start epochId");
         uint[] memory ret;
-        uint8 memory n = mortage.getTotalNumber(grpId);
+        uint8 n = mortgage.getTotalNumber(grpId);
 
-
-        for (uint i = 0; i < n; i++) {
-            ret.push(0);
+        ret = new uint[](n);
+        for (uint8 i = 0; i < n; i++) {
             for (uint j = startEpId; j < startEpId; j++){
                 ret[i] += metricData.mapSlshCount[grpId][j][i];
             }
@@ -125,25 +123,29 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
     // todo get proof is used for front end.
-    function getRSlshProof(bytes32 xHash)
+    function getRSlshProof(bytes grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
     notHalted
     initialized
     onlyValidGrpId(grpId)
+    returns (MetricTypes.SSlshData)
     {
-
+        MetricTypes.SSlshData memory sslshData;
+        return sslshData;
     }
 
     // todo get proof is used for front end.
-    function getSSlshProof(bytes32 xHash)
+    function getSSlshProof(bytes grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
     notHalted
     initialized
     onlyValidGrpId(grpId)
+    returns (MetricTypes.RSlshData)
     {
-
+        MetricTypes.RSlshData memory rslshData;
+        return rslshData;
     }
 
 
@@ -158,10 +160,10 @@ contract MetricDelegate is MetricStorage, Halt {
     {
         metricData.mapInct[grpId][hashX] = inctData;
 
-        uint8 memory smCount = getSMCount();
+        uint8 smCount = getSMCount();
         uint epochId = getEpochId();
 
-        for (uint i = 0; i < smCount; i++) {
+        for (uint8 i = 0; i < smCount; i++) {
             if (checkHamming(inctData.smIndexes,i)){
                 metricData.mapInctCount[grpId][epochId][i] += 1;
             }
@@ -176,10 +178,10 @@ contract MetricDelegate is MetricStorage, Halt {
     {
         metricData.mapRNW[grpId][hashX] = rnwData;
 
-        uint8 memory smCount = getSMCount();
+        uint8 smCount = getSMCount();
         uint epochId = getEpochId();
 
-        for (uint i = 0; i < smCount; i++) {
+        for (uint8 i = 0; i < smCount; i++) {
             if (checkHamming(rnwData.smIndexes,i)){
                 metricData.mapSlshCount[grpId][epochId][i] += 1;
 
@@ -196,10 +198,10 @@ contract MetricDelegate is MetricStorage, Halt {
     {
         metricData.mapSNW[grpId][hashX] = snwData;
 
-        uint8 memory smCount = getSMCount();
+        uint8 smCount = getSMCount();
         uint epochId = getEpochId();
 
-        for (uint i = 0; i < smCount; i++) {
+        for (uint8 i = 0; i < smCount; i++) {
             if (checkHamming(snwData.smIndexes,i)){
                 metricData.mapSlshCount[grpId][epochId][i] += 1;
 
@@ -282,12 +284,12 @@ contract MetricDelegate is MetricStorage, Halt {
     // todo get EpochId from pre-compile contract
     function getEpochId()
     internal
-    pure
+    view
     returns (uint)
     {
-        uint memory timeStamp = now;
+        //uint memory timeStamp = now;
         uint epochTimespan = uint(5*12*1440);
-        return timeStamp / epochTimespan;
+        return now / epochTimespan;
     }
 
     // todo get EpochId from pre-compile contract
@@ -304,7 +306,7 @@ contract MetricDelegate is MetricStorage, Halt {
     pure
     returns (bool)
     {
-        return (indexes |= (1<<smIndex)) != uint(0);
+        return (indexes &= (1<<smIndex)) != uint(0);
     }
 }
 

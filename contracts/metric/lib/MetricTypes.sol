@@ -29,12 +29,7 @@ pragma solidity ^0.4.24;
 library MetricTypes {
     enum SlshReason {CM, R, RNK, S, SNK}
 
-    /**
-     *
-     * EVENTS
-     *
-     **/
-    event SMSlshLogger(bytes indexed grpId, bytes32 indexed hashX, uint8 indexed smIndex, SlshReason slshReason);
+
 
 
 /**
@@ -127,7 +122,8 @@ mapping(bytes => mapping(bytes32 => InctData))                          mapInct;
 */
 // cm slsh data
 // groupId -> hashx -> smIndex -> CMSlshData
-mapping(bytes => mapping(bytes32 => mapping(uint8 => CMSlshData)))     mapCMSlsh;
+    //todo  add CMSlsh data ?
+//mapping(bytes => mapping(bytes32 => mapping(uint8 => CMSlshData)))     mapCMSlsh;
 
 // R slsh data
     // groupId -> hashx -> smIndex -> SlshData
