@@ -1,5 +1,4 @@
 const fs = require('fs');
-const path = require('path');
 const config = require('../../cfg/config');
 const abiMap = require('../../cfg/abi');
 const keythereum = require('keythereum');
@@ -81,11 +80,6 @@ async function sendPloyCommit(groupId, polyCommit) {
   return txHash;
 }
 
-async function sendGpk(groupId, polyCommit) {
-  let txHash = await createGpkSc.methods.setGpk(groupId).call();
-  return txHash;
-}
-
 async function sendEncSij(groupId, dest, encSij) {
   let encSijStr = '0x' + encSij.toString('hex');
   let txData = await createGpkSc.methods.setEncSij(groupId, dest, encSijStr).encodeABI();
@@ -100,8 +94,8 @@ async function sendCheckStatus(groupId, src, isValid) {
 }
 
 async function sendSij(groupId, dest, sij, r) {
-  let sijStr = '0x' + sij.toString('hex');
-  let rStr = '0x' + r.toString('hex');
+  let sijStr = '0x' + sij.toRadix(16);
+  let rStr = '0x' + r.toRadix(16);
   let txData = await createGpkSc.methods.revealSij(groupId, dest, sijStr, rStr).encodeABI();
   let txHash = await sendTx(config.contractAddress.createGpk, txData);
   return txHash;
@@ -125,6 +119,12 @@ async function sendSijTimeout(groupId, src) {
   return txHash;
 }
 
+async function sendGpk(groupId, gpk, pkShare) { // only for poc
+  let txData = await createGpkSc.methods.setGpk(groupId, gpk, pkShare).encodeABI();
+  let txHash = await sendTx(config.contractAddress.createGpk, txData);
+  return txHash;  
+}
+
 module.exports = {
   selfSk,
   selfPk,
@@ -133,12 +133,12 @@ module.exports = {
   getElapsed,
   sendTx,
   getTxReceipt,
-  sendGpk,
   sendPloyCommit,
   sendEncSij,
   sendCheckStatus,
   sendSij,
   sendEncSijTimeout,
   sendCheckTimeout,
-  sendSijTimeout
+  sendSijTimeout,
+  sendGpk
 }

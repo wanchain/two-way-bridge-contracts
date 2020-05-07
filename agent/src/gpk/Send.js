@@ -2,8 +2,6 @@ class Send {
   constructor(pk) {
     // pk
     this.pk = pk; // hex string with 0x
-    // polyCommit
-    this.polyCommitTimeoutTxHash = '';
     // encSij
     this.sij = null; // BigInteger
     this.r = null; // Buffer, bytes16
@@ -17,8 +15,10 @@ class Send {
     this.chainCheckTime = 0;
     this.checkTimeoutTxHash = '';
     this.sijTimeoutTxHash = '';
-    // sij
+    // reveal sij
     this.sijTxHash = 0;
     this.chainSijTime = 0;
   }  
 }
+
+module.exports = Send;

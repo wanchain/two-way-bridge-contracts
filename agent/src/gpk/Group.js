@@ -28,11 +28,16 @@ class GpkGroup {
     this.PolyCommit = []; // poly * G, Point
     this.polyCommitTxHash = '';
     this.polyCommitDone = false;
-    this.gpk = "";
-    this.pkShare = "";
+    this.skShare = ''; // hex string with 0x
+    this.pkShare = ''; // hex string with 0x
+    this.gpk = ''; // hex string with 0x
     this.gpkTxHash = '';
+    this.gpkDone = false;
  
-    // interactive data
+    // global interactive data
+    this.polyCommitTimeoutTxHash = '';
+
+    // p2p interactive data
     this.receive = new Map();
     this.send = new Map();
 
@@ -96,9 +101,6 @@ class GpkGroup {
         case GroupStatus.PolyCommit:
           this.procPolyCommit();
           break;
-        case GroupStatus.Gpk:
-          this.procGpk();
-          break;
         case GroupStatus.Negotiate:
           this.procNegotiate();
           break;
@@ -140,44 +142,43 @@ class GpkGroup {
     this.defaultPeriod = status[4];
     this.negotiatePeriod = status[5];
     
+    if (this.polyCommitTimeoutTxHash) {
+      receipt = await wanchain.getTxReceipt(this.polyCommitTimeoutTxHash);
+      if (receipt && receipt.status == '0x0') {
+        this.polyCommitTimeoutTxHash = '';
+      }
+    }
+
     // receive polyCommit and check timeout
     let isTimeout = (wanchain.getElapsed(this.statusTime) > this.ployCommitPeriod);
-    for (let i = 0; i < smList.lenght; i++) {
+    let toReportTimeout = false; 
+    for (let i = 0; i < smList.length; i++) {
       let sm = this.smList[i];
       let receive = this.receive.get[sm];
-      let send = this.send.get[sm];
-      if (send.polyCommitTimeoutTxHash) {
-        receipt = await wanchain.getTxReceipt(send.polyCommitTimeoutTxHash);
-        if (receipt && receipt.status == '0x0') {
-          send.polyCommitTimeoutTxHash = '';
-        }        
-      }
-      if (!receive.PolyCommit.lenght) {
+
+      if (!receive.PolyCommit.length) {
         let pc = await createGpkSc.getPolyCommit(this.groupId, sm, -1).call();
         if (pc) {
           receive.PolyCommit = pc;
         } else if (isTimeout) {
-          if (!send.polyCommitTimeoutTxHash) {
-            send.polyCommitTimeoutTxHash = await createGpkSc.polyCommitTimeout(this.groupId, sm);
-          }
+          toReportTimeout = true;
         }
+      }
+    }
+    if (toReportTimeout) {
+      if (!this.polyCommitTimeoutTxHash) {
+        this.polyCommitTimeoutTxHash = await createGpkSc.polyCommitTimeout(this.groupId);
       }
     }
   }
   
-  async procGpk() {
-    if (this.gpkTxHash) {
-      receipt = await wanchain.getTxReceipt(this.gpkTxHash);
-      if (receipt && receipt.status == '0x0') {
-        this.gpkTxHash = '';
-      }
-    }
-    // if ((!this.gpkTxHash) && (this.))    
-  }
-
   async procNegotiate() {
     try {
-      for (let i = 0; i < smList.lenght; i++) {
+      let gpkDone = await setGpk();
+      if (!gpkDone) {
+        return;
+      }
+      for (let i = 0; i < smList.length; i++) {
         let sm = this.smList[i];
         let receive = this.receive.get[sm];
         let send = this.send.get[sm];
@@ -191,6 +192,28 @@ class GpkGroup {
     }
   }
 
+  async setGpk() { // only for poc
+    if ((!this.gpk) || this.gpkDone) {
+      return true;
+    }
+    if (this.gpkTxHash) {
+      receipt = await wanchain.getTxReceipt(this.gpkTxHash);
+      if (receipt) {
+        if (receipt && receipt.status == '0x1') {
+          this.gpkDone = true;
+          return true;
+        } else {
+          this.gpkTxHash = '';
+        }
+      } else {
+        return false;
+      }
+    }
+    // first send or resend
+    this.gpkTxHash = await wanchain.sendGpk(this.groupId, this.gpk, this.pkShare);
+    return false;
+  }  
+
   async negotiateReceive(receive, send, partner) {
     let dest;
     // encSij
@@ -201,6 +224,10 @@ class GpkGroup {
         receive.sij = encrypt.decryptSij(receive.encSij, this.selfSk);
         if (encrypt.verifySij(receive.sij, receive.PolyCommit, this.selfPk)) {
           send.checkStatus = CheckStatus.Valid;
+          // check all received
+          if (this.checkAllSijReceived()) {
+            this.genKeyShare();
+          }
         } else {
           send.checkStatus = CheckStatus.Invalid;
           this.interrupted = true;
@@ -226,6 +253,39 @@ class GpkGroup {
         receive.sij = dest[4];
       }
     }
+  }
+
+  checkAllSijReceived() {
+    for (let i = 0; i < this.smList.length; i++) {
+      if (!this.receive.get(this.smList[i]).sij) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  genKeyShare() {
+    // skShare & pkShare
+    let skShare = null;
+    let gpk = null;
+    for (let i = 0; i < this.smList.length; i++) {
+      let sij = this.receive.get(this.smList[i]).sij;
+      if (skShare == null) {
+        skShare = sij;
+      } else {
+        skShare = skShare.add(sij);
+      }
+      // gpk only for poc
+      let siG = encrypt.recoverSiG(this.smList[i].polyCommit);
+      if (!gpk) {
+        gpk = siG;
+      } else {
+        gpk = gpk.add(siG);
+      }      
+    }
+    this.skShare = '0x' + skShare.toRadix(16);
+    this.pkShare = mulG(skShare).getEncoded(false).toString('hex');
+    this.gpk = gpk.getEncoded(false).toString('hex');
   }
 
   async negotiateCheckTx(send, partner) {

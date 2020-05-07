@@ -1,5 +1,5 @@
 const GroupStatus = {
-  Init: 0, PolyCommit: 1, Gpk: 2, Negotiate: 3, Complete: 4, Close: 5
+  Init: 0, PolyCommit: 1, Negotiate: 2, Complete: 3, Close: 4
 }
 
 const CheckStatus = {

@@ -7,6 +7,8 @@ class Receive {
     // sij
     this.encSij = ''; // hex string with 0x
     this.checkStatus = CheckStatus.Init;
-    this.sij = ''; // hex string with 0x
+    this.sij = null; // bigi
   }  
 }
+
+module.exports = Receive;
