@@ -110,13 +110,13 @@ uint256  smIndexes;
 struct MetricStorageData {
 
 /// @notice transaction fee, hashX => fee
-/// groupId -> hashx -> InctData
-
 /**
 *
 * Incentive data
 *
-*/
+**/
+
+/// groupId -> hashx -> InctData
 mapping(bytes => mapping(bytes32 => InctData))                          mapInct;
 
 
@@ -126,17 +126,22 @@ mapping(bytes => mapping(bytes32 => InctData))                          mapInct;
 *
 */
 // cm slsh data
-// groupId -> hashx -> smIndex -> SlshData
+// groupId -> hashx -> smIndex -> CMSlshData
 mapping(bytes => mapping(bytes32 => mapping(uint8 => CMSlshData)))     mapCMSlsh;
 
 // R slsh data
+    // groupId -> hashx -> smIndex -> SlshData
 mapping(bytes => mapping(bytes32 => mapping(uint8 => RSlshData)))      mapRSlsh;
 // R No Working data
+
+    // groupId -> hashx -> RNWData(array of the sm index)
 mapping(bytes => mapping(bytes32 => RNWData))                           mapRNW;
 
 // S slsh data
+    // groupId -> hashx -> smIndex -> SSlshData
 mapping(bytes => mapping(bytes32 => mapping(uint8 => SSlshData)))     mapSSlsh;
 // S No Working data
+    // groupId -> hashx -> SNWData(array of the sm index)
 mapping(bytes => mapping(bytes32 => SNWData))                          mapSNW;
 
 

@@ -44,6 +44,6 @@ contract MetricStorage is BasicStorage {
      **
      ************************************************************/
 
-    MetricTypes.MetricStorageData metricStorageData;
+    MetricTypes.MetricStorageData metricData;
 
 }

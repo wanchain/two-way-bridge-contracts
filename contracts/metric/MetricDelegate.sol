@@ -74,7 +74,7 @@ contract MetricDelegate is MetricStorage, Halt {
         for (uint i = 0; i < n; i++) {
             ret.push(0);
             for (uint j = startEpId; j < startEpId; j++){
-                ret[i] += mapInctCount[grpId][j][i];
+                ret[i] += metricData.mapInctCount[grpId][j][i];
             }
         }
         return ret;
@@ -96,7 +96,7 @@ contract MetricDelegate is MetricStorage, Halt {
         for (uint i = 0; i < n; i++) {
             ret.push(0);
             for (uint j = startEpId; j < startEpId; j++){
-                ret[i] += mapSlshCount[grpId][j][i];
+                ret[i] += metricData.mapSlshCount[grpId][j][i];
             }
         }
         return ret;
@@ -110,7 +110,7 @@ contract MetricDelegate is MetricStorage, Halt {
     onlyValidGrpId(grpId)
     returns (uint)
     {
-        return mapInctCount[grpId][epId][smIndex];
+        return metricData.mapInctCount[grpId][epId][smIndex];
     }
 
     function getSlshCntByEpId(bytes grpId, uint epId, uint8 smIndex)
@@ -121,10 +121,10 @@ contract MetricDelegate is MetricStorage, Halt {
     onlyValidGrpId(grpId)
     returns (uint)
     {
-        return mapSlshCount[grpId][epId][smIndex];
+        return metricData.mapSlshCount[grpId][epId][smIndex];
     }
 
-
+    // todo get proof is used for front end.
     function getRSlshProof(bytes32 xHash)
     external
     view
@@ -135,6 +135,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
+    // todo get proof is used for front end.
     function getSSlshProof(bytes32 xHash)
     external
     view
@@ -145,67 +146,122 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
-    function wrInct(bytes32 xHash)
-    external
-    notHalted
-    initialized
-    onlyValidGrpId(grpId)
-    {
 
-    }
 ///=======================================write incentive and slash=============================================
-    function wrRSlsh(bytes32 xHash)
+
+    /// todo white list can write the working record
+    function wrInct(bytes grpId, bytes32 hashX, MetricTypes.InctData inctData)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
+        metricData.mapInct[grpId][hashX] = inctData;
 
+        uint8 memory smCount = getSMCount();
+        uint epochId = getEpochId();
+
+        for (uint i = 0; i < smCount; i++) {
+            if (checkHamming(inctData.smIndexes,i)){
+                metricData.mapInctCount[grpId][epochId][i] += 1;
+            }
+        }
     }
 
-    function wrRNW(bytes32 xHash)
+    function wrRNW(bytes grpId, bytes32 hashX, MetricTypes.RNWData rnwData)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
+        metricData.mapRNW[grpId][hashX] = rnwData;
 
+        uint8 memory smCount = getSMCount();
+        uint epochId = getEpochId();
+
+        for (uint i = 0; i < smCount; i++) {
+            if (checkHamming(rnwData.smIndexes,i)){
+                metricData.mapSlshCount[grpId][epochId][i] += 1;
+
+                emit SMSlshLogger(grpId, hashX, i, MetricTypes.SlshReason.RNK);
+            }
+        }
     }
 
-    function wrSSlsh(bytes32 xHash)
+    function wrSNW(bytes grpId, bytes32 hashX, MetricTypes.SNWData snwData)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
+        metricData.mapSNW[grpId][hashX] = snwData;
 
+        uint8 memory smCount = getSMCount();
+        uint epochId = getEpochId();
+
+        for (uint i = 0; i < smCount; i++) {
+            if (checkHamming(snwData.smIndexes,i)){
+                metricData.mapSlshCount[grpId][epochId][i] += 1;
+
+                emit SMSlshLogger(grpId, hashX, i, MetricTypes.SlshReason.SNK);
+            }
+        }
     }
 
-    function wrSNW(bytes32 xHash)
+
+
+    function wrRSlsh(bytes grpId, bytes32 hashX, uint8 smIndex,MetricTypes.RSlshData rsslshData)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
+        // write working record
+        metricData.mapRSlsh[grpId][hashX][smIndex] = rsslshData;
 
+        // update the  count
+        metricData.mapSlshCount[grpId][getEpochId()][smIndex] += 1;
+        // emit the event
+        emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.R);
     }
+
+    function wrSSlsh(bytes grpId, bytes32 hashX, uint8 smIndex,MetricTypes.SSlshData sslshData)
+    external
+    notHalted
+    initialized
+    onlyValidGrpId(grpId)
+    {
+        // write working record
+        metricData.mapSSlsh[grpId][hashX][smIndex] = sslshData;
+
+        // update the  count
+        metricData.mapSlshCount[grpId][getEpochId()][smIndex] += 1;
+        // emit the event
+        emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
+    }
+
+
 ///=======================================check proof =============================================
+    // todo check the proof for all white list can write working record
     function checkRProof(bytes grpId, bytes32 hashX, uint8 smIndex)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
+    returns (bool)
     {
-
+        return true;
     }
 
+    // todo check the proof for all white list can write working record
     function checkSProof(bytes grpId, bytes32 hashX, uint8 smIndex)
-    external
+    internal
     notHalted
     initialized
     onlyValidGrpId(grpId)
+    returns (bool)
     {
-
+        return true;
     }
 
 
@@ -221,6 +277,34 @@ contract MetricDelegate is MetricStorage, Halt {
 
         config = IConfig(configAddr);
         mortgage = IMortgage(mortgageAddr);
+    }
+
+    // todo get EpochId from pre-compile contract
+    function getEpochId()
+    internal
+    pure
+    returns (uint)
+    {
+        uint memory timeStamp = now;
+        uint epochTimespan = uint(5*12*1440);
+        return timeStamp / epochTimespan;
+    }
+
+    // todo get EpochId from pre-compile contract
+    function getSMCount()
+    internal
+    pure
+    returns (uint8)
+    {
+        return uint8(21);
+    }
+
+    function checkHamming(uint indexes, uint8 smIndex)
+    internal
+    pure
+    returns (bool)
+    {
+        return (indexes |= (1<<smIndex)) != uint(0);
     }
 }
 
