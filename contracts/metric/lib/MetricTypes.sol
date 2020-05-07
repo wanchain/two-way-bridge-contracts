@@ -27,15 +27,11 @@
 pragma solidity ^0.4.24;
 
 library MetricTypes {
+    enum SlshReason {CM, R, RNK, S, SNK}
 
-    /**
-     *
-     * EVENTS
-     *
-     **/
-    event SMSlshLogger(bytes indexed grpId, bytes32 indexed hashX, uint8 indexed smIndex, SlshReason slshReason);
 
-    enum SlshReason{CM, R, RNK, S, SNK}
+
+
 /**
  *
  * STRUCTURES
@@ -46,17 +42,17 @@ library MetricTypes {
 // 2. check h, polyCMData.polyCMR , polyCMData.polyCMS, senderPk
 // cm
 struct PolyCMData{
-[]bytes             polyCM;
+bytes[]             polyCM;
 bytes               polyCMR;
 bytes               polyCMS;
-};
+}
 
 // s[i][j]
 struct PolyDataPln{
 bytes               polyData;
 bytes               polyDataR;
 bytes               polyDataS;
-};
+}
 
 // judge s[i][j]
 // check sig:
@@ -109,13 +105,13 @@ uint256  smIndexes;
 struct MetricStorageData {
 
 /// @notice transaction fee, hashX => fee
-/// groupId -> hashx -> InctData
-
 /**
 *
 * Incentive data
 *
-*/
+**/
+
+/// groupId -> hashx -> InctData
 mapping(bytes => mapping(bytes32 => InctData))                          mapInct;
 
 
@@ -125,17 +121,23 @@ mapping(bytes => mapping(bytes32 => InctData))                          mapInct;
 *
 */
 // cm slsh data
-// groupId -> hashx -> smIndex -> SlshData
-mapping(bytes => mapping(bytes32 => mapping(uint8 => CMSlshData)))     mapCMSlsh;
+// groupId -> hashx -> smIndex -> CMSlshData
+    //todo  add CMSlsh data ?
+//mapping(bytes => mapping(bytes32 => mapping(uint8 => CMSlshData)))     mapCMSlsh;
 
 // R slsh data
+    // groupId -> hashx -> smIndex -> SlshData
 mapping(bytes => mapping(bytes32 => mapping(uint8 => RSlshData)))      mapRSlsh;
 // R No Working data
+
+    // groupId -> hashx -> RNWData(array of the sm index)
 mapping(bytes => mapping(bytes32 => RNWData))                           mapRNW;
 
 // S slsh data
+    // groupId -> hashx -> smIndex -> SSlshData
 mapping(bytes => mapping(bytes32 => mapping(uint8 => SSlshData)))     mapSSlsh;
 // S No Working data
+    // groupId -> hashx -> SNWData(array of the sm index)
 mapping(bytes => mapping(bytes32 => SNWData))                          mapSNW;
 
 
