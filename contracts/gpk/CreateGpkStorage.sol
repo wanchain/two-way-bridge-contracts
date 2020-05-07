@@ -91,9 +91,4 @@ contract CreateGpkStorage is BasicStorage {
     enum CheckStatus {Init, Valid, Invalid}
 
     enum SlashType {PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, EncSijInvalid, CheckInvalid, Connive}
-
-    struct SlashInfo {
-        SlashType slashType;
-        address storeman;
-    }
 }
