@@ -31,7 +31,7 @@ interface IMortgage {
     function getSelectedSmInfo(bytes32 groupId, uint index) external returns(bytes pk, address txAddress);
     function getSmInfo(bytes32 groupId, address txAddress) external returns(bytes pk, bool isSelected);
     function setGpk(bytes32 groupId, bytes gpk) external;
-    function setInvalidSm(bytes32 groupId, uint slashType, address txAddress) external returns(bool isContinue);
+    function setInvalidSm(bytes32 groupId, uint[] slashType, address[] txAddress) external returns(bool isContinue);
 
     function getTotalNumber(bytes grpId) external returns (uint8);
     function getThresholdNumber(bytes grpId) external returns (uint8);
