@@ -11,6 +11,26 @@ let metricInst;
 
 const grpId            = stringToBytes("groupID1");
 
+
+// stage R slash
+let polyCM             = stringToBytes("polyCM");
+let polyCMR             = stringToBytes("polyCMR");
+let polyCMS             = stringToBytes("polyCMS");
+
+let polyData             = stringToBytes("polyData");
+let polyDataR             = stringToBytes("polyDataR");
+let polyDataS             = stringToBytes("polyDataS");
+
+// stage S slash
+let gpkShare             = stringToBytes("gpkShare");
+let rpkShare             = stringToBytes("rpkShare");
+let m                    = stringToBytes("m");
+
+let spolyData             = stringToBytes("spolyData");
+let spolyDataR             = stringToBytes("spolyDataR");
+let spolyDataS             = stringToBytes("spolyDataS");
+
+
 // x and xhash
 const xInct                    = '0x0000000000000000000000000000000000000000000000000000000000000001';
 const xHashInct                = '0xec4916dd28fc4c10d78e287ca5d9cc51ee1ae73cbfde08c6b37324cbfaac8bc5';
@@ -82,6 +102,109 @@ contract('Test Metric', async (accounts) => {
         }
     });
 
+
+    it('get statics...   -> getPrdInctMetric', async () => {
+        try {
+            let startEpID = getEpIDByNow();
+            let endEpID = startEpID+1;
+
+            console.log(startEpID);
+            console.log(endEpID);
+
+            let ret = await metricInst.getPrdInctMetric(grpId,new BN(startEpID),new BN(endEpID));
+            for(let i=0;i<ret.length;i++){
+                console.log(ret[i].toString(10));
+            }
+
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
+
+    it('get statics...   -> getPrdSlshMetric', async () => {
+        try {
+
+            let startEpID = getEpIDByNow();
+            let endEpID = startEpID+1;
+
+            console.log(startEpID);
+            console.log(endEpID);
+
+            let ret = await metricInst.getPrdSlshMetric(grpId,new BN(startEpID),new BN(endEpID));
+
+            for(let i=0;i<ret.length;i++){
+                console.log(ret[i].toString(10));
+            }
+
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
+
+    // ===========================================================R proof==============
+    it('write proof...   -> wrRSlshPolyCM', async () => {
+        try {
+
+            let ret = await metricInst.wrRSlshPolyCM(grpId,
+                xHashRSlsh,
+                [8,9],
+                true,
+                polyCM,
+                polyCMR,
+                polyCMS);
+
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
+
+    it('write proof...   -> wrRSlshPolyData', async () => {
+        try {
+
+            let ret = await metricInst.wrRSlshPolyData(grpId,
+                xHashRSlsh,
+                [8,9],
+                true,
+                polyData,
+                polyDataR,
+                polyDataS);
+
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
+// ===========================================================S proof==============
+    it('write proof...   -> wrSSlshShare', async () => {
+        try {
+
+            let ret = await metricInst.wrSSlshShare(grpId,
+                xHashSSlsh,
+                [10,11],
+                true,
+                gpkShare,
+                rpkShare,
+                m);
+
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
+
+    it('write proof...   -> wrSSlshPolyPln', async () => {
+        try {
+
+            let ret = await metricInst.wrSSlshPolyPln(grpId,
+                xHashSSlsh,
+                [10,11],
+                true,
+                spolyData,
+                spolyDataR,
+                spolyDataS);
+
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
 
     it('get statics...   -> getPrdInctMetric', async () => {
         try {
