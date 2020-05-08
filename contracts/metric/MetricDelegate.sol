@@ -68,11 +68,13 @@ contract MetricDelegate is MetricStorage, Halt {
     returns (uint[]) {
         require(endEpId > startEpId, "End epochId should be more than start epochId");
         uint[] memory ret;
-        uint8 n = mortgage.getTotalNumber(grpId);
+        // todo get total number from mortgage
+        //uint8 n = mortgage.getTotalNumber(grpId);
+        uint8 n = getTotalNumber();
 
         ret = new uint[](n);
         for (uint8 i = 0; i < n; i++) {
-            for (uint j = startEpId; j < startEpId; j++){
+            for (uint j = startEpId; j < endEpId; j++){
                 ret[i] += metricData.mapInctCount[grpId][j][i];
             }
         }
@@ -89,11 +91,13 @@ contract MetricDelegate is MetricStorage, Halt {
     {
         require(endEpId > startEpId, "End epochId should be more than start epochId");
         uint[] memory ret;
-        uint8 n = mortgage.getTotalNumber(grpId);
+        // todo get total number from mortgage
+        //uint8 n = mortgage.getTotalNumber(grpId);
+        uint8 n = getTotalNumber();
 
         ret = new uint[](n);
         for (uint8 i = 0; i < n; i++) {
-            for (uint j = startEpId; j < startEpId; j++){
+            for (uint j = startEpId; j < endEpId; j++){
                 ret[i] += metricData.mapSlshCount[grpId][j][i];
             }
         }
@@ -229,7 +233,7 @@ contract MetricDelegate is MetricStorage, Halt {
         }
 
         //todo dupilicate? allow users update the proof?
-        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+        MetricTypes.RSlshData memory rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
 
         // write working record
 
@@ -261,7 +265,7 @@ contract MetricDelegate is MetricStorage, Halt {
         }
 
         //todo dupilicate? allow users update the proof?
-        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+        MetricTypes.RSlshData memory rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
 
         require( rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
         require( rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
@@ -296,7 +300,7 @@ contract MetricDelegate is MetricStorage, Halt {
         }
 
         //todo dupilicate? allow users update the proof?
-        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+        MetricTypes.SSlshData memory sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
         // write working record
 
         sslshData.m  = m;
@@ -327,7 +331,7 @@ contract MetricDelegate is MetricStorage, Halt {
         }
 
         //todo dupilicate? allow users update the proof?
-        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+        MetricTypes.SSlshData memory sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
 
         require( sslshData.m.length != 0, "m is empty");
         require( sslshData.rpkShare.length != 0, "rpkShare is empty");
@@ -410,6 +414,15 @@ contract MetricDelegate is MetricStorage, Halt {
     pure
     returns (bool)
     {
-        return (indexes &= (uint(1)<<smIndex)) != uint(0);
+        //todo think over
+        return indexes & (uint(1)<<smIndex) != uint(0);
    }
+
+    function getTotalNumber()
+    internal
+    pure
+    returns (uint8)
+    {
+        return uint8(21);
+    }
 }
