@@ -76,21 +76,21 @@ contract StoremanGroupStorage is BasicStorage {
   }
 
   struct StoremanGroup {
-      //address delegate;                 /// the account for registering a storeman group which provides storeman group deposit
+      bytes32    groupId;
+      uint    txFeeRatio;               /// the fee ratio required by storeman group
+      uint memberCountDesign;
+      GroupStatus    status;
       uint    deposit;                  /// the storeman group deposit in wan coins, change when selecting
       uint    depositWeight;            /// caculate this value when selecting
-      uint    txFeeRatio;               /// the fee ratio required by storeman group
       uint    unregisterApplyTime;      /// the time point for storeman group applied unregistration
-      GroupStatus    status;
-      bytes32    groupIndex;
-      string  chainName;
-      uint memberCountDesign;
       uint memberCount;
       uint whiteCount;
+      bytes  chain;
       mapping(address=>Candidate) candidates; // bianli map 不好做.
       mapping(uint=>address) addrMap;
       mapping(uint=>address) selectedNode;
       mapping(uint=>address) workingNode;
-      mapping(address=>bytes) whiteEnodeID;
+      mapping(uint=>address) whiteMap;
+      mapping(address=>address) whiteWk;   // the white list specified when start group.
   }
 }

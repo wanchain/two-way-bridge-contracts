@@ -1,3 +1,5 @@
+const ethutil = require("ethereumjs-util");
+const pu = require('promisefy-util')
 
 function sha256(message) {
   const crypto=require('crypto');
@@ -47,12 +49,27 @@ function linkMultiLibrary(contract, libs) {
 }
 function stringTobytes32(name){
   let b = Buffer.alloc(32)
-  b.write(name, 32-name.length,'ascii')
+  b.write(name, 32-name.length,'utf8')
   let id = '0x'+b.toString('hex')
   console.log("id:",id)
   return id
 }
-
+function stringTobytes(name){
+  let b = Buffer.from(name,'utf8')
+  let id = '0x'+b.toString('hex')
+  console.log("id:",id)
+  return id
+}
+function getAddressFromInt(i){
+  let b = Buffer.alloc(32)
+  b.writeUInt32LE(i,28)
+  let pkb = ethutil.privateToPublic(b)
+  let priv = '0x'+b.toString('hex')
+  let addr = '0x'+ethutil.pubToAddress(pkb).toString('hex')
+  let pk = '0x'+pkb.toString('hex')
+  console.log("got address: ",addr)
+  return {addr, pk, priv:b}
+}
 
 async function waitReceipt(txhash) {
   let lastBlock = await pu.promisefy(web3.eth.getBlockNumber, [], web3.eth)
@@ -81,5 +98,7 @@ module.exports = {
   linkLibrary: linkLibrary,
   linkMultiLibrary: linkMultiLibrary,
   stringTobytes32:stringTobytes32,
+  stringTobytes:stringTobytes,
+  getAddressFromInt:getAddressFromInt,
   waitReceipt:waitReceipt,
 };

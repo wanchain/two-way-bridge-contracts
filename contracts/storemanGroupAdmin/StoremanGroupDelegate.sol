@@ -106,37 +106,51 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @param wkAddrs                    white list work address.
     /// @param senders                    senders address of the white list enode.
     /// @param minStake                   minimum value when join the group.
+    /// @param memberCountDesign          designed member count in this group. normally it is 21.
+    /// @param workStart                  When the group start to work.
     /// @param workDuration               how many days the group will work for
     /// @param registerDuration           how many days the duration that allow transfer staking.
     /// @param crossFee                   the fee for cross transaction.
-    /// @param preGroupId              the preview group index.
-    function registerStart(bytes32 groupId, string chain, address[] wkAddrs, address[] senders, uint minStake,
-        uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupId)
-        external
-    {
-        return;
-    }
-    
-
-    function addGroup(uint txFeeRate, bytes32 groupId)
+    /// @param preGroupId                 the preview group index.
+    function registerStart(bytes32 groupId, uint minStake, uint memberCountDesign,
+        uint workStart,uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupId, bytes chain, address[] wkAddrs, address[] senders)
         public
-    {
-        StoremanGroup memory group = StoremanGroup(0,0,txFeeRate,0,GroupStatus.initial,groupId,'ETH',21,0,0);
-        groups[groupId] = group;
-    }
-    event addStakerEvent(address indexed pkAddr, bytes32 indexed index);
+    { 
+        require(wkAddrs.length == senders.length);
+        require(wkAddrs.length > backupCount);
+        StoremanGroup memory group = StoremanGroup(groupId,crossFee,memberCountDesign,GroupStatus.initial,0,0,0,0,0,chain);
+        group.whiteCount = wkAddrs.length - backupCount;
 
-    function addStaker(bytes32 index, bytes PK, bytes enodeID, uint delegateFee)
+        groups[groupId] = group;
+        for(uint i = 0; i < wkAddrs.length; i++){
+            groups[groupId].whiteMap[i] = wkAddrs[i];
+            groups[groupId].whiteWk[wkAddrs[i]] = senders[i];
+        }
+    }
+
+
+
+
+    event stakeInEvent(bytes32 indexed index,address indexed pkAddr, bytes enodeID);
+
+    function stakeIn(bytes32 index, bytes PK, bytes enodeID, uint delegateFee)
         public payable
     {
         StoremanGroup group = groups[index];
         address pkAddr = address(keccak256(PK));
-        Candidate memory sk = Candidate(msg.sender, enodeID, PK,pkAddr,false,false,false,delegateFee,msg.value,0,0,0);
+        Candidate memory sk = Candidate(msg.sender, enodeID, PK,pkAddr,false,false,false,delegateFee,msg.value,calSkWeight(msg.value),0,0);
         group.addrMap[group.memberCount] = pkAddr;
         group.memberCount++;
 
         group.candidates[pkAddr] = sk;
-        emit addStakerEvent(pkAddr, index);
+
+        //check if it is white
+        if(group.whiteWk[pkAddr] != address(0x00)){
+            if(group.whiteWk[pkAddr] != msg.sender){
+                revert();
+            }
+        }
+        emit stakeInEvent(index, pkAddr, enodeID);
     }
     function getStaker(bytes32 index, address pkAddr) public view returns (bytes,uint,uint) {
         Candidate sk = groups[index].candidates[pkAddr];
@@ -179,7 +193,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
     function getSelectedSmNumber(bytes32 groupId) public view returns(uint) {
         StoremanGroup group = groups[groupId];
-        return group.memberCount;
+        if(group.status == GroupStatus.initial ||  group.status == GroupStatus.failed){
+            return 0;
+        }
+        return group.memberCountDesign;
     }
     function toSelect(bytes32 groupId) public {
         StoremanGroup group = groups[groupId];
@@ -187,8 +204,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
             group.status = GroupStatus.failed;
             return;
         }
-        // first, select the sm from white list.
-        group.whiteCount = 5;
+        // first, select the sm from white list. 
+        // TODO: check all white list should stakein.
+        for(uint m=0; m<group.whiteCount;m++){
+            group.selectedNode[m] = group.whiteMap[m];
+        }
 
         for(uint i = 0; i<group.memberCount; i++){
             uint j;
