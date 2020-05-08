@@ -113,7 +113,7 @@ contract('Test Metric', async (accounts) => {
 
             let ret = await metricInst.getPrdInctMetric(grpId,new BN(startEpID),new BN(endEpID));
             for(let i=0;i<ret.length;i++){
-                console.log(ret[i].toString(10));
+                process.stdout.write(ret[i].toString(10)+" ");
             }
 
         } catch (err) {
@@ -133,7 +133,7 @@ contract('Test Metric', async (accounts) => {
             let ret = await metricInst.getPrdSlshMetric(grpId,new BN(startEpID),new BN(endEpID));
 
             for(let i=0;i<ret.length;i++){
-                console.log(ret[i].toString(10));
+                process.stdout.write(ret[i].toString(10)+" ");
             }
 
         } catch (err) {
@@ -216,7 +216,7 @@ contract('Test Metric', async (accounts) => {
 
             let ret = await metricInst.getPrdInctMetric(grpId,new BN(startEpID),new BN(endEpID));
             for(let i=0;i<ret.length;i++){
-                console.log(ret[i].toString(10));
+                process.stdout.write(ret[i].toString(10)+" ");
             }
 
         } catch (err) {
@@ -236,7 +236,7 @@ contract('Test Metric', async (accounts) => {
             let ret = await metricInst.getPrdSlshMetric(grpId,new BN(startEpID),new BN(endEpID));
 
             for(let i=0;i<ret.length;i++){
-                console.log(ret[i].toString(10));
+                process.stdout.write(ret[i].toString(10)+" ");
             }
 
         } catch (err) {
