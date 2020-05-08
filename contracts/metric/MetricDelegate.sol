@@ -62,7 +62,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getPrdInctMetric(bytes grpId, uint startEpId, uint endEpId)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (uint[]) {
@@ -84,7 +83,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getPrdSlshMetric(bytes grpId, uint startEpId, uint endEpId)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns(uint[])
@@ -107,7 +105,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getSmSuccCntByEpId(bytes grpId, uint epId, uint8 smIndex)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (uint)
@@ -118,7 +115,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getSlshCntByEpId(bytes grpId, uint epId, uint8 smIndex)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (uint)
@@ -130,7 +126,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getRSlshProof(bytes grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (MetricTypes.SSlshData)
@@ -143,7 +138,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getSSlshProof(bytes grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (MetricTypes.RSlshData)
@@ -367,7 +361,6 @@ contract MetricDelegate is MetricStorage, Halt {
     // todo check proof by pre-compile contract
     function checkRProof(bytes grpId, bytes32 hashX, uint8 smIndex)
     internal
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (bool)
@@ -379,7 +372,6 @@ contract MetricDelegate is MetricStorage, Halt {
     // todo check proof by pre-compile contract
     function checkSProof(bytes grpId, bytes32 hashX, uint8 smIndex)
     internal
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (bool)
