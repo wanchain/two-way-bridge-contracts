@@ -15,7 +15,7 @@ class EventTracker {
     interval = (interval > 10) ? 10 : interval;
     this.schInterval = interval * 60 * 1000;
     this.schThreshold = interval * 6;
-    this.schBatchSize = interval * 120;
+    this.schBatchSize = interval * 360; // half an hour
     // name => {address, topics} 
     this.subscribeMap = new Map();
     this.subscribeArray = [];
@@ -28,7 +28,7 @@ class EventTracker {
   }
 
   start() {
-    this.next();
+    this.next(this.schThreshold + 1);
   }
 
   async mainLoop() {
@@ -104,6 +104,4 @@ class EventTracker {
   }  
 }
 
-let tracker = new EventTracker('gpk', 6320300, (evt) => {console.log("receive evt: %O", evt); return true;}, 1);
-tracker.subscribe('wandora', '0x73a99a82f1b95bfd55a5820a7342758ceca80b33', ["0x10c53ecd69edb1ebf570440ffdc3bb14b8d0ad4297cbde535c88d316164653ae"]);
-tracker.start();
+module.exports = EventTracker;

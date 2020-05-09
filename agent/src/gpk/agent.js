@@ -1,76 +1,18 @@
 const Web3 = require('web3');
 const config = require('../../cfg/config');
 const GpkGroup = require('./Group');
-
-const web3 = new Web3(new Web3.providers.HttpProvider(config.wanNodeURL));
+const EventTracker = require('../utils/EventTracker');
+const wanchain = require('../utils/wanchain');
 
 console.log("open storeman gpk agent");
 
-function exit(blockLeft = 0) {
-  let schInterval = 300000; // default 5min
-  if (blockLeft > 30) {
-    schInterval = 3000;
-  }
+const evtTracker = new EventTracker('gpk', 6320300, gpkEvtHandler);
+evtTracker.subscribe('wandora', '0x73a99a82f1b95bfd55a5820a7342758ceca80b33', ["0x10c53ecd69edb1ebf570440ffdc3bb14b8d0ad4297cbde535c88d316164653ae"]);
+evtTracker.start();
 
-  dbcc.setContext(processName, {blockNumber: lastBlockNumber}, () => {
-    lock.remove(() => {
-      setTimeout(() => {
-        sync_main();
-      }, schInterval);
-    });
-  });
-}
-
-function sync_main() {
-  lock.isLocked(isLocked => {
-    if (isLocked) {
-      console.log('script already running');
-      iwan.close();
-      mongoose.disconnect();
-      return process.exit(0);
-    }
-
-    lock.create(() => {
-      iwan.getBlockNumber('WAN', (err, latestBlock) => {
-        if (err) {
-          console.error(err);
-          return exit();
-        }
-        dbcc.getContext(processName, true, (err, value) => {
-          if (value && (lastBlockNumber == -1)) {
-            lastBlockNumber = value.blockNumber;
-          }
-          processBlocks(latestBlock);
-        });
-      });
-    });
-  })
-}
-
-async function processBlocks(latestBlock) {
-  // get new cc txs
-  let startBlock = lastBlockNumber + 1;
-  let endBlock = startBlock + count - 1;
-  if (endBlock > latestBlock) {
-    endBlock = latestBlock;
-  }
-
-  try {
-    let addrSet = await getEventsAddr(startBlock, endBlock);
-    let balances = await syncLib.get_balances(Array.from(addrSet));
-    // console.log("balances: %O", balances);
-    dbpos.saveBalance(balances, (err) => {
-      if (err) {
-        console.error(err);
-        return exit();
-      } else {
-        lastBlockNumber = endBlock;
-        return exit(latestBlock - endBlock);
-      }
-    })
-  } catch (err) {
-    return exit();
-  }
+function gpkEvtHandler(evt) {
+  console.log("receive evt: %O", evt);
+  return true;
 }
 
 // gpk();
