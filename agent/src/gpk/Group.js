@@ -42,7 +42,7 @@ class GpkGroup {
     this.send = new Map();
 
     // process
-    this.timerId = 0;
+    this.timerId = null;
     this.interrupted = false;
   }
 
@@ -66,6 +66,7 @@ class GpkGroup {
     for (let i = 0; i < 17; i++) {
       this.poly[i] = encrypt.genRandom();
       this.PolyCommit[i] = encrypt.mulG(this.poly[i]);
+      // console.log("init PolyCommit %i: %s", i, this.PolyCommit[i].getEncoded(false).toString('hex'));
     }
   }
 
@@ -402,6 +403,10 @@ class GpkGroup {
     console.log('%s gpk group %s round %d is closed', new Date(), this.groupId, this.round);
     clearInterval(this.timerId);
   }
+
+  // test() {
+  //   wanchain.sendPloyCommit(this.groupId, this.PolyCommit);
+  // }
 }
 
 module.exports = GpkGroup;

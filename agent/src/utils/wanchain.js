@@ -67,12 +67,12 @@ async function getTxReceipt(txHash) {
 
 async function sendPloyCommit(groupId, polyCommit) {
   let order = polyCommit.length;
-  let buf = new Buffer(order * 64 * 2);
+  let buf = Buffer.alloc(order * 65);
   let offset = 0;
   for (let i = 0; i < order; i++) {
-    let temp = polyCommit[i].getEncoded(false).toString('hex').substr(2);
+    let temp = polyCommit[i].getEncoded(false);
     temp.copy(buf, offset);
-    offset += 128;
+    offset += 65;
   }
   let pcStr = '0x' + buf.toString('hex');
   let txData = await createGpkSc.methods.setPolyCommit(groupId, pcStr).encodeABI();
@@ -119,6 +119,14 @@ async function sendSijTimeout(groupId, src) {
   return txHash;
 }
 
+async function getBlockNumber() {
+  return await web3.eth.getBlockNumber(); // promise
+}
+
+function getEvents(options) {
+  return web3.eth.getPastLogs(options); // promise
+}
+
 async function sendGpk(groupId, gpk, pkShare) { // only for poc
   let txData = await createGpkSc.methods.setGpk(groupId, gpk, pkShare).encodeABI();
   let txHash = await sendTx(config.contractAddress.createGpk, txData);
@@ -140,5 +148,7 @@ module.exports = {
   sendEncSijTimeout,
   sendCheckTimeout,
   sendSijTimeout,
+  getBlockNumber,
+  getEvents,
   sendGpk
 }
