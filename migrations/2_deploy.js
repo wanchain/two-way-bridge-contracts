@@ -18,6 +18,10 @@ const MetricDelegate  = artifacts.require('MetricDelegate');
 
 
 module.exports = async function(deployer){
+    // test
+    //await deployer.deploy(TestStoremanGroup);
+
+
     // token manager sc
     await deployer.deploy(TokenManagerProxy);
     let tmProxy = await TokenManagerProxy.deployed();
@@ -84,4 +88,5 @@ module.exports = async function(deployer){
     await deployer.deploy(MetricDelegate);
     let metricDlg = await MetricDelegate.deployed();
     await metricProxy.upgradeTo(metricDlg.address);
+
 }

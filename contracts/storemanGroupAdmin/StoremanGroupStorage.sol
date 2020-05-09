@@ -30,23 +30,67 @@ import "../components/BasicStorage.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IHTLC.sol";
 
+
+
+
 contract StoremanGroupStorage is BasicStorage {
-    /// token manager instance address
-    ITokenManager public tokenManager;
-    /// HTLC instance address
-    IHTLC public htlc;
-    /// is white list is enabled, if false, any storeman group can register
-    bool public isWhiteListEnabled;
 
-    /// tokenOrigAddr->storemanPK->StoremanGroup)
-    mapping(bytes => mapping(bytes => StoremanGroup)) internal storemanGroupMap;
-    /// tokenOrigAddr->storemanPK->isEnabled
-    mapping(bytes => mapping(bytes => bool)) internal whiteListMap;
+  /// token manager instance address
+  ITokenManager public tokenManager;
+  /// HTLC instance address
+  IHTLC public htlc;
 
-    struct StoremanGroup {
-        address delegate;                 /// the account for registering a storeman group which provides storeman group deposit
-        uint    deposit;                  /// the storeman group deposit in wan coins
-        uint    txFeeRatio;               /// the fee ratio required by storeman group
-        uint    unregisterApplyTime;      /// the time point for storeman group applied unregistration
-    }
+  mapping(bytes32 => StoremanGroup) public groups;
+  mapping(bytes => mapping(bytes => StoremanGroup)) internal storemanGroupMap;
+
+  uint backupCount = 3;
+  address[] public badAddrs;
+  uint[] public badTypes;
+  enum GroupStatus {initial,failed,selected,ready,retired,dismissed}
+  struct Delegator {
+      address sender; // the delegator wallet address
+      address staker;
+      bool  quited;
+      //bool  claimed;
+      uint  deposit;
+      uint  incentive;
+      mapping(uint=>uint) value;
+  }
+  struct Candidate {
+      address sender;
+      bytes enodeID;
+      bytes PK;
+      address  pkAddress; // 合约计算一下.
+      bool  quited;
+      //bool  claimed;// 不需要??? 提取后deposit归零.
+      bool  selected;
+      bool  isWorking;
+      uint  delegateFee;
+      uint  deposit;         // 自有
+      uint  depositWeight; //total 自由+代理
+      uint  incentive;       // without delegation.. set to 0 after incentive.
+      uint  delegatorCount;
+      mapping(uint=>address) addrMap;
+      mapping(uint=>uint) value;  // 需要遍历.
+      mapping(address=>Delegator) delegators;
+  }
+
+  struct StoremanGroup {
+      bytes32    groupId;
+      uint    txFeeRatio;               /// the fee ratio required by storeman group
+      uint memberCountDesign;
+      GroupStatus    status;
+      uint    deposit;                  /// the storeman group deposit in wan coins, change when selecting
+      uint    depositWeight;            /// caculate this value when selecting
+      uint    unregisterApplyTime;      /// the time point for storeman group applied unregistration
+      uint memberCount;
+      uint whiteCount;
+      bytes  chain;
+      mapping(address=>Candidate) candidates; // bianli map 不好做.
+      mapping(uint=>address) addrMap;
+      mapping(uint=>address) selectedNode;
+      mapping(uint=>address) workingNode;
+      mapping(uint=>address) whiteMap;
+      mapping(address=>address) whiteWk;   // the white list specified when start group.
+  }
 }

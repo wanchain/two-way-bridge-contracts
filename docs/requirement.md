@@ -51,7 +51,7 @@ storemanGroup组织好以后, Leader发起产生公共私钥的过程,生成共�
  作用  : 开放一个storemanGroup的注册窗口, 允许注册(stakeIn,  delegateIn)  
  需要指定如下参数:
     - groupId: group的编号.   
-    - enodeIDs:   白名单定节点的enodeId数组,白名单包含内定和备选两类  
+    - wkAddrs:   白名单定节点的enodeId数组,白名单包含内定和备选两类  
     - senders:   白名单对应的钱包地址, 只有从这个地址注册才能认领白订单的enodeID.
     - workStart: 起始工作时间. 从1970年开始的秒数.
     - workDuration: storeman工作时长(天)  
@@ -59,13 +59,13 @@ storemanGroup组织好以后, Leader发起产生公共私钥的过程,生成共�
     - chain: 工作的chain的名字.
     - minStake: 该group允许的最小投资额度.  
     - crossFee: 该group收取的跨链手续费.  
-    - preGroupIndex: 上一个group编号. 如果指定了这个参数, 上一个group如果有人退出, 则没有退出的人, 自动进入当前group参与竞选.     
+    - preGroupId: 上一个group编号. 如果指定了这个参数, 上一个group如果有人退出, 则没有退出的人, 自动进入当前group参与竞选.     
     
 注意: 这个接口里只指定了白名单,但是并不打入资金. 
 
 ``` 
- function registerStart(bytes32 groupId, string chain, bytes[] enodeIDs, address[] senders, uint minStake,  
-     uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupIndex)            
+ function registerStart(bytes32 groupId, bytes chain, address[] wkAddrs, address[] senders, uint minStake,  
+    uint workStart, uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupId)            
 ```
 
 

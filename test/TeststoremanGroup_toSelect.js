@@ -79,6 +79,7 @@ contract('StoremanGroupDelegate', async (accounts) => {
         console.log("tx:", tx)
         console.log("group:",await testInstance.groups(id))
     })
+
     it('test stakeIn', async()=>{
         let stakerCount = 600
         for(let i=0; i<stakerCount; i++){
@@ -141,7 +142,6 @@ contract('StoremanGroupDelegate', async (accounts) => {
 
 
     })
-
     it('test toSelect', async ()=>{
         let tx = await testInstance.toSelect(id,{from: tester})
         console.log("toSelect tx:", tx)

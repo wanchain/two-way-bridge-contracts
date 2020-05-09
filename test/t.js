@@ -1,25 +1,28 @@
-
+const ethutil = require("ethereumjs-util");
 
 function main() {
-    let m = new Map()
-    let from = 5
-    let total = 21
-    console.log("m[0]:", m[0])
-    for(let i =1; i<60; i++){
-        let j
-        for(j=total-1; j>from; j--) {
-            if(!m[j] || i > m[j]){
-                continue
-            }
-        }
-        if(j<total-1){
-            for(let k=total-2; k>=j; k--){
-                m[k+1] = m[k]
-            }
-            m[j] = i;
-        }
-        console.log("m:",m)
+    let pubkeyhexstring = [
+        "0x048be2b2bab6de9161410b78e5d30215df8c966cce240296fa858086d50d3e62ec0b3368eae94b9179c72e28099c6e0261f6cff923438f50bb86d42eb100c7f445",
+        "0x048be2b2bab6de9161410b78e5d30215df8c966cce240296fa858086d50d3e62ec0b3368eae94b9179c72e28099c6e0261f6cff923438f50bb86d42eb100c7f445",
+        "0x04a33fd04c2bef3ce12c2240677263aca34938e36d417491961100d1f18e72feee8d98f280b70f5d5598f87095138ca7bcb4e177c2efdd5f5ace84ca9a7a5bf943",
+        "0x04a33fd04c2bef3ce12c2240677263aca34938e36d417491961100d1f18e72feee8d98f280b70f5d5598f87095138ca7bcb4e177c2efdd5f5ace84ca9a7a5bf943",
+        "0x045386251cfc86f5bbb0432b79adca9ee40d4f2e83597dca78c385bf5c5e867e67340d1d59938d3077a6130e610fe5d88436009626974acf97cd702e48e0eefb64",
+        "0x045386251cfc86f5bbb0432b79adca9ee40d4f2e83597dca78c385bf5c5e867e67340d1d59938d3077a6130e610fe5d88436009626974acf97cd702e48e0eefb64",
+        "0x04e8a1de2239233a5112df079700589696d65c878de4342472fc064a502ec3c832cc6f26e45b57e9cce631186b7f381e6bfa6e57fcca6d6af2dabdf7f0c2f3b8cb",
+        "0x04e8a1de2239233a5112df079700589696d65c878de4342472fc064a502ec3c832cc6f26e45b57e9cce631186b7f381e6bfa6e57fcca6d6af2dabdf7f0c2f3b8cb",
+        "0x04cdfb5ba7190512703092298e470df5d275bf5d1c412d3b0d112feeadc3c27fd0fd6dbeda79d93c2b3cbd279ab10722761c6976bea6d4a4f0d674ea7588ae27e4",
+        "0x04cdfb5ba7190512703092298e470df5d275bf5d1c412d3b0d112feeadc3c27fd0fd6dbeda79d93c2b3cbd279ab10722761c6976bea6d4a4f0d674ea7588ae27e4",
+        "0x04ac1155987163c130311923c9934b5181db118566fe5639e1958d4105ee1aff815f4afebdb68583b31304981ea25b8b4afe0cf7fdc28734999635bd16216cd01f",
+        "0x04ac1155987163c130311923c9934b5181db118566fe5639e1958d4105ee1aff815f4afebdb68583b31304981ea25b8b4afe0cf7fdc28734999635bd16216cd01f",
+    ]
+    for(let i=0; i<pubkeyhexstring.length; i++){
+        console.log(pubkeyhexstring[i])
+        let pub = Buffer.from(pubkeyhexstring[i].slice(4),'hex')
+        let addr = '0x'+ethutil.pubToAddress(pub).toString('hex')
+        console.log("add is: ",addr)
     }
+
 }
+
 
 main();
