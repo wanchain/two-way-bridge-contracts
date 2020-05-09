@@ -62,17 +62,18 @@ contract MetricDelegate is MetricStorage, Halt {
     function getPrdInctMetric(bytes grpId, uint startEpId, uint endEpId)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (uint[]) {
         require(endEpId > startEpId, "End epochId should be more than start epochId");
         uint[] memory ret;
-        uint8 n = mortgage.getTotalNumber(grpId);
+        // todo get total number from mortgage
+        //uint8 n = mortgage.getTotalNumber(grpId);
+        uint8 n = getTotalNumber();
 
         ret = new uint[](n);
         for (uint8 i = 0; i < n; i++) {
-            for (uint j = startEpId; j < startEpId; j++){
+            for (uint j = startEpId; j < endEpId; j++){
                 ret[i] += metricData.mapInctCount[grpId][j][i];
             }
         }
@@ -82,18 +83,19 @@ contract MetricDelegate is MetricStorage, Halt {
     function getPrdSlshMetric(bytes grpId, uint startEpId, uint endEpId)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns(uint[])
     {
         require(endEpId > startEpId, "End epochId should be more than start epochId");
         uint[] memory ret;
-        uint8 n = mortgage.getTotalNumber(grpId);
+        // todo get total number from mortgage
+        //uint8 n = mortgage.getTotalNumber(grpId);
+        uint8 n = getTotalNumber();
 
         ret = new uint[](n);
         for (uint8 i = 0; i < n; i++) {
-            for (uint j = startEpId; j < startEpId; j++){
+            for (uint j = startEpId; j < endEpId; j++){
                 ret[i] += metricData.mapSlshCount[grpId][j][i];
             }
         }
@@ -103,7 +105,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getSmSuccCntByEpId(bytes grpId, uint epId, uint8 smIndex)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (uint)
@@ -114,7 +115,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getSlshCntByEpId(bytes grpId, uint epId, uint8 smIndex)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (uint)
@@ -126,7 +126,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getRSlshProof(bytes grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (MetricTypes.SSlshData)
@@ -139,7 +138,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getSSlshProof(bytes grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (MetricTypes.RSlshData)
@@ -229,7 +227,7 @@ contract MetricDelegate is MetricStorage, Halt {
         }
 
         //todo dupilicate? allow users update the proof?
-        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+        MetricTypes.RSlshData  rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
 
         // write working record
 
@@ -244,6 +242,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
+    // todo how to make sure atom operation?
     function wrRSlshPolyData(bytes grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
         bytes polyData,bytes polyDataR,bytes polyDataS)
     external
@@ -261,7 +260,7 @@ contract MetricDelegate is MetricStorage, Halt {
         }
 
         //todo dupilicate? allow users update the proof?
-        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+        MetricTypes.RSlshData  rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
 
         require( rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
         require( rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
@@ -273,10 +272,15 @@ contract MetricDelegate is MetricStorage, Halt {
         rslshData.polyDataPln.polyDataR = polyDataR;
         rslshData.polyDataPln.polyDataS = polyDataS;
 
-        // update the  count
-        metricData.mapSlshCount[grpId][getEpochId()][smIndex] += 1;
-        // emit the event
-        emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.R);
+        if (checkRProof(grpId,hashX,smIndex)){
+            // update the  count
+            metricData.mapSlshCount[grpId][getEpochId()][smIndex] += 1;
+            // emit the event
+            emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.R);
+        }else{
+            emit SMInvSlshLogger(msg.sender,grpId, hashX, smIndex, MetricTypes.SlshReason.R);
+            delete  metricData.mapRSlsh[grpId][hashX][smIndex];
+        }
     }
 
 
@@ -296,7 +300,7 @@ contract MetricDelegate is MetricStorage, Halt {
         }
 
         //todo dupilicate? allow users update the proof?
-        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+        MetricTypes.SSlshData  sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
         // write working record
 
         sslshData.m  = m;
@@ -310,6 +314,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     }
 
+    // todo how to make sure atom operation?
     function wrSSlshPolyPln(bytes grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
         bytes polyData,bytes polyDataR,bytes polyDataS)
     external
@@ -327,7 +332,7 @@ contract MetricDelegate is MetricStorage, Halt {
         }
 
         //todo dupilicate? allow users update the proof?
-        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+        MetricTypes.SSlshData  sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
 
         require( sslshData.m.length != 0, "m is empty");
         require( sslshData.rpkShare.length != 0, "rpkShare is empty");
@@ -338,20 +343,24 @@ contract MetricDelegate is MetricStorage, Halt {
         sslshData.polyDataPln.polyDataR  = polyDataR;
         sslshData.polyDataPln.polyDataS  = polyDataS;
 
-
-        // update the  count
-        metricData.mapSlshCount[grpId][getEpochId()][smIndex] += 1;
-        // emit the event
-        emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
+        if (checkSProof(grpId,hashX,smIndex)){
+            // update the  count
+            metricData.mapSlshCount[grpId][getEpochId()][smIndex] += 1;
+            // emit the event
+            emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
+        }else{
+            emit SMInvSlshLogger(msg.sender,grpId, hashX, smIndex, MetricTypes.SlshReason.S);
+            delete  metricData.mapSSlsh[grpId][hashX][smIndex];
+        }
 
     }
 
 
 ///=======================================check proof =============================================
     // todo check the proof for all white list can write working record
+    // todo check proof by pre-compile contract
     function checkRProof(bytes grpId, bytes32 hashX, uint8 smIndex)
-    external
-    notHalted
+    internal
     initialized
     onlyValidGrpId(grpId)
     returns (bool)
@@ -360,9 +369,9 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
     // todo check the proof for all white list can write working record
+    // todo check proof by pre-compile contract
     function checkSProof(bytes grpId, bytes32 hashX, uint8 smIndex)
     internal
-    notHalted
     initialized
     onlyValidGrpId(grpId)
     returns (bool)
@@ -410,6 +419,14 @@ contract MetricDelegate is MetricStorage, Halt {
     pure
     returns (bool)
     {
-        return (indexes &= (uint(1)<<smIndex)) != uint(0);
+        return indexes & (uint(1)<<smIndex) != uint(0);
    }
+
+    function getTotalNumber()
+    internal
+    pure
+    returns (uint8)
+    {
+        return uint8(21);
+    }
 }
