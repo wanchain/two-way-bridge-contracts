@@ -147,9 +147,12 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         //check if it is white
         if(group.whiteWk[pkAddr] != address(0x00)){
             if(group.whiteWk[pkAddr] != msg.sender){
-                revert();
+                revert("invalid sender");
             }
+        } else {
+            realInsert(index, pkAddr, calSkWeight(msg.value));
         }
+
         emit stakeInEvent(index, pkAddr, enodeID);
     }
     function getStaker(bytes32 index, address pkAddr) public view returns (bytes,uint,uint) {
@@ -189,6 +192,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         sk.delegatorCount++;
         sk.depositWeight += msg.value;
         sk.delegators[msg.sender] = dk;
+        if(groups[index].whiteWk[skPkAddr] == address(0x00)){
+            realInsert(index, skPkAddr, sk.depositWeight);
+        }
     }
 
     function getSelectedSmNumber(bytes32 groupId) public view returns(uint) {
@@ -197,6 +203,21 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
             return 0;
         }
         return group.memberCountDesign;
+    }
+    function realInsert(bytes32 groupId, address addr, uint weight) internal{
+        StoremanGroup group = groups[groupId];
+        for(uint j = group.memberCountDesign-1; j>group.whiteCount; j--) {
+            if(weight > group.candidates[group.selectedNode[j]].depositWeight){
+                continue;
+            }
+            break;
+        }
+        if(j<group.memberCountDesign-1){
+            for(uint k = group.memberCountDesign-2; k>=j; k--){
+                group.selectedNode[k+1] = group.selectedNode[k];
+            }
+            group.selectedNode[j] = addr;
+        }
     }
     function toSelect(bytes32 groupId) public {
         StoremanGroup group = groups[groupId];
@@ -210,20 +231,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
             group.selectedNode[m] = group.whiteMap[m];
         }
 
-        for(uint i = 0; i<group.memberCount; i++){
-            uint j;
-            for(j = group.memberCountDesign-1; j>group.whiteCount; j--) {
-                if(group.candidates[group.addrMap[i]].depositWeight > group.candidates[group.addrMap[j]].depositWeight){
-                    continue;
-                }
-            }
-            if(j<group.memberCountDesign-1){
-                for(uint k = group.memberCountDesign-2; k>=j; k--){
-                    group.selectedNode[k+1] = group.selectedNode[k];
-                }
-                group.selectedNode[j] = group.addrMap[i];
-            }
-        }
         group.status = GroupStatus.selected;
         return;
     }
