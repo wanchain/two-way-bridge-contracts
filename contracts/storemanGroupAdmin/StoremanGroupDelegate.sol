@@ -107,18 +107,19 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @param senders                    senders address of the white list enode.
     /// @param minStake                   minimum value when join the group.
     /// @param memberCountDesign          designed member count in this group. normally it is 21.
+    /// @param threshold                  threshold in this group. normally it is 17.
     /// @param workStart                  When the group start to work.
     /// @param workDuration               how many days the group will work for
     /// @param registerDuration           how many days the duration that allow transfer staking.
     /// @param crossFee                   the fee for cross transaction.
     /// @param preGroupId                 the preview group index.
-    function registerStart(bytes32 groupId, uint minStake, uint memberCountDesign,
+    function registerStart(bytes32 groupId, uint minStake, uint memberCountDesign, uint threshold,
         uint workStart,uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupId, bytes chain, address[] wkAddrs, address[] senders)
         public
     { 
         require(wkAddrs.length == senders.length);
         require(wkAddrs.length > backupCount);
-        StoremanGroup memory group = StoremanGroup(groupId,crossFee,memberCountDesign,GroupStatus.initial,0,0,0,0,0,chain);
+        StoremanGroup memory group = StoremanGroup(groupId,crossFee,memberCountDesign,threshold,GroupStatus.initial,0,0,0,0,0,chain);
         group.whiteCount = wkAddrs.length - backupCount;
 
         groups[groupId] = group;
@@ -234,7 +235,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.status = GroupStatus.selected;
         return;
     }
-    function getSelectedSmAddress(bytes32 groupId, uint index) public view   returns(address, bytes){
+    function getSelectedSmInfo(bytes32 groupId, uint index) public view   returns(address, bytes){
         StoremanGroup group = groups[groupId];
         address addr = group.selectedNode[index];
         Candidate sk = group.candidates[addr];
@@ -266,6 +267,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return true;
     }
 
+    function getThresholdNumber(bytes32 groupId) external returns (uint){
+        StoremanGroup group = groups[groupId];
+        return group.threshold;
+    }
 
     /// @notice                           function for storeman group register, this method should be
     ///                                   invoked by a storeman group registration delegate or wanchain foundation
