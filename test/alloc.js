@@ -4,13 +4,14 @@ const net = require('net')
 let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
 const ethutil = require("ethereumjs-util");
 const pu = require('promisefy-util')
+const fs=require('fs')
+const wanutil = require('wanchain-util');
 
 
 async function getAddressFromInt(i){
     let b = Buffer.alloc(32)
     b.writeUInt32LE(i,28)
     let pkb = ethutil.privateToPublic(b)
-    let priv = '0x'+b.toString('hex')
     let addr = '0x'+ethutil.pubToAddress(pkb).toString('hex')
     let pk = '0x'+pkb.toString('hex')
     let accounts = await pu.promisefy(web3.eth.getAccounts, [],web3.eth)
@@ -26,9 +27,13 @@ async function getAddressFromInt(i){
 
 async function main() {
     let count=30
-    let dlCount = 10
+    let dlCount = 0
     for(let i=0; i<count; i++){
-        let a = await getAddressFromInt(i+1000)
+        let a = await getAddressFromInt(i+2000)
+        let keystore = web3.eth.accounts.encrypt(a.priv.toString('hex'),'wanglu')
+        keystore.waddress = wanutil.generateWaddrFromPriv(a.priv, a.priv);
+        keystore.crypto2 = keystore.crypto;
+        fs.writeFileSync('0x'+keystore.address, JSON.stringify(keystore))
         for(let j=0; j<dlCount; j++){
             let a = await getAddressFromInt((i+1000)*1000*10+j)
             console.log("got address: ", i, j, a.addr)
