@@ -5,17 +5,17 @@ const {GroupStatus, CheckStatus} = require('./Types');
 const Send = require('./Send');
 const Receive = require('./Receive');
 
-class GpkGroup {
-  constructor(groupId) {
+class Round {
+  constructor(groupId, round) {
     // contract
     this.createGpkSc = null;
     this.mortgageSc = null;
 
     // group info
     this.groupId = groupId;
+    this.round = round;
     this.status = GroupStatus.Init;
     this.statusTime = 0;
-    this.round = 0;
     this.smList = []; // 21, address
     this.ployCommitPeriod = 0;
     this.defaultPeriod = 0;
@@ -46,7 +46,7 @@ class GpkGroup {
     this.interrupted = false;
   }
 
-  async init() {
+  async start() {
     this.initSelfKey();
     this.initPoly();
     this.createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
@@ -89,13 +89,12 @@ class GpkGroup {
 
   async mainLoop() {
     try {
-      let status = await contract.methods.getGroupInfo(this.groupId, -1).call();
-      this.status = status[0];
-      this.statusTime = status[1];
-      this.round = status[2];
+      let info = await this.createGpkSc.methods.getGroupInfo(this.groupId, this.round).call();
+      this.status = info[1];
+      this.statusTime = info[2];
       console.log('%s gpk group %s round %d status %d main loop', new Date(), this.groupId, this.round, this.status);
 
-      switch (status[0]) {
+      switch (this.status) {
         case GroupStatus.Init:
           this.procInit();
           break;
@@ -409,4 +408,4 @@ class GpkGroup {
   // }
 }
 
-module.exports = GpkGroup;
+module.exports = Round;

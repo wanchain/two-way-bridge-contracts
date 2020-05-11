@@ -16,10 +16,11 @@ class EventTracker {
     this.schInterval = interval * 60 * 1000;
     this.schThreshold = interval * 6;
     this.schBatchSize = interval * 360; // half an hour
+    this.toStop = false;
     // name => {address, topics} 
     this.subscribeMap = new Map();
     this.subscribeArray = [];
-    this.eventList = [];    
+    this.eventList = [];
   }
 
   subscribe(name, scAddress, topics) {
@@ -29,6 +30,10 @@ class EventTracker {
 
   start() {
     this.next(this.schThreshold + 1);
+  }
+
+  stop() {
+    this.toStop = true;
   }
 
   async mainLoop() {
@@ -63,7 +68,7 @@ class EventTracker {
       this.lastBlock = endBlock;
       if (eventArray.length) {
         console.log("%s eventTracker fetched %d event from block %d-%d", this.id, eventArray.length, startBlock, endBlock);
-        eventArray.sort((a, b) => {a.blockNumber - b.blockNumber});
+        eventArray.sort(this.sortLog);
         this.eventList = this.eventList.concat(eventArray);
       }
 
@@ -94,6 +99,9 @@ class EventTracker {
   }
 
   next(blockLeft = 0) {
+    if (this.toStop) {
+      return;
+    }
     let interval = this.schInterval;
     if (blockLeft > this.schThreshold) {
       interval /= 60;
@@ -101,7 +109,17 @@ class EventTracker {
     setTimeout(() => {
       this.mainLoop();
     }, interval);
-  }  
+  }
+
+  sortLog(a, b) {
+    if (a.blockNumber != a.blockNumber) {
+      return (a.blockNumber - b.blockNumber);
+    }
+    if (a.transactionIndex != a.transactionIndex) {
+      return (a.transactionIndex - b.transactionIndex);
+    }
+    return (a.logIndex - b.logIndex);
+  }
 }
 
 module.exports = EventTracker;

@@ -1,23 +1,49 @@
-const Web3 = require('web3');
 const config = require('../../cfg/config');
-const GpkGroup = require('./Group');
+const Round = require('./Round');
 const EventTracker = require('../utils/EventTracker');
+const {GroupStatus} = require('./Types');
 const wanchain = require('../utils/wanchain');
 
-console.log("open storeman gpk agent");
+console.log("OpenStoreman gpk agent");
 
-const evtTracker = new EventTracker('gpk', 6320300, gpkEvtHandler);
-evtTracker.subscribe('wandora', '0x73a99a82f1b95bfd55a5820a7342758ceca80b33', ["0x10c53ecd69edb1ebf570440ffdc3bb14b8d0ad4297cbde535c88d316164653ae"]);
+// record latest round of each group
+const groupMap = new Map();
+
+// TODO: restore group agent after reboot
+
+const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
+
+const evtTracker = new EventTracker('gpk', 6320300, eventHandler);
+evtTracker.subscribe('mortgage', '0x73a99a82f1b95bfd55a5820a7342758ceca80b33', ["0x10c53ecd69edb1ebf570440ffdc3bb14b8d0ad4297cbde535c88d316164653ae"]);
 evtTracker.start();
 
-function gpkEvtHandler(evt) {
+async function eventHandler(evt) {
   console.log("receive evt: %O", evt);
-  return true;
+  let groupId = '0x' + evt.topics[0];
+  let group = groupMap.get(groupId);
+  try {
+    let info = await createGpkSc.methods.getGroupInfo(groupId, -1).call();
+    let round = info[0], status = info[1];
+    if (status != GroupStatus.Close) {
+      if ((!group) || (group.round < round)) {
+        let newRound = new Round(groupId, round);
+        groupMap.set(groupId, newRound);
+        newRound.start();
+        console.log("%s gpk agent start group %s new round %d", new Date(), groupId, round);
+      } else {
+        console.error("%s gpk agent invalid local group %s, round %d > %d", new Date(), groupId, group.round, round);
+      }
+    }
+    return true;
+  } catch (err) {
+    console.error("%s gpk agent process event err: %O", new Date(), err);
+    return false;
+  }
 }
 
-// gpk();
-
-async function gpk() {
-  let group = new GpkGroup('test');
-  group.init();
+async function test() {
+  let round = new Round('test', 0);
+  round.start();
 }
+
+// test();

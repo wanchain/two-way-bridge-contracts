@@ -493,9 +493,9 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         returns(uint, uint, uint, uint, uint, uint)
     {
         Group storage group = groupMap[groupId];
-        uint queryRound = (roundNum > 0)? uint(roundNum) : group.round;
+        uint queryRound = (roundNum >= 0)? uint(roundNum) : group.round;
         Round storage round = group.roundMap[queryRound];
-        return (uint(round.status), round.statusTime, queryRound,
+        return (queryRound, uint(round.status), round.statusTime,
                 group.cfg.ployCommitPeriod, group.cfg.defaultPeriod, group.cfg.negotiatePeriod);
     }
 
@@ -505,7 +505,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         returns(bytes)
     {
         Group storage group = groupMap[groupId];
-        uint queryRound = (roundNum > 0)? uint(roundNum) : group.round;
+        uint queryRound = (roundNum >= 0)? uint(roundNum) : group.round;
         Round storage round = group.roundMap[queryRound];
         return round.srcMap[src].polyCommit;
     }
@@ -516,7 +516,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         returns(bytes, uint, uint, uint, uint, uint)
     {
         Group storage group = groupMap[groupId];
-        uint queryRound = (roundNum > 0)? uint(roundNum) : group.round;
+        uint queryRound = (roundNum >= 0)? uint(roundNum) : group.round;
         Round storage round = group.roundMap[queryRound];
         Dest storage d = round.srcMap[src].destMap[dest];
         return (d.encSij, uint(d.checkStatus), d.setTime, d.checkTime, d.Sij, d.r);
