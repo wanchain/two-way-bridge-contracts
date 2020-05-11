@@ -105,7 +105,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @param chain                      the chain that the group will work for.
     /// @param wkAddrs                    white list work address.
     /// @param senders                    senders address of the white list enode.
-    /// @param minStake                   minimum value when join the group.
     /// @param memberCountDesign          designed member count in this group. normally it is 21.
     /// @param threshold                  threshold in this group. normally it is 17.
     /// @param workStart                  When the group start to work.
@@ -113,7 +112,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @param registerDuration           how many days the duration that allow transfer staking.
     /// @param crossFee                   the fee for cross transaction.
     /// @param preGroupId                 the preview group index.
-    function registerStart(bytes32 groupId, uint minStake, uint memberCountDesign, uint threshold,
+    function registerStart(bytes32 groupId, uint memberCountDesign, uint threshold,
         uint workStart,uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupId, bytes chain, address[] wkAddrs, address[] senders)
         public
     { 

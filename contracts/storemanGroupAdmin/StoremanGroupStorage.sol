@@ -44,6 +44,7 @@ contract StoremanGroupStorage is BasicStorage {
   mapping(bytes => mapping(bytes => StoremanGroup)) internal storemanGroupMap;
 
   uint backupCount = 3;
+  uint minStake = 10000;
   address[] public badAddrs;
   uint[] public badTypes;
   enum GroupStatus {initial,failed,selected,ready,retired,dismissed}
