@@ -79,6 +79,7 @@ contract StoremanGroupStorage is BasicStorage {
       bytes32    groupId;
       uint    txFeeRatio;               /// the fee ratio required by storeman group
       uint memberCountDesign;
+      uint threshold;
       GroupStatus    status;
       uint    deposit;                  /// the storeman group deposit in wan coins, change when selecting
       uint    depositWeight;            /// caculate this value when selecting
