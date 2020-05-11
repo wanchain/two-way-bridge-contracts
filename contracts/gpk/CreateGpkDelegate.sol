@@ -133,7 +133,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             bytes memory pk;
             address txAddress;
             for (uint i = 0; i < round.smNumber; i++) {
-                (pk, txAddress) = mortgage.getSelectedSmInfo(groupId, i);
+                (txAddress, pk) = mortgage.getSelectedSmInfo(groupId, i);
                 round.indexMap[i] = txAddress;
                 round.addressMap[txAddress] = pk;
             }
