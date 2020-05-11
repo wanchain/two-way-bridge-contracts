@@ -8,8 +8,8 @@ const Receive = require('./Receive');
 class Round {
   constructor(groupId, round) {
     // contract
-    this.createGpkSc = null;
     this.mortgageSc = null;
+    this.createGpkSc = null;
 
     // group info
     this.groupId = groupId;
@@ -41,19 +41,19 @@ class Round {
     this.receive = new Map();
     this.send = new Map();
 
-    // process
-    this.timerId = null;
-    this.interrupted = false;
+    // schedule
+    this.standby = false;
+    this.toStop = false;
   }
 
   async start() {
     this.initSelfKey();
     this.initPoly();
-    this.createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
     this.mortgageSc = wanchain.getContract('Mortgage', config.contractAddress.mortgage);
+    this.createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
     await this.initSmList();
-    this.timerId = setInterval(() => this.mainLoop, 6000);
     console.log("init gpk group %s", this.groupId);
+    next(3000);
   }
 
   initSelfKey() {
@@ -87,6 +87,19 @@ class Round {
     }
   }
 
+  next(interval = 60000) {
+    if (this.toStop) {
+      return;
+    }
+    setTimeout(() => {
+      this.mainLoop();
+    }, interval);
+  }
+
+  stop() {
+    this.toStop = true;
+  }
+
   async mainLoop() {
     try {
       let info = await this.createGpkSc.methods.getGroupInfo(this.groupId, this.round).call();
@@ -114,6 +127,7 @@ class Round {
     } catch (err) {
       console.error('%s gpk group %s proc err: %O', new Date(), this.groupId, err);
     }
+    next();
   }
 
   async procInit() { // TODO: only trustable node send?
@@ -230,7 +244,7 @@ class Round {
           }
         } else {
           send.checkStatus = CheckStatus.Invalid;
-          this.interrupted = true;
+          this.standby = true;
           console.error('%s gpk group %s round %d pk %s sij invalid', new Date(), this.groupId, this.round, partner);
         }
       }
@@ -241,7 +255,7 @@ class Round {
       if (dest[1]) {
         receive.checkStatus = dest[1];
         if (receive.checkStatus == CheckStatus.Invalid) {
-          this.interrupted = true;
+          this.standby = true;
           console.error('%s gpk group %s round %d pk %s check invalid', new Date(), this.groupId, this.round, partner);
         }
       }
@@ -375,7 +389,7 @@ class Round {
     if ((receive.checkStatus == CheckStatus.Invalid) && (!send.sijTxHash)) {
       send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, send.r);
     }
-    if (this.interrupted) {
+    if (this.standby) {
       return;
     }
     // encSij
@@ -395,12 +409,12 @@ class Round {
   
   async procComplete() {
     console.log('%s gpk group %s round %d is complete', new Date(), this.groupId, this.round);
-    clearInterval(this.timerId);
+    this.stop();
   }
   
   async procClose() {
     console.log('%s gpk group %s round %d is closed', new Date(), this.groupId, this.round);
-    clearInterval(this.timerId);
+    this.stop();
   }
 
   // test() {

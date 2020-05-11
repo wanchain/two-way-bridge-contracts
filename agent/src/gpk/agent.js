@@ -11,6 +11,7 @@ const groupMap = new Map();
 
 // TODO: restore group agent after reboot
 
+const mortgageSc = wanchain.getContract('Mortgage', config.contractAddress.mortgage);
 const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
 
 const evtTracker = new EventTracker('gpk', 6320300, eventHandler);
@@ -24,7 +25,7 @@ async function eventHandler(evt) {
   try {
     let info = await createGpkSc.methods.getGroupInfo(groupId, -1).call();
     let round = info[0], status = info[1];
-    if (status != GroupStatus.Close) {
+    if ((status != GroupStatus.Negotiate) && (status != GroupStatus.Close) && checkSelfSelected(groupId)) {
       if ((!group) || (group.round < round)) {
         let newRound = new Round(groupId, round);
         groupMap.set(groupId, newRound);
@@ -39,6 +40,11 @@ async function eventHandler(evt) {
     console.error("%s gpk agent process event err: %O", new Date(), err);
     return false;
   }
+}
+
+async function checkSelfSelected(groupId) {
+    let info = await mortgageSc.methods.getSmInfo(groupId, wanchain.selfAddress);
+    return (info[3] == true); // isWorking
 }
 
 async function test() {
