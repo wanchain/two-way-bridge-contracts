@@ -74,7 +74,7 @@ contract('StoremanGroupDelegate', async (accounts) => {
             wks.push(wk)
             srs.push(sr)
         }
-        let tx = await testInstance.registerStart(id,10000,memberCountDesign,12345, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
+        let tx = await testInstance.registerStart(id,10000,memberCountDesign,17,12345, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
             {from: tester})
         console.log("tx:", tx)
         console.log("group:",await testInstance.groups(id))

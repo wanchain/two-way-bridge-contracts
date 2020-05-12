@@ -10,7 +10,8 @@ const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
 let contractAddress = undefined //    "0x4553061E7aD83d83F559487B1EB7847a9F90ad59"; //   
 
-let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
+//let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
+let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
 let gGasLimit=9000000;
 let gGasPrice=200000000000;
 
@@ -55,7 +56,8 @@ contract('StoremanGroupDelegate', async (accounts) => {
     let testInstance
     let tester = accounts[0]
     let id = utils.stringTobytes32(Date.now().toString())
-    const memberCountDesign = 21
+    const memberCountDesign = 4
+    const threshold  = 3
 
     before("init contracts", async() => {
         testInstance = await initContracts(accounts);
@@ -65,7 +67,7 @@ contract('StoremanGroupDelegate', async (accounts) => {
 
 
     it('registerStart_1 ', async ()=>{
-        let count = 5;
+        let count = 4;
         let wks = []
         let srs= []
         for(let i=0; i<count;i++){
@@ -74,13 +76,13 @@ contract('StoremanGroupDelegate', async (accounts) => {
             wks.push(wk)
             srs.push(sr)
         }
-        let tx = await testInstance.registerStart(id,10000,memberCountDesign,12345, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
+        let tx = await testInstance.registerStart(id,memberCountDesign,threshold,12345, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
             {from: tester})
         console.log("tx:", tx)
         console.log("group:",await testInstance.groups(id))
     })
     it('test stakeIn', async()=>{
-        let stakerCount = 600
+        let stakerCount = 28
         for(let i=0; i<stakerCount; i++){
             let sf = utils.getAddressFromInt(i+1000)
             let sw = utils.getAddressFromInt(i+2000)
@@ -153,7 +155,7 @@ contract('StoremanGroupDelegate', async (accounts) => {
         console.log("count :", count)
 
         for(let i=0; i<count; i++) {
-            let skAddr = await testInstance.getSelectedSmAddress(id, i)
+            let skAddr = await testInstance.getSelectedSmInfo(id, i)
             console.log("skAddr:", i,skAddr)
             let sk = await testInstance.getSmInfo(id, skAddr[0]);
             console.log("sk, i:", i, sk)

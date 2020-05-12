@@ -219,6 +219,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
             group.selectedNode[j] = addr;
         }
     }
+    event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
     function toSelect(bytes32 groupId) public {
         StoremanGroup group = groups[groupId];
         if(group.memberCount < group.memberCountDesign){
@@ -230,7 +231,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         for(uint m=0; m<group.whiteCount;m++){
             group.selectedNode[m] = group.whiteMap[m];
         }
-
+        address[] memory members = new address[](group.memberCountDesign);
+        for(uint i=0; i<group.memberCountDesign; i++){
+            members[i] = group.selectedNode[i];
+        }
+        emit selectedEvent(groupId, group.memberCountDesign, members);
         group.status = GroupStatus.selected;
         return;
     }

@@ -2,13 +2,13 @@ pragma solidity ^0.4.24;
 
 import "truffle/Assert.sol";
 import "truffle/DeployedAddresses.sol";
-import "../contracts/test/TestStoremanGroup.sol";
+import "../contracts/storemanGroupAdmin/StoremanGroupDelegate.sol";
 
 contract CallSM {
     uint total = 1;
     uint total2 ;
     //address tsmg = address(0x82Ee15a21e8a584aF87EdDC9f32E22F1Ca22f37b);
-    address tsmg = DeployedAddresses.TestStoremanGroup();
+    address tsmg = DeployedAddresses.StoremanGroupDelegate();
     TestStoremanGroup sm = TestStoremanGroup(tsmg);
     uint[] tt ;
 
