@@ -41,15 +41,11 @@ contract CreateGpkStorage is BasicStorage {
 
     /* below is structure definition */
 
-    struct Config {
+    struct Group {
+        uint round;
         uint ployCommitPeriod;
         uint defaultPeriod;
         uint negotiatePeriod;
-    }
-
-    struct Group {
-        uint round;
-        Config cfg;
         /// round->Round
         mapping(uint => Round) roundMap;
     }
@@ -69,7 +65,7 @@ contract CreateGpkStorage is BasicStorage {
         uint checkValidCount;
     }
 
-    enum GroupStatus {Init, PolyCommit, Negotiate, Complete, Close}
+    enum GroupStatus {PolyCommit, Negotiate, Complete, Close}
 
     struct Src {
         bytes polyCommit;

@@ -121,28 +121,24 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
 
         Group storage group = groupMap[groupId];
         Round storage round = group.roundMap[group.round];
-        if (round.status == GroupStatus.Init) {
-            require(round.smNumber == 0, "Invalid status");
-            // init config
-            if (group.cfg.ployCommitPeriod == 0) {
-               fetchConfig(groupId);
-            }
+        require(round.status == GroupStatus.PolyCommit, "Invalid status");
+        if (round.smNumber == 0) {
+            // init config when the first node submit
+            fetchConfig(group);
             // selected sm list
             round.smNumber = mortgage.getSelectedSmNumber(groupId);
             require(round.smNumber > 0, "Invalid sm number");
-            bytes memory pk;
+            // retrieve nodes
             address txAddress;
+            bytes memory pk;
             for (uint i = 0; i < round.smNumber; i++) {
                 (txAddress, pk) = mortgage.getSelectedSmInfo(groupId, i);
                 round.indexMap[i] = txAddress;
                 round.addressMap[txAddress] = pk;
             }
-            round.status = GroupStatus.PolyCommit;
             round.statusTime = now;
             emit StartCreateGpkLogger(groupId, group.round);
         }
-
-        require(round.status == GroupStatus.PolyCommit, "Invalid status");
         require(round.addressMap[msg.sender].length != 0, "Invalid sender");
         require(round.srcMap[msg.sender].polyCommit.length == 0, "Duplicate");
         round.srcMap[msg.sender] = Src(polyCommit, new bytes(0), 0);
@@ -163,8 +159,8 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     {
         Group storage group = groupMap[groupId];
         Round storage round = group.roundMap[group.round];
-        require(now.sub(round.statusTime) > group.cfg.ployCommitPeriod, "Deadline not reached");
-        require(round.srcMap[src].polyCommit.length == 0, "Submitted");
+        require((round.status == GroupStatus.PolyCommit) && (round.statusTime != 0), "Invalid status");
+        require(now.sub(round.statusTime) > group.ployCommitPeriod, "Not late");
         uint slashCount = 0;
         SlashType[] memory slashTypes = new SlashType[](round.smNumber);
         address[] memory slashSms = new address[](round.smNumber);
@@ -208,7 +204,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     function setEncSij(bytes32 groupId, address dest, bytes encSij)
         external
     {
-        require(encSij.length == (2 * 64), "Invalid encSij");
+        require(encSij.length == 130, "Invalid encSij");
         Group storage group = groupMap[groupId];
         Round storage round = group.roundMap[group.round];
         checkValid(round, GroupStatus.Negotiate, dest, true);
@@ -266,7 +262,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         checkValid(round, GroupStatus.Negotiate, src, true);
         Dest storage d = round.srcMap[src].destMap[msg.sender];
         require(d.encSij.length == 0, "Outdated");
-        require(now.sub(round.statusTime) > group.cfg.defaultPeriod, "Deadline not reached");
+        require(now.sub(round.statusTime) > group.defaultPeriod, "Not late");
         slash(groupId, SlashType.EncSijTimout, src, msg.sender, true, true);
     }
 
@@ -283,7 +279,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         checkValid(round, GroupStatus.Negotiate, dest, true);
         Src storage src = round.srcMap[msg.sender];
         Dest storage d = src.destMap[dest];
-        require(d.checkStatus == CheckStatus.Invalid, "Invalid checkStatus");
+        require(d.checkStatus == CheckStatus.Invalid, "Checked Valid");
         d.Sij = Sij;
         d.r = r;
         emit RevealSijLogger(groupId, group.round, msg.sender, dest);
@@ -304,9 +300,9 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         Round storage round = group.roundMap[group.round];
         checkValid(round, GroupStatus.Negotiate, dest, true);
         Dest storage d = round.srcMap[msg.sender].destMap[dest];
-        require(d.checkStatus == CheckStatus.Init, "Invalid checkStatus");
+        require(d.checkStatus == CheckStatus.Init, "Checked");
         require(d.encSij.length != 0, "Not ready");
-        require(now.sub(d.setTime) > group.cfg.defaultPeriod, "Deadline not reached");
+        require(now.sub(d.setTime) > group.defaultPeriod, "Not late");
         slash(groupId, SlashType.CheckTimeout, msg.sender, dest, false, true);
     }
 
@@ -318,10 +314,10 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     {
         Group storage group = groupMap[groupId];
         Round storage round = group.roundMap[group.round];
-        checkValid(round, GroupStatus.Negotiate, src, false);
+        checkValid(round, GroupStatus.Negotiate, src, true);
         Dest storage d = round.srcMap[src].destMap[msg.sender];
-        require(d.checkStatus == CheckStatus.Invalid, "Invalid checkStatus");
-        require(now.sub(d.checkTime) > group.cfg.defaultPeriod, "Deadline not reached");
+        require(d.checkStatus == CheckStatus.Invalid, "Not need");
+        require(now.sub(d.checkTime) > group.defaultPeriod, "Not late");
         slash(groupId, SlashType.SijTimeout, src, msg.sender, true, true);
     }
 
@@ -337,7 +333,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         address[] memory slashSms = new address[](round.smNumber * 2);
 
         require(round.status == GroupStatus.Negotiate, "Invalid status");
-        require(now.sub(round.statusTime) > group.cfg.negotiatePeriod, "Deadline not reached");
+        require(now.sub(round.statusTime) > group.negotiatePeriod, "Not late");
 
         for (uint i = 0; i < round.smNumber; i++) {
             address s = round.indexMap[i];
@@ -391,15 +387,15 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     }
 
     /// @notice                           function for fetch config
-    /// @param groupId                    storeman group id
-    function fetchConfig(bytes32 groupId)
+    /// @param group                      storeman group pointer
+    function fetchConfig(Group storage group)
         internal
     {
-        Config storage cfg = groupMap[groupId].cfg;
-        // (cfg.ployCommitPeriod, cfg.defaultPeriod, cfg.encSijMaxTimes, cfg.negotiatePeriod) = config.getCreateGpkCfg();
-        cfg.ployCommitPeriod = 10 * 60;
-        cfg.defaultPeriod = 5 * 60;
-        cfg.negotiatePeriod = 15 * 60;
+        if (group.round == 0) { // init once time at the first round
+            group.ployCommitPeriod = 10 * 60;
+            group.defaultPeriod = 5 * 60;
+            group.negotiatePeriod = 15 * 60;
+        }
     }
 
     /// @notice                           function for generate gpk and pkShare
@@ -496,7 +492,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         uint queryRound = (roundNum >= 0)? uint(roundNum) : group.round;
         Round storage round = group.roundMap[queryRound];
         return (queryRound, uint(round.status), round.statusTime,
-                group.cfg.ployCommitPeriod, group.cfg.defaultPeriod, group.cfg.negotiatePeriod);
+                group.ployCommitPeriod, group.defaultPeriod, group.negotiatePeriod);
     }
 
     function getPolyCommit(bytes32 groupId, address src, int roundNum)
