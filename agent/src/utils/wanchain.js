@@ -23,8 +23,11 @@ function getContract(name, address) {
   }
 }
 
-function getElapsed(chainTs) {
-  return ((new Date() / 1000).toFixed(0) - chainTs);
+function getElapsed(baseTs) {
+  if (baseTs == 0) {
+    return 0;
+  }
+  return ((new Date() / 1000).toFixed(0) - baseTs);
 }
 
 async function sendTx(contractAddr, data) {
@@ -101,6 +104,12 @@ async function sendSij(groupId, dest, sij, r) {
   return txHash;
 }
 
+async function sendPolyCommitTimeout(groupId) {
+  let txData = await createGpkSc.methods.polyCommitTimeout(groupId).encodeABI();
+  let txHash = await sendTx(config.contractAddress.createGpk, txData);
+  return txHash;
+}
+
 async function sendEncSijTimeout(groupId, src) {
   let txData = await createGpkSc.methods.encSijTimeout(groupId, src).encodeABI();
   let txHash = await sendTx(config.contractAddress.createGpk, txData);
@@ -145,6 +154,7 @@ module.exports = {
   sendEncSij,
   sendCheckStatus,
   sendSij,
+  sendPolyCommitTimeout,
   sendEncSijTimeout,
   sendCheckTimeout,
   sendSijTimeout,

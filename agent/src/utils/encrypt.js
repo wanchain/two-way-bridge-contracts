@@ -7,6 +7,8 @@ const Point = ecurve.Point;
 
 const p = BigInteger.fromHex('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F');
 
+const PK_STR_LEN = 130;
+
 function genRandom() {
   let random = BigInteger.fromHex(crypto.randomBytes(32).toString('hex'));
   return random.mod(p).add(BigInteger.valueOf(1));
@@ -17,11 +19,11 @@ function mulG(n) {
 }
 
 function genSij(polyCoef, pk) {
-  let hij = BigInteger.fromHex(crypto.createHash('sha256').update(Buffer.from(pk, 'hex')));
+  let hj = BigInteger.fromHex(crypto.createHash('sha256').update(Buffer.from(pk, 'hex')));
   let sij = null;
   let order = polyCoef.length;
-  for (let i = 0; i < order; i++) {
-    let temp = hij.modPowInt(i, p).multiply(polyCoef[i]);
+  for (let o = 0; o < order; o++) {
+    let temp = hj.modPowInt(o, p).multiply(polyCoef[o]);
     if (!sij) {
       sij = temp;
     } else {
@@ -48,14 +50,14 @@ function decryptSij(encSij, sk) {
 };
 
 function verifySij(sij, polyCommit, selfPk) {
-   let order = (polyCommit.length -2) / 128;
+   let order = (polyCommit.length -2) / PK_STR_LEN;
    let expected = mulG(sij);
    let committed = null;
    let hij = BigInteger.fromHex(crypto.createHash('sha256').update(Buffer.from(selfPk, 'hex')));
    for (let i = 0; i < order; i++) {
-    let pci = polyCommit.substr(2 + i * 128, 128);
-    let p = Point.decodeFrom(secp256k1, Buffer.fromHex('04' + pci));
-    let temp = p.multiply(hij.modPowInt(i, p));
+    let pci = polyCommit.substr(2 + i * PK_STR_LEN, PK_STR_LEN);
+    let tp = Point.decodeFrom(secp256k1, Buffer.fromHex(pci));
+    let temp = tp.multiply(hij.modPowInt(i, p));
     if (!committed) {
       committed = temp;
     } else {
@@ -69,8 +71,25 @@ function addSij(s1, s2) {
   return s1.add(s2).mod(p);
 };
 
+function takePolyCommit(polyCommit, pk) {
+  let hi = BigInteger.fromHex(crypto.createHash('sha256').update(Buffer.from(pk, 'hex')));
+  let share = null;
+  let order = (polyCommit.length -2) / PK_STR_LEN;
+  for (let o = 0; o < order; o++) {
+    let pci = polyCommit.substr(2 + i * PK_STR_LEN, PK_STR_LEN);
+    let tp = Point.decodeFrom(secp256k1, Buffer.fromHex(pci));
+    let temp = tp.multiply(hi.modPowInt(o, p));
+    if (!share) {
+      share = temp;
+    } else {
+      share = share.add(temp);
+    }
+  }
+  return share;
+};
+
 function recoverSiG(polyCommit) {
-  let siGStr = polyCommit.substr(2, 128);
+  let siGStr = polyCommit.substr(2, PK_STR_LEN);
   let siG = Point.decodeFrom(secp256k1, Buffer.fromHex('04' + sigStr));
   return siG;
 };
@@ -83,5 +102,6 @@ module.exports = {
   decryptSij,
   verifySij,
   addSij,
-  recoverSiG,
+  takePolyCommit,
+  recoverSiG
 }

@@ -52,4 +52,4 @@ async function test() {
   round.start();
 }
 
-// test();
+test();

@@ -495,25 +495,23 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
                 group.ployCommitPeriod, group.defaultPeriod, group.negotiatePeriod);
     }
 
-    function getPolyCommit(bytes32 groupId, address src, int roundNum)
+    function getPolyCommit(bytes32 groupId, uint roundNum, address src)
         external
         view
         returns(bytes)
     {
         Group storage group = groupMap[groupId];
-        uint queryRound = (roundNum >= 0)? uint(roundNum) : group.round;
-        Round storage round = group.roundMap[queryRound];
+        Round storage round = group.roundMap[roundNum];
         return round.srcMap[src].polyCommit;
     }
 
-    function getEncSijInfo(bytes32 groupId, address src, address dest, int roundNum)
+    function getEncSijInfo(bytes32 groupId, uint roundNum, address src, address dest)
         external
         view
         returns(bytes, uint, uint, uint, uint, uint)
     {
         Group storage group = groupMap[groupId];
-        uint queryRound = (roundNum >= 0)? uint(roundNum) : group.round;
-        Round storage round = group.roundMap[queryRound];
+        Round storage round = group.roundMap[roundNum];
         Dest storage d = round.srcMap[src].destMap[dest];
         return (d.encSij, uint(d.checkStatus), d.setTime, d.checkTime, d.Sij, d.r);
     }
