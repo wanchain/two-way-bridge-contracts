@@ -3,9 +3,9 @@ class Send {
     // pk
     this.pk = pk; // hex string with 0x
     // encSij
-    this.sij = null; // BigInteger
-    this.r = null; // Buffer, bytes16
-    this.encSij = null; // Buffer
+    this.sij = ''; // hex string with 0x, 32 bytes
+    this.encSij = ''; // hex string with 0x, variable length bytes
+    this.ephemPrivateKey = ''; // hex string with 0x, 32 bytes
     this.encSijTxHash = '';
     this.chainEncSijTime  = 0; // timestamp in sencond
     this.encSijTimeoutTxHash = '';

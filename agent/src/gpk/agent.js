@@ -49,7 +49,7 @@ async function checkSelfSelected(groupId) {
 
 async function test() {
   let round = new Round('test', 0);
-  round.start();
+  round.test();
 }
 
 test();

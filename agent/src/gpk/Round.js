@@ -60,13 +60,13 @@ class Round {
 
   initSelfKey() {
     this.selfSk = wanchain.selfSk;
-    this.selfPk = '0x' + wanchain.selfPk.toString('hex');
+    this.selfPk = '0x04' + wanchain.selfPk.toString('hex');
     this.selfAddress = wanchain.selfAddress;
   } 
 
   initPoly() {
     for (let i = 0; i < 17; i++) {
-      this.poly[i] = encrypt.genRandom();
+      this.poly[i] = encrypt.genRandom(32);
       this.PolyCommit[i] = encrypt.mulG(this.poly[i]);
       // console.log("init PolyCommit %i: %s", i, this.PolyCommit[i].getEncoded(false).toString('hex'));
     }
@@ -389,23 +389,33 @@ class Round {
     }
     // sij
     if ((receive.checkStatus == CheckStatus.Invalid) && (!send.sijTxHash)) {
-      send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, send.r);
+      send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, send.ephemPrivateKey);
     }
     if (this.standby) {
       return;
     }
     // encSij
-    let destPk = this.send.get(partner).pk;
     if (!send.encSij) {
-      send.sij = encrypt.genSij(this.poly, destPk);
-      let result = await encrypt.encryptSij(send.sij, destPk);
-      if (result) {
-        send.r = result.iv;
-        send.encSij = result.ciphertext;
-      }
+      await genEncSij(partner);
     }
     if (!send.encSijTxHash) {
       send.encSijTxHash = await wanchain.sendEncSij(this.groupId, partner, send.encSij);
+    }
+  }
+
+  async genEncSij(partner) {
+    let send = this.send.get[partner];
+    let destPk = send.pk;
+    let opts = {
+      iv: Buffer.from(encrypt.genRandom(16).toRadix(16), 'hex'),
+      ephemPrivateKey: Buffer.from(encrypt.genRandom(32).toRadix(16), 'hex')
+    };
+    send.sij = '0x' + encrypt.genSij(this.poly, destPk).toRadix(16);
+    try {
+      send.encSij = await encrypt.encryptSij(send.sij, destPk, opts);
+      send.ephemPrivateKey = '0x' + opts.ephemPrivateKey.toString('hex');
+    } catch {
+      send.sij = '';
     }
   }
   
@@ -469,9 +479,30 @@ class Round {
     return false;
   }
 
-  // test() {
-  //   wanchain.sendPloyCommit(this.groupId, this.PolyCommit);
-  // }
+  async test() {
+    /* encryptSij */
+    this.initSelfKey();
+    console.log("pk: %s", this.selfPk);
+    let opts = {
+      iv: Buffer.from(encrypt.genRandom(16).toRadix(16), 'hex'),
+      ephemPrivateKey: Buffer.from(encrypt.genRandom(32).toRadix(16), 'hex')
+    };
+    console.log("iv: %s", opts.iv.toString('hex'));
+    console.log("ephemPrivateKey: %s", opts.ephemPrivateKey.toString('hex'));
+    this.initPoly();
+    let sij = encrypt.genSij(this.poly, this.selfPk).toRadix(16);
+    let encrypted = await encrypt.encryptSij(sij, this.selfPk, opts);
+    console.log("M: %s", sij);
+    console.log("encrypted: %O", encrypted);
+    let input = {};
+    input.ciphertext = encrypted.ciphertext;
+    input.iv = encrypted.iv;
+    input.ephemPublicKey = encrypted.ephemPublicKey;
+    input.mac = encrypted.mac;
+    let MR = await encrypt.decryptSij(input, this.selfSk);
+    console.log("MR: %O", MR.toRadix(16));
+    console.log("iv1: %s", encrypted.iv.toString('hex'));
+  }
 }
 
 module.exports = Round;

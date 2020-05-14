@@ -9,8 +9,8 @@ const N = BigInteger.fromHex('fffffffffffffffffffffffffffffffebaaedce6af48a03bbf
 
 const PK_STR_LEN = 130;
 
-function genRandom() {
-  let random = BigInteger.fromBuffer(crypto.randomBytes(32));
+function genRandom(bytes) {
+  let random = BigInteger.fromBuffer(crypto.randomBytes(bytes));
   return random.mod(N).add(BigInteger.valueOf(1));
 };
 
@@ -30,7 +30,7 @@ function genSij(polyCoef, pk) {
   let sij = null;
   let order = polyCoef.length;
   for (let o = 0; o < order; o++) {
-    let temp = hj.modPowInt(o, N).multiply(polyCoef[o]);
+    let temp = hj.modPowInt(o, N).multiply(polyCoef[o]).mod(N);
     if (!sij) {
       sij = temp;
     } else {
@@ -40,20 +40,26 @@ function genSij(polyCoef, pk) {
   return sij;
 };
 
-async function encryptSij(sij, pk) {
-  let key = Buffer.from(pk.substr(2), 'hex');
-  let M = Buffer.from(sij.toRadix(16), 'hex');
+async function encryptSij(sij, pk, opts) {
+  let toPk = Buffer.from(pk.substr(2), 'hex');
+  let M = Buffer.from(sij.substr(2), 'hex');
   try {
-    let result = await eccrypto.encrypt(key, M);
+    let result = await eccrypto.encrypt(toPk, M, opts);
     return result;
   } catch (err) {
-    console.error("encryptSij pk %s err: %O", pk, err);
+    console.error("encryptSij err: %O", err);
     return null;
   }
 };
 
-function decryptSij(encSij, sk) {
-  // TODO: confirm algorithms, return bigi
+async function decryptSij(encSij, sk) {
+  try {
+    let result = await eccrypto.decrypt(sk, encSij);
+    return BigInteger.fromBuffer(result);
+  } catch (err) {
+    console.error("decryptSij err: %O", err);
+    return null;
+  }
 };
 
 function verifySij(sij, polyCommit, selfPk) {
@@ -85,7 +91,7 @@ function takePolyCommit(polyCommit, pk) {
   for (let o = 0; o < order; o++) {
     let pci = polyCommit.substr(2 + o * PK_STR_LEN, PK_STR_LEN);
     let tp = Point.decodeFrom(secp256k1, Buffer.from(pci, 'hex'));
-    let scale = hi.modPowInt(o, N).mod(N);
+    let scale = hi.modPowInt(o, N);
     let temp = tp.multiply(scale);
     if (!share) {
       share = temp;

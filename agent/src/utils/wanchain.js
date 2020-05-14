@@ -96,10 +96,8 @@ async function sendCheckStatus(groupId, src, isValid) {
   return txHash;  
 }
 
-async function sendSij(groupId, dest, sij, r) {
-  let sijStr = '0x' + sij.toRadix(16);
-  let rStr = '0x' + r.toRadix(16);
-  let txData = await createGpkSc.methods.revealSij(groupId, dest, sijStr, rStr).encodeABI();
+async function sendSij(groupId, dest, sij, ephemPrivateKey) {
+  let txData = await createGpkSc.methods.revealSij(groupId, dest, sij, ephemPrivateKey).encodeABI();
   let txHash = await sendTx(config.contractAddress.createGpk, txData);
   return txHash;
 }
