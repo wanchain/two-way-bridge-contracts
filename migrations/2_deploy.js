@@ -19,7 +19,7 @@ const MetricDelegate  = artifacts.require('MetricDelegate');
 
 module.exports = async function(deployer){
     // test
-    //await deployer.deploy(TestStoremanGroup);
+    await deployer.deploy(TestStoremanGroup);
 
 
     // token manager sc
@@ -82,11 +82,17 @@ module.exports = async function(deployer){
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
     await smg.setDependence(tmProxy.address, htlcProxy.address);
 
-    // deploy metric
+    //deploy metric
+
+    const ADDRESS_MRTG                  = '0x0000000000000000000000000000000000000002';
+
     await deployer.deploy(MetricProxy);
     let metricProxy = await MetricProxy.deployed();
     await deployer.deploy(MetricDelegate);
     let metricDlg = await MetricDelegate.deployed();
     await metricProxy.upgradeTo(metricDlg.address);
+
+    let metric = await MetricDelegate.at(metricProxy.address);
+    await metric.setDependence(ADDRESS_MRTG,ADDRESS_MRTG);
 
 }

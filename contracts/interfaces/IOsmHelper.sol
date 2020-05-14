@@ -26,20 +26,8 @@
 
 pragma solidity ^0.4.24;
 
-interface IMortgage {
-    function getSelectedSmNumber(bytes32 groupId) external returns(uint number);
-    function getSmInfo(bytes32 groupId, address wkAddress) public view  returns(address sender,bytes PK,
-        bool quited, bool  isWorking,uint  delegateFee,uint  deposit,uint  depositWeight,
-        uint incentive, uint delegatorCount
-        );
-    function setGpk(bytes32 groupId, bytes gpk) external;
-    function setInvalidSm(bytes32 groupId, uint[] slashType, address[] txAddress) external returns(bool isContinue);
-
-
-    function getTotalNumberByGrpId(bytes32 grpId) external returns (uint);
-    function getThresholdByGrpId(bytes32 grpId) external returns (uint);
-    function getWorkingGrps() external returns (byte32[] grpIds);
-    function getLeaderIndexByGrpId(bytes32 grpId) external returns (uint);
-    function getSelectedSmInfo(bytes32 groupId, uint index) external returns( address txAddress, bytes pk, bytes enodeId);
-
+interface IOsmHelper {
+    function getEpochId(uint timeStamp) external returns(uint);
+    function checkSig(bytes32 hash, bytes r, bytes s, bytes pk) external returns(bool);
+    function polyEval(bytes f, bytes xValue) external returns(uint x, uint y);
 }
