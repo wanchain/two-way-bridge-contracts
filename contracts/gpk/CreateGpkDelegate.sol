@@ -132,7 +132,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             address txAddress;
             bytes memory pk;
             for (uint i = 0; i < round.smNumber; i++) {
-                (txAddress, pk) = mortgage.getSelectedSmInfo(groupId, i);
+                (txAddress, pk,) = mortgage.getSelectedSmInfo(groupId, i);
                 round.indexMap[i] = txAddress;
                 round.addressMap[txAddress] = pk;
             }
@@ -270,8 +270,8 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     /// @param groupId                    storeman group id
     /// @param dest                       dest storeman address
     /// @param Sij                        Sij
-    /// @param r                          random number
-    function revealSij(bytes32 groupId, address dest, uint Sij, uint r)
+    /// @param ephemPrivateKey            ecies ephemPrivateKey
+    function revealSij(bytes32 groupId, address dest, uint Sij, uint ephemPrivateKey)
         external
     {
         Group storage group = groupMap[groupId];
@@ -281,9 +281,9 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         Dest storage d = src.destMap[dest];
         require(d.checkStatus == CheckStatus.Invalid, "Checked Valid");
         d.Sij = Sij;
-        d.r = r;
+        d.ephemPrivateKey = ephemPrivateKey;
         emit RevealSijLogger(groupId, group.round, msg.sender, dest);
-        if (verifySij(Sij, r, d.encSij, src.polyCommit, dest)) {
+        if (verifySij(d, src.polyCommit, dest)) {
           slash(groupId, SlashType.CheckInvalid, msg.sender, dest, false, true);
         } else {
           slash(groupId, SlashType.EncSijInvalid, msg.sender, dest, true, true);
@@ -407,12 +407,10 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     }
 
     /// @notice                           function for verify Sij to judge challenge
-    /// @param Sij                        Sij
-    /// @param r                          random number
-    /// @param encSij                     encoded Sij
+    /// @param d                          Dest
     /// @param polyCommit                 polyCommit of pki
     /// @param dest                       dest storeman address
-    function verifySij(uint Sij, uint r, bytes encSij, bytes polyCommit, address dest)
+    function verifySij(Dest storage d, bytes polyCommit, address dest)
         internal
         pure
         returns(bool valid)
@@ -513,7 +511,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         Group storage group = groupMap[groupId];
         Round storage round = group.roundMap[roundNum];
         Dest storage d = round.srcMap[src].destMap[dest];
-        return (d.encSij, uint(d.checkStatus), d.setTime, d.checkTime, d.Sij, d.r);
+        return (d.encSij, uint(d.checkStatus), d.setTime, d.checkTime, d.Sij, d.ephemPrivateKey);
     }
 
     /// @notice fallback function

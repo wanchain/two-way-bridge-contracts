@@ -81,7 +81,7 @@ contract CreateGpkStorage is BasicStorage {
         uint setTime;
         uint checkTime;
         uint Sij;
-        uint r;
+        uint ephemPrivateKey;
     }
 
     enum CheckStatus {Init, Valid, Invalid}

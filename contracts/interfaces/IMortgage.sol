@@ -38,7 +38,7 @@ interface IMortgage {
     // comment because it is same as getSelectedSmNumber
     //function getTotalNumberByGrpId(bytes32 grpId) external returns (uint);
     function getThresholdByGrpId(bytes32 grpId) external returns (uint);
-    function getWorkingGrps() external returns (byte32[] grpIds);
+    function getWorkingGrps() external returns (bytes32[] grpIds);
     // comment because index 0 is always the index of leader
     //function getLeaderIndexByGrpId(bytes32 grpId) external returns (uint);
     function getSelectedSmInfo(bytes32 groupId, uint index) external returns( address txAddress, bytes pk, bytes enodeId);
