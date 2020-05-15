@@ -241,7 +241,7 @@ class Round {
       dest = await createGpkSc.methods.getEncSijInfo(this.groupId, this.round, partner, selfAddress).call();
       if (dest[0]) {
         receive.encSij = dest[0];
-        receive.sij = encrypt.decryptSij(receive.encSij, this.selfSk);
+        receive.sij = encrypt.decryptSij(this.selfSk, receive.encSij);
         if (encrypt.verifySij(receive.sij, receive.PolyCommit, this.selfPk)) {
           send.checkStatus = CheckStatus.Valid;
           // check all received
@@ -270,7 +270,7 @@ class Round {
     if ((send.checkStatus == CheckStatus.Invalid) && send.checkTxHash) { // already send checkStatus, do not wait chain confirm
       dest = await createGpkSc.methods.getEncSijInfo(this.groupId, this.round, partner, selfAddress).call();
       if (dest[4]) {
-        receive.sij = dest[4];
+        receive.revealed = true;
       }
     }
   }
@@ -372,7 +372,7 @@ class Round {
       }
     }
     // sij timeout
-    if ((send.checkStatus == CheckStatus.Invalid) && send.chainCheckTime && !receive.sij) {
+    if ((send.checkStatus == CheckStatus.Invalid) && send.chainCheckTime && !receive.revealed) {
       if (wanchain.getElapsed(send.chainCheckTime) > this.defaultPeriod) {
         send.sijTimeoutTxHash = await wanchain.sendSijTimeout(this.groupId, partner);
       }
@@ -413,7 +413,7 @@ class Round {
     };
     send.sij = '0x' + encrypt.genSij(this.poly, destPk).toRadix(16);
     try {
-      send.encSij = await encrypt.encryptSij(send.sij, destPk, opts);
+      send.encSij = await encrypt.encryptSij(destPk, send.sij, opts);
       send.ephemPrivateKey = '0x' + opts.ephemPrivateKey.toString('hex');
     } catch {
       send.sij = '';
@@ -444,7 +444,7 @@ class Round {
         pkShare = pkShare.add(share);
       }
       // gpk
-      let siG = encrypt.recoverSiG(this.smList[i].polyCommit);
+      let siG = encrypt.recoverSiG(this.receive.get(this.smList[i]).polyCommit);
       if (!gpk) {
         gpk = siG;
       } else {
@@ -491,18 +491,12 @@ class Round {
     console.log("iv: %s", opts.iv.toString('hex'));
     console.log("ephemPrivateKey: %s", opts.ephemPrivateKey.toString('hex'));
     this.initPoly();
-    let sij = encrypt.genSij(this.poly, this.selfPk).toRadix(16);
-    let encrypted = await encrypt.encryptSij(sij, this.selfPk, opts);
+    let sij = '0x' + encrypt.genSij(this.poly, this.selfPk).toRadix(16);
+    let encrypted = await encrypt.encryptSij(this.selfPk, sij, opts);
     console.log("M: %s", sij);
     console.log("encrypted: %O", encrypted);
-    let input = {};
-    input.ciphertext = encrypted.ciphertext;
-    input.iv = encrypted.iv;
-    input.ephemPublicKey = encrypted.ephemPublicKey;
-    input.mac = encrypted.mac;
-    let MR = await encrypt.decryptSij(input, this.selfSk);
-    console.log("MR: %O", MR.toRadix(16));
-    console.log("iv1: %s", encrypted.iv.toString('hex'));
+    let MR = await encrypt.decryptSij(this.selfSk, encrypted);
+    console.log("MR: %s", MR);
   }
 }
 

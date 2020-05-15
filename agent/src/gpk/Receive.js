@@ -7,7 +7,8 @@ class Receive {
     // sij
     this.encSij = ''; // hex string with 0x
     this.checkStatus = CheckStatus.Init;
-    this.sij = null; // bigi
+    this.sij = ''; // hex string with 0x
+    this.revealed = false;
   }  
 }
 

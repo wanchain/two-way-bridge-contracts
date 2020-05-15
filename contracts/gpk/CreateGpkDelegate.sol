@@ -43,20 +43,20 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     /// @notice                           event for start create gpk for specified storeman group
     /// @param groupId                    storeman group id
     /// @param round                      group reset times
-    event StartCreateGpkLogger(bytes32 indexed groupId, uint indexed round);
+    event StartCreateGpkLogger(bytes32 indexed groupId, uint16 indexed round);
 
     /// @notice                           event for storeman submit poly commit
     /// @param groupId                    storeman group id
     /// @param round                      group reset times
     /// @param storeman                   storeman address
-    event SetPolyCommitLogger(bytes32 indexed groupId, uint indexed round, address storeman);
+    event SetPolyCommitLogger(bytes32 indexed groupId, uint16 indexed round, address storeman);
 
     /// @notice                           event for storeman submit encoded Sij
     /// @param groupId                    storeman group id
     /// @param round                      group reset times
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
-    event SetEncSijLogger(bytes32 indexed groupId, uint indexed round, address src, address dest);
+    event SetEncSijLogger(bytes32 indexed groupId, uint16 indexed round, address src, address dest);
 
     /// @notice                           event for storeman submit result of checking encSij
     /// @param groupId                    storeman group id
@@ -64,14 +64,14 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     /// @param isValid                    whether encSij is valid
-    event SetCheckStatusLogger(bytes32 indexed groupId, uint indexed round, address src, address dest, bool isValid);
+    event SetCheckStatusLogger(bytes32 indexed groupId, uint16 indexed round, address src, address dest, bool isValid);
 
     /// @notice                           event for storeman reveal Sij
     /// @param groupId                    storeman group id
     /// @param round                      group reset times
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
-    event RevealSijLogger(bytes32 indexed groupId, uint indexed round, address src, address dest);
+    event RevealSijLogger(bytes32 indexed groupId, uint16 indexed round, address src, address dest);
 
     /// @notice                           event for contract slash storeman
     /// @param groupId                    storeman group id
@@ -80,12 +80,12 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     /// @param srcOrDest                  if true, slash src, otherwise slash dest
-    event SlashLogger(bytes32 indexed groupId, uint indexed round, uint slashType, address src, address dest, bool srcOrDest);
+    event SlashLogger(bytes32 indexed groupId, uint16 indexed round, uint8 slashType, address src, address dest, bool srcOrDest);
 
     /// @notice                           event for reset protocol
     /// @param groupId                    storeman group id
     /// @param round                      group reset times
-    event ResetLogger(bytes32 indexed groupId, uint indexed round);
+    event ResetLogger(bytes32 indexed groupId, uint16 indexed round);
 
     /// @notice                           event for reset protocol
     /// @param groupId                    storeman group id
@@ -440,7 +440,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         internal
     {
         Group storage group = groupMap[groupId];
-        emit SlashLogger(groupId, group.round, uint(slashType), src, dest, srcOrDest);
+        emit SlashLogger(groupId, group.round, uint8(slashType), src, dest, srcOrDest);
         if (toReset) {
             uint[] memory types = new uint[](1);
             types[0] = uint(slashType);
@@ -483,15 +483,15 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         group.round++;
     }
 
-    function getGroupInfo(bytes32 groupId, int roundNum)
+    function getGroupInfo(bytes32 groupId, int16 roundNum)
         external
         view
-        returns(uint, uint, uint, uint, uint, uint)
+        returns(uint16, uint8, uint, uint32, uint32, uint32)
     {
         Group storage group = groupMap[groupId];
-        uint queryRound = (roundNum >= 0)? uint(roundNum) : group.round;
+        uint16 queryRound = (roundNum >= 0)? uint16(roundNum) : group.round;
         Round storage round = group.roundMap[queryRound];
-        return (queryRound, uint(round.status), round.statusTime,
+        return (queryRound, uint8(round.status), round.statusTime,
                 group.ployCommitPeriod, group.defaultPeriod, group.negotiatePeriod);
     }
 
@@ -508,12 +508,12 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     function getEncSijInfo(bytes32 groupId, uint roundNum, address src, address dest)
         external
         view
-        returns(bytes, uint, uint, uint, uint, uint)
+        returns(bytes, uint8, uint, uint, uint, uint)
     {
         Group storage group = groupMap[groupId];
         Round storage round = group.roundMap[roundNum];
         Dest storage d = round.srcMap[src].destMap[dest];
-        return (d.encSij, uint(d.checkStatus), d.setTime, d.checkTime, d.Sij, d.ephemPrivateKey);
+        return (d.encSij, uint8(d.checkStatus), d.setTime, d.checkTime, d.Sij, d.ephemPrivateKey);
     }
 
     /// @notice fallback function

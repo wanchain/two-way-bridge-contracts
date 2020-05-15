@@ -40,22 +40,29 @@ function genSij(polyCoef, pk) {
   return sij;
 };
 
-async function encryptSij(sij, pk, opts) {
+async function encryptSij(pk, sij, opts) {
   let toPk = Buffer.from(pk.substr(2), 'hex');
   let M = Buffer.from(sij.substr(2), 'hex');
   try {
-    let result = await eccrypto.encrypt(toPk, M, opts);
-    return result;
+    let m = await eccrypto.encrypt(toPk, M, opts);
+    console.log("in m: %O", m)
+    return '0x' + Buffer.concat([m.iv, m.ephemPublicKey, m.ciphertext, m.mac]).toString('hex');
   } catch (err) {
     console.error("encryptSij err: %O", err);
     return null;
   }
 };
 
-async function decryptSij(encSij, sk) {
+async function decryptSij(sk, encSij) {
   try {
-    let result = await eccrypto.decrypt(sk, encSij);
-    return BigInteger.fromBuffer(result);
+    let opts = {
+      iv: Buffer.from(encSij.substr(2, 32), 'hex'),
+      ephemPublicKey: Buffer.from(encSij.substr(34, 130), 'hex'),
+      ciphertext: Buffer.from(encSij.substr(164, encSij.length - 228), 'hex'),
+      mac: Buffer.from(encSij.substr(-64), 'hex')
+    }
+    let M = await eccrypto.decrypt(sk, opts);
+    return '0x' + M.toString('hex');
   } catch (err) {
     console.error("decryptSij err: %O", err);
     return null;
@@ -64,12 +71,12 @@ async function decryptSij(encSij, sk) {
 
 function verifySij(sij, polyCommit, selfPk) {
    let order = (polyCommit.length -2) / PK_STR_LEN;
-   let expected = mulG(sij);
+   let expected = mulG(BigInteger.fromHex(sij.substr(2)));
    let committed = null;
    let hij = BigInteger.fromBuffer(pk2sha256(selfPk)).mod(N);
    for (let i = 0; i < order; i++) {
     let pci = polyCommit.substr(2 + i * PK_STR_LEN, PK_STR_LEN);
-    let tp = Point.decodeFrom(secp256k1, Buffer.fromHex(pci));
+    let tp = Point.decodeFrom(secp256k1, Buffer.from(pci, 'hex'));
     let temp = tp.multiply(hij.modPowInt(i, N));
     if (!committed) {
       committed = temp;
@@ -103,8 +110,7 @@ function takePolyCommit(polyCommit, pk) {
 };
 
 function recoverSiG(polyCommit) {
-  let siGStr = polyCommit.substr(2, PK_STR_LEN);
-  let siG = Point.decodeFrom(secp256k1, Buffer.fromHex('04' + sigStr));
+  let siG = Point.decodeFrom(secp256k1, Buffer.from(polyCommit.substr(2, PK_STR_LEN), 'hex'));
   return siG;
 };
 
