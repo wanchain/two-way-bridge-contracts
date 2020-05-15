@@ -270,8 +270,9 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     /// @param groupId                    storeman group id
     /// @param dest                       dest storeman address
     /// @param Sij                        Sij
+    /// @param iv                         ecies iv
     /// @param ephemPrivateKey            ecies ephemPrivateKey
-    function revealSij(bytes32 groupId, address dest, uint Sij, uint ephemPrivateKey)
+    function revealSij(bytes32 groupId, address dest, uint Sij, uint128 iv, uint ephemPrivateKey)
         external
     {
         Group storage group = groupMap[groupId];
@@ -283,7 +284,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         d.Sij = Sij;
         d.ephemPrivateKey = ephemPrivateKey;
         emit RevealSijLogger(groupId, group.round, msg.sender, dest);
-        if (verifySij(d, src.polyCommit, dest)) {
+        if (verifySij(d, dest, iv, src.polyCommit)) {
           slash(groupId, SlashType.CheckInvalid, msg.sender, dest, false, true);
         } else {
           slash(groupId, SlashType.EncSijInvalid, msg.sender, dest, true, true);
@@ -408,9 +409,10 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
 
     /// @notice                           function for verify Sij to judge challenge
     /// @param d                          Dest
-    /// @param polyCommit                 polyCommit of pki
     /// @param dest                       dest storeman address
-    function verifySij(Dest storage d, bytes polyCommit, address dest)
+    /// @param iv                         ecies iv
+    /// @param polyCommit                 polyCommit of pki
+    function verifySij(Dest storage d, address dest, uint128 iv, bytes polyCommit)
         internal
         pure
         returns(bool valid)

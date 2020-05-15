@@ -389,7 +389,8 @@ class Round {
     }
     // sij
     if ((receive.checkStatus == CheckStatus.Invalid) && (!send.sijTxHash)) {
-      send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, send.ephemPrivateKey);
+      let iv = null; // TODO
+      send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, iv, send.ephemPrivateKey);
     }
     if (this.standby) {
       return;
