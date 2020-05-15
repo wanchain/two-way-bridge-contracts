@@ -42,46 +42,47 @@ contract CreateGpkStorage is BasicStorage {
     /* below is structure definition */
 
     struct Group {
-        uint round;
-        uint ployCommitPeriod;
-        uint defaultPeriod;
-        uint negotiatePeriod;
+        uint16 round;
+        uint32 ployCommitPeriod;
+        uint32 defaultPeriod;
+        uint32 negotiatePeriod;
         /// round->Round
         mapping(uint => Round) roundMap;
     }
 
     struct Round {
         GroupStatus status;
+        uint16 smNumber;
+        uint16 polyCommitCount;
+        uint32 checkValidCount;
         uint statusTime;
-        uint smNumber;
+        bytes gpk;
         /// index->txAddress
         mapping(uint => address) indexMap;
         /// txAddress->pk
         mapping(address => bytes) addressMap;
-        uint polyCommitCount;
-        bytes gpk;
         /// txAddress->Src
         mapping(address => Src) srcMap;
-        uint checkValidCount;
     }
 
     enum GroupStatus {PolyCommit, Negotiate, Complete, Close}
 
     struct Src {
+        uint16 checkValidCount;
         bytes polyCommit;
         bytes pkShare;
-        uint checkValidCount;
         /// txAddress->Dest
         mapping(address => Dest) destMap;
     }
 
     struct Dest {
-        bytes encSij;
         CheckStatus checkStatus;
+        uint128 iv;
         uint setTime;
         uint checkTime;
         uint Sij;
         uint ephemPrivateKey;
+        bytes encSij;
     }
 
     enum CheckStatus {Init, Valid, Invalid}

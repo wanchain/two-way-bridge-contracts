@@ -126,7 +126,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             // init config when the first node submit
             fetchConfig(group);
             // selected sm list
-            round.smNumber = mortgage.getSelectedSmNumber(groupId);
+            round.smNumber = uint16(mortgage.getSelectedSmNumber(groupId));
             require(round.smNumber > 0, "Invalid sm number");
             // retrieve nodes
             address txAddress;
@@ -141,7 +141,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         }
         require(round.addressMap[msg.sender].length != 0, "Invalid sender");
         require(round.srcMap[msg.sender].polyCommit.length == 0, "Duplicate");
-        round.srcMap[msg.sender] = Src(polyCommit, new bytes(0), 0);
+        round.srcMap[msg.sender].polyCommit = polyCommit;
         round.polyCommitCount++;
         if (round.polyCommitCount >= round.smNumber) {
             genGpk(round);
@@ -336,32 +336,32 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         require(now.sub(round.statusTime) > group.negotiatePeriod, "Not late");
 
         for (uint i = 0; i < round.smNumber; i++) {
-            address s = round.indexMap[i];
+            address src = round.indexMap[i];
             for (uint j = 0; j < round.smNumber; j++) {
-                address d = round.indexMap[j];
-                Dest storage dest = round.srcMap[s].destMap[d];
-                if (dest.checkStatus == CheckStatus.Valid) {
+                address dest = round.indexMap[j];
+                Dest storage d = round.srcMap[src].destMap[dest];
+                if (d.checkStatus == CheckStatus.Valid) {
                     continue;
                 }
                 SlashType sType;
                 SlashType dType;
-                if (dest.encSij.length == 0) {
+                if (d.encSij.length == 0) {
                     sType = SlashType.EncSijTimout;
                     dType = SlashType.Connive;
-                } else if (dest.checkStatus == CheckStatus.Init) {
+                } else if (d.checkStatus == CheckStatus.Init) {
                     sType = SlashType.Connive;
                     dType = SlashType.CheckTimeout;
-                } else if (dest.checkStatus == CheckStatus.Invalid) {
+                } else if (d.checkStatus == CheckStatus.Invalid) {
                     sType = SlashType.SijTimeout;
                     dType = SlashType.Connive;
                 }
-                slash(groupId, sType, s, d, true, false);
-                slash(groupId, dType, s, d, false, false);
+                slash(groupId, sType, src, dest, true, false);
+                slash(groupId, dType, src, dest, false, false);
                 slashTypes[slashCount] = sType;
-                slashSms[slashCount] = s;
+                slashSms[slashCount] = src;
                 slashCount++;
                 slashTypes[slashCount] = dType;
-                slashSms[slashCount] = d;
+                slashSms[slashCount] = dest;
                 slashCount++;
             }
         }
