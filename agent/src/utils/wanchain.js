@@ -4,11 +4,14 @@ const abiMap = require('../../cfg/abi');
 const keythereum = require('keythereum');
 const ethUtil = require('ethereumjs-util');
 const Web3 = require('web3');
+const Tx = require('ethereumjs-tx');
 
 const keystore = JSON.parse(fs.readFileSync(config.keystore.path, "utf8"));
 const selfSk = keythereum.recover(config.keystore.pwd, keystore); // Buffer
 const selfPk = ethUtil.privateToPublic(selfSk); // Buffer
-const selfAddress = '0x' + ethUtil.pubToAddress(selfPk).toString('hex');
+const selfAddress = '0x' + ethUtil.pubToAddress(selfPk).toString('hex').toLowerCase();
+console.log("pk: %s", selfPk.toString('hex'));
+console.log("address: %s", selfAddress);
 
 const web3 = new Web3(new Web3.providers.HttpProvider(config.wanNodeURL));
 
@@ -49,8 +52,9 @@ async function sendTx(contractAddr, data) {
   tx.sign(selfSk);
 
   try {
-    let txHash = await web3.eth.sendRawTransaction('0x' + tx.serialize().toString('hex'));
-    return txHash;
+    let result = await web3.eth.sendSignedTransaction('0x' + tx.serialize().toString('hex'));
+    // console.log("%s txHash: %s", selfAddress, result.transactionHash);
+    return result.transactionHash;
   } catch(err) {
     console.error("send tx data %s to contract %s error: %O", data, contractAddr, err);
     return '';
@@ -60,7 +64,7 @@ async function sendTx(contractAddr, data) {
 async function getTxReceipt(txHash) {
   try {
     let receipt = await web3.eth.getTransactionReceipt(txHash);
-    // console.log("getTxReceipt %s receipt: %O", txHash, receipt);
+    console.log("getTxReceipt %s receipt: %s", txHash, receipt.status);
     return receipt;
   } catch(err) {
     // console.log("getTxReceipt %s none: %O", txHash, err);
@@ -84,8 +88,7 @@ async function sendPloyCommit(groupId, polyCommit) {
 }
 
 async function sendEncSij(groupId, dest, encSij) {
-  let encSijStr = '0x' + encSij.toString('hex');
-  let txData = await createGpkSc.methods.setEncSij(groupId, dest, encSijStr).encodeABI();
+  let txData = await createGpkSc.methods.setEncSij(groupId, dest, encSij).encodeABI();
   let txHash = await sendTx(config.contractAddress.createGpk, txData);
   return txHash;  
 }

@@ -45,7 +45,7 @@ async function encryptSij(pk, sij, opts) {
   let M = Buffer.from(sij.substr(2), 'hex');
   try {
     let m = await eccrypto.encrypt(toPk, M, opts);
-    console.log("in m: %O", m)
+    console.log("encryptSij: %s", m.ciphertext.toString('hex'));
     return '0x' + Buffer.concat([m.iv, m.ephemPublicKey, m.ciphertext, m.mac]).toString('hex');
   } catch (err) {
     console.error("encryptSij err: %O", err);
