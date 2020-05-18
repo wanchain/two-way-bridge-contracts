@@ -271,7 +271,7 @@ event setDependenceEvent(address);
         return true;
     }
 
-    function getThresholdNumber(bytes32 groupId) external returns (uint){
+    function getThresholdByGrpId(bytes32 groupId) external view returns (uint){
         StoremanGroup storage group = groups[groupId];
         return group.threshold;
     }
