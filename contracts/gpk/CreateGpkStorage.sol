@@ -28,13 +28,13 @@ pragma solidity ^0.4.24;
 
 import "../components/BasicStorage.sol";
 import "../interfaces/IConfig.sol";
-import "../interfaces/IMortgage.sol";
+import "../interfaces/IStoremanGroup.sol";
 
 contract CreateGpkStorage is BasicStorage {
     /// config instance address
     IConfig public config;
     /// mortgage instance address
-    IMortgage public mortgage;
+    IStoremanGroup public mortgage;
 
     /// groupId->Group
     mapping(bytes32 => Group) internal groupMap;

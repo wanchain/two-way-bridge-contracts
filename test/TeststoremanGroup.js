@@ -42,11 +42,11 @@ contract('TestSmg', async (accounts) => {
     before("init contracts", async() => {
         if(!contractAddress) {
             smgProxy = await StoremanGroupProxy.deployed();
-            let smgDelegate = await StoremanGroupDelegate.deployed();
+            //let smgDelegate = await StoremanGroupDelegate.deployed();
             //await smgProxy.upgradeTo(smgDelegate.address);
 
-            smg = await StoremanGroupDelegate.at(smgDelegate.address)
-            contractAddress = smgDelegate.address
+            smg = await StoremanGroupDelegate.at(smgProxy.address)
+            contractAddress = smgProxy.address
             console.log("==============================storemanGroup smgProxy contractAddress: ", contractAddress)
         }
 

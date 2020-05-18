@@ -108,7 +108,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         require(configAddr != address(0), "Invalid config address");
         require(mortgageAddr != address(0), "Invalid mortgage address");
         config = IConfig(configAddr);
-        mortgage = IMortgage(mortgageAddr);
+        mortgage = IStoremanGroup(mortgageAddr);
     }
 
     /// @notice                           function for storeman submit poly commit

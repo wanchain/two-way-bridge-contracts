@@ -30,7 +30,7 @@ pragma experimental ABIEncoderV2;
 import "../components/BasicStorage.sol";
 import "./lib/MetricTypes.sol";
 import "../interfaces/IConfig.sol";
-import "../interfaces/IMortgage.sol";
+import "../interfaces/IStoremanGroup.sol";
 
 contract MetricStorage is BasicStorage {
 
@@ -46,7 +46,7 @@ contract MetricStorage is BasicStorage {
     /// config instance address
     IConfig public config;
     /// mortgage instance address
-    IMortgage public mortgage;
+    IStoremanGroup public mortgage;
 
     /************************************************************
      **

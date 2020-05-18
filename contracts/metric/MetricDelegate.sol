@@ -30,7 +30,7 @@ pragma experimental ABIEncoderV2;
 import "../components/Halt.sol";
 import "./MetricStorage.sol";
 import "./lib/MetricTypes.sol";
-import "../interfaces/IMortgage.sol";
+import "../interfaces/IStoremanGroup.sol";
 import "../lib/SafeMath.sol";
 
 contract MetricDelegate is MetricStorage, Halt {
@@ -48,7 +48,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     modifier initialized {
         require(config != IConfig(address(0)), "Global configure is null");
-        require(mortgage != IMortgage(address(0)), "Mortage is null");
+        require(mortgage != IStoremanGroup(address(0)), "Mortage is null");
         _;
     }
 
@@ -391,7 +391,7 @@ contract MetricDelegate is MetricStorage, Halt {
         require(mortgageAddr != address(0), "Invalid mortgage address");
 
         config = IConfig(configAddr);
-        mortgage = IMortgage(mortgageAddr);
+        mortgage = IStoremanGroup(mortgageAddr);
     }
 
     // todo get EpochId from pre-compile contract

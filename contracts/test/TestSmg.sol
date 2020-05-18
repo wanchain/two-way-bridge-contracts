@@ -1,14 +1,14 @@
 pragma solidity ^0.4.24;
 
-import "../interfaces/IMortgage.sol";
+import "../interfaces/IStoremanGroup.sol";
 
 contract TestSmg {
-    IMortgage smg;
+    IStoremanGroup smg;
     constructor(){
         return;
     }
     function setSmgAddr(address addr) public{
-        smg = IMortgage(addr);
+        smg = IStoremanGroup(addr);
     }
     function testSetGpk(bytes32 groupId, bytes gpk) public {
         smg.setGpk(groupId, gpk);
