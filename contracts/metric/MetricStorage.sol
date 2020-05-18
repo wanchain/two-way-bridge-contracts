@@ -46,6 +46,7 @@ contract MetricStorage is BasicStorage {
     /// config instance address
     IConfig public config;
     /// mortgage instance address
+
     IStoremanGroup public smg;
 
     /************************************************************

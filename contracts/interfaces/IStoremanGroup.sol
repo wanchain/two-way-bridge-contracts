@@ -26,7 +26,7 @@
 
 pragma solidity ^0.4.24;
 
-interface IMortgage {
+interface IStoremanGroup {
     function getSelectedSmNumber(bytes32 groupId) external returns(uint number);
     function getSmInfo(bytes32 groupId, address wkAddress) public view  returns(address sender,bytes PK,
         bool quited, bool  isWorking,uint  delegateFee,uint  deposit,uint  depositWeight,
