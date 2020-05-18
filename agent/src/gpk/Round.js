@@ -11,7 +11,7 @@ const POC = true;
 class Round {
   constructor(groupId, round) {
     // contract
-    this.mortgageSc = null;
+    this.smgSc = null;
     this.createGpkSc = null;
 
     // group info
@@ -27,7 +27,7 @@ class Round {
     // self data
     this.selfSk = null; // Buffer
     this.selfPk = ''; // hex string with 0x
-    this.poly = []; // 17 order, BigInteger
+    this.poly = []; // defalt 17 order, BigInteger
     this.polyCommit = []; // poly * G, Point
     this.polyCommitTxHash = '';
     this.polyCommitDone = false;
@@ -50,11 +50,11 @@ class Round {
   }
 
   async start() {
-    this.initSelfKey();
-    this.initPoly();
-    this.mortgageSc = wanchain.getContract('Mortgage', config.contractAddress.mortgage);
+    this.smgSc = wanchain.getContract('smg', config.contractAddress.smg);
     this.createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
+    this.initSelfKey();
     await this.initSmList();
+    this.initPoly();
     console.log("init gpk group %s", this.groupId);
     this.next(3000);
   }
@@ -66,7 +66,8 @@ class Round {
   } 
 
   initPoly() {
-    for (let i = 0; i < 17; i++) {
+    let threshold = this.smgSc.methods.getThresholdByGrpId(this.groupId).call();
+    for (let i = 0; i < threshold; i++) {
       this.poly[i] = encrypt.genRandom(32);
       this.polyCommit[i] = encrypt.mulG(this.poly[i]);
       // console.log("init polyCommit %i: %s", i, this.polyCommit[i].getEncoded(false).toString('hex'));
@@ -74,20 +75,27 @@ class Round {
   }
 
   async initSmList() {
-    let smList = [];
-    try {
-      let smNumber = await this.mortgageSc.methods.getSelectedSmNumber(this.groupId).call();
-      for (let i = 0; i < smNumber; i++) {
-        let sm = await this.mortgageSc.methods.getSelectedSmInfo(this.groupId, i).call();
-        smList.push(sm[0]);
-        this.send.set(sm[0], new Send(sm[1]));
-        this.receive.set(sm[0], new Receive());
-      }
-      this.smList = smList;
-      console.log('%s gpk group %s init smList: %O', new Date(), this.groupId, smList);
-    } catch (err) {
-      console.error('%s gpk group %s init smList err: %O', new Date(), this.groupId, err);
+    let smNumber = await this.smgSc.methods.getSelectedSmNumber(this.groupId).call();
+    let smList = new Array(smNumber);
+    let ps = new Array(smNumber);
+    for (let i = 0; i < smNumber; i++) {
+      ps[i] = new Promise(async (resolve, reject) => {
+        try {
+          let sm = await this.smgSc.methods.getSelectedSmInfo(this.groupId, i).call();
+          smList[i] = sm[0];
+          this.send.set(sm[0], new Send(sm[1]));
+          this.receive.set(sm[0], new Receive());
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      })
     }
+    await Promise.all(ps);
+    this.smList = smList;
+    console.log('%s gpk group %s init smList: %O', new Date(), this.groupId, smList);
+    console.log('send map: %O', this.send);
+    console.log('receive map: %O', this.receive);
   }
 
   next(interval = 60000) {
@@ -427,7 +435,11 @@ class Round {
       iv: Buffer.from(encrypt.genRandom(16).toRadix(16), 'hex'),
       ephemPrivateKey: Buffer.from(encrypt.genRandom(32).toRadix(16), 'hex')
     };
+    console.log("genEncSij partner: %s", partner);
+    console.log("poly: %O", this.poly);
+    console.log("destPk: %s", destPk);
     send.sij = '0x' + encrypt.genSij(this.poly, destPk).toRadix(16);
+    console.log("sij: %s", sij);
     try {
       send.encSij = await encrypt.encryptSij(destPk, send.sij, opts);
       send.ephemPrivateKey = '0x' + opts.ephemPrivateKey.toString('hex');
@@ -442,7 +454,7 @@ class Round {
   }
   
   async procClose() {
-    console.log('gpk group %s round %d is closed', his.groupId, this.round);
+    console.log('gpk group %s round %d is closed', this.groupId, this.round);
     this.stop();
   }
 

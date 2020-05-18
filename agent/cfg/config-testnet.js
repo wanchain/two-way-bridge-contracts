@@ -3,12 +3,12 @@ const path = require('path');
 exports.wanNodeURL = 'http://192.168.1.179:7654';
 
 exports.contractAddress = {
-  createGpk: '0x0BC87627fb53cf070C5a8354594f351810d5D4d0',
-  mortgage: '',
+  smg: '0x8d6DD94C90C303b332E1E3Bcb8cCF496D82eC96D',
+  createGpk: '0xC464153Fb0aE47D751856D92acea63A522682859',
 }
 
 exports.keystore = {
-  path: path.join(__dirname, '../../test/keystore/0x2a94459e0a0ac91dbba7e43ce8262eb4cb768a6e'),
+  path: path.join(__dirname, '../../test/keystore/0x2e54a80b977fd1859782e2ee96a76285a7fc75ba'),
   pwd: 'wanglu',
 }
 

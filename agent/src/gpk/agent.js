@@ -11,16 +11,16 @@ const groupMap = new Map();
 
 // TODO: restore group agent after reboot
 
-const mortgageSc = wanchain.getContract('Mortgage', config.contractAddress.mortgage);
+const smgSc = wanchain.getContract('smg', config.contractAddress.smg);
 const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
 
-const evtTracker = new EventTracker('gpk', 6320300, eventHandler);
-evtTracker.subscribe('mortgage', '0x73a99a82f1b95bfd55a5820a7342758ceca80b33', ["0x10c53ecd69edb1ebf570440ffdc3bb14b8d0ad4297cbde535c88d316164653ae"]);
+const evtTracker = new EventTracker('gpk', 611369, eventHandler);
+evtTracker.subscribe('smg', config.contractAddress.smg, ["0x62487e9f333516e24026d78ce371e54c664a46271dcf5ffdafd8cd10ea75a5bf"]);
 evtTracker.start();
 
 async function eventHandler(evt) {
   console.log("receive evt: %O", evt);
-  let groupId = '0x' + evt.topics[0];
+  let groupId = evt.topics[1];
   let group = groupMap.get(groupId);
   try {
     let info = await createGpkSc.methods.getGroupInfo(groupId, -1).call();
@@ -44,13 +44,6 @@ async function eventHandler(evt) {
 }
 
 async function checkSelfSelected(groupId) {
-    let info = await mortgageSc.methods.getSmInfo(groupId, wanchain.selfAddress);
+    let info = await smgSc.methods.getSmInfo(groupId, wanchain.selfAddress);
     return (info[3] == true); // isWorking
 }
-
-async function test() {
-  let round = new Round('test', 0);
-  round.test();
-}
-
-test();

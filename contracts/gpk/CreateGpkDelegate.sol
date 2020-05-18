@@ -98,17 +98,17 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     *
     */
 
-    /// @notice                           function for set config and mortgage contract address
+    /// @notice                           function for set config and smg contract address
     /// @param configAddr                 config contract address
-    /// @param mortgageAddr               mortgage contract address
-    function setDependence(address configAddr, address mortgageAddr)
+    /// @param smgAddr                    smg contract address
+    function setDependence(address configAddr, address smgAddr)
         external
         onlyOwner
     {
         require(configAddr != address(0), "Invalid config address");
-        require(mortgageAddr != address(0), "Invalid mortgage address");
+        require(smgAddr != address(0), "Invalid smg address");
         config = IConfig(configAddr);
-        mortgage = IStoremanGroup(mortgageAddr);
+        smg = IStoremanGroup(smgAddr);
     }
 
     /// @notice                           function for storeman submit poly commit
@@ -126,13 +126,13 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             // init config when the first node submit
             fetchConfig(group);
             // selected sm list
-            round.smNumber = uint16(mortgage.getSelectedSmNumber(groupId));
+            round.smNumber = uint16(smg.getSelectedSmNumber(groupId));
             require(round.smNumber > 0, "Invalid sm number");
             // retrieve nodes
             address txAddress;
             bytes memory pk;
             for (uint i = 0; i < round.smNumber; i++) {
-                (txAddress, pk,) = mortgage.getSelectedSmInfo(groupId, i);
+                (txAddress, pk,) = smg.getSelectedSmInfo(groupId, i);
                 round.indexMap[i] = txAddress;
                 round.addressMap[txAddress] = pk;
             }
@@ -243,7 +243,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             if (round.checkValidCount >= round.smNumber ** 2) {
                 round.status = GroupStatus.Complete;
                 round.statusTime = now;
-                mortgage.setGpk(groupId, round.gpk);
+                smg.setGpk(groupId, round.gpk);
                 emit GpkCreatedLogger(groupId, round.gpk);
             }
         } else {
@@ -446,7 +446,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             types[0] = uint(slashType);
             address[] memory sms = new address[](1);
             sms[0] = srcOrDest? src : dest;
-            mortgage.setInvalidSm(groupId, types, sms);
+            smg.setInvalidSm(groupId, types, sms);
             reset(groupId);
         }
     }
@@ -466,7 +466,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
           types[i] = uint(slashTypes[i]);
           sms[i] = slashSms[i];
         }
-        mortgage.setInvalidSm(groupId, types, sms);
+        smg.setInvalidSm(groupId, types, sms);
         reset(groupId);
     }
 

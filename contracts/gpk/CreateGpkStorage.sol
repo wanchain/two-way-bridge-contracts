@@ -33,8 +33,8 @@ import "../interfaces/IStoremanGroup.sol";
 contract CreateGpkStorage is BasicStorage {
     /// config instance address
     IConfig public config;
-    /// mortgage instance address
-    IStoremanGroup public mortgage;
+    /// smg instance address
+    IStoremanGroup public smg;
 
     /// groupId->Group
     mapping(bytes32 => Group) internal groupMap;
