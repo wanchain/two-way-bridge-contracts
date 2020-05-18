@@ -71,8 +71,6 @@ module.exports = async function(deployer){
     let smgDelegate = await StoremanGroupDelegate.deployed();
     console.log("smgDelegate.address:", smgDelegate.address)
     await smgProxy.upgradeTo(smgDelegate.address);
-    
-
 
     await deployer.deploy(TestSmg);
     let tsmg = await TestSmg.deployed();
@@ -82,43 +80,22 @@ module.exports = async function(deployer){
     let tm = await TokenManagerDelegate.at(tmProxy.address);
     await tm.setHtlcAddr(htlcProxy.address);
 
-
-
-
-
-
     // htlc dependence
     let htlc = await HTLCDelegate.at(htlcProxy.address);
     await htlc.setEconomics(tmProxy.address, smgProxy.address, 0);
 
-
-
     // storm group admin dependence
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
 
-
-
-
-
-
-
-
-
     // console.log("impold:", await smgProxy.implementation())
     // console.log("smgDelegate.address:", smgDelegate.address)
     // await smgProxy.upgradeTo(smgDelegate.address);
-
-
-
 
     await smg.setDependence(tmProxy.address, htlcProxy.address);
 
-
     // console.log("impold:", await smgProxy.implementation())
     // console.log("smgDelegate.address:", smgDelegate.address)
     // await smgProxy.upgradeTo(smgDelegate.address);
-
-
 
     //deploy metric
 
@@ -133,8 +110,13 @@ module.exports = async function(deployer){
     let metric = await MetricDelegate.at(metricProxy.address);
     await metric.setDependence(ADDRESS_MRTG,ADDRESS_MRTG);
 
+    // create gpk sc
+    await deployer.deploy(CreateGpkProxy);
+    let gpkProxy = await CreateGpkProxy.deployed();
+    await deployer.deploy(CreateGpkDelegate);
+    let gpkDelegate = await CreateGpkDelegate.deployed();
+    await gpkProxy.upgradeTo(gpkDelegate.address);
 
-
-
-
+    let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);
+    await gpk.setDependence(smgProxy.address, smgProxy.address);
 }

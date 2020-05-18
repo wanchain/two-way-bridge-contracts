@@ -50,6 +50,8 @@ contract('TestSmg', async (accounts) => {
             console.log("==============================storemanGroup smgProxy contractAddress: ", contractAddress)
         }
 
+        let gpkProxy = await CreateGpkProxy.deployed();
+        console.log("CreateGpk contractAddress: %s", gpkProxy.address);
     
         tsmg = await TestSmg.deployed();
         await tsmg.setSmgAddr(smgProxy.address)
