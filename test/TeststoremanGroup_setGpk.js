@@ -14,7 +14,7 @@ const Tx = wanUtil.wanchainTx;
 //const Tx = require("ethereumjs-tx")
 let contractAddress =  undefined 
 
-let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
+let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
 
 
 let EOS = utils.stringTobytes("EOS")
@@ -22,7 +22,8 @@ let EOS = utils.stringTobytes("EOS")
 
 contract('TestSmg', async(accounts)=>{
     let tester = accounts[0]
-
+    const memberCountDesign = 4
+    const threshold  = 3
     let id = utils.stringTobytes32(Date.now().toString())
     let smgDelegate 
     let tsmg;
@@ -61,6 +62,8 @@ contract('TestSmg', async(accounts)=>{
             srs.push(sr)
         }
         let tx = await smgDelegate.registerStart(id,10000,21,17, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
+        let tx = await smgDelegate.registerStart(id,memberCountDesign,threshold,12345, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
+
             {from: tester})
         console.log("tx:", tx)
         console.log("group:",await smgDelegate.groups(id))
