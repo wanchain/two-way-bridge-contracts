@@ -41,7 +41,7 @@ contract MetricDelegate is MetricStorage, Halt {
      * MODIFIERS
      *
      */
-    modifier onlyValidGrpId (bytes grpId) {
+    modifier onlyValidGrpId (bytes32 grpId) {
         require( grpId.length > 0 , "Invalid group ID");
         _;
     }
@@ -59,7 +59,7 @@ contract MetricDelegate is MetricStorage, Halt {
      */
 
     ///=======================================statistic=============================================
-    function getPrdInctMetric(bytes grpId, uint startEpId, uint endEpId)
+    function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId)
     external
     view
     initialized
@@ -77,7 +77,7 @@ contract MetricDelegate is MetricStorage, Halt {
         return ret;
     }
 
-    function getPrdSlshMetric(bytes grpId, uint startEpId, uint endEpId)
+    function getPrdSlshMetric(bytes32 grpId, uint startEpId, uint endEpId)
     external
     view
     initialized
@@ -96,7 +96,7 @@ contract MetricDelegate is MetricStorage, Halt {
         return ret;
     }
 
-    function getSmSuccCntByEpId(bytes grpId, uint epId, uint8 smIndex)
+    function getSmSuccCntByEpId(bytes32 grpId, uint epId, uint8 smIndex)
     external
     view
     initialized
@@ -106,7 +106,7 @@ contract MetricDelegate is MetricStorage, Halt {
         return metricData.mapInctCount[grpId][epId][smIndex];
     }
 
-    function getSlshCntByEpId(bytes grpId, uint epId, uint8 smIndex)
+    function getSlshCntByEpId(bytes32 grpId, uint epId, uint8 smIndex)
     external
     view
     initialized
@@ -117,7 +117,7 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
     // todo get proof is used for front end.
-    function getRSlshProof(bytes grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
+    function getRSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
     initialized
@@ -129,7 +129,7 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
     // todo get proof is used for front end.
-    function getSSlshProof(bytes grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
+    function getSSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
     initialized
@@ -144,14 +144,14 @@ contract MetricDelegate is MetricStorage, Halt {
 ///=======================================write incentive and slash=============================================
 
     /// todo white list can write the working record
-    function wrInct(bytes grpId, bytes32 hashX, uint  inctData)
+    function wrInct(bytes32 grpId, bytes32 hashX, uint  inctData)
     external
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
         metricData.mapInct[grpId][hashX].smIndexes = inctData;
-        uint8 smCount = getSMCount();
+        uint8 smCount = getSMCount(grpId);
         uint epochId = getEpochId();
 
         for (uint8 i = 0; i < smCount; i++) {
@@ -161,7 +161,7 @@ contract MetricDelegate is MetricStorage, Halt {
         }
     }
 
-    function wrRNW(bytes grpId, bytes32 hashX, uint rnwData)
+    function wrRNW(bytes32 grpId, bytes32 hashX, uint rnwData)
     external
     notHalted
     initialized
@@ -169,7 +169,7 @@ contract MetricDelegate is MetricStorage, Halt {
     {
         metricData.mapRNW[grpId][hashX].smIndexes = rnwData;
 
-        uint8 smCount = getSMCount();
+        uint8 smCount = getSMCount(grpId);
         uint epochId = getEpochId();
 
         for (uint8 i = 0; i < smCount; i++) {
@@ -181,7 +181,7 @@ contract MetricDelegate is MetricStorage, Halt {
         }
     }
 
-    function wrSNW(bytes grpId, bytes32 hashX, uint snwData)
+    function wrSNW(bytes32 grpId, bytes32 hashX, uint snwData)
     external
     notHalted
     initialized
@@ -189,7 +189,7 @@ contract MetricDelegate is MetricStorage, Halt {
     {
         metricData.mapSNW[grpId][hashX].smIndexes = snwData;
 
-        uint8 smCount = getSMCount();
+        uint8 smCount = getSMCount(grpId);
         uint epochId = getEpochId();
 
         for (uint8 i = 0; i < smCount; i++) {
@@ -203,7 +203,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
 
 
-    function wrRSlshPolyCM(bytes grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
+    function wrRSlshPolyCM(bytes32 grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
         bytes polyCM,bytes polyCMR,bytes polyCMS)
     external
     notHalted
@@ -237,7 +237,7 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
     // todo how to make sure atom operation?
-    function wrRSlshPolyData(bytes grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
+    function wrRSlshPolyData(bytes32 grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
         bytes polyData,bytes polyDataR,bytes polyDataS)
     external
     notHalted
@@ -278,7 +278,7 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
 
-    function wrSSlshShare(bytes grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
+    function wrSSlshShare(bytes32 grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
         bytes gpkShare,bytes rpkShare,bytes m)
     external
     notHalted
@@ -309,7 +309,7 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
     // todo how to make sure atom operation?
-    function wrSSlshPolyPln(bytes grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
+    function wrSSlshPolyPln(bytes32 grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex,bool becauseSndr,
         bytes polyData,bytes polyDataR,bytes polyDataS)
     external
     notHalted
@@ -353,7 +353,7 @@ contract MetricDelegate is MetricStorage, Halt {
 ///=======================================check proof =============================================
     // todo check the proof for all white list can write working record
     // todo check proof by pre-compile contract
-    function checkRProof(bytes grpId, bytes32 hashX, uint8 smIndex)
+    function checkRProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     initialized
     onlyValidGrpId(grpId)
@@ -364,7 +364,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     // todo check the proof for all white list can write working record
     // todo check proof by pre-compile contract
-    function checkSProof(bytes grpId, bytes32 hashX, uint8 smIndex)
+    function checkSProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     initialized
     onlyValidGrpId(grpId)
@@ -402,7 +402,7 @@ contract MetricDelegate is MetricStorage, Halt {
     // todo get EpochId from pre-compile contract
     function getSMCount(bytes32 grpId)
     internal
-    pure
+    view
     returns (uint8)
     {
         return uint8(smg.getSelectedSmNumber(grpId));
