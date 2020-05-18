@@ -18,7 +18,7 @@ class Send {
     // reveal sij
     this.sijTxHash = 0;
     this.chainSijTime = 0;
-  }  
+  }
 }
 
 module.exports = Send;
