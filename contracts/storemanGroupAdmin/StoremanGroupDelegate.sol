@@ -242,11 +242,11 @@ event setDependenceEvent(address);
         group.status = GroupStatus.selected;
         return;
     }
-    function getSelectedSmInfo(bytes32 groupId, uint index) public view   returns(address, bytes){
+    function getSelectedSmInfo(bytes32 groupId, uint index) public view   returns(address, bytes, bytes){
         StoremanGroup storage group = groups[groupId];
         address addr = group.selectedNode[index];
         Candidate storage sk = group.candidates[addr];
-        return (addr, sk.PK);
+        return (addr, sk.PK,sk.enodeID);
     }
 
 
@@ -266,12 +266,7 @@ event setDependenceEvent(address);
         StoremanGroup storage group = groups[groupId];
         storemanGroupRegister(group.chain,groupId, gpk, group.txFeeRatio);
     }
-    function testArray(uint[] types, address[] addrs) public {
-        for(uint i = 0; i<types.length; i++) {
-            badAddrs.push(addrs[i]);
-            badTypes.push(types[i]);
-        }
-    }
+
     function setInvalidSm(bytes32 groupId, uint[] slashType,  address[] badAddrs) public returns(bool isContinue){
         return true;
     }

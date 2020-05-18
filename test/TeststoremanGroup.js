@@ -3,8 +3,13 @@ const utils = require("./utils");
 const Web3 = require('web3')
 const net = require('net')
 const ethutil = require("ethereumjs-util");
-const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const pu = require('promisefy-util')
+
+const TestSmg = artifacts.require('TestSmg')
+const TokenManagerProxy = artifacts.require('TokenManagerProxy');
+const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
+const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
+const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
@@ -20,35 +25,9 @@ staker: 1000 ~ 1000+100
 delegator: stakerId*100 ~ stakerID*100+1000
  ****************************************/
 
- /*
- * @param sol
- * @param address
- * @returns {Promise<*>}
- */
-async function deploy(sol, address) {
-    let contract;
-    if(contractAddress){
-        contract = await utils.contractAt(sol, contractAddress);
-        console.log("old contractAddress:",contractAddress)
-    } else {
-        if (!await sol.isDeployed()) {
-            contract = await utils.deployContract(sol, { from: address });
-            contractAddress = contract.address
-            console.log("new contractAddress:",contractAddress)
-        } else {
-            contract = await utils.contractAt(sol, sol.address);
-            contractAddress = contract.address
-            console.log("old old contractAddress:",contractAddress)
-        }
-    }
 
-    lib.assertExists(contract);
-    return contract;
-}
 
-async function initContracts(accounts) {
-    return await deploy(StoremanGroupDelegate, accounts[0])
-}
+let EOS = utils.stringTobytes("EOS")
 
 
 
@@ -58,10 +37,34 @@ contract('StoremanGroupDelegate', async (accounts) => {
     let id = utils.stringTobytes32(Date.now().toString())
     const memberCountDesign = 4
     const threshold  = 3
+    let smgDelegate 
 
     before("init contracts", async() => {
-        testInstance = await initContracts(accounts);
-        console.log("testInstance address:",testInstance.address)
+        if(!contractAddress) {
+            let smgProxy = await StoremanGroupProxy.deployed();
+            smgDelegate = await StoremanGroupDelegate.deployed();
+            await smgProxy.upgradeTo(smgDelegate.address);
+            contractAddress = smgDelegate.address
+            console.log("==============================storemanGroup contractAddress: ", contractAddress)
+        }
+
+    
+        tsmg = await TestSmg.deployed();
+        await tsmg.setSmgAddr(smgDelegate.address)
+
+
+
+
+        let tmProxy = await TokenManagerProxy.deployed();
+        let tm = await TokenManagerDelegate.deployed();
+        //await tmprx.upgradeTo(tm.address);
+
+        await smgDelegate.setDependence(tmProxy.address, tmProxy.address);
+
+        await tm.addToken(EOS, 10000,'0x'+web3.utils.toWei("10").toString('hex'),60 * 60 * 72,EOS,EOS,8)
+        let t = await tm.getTokenInfo(EOS)
+        console.log("tokens:", t)
+
     })
 
 
@@ -76,18 +79,18 @@ contract('StoremanGroupDelegate', async (accounts) => {
             wks.push(wk)
             srs.push(sr)
         }
-        let tx = await testInstance.registerStart(id,memberCountDesign,threshold,12345, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
+        let tx = await smgDelegate.registerStart(id,memberCountDesign,threshold,12345, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
             {from: tester})
         console.log("tx:", tx)
-        console.log("group:",await testInstance.groups(id))
+        console.log("group:",await smgDelegate.groups(id))
     })
     it('test stakeIn', async()=>{
-        let stakerCount = 28
+        let stakerCount = 7
         for(let i=0; i<stakerCount; i++){
             let sf = utils.getAddressFromInt(i+1000)
             let sw = utils.getAddressFromInt(i+2000)
             let en = utils.getAddressFromInt(i+3000)
-            let sdata =  testInstance.contract.methods.stakeIn(id, sw.pk,en.pk,2000+i).encodeABI()
+            let sdata =  smgDelegate.contract.methods.stakeIn(id, sw.pk,en.pk,2000+i).encodeABI()
             console.log("sdata:",sdata)
             let rawTx = {
                 Txtype: 0x01,
@@ -113,7 +116,7 @@ contract('StoremanGroupDelegate', async (accounts) => {
             let deCount=2;
             for(let j=0; j<deCount; j++){
                 let de = utils.getAddressFromInt((i+1000)*10*1000 + j)
-                let dedata = testInstance.contract.methods.addDelegator(id,sw.addr).encodeABI()
+                let dedata = smgDelegate.contract.methods.addDelegator(id,sw.addr).encodeABI()
                 let rawTx = {
                     Txtype: 0x01,
                     nonce: await pu.promisefy(web3.eth.getTransactionCount,[de.addr,"pending"], web3.eth),
@@ -137,7 +140,7 @@ contract('StoremanGroupDelegate', async (accounts) => {
             while(!(candidate && candidate["2"] == deCount)){
                 console.log("candicate i", i, candidate)
                 await pu.sleep(3000)
-                candidate  = await testInstance.getStaker(id, sw.addr)
+                candidate  = await smgDelegate.getStaker(id, sw.addr)
             }
         }
 
@@ -145,21 +148,27 @@ contract('StoremanGroupDelegate', async (accounts) => {
     })
 
     it('test toSelect', async ()=>{
-        let tx = await testInstance.toSelect(id,{from: tester})
+        let tx = await smgDelegate.toSelect(id,{from: tester})
         console.log("toSelect tx:", tx)
         await utils.waitReceipt(tx.tx)
-        console.log("group:",await testInstance.groups(id))
+        console.log("group:",await smgDelegate.groups(id))
 
         
-        let count = await testInstance.getSelectedSmNumber(id)
+        let count = await smgDelegate.getSelectedSmNumber(id)
         console.log("count :", count)
 
         for(let i=0; i<count; i++) {
-            let skAddr = await testInstance.getSelectedSmInfo(id, i)
+            let skAddr = await smgDelegate.getSelectedSmInfo(id, i)
             console.log("skAddr:", i,skAddr)
-            let sk = await testInstance.getSmInfo(id, skAddr[0]);
-            console.log("sk, i:", i, sk)
+            // let sk = await smgDelegate.getSmInfo(id, skAddr[0]);
+            // console.log("sk, i:", i, sk)
         }
 
     })
+    it('testSetGpk', async() => {
+        let gpk = "0x04d2386b8a684e7be9f0d911c936092035dc2b112fe8c83fb602beac098183800237d173cf0e1e5a8cbb159bcdbdfbef67e25dbcc8b852e032aa2a9d7b0fe912a4"
+       let tx =  await tsmg.testSetGpk(id, gpk)
+       console.log("tx:", tx)
+    })
+
 })
