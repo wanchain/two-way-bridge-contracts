@@ -52,9 +52,6 @@ contract('StoremanGroupDelegate', async (accounts) => {
         tsmg = await TestSmg.deployed();
         await tsmg.setSmgAddr(smgDelegate.address)
 
-
-
-
         let tmProxy = await TokenManagerProxy.deployed();
         let tm = await TokenManagerDelegate.deployed();
         //await tmprx.upgradeTo(tm.address);
