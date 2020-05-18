@@ -10,6 +10,8 @@ const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
+const CreateGpkProxy = artifacts.require('CreateGpkProxy');
+
 const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
 let contractAddress = undefined //    "0x4553061E7aD83d83F559487B1EB7847a9F90ad59"; //   
