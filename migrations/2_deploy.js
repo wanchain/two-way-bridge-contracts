@@ -20,7 +20,7 @@ const MetricDelegate  = artifacts.require('MetricDelegate');
 
 module.exports = async function(deployer){
     // test
-    await deployer.deploy(TestStoremanGroup);
+    //await deployer.deploy(TestStoremanGroup);
 
 
     // token manager sc
