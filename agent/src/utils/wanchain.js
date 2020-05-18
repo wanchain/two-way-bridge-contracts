@@ -4,13 +4,15 @@ const abiMap = require('../../cfg/abi');
 const keythereum = require('keythereum');
 const ethUtil = require('ethereumjs-util');
 const Web3 = require('web3');
-const Tx = require('ethereumjs-tx');
+const wanUtil = require('wanchain-util');
+const Tx = wanUtil.wanchainTx;
 
 const keystore = JSON.parse(fs.readFileSync(config.keystore.path, "utf8"));
+console.log("keystore path: %s", config.keystore.path);
 const selfSk = keythereum.recover(config.keystore.pwd, keystore); // Buffer
 const selfPk = ethUtil.privateToPublic(selfSk); // Buffer
 const selfAddress = '0x' + ethUtil.pubToAddress(selfPk).toString('hex').toLowerCase();
-console.log("pk: %s", selfPk.toString('hex'));
+console.log("pk: %s", '0x04' + selfPk.toString('hex'));
 console.log("address: %s", selfAddress);
 
 const web3 = new Web3(new Web3.providers.HttpProvider(config.wanNodeURL));
@@ -45,9 +47,11 @@ async function sendTx(contractAddr, data) {
       gasPrice: config.gasPrice,
       gasLimit: config.gasLimit,
       to: contractAddr,
+      chainId: '0x06',
       value: '0x0',
       data: data
   };
+  // console.log("sendTx: %O", rawTx);
   let tx = new Tx(rawTx);
   tx.sign(selfSk);
 
