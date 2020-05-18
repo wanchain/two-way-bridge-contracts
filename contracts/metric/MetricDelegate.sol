@@ -30,7 +30,7 @@ pragma experimental ABIEncoderV2;
 import "../components/Halt.sol";
 import "./MetricStorage.sol";
 import "./lib/MetricTypes.sol";
-import "../interfaces/IMortgage.sol";
+import "../interfaces/IStoremanGroup.sol";
 import "../lib/SafeMath.sol";
 
 contract MetricDelegate is MetricStorage, Halt {
@@ -48,7 +48,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
     modifier initialized {
         require(config != IConfig(address(0)), "Global configure is null");
-        require(mortgage != IMortgage(address(0)), "Mortage is null");
+        require(smg != IStoremanGroup(address(0)), "Smg is null");
         _;
     }
 
@@ -67,10 +67,7 @@ contract MetricDelegate is MetricStorage, Halt {
     returns (uint[]) {
         require(endEpId > startEpId, "End epochId should be more than start epochId");
         uint[] memory ret;
-        // todo get total number from mortgage
-        //uint8 n = mortgage.getTotalNumber(grpId);
-        uint8 n = getTotalNumber();
-
+        uint8 n = getSMCount(grpId);
         ret = new uint[](n);
         for (uint8 i = 0; i < n; i++) {
             for (uint j = startEpId; j < endEpId; j++){
@@ -89,10 +86,7 @@ contract MetricDelegate is MetricStorage, Halt {
     {
         require(endEpId > startEpId, "End epochId should be more than start epochId");
         uint[] memory ret;
-        // todo get total number from mortgage
-        //uint8 n = mortgage.getTotalNumber(grpId);
-        uint8 n = getTotalNumber();
-
+        uint8 n = getSMCount(grpId);
         ret = new uint[](n);
         for (uint8 i = 0; i < n; i++) {
             for (uint j = startEpId; j < endEpId; j++){
@@ -380,18 +374,18 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
 
-/// @notice                           function for set config and mortgage contract address
+/// @notice                           function for set config and smg contract address
 /// @param configAddr                 config contract address
-/// @param mortgageAddr               mortgage contract address
-    function setDependence(address configAddr, address mortgageAddr)
+/// @param smgAddr               smg contract address
+    function setDependence(address configAddr, address smgAddr)
     external
     onlyOwner
     {
         require(configAddr != address(0), "Invalid config address");
-        require(mortgageAddr != address(0), "Invalid mortgage address");
+        require(smgAddr != address(0), "Invalid smg address");
 
         config = IConfig(configAddr);
-        mortgage = IMortgage(mortgageAddr);
+        smg = IStoremanGroup(smgAddr);
     }
 
     // todo get EpochId from pre-compile contract
@@ -406,12 +400,12 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
     // todo get EpochId from pre-compile contract
-    function getSMCount()
+    function getSMCount(bytes32 grpId)
     internal
     pure
     returns (uint8)
     {
-        return uint8(21);
+        return uint8(smg.getSelectedSmNumber(grpId));
     }
 
     function checkHamming(uint indexes, uint8 smIndex)
@@ -422,11 +416,7 @@ contract MetricDelegate is MetricStorage, Halt {
         return indexes & (uint(1)<<smIndex) != uint(0);
    }
 
-    function getTotalNumber()
-    internal
-    pure
-    returns (uint8)
-    {
-        return uint8(21);
+    function () public payable {
+        revert("Not support");
     }
 }
