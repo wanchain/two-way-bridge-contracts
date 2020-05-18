@@ -41,7 +41,7 @@ contract StoremanGroupStorage is BasicStorage {
   IHTLC public htlc;
 
   mapping(bytes32 => StoremanGroup) public groups;
-  mapping(bytes => mapping(bytes => StoremanGroup)) internal storemanGroupMap;
+  mapping(bytes => mapping(bytes => bytes32)) internal storemanGroupMap;
 
   uint backupCount = 3;
   uint minStake = 10000;

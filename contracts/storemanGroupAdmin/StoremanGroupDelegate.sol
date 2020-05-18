@@ -32,6 +32,7 @@ import "./StoremanGroupStorage.sol";
 
 contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     using SafeMath for uint;
+    address public  gtm;
 
     /**
      *
@@ -45,7 +46,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @param wanDeposit                 deposit wancoin number
     /// @param quota                      corresponding token quota
     /// @param txFeeRatio                 storeman fee ratio
-    event StoremanGroupRegistrationLogger(bytes tokenOrigAccount, bytes storemanGroup, uint wanDeposit, uint quota, uint txFeeRatio);
+    event StoremanGroupRegistrationLogger(bytes indexed tokenOrigAccount, bytes32 indexed groupId,  bytes storemanGroup, uint wanDeposit, uint quota, uint txFeeRatio);
 
     /// @notice                           event for storeman register
     /// @param storemanGroup              storeman group PK
@@ -78,7 +79,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     * MANIPULATIONS
     *
     */
-
+event setDependenceEvent(address);
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param tmAddr                     token manager contract address
     /// @param htlcAddr                   htlc contract address
@@ -90,6 +91,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         require(htlcAddr != address(0), "Invalid htlc address");
         tokenManager = ITokenManager(tmAddr);
         htlc = IHTLC(htlcAddr);
+        gtm = tmAddr;
+        setDependenceEvent(tmAddr);
     }
 
 
@@ -115,7 +118,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function registerStart(bytes32 groupId, uint memberCountDesign, uint threshold,
         uint workStart,uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupId, bytes chain, address[] wkAddrs, address[] senders)
         public
-    { 
+    {
         require(wkAddrs.length == senders.length);
         require(wkAddrs.length > backupCount);
         StoremanGroup memory group = StoremanGroup(groupId,crossFee,memberCountDesign,threshold,GroupStatus.initial,0,0,0,0,0,chain);
@@ -136,7 +139,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function stakeIn(bytes32 index, bytes PK, bytes enodeID, uint delegateFee)
         public payable
     {
-        StoremanGroup group = groups[index];
+        StoremanGroup storage group = groups[index];
         address pkAddr = address(keccak256(PK));
         Candidate memory sk = Candidate(msg.sender, enodeID, PK,pkAddr,false,false,false,delegateFee,msg.value,calSkWeight(msg.value),0,0);
         group.addrMap[group.memberCount] = pkAddr;
@@ -156,7 +159,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         emit stakeInEvent(index, pkAddr, enodeID);
     }
     function getStaker(bytes32 index, address pkAddr) public view returns (bytes,uint,uint) {
-        Candidate sk = groups[index].candidates[pkAddr];
+        Candidate storage sk = groups[index].candidates[pkAddr];
         return (sk.PK, sk.delegateFee, sk.delegatorCount);
     }
 
@@ -168,7 +171,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
     event incentive(bytes32 indexed index, address indexed to, uint indexed delegatorCount);
     function testIncentiveAll(bytes32 index) public  {
-        StoremanGroup group = groups[index];
+        StoremanGroup storage group = groups[index];
         for(uint i = 0; i<group.memberCountDesign; i++) { //todo change to working.
             address skAddr = group.selectedNode[i];
             Candidate sk = group.candidates[skAddr];
@@ -187,7 +190,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         payable
     {
         Delegator memory dk = Delegator(msg.sender,skPkAddr,false,msg.value,1);
-        Candidate sk = groups[index].candidates[skPkAddr];
+        Candidate storage sk = groups[index].candidates[skPkAddr];
         sk.addrMap[sk.delegatorCount] = msg.sender;
         sk.delegatorCount++;
         sk.depositWeight += msg.value;
@@ -198,14 +201,14 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
     function getSelectedSmNumber(bytes32 groupId) public view returns(uint) {
-        StoremanGroup group = groups[groupId];
-        if(group.status == GroupStatus.initial ||  group.status == GroupStatus.failed){
+        StoremanGroup storage group = groups[groupId];
+        if(group.status == GroupStatus.initial || group.status == GroupStatus.failed){
             return 0;
         }
         return group.memberCountDesign;
     }
     function realInsert(bytes32 groupId, address addr, uint weight) internal{
-        StoremanGroup group = groups[groupId];
+        StoremanGroup storage  group = groups[groupId];
         for(uint j = group.memberCountDesign-1; j>group.whiteCount; j--) {
             if(weight > group.candidates[group.selectedNode[j]].depositWeight){
                 continue;
@@ -221,7 +224,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
     event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
     function toSelect(bytes32 groupId) public {
-        StoremanGroup group = groups[groupId];
+        StoremanGroup storage group = groups[groupId];
         if(group.memberCount < group.memberCountDesign){
             group.status = GroupStatus.failed;
             return;
@@ -240,9 +243,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return;
     }
     function getSelectedSmInfo(bytes32 groupId, uint index) public view   returns(address, bytes){
-        StoremanGroup group = groups[groupId];
+        StoremanGroup storage group = groups[groupId];
         address addr = group.selectedNode[index];
-        Candidate sk = group.candidates[addr];
+        Candidate storage sk = group.candidates[addr];
         return (addr, sk.PK);
     }
 
@@ -251,8 +254,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         bool quited, bool  isWorking,uint  delegateFee,uint  deposit,uint  depositWeight,
         uint incentive, uint delegatorCount
         ){
-            StoremanGroup group = groups[groupId];
-            Candidate sk = group.candidates[wkAddress];
+            StoremanGroup storage group = groups[groupId];
+            Candidate storage sk = group.candidates[wkAddress];
 
             return (sk.sender,   sk.PK, sk.quited,
                 sk.isWorking,  sk.delegateFee, sk.deposit,
@@ -260,6 +263,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
             );
     }
     function setGpk(bytes32 groupId, bytes gpk) public {
+        StoremanGroup storage group = groups[groupId];
+        storemanGroupRegister(group.chain,groupId, gpk, group.txFeeRatio);
     }
     function testArray(uint[] types, address[] addrs) public {
         for(uint i = 0; i<types.length; i++) {
@@ -272,42 +277,45 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
     function getThresholdNumber(bytes32 groupId) external returns (uint){
-        StoremanGroup group = groups[groupId];
+        StoremanGroup storage group = groups[groupId];
         return group.threshold;
     }
+
+    event storemanGroupRegisterAddr(address);
 
     /// @notice                           function for storeman group register, this method should be
     ///                                   invoked by a storeman group registration delegate or wanchain foundation
     /// @param tokenOrigAccount           token account of original chain
     /// @param storemanGroup              storeman group PK
     /// @param txFeeRatio                 transaction fee ratio required by storeman group
-    function storemanGroupRegister(bytes tokenOrigAccount, bytes storemanGroup, uint txFeeRatio)
-        external
-        payable
-        notHalted
+    function storemanGroupRegister(bytes tokenOrigAccount, bytes32 groupId, bytes storemanGroup, uint txFeeRatio)
+        //internal
+        public
+        //notHalted
     {
         require(tokenOrigAccount.length != 0, "Invalid tokenOrigAccount");
         require(storemanGroup.length != 0, "Invalid storemanGroup");
-        require(storemanGroupMap[tokenOrigAccount][storemanGroup].deposit == 0, "Duplicate register");
+
+        require(storemanGroupMap[tokenOrigAccount][storemanGroup] == 0, "Duplicate register");
 
         uint8 decimals;
         uint token2WanRatio;
         uint minDeposit;
         uint defaultPrecise;
+
+        emit storemanGroupRegisterAddr(gtm);
         (,,decimals,,token2WanRatio,minDeposit,,defaultPrecise) = tokenManager.getTokenInfo(tokenOrigAccount);
-        require(minDeposit > 0, "Token doesn't exist");
-        require(msg.value >= minDeposit, "At lease minDeposit");
-        require(txFeeRatio < defaultPrecise, "Invalid txFeeRatio");
-        // if (isWhiteListEnabled) {
-        //     require(whiteListMap[tokenOrigAccount][storemanGroup], "Not in white list");
-        //     delete whiteListMap[tokenOrigAccount][storemanGroup];
-        // }
+        // require(minDeposit > 0, "Token doesn't exist");
+        // require(msg.value >= minDeposit, "At lease minDeposit");
+        // require(txFeeRatio < defaultPrecise, "Invalid txFeeRatio");
 
-        uint quota = (msg.value).mul(defaultPrecise).div(token2WanRatio).mul(10**uint(decimals)).div(1 ether);
-        htlc.addStoremanGroup(tokenOrigAccount, storemanGroup, quota, txFeeRatio);
-        //storemanGroupMap[tokenOrigAccount][storemanGroup] = StoremanGroup(msg.sender, msg.value, txFeeRatio, 0);
 
-        emit StoremanGroupRegistrationLogger(tokenOrigAccount, storemanGroup, msg.value, quota, txFeeRatio);
+        //uint quota = (msg.value).mul(defaultPrecise).div(token2WanRatio).mul(10**uint(decimals)).div(1 ether);
+        uint quota = 0x999999999999999;
+        //htlc.addStoremanGroup(tokenOrigAccount, storemanGroup, quota, txFeeRatio);
+        storemanGroupMap[tokenOrigAccount][storemanGroup] = groupId;
+
+        emit StoremanGroupRegistrationLogger(tokenOrigAccount, groupId,  storemanGroup, 0, quota, txFeeRatio);
     }
 
     /// @notice                           function for storeman group apply unregistration through the delegate
@@ -317,11 +325,12 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         external
         notHalted
     {
-        StoremanGroup storage smg = storemanGroupMap[tokenOrigAccount][storemanGroup];
+        bytes32 groupId = storemanGroupMap[tokenOrigAccount][storemanGroup];
+        StoremanGroup storage smg = groups[groupId];
         //require(msg.sender == smg.delegate, "Sender must be delegate");
         require(smg.unregisterApplyTime == 0, "Duplicate unregister");
         smg.unregisterApplyTime = now;
-        htlc.deactivateStoremanGroup(tokenOrigAccount, storemanGroup);
+        //htlc.deactivateStoremanGroup(tokenOrigAccount, storemanGroup);
 
         emit StoremanGroupApplyUnRegistrationLogger(tokenOrigAccount, storemanGroup, now);
     }
@@ -333,12 +342,13 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         external
         notHalted
     {
-        StoremanGroup storage smg = storemanGroupMap[tokenOrigAccount][storemanGroup];
+        bytes32 groupId = storemanGroupMap[tokenOrigAccount][storemanGroup];
+        StoremanGroup storage smg = groups[groupId];
         //require(msg.sender == smg.delegate, "Sender must be delegate");
         uint withdrawDelayTime;
         (,,,,,,withdrawDelayTime,) = tokenManager.getTokenInfo(tokenOrigAccount);
         require(now > smg.unregisterApplyTime.add(withdrawDelayTime), "Must wait until delay time");
-        htlc.delStoremanGroup(tokenOrigAccount, storemanGroup);
+        //htlc.delStoremanGroup(tokenOrigAccount, storemanGroup);
         //smg.delegate.transfer(smg.deposit);
 
         emit StoremanGroupWithdrawLogger(tokenOrigAccount, storemanGroup, smg.deposit, smg.deposit);
@@ -355,7 +365,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         notHalted
     {
         require(msg.value > 0, "Value too small");
-        StoremanGroup storage smg = storemanGroupMap[tokenOrigAccount][storemanGroup];
+        bytes32 groupId = storemanGroupMap[tokenOrigAccount][storemanGroup];
+        StoremanGroup storage smg = groups[groupId];        
         //require(msg.sender == smg.delegate, "Sender must be delegate");
         require(smg.unregisterApplyTime == 0, "Inactive");
 
@@ -365,7 +376,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         (,,decimals,,token2WanRatio,,,defaultPrecise) = tokenManager.getTokenInfo(tokenOrigAccount);
         uint deposit = smg.deposit.add(msg.value);
         uint quota = deposit.mul(defaultPrecise).div(token2WanRatio).mul(10**uint(decimals)).div(1 ether);
-        htlc.updateStoremanGroup(tokenOrigAccount, storemanGroup, quota);
+        //htlc.updateStoremanGroup(tokenOrigAccount, storemanGroup, quota);
         // TODO: notify bonus contract
         smg.deposit = deposit;
         emit StoremanGroupUpdateLogger(tokenOrigAccount, storemanGroup, deposit, quota, smg.txFeeRatio);
@@ -379,7 +390,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         view
         returns(address, uint, uint, uint)
     {
-        StoremanGroup storage smg = storemanGroupMap[tokenOrigAccount][storemanGroup];
+        bytes32 groupId = storemanGroupMap[tokenOrigAccount][storemanGroup];
+        StoremanGroup storage smg = groups[groupId];        
         return (address(0x00), smg.deposit, smg.txFeeRatio, smg.unregisterApplyTime);
     }
 

@@ -3,6 +3,7 @@ const utils = require("./utils");
 const Web3 = require('web3')
 const net = require('net')
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
+const TokenManagerDelegate = artifacts.require('TokenManagerDelegate')
 const pu = require('promisefy-util')
 
 const wanUtil = require('wanchain-util');
@@ -14,36 +15,7 @@ let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto
 let gGasLimit=900000;
 let gGasPrice=200000000000;
 
-/*************************************
-staker: 1000 ~ 1000+100
-delegator: stakerId*100 ~ stakerID*100+1000
- ****************************************/
-
- /*
- * @param sol
- * @param address
- * @returns {Promise<*>}
- */
-async function deploy(sol, address) {
-    let contract;
-    if (!await sol.isDeployed()) {
-        if(contractAddress){
-            contract = await utils.contractAt(sol, contractAddress);
-        } else {
-            contract = await utils.deployContract(sol, { from: address });
-            contractAddress = contract.address
-            console.log("new contractAddress:",contractAddress)
-        }
-    } else {
-        contract = await utils.contractAt(sol, sol.address);
-    }
-    lib.assertExists(contract);
-    return contract;
-}
-
-async function initContracts(accounts) {
-    return await deploy(StoremanGroupDelegate, accounts[0])
-}
+let EOS = utils.stringTobytes("EOS")
 
 
 contract('StoremanGroupDelegate', async (accounts) => {
@@ -52,7 +24,10 @@ contract('StoremanGroupDelegate', async (accounts) => {
     let id = utils.stringTobytes32(Date.now().toString())
 
     before("init contracts", async() => {
-        testInstance = await initContracts(accounts);
+
+        let tm = await TokenManagerDelegate.deployed()
+        await tm.addToken(EOS, 10000,'0x'+web3.utils.toWei("10").toString('hex'),60 * 60 * 72,EOS,EOS,8)
+        testInstance = await StoremanGroupDelegate.deployed()
         console.log("testInstance address:",testInstance.address)
     })
 

@@ -223,14 +223,15 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     /// @return withdrawDelayTime       the delay time for withdrawing deposit after storeman group applied un-registration
     /// @return DEFAULT_PRECISE         const value
     function getTokenInfo(bytes tokenOrigAccount)
-        external
-        view
-        onlyValidAccount(tokenOrigAccount)
+        // external
+        // view
+        // onlyValidAccount(tokenOrigAccount)
         returns(bytes, bytes, uint8, address, uint, uint, uint, uint)
     {
-        TokenInfo storage token = mapTokenInfo[tokenOrigAccount];
-        return (token.name, token.symbol, token.decimals, token.tokenWanAddr,
-                token.token2WanRatio, token.minDeposit, token.withdrawDelayTime, DEFAULT_PRECISE);
+        // TokenInfo storage token = mapTokenInfo[tokenOrigAccount];
+        // return (token.name, token.symbol, token.decimals, token.tokenWanAddr,
+        //         token.token2WanRatio, token.minDeposit, token.withdrawDelayTime, DEFAULT_PRECISE);
+        return (hex"aa",hex"bb",8, address(0x22),1,2,3,4);
     }
 
     /// @notice                      mint token for a supported token

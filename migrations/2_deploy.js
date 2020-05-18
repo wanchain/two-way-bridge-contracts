@@ -12,6 +12,7 @@ const HTLCProxy = artifacts.require('HTLCProxy');
 const HTLCDelegate = artifacts.require('HTLCDelegate');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
+const TestSmg = artifacts.require('TestSmg');
 
 const MetricProxy     = artifacts.require('MetricProxy');
 const MetricDelegate  = artifacts.require('MetricDelegate');
@@ -70,6 +71,10 @@ module.exports = async function(deployer){
     let smgDelegate = await StoremanGroupDelegate.deployed();
     await smgProxy.upgradeTo(smgDelegate.address);
 
+    await deployer.deploy(TestSmg);
+    let tsmg = await TestSmg.deployed();
+    await tsmg.setSmgAddr(smgProxy.address)
+    
     // token manager dependence
     let tm = await TokenManagerDelegate.at(tmProxy.address);
     await tm.setHtlcAddr(htlcProxy.address);
@@ -80,7 +85,8 @@ module.exports = async function(deployer){
 
     // storm group admin dependence
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
-    await smg.setDependence(tmProxy.address, htlcProxy.address);
+    let ddd = await smg.setDependence(tmProxy.address, htlcProxy.address);
+    //console.log("tmProxy:", tmProxy.address, ddd);
 
     //deploy metric
 
