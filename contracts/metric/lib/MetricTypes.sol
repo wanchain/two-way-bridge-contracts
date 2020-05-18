@@ -114,7 +114,7 @@ struct MetricStorageData {
 **/
 
 /// groupId -> hashx -> InctData
-mapping(bytes => mapping(bytes32 => InctData))                          mapInct;
+mapping(bytes32 => mapping(bytes32 => InctData))                          mapInct;
 
 
 /**
@@ -129,18 +129,18 @@ mapping(bytes => mapping(bytes32 => InctData))                          mapInct;
 
 // R slsh data
     // groupId -> hashx -> smIndex -> SlshData
-mapping(bytes => mapping(bytes32 => mapping(uint8 => RSlshData)))      mapRSlsh;
+mapping(bytes32 => mapping(bytes32 => mapping(uint8 => RSlshData)))      mapRSlsh;
 // R No Working data
 
     // groupId -> hashx -> RNWData(array of the sm index)
-mapping(bytes => mapping(bytes32 => RNWData))                           mapRNW;
+mapping(bytes32 => mapping(bytes32 => RNWData))                           mapRNW;
 
 // S slsh data
     // groupId -> hashx -> smIndex -> SSlshData
-mapping(bytes => mapping(bytes32 => mapping(uint8 => SSlshData)))     mapSSlsh;
+mapping(bytes32 => mapping(bytes32 => mapping(uint8 => SSlshData)))     mapSSlsh;
 // S No Working data
     // groupId -> hashx -> SNWData(array of the sm index)
-mapping(bytes => mapping(bytes32 => SNWData))                          mapSNW;
+mapping(bytes32 => mapping(bytes32 => SNWData))                          mapSNW;
 
 
 /**
@@ -149,9 +149,9 @@ mapping(bytes => mapping(bytes32 => SNWData))                          mapSNW;
 *
 */
 /// grpId -> epochId -> smIndex -> slsh count
-mapping(bytes => mapping(uint256 => mapping(uint8 => uint256)))   mapSlshCount;
+mapping(bytes32 => mapping(uint256 => mapping(uint8 => uint256)))   mapSlshCount;
 /// grpId -> epochId -> smIndex -> incentive count
-mapping(bytes => mapping(uint256 => mapping(uint8 => uint256)))   mapInctCount;
+mapping(bytes32 => mapping(uint256 => mapping(uint8 => uint256)))   mapInctCount;
 
 }
 
