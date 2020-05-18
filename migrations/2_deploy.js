@@ -17,6 +17,9 @@ const TestSmg = artifacts.require('TestSmg');
 const MetricProxy     = artifacts.require('MetricProxy');
 const MetricDelegate  = artifacts.require('MetricDelegate');
 
+const StoremanGroupProxy  = artifacts.require('StoremanGroupProxy');
+const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
+
 
 module.exports = async function(deployer){
     // test
