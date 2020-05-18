@@ -51,13 +51,11 @@ function stringTobytes32(name){
   let b = Buffer.alloc(32)
   b.write(name, 32-name.length,'utf8')
   let id = '0x'+b.toString('hex')
-  console.log("id:",id)
   return id
 }
 function stringTobytes(name){
   let b = Buffer.from(name,'utf8')
   let id = '0x'+b.toString('hex')
-  console.log("id:",id)
   return id
 }
 function getAddressFromInt(i){

@@ -10,8 +10,8 @@ const HTLCSmgLib = artifacts.require('HTLCSmgLib');
 const HTLCUserLib = artifacts.require('HTLCUserLib');
 const HTLCProxy = artifacts.require('HTLCProxy');
 const HTLCDelegate = artifacts.require('HTLCDelegate');
-const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
+const StoremanGroupProxy = artifacts.require('StoremanGroupProxy2');
+const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate2');
 const TestSmg = artifacts.require('TestSmg');
 
 const MetricProxy     = artifacts.require('MetricProxy');
@@ -69,7 +69,10 @@ module.exports = async function(deployer){
     let smgProxy = await StoremanGroupProxy.deployed();
     await deployer.deploy(StoremanGroupDelegate);
     let smgDelegate = await StoremanGroupDelegate.deployed();
+    console.log("smgDelegate.address:", smgDelegate.address)
     await smgProxy.upgradeTo(smgDelegate.address);
+    
+
 
     await deployer.deploy(TestSmg);
     let tsmg = await TestSmg.deployed();
@@ -79,14 +82,43 @@ module.exports = async function(deployer){
     let tm = await TokenManagerDelegate.at(tmProxy.address);
     await tm.setHtlcAddr(htlcProxy.address);
 
+
+
+
+
+
     // htlc dependence
     let htlc = await HTLCDelegate.at(htlcProxy.address);
     await htlc.setEconomics(tmProxy.address, smgProxy.address, 0);
 
+
+
     // storm group admin dependence
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
-    let ddd = await smg.setDependence(tmProxy.address, htlcProxy.address);
-    //console.log("tmProxy:", tmProxy.address, ddd);
+
+
+
+
+
+
+
+
+
+    // console.log("impold:", await smgProxy.implementation())
+    // console.log("smgDelegate.address:", smgDelegate.address)
+    // await smgProxy.upgradeTo(smgDelegate.address);
+
+
+
+
+    await smg.setDependence(tmProxy.address, htlcProxy.address);
+
+
+    // console.log("impold:", await smgProxy.implementation())
+    // console.log("smgDelegate.address:", smgDelegate.address)
+    // await smgProxy.upgradeTo(smgDelegate.address);
+
+
 
     //deploy metric
 
@@ -100,5 +132,9 @@ module.exports = async function(deployer){
 
     let metric = await MetricDelegate.at(metricProxy.address);
     await metric.setDependence(ADDRESS_MRTG,ADDRESS_MRTG);
+
+
+
+
 
 }

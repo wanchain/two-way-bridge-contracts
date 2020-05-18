@@ -1,4 +1,3 @@
-const lib = require("./lib");
 const utils = require("./utils");
 const Web3 = require('web3')
 const net = require('net')

@@ -30,9 +30,8 @@ import "../lib/SafeMath.sol";
 import "../components/Halt.sol";
 import "./StoremanGroupStorage.sol";
 
-contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
+contract StoremanGroupDelegate2 is StoremanGroupStorage, Halt {
     using SafeMath for uint;
-    address public  gtm;
 
     /**
      *
@@ -79,7 +78,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     * MANIPULATIONS
     *
     */
-event setDependenceEvent(address);
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param tmAddr                     token manager contract address
     /// @param htlcAddr                   htlc contract address
@@ -91,8 +89,6 @@ event setDependenceEvent(address);
         require(htlcAddr != address(0), "Invalid htlc address");
         tokenManager = ITokenManager(tmAddr);
         htlc = IHTLC(htlcAddr);
-        gtm = tmAddr;
-        setDependenceEvent(tmAddr);
     }
 
 
@@ -276,7 +272,6 @@ event setDependenceEvent(address);
         return group.threshold;
     }
 
-    event storemanGroupRegisterAddr(address);
 
     /// @notice                           function for storeman group register, this method should be
     ///                                   invoked by a storeman group registration delegate or wanchain foundation
@@ -298,7 +293,6 @@ event setDependenceEvent(address);
         uint minDeposit;
         uint defaultPrecise;
 
-        emit storemanGroupRegisterAddr(gtm);
         (,,decimals,,token2WanRatio,minDeposit,,defaultPrecise) = tokenManager.getTokenInfo(tokenOrigAccount);
         // require(minDeposit > 0, "Token doesn't exist");
         // require(msg.value >= minDeposit, "At lease minDeposit");
