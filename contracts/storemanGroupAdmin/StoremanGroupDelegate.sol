@@ -45,7 +45,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @param wanDeposit                 deposit wancoin number
     /// @param quota                      corresponding token quota
     /// @param txFeeRatio                 storeman fee ratio
-    event StoremanGroupRegistrationLogger(bytes indexed tokenOrigAccount, bytes32 indexed groupId,  bytes storemanGroup, uint wanDeposit, uint quota, uint txFeeRatio);
+    event StoremanGroupRegistrationLogger(bytes  tokenOrigAccount, bytes32 indexed groupId,  bytes storemanGroup, uint wanDeposit, uint quota, uint txFeeRatio);
 
     /// @notice                           event for storeman register
     /// @param storemanGroup              storeman group PK
