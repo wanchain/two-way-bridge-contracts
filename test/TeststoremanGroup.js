@@ -3,13 +3,15 @@ const Web3 = require('web3')
 const net = require('net')
 const ethutil = require("ethereumjs-util");
 const pu = require('promisefy-util')
+const schnorr = require('../utils/schnorr/tools.js');
 
 const TestSmg = artifacts.require('TestSmg')
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-
+const HTLCProxy = artifacts.require('HTLCProxy');
+const HTLCDelegate = artifacts.require('HTLCDelegate');
 const CreateGpkProxy = artifacts.require('CreateGpkProxy');
 
 const wanUtil = require('wanchain-util');
@@ -33,9 +35,16 @@ let EOS = utils.stringTobytes("EOS")
 
 
 contract('TestSmg', async (accounts) => {
-    let testInstance
     let tester = accounts[0]
     let id = utils.stringTobytes32(Date.now().toString())
+    let gaddr = '0xdfa84795344a019a2f13289789dbb74cb1a77065'
+    let gpk = '0x4da190ee5cde629aa0b95f82930d8d1540c648d93e1ce99a361d422b97437a40145f13cbe6d061ff93f226ea97786d4d66c0a3779479f3d10425e4e3f2aa11bb'
+    let skSmg ='0x000000000000000000000000000000000000000000000000000000000f270000'
+
+    // let gaddr = '0xdfa84795344a019a2f13289789dbb74cb1a77065'
+    // let gpk = '0x4da190ee5cde629aa0b95f82930d8d1540c648d93e1ce99a361d422b97437a40145f13cbe6d061ff93f226ea97786d4d66c0a3779479f3d10425e4e3f2aa11bb'
+    // let gpriv ='0x000000000000000000000000000000000000000000000000000000000f270000'
+
     const memberCountDesign = 4
     const threshold  = 3
     let smgProxy
@@ -44,8 +53,6 @@ contract('TestSmg', async (accounts) => {
     before("init contracts", async() => {
         if(!contractAddress) {
             smgProxy = await StoremanGroupProxy.deployed();
-            //let smgDelegate = await StoremanGroupDelegate.deployed();
-            //await smgProxy.upgradeTo(smgDelegate.address);
 
             smg = await StoremanGroupDelegate.at(smgProxy.address)
             contractAddress = smgProxy.address
@@ -59,12 +66,11 @@ contract('TestSmg', async (accounts) => {
         await tsmg.setSmgAddr(smgProxy.address)
 
         let tmProxy = await TokenManagerProxy.deployed();
-        let tm = await TokenManagerDelegate.deployed();
-        //await tmprx.upgradeTo(tm.address);
+        let tm = await TokenManagerDelegate.at(tmProxy.address);
 
-        await smg.setDependence(tmProxy.address, tmProxy.address);
+        //await smg.setDependence(tmProxy.address, tmProxy.address);
 
-        await tm.addToken(EOS, 10000,'0x'+web3.utils.toWei("10").toString('hex'),60 * 60 * 72,EOS,EOS,8)
+        await tm.addToken(EOS, 10000,'0x99999999',60 * 60 * 72,EOS,EOS,8)
         let t = await tm.getTokenInfo(EOS)
         console.log("tokens:", t)
 
@@ -169,14 +175,30 @@ contract('TestSmg', async (accounts) => {
 
     })
     it('setGpk', async() => {
-        let gpk = "0x04d2386b8a684e7be9f0d911c936092035dc2b112fe8c83fb602beac098183800237d173cf0e1e5a8cbb159bcdbdfbef67e25dbcc8b852e032aa2a9d7b0fe912a4"
        let tx =  await smg.setGpk(id, gpk)
        console.log("setGpk tx:", tx)
     })
-    // it('testSetGpk', async() => {
-    //     let gpk = "0x04d2386b8a684e7be9f0d911c936092035dc2b112fe8c83fb602beac098183800237d173cf0e1e5a8cbb159bcdbdfbef67e25dbcc8b852e032aa2a9d7b0fe912a4"
-    //    let tx =  await tsmg.testSetGpk(id, gpk)
-    //    console.log("tx:", tx)
-    // })
+
+    it('inSmgLock', async()=>{
+        let typesArray = ['bytes','bytes32','address','uint256'];
+        let xhash = utils.stringTobytes32("xhash")
+        let waddr =  utils.getAddressFromInt(3).addr
+        let value = 100;
+        let parameters = [EOS, xhash,waddr, value];
+    
+   
+        let s = schnorr.getS(skSmg, typesArray, parameters);
+        console.log("=====s===hex:", s);
+        let r = schnorr.getR()
+        console.log("=====R===hex:",r);
+
+        let htlcProxy = await HTLCProxy.deployed();
+        let htlc = await HTLCDelegate.at(htlcProxy.address);
+        console.log("htlcProxy.address:", htlcProxy.address)
+
+        let locktx = await htlc.inSmgLock(EOS, xhash, waddr, 100, gpk, utils.stringTobytes32("r"),utils.stringTobytes32("s"))   
+        console.log("locktx:", locktx); 
+    })
+
 
 })

@@ -68,7 +68,8 @@ contract StoremanGroupStorage is BasicStorage {
       bool  isWorking;
       uint  delegateFee;
       uint  deposit;         // 自有
-      uint  depositWeight; //total 自由+代理
+      uint  delegateDeposit; // delegate total.
+      uint  depositWeight; //total 自有+代理
       uint  incentive;       // without delegation.. set to 0 after incentive.
       uint  delegatorCount;
       mapping(uint=>address) addrMap;
