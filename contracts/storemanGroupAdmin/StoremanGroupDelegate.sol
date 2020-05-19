@@ -137,7 +137,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         StoremanGroup storage group = groups[index];
         address pkAddr = address(keccak256(PK));
-        Candidate memory sk = Candidate(msg.sender, enodeID, PK,pkAddr,false,false,false,delegateFee,msg.value,calSkWeight(msg.value),0,0);
+        Candidate memory sk = Candidate(msg.sender, enodeID, PK,pkAddr,false,false,false,delegateFee,msg.value,0,calSkWeight(msg.value),0,0);
         group.addrMap[group.memberCount] = pkAddr;
         group.memberCount++;
 
@@ -189,6 +189,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         Candidate storage sk = groups[index].candidates[skPkAddr];
         sk.addrMap[sk.delegatorCount] = msg.sender;
         sk.delegatorCount++;
+        sk.delegateDeposit  += msg.value;
         sk.depositWeight += msg.value;
         sk.delegators[msg.sender] = dk;
         if(groups[index].whiteWk[skPkAddr] == address(0x00)){
@@ -231,8 +232,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
             group.selectedNode[m] = group.whiteMap[m];
         }
         address[] memory members = new address[](group.memberCountDesign);
+        group.deposit = 0;        
         for(uint i=0; i<group.memberCountDesign; i++){
             members[i] = group.selectedNode[i];
+            Candidate storage sk = group.candidates[group.selectedNode[i]];
+            group.deposit += (sk.deposit+sk.delegateDeposit);
         }
         emit selectedEvent(groupId, group.memberCountDesign, members);
         group.status = GroupStatus.selected;
@@ -292,16 +296,18 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         uint token2WanRatio;
         uint minDeposit;
         uint defaultPrecise;
+        StoremanGroup storage group = groups[groupId];
 
         (,,decimals,,token2WanRatio,minDeposit,,defaultPrecise) = tokenManager.getTokenInfo(tokenOrigAccount);
-        // require(minDeposit > 0, "Token doesn't exist");
-        // require(msg.value >= minDeposit, "At lease minDeposit");
-        // require(txFeeRatio < defaultPrecise, "Invalid txFeeRatio");
+        require(minDeposit > 0, "Token doesn't exist");
+        //require(msg.value >= minDeposit, "At lease minDeposit");
+        //require(group.deposit >= minDeposit, "At lease minDeposit");
+        require(txFeeRatio < defaultPrecise, "Invalid txFeeRatio");
 
 
         //uint quota = (msg.value).mul(defaultPrecise).div(token2WanRatio).mul(10**uint(decimals)).div(1 ether);
-        uint quota = 0x999999999999999;
-        //htlc.addStoremanGroup(tokenOrigAccount, storemanGroup, quota, txFeeRatio);
+        uint quota = group.deposit;
+        htlc.addStoremanGroup(tokenOrigAccount, storemanGroup, quota, txFeeRatio);
         storemanGroupMap[tokenOrigAccount][storemanGroup] = groupId;
 
         emit StoremanGroupRegistrationLogger(tokenOrigAccount, groupId,  storemanGroup, 0, quota, txFeeRatio);

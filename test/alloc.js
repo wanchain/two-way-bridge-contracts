@@ -12,7 +12,7 @@ const wanutil = require('wanchain-util');
 
 async function getAddressFromInt(i){
     let b = Buffer.alloc(32)
-    b.writeUInt32LE(i,28)
+    b.writeUInt32BE(i,28)
     let pkb = ethutil.privateToPublic(b)
     let addr = '0x'+ethutil.pubToAddress(pkb).toString('hex')
     let pk = '0x'+pkb.toString('hex')
@@ -31,11 +31,12 @@ async function main() {
     let count=30
     let dlCount = 10
     for(let i=0; i<count; i++){
+        await getAddressFromInt(i+1000)
         let a = await getAddressFromInt(i+2000)
-        // let keystore = web3.eth.accounts.encrypt(a.priv.toString('hex'),'wanglu')
-        // keystore.waddress = wanutil.generateWaddrFromPriv(a.priv, a.priv);
-        // keystore.crypto2 = keystore.crypto;
-        // fs.writeFileSync('0x'+keystore.address, JSON.stringify(keystore))
+        let keystore = web3.eth.accounts.encrypt(a.priv.toString('hex'),'wanglu')
+        keystore.waddress = wanutil.generateWaddrFromPriv(a.priv, a.priv);
+        keystore.crypto2 = keystore.crypto;
+        fs.writeFileSync('0x'+keystore.address, JSON.stringify(keystore))
         for(let j=0; j<dlCount; j++){
             let a = await getAddressFromInt((i+1000)*1000*10+j)
             console.log("got address: ", i, j, a.addr)

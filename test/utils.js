@@ -60,12 +60,12 @@ function stringTobytes(name){
 }
 function getAddressFromInt(i){
   let b = Buffer.alloc(32)
-  b.writeUInt32LE(i,28)
+  b.writeUInt32BE(i,28)
   let pkb = ethutil.privateToPublic(b)
-  let priv = '0x'+b.toString('hex')
+  //console.log("priv:", '0x'+b.toString('hex')) 
   let addr = '0x'+ethutil.pubToAddress(pkb).toString('hex')
   let pk = '0x'+pkb.toString('hex')
-  console.log("got address: ",addr)
+  //console.log("got address: ",addr)
   return {addr, pk, priv:b}
 }
 

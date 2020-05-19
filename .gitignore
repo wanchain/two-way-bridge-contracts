@@ -1,7 +1,7 @@
 build
 node_modules
 cxt
-keystore
+#keystore
 package-lock.json
 coverage
 coverage.json

@@ -1,19 +1,32 @@
-const crypto 			= require('crypto');
-const BigInteger 	    = require('bigi');
-const ecurve 			= require('ecurve');
-const Web3EthAbi 	    = require('web3-eth-abi');
-const  ecparams 	    = ecurve.getCurveByName('secp256k1');
+const crypto = require('crypto');
+const BigInteger = require('bigi');
+const ecurve = require('ecurve');
+const Web3EthAbi = require('web3-eth-abi');
+const ecparams = ecurve.getCurveByName('secp256k1');
+const Point = ecurve.Point;
+const LenPtHexString = 130;
+const ByteLenOfSk = 32;
+const ErrPointNotOnCurve = "Point is not on curve";
+const ErrInvalidHexString = "not a hex string";
+const ErrInvalidHexStringLen = "Invalid hex string length";
 
 // buffer
-const r 			    = new Buffer("e7e59bebdcee876e84d03832544f5a517e96a9e3f60cd8f564bece6719d5af52", 'hex');
+const r = new Buffer("e7e59bebdcee876e84d03832544f5a517e96a9e3f60cd8f564bece6719d5af52", 'hex');
 // buffer
-let R					= baseScarMulti(r);
+let R = baseScarMulti(r);
 
 // sk*G
 // return: buff
 function baseScarMulti(sk) {
     let curvePt = ecparams.G.multiply(BigInteger.fromBuffer(sk));
     return curvePt.getEncoded(false);
+}
+
+// sk*G
+// return: buff
+function baseScarMultiPt(sk) {
+    let curvePt = ecparams.G.multiply(BigInteger.fromBuffer(sk));
+    return curvePt
 }
 
 // hash
@@ -32,7 +45,8 @@ function getSBuff(sk, m) {
     let mBig = BigInteger.fromBuffer(m);
     let retBig;
     retBig = rBig.add(skBig.multiply(mBig).mod(ecparams.n)).mod(ecparams.n);
-    return retBig.toBuffer(32);
+    //console.log("getSBuff m",bufferToHexString(mBig.toBuffer(ByteLenOfSk)));
+    return retBig.toBuffer(ByteLenOfSk);
 }
 
 // return: buffer
@@ -91,8 +105,118 @@ function getS(sk, typesArray, parameters) {
     return bufferToHexString(sBuff);
 }
 
+function getSByRawMsg(sk, rawMsg) {
+    let MBuff = new Buffer(removePrefix(rawMsg), 'hex');
+    //console.log("getSByRawMsg M",bufferToHexString(MBuff));
+    let M1Buff = computeM1(MBuff);
+    //console.log("getSByRawMsg M1",bufferToHexString(M1Buff));
+    let mBuff = computem(M1Buff, R);
+    //console.log("getSByRawMsg m",bufferToHexString(mBuff));
+    let sBuff = getSBuff(sk, mBuff);
+    //console.log("after getSBuff");
+    return bufferToHexString(sBuff);
+}
+
+function isHexString(hexStr) {
+    let str = removePrefix(hexStr);
+    if (str.length == 0) {
+        return false;
+    }
+    return /^[A-Fa-f0-9]+$/.test(str) && str.length % 2 == 0;
+}
+
+//  random      :hexstring
+//  sigS        :hexstring
+//  rawMessage  :hexstring
+//  pk          :hexstring
+// return true,false
+function verifySig(random, sigS, rawMessage, pk) {
+    if (!isHexString(random)) {
+        throw "random:" + ErrInvalidHexString;
+    }
+    if (!isHexString(sigS)) {
+        throw "sigS:" + ErrInvalidHexString;
+    }
+    if (!isHexString(rawMessage)) {
+        throw "rawMessage:" + ErrInvalidHexString;
+    }
+    if (!isHexString(pk)) {
+        throw "pk:" + ErrInvalidHexString;
+    }
+    // compute  left sG
+    let sBuffer = new Buffer(removePrefix(sigS), 'hex');
+    //console.log("sigS",bufferToHexString(sBuffer));
+    let left = baseScarMultiPt(sBuffer);
+
+    // compute  right R+m*pk
+    let ptR;
+    ptR = ptFromHex(random);
+    let isOnCurve = ecparams.isOnCurve(ptR);
+    if (!isOnCurve) {
+        throw "random:" + ErrPointNotOnCurve;
+    }
+
+    let ptMPk;
+    ptMPk = ptFromHex(pk);
+    isOnCurve = ecparams.isOnCurve(ptMPk);
+    if (!isOnCurve) {
+        throw "pk:" + ErrPointNotOnCurve;
+    }
+
+    let bnm = getbnMFromRaw(random, rawMessage);
+    //console.log("m",bufferToHexString(bnm.toBuffer(ByteLenOfSk)));
+    ptMPk = ptMPk.multiply(bnm);
+
+    let right;
+    right = ptR.add(ptMPk);
+
+    isOnCurve = ecparams.isOnCurve(left);
+    if (!isOnCurve) {
+        throw "left sG:" + ErrPointNotOnCurve;
+    }
+    isOnCurve = ecparams.isOnCurve(right);
+    if (!isOnCurve) {
+        throw "right R+m*PK:" + ErrPointNotOnCurve;
+    }
+    return left.equals(right);
+}
+
+function getbnMFromRaw(random, rawMsg) {
+    let bufRandom = new Buffer(removePrefix(random), 'hex');
+    let bufRawMsg = new Buffer(removePrefix(rawMsg), 'hex');
+
+    let M1Buff = computeM1(bufRawMsg);
+    let mBuff = computem(M1Buff, bufRandom);
+    return BigInteger.fromBuffer(mBuff);
+}
+
+function ptFromHex(hexStr) {
+    let hexStrTemp = removePrefix(hexStr);
+    let bnX, bnY;
+    if (hexStrTemp.length !== LenPtHexString) {
+        throw ErrInvalidHexStringLen;
+    }
+    bnX = BigInteger.fromBuffer(new Buffer(hexStrTemp.substring(2, 66), 'hex'));
+    bnY = BigInteger.fromBuffer(new Buffer(hexStrTemp.substring(66, LenPtHexString), 'hex'));
+
+    //console.log("bnX",bufferToHexString(bnX.toBuffer(ByteLenOfSk)));
+    //console.log("bnY",bufferToHexString(bnY.toBuffer(ByteLenOfSk)));
+    return Point.fromAffine(ecparams, bnX, bnY);
+}
+
+function removePrefix(hexStr) {
+    if (hexStr.length < 2) throw ErrInvalidHexString;
+    if (hexStr.substring(0, 2) === "0x" || hexStr.substring(0, 2) === "0X") {
+        return hexStr.substring(2);
+    } else {
+        return hexStr;
+    }
+}
+
 module.exports = {
     getS: getS,
     getPKBySk: getPKBySk,
-    getR: getR
+    getR: getR,
+    verifySig: verifySig,
+    getSByRawMsg: getSByRawMsg
 };
