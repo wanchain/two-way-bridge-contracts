@@ -8,8 +8,8 @@ const pu = require('promisefy-util')
 //const TestSmg = artifacts.require('TestSmg')
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
-const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate2')
-const StoremanGroupProxy = artifacts.require('StoremanGroupProxy2');
+const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
+const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;

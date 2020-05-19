@@ -30,7 +30,7 @@ import "../components/Halt.sol";
 import "./StoremanGroupStorage.sol";
 import "../components/Proxy.sol";
 
-contract StoremanGroupProxy2 is StoremanGroupStorage, Halt, Proxy {
+contract StoremanGroupProxy is StoremanGroupStorage, Halt, Proxy {
     /**
     *
     * MANIPULATIONS

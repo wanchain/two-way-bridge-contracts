@@ -10,8 +10,8 @@ const HTLCSmgLib = artifacts.require('HTLCSmgLib');
 const HTLCUserLib = artifacts.require('HTLCUserLib');
 const HTLCProxy = artifacts.require('HTLCProxy');
 const HTLCDelegate = artifacts.require('HTLCDelegate');
-const StoremanGroupProxy = artifacts.require('StoremanGroupProxy2');
-const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate2');
+const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
+const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const TestSmg = artifacts.require('TestSmg');
 
 const MetricProxy     = artifacts.require('MetricProxy');

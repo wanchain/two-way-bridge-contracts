@@ -30,7 +30,7 @@ import "../lib/SafeMath.sol";
 import "../components/Halt.sol";
 import "./StoremanGroupStorage.sol";
 
-contract StoremanGroupDelegate2 is StoremanGroupStorage, Halt {
+contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     using SafeMath for uint;
 
     /**
