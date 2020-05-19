@@ -14,7 +14,7 @@ const groupMap = new Map();
 const smgSc = wanchain.getContract('smg', config.contractAddress.smg);
 const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
 
-const evtTracker = new EventTracker('gpk', 611369, eventHandler);
+const evtTracker = new EventTracker('gpk', config.startBlock, eventHandler);
 evtTracker.subscribe('smg', config.contractAddress.smg, ["0x62487e9f333516e24026d78ce371e54c664a46271dcf5ffdafd8cd10ea75a5bf"]);
 evtTracker.start();
 

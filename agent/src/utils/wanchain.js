@@ -8,10 +8,11 @@ const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
 
 const keystore = JSON.parse(fs.readFileSync(config.keystore.path, "utf8"));
-console.log("keystore path: %s", config.keystore.path);
 const selfSk = keythereum.recover(config.keystore.pwd, keystore); // Buffer
 const selfPk = ethUtil.privateToPublic(selfSk); // Buffer
 const selfAddress = '0x' + ethUtil.pubToAddress(selfPk).toString('hex').toLowerCase();
+let selfNonce = 0;
+console.log("keystore path: %s", config.keystore.path);
 console.log("pk: %s", '0x04' + selfPk.toString('hex'));
 console.log("address: %s", selfAddress);
 
@@ -35,15 +36,23 @@ function getElapsed(baseTs) {
   return ((new Date() / 1000).toFixed(0) - baseTs);
 }
 
+async function updateNounce() {
+  try {
+    selfNonce = await web3.eth.getTransactionCount(selfAddress, 'pending');
+    console.error("update %s nonce %d", selfAddress, selfNonce);
+  } catch (err) {
+    console.error("update %s old nonce %d err: %O", selfAddress, selfNonce, err);
+  }
+}
+
 async function sendTx(contractAddr, data) {
   if (0 != data.indexOf('0x')){
     data = '0x' + data;
   }
 
-  let nonce = await web3.eth.getTransactionCount(selfAddress, 'pending');
   let rawTx = {
       Txtype: 0x01, // wanchain only
-      nonce: nonce,
+      nonce: selfNonce++,
       gasPrice: config.gasPrice,
       gasLimit: config.gasLimit,
       to: contractAddr,
@@ -51,7 +60,7 @@ async function sendTx(contractAddr, data) {
       value: '0x0',
       data: data
   };
-  // console.log("sendTx: %O", rawTx);
+  console.log("sendTx: %O", rawTx);
   let tx = new Tx(rawTx);
   tx.sign(selfSk);
 
@@ -153,6 +162,7 @@ module.exports = {
   selfAddress,
   getContract,
   getElapsed,
+  updateNounce,
   sendTx,
   getTxReceipt,
   sendPloyCommit,

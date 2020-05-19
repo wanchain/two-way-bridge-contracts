@@ -73,13 +73,14 @@ class Round {
       ps[i] = new Promise(async (resolve, reject) => {
         try {
           let sm = await this.smgSc.methods.getSelectedSmInfo(this.groupId, i).call();
-          smList[i] = sm[0]; // address
+          let address = sm[0].toLowerCase();
+          smList[i] = address;
           let pk = sm[1];
           if (pk.length == 130) {
             pk = '0x04' + pk.substr(2);
           }
-          this.send.set(sm[0], new Send(pk));
-          this.receive.set(sm[0], new Receive());
+          this.send.set(address, new Send(pk));
+          this.receive.set(address, new Receive());
           resolve();
         } catch (err) {
           reject(err);
@@ -97,7 +98,7 @@ class Round {
     let threshold = await this.smgSc.methods.getThresholdByGrpId(this.groupId).call();
     console.log("group %s threshold: %d", this.groupId, threshold);
     for (let i = 0; i < threshold; i++) {
-      this.poly[i] = encrypt.genRandom(32);
+      this.poly[i] = encrypt.genRandomCoef(32);
       this.polyCommit[i] = encrypt.mulG(this.poly[i]);
       console.log("init polyCommit %i: %s", i, this.polyCommit[i].getEncoded(false).toString('hex'));
     }
@@ -118,6 +119,8 @@ class Round {
 
   async mainLoop() {
     try {
+      await wanchain.updateNounce();
+
       let info = await this.createGpkSc.methods.getGroupInfo(this.groupId, this.round).call();
       this.status = parseInt(info[1]);
       this.statusTime = parseInt(info[2]);
@@ -437,9 +440,10 @@ class Round {
     let send = this.send.get(partner);
     let destPk = send.pk;
     let opts = {
-      iv: Buffer.from(encrypt.genRandom(16).toRadix(16), 'hex'),
-      ephemPrivateKey: Buffer.from(encrypt.genRandom(32).toRadix(16), 'hex')
+      iv: encrypt.genRandomBuffer(16),
+      ephemPrivateKey: encrypt.genRandomBuffer(32)
     };
+    console.log("iv: %s", opts.iv.toString('hex'));
     console.log("genEncSij partner: %s", partner);
     console.log("poly: %O", this.poly);
     console.log("destPk: %s", destPk);
@@ -448,19 +452,31 @@ class Round {
     try {
       send.encSij = await encrypt.encryptSij(destPk, send.sij, opts);
       send.ephemPrivateKey = '0x' + opts.ephemPrivateKey.toString('hex');
+      console.log("encSij: %s", send.encSij);
     } catch {
       send.sij = '';
     }
   }
   
   async procComplete() {
-    console.log('gpk group %s round %d is complete', this.groupId, this.round);
     this.stop();
+    console.log("pk group %s round %d is complete", this.groupId, this.round);
+
+    let i;
+    for (i = 0; i < this.smList.length; i++) {
+      if (this.smList[i] == wanchain.selfAddress) {
+        break;
+      }
+    }
+    let pkShare = await this.createGpkSc.methods.getPkShare(this.groupId, i).call();
+    let gpk = await this.createGpkSc.methods.getGpk(this.groupId).call();
+    console.log("get %s pkShare: %s", wanchain.selfAddress, pkShare);
+    console.log("get gpk 0: %s", gpk);
   }
   
   async procClose() {
-    console.log('gpk group %s round %d is closed', this.groupId, this.round);
     this.stop();
+    console.log("gpk group %s round %d is closed", this.groupId, this.round);
   }
 
   // belows are for POC only
@@ -486,6 +502,8 @@ class Round {
     }
     this.pkShare = '0x' + pkShare.getEncoded(false).toString('hex');
     this.gpk = '0x' + gpk.getEncoded(false).toString('hex');
+    console.log("gen pkShare: %s", this.pkShare);
+    console.log("gen gpk: %s", this.gpk);
   }
 
   async setGpk() {
@@ -512,26 +530,6 @@ class Round {
     this.gpkTxHash = await wanchain.sendGpk(this.groupId, this.gpk, this.pkShare);
     console.log("group %s round %d sendGpk hash: %s", this.groupId, this.round, this.gpkTxHash );
     return false;
-  }
-
-  async test() {
-    this.initSelfKey();
-    console.log("pk: %s", this.selfPk);
-    console.log("txAddress: %s", this.selfAddress);
-    /* encryptSij */
-    // let opts = {
-    //   iv: Buffer.from(encrypt.genRandom(16).toRadix(16), 'hex'),
-    //   ephemPrivateKey: Buffer.from(encrypt.genRandom(32).toRadix(16), 'hex')
-    // };
-    // console.log("iv: %s", opts.iv.toString('hex'));
-    // console.log("ephemPrivateKey: %s", opts.ephemPrivateKey.toString('hex'));
-    // this.initPoly();
-    // let sij = '0x' + encrypt.genSij(this.poly, this.selfPk).toRadix(16);
-    // let encrypted = await encrypt.encryptSij(this.selfPk, sij, opts);
-    // console.log("M: %s", sij);
-    // console.log("encrypted: %O", encrypted);
-    // let MR = await encrypt.decryptSij(this.selfSk, encrypted);
-    // console.log("MR: %s", MR);
   }
 }
 

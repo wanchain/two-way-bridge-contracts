@@ -9,7 +9,11 @@ const N = BigInteger.fromHex('fffffffffffffffffffffffffffffffebaaedce6af48a03bbf
 
 const PK_STR_LEN = 130;
 
-function genRandom(bytes) {
+function genRandomBuffer(bytes) {
+  return crypto.randomBytes(bytes);
+};
+
+function genRandomCoef(bytes) {
   let random = BigInteger.fromBuffer(crypto.randomBytes(bytes));
   return random.mod(N).add(BigInteger.valueOf(1));
 };
@@ -115,7 +119,8 @@ function recoverSiG(polyCommit) {
 };
 
 module.exports = {
-  genRandom,
+  genRandomBuffer,
+  genRandomCoef,
   mulG,
   genSij,
   encryptSij,

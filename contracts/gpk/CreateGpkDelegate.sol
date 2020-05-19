@@ -516,7 +516,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         return (d.encSij, uint8(d.checkStatus), d.setTime, d.checkTime, d.Sij, d.ephemPrivateKey);
     }
 
-    function getPkShareByIndex(bytes32 groupId, uint index)
+    function getPkShare(bytes32 groupId, uint index)
         external
         view
         returns(bytes)
@@ -526,7 +526,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         return group.roundMap[group.round].srcMap[src].pkShare;
     }
 
-    function getGPKByGrpId(bytes32 groupId)
+    function getGpk(bytes32 groupId)
         external
         view
         returns(bytes)
