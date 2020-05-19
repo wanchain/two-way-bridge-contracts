@@ -26,9 +26,11 @@ const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
 
 contract('TestSmg', async (accounts) => {
     let EOS = utils.stringTobytes("EOS")
-    let gaddr = '0xdfa84795344a019a2f13289789dbb74cb1a77065'
-    let gpk = '0x4da190ee5cde629aa0b95f82930d8d1540c648d93e1ce99a361d422b97437a40145f13cbe6d061ff93f226ea97786d4d66c0a3779479f3d10425e4e3f2aa11bb'
-    let skSmg ='0x000000000000000000000000000000000000000000000000000000000f270000'
+    
+    let gaddr = '0xf223ebd621fc35417023fdc52d3cc55de672e6de'
+    let gpk = '0x7793ef5f8e57e872ea9fbb18bd710ab96ea4f646134d3308930cbf62e73f0e1c8d5b3b793573090fa4a7e7e5c38fd987e889bc3e720e05b243e856f632ae7cc5'
+    let skSmg ='000000000000000000000000000000000000000000000000000000000000270f'
+
     let htlc;
     before("init contracts", async() => {
         let htlcProxy_address = "0x4a697A4FeFf854d9b39D5E2e81A6568997770453"; 
