@@ -40,7 +40,7 @@ async function sendTx(contractAddr, data) {
     data = '0x' + data;
   }
 
-  let nonce = await web3.eth.getTransactionCount(selfAddress);
+  let nonce = await web3.eth.getTransactionCount(selfAddress, 'pending');
   let rawTx = {
       Txtype: 0x01, // wanchain only
       nonce: nonce,
