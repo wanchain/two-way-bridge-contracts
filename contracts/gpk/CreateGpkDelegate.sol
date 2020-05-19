@@ -516,6 +516,25 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         return (d.encSij, uint8(d.checkStatus), d.setTime, d.checkTime, d.Sij, d.ephemPrivateKey);
     }
 
+    function getPkShareByIndex(bytes32 groupId, uint index)
+        external
+        view
+        returns(bytes)
+    {
+        Group storage group = groupMap[groupId];
+        address src = group.roundMap[group.round].indexMap[index];
+        return group.roundMap[group.round].srcMap[src].pkShare;
+    }
+
+    function getGPKByGrpId(bytes32 groupId)
+        external
+        view
+        returns(bytes)
+    {
+        Group storage group = groupMap[groupId];
+        return group.roundMap[group.round].gpk;
+    }
+
     /// @notice fallback function
     function () public payable {
         revert("Not support");
