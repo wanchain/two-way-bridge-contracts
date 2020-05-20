@@ -236,10 +236,7 @@ class Round {
 
   async procNegotiate() {
     await this.polyCommitReceive();
-    let gpkDone = await this.setGpk();
-    if (!gpkDone) {
-      return;
-    }
+    await this.setGpk();
     await Promise.all(this.smList.map(sm => {
       return new Promise(async (resolve, reject) => {
         try {
@@ -321,9 +318,10 @@ class Round {
     }
     this.skShare = '0x' + skShare.toRadix(16);
     this.pkShare = '0x' + encrypt.mulG(skShare).getEncoded(false).toString('hex');
-    wanchain.genKeystoreFile(this.groupId, this.skShare, 'wanglu');
-    console.log("genKeyShare skShare: %s", this.skShare);
-    console.log("genKeyShare pkShare: %s", this.pkShare);
+    wanchain.genKeystoreFile(this.gpk, this.skShare, config.keystore.pwd);
+    console.log("gen skShare: %s", this.skShare);
+    console.log("gen pkShare: %s", this.pkShare);
+    console.log("gen keystore file: %s", this.gpk);
   }
 
   async negotiateCheckTx(partner) {
@@ -433,7 +431,7 @@ class Round {
     }
     if (!send.encSijTxHash) {
       send.encSijTxHash = await wanchain.sendEncSij(this.groupId, partner, send.encSij);
-      console.log("group %s round %d sendEncSij to %s hash: %s", this.groupId, this.round, partner, send.encSijTxHash);
+      console.log("group %s round %d sendEncSij %s to %s hash: %s", this.groupId, this.round, send.encSij, partner, send.encSijTxHash);
     }
   }
 
@@ -471,7 +469,7 @@ class Round {
     let pkShare = await this.createGpkSc.methods.getPkShare(this.groupId, i).call();
     let gpk = await this.createGpkSc.methods.getGpk(this.groupId).call();
     console.log("get index %d %s pkShare: %s", i, wanchain.selfAddress, pkShare);
-    console.log("get gpk 0: %s", gpk);
+    console.log("get gpk: %s", gpk);
   }
   
   async procClose() {
@@ -507,29 +505,25 @@ class Round {
   }
 
   async setGpk() {
-    if (!this.gpk) {
-      return false;
-    }
-    if (this.gpkDone) {
-      return true;
+    if (this.gpkDone || !this.gpk) {
+      return;
     }
     if (this.gpkTxHash) {
       let receipt = await wanchain.getTxReceipt(this.gpkTxHash);
       if (receipt) {
         if (receipt.status) {
           this.gpkDone = true;
-          return true;
+          return;
         } else {
           this.gpkTxHash = '';
         }
       } else {
-        return false;
+        return;
       }
     }
     // first send or resend
     this.gpkTxHash = await wanchain.sendGpk(this.groupId, this.gpk, this.pkShare);
     console.log("group %s round %d sendGpk hash: %s", this.groupId, this.round, this.gpkTxHash );
-    return false;
   }
 }
 
