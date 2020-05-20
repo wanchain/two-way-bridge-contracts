@@ -404,7 +404,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     function genGpk(Round storage round)
         internal
     {
-        round.gpk = new bytes(0); // TODO
+        round.gpk = round.gpk; // TODO
     }
 
     /// @notice                           function for verify Sij to judge challenge
@@ -426,7 +426,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     function genPkShare(Round storage round, address src)
         internal
     {
-        round.srcMap[src].pkShare = new bytes(0); // TODO
+        round.srcMap[src].pkShare = round.srcMap[src].pkShare; // TODO
     }
 
     /// @notice                           function for slash

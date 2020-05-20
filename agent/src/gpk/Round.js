@@ -321,6 +321,7 @@ class Round {
     }
     this.skShare = '0x' + skShare.toRadix(16);
     this.pkShare = '0x' + encrypt.mulG(skShare).getEncoded(false).toString('hex');
+    wanchain.genKeystoreFile(this.groupId, this.skShare, 'wanglu');
     console.log("genKeyShare skShare: %s", this.skShare);
     console.log("genKeyShare pkShare: %s", this.pkShare);
   }
@@ -445,14 +446,13 @@ class Round {
     };
     console.log("iv: %s", opts.iv.toString('hex'));
     console.log("genEncSij partner: %s", partner);
-    console.log("poly: %O", this.poly);
     console.log("destPk: %s", destPk);
     send.sij = '0x' + encrypt.genSij(this.poly, destPk).toRadix(16);
     console.log("sij: %s", send.sij);
     try {
       send.encSij = await encrypt.encryptSij(destPk, send.sij, opts);
       send.ephemPrivateKey = '0x' + opts.ephemPrivateKey.toString('hex');
-      console.log("encSij: %s", send.encSij);
+      console.log("gen encSij: %s", send.encSij);
     } catch {
       send.sij = '';
     }
@@ -470,7 +470,7 @@ class Round {
     }
     let pkShare = await this.createGpkSc.methods.getPkShare(this.groupId, i).call();
     let gpk = await this.createGpkSc.methods.getGpk(this.groupId).call();
-    console.log("get %s pkShare: %s", wanchain.selfAddress, pkShare);
+    console.log("get index %d %s pkShare: %s", i, wanchain.selfAddress, pkShare);
     console.log("get gpk 0: %s", gpk);
   }
   

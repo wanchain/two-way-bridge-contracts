@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const config = require('../../cfg/config');
 const abiMap = require('../../cfg/abi');
 const keythereum = require('keythereum');
@@ -150,6 +151,12 @@ function getEvents(options) {
   return web3.eth.getPastLogs(options); // promise
 }
 
+function genKeystoreFile(groupId, sk, password) {
+  let content = JSON.stringify(web3.eth.accounts.encrypt(sk, password));
+  let fp = path.join(__dirname, '../../keystore/', groupId);
+  fs.writeFileSync(fp, content, 'utf8');
+}
+
 async function sendGpk(groupId, gpk, pkShare) { // only for poc
   let txData = await createGpkSc.methods.setGpk(groupId, gpk, pkShare).encodeABI();
   let txHash = await sendTx(config.contractAddress.createGpk, txData);
@@ -175,5 +182,6 @@ module.exports = {
   sendSijTimeout,
   getBlockNumber,
   getEvents,
+  genKeystoreFile,
   sendGpk
 }
