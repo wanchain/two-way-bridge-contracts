@@ -52,6 +52,7 @@ function getSBuff(sk, m) {
 // return: buffer
 function computeM1(M) {
     let M1 = h(M);
+    console.log("message hash:", '0x'+M1.toString('hex'))
     return M1;
 }
 

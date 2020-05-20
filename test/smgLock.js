@@ -26,19 +26,20 @@ const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
 
 contract('TestSmg', async (accounts) => {
     let EOS = utils.stringTobytes("EOS")
-    
-    let gaddr = '0xf223ebd621fc35417023fdc52d3cc55de672e6de'
-    let gpk = '0x7793ef5f8e57e872ea9fbb18bd710ab96ea4f646134d3308930cbf62e73f0e1c8d5b3b793573090fa4a7e7e5c38fd987e889bc3e720e05b243e856f632ae7cc5'
-    let skSmg ='000000000000000000000000000000000000000000000000000000000000270f'
+
+    let gpk = '0x04a4a90e6b3914780a66e3d34134478ffe455b657705d9c71bf48f66b52e486ed8362d850558f152ff03a5210a63625438cbaa9cb924bd90d597299cf9c3bcbe70';
+    let skSmg ='0x000000000000000000000000000000000000000000000000000000000000270f'
+    console.log("gpk:",schnorr.getPKBySk(skSmg))
 
     let htlc;
     before("init contracts", async() => {
-        let htlcProxy_address = "0x4a697A4FeFf854d9b39D5E2e81A6568997770453"; 
+        let htlcProxy_address = "0x1dBEffEDbc8C349a53E6c18ec0521A27d6e9D085"; 
         htlc = await HTLCDelegate.at(htlcProxy_address);
     })
     it("lock", async ()=>{
         let xhash = utils.stringTobytes32("xhash")
-        let typesArray = ['bytes','bytes32','address','uint256'];
+        let waddr =  utils.getAddressFromInt(3).addr
+        let typesArray = ['bytes','bytes32','address','uint'];
         let parameters = [EOS, xhash, waddr, 100];
     
    

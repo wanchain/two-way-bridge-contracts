@@ -5,9 +5,9 @@ function main() {
 
 
 
-    for(let i=9999; i<10000; i++){
+    for(let i=3000; i<3008; i++){
         let n = utils.getAddressFromInt(i)
-        console.log(n.addr, n.priv.toString('hex'), n.pk)
+        console.log( n.priv.toString('hex'), n.pk)
     }
 }
 
