@@ -166,19 +166,16 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return deposit*15/10;
     }
     event incentive(bytes32 indexed index, address indexed to, uint indexed delegatorCount);
-    function testIncentiveAll(bytes32 index) public  {
+    function testIncentiveAll(bytes32 index, address wkAddr) public  {
         StoremanGroup storage group = groups[index];
-        for(uint i = 0; i<group.memberCountDesign; i++) { //todo change to working.
-            address skAddr = group.selectedNode[i];
-            Candidate sk = group.candidates[skAddr];
-            sk.incentive += calIncentive(1000, sk.deposit,false);
-            emit incentive(index, sk.sender, sk.delegatorCount);
+        Candidate storage sk = group.candidates[wkAddr];
+        sk.incentive += calIncentive(1000, sk.deposit,false);
+        emit incentive(index, sk.sender, sk.delegatorCount);
 
-            for(uint j = 0; j < sk.delegatorCount; j++){
-                address deAddr = sk.addrMap[j];
-                Delegator de = sk.delegators[deAddr];
-                de.incentive += calIncentive(1000, de.deposit, true);
-            }
+        for(uint j = 0; j < sk.delegatorCount; j++){
+            address deAddr = sk.addrMap[j];
+            Delegator storage de = sk.delegators[deAddr];
+            de.incentive += calIncentive(1000, de.deposit, true);
         }
     }
     function addDelegator(bytes32 index, address skPkAddr)
