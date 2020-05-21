@@ -316,7 +316,7 @@ class Round {
         skShare = encrypt.addSij(skShare, sij);
       }
     }
-    this.skShare = '0x' + skShare.toRadix(16);
+    this.skShare = '0x' + skShare.toBuffer(32).toString('hex');
     this.pkShare = '0x' + encrypt.mulG(skShare).getEncoded(false).toString('hex');
     wanchain.genKeystoreFile(this.gpk, this.skShare, config.keystore.pwd);
     console.log("gen skShare: %s", this.skShare);
@@ -445,7 +445,7 @@ class Round {
     console.log("iv: %s", opts.iv.toString('hex'));
     console.log("genEncSij partner: %s", partner);
     console.log("destPk: %s", destPk);
-    send.sij = '0x' + encrypt.genSij(this.poly, destPk).toRadix(16);
+    send.sij = '0x' + encrypt.genSij(this.poly, destPk).toBuffer(32).toString('hex');
     console.log("sij: %s", send.sij);
     try {
       send.encSij = await encrypt.encryptSij(destPk, send.sij, opts);

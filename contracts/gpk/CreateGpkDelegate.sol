@@ -204,7 +204,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     function setEncSij(bytes32 groupId, address dest, bytes encSij)
         external
     {
-        // require(encSij.length == 161, "Invalid encSij");
+        require(encSij.length == 161, "Invalid encSij");
         Group storage group = groupMap[groupId];
         Round storage round = group.roundMap[group.round];
         checkValid(round, GroupStatus.Negotiate, dest, true);
