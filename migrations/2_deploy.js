@@ -102,8 +102,6 @@ module.exports = async function(deployer){
 
     //deploy metric
 
-    const ADDRESS_MRTG                  = '0x0000000000000000000000000000000000000002';
-
     await deployer.deploy(MetricProxy);
     let metricProxy = await MetricProxy.deployed();
     await deployer.deploy(MetricDelegate);
@@ -111,7 +109,7 @@ module.exports = async function(deployer){
     await metricProxy.upgradeTo(metricDlg.address);
 
     let metric = await MetricDelegate.at(metricProxy.address);
-    await metric.setDependence(ADDRESS_MRTG,ADDRESS_MRTG);
+    await metric.setDependence(smgProxy.address,smgProxy.address);
 
     // create gpk sc
     await deployer.deploy(CreateGpkProxy);
