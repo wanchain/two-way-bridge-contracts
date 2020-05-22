@@ -28,10 +28,9 @@ function recoverProcess() {
       let ctx = JSON.parse(fs.readFileSync(p, 'utf-8'));
       let round = new Round('', 0);
       Object.assign(round, ctx);
-      round.initSc();
       groupMap.set(round.groupId, round);
-      round.next(3000);
-      console.log("round: %O", round);
+      round.resume();
+      console.log("%s gpk agent resume group %s round %d", new Date(), round.groupId, round.round);
     }
   });
 }
@@ -72,7 +71,7 @@ async function procSmgSelectedEvent(evt) {
       let newRound = new Round(groupId, round);
       groupMap.set(groupId, newRound);
       await newRound.start();
-      console.log("%s gpk agent start group %s new round %d", new Date(), groupId, round);
+      console.log("%s gpk agent start group %s round %d", new Date(), groupId, round);
     } else {
       console.error("%s gpk agent ignore group %s round %d status %d event", new Date(), groupId, round, status);
     }

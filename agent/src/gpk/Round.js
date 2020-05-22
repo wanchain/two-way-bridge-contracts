@@ -56,9 +56,15 @@ class Round {
     this.initSelfKey();
     await this.initSmList();
     this.initPoly();
-    console.log("init gpk group %s", this.groupId);
+    console.log("start gpk group %s round %d", this.groupId, this.round);
     this.next(3000);
   }
+
+  async resume() {
+    this.initSc();
+    console.log("resume gpk group %s round %d", this.groupId, this.round);
+    this.next(3000);
+  }  
 
   initSc() {
     this.smgSc = wanchain.getContract('smg', config.contractAddress.smg);
