@@ -8,8 +8,8 @@ exports.keystore = {
 }
 
 exports.contractAddress = {
-  smg: '0x04F15547ea2705D0a810f5C9Afc361338b2ec5c0',
-  createGpk: '0xCa3E87A214CA65fe7C8B8611C488A4b0224c229C',
+  smg: '0x548e8648Ae4A6bad37C2097eB04dB3a277cB0156',
+  createGpk: '0x779a0C0b624eCbBa67bb61F58988153dc3067c43',
 }
 
 exports.startBlock = 928750;

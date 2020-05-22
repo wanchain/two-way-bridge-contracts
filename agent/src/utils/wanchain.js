@@ -165,6 +165,14 @@ async function sendGpk(groupId, gpk, pkShare) { // only for poc
   return txHash;  
 }
 
+async function getPosAvgReturn() {
+  let now = (new Date().getTime() / 1000).toFixed(0);
+  let result = await createGpkSc.methods.getPosAvgReturn(now - 86400 * 3, now - 86400 * 3 + 120).call();
+  console.log("%d getPosAvgReturn: %O", now, result);
+}
+
+getPosAvgReturn();
+
 module.exports = {
   selfSk,
   selfPk,
