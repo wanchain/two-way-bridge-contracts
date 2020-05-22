@@ -52,13 +52,17 @@ class Round {
   }
 
   async start() {
-    this.smgSc = wanchain.getContract('smg', config.contractAddress.smg);
-    this.createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
+    this.initSc();
     this.initSelfKey();
     await this.initSmList();
     this.initPoly();
     console.log("init gpk group %s", this.groupId);
     this.next(3000);
+  }
+
+  initSc() {
+    this.smgSc = wanchain.getContract('smg', config.contractAddress.smg);
+    this.createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
   }
 
   initSelfKey() {
@@ -108,10 +112,11 @@ class Round {
   }
 
   next(interval = 60000) {
-    this.saveProgress();
     if (this.toStop) {
+      this.removeProgress()
       return;
     }
+    this.saveProgress();
     setTimeout(() => {
       this.mainLoop();
     }, interval);
@@ -123,6 +128,11 @@ class Round {
     copy.createGpkSc = null;
     let fp = path.join(__dirname, '../../cxt/', this.groupId + '.cxt');
     fs.writeFileSync(fp, JSON.stringify(copy), 'utf8');
+  }
+
+  removeProgress() {
+    let fp = path.join(__dirname, '../../cxt/', this.groupId + '.cxt');
+    fs.unlinkSync(fp);
   }
 
   stop() {

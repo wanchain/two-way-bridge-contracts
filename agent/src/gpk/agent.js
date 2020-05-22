@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const config = require('../../cfg/config');
 const Round = require('./Round');
 const EventTracker = require('../utils/EventTracker');
@@ -13,6 +15,26 @@ const groupMap = new Map();
 
 const smgSc = wanchain.getContract('smg', config.contractAddress.smg);
 const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
+
+recoverProcess();
+
+function recoverProcess() {
+  let dir = path.join(__dirname, '../../cxt/');
+  let files = fs.readdirSync(dir);
+  files.forEach(file => {
+    if (file.match(/^0x[0-9a-f]{64}\.cxt$/)) {
+      console.log("recoverProcess: %s", file);
+      let p = path.join(dir, file);
+      let ctx = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      let round = new Round('', 0);
+      Object.assign(round, ctx);
+      round.initSc();
+      groupMap.set(round.groupId, round);
+      round.next(3000);
+      console.log("round: %O", round);
+    }
+  });
+}
 
 const evtTracker = new EventTracker('gpk', config.startBlock, eventHandler);
 evtTracker.subscribe('smg_selectedEvent', config.contractAddress.smg, ["0x62487e9f333516e24026d78ce371e54c664a46271dcf5ffdafd8cd10ea75a5bf"]);
