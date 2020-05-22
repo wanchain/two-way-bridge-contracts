@@ -91,7 +91,7 @@ async function sendPloyCommit(groupId, polyCommit) {
   let buf = Buffer.alloc(order * 65);
   let offset = 0;
   for (let i = 0; i < order; i++) {
-    let temp = polyCommit[i].getEncoded(false);
+    let temp = Buffer.from(polyCommit[i].substr(2), 'hex');
     temp.copy(buf, offset);
     offset += 65;
   }

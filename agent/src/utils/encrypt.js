@@ -34,7 +34,8 @@ function genSij(polyCoef, pk) {
   let sij = null;
   let order = polyCoef.length;
   for (let o = 0; o < order; o++) {
-    let temp = hj.modPowInt(o, N).multiply(polyCoef[o]).mod(N);
+    let poly = BigInteger.fromHex(polyCoef[o].substr(2));
+    let temp = hj.modPowInt(o, N).multiply(poly).mod(N);
     if (!sij) {
       sij = temp;
     } else {
@@ -65,7 +66,8 @@ async function decryptSij(sk, encSij) {
       ciphertext: Buffer.from(encSij.substr(164, encSij.length - 228), 'hex'),
       mac: Buffer.from(encSij.substr(-64), 'hex')
     }
-    let M = await eccrypto.decrypt(sk, opts);
+    let skBuf = Buffer.from(sk.substr(2), 'hex');
+    let M = await eccrypto.decrypt(skBuf, opts);
     return '0x' + M.toString('hex');
   } catch (err) {
     console.error("decryptSij err: %O", err);
