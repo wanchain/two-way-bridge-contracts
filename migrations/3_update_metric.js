@@ -5,7 +5,7 @@ const MetricDelegate  = artifacts.require('MetricDelegate');
 module.exports = async function(deployer){
 
     //deploy metric
-    let metricProxyAddr='0x8e84b41800d7915aD3fF9E6bbba434c7ca99fB95';
+    let metricProxyAddr='0x2208577B3329101A4C168f95Be34A54C61c33b9A';
     let smgProxyAddr='0x49fde469b39389Cd93999A3Ec092143C01c5f411';
 
 

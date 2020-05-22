@@ -57,6 +57,13 @@ contract MetricDelegate is MetricStorage, Halt {
      * MANIPULATIONS
      *
      */
+    function getDependence()
+    external
+    view
+    returns (address,address)
+    {
+        return (config,smg);
+    }
 
     ///=======================================statistic=============================================
     function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId)
