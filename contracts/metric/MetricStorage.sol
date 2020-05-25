@@ -41,7 +41,7 @@ contract MetricStorage is BasicStorage {
      **/
     event SMSlshLogger(bytes32 indexed grpId, bytes32 indexed hashX, uint8 indexed smIndex, MetricTypes.SlshReason slshReason);
 
-    event SMInvSlshLogger(address slshWriter,bytes32 indexed grpId, bytes32 indexed hashX, uint8 indexed smIndex, MetricTypes.SlshReason slshReason);
+    event SMInvSlshLogger(address slshWriter, bytes32 indexed grpId, bytes32 indexed hashX, uint8 indexed smIndex, MetricTypes.SlshReason slshReason);
 
     /// config instance address
     IConfig public config;
