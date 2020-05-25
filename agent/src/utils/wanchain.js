@@ -165,13 +165,33 @@ async function sendGpk(groupId, gpk, pkShare) { // only for poc
   return txHash;  
 }
 
+// test precompile contract
+
+const encrypt = require('./encrypt');
+
+const preCompileSc = getContract('PreCompile', config.contractAddress.preCompile);
+
 async function getPosAvgReturn() {
   let now = (new Date().getTime() / 1000).toFixed(0);
   let result = await createGpkSc.methods.getPosAvgReturn(now - 86400 * 3, now - 86400 * 3 + 120).call();
   console.log("%d getPosAvgReturn: %O", now, result);
 }
 
-getPosAvgReturn();
+async function testAddPointRaw() {
+  let p1 = encrypt.mulG(encrypt.genRandomCoef(32)).getEncoded(false).toString('hex');
+  let p2 = encrypt.mulG(encrypt.genRandomCoef(32)).getEncoded(false).toString('hex');
+  let x1 = '0x' + p1.substr(2);
+  let y1 = '0x' + p1.substr(66);
+  let x2 = '0x' + p2.substr(2);
+  let y2 = '0x' + p2.substr(66);
+  console.log("testAddPointRaw input: x1=%s, y1=%s, x2=%s, y2=%s", x1, y1, x2, y2);
+  let result = await preCompileSc.methods.add(x1, y1, x2, y2).call();
+  console.log("testAddPointRaw output %O", result);
+  // console.log("testAddPointRaw output %s: x=%s, y=%s", result[2], result[0], result[1]);
+}
+
+// getPosAvgReturn();
+// testAddPointRaw();
 
 module.exports = {
   selfSk,

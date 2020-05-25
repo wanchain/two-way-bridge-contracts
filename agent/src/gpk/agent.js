@@ -66,7 +66,7 @@ async function procSmgSelectedEvent(evt) {
   let info = await createGpkSc.methods.getGroupInfo(groupId, -1).call();
   console.log("agent get group: %O", info);
   let round = info[0], status = info[1];
-  if ((status != GroupStatus.Close) && checkSelfSelected(groupId)) {
+  if ((status == GroupStatus.PolyCommit) && checkSelfSelected(groupId)) {
     if ((!group) || (group.round < round)) {
       let newRound = new Round(groupId, round);
       groupMap.set(groupId, newRound);
