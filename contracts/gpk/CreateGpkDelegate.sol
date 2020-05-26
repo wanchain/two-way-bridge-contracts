@@ -195,9 +195,9 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         Src storage src = round.srcMap[msg.sender];
         require(src.pkShare.length == 0, "Duplicate");
         src.pkShare = pkShare;
-        // if (msg.sender == round.indexMap[0]) { // leader
-        //   round.gpk = gpk;
-        // }
+        if (msg.sender == round.indexMap[0]) { // leader
+          round.gpk = gpk;
+        }
     }
 
     /// @notice                           function for src storeman submit encSij
