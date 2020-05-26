@@ -23,7 +23,11 @@ const CreateGpkProxy  = artifacts.require('CreateGpkProxy');
 const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
 
 
-module.exports = async function(deployer){
+module.exports = async function(deployer, network){
+    // if (network == 'development') {
+    //   return;
+    // }
+
     // test
     //await deployer.deploy(TestStoremanGroup);
 
