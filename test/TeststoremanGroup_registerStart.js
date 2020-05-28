@@ -26,46 +26,30 @@ delegator: stakerId*100 ~ stakerID*100+1000
  ****************************************/
 
 
-
 let EOS = utils.stringTobytes("EOS")
 
 
 
-contract('smg', async (accounts) => {
+contract('TestSmg', async (accounts) => {
     let tester = accounts[0]
     let id = utils.stringTobytes32(Date.now().toString())
+    let gaddr = '0xf223ebd621fc35417023fdc52d3cc55de672e6de'
+    //let gpk = '0x047793ef5f8e57e872ea9fbb18bd710ab96ea4f646134d3308930cbf62e73f0e1c8d5b3b793573090fa4a7e7e5c38fd987e889bc3e720e05b243e856f632ae7cc5'
+    let gpk = '0x04a4a90e6b3914780a66e3d34134478ffe455b657705d9c71bf48f66b52e486ed8362d850558f152ff03a5210a63625438cbaa9cb924bd90d597299cf9c3bcbe70';
+    let skSmg ='0x000000000000000000000000000000000000000000000000000000000000270f'
+
+
     const memberCountDesign = 4
     const threshold  = 3
     let smgProxy
     let  smg
 
     before("init contracts", async() => {
-        if(!contractAddress) {
-            smgProxy = await StoremanGroupProxy.deployed();
-            let impold = await smgProxy.implementation()
-            console.log("impold:", impold)
-            let smgDelegate = await StoremanGroupDelegate.deployed();
-            console.log("smgDelegate.address:", smgDelegate.address)
-            await smgProxy.upgradeTo(smgDelegate.address);
-            
-            smg = await StoremanGroupDelegate.at(smgDelegate.address)
-            contractAddress = smgDelegate.address
-            console.log("==============================storemanGroup smgProxy contractAddress: ", contractAddress)
-        }
+        smgProxy = await StoremanGroupProxy.deployed();
 
-    
-        // tsmg = await TestSmg.deployed();
-        // await tsmg.setSmgAddr(smgProxy.address)
-
-        let tmProxy = await TokenManagerProxy.deployed();
-        let tm = await TokenManagerDelegate.deployed();
-        //await tmprx.upgradeTo(tm.address);
-
-        await smg.setDependence(tmProxy.address, tmProxy.address);
-
-        await tm.addToken(EOS, 10000,'0x'+web3.utils.toWei("10").toString('hex'),60 * 60 * 72,EOS,EOS,8)
-        let t = await tm.getTokenInfo(EOS)
-        console.log("tokens:", t)
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        contractAddress = smgProxy.address
+        console.log("==============================storemanGroup smgProxy contractAddress: ", contractAddress)
 
     })
 

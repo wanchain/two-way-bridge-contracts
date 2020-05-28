@@ -29,14 +29,14 @@ async function getAddressFromInt(i){
 
 async function main() {
     let count=30
-    let dlCount = 10
+    let dlCount = 250
     for(let i=0; i<count; i++){
         await getAddressFromInt(i+1000)
         let a = await getAddressFromInt(i+2000)
-        let keystore = web3.eth.accounts.encrypt(a.priv.toString('hex'),'wanglu')
-        keystore.waddress = wanutil.generateWaddrFromPriv(a.priv, a.priv);
-        keystore.crypto2 = keystore.crypto;
-        fs.writeFileSync('0x'+keystore.address, JSON.stringify(keystore))
+        // let keystore = web3.eth.accounts.encrypt(a.priv.toString('hex'),'wanglu')
+        // keystore.waddress = wanutil.generateWaddrFromPriv(a.priv, a.priv);
+        // keystore.crypto2 = keystore.crypto;
+        // fs.writeFileSync('0x'+keystore.address, JSON.stringify(keystore))
         for(let j=0; j<dlCount; j++){
             let a = await getAddressFromInt((i+1000)*1000*10+j)
             console.log("got address: ", i, j, a.addr)

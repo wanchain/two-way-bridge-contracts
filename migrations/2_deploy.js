@@ -21,10 +21,8 @@ const CreateGpkProxy  = artifacts.require('CreateGpkProxy');
 const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
 
 
-module.exports = async function(deployer){
-    // test
-    //await deployer.deploy(TestStoremanGroup);
-
+module.exports = async function(deployer,network){
+    if(network === 'nodeploy') return;
 
     // token manager sc
     await deployer.deploy(TokenManagerProxy);

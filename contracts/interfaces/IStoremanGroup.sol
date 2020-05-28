@@ -28,7 +28,7 @@ pragma solidity ^0.4.24;
 
 interface IStoremanGroup {
     function getSelectedSmNumber(bytes32 groupId) external returns(uint number);
-    function getSmInfo(bytes32 groupId, address wkAddress) public view  returns(address sender,bytes PK,
+    function getSmInfo(bytes32 groupId, address wkAddress) external view  returns(address sender,bytes PK,
         bool quited, bool  isWorking,uint  delegateFee,uint  deposit,uint  depositWeight,
         uint incentive, uint delegatorCount
         );

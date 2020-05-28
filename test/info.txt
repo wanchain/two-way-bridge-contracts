@@ -95,7 +95,7 @@ keystore在test/keystore目录, 密码: wanglu
 
 
 日志事件:
-选择出来后, 发送一个日志, 稍后加上.
+选择出来后, 发送一个日志,selectedEvent
 生成gpk, 注册给admin后, 有一个事件(同以前的eos).
 
 

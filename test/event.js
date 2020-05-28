@@ -9,7 +9,7 @@ async function main(){
     let json = JSON.parse(content);
     console.log("abi:", json.abi)
     let smg = new web3.eth.Contract(json.abi, addr)
-    let e = await smg.getPastEvents({fromBlock:0, topic:[sha256("EOS")]});
+    let e = await smg.getPastEvents({fromBlock:0, topic:[sha256(config.chain)]});
     console.log("e:", e)
     let cur = web3.eth.blockNumber;
     console.log("cur:", cur)

@@ -99,34 +99,55 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return backupCount;
     }
 
+
     /// @notice                           function for owner set token manager and htlc contract address
-    /// @param groupId                    the building storeman group index.
+    /// @param id                    the building storeman group index.
     /// @param chain                      the chain that the group will work for.
     /// @param wkAddrs                    white list work address.
     /// @param senders                    senders address of the white list enode.
-    /// @param memberCountDesign          designed member count in this group. normally it is 21.
-    /// @param threshold                  threshold in this group. normally it is 17.
-    /// @param workStart                  When the group start to work.
+    /// @param workStart                  When the group start to work. the day ID;
     /// @param workDuration               how many days the group will work for
     /// @param registerDuration           how many days the duration that allow transfer staking.
     /// @param crossFee                   the fee for cross transaction.
     /// @param preGroupId                 the preview group index.
-    function registerStart(bytes32 groupId, uint memberCountDesign, uint threshold,
+    function registerStart(bytes32 id, 
         uint workStart,uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupId, bytes chain, address[] wkAddrs, address[] senders)
         public
     {
         require(wkAddrs.length == senders.length);
         require(wkAddrs.length > backupCount);
-        StoremanGroup memory group = StoremanGroup(groupId,crossFee,memberCountDesign,threshold,GroupStatus.initial,0,0,0,0,0,chain);
+
+        Deposit.Records memory deposits =  Deposit.Records(0);
+        Deposit.Records memory depositWeights =  Deposit.Records(0);
+
+        StoremanGroup memory group = StoremanGroup({
+            groupId:id,
+            txFeeRatio:crossFee,              /// the fee ratio required by storeman group
+            status:GroupStatus.initial,
+            deposit:deposits,                  /// the storeman group deposit in wan coins, change when selecting
+            depositWeight:depositWeights,            /// caculate this value when selecting
+            unregisterApplyTime:0,      /// the time point for storeman group applied unregistration
+            memberCount:0,
+            whiteCount:0,
+            workDay:workStart,
+            totalDays:workDuration,
+            chain:chain,
+            config: configDefault
+        });
         group.whiteCount = wkAddrs.length - backupCount;
 
-        groups[groupId] = group;
+        groups[id] = group;
         for(uint i = 0; i < wkAddrs.length; i++){
-            groups[groupId].whiteMap[i] = wkAddrs[i];
-            groups[groupId].whiteWk[wkAddrs[i]] = senders[i];
+            groups[id].whiteMap[i] = wkAddrs[i];
+            groups[id].whiteWk[wkAddrs[i]] = senders[i];
         }
     }
 
+    function updateGroupConfig(bytes32 groupId, uint memberCountdesign, uint threshold) public {
+        StoremanGroup storage group = groups[groupId];
+        group.config.memberCountDesign = memberCountdesign;
+        group.config.threshold = threshold;
+    }
 
 
 
@@ -137,11 +158,33 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         StoremanGroup storage group = groups[index];
         address pkAddr = address(keccak256(PK));
-        Candidate memory sk = Candidate(msg.sender, enodeID, PK,pkAddr,false,false,false,delegateFee,msg.value,0,calSkWeight(msg.value),0,0);
+        Deposit.Records memory records = Deposit.Records(0);
+        Candidate memory sk = Candidate({
+            sender:msg.sender,
+            enodeID:enodeID,
+            PK:PK,
+            pkAddress:pkAddr, // 合约计算一下.
+            quited:false,
+            selected:false,
+            isWorking:false,
+            delegateFee:delegateFee,
+            delegatorCount:0,
+            delegateDeposit:0,
+            incentive:0,       // without delegation.. set to 0 after incentive.
+            incentivedDelegator:0, // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
+            deposits:records  
+            });
         group.addrMap[group.memberCount] = pkAddr;
         group.memberCount++;
 
         group.candidates[pkAddr] = sk;
+
+        uint day = getDaybyTime(now);
+        if(day < groups[index].workDay) {
+            day = groups[index].workDay;
+        }
+        Deposit.Record memory r = Deposit.Record(day, msg.value);
+        Deposit.addRecord(group.candidates[pkAddr].deposits, r);
 
         //check if it is white
         if(group.whiteWk[pkAddr] != address(0x00)){
@@ -149,7 +192,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
                 revert("invalid sender");
             }
         } else {
-            realInsert(index, pkAddr, calSkWeight(msg.value));
+            realInsert(index, pkAddr, calSkWeight(msg.value), group.config.memberCountDesign-1);
         }
 
         emit stakeInEvent(index, pkAddr, enodeID);
@@ -159,38 +202,104 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return (sk.PK, sk.delegateFee, sk.delegatorCount);
     }
 
-    function calIncentive(uint p, uint deposit, bool isDelegator) public returns (uint) {
-        return deposit*p/10000;
+    function calIncentive(uint groupIncentive, uint groupWeight, uint weight) public returns (uint) {
+        return groupIncentive*weight/groupWeight;
     }
     function calSkWeight(uint deposit) public  returns(uint) {
         return deposit*15/10;
     }
-    event incentive(bytes32 indexed index, address indexed to, uint indexed delegatorCount);
-    function testIncentiveAll(bytes32 index, address wkAddr) public  {
-        StoremanGroup storage group = groups[index];
-        Candidate storage sk = group.candidates[wkAddr];
-        sk.incentive += calIncentive(1000, sk.deposit,false);
-        emit incentive(index, sk.sender, sk.delegatorCount);
 
-        for(uint j = 0; j < sk.delegatorCount; j++){
-            address deAddr = sk.addrMap[j];
-            Delegator storage de = sk.delegators[deAddr];
-            de.incentive += calIncentive(1000, de.deposit, true);
-        }
+    function getGroupIncentive(bytes32 groupId, uint day, uint groupDepositByDay) public view returns (uint)  {
+        uint p = 30000000 ;  // this value should get from pos lib.
+        return p;
     }
-    function addDelegator(bytes32 index, address skPkAddr)
+
+    /*
+    The logic of incentive
+    1) get the incentive by day and groupID.
+    If the incentive array by day haven't geted from low level, the tx will try to get it.
+    so the one who first incentive will spend more gas.
+
+    2) calculate the sk incentive all days.
+    3) calculate the delegator all days one by one.
+     */
+    event incentive(bytes32 indexed groupId, address indexed pkAddr, bool indexed finished);
+    function testIncentiveAll(bytes32 groupId, address wkAddr) public  {
+        StoremanGroup storage group = groups[groupId];
+        Candidate storage sk = group.candidates[wkAddr];
+        uint day = 0;
+        if(group.groupIncentive[group.workDay] == 0){
+            for(day = group.workDay; day < group.workDay+group.totalDays; day++) {
+                group.groupIncentive[day] = getGroupIncentive(groupId, day, 0);
+            }
+        }
+
+        if(sk.incentivedDelegator == 0){
+            for(day = group.workDay; day < group.workDay+group.totalDays; day++) {
+                sk.incentive += calIncentive(group.groupIncentive[day], Deposit.getValueById(group.depositWeight,day),  calSkWeight(Deposit.getValueById(sk.deposits,day)));
+            }
+        }
+
+        while(sk.incentivedDelegator != sk.delegatorCount) {
+            for(day = group.workDay; day < group.workDay+group.totalDays; day++) {
+                address deAddr = sk.addrMap[sk.incentivedDelegator];
+                Delegator storage de = sk.delegators[deAddr];
+                de.incentive += calIncentive(group.groupIncentive[day], Deposit.getValueById(group.depositWeight,day), Deposit.getValueById(de.deposits,day));
+            }
+            sk.incentivedDelegator++;
+            if(msg.gas < 5000000 ){ // check the gas. because calculate delegator incentive need more gas left.
+                emit incentive(groupId, wkAddr, false);
+                return;
+            }
+        }
+
+        emit incentive(groupId, wkAddr, true);
+
+    }
+
+    function getDaybyTime(uint time) returns (uint) {
+        return time; // TODO; get the day. not minute.
+    }
+    function addDelegator(bytes32 groupId, address skPkAddr)
         public
         payable
     {
-        Delegator memory dk = Delegator(msg.sender,skPkAddr,false,msg.value,1);
-        Candidate storage sk = groups[index].candidates[skPkAddr];
-        sk.addrMap[sk.delegatorCount] = msg.sender;
-        sk.delegatorCount++;
+        uint FIX_INCENTIVE = 1;
+        StoremanGroup storage  group = groups[groupId];
+        Candidate storage sk =group.candidates[skPkAddr];
+        require(sk.pkAddress == skPkAddr, "sk doesn't exist");
+
+        uint day = getDaybyTime(now);
+        if(day < group.workDay) {
+            day = group.workDay;
+        }
+        Delegator storage dk = sk.delegators[msg.sender];
+        if(dk.sender == address(0x00)) {
+            sk.addrMap[sk.delegatorCount] = msg.sender;
+            sk.delegatorCount++;
+            dk.sender = msg.sender;
+            dk.staker = skPkAddr;
+        }
         sk.delegateDeposit  += msg.value;
-        sk.depositWeight += msg.value;
-        sk.delegators[msg.sender] = dk;
-        if(groups[index].whiteWk[skPkAddr] == address(0x00)){
-            realInsert(index, skPkAddr, sk.depositWeight);
+        
+        Deposit.Record memory r = Deposit.Record(day, msg.value);
+        Deposit.addRecord(dk.deposits,r);
+        //如果还没选择, 不需要更新group的值, 在选择的时候一起更新.
+        // 如果已经选择过了, 需要更新group的值. 
+        if(group.status >= GroupStatus.selected){
+            Deposit.addRecord(group.deposit,r);
+            Deposit.addRecord(group.depositWeight,r);
+        }
+
+        //TODO: resort
+        if(group.status < GroupStatus.selected && group.whiteWk[skPkAddr] == address(0x00)){
+            uint seleIndex = group.config.memberCountDesign;
+            for(uint selectedIndex = group.whiteCount; selectedIndex<group.config.memberCountDesign; selectedIndex++){
+                if(group.selectedNode[selectedIndex] == skPkAddr) {
+                    break;
+                }
+            }
+            realInsert(groupId, skPkAddr, calSkWeight(Deposit.getLastValue(sk.deposits))+sk.delegateDeposit, selectedIndex);
         }
     }
 
@@ -199,27 +308,27 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         if(group.status == GroupStatus.initial || group.status == GroupStatus.failed){
             return 0;
         }
-        return group.memberCountDesign;
+        return group.config.memberCountDesign;
     }
-    function realInsert(bytes32 groupId, address addr, uint weight) internal{
+    function realInsert(bytes32 groupId, address addr, uint weight, uint last) internal{
         StoremanGroup storage  group = groups[groupId];
-        for(uint j = group.memberCountDesign-1; j>group.whiteCount; j--) {
-            if(weight > group.candidates[group.selectedNode[j]].depositWeight){
+        for(uint j = last; j>=group.whiteCount; j--) {
+            if(weight > group.candidates[group.selectedNode[j]].delegateDeposit + calSkWeight(Deposit.getLastValue(group.candidates[group.selectedNode[j]].deposits))){
                 continue;
             }
             break;
         }
-        if(j<group.memberCountDesign-1){
-            for(uint k = group.memberCountDesign-2; k>=j; k--){
+        if(j<last){
+            for(uint k = last-1; k>j; k--){
                 group.selectedNode[k+1] = group.selectedNode[k];
             }
-            group.selectedNode[j] = addr;
+            group.selectedNode[j+1] = addr;
         }
     }
     event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
     function toSelect(bytes32 groupId) public {
         StoremanGroup storage group = groups[groupId];
-        if(group.memberCount < group.memberCountDesign){
+        if(group.memberCount < group.config.memberCountDesign){
             group.status = GroupStatus.failed;
             return;
         }
@@ -228,15 +337,22 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         for(uint m=0; m<group.whiteCount;m++){
             group.selectedNode[m] = group.whiteMap[m];
         }
-        address[] memory members = new address[](group.memberCountDesign);
-        group.deposit = 0;        
-        for(uint i=0; i<group.memberCountDesign; i++){
+        address[] memory members = new address[](group.config.memberCountDesign);
+        uint groupDeposit = 0;
+        uint groupDepositWeight = 0;
+        uint day = group.workDay;
+        for(uint i=0; i<group.config.memberCountDesign; i++){
             members[i] = group.selectedNode[i];
             Candidate storage sk = group.candidates[group.selectedNode[i]];
-            group.deposit += (sk.deposit+sk.delegateDeposit);
+            groupDeposit += (Deposit.getLastValue(sk.deposits)+sk.delegateDeposit);
+            groupDepositWeight += (calSkWeight(Deposit.getLastValue(sk.deposits))+sk.delegateDeposit);
         }
-        emit selectedEvent(groupId, group.memberCountDesign, members);
+        Deposit.Record memory deposit = Deposit.Record(day, groupDeposit);
+        Deposit.Record memory depositWeight = Deposit.Record(day, groupDepositWeight);
+        emit selectedEvent(groupId, group.config.memberCountDesign, members);
         group.status = GroupStatus.selected;
+        Deposit.addRecord(group.deposit,deposit);
+        Deposit.addRecord(group.depositWeight,depositWeight);
         return;
     }
     function getSelectedSmInfo(bytes32 groupId, uint index) public view   returns(address, bytes, bytes){
@@ -247,17 +363,36 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
 
-    function getSmInfo(bytes32 groupId, address wkAddress) public view  returns(address sender,bytes PK,
-        bool quited, bool  isWorking,uint  delegateFee,uint  deposit,uint  depositWeight,
+    function getSmInfo(bytes32 groupId, address wkAddress) public view  returns(address sender,bytes PK, address pkAddress,
+        bool quited, bool  isWorking,uint  delegateFee,uint  deposit, uint delegateDeposit,
         uint incentive, uint delegatorCount
         ){
             StoremanGroup storage group = groups[groupId];
             Candidate storage sk = group.candidates[wkAddress];
 
-            return (sk.sender,   sk.PK, sk.quited,
-                sk.isWorking,  sk.delegateFee, sk.deposit,
-                sk.depositWeight, sk.incentive,  sk.delegatorCount
+            return (sk.sender,   sk.PK, sk.pkAddress, sk.quited,
+                sk.isWorking,  sk.delegateFee, Deposit.getLastValue(sk.deposits), sk.delegateDeposit,
+                sk.incentive,  sk.delegatorCount
             );
+    }
+
+
+    function getSmDelegatorAddr(bytes32 groupId, address wkAddr, uint deIndex) public view  returns (address){
+        StoremanGroup storage group = groups[groupId];
+        Candidate storage sk = group.candidates[wkAddr];
+        return sk.addrMap[deIndex];
+    }
+    function getSmDelegatorInfo(bytes32 groupId, address wkAddr, address deAddr) public view returns (uint, uint,uint) {
+        StoremanGroup storage group = groups[groupId];
+        Candidate storage sk = group.candidates[wkAddr];
+        Delegator storage de = sk.delegators[deAddr];
+        return (Deposit.getLastValue(de.deposits), de.deposits.total, de.incentive);
+    }
+    function getSmDelegatorInfoRecord(bytes32 groupId, address wkAddr, address deAddr, uint index) public view returns (uint, uint) {
+        StoremanGroup storage group = groups[groupId];
+        Candidate storage sk = group.candidates[wkAddr];
+        Delegator storage de = sk.delegators[deAddr];
+        return (de.deposits.records[index].id, de.deposits.records[index].value);
     }
     function setGpk(bytes32 groupId, bytes gpk) public {
         StoremanGroup storage group = groups[groupId];
@@ -270,7 +405,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
     function getThresholdByGrpId(bytes32 groupId) external view returns (uint){
         StoremanGroup storage group = groups[groupId];
-        return group.threshold;
+        return group.config.threshold;
     }
 
 
@@ -303,7 +438,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
 
         //uint quota = (msg.value).mul(defaultPrecise).div(token2WanRatio).mul(10**uint(decimals)).div(1 ether);
-        uint quota = group.deposit;
+        uint quota = Deposit.getLastValue(group.deposit);
         htlc.addStoremanGroup(tokenOrigAccount, storemanGroup, quota, txFeeRatio);
         storemanGroupMap[tokenOrigAccount][storemanGroup] = groupId;
 
@@ -343,7 +478,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         //htlc.delStoremanGroup(tokenOrigAccount, storemanGroup);
         //smg.delegate.transfer(smg.deposit);
 
-        emit StoremanGroupWithdrawLogger(tokenOrigAccount, storemanGroup, smg.deposit, smg.deposit);
+        //emit StoremanGroupWithdrawLogger(tokenOrigAccount, storemanGroup, smg.deposit, smg.deposit);
 
         delete storemanGroupMap[tokenOrigAccount][storemanGroup];
     }
@@ -366,12 +501,12 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         uint token2WanRatio;
         uint defaultPrecise;
         (,,decimals,,token2WanRatio,,,defaultPrecise) = tokenManager.getTokenInfo(tokenOrigAccount);
-        uint deposit = smg.deposit.add(msg.value);
-        uint quota = deposit.mul(defaultPrecise).div(token2WanRatio).mul(10**uint(decimals)).div(1 ether);
+        // uint deposit = smg.deposit.add(msg.value);
+        // uint quota = deposit.mul(defaultPrecise).div(token2WanRatio).mul(10**uint(decimals)).div(1 ether);
         //htlc.updateStoremanGroup(tokenOrigAccount, storemanGroup, quota);
         // TODO: notify bonus contract
-        smg.deposit = deposit;
-        emit StoremanGroupUpdateLogger(tokenOrigAccount, storemanGroup, deposit, quota, smg.txFeeRatio);
+        // smg.deposit = deposit;
+        // emit StoremanGroupUpdateLogger(tokenOrigAccount, storemanGroup, deposit, quota, smg.txFeeRatio);
     }
 
     /// @notice                           function for getting storeman group information
@@ -384,9 +519,16 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         bytes32 groupId = storemanGroupMap[tokenOrigAccount][storemanGroup];
         StoremanGroup storage smg = groups[groupId];        
-        return (address(0x00), smg.deposit, smg.txFeeRatio, smg.unregisterApplyTime);
+        return (address(0x00), Deposit.getLastValue(smg.deposit), smg.txFeeRatio, smg.unregisterApplyTime);
     }
-
+    function getGroupInfo(bytes32 id)
+        external
+        view
+        returns(bytes32 groupId, GroupStatus status, uint deposit,  uint depositWeight, uint memberCount,bytes chain,uint workDay)
+    {
+        StoremanGroup storage smg = groups[id];       
+        return (smg.groupId, smg.status, Deposit.getLastValue(smg.deposit), Deposit.getLastValue(smg.depositWeight),smg.memberCount, smg.chain, smg.workDay);
+    }
     /// @notice fallback function
     function () public payable {
         revert("Not support");
