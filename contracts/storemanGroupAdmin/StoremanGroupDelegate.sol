@@ -29,6 +29,7 @@ pragma solidity ^0.4.24;
 import "../lib/SafeMath.sol";
 import "../components/Halt.sol";
 import "./StoremanGroupStorage.sol";
+import "../lib/PosLib.sol";
 
 contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     using SafeMath for uint;
@@ -208,10 +209,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function calSkWeight(uint deposit) public  returns(uint) {
         return deposit*15/10;
     }
-
-    function getGroupIncentive(bytes32 groupId, uint day, uint groupDepositByDay) public view returns (uint)  {
-        uint p = 30000000 ;  // this value should get from pos lib.
-        return p;
+    function getGroupIncentive(bytes32 groupId, uint time) public view returns (uint)  {
+        StoremanGroup storage group = groups[groupId];
+        //return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit), time, 10000, 10000);
+        return 30000000;
     }
 
     /*
@@ -230,7 +231,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         uint day = 0;
         if(group.groupIncentive[group.workDay] == 0){
             for(day = group.workDay; day < group.workDay+group.totalDays; day++) {
-                group.groupIncentive[day] = getGroupIncentive(groupId, day, 0);
+                group.groupIncentive[day] = getGroupIncentive(groupId, day); // TODO: change to the correct time
             }
         }
 
@@ -528,6 +529,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         StoremanGroup storage smg = groups[id];       
         return (smg.groupId, smg.status, Deposit.getLastValue(smg.deposit), Deposit.getLastValue(smg.depositWeight),smg.memberCount, smg.chain, smg.workDay);
+    }
+    function checkGroupIncentive(bytes32 id, uint day) public view returns ( uint) {
+        StoremanGroup storage group = groups[id];       
+        return group.groupIncentive[day];
     }
     /// @notice fallback function
     function () public payable {

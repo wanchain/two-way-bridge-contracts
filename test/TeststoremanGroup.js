@@ -20,7 +20,8 @@ const Tx = wanUtil.wanchainTx;
 let contractAddress = undefined //    "0x4553061E7aD83d83F559487B1EB7847a9F90ad59"; //   
 
 //let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
-let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
+//let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
+let web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8545'))
 let gGasLimit=9000000;
 let gGasPrice=200000000000;
 
@@ -34,7 +35,6 @@ delegator: stakerId*100 ~ stakerID*100+1000
 let EOS = utils.stringTobytes("EOS")
 
 async function tryAddDelegator(smg, id, skAddr, de, value)  {
-    console.log("IDLLLLLLLLLLLL:", id, skAddr)
     let dedata = smg.contract.methods.addDelegator(id,skAddr).encodeABI()
     let rawTx = {
         Txtype: 0x01,
@@ -46,7 +46,7 @@ async function tryAddDelegator(smg, id, skAddr, de, value)  {
         value: value,
         data: dedata,
     }
-    console.log("rawTx:", rawTx)
+    //console.log("rawTx:", rawTx)
     let tx = new Tx(rawTx)
     tx.sign(de.priv)
     const serializedTx = '0x'+tx.serialize().toString('hex');
@@ -56,7 +56,7 @@ async function tryAddDelegator(smg, id, skAddr, de, value)  {
 
 contract('TestSmg', async (accounts) => {
     let tester = accounts[0]
-    let now = parseInt(Date.now()/1000);
+    let now = parseInt(Date.now()/1000/120);
     //let id = utils.stringTobytes32(now.toString())
     let id = "0x0000000000000000000000000000000000000031353930303435363333303733"
 
@@ -116,7 +116,7 @@ contract('TestSmg', async (accounts) => {
         }
         
         //registerStart(bytes32 id, uint workStart,uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupId, bytes chain, address[] wkAddrs, address[] senders)
-        let tx = await smg.registerStart(id,now+10, 100, 10,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
+        let tx = await smg.registerStart(id,now, 2, 10,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
             {from: tester})
         //console.log("tx:", tx)
         console.log("group:",await smg.getGroupInfo(id))
@@ -241,6 +241,7 @@ contract('TestSmg', async (accounts) => {
     })
 
     it('incentive ', async ()=>{
+        await pu.sleep(4 * 60 * 1000)
         let count = await smg.getSelectedSmNumber(id)
         console.log("count :", count)
         console.log("group:",await smg.getGroupInfo(id))
@@ -293,6 +294,9 @@ contract('TestSmg', async (accounts) => {
             
 
         }
+
+        let dayIncentive = await smg.checkGroupIncentive(id, now+1)
+        console.log("dayIncentive: ", dayIncentive)
 
     })
 

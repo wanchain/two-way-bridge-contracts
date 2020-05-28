@@ -105,19 +105,17 @@ library PosLib {
             return 0;
         }
         uint256 p1Return = smgDeposit.mul(p1).div(DIVISOR);
-        return p1Return;
 
-        // uint256 hardcap;
-        // (hardcap,success) = getHardCap(crossChainCoefficient,chainTypeCoefficient,now);
-        // if(!success) {
-        //     return 0;
-        // }
+        uint256 hardcap;
+        (hardcap,success) = getHardCap(crossChainCoefficient,chainTypeCoefficient,now);
+        if(!success) {
+            return 0;
+        }
 
-        // uint256 hardcapReturn = hardcap.mul(1 ether).div(DIVISOR);
-        // return hardcapReturn;
+        uint256 hardcapReturn = hardcap.mul(1 ether).div(DIVISOR);
+        return hardcapReturn;
 
-        // return hardcapReturn<=p1Return?hardcapReturn:p1Return;
-        //return 600000000;
+        return hardcapReturn<=p1Return?hardcapReturn:p1Return;
     }
 
 
