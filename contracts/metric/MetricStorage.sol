@@ -1,6 +1,6 @@
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2020 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ contract MetricStorage is BasicStorage {
      **/
     event SMSlshLogger(bytes32 indexed grpId, bytes32 indexed hashX, uint8 indexed smIndex, MetricTypes.SlshReason slshReason);
 
-    event SMInvSlshLogger(address slshWriter,bytes32 indexed grpId, bytes32 indexed hashX, uint8 indexed smIndex, MetricTypes.SlshReason slshReason);
+    event SMInvSlshLogger(address slshWriter, bytes32 indexed grpId, bytes32 indexed hashX, uint8 indexed smIndex, MetricTypes.SlshReason slshReason);
 
     /// config instance address
     IConfig public config;
