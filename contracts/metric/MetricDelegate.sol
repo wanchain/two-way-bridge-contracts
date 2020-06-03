@@ -32,6 +32,8 @@ import "./MetricStorage.sol";
 import "./lib/MetricTypes.sol";
 import "../interfaces/IStoremanGroup.sol";
 import "../lib/SafeMath.sol";
+import "../lib/CommonTool.sol";
+import "../lib/PosLib.sol";
 
 contract MetricDelegate is MetricStorage, Halt {
     using SafeMath for uint;
@@ -394,24 +396,43 @@ contract MetricDelegate is MetricStorage, Halt {
         smg = IStoremanGroup(smgAddr);
     }
 
-    // todo get EpochId from pre-compile contract
     function getEpochId()
     internal
     view
     returns (uint)
     {
-        //uint memory timeStamp = now;
-        uint epochTimespan = uint(5 * 12 * 1440);
-        return now / epochTimespan;
+        return PosLib.getEpochId(now);
     }
 
-    // todo get EpochId from pre-compile contract
     function getSMCount(bytes32 grpId)
     internal
     view
     returns (uint8)
     {
         return uint8(smg.getSelectedSmNumber(grpId));
+    }
+
+    function checkSigTest()
+    external
+    view
+    returns (bool) {
+
+        return CommonTool.checkSigTest();
+    }
+
+    function checkSig(bytes32 hash, bytes32 r, bytes32 s, bytes pk)
+    public
+    view
+    returns (bool) {
+
+        return CommonTool.checkSig(hash, r, s, pk);
+    }
+
+    function getEpochId(uint256 blockTime)
+    public
+    view
+    returns (uint256){
+        return PosLib.getEpochId(blockTime);
     }
 
     function checkHamming(uint indexes, uint8 smIndex)
@@ -421,6 +442,7 @@ contract MetricDelegate is MetricStorage, Halt {
     {
         return indexes & (uint(1) << smIndex) != uint(0);
     }
+
 
     function() public payable {
         revert("Not support");
