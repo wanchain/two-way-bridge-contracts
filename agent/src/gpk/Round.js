@@ -34,8 +34,6 @@ class Round {
     this.skShare = ''; // hex string with 0x
     this.pkShare = ''; // hex string with 0x
     this.gpk = ''; // hex string with 0x04
-    this.gpkTxHash = '';
-    this.gpkDone = false;
  
     // global interactive data
     this.polyCommitTimeoutTxHash = '';
@@ -262,7 +260,6 @@ class Round {
 
   async procNegotiate() {
     await this.polyCommitReceive();
-    await this.setGpk();
     await Promise.all(this.smList.map((sm, index) => {
       return new Promise(async (resolve, reject) => {
         try {
@@ -491,8 +488,16 @@ class Round {
     }
     let pkShare = await this.createGpkSc.methods.getPkShare(this.groupId, i).call();
     let gpk = await this.createGpkSc.methods.getGpk(this.groupId).call();
-    console.log("get index %d %s pkShare: %s", i, wanchain.selfAddress, pkShare);
-    console.log("get gpk: %s", gpk);
+    if (pkShare == this.pkShare) {
+      console.log("get index %d %s pkShare: %s", i, wanchain.selfAddress, pkShare);
+    } else {
+      console.log("get index %d %s pkShare %s not match %s", i, wanchain.selfAddress, pkShare, this.pkShare);
+    }
+    if (gpk == this.gpk) {
+      console.log("get gpk: %s", gpk);
+    } else {
+      console.error("get gpk %s not match %s", gpk, this.gpk);
+    }
   }
   
   async procClose() {
@@ -525,28 +530,6 @@ class Round {
     this.gpk = '0x' + gpk.getEncoded(false).toString('hex');
     console.log("gen pkShare: %s", this.pkShare);
     console.log("gen gpk: %s", this.gpk);
-  }
-
-  async setGpk() {
-    if (this.gpkDone || !this.gpk) {
-      return;
-    }
-    if (this.gpkTxHash) {
-      let receipt = await wanchain.getTxReceipt(this.gpkTxHash);
-      if (receipt) {
-        if (receipt.status) {
-          this.gpkDone = true;
-          return;
-        } else {
-          this.gpkTxHash = '';
-        }
-      } else {
-        return;
-      }
-    }
-    // first send or resend
-    this.gpkTxHash = await wanchain.sendGpk(this.groupId, this.pkShare);
-    console.log("group %s round %d sendGpk hash: %s", this.groupId, this.round, this.gpkTxHash );
   }
 }
 

@@ -137,7 +137,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             for (uint i = 0; i < round.smNumber; i++) {
                 (txAddress, pk,) = smg.getSelectedSmInfo(groupId, i);
                 round.indexMap[i] = txAddress;
-                round.addressMap[txAddress] = pk;
+                round.addressMap[txAddress] = unifyPk(pk);
             }
             round.statusTime = now;
             emit StartCreateGpkLogger(groupId, group.round);
@@ -147,6 +147,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         round.srcMap[msg.sender].polyCommit = polyCommit;
         round.polyCommitCount++;
         updateGpk(round, polyCommit);
+        updatePkShare(round, polyCommit);
         if (round.polyCommitCount >= round.smNumber) {
             round.status = GroupStatus.Negotiate;
             round.statusTime = now;
@@ -177,21 +178,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             }
         }
         slashMulti(groupId, slashCount, slashTypes, slashSms);
-    }
-
-    /// @notice                           function for storeman submit gpk and pkShare (only for poc)
-    /// @param groupId                    storeman group id
-    /// @param pkShare                    storeman group pkShare
-    function setGpk(bytes32 groupId, bytes pkShare)
-        external
-    {
-        require(pkShare.length == 65, "Invalid pkShare");
-        Group storage group = groupMap[groupId];
-        Round storage round = group.roundMap[group.round];
-        checkValid(round, GroupStatus.Negotiate, address(0), true);
-        Src storage src = round.srcMap[msg.sender];
-        require(src.pkShare.length == 0, "Duplicate");
-        src.pkShare = pkShare;
     }
 
     /// @notice                           function for src storeman submit encSij
@@ -401,8 +387,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     /// @param polyCommit                 poly commit
     function updateGpk(Round storage round, bytes polyCommit)
         internal
-        view
-        returns(bytes)
     {
         bytes memory gpk = round.gpk;
         uint x = bytes2uint(polyCommit, 1);
@@ -420,6 +404,37 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         assembly { mstore(add(gpk, 33), x) }
         assembly { mstore(add(gpk, 65), y) }
         round.gpk = gpk;
+    }
+
+    /// @notice                           function for generate gpk and pkShare
+    /// @param round                      round
+    /// @param polyCommit                 poly commit
+    function updatePkShare(Round storage round, bytes polyCommit)
+        internal
+    {
+        uint x;
+        uint y;
+        bool success;
+        for (uint i = 0; i < round.smNumber; i++) {
+            address txAddress = round.indexMap[i];
+            bytes memory pk = round.addressMap[txAddress];
+            (x, y, success) = encrypt.calPolyCommit(polyCommit, pk);
+            require(success == true, "pkShare failed");
+
+            bytes memory pkShare = round.srcMap[txAddress].pkShare;
+            if (pkShare.length != 0) {
+                uint pkX = bytes2uint(pkShare, 1);
+                uint pkY = bytes2uint(pkShare, 33);
+                (x, y, success) = encrypt.add(x, y, pkX, pkY);
+                require(success == true, "pkShare error");
+            } else {
+                pkShare = new bytes(65);
+                pkShare[0] = 0x04;
+            }
+            assembly { mstore(add(pkShare, 33), x) }
+            assembly { mstore(add(pkShare, 65), y) }
+            round.srcMap[txAddress].pkShare = pkShare;
+        }
     }
 
     /// @notice                           function for verify Sij to judge challenge
@@ -511,6 +526,24 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             number = number + uint8(source[i + offset]) * (2 ** (8 * (32 - (i + 1))));
         }
         return number;
+    }
+
+    function unifyPk(bytes pk)
+        internal
+        pure
+        returns(bytes)
+    {
+        if (pk.length == 65) {
+            return pk;
+        }
+        bytes memory uPk = new bytes(65);
+        if (pk.length == 64) {
+            uPk[0] = 0x04;
+            for (uint i = 0; i < 64; i++) {
+                uPk[i + 1] = pk[i];
+            }
+        }
+        return uPk;
     }
 
     function getGroupInfo(bytes32 groupId, int16 roundNum)

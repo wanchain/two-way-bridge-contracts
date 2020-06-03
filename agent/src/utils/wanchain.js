@@ -96,6 +96,7 @@ async function sendPloyCommit(groupId, polyCommit) {
     offset += 65;
   }
   let pcStr = '0x' + buf.toString('hex');
+  console.log("group %s sendPloyCommit %s", groupId, pcStr);
   let txData = await createGpkSc.methods.setPolyCommit(groupId, pcStr).encodeABI();
   let txHash = await sendTx(config.contractAddress.createGpk, txData);
   return txHash;
@@ -161,12 +162,6 @@ function genKeystoreFile(gpk, sk, password) {
   fs.writeFileSync(fp, password, 'utf8');
 }
 
-async function sendGpk(groupId, pkShare) { // only for poc
-  let txData = await createGpkSc.methods.setGpk(groupId, pkShare).encodeABI();
-  let txHash = await sendTx(config.contractAddress.createGpk, txData);
-  return txHash;  
-}
-
 module.exports = {
   selfSk,
   selfPk,
@@ -186,6 +181,5 @@ module.exports = {
   sendSijTimeout,
   getBlockNumber,
   getEvents,
-  genKeystoreFile,
-  sendGpk
+  genKeystoreFile
 }
