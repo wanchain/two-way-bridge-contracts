@@ -360,19 +360,118 @@ contract MetricDelegate is MetricStorage, Halt {
 
     ///=======================================check proof =============================================
     // todo check the proof for all white list can write working record
-    // todo check proof by pre-compile contract
     function checkRProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     initialized
     onlyValidGrpId(grpId)
     returns (bool)
     {
-        return true;
+        bool bSig = checkRSig(grpId, hashX, smIndex);
+        bool bContent = checkRContent(grpId, hashX, smIndex);
+        return getChkResult(bSig, bContent, metricData.mapRSlsh[grpId][hashX][smIndex].becauseSndr);
+    }
+
+    function getChkResult(bool bSig, bool bContent, bool becauseSndr)
+    internal
+    pure
+    returns (bool)
+    {
+        if (!bSig || !bContent) {
+            // should be sender
+            if (becauseSndr) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            // should be receiver
+            if (becauseSndr) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+
+    function getPkBytesByInx(bytes32 grpId, uint8 smIndex)
+    internal
+    view
+    initialized
+    onlyValidGrpId(grpId)
+    returns (bytes)
+    {
+        bytes memory smPk;
+        //        (, smPk,) = smg.getSelectedSmInfo(grpId, uint(smIndex));
+        return smPk;
+    }
+
+    function checkRSig(bytes32 grpId, bytes32 hashX, uint8 smIndex)
+    internal
+    initialized
+    onlyValidGrpId(grpId)
+    returns (bool)
+    {
+        bytes32 h;
+        bytes32 r;
+        bytes32 s;
+        bytes memory senderPk;
+
+        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+        // build h
+        h = sha256(rslshData.polyDataPln.polyData);
+        // build senderpk
+        senderPk = getPkBytesByInx(grpId, smIndex);
+        // build r
+        r = bytesToBytes32(rslshData.polyDataPln.polyDataR);
+        // build s
+        s = bytesToBytes32(rslshData.polyDataPln.polyDataS);
+        return CommonTool.checkSig(h, r, s, senderPk);
+    }
+
+    function checkRContent(bytes32 grpId, bytes32 hashX, uint8 smIndex)
+    internal
+    initialized
+    onlyValidGrpId(grpId)
+    returns (bool)
+    {
+        uint256 uintSij = bytesToUint(sij);
+
+        uint256 xLeft;
+        uint256 yLeft;
+
+        uint256 xRight;
+        uint256 yRight;
+        bool success;
+
+        bytes memory sij;
+        bytes memory rcvrPk;
+        MetricTypes.RSlshData memory rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+        sij = rslshData.polyDataPln.polyData;
+        rcvrPk = getPkBytesByInx(grpId, rslshData.rcvrIndex);
+
+        // left point compute by CMG
+        (xLeft, yLeft, success) = CommonTool.calPolyCommit(rslshData.polyCMData.polyCM, rcvrPk);
+        require(success, 'calPolyCommit does not return right result');
+
+        // right point s[i][i]*G
+        (xRight, yRight, success) = CommonTool.mulG(uintSij);
+        require(success, 'mulG does not return right result');
+        return xLeft == xRight && yLeft == yRight;
     }
 
     // todo check the proof for all white list can write working record
-    // todo check proof by pre-compile contract
     function checkSProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
+    internal
+    initialized
+    onlyValidGrpId(grpId)
+    returns (bool)
+    {
+        bool bSig = checkSSig(grpId, hashX, smIndex);
+        bool bContent = checkSContent(grpId, hashX, smIndex);
+        return getChkResult(bSig, bContent, metricData.mapSSlsh[grpId][hashX][smIndex].becauseSndr);
+    }
+
+    function checkSSig(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     initialized
     onlyValidGrpId(grpId)
@@ -381,6 +480,14 @@ contract MetricDelegate is MetricStorage, Halt {
         return true;
     }
 
+    function checkSContent(bytes32 grpId, bytes32 hashX, uint8 smIndex)
+    internal
+    initialized
+    onlyValidGrpId(grpId)
+    returns (bool)
+    {
+        return true;
+    }
 
     /// @notice                           function for set config and smg contract address
     /// @param configAddr                 config contract address
@@ -428,13 +535,6 @@ contract MetricDelegate is MetricStorage, Halt {
         return CommonTool.checkSig(hash, r, s, pk);
     }
 
-    function getEpochId(uint256 blockTime)
-    public
-    view
-    returns (uint256){
-        return PosLib.getEpochId(blockTime);
-    }
-
     function checkHamming(uint indexes, uint8 smIndex)
     internal
     pure
@@ -446,5 +546,23 @@ contract MetricDelegate is MetricStorage, Halt {
 
     function() public payable {
         revert("Not support");
+    }
+
+    function bytesToUint(bytes memory b)
+    private
+    pure
+    returns (uint256){
+
+        uint256 number;
+        for (uint i = 0; i < b.length; i++) {
+            number = number + uint8(b[i]) * (2 ** (8 * (b.length - (i + 1))));
+        }
+        return number;
+    }
+
+    function bytesToBytes32(bytes memory source) pure internal returns (bytes32 result) {
+        assembly {
+            result := mload(add(source, 32))
+        }
     }
 }
