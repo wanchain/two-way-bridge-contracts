@@ -146,8 +146,8 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         require(round.srcMap[msg.sender].polyCommit.length == 0, "Duplicate");
         round.srcMap[msg.sender].polyCommit = polyCommit;
         round.polyCommitCount++;
+        updateGpk(round, polyCommit);
         if (round.polyCommitCount >= round.smNumber) {
-            round.gpk = genGpk(round);
             round.status = GroupStatus.Negotiate;
             round.statusTime = now;
         }
@@ -398,31 +398,28 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
 
     /// @notice                           function for generate gpk and pkShare
     /// @param round                      round
-    function genGpk(Round storage round)
+    /// @param polyCommit                 poly commit
+    function updateGpk(Round storage round, bytes polyCommit)
         internal
         view
         returns(bytes)
     {
-        bytes memory gpk = new bytes(65);
-        uint gpkx;
-        uint gpky;
-        bool success = true;
-        for (uint i = 0; i < round.smNumber; i++) {
-            bytes pc = round.srcMap[round.indexMap[i]].polyCommit;
-            uint pkx = bytes2uint(pc, 1);
-            uint pky = bytes2uint(pc, 33);
-            if (i == 0) {
-              gpkx = pkx;
-              gpky = pky;
-            } else {
-              (gpkx, gpky, success) = encrypt.add(gpkx, gpky, pkx, pky);
-            }
+        bytes memory gpk = round.gpk;
+        uint x = bytes2uint(polyCommit, 1);
+        uint y = bytes2uint(polyCommit, 33);
+        if (gpk.length != 0) {
+            uint gpkX = bytes2uint(gpk, 1);
+            uint gpkY = bytes2uint(gpk, 33);
+            bool success;
+            (x, y, success) = encrypt.add(x, y, gpkX, gpkY);
             require(success == true, "Gpk failed");
+        } else {
+            gpk = new bytes(65);
+            gpk[0] = 0x04;
         }
-        gpk[0] = 0x04;
-        assembly { mstore(add(gpk, 33), gpkx) }
-        assembly { mstore(add(gpk, 65), gpky) }
-        return gpk;
+        assembly { mstore(add(gpk, 33), x) }
+        assembly { mstore(add(gpk, 65), y) }
+        round.gpk = gpk;
     }
 
     /// @notice                           function for verify Sij to judge challenge
