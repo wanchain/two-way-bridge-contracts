@@ -147,7 +147,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         round.srcMap[msg.sender].polyCommit = polyCommit;
         round.polyCommitCount++;
         if (round.polyCommitCount >= round.smNumber) {
-            genGpk(round);
+            round.gpk = genGpk(round);
             round.status = GroupStatus.Negotiate;
             round.statusTime = now;
         }
@@ -181,23 +181,17 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
 
     /// @notice                           function for storeman submit gpk and pkShare (only for poc)
     /// @param groupId                    storeman group id
-    /// @param gpk                        gpk, only accept leader's value
     /// @param pkShare                    storeman group pkShare
-    function setGpk(bytes32 groupId, bytes gpk, bytes pkShare)
+    function setGpk(bytes32 groupId, bytes pkShare)
         external
     {
-        require(gpk.length == 65, "Invalid gpk");
         require(pkShare.length == 65, "Invalid pkShare");
-
         Group storage group = groupMap[groupId];
         Round storage round = group.roundMap[group.round];
         checkValid(round, GroupStatus.Negotiate, address(0), true);
         Src storage src = round.srcMap[msg.sender];
         require(src.pkShare.length == 0, "Duplicate");
         src.pkShare = pkShare;
-        if (msg.sender == round.indexMap[0]) { // leader
-          round.gpk = gpk;
-        }
     }
 
     /// @notice                           function for src storeman submit encSij
@@ -406,22 +400,29 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     /// @param round                      round
     function genGpk(Round storage round)
         internal
+        view
+        returns(bytes)
     {
         bytes memory gpk = new bytes(65);
-        uint gpkx = 0;
-        uint gpky = 0;
-        bool success;
+        uint gpkx;
+        uint gpky;
+        bool success = true;
         for (uint i = 0; i < round.smNumber; i++) {
             bytes pc = round.srcMap[round.indexMap[i]].polyCommit;
-            uint pkx = bytes2uint(pc, 2);
-            uint pky = bytes2uint(pc, 34);
-            // (gpkx, gpky, success) = encrypt.add(gpkx, gpky, pkx, pky);
-            // require(success == true, "Gpk failed");
+            uint pkx = bytes2uint(pc, 1);
+            uint pky = bytes2uint(pc, 33);
+            if (i == 0) {
+              gpkx = pkx;
+              gpky = pky;
+            } else {
+              (gpkx, gpky, success) = encrypt.add(gpkx, gpky, pkx, pky);
+            }
+            require(success == true, "Gpk failed");
         }
         gpk[0] = 0x04;
         assembly { mstore(add(gpk, 33), gpkx) }
         assembly { mstore(add(gpk, 65), gpky) }
-        round.gpk = gpk;
+        return gpk;
     }
 
     /// @notice                           function for verify Sij to judge challenge
@@ -505,6 +506,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
 
     function bytes2uint(bytes source, uint offset)
         internal
+        pure
         returns(uint)
     {
         uint number = 0;
@@ -564,17 +566,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     {
         Group storage group = groupMap[groupId];
         return group.roundMap[group.round].gpk;
-    }
-
-    function getPosAvgReturn(uint256 groupStartTime, uint256 curTime)
-        external
-        view
-        returns(uint256, bool)
-    {
-        uint rt;
-        bool success;
-        (rt, success) = encrypt.getPosAvgReturn(groupStartTime, curTime);
-        return (rt, success);
     }
 
     /// @notice fallback function

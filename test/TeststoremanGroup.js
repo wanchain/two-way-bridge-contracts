@@ -194,110 +194,110 @@ contract('TestSmg', async (accounts) => {
         console.log("count :", count)
 
     })
-    it('setGpk', async() => {
-        await pu.sleep(2000)
-       let tx =  await smg.setGpk(id, gpk)
-       //console.log("setGpk tx:", tx)
-    })
-    it('test append', async()=>{
-        let i=stakerCount-1;
-        let sw = utils.getAddressFromInt(i+2000)
-        let j = deCount-1;
+    // it('setGpk', async() => {
+    //     await pu.sleep(2000)
+    //    let tx =  await smg.setGpk(id, gpk)
+    //    //console.log("setGpk tx:", tx)
+    // })
+    // it('test append', async()=>{
+    //     let i=stakerCount-1;
+    //     let sw = utils.getAddressFromInt(i+2000)
+    //     let j = deCount-1;
 
-        let de = utils.getAddressFromInt((i+1000)*10*1000 + j)
+    //     let de = utils.getAddressFromInt((i+1000)*10*1000 + j)
 
-        txhash = await tryAddDelegator(smg, id, sw.addr, de, 3000);
-        console.log("append txhash i j:", i,j, txhash)
-        await utils.waitReceipt(txhash)
-    })
-    it('inSmgLock', async()=>{
-        let typesArray = ['bytes','bytes32','address','uint'];
-        let xhash = utils.stringTobytes32("xhash")
-        let waddr =  utils.getAddressFromInt(3).addr
-        let value = 100;
-        let parameters = [EOS, xhash,waddr, value];
-        // [ '0x454f53',
-        // '0x0000000000000000000000000000000000000000000000000000007868617368',
-        // '0x6813eb9362372eef6200f3b1dbc3f819671cba69',
-        // 100 ]
+    //     txhash = await tryAddDelegator(smg, id, sw.addr, de, 3000);
+    //     console.log("append txhash i j:", i,j, txhash)
+    //     await utils.waitReceipt(txhash)
+    // })
+    // it('inSmgLock', async()=>{
+    //     let typesArray = ['bytes','bytes32','address','uint'];
+    //     let xhash = utils.stringTobytes32("xhash")
+    //     let waddr =  utils.getAddressFromInt(3).addr
+    //     let value = 100;
+    //     let parameters = [EOS, xhash,waddr, value];
+    //     // [ '0x454f53',
+    //     // '0x0000000000000000000000000000000000000000000000000000007868617368',
+    //     // '0x6813eb9362372eef6200f3b1dbc3f819671cba69',
+    //     // 100 ]
       
-        // let data = web3.eth.abi.encodeParameters(typesArray, parameters)
+    //     // let data = web3.eth.abi.encodeParameters(typesArray, parameters)
 
-        // let s = schnorr.getS(skSmg, typesArray, parameters);
-        // console.log("=====s===hex:", s);
-        // let r = schnorr.getR()
-        // console.log("=====R===hex:",r);
+    //     // let s = schnorr.getS(skSmg, typesArray, parameters);
+    //     // console.log("=====s===hex:", s);
+    //     // let r = schnorr.getR()
+    //     // console.log("=====R===hex:",r);
 
-        let htlcProxy = await HTLCProxy.deployed();
-        let htlc = await HTLCDelegate.at(htlcProxy.address);
-        console.log("htlcProxy.address:", htlcProxy.address)
-        let r = "0x042889675e82ca348bc8769ecf0b4533dec112a4531ea4024f15a8b96e154d1447d634f50078cb2003b13fc0324c60798c1eb58954bfcbfcf1293b42959615b686"
-        let s = "0x62926fc0009c1d3d854d060dd64ead34573be15c60373dbf3a3d070ae2a01422"
+    //     let htlcProxy = await HTLCProxy.deployed();
+    //     let htlc = await HTLCDelegate.at(htlcProxy.address);
+    //     console.log("htlcProxy.address:", htlcProxy.address)
+    //     let r = "0x042889675e82ca348bc8769ecf0b4533dec112a4531ea4024f15a8b96e154d1447d634f50078cb2003b13fc0324c60798c1eb58954bfcbfcf1293b42959615b686"
+    //     let s = "0x62926fc0009c1d3d854d060dd64ead34573be15c60373dbf3a3d070ae2a01422"
 
-        let locktx = await htlc.inSmgLock(EOS, xhash, waddr, 100, gpk, r,s)   
-        console.log("locktx:", locktx); 
-        console.log("parameters++++++++++++++++:",parameters)
+    //     let locktx = await htlc.inSmgLock(EOS, xhash, waddr, 100, gpk, r,s)   
+    //     console.log("locktx:", locktx); 
+    //     console.log("parameters++++++++++++++++:",parameters)
 
-    })
+    // })
 
-    it('incentive ', async ()=>{
-        await pu.sleep(4 * 60 * 1000)
-        let count = await smg.getSelectedSmNumber(id)
-        console.log("count :", count)
-        console.log("group:",await smg.getGroupInfo(id))
+    // it('incentive ', async ()=>{
+    //     await pu.sleep(4 * 60 * 1000)
+    //     let count = await smg.getSelectedSmNumber(id)
+    //     console.log("count :", count)
+    //     console.log("group:",await smg.getGroupInfo(id))
 
-        for(let i=0; i<count; i++){
-            let  skAddr = await smg.getSelectedSmInfo(id, i)
-            console.log("skAddr:", skAddr)
-            while(true){
-                let tx = await smg.testIncentiveAll(id,skAddr['0'])
-                let rec = await utils.waitReceipt(tx.tx);
-                // console.log("rec:",rec.logs[0].topics[3]==1)
-                // console.log("rec:",rec.logs[0].topics)
-                // console.log("rec:",rec)
-                if(rec.logs[0].topics[3]==1){
-                    break;
-                }
-            }
-        }
-
-
-
-        // for(let i=0; i<count; i++) {
-        //     let  = await smg.getSelectedSmInfo(id, i)
-        //     console.log("skAddr:", i,skAddr)
-        //     while(true){
-        //         let tx = await smg.testIncentiveAll(id,skAddr['0'])
-        //         let rec = await utils.waitReceipt(tx.tx);
-        //         console.log("rec:",rec)
-        //     }
+    //     for(let i=0; i<count; i++){
+    //         let  skAddr = await smg.getSelectedSmInfo(id, i)
+    //         console.log("skAddr:", skAddr)
+    //         while(true){
+    //             let tx = await smg.testIncentiveAll(id,skAddr['0'])
+    //             let rec = await utils.waitReceipt(tx.tx);
+    //             // console.log("rec:",rec.logs[0].topics[3]==1)
+    //             // console.log("rec:",rec.logs[0].topics)
+    //             // console.log("rec:",rec)
+    //             if(rec.logs[0].topics[3]==1){
+    //                 break;
+    //             }
+    //         }
+    //     }
 
 
-        for(let i=0; i<count; i++) {
-            let skAddr = await smg.getSelectedSmInfo(id, i)
-            console.log("skAddr:", i,skAddr)
-                let sk = await smg.getSmInfo(id, skAddr[0]);
-                console.log("sk, i:", i, sk)
 
-                let deCount = sk["9"] ;
-                for(let k=0; k<deCount; k++) {
-                    let deAddr = await smg.getSmDelegatorAddr(id, skAddr[0], k)
-                    let de = await smg.getSmDelegatorInfo(id, skAddr[0], deAddr);
-                        console.log("de:", k, de)
+    //     // for(let i=0; i<count; i++) {
+    //     //     let  = await smg.getSelectedSmInfo(id, i)
+    //     //     console.log("skAddr:", i,skAddr)
+    //     //     while(true){
+    //     //         let tx = await smg.testIncentiveAll(id,skAddr['0'])
+    //     //         let rec = await utils.waitReceipt(tx.tx);
+    //     //         console.log("rec:",rec)
+    //     //     }
 
-                    let rc = de["1"];
-                    for(let c = 0; c<rc; c++){
-                        let r = await smg.getSmDelegatorInfoRecord(id, skAddr[0], deAddr, c)
-                        console.log("records", c, r["0"], r["1"])
-                    }
-                }
+
+    //     for(let i=0; i<count; i++) {
+    //         let skAddr = await smg.getSelectedSmInfo(id, i)
+    //         console.log("skAddr:", i,skAddr)
+    //             let sk = await smg.getSmInfo(id, skAddr[0]);
+    //             console.log("sk, i:", i, sk)
+
+    //             let deCount = sk["9"] ;
+    //             for(let k=0; k<deCount; k++) {
+    //                 let deAddr = await smg.getSmDelegatorAddr(id, skAddr[0], k)
+    //                 let de = await smg.getSmDelegatorInfo(id, skAddr[0], deAddr);
+    //                     console.log("de:", k, de)
+
+    //                 let rc = de["1"];
+    //                 for(let c = 0; c<rc; c++){
+    //                     let r = await smg.getSmDelegatorInfoRecord(id, skAddr[0], deAddr, c)
+    //                     console.log("records", c, r["0"], r["1"])
+    //                 }
+    //             }
             
 
-        }
+    //     }
 
-        let dayIncentive = await smg.checkGroupIncentive(id, now+1)
-        console.log("dayIncentive: ", dayIncentive)
+    //     let dayIncentive = await smg.checkGroupIncentive(id, now+1)
+    //     console.log("dayIncentive: ", dayIncentive)
 
-    })
+    // })
 
 })

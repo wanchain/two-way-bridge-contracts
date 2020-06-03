@@ -8,8 +8,6 @@ const {GroupStatus, CheckStatus} = require('./Types');
 const Send = require('./Send');
 const Receive = require('./Receive');
 
-const POC = true;
-
 class Round {
   constructor(groupId, round) {
     // contract
@@ -218,7 +216,7 @@ class Round {
     let receipt;
     // self polyCommit
     if (this.polyCommitTxHash && !this.polyCommitDone) {
-      receipt = await wanchain.getTxReceipt(this.polyCommitTxHash);
+      receipt = await wanchain.getTxReceipt(this.polyCommitTxHash, 'polyCommit');
       if (receipt) {
         if (receipt.status) {
           this.polyCommitDone = true;
@@ -547,7 +545,7 @@ class Round {
       }
     }
     // first send or resend
-    this.gpkTxHash = await wanchain.sendGpk(this.groupId, this.gpk, this.pkShare);
+    this.gpkTxHash = await wanchain.sendGpk(this.groupId, this.pkShare);
     console.log("group %s round %d sendGpk hash: %s", this.groupId, this.round, this.gpkTxHash );
   }
 }
