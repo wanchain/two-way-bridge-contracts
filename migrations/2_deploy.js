@@ -1,4 +1,3 @@
-
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const Secp256k1 = artifacts.require('Secp256k1');
@@ -17,18 +16,19 @@ const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const TestSmg = artifacts.require('TestSmg');
 
 
-const CommonTool    = artifacts.require('CommonTool');
-const MetricProxy     = artifacts.require('MetricProxy');
-const MetricDelegate  = artifacts.require('MetricDelegate');
+const CommonTool = artifacts.require('CommonTool');
+const MetricProxy = artifacts.require('MetricProxy');
+const MetricDelegate = artifacts.require('MetricDelegate');
+const MetricLib = artifacts.require('MetricLib');
 
 const Enhancement = artifacts.require('Enhancement');
 
-const CreateGpkProxy  = artifacts.require('CreateGpkProxy');
+const CreateGpkProxy = artifacts.require('CreateGpkProxy');
 const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
 
 
-module.exports = async function(deployer,network){
-    if(network === 'nodeploy') return;
+module.exports = async function (deployer, network) {
+    if (network === 'nodeploy') return;
 
     // token manager sc
     await deployer.deploy(TokenManagerProxy);
@@ -74,7 +74,7 @@ module.exports = async function(deployer,network){
     // storeman group admin sc
     let poslibAddr = await deployer.deploy(PosLib);
     console.log("================== poslib address:", poslibAddr.address);
-    await deployer.link(PosLib,StoremanGroupDelegate)
+    await deployer.link(PosLib, StoremanGroupDelegate)
     await deployer.deploy(StoremanGroupProxy);
     let smgProxy = await StoremanGroupProxy.deployed();
     await deployer.deploy(StoremanGroupDelegate);
@@ -85,7 +85,7 @@ module.exports = async function(deployer,network){
     await deployer.deploy(TestSmg);
     let tsmg = await TestSmg.deployed();
     await tsmg.setSmgAddr(smgProxy.address)
-    
+
     // token manager dependence
     let tm = await TokenManagerDelegate.at(tmProxy.address);
     await tm.setHtlcAddr(htlcProxy.address);
@@ -112,8 +112,14 @@ module.exports = async function(deployer,network){
 
     //deploy metric
     await deployer.deploy(CommonTool);
+    await deployer.link(CommonTool, MetricLib);
+    await deployer.link(PosLib, MetricLib);
+    await deployer.deploy(MetricLib);
+
+
     await deployer.link(CommonTool, MetricDelegate);
-    await deployer.link(PosLib,MetricDelegate);
+    await deployer.link(MetricLib, MetricDelegate);
+    await deployer.link(PosLib, MetricDelegate);
 
     await deployer.deploy(MetricProxy);
     let metricProxy = await MetricProxy.deployed();
@@ -122,7 +128,7 @@ module.exports = async function(deployer,network){
     await metricProxy.upgradeTo(metricDlg.address);
 
     let metric = await MetricDelegate.at(metricProxy.address);
-    await metric.setDependence(smgProxy.address,smgProxy.address);
+    await metric.setDependence(smgProxy.address, smgProxy.address);
 
     // precompile contract
     await deployer.deploy(Enhancement);
