@@ -136,5 +136,5 @@ module.exports = async function(deployer,network){
     await gpkProxy.upgradeTo(gpkDelegate.address);
 
     let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);
-    await gpk.setDependence(smgProxy.address, smgProxy.address, pos.address);
+    await gpk.setDependence(smgProxy.address, pos.address);
 }

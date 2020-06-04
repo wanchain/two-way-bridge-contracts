@@ -98,18 +98,15 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     *
     */
 
-    /// @notice                           function for set config and smg contract address
-    /// @param configAddr                 config contract address
+    /// @notice                           function for set smg and precompiled encrypt contract address
     /// @param smgAddr                    smg contract address
     /// @param encryptAddr                encrypt contract address
-    function setDependence(address configAddr, address smgAddr, address encryptAddr)
+    function setDependence(address smgAddr, address encryptAddr)
         external
         onlyOwner
     {
-        require(configAddr != address(0), "Invalid config address");
         require(smgAddr != address(0), "Invalid smg address");
         require(encryptAddr != address(0), "Invalid encrypt address");
-        config = IConfig(configAddr);
         smg = IStoremanGroup(smgAddr);
         encrypt = IPosAvgReturn(encryptAddr);
     }
@@ -127,7 +124,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         require(round.status == GroupStatus.PolyCommit, "Invalid status");
         if (round.smNumber == 0) {
             // init config when the first node submit
-            fetchConfig(group);
+            initConfig(group);
             // selected sm list
             round.smNumber = uint16(smg.getSelectedSmNumber(groupId));
             require(round.smNumber > 0, "Invalid sm number");
@@ -366,9 +363,9 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         }
     }
 
-    /// @notice                           function for fetch config
+    /// @notice                           function for init config
     /// @param group                      storeman group pointer
-    function fetchConfig(Group storage group)
+    function initConfig(Group storage group)
         internal
     {
         if (group.round == 0) { // init once time at the first round
