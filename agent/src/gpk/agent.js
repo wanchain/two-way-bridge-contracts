@@ -5,6 +5,7 @@ const Round = require('./Round');
 const EventTracker = require('../utils/EventTracker');
 const {GroupStatus} = require('./Types');
 const wanchain = require('../utils/wanchain');
+const tool = require('../utils/tools');
 
 console.log("OpenStoreman gpk agent");
 
@@ -24,8 +25,7 @@ function recoverProcess() {
   files.forEach(file => {
     if (file.match(/^0x[0-9a-f]{64}\.cxt$/)) {
       console.log("recoverProcess: %s", file);
-      let p = path.join(dir, file);
-      let ctx = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      let ctx = tool.readContext(file);
       let round = new Round('', 0);
       Object.assign(round, ctx);
       groupMap.set(round.groupId, round);

@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const config = require('../../cfg/config');
 const BigInteger = require('bigi');
 const encrypt = require('../utils/encrypt');
@@ -7,6 +5,7 @@ const wanchain = require('../utils/wanchain');
 const {GroupStatus, CheckStatus} = require('./Types');
 const Send = require('./Send');
 const Receive = require('./Receive');
+const tool = require('../utils/tools');
 
 class Round {
   constructor(groupId, round) {
@@ -128,13 +127,11 @@ class Round {
     let copy = Object.assign({}, this);
     copy.smgSc = null;
     copy.createGpkSc = null;
-    let fp = path.join(__dirname, '../../cxt/', this.groupId + '.cxt');
-    fs.writeFileSync(fp, JSON.stringify(copy), 'utf8');
+    tool.writeContext(this.groupId + '.cxt', copy);
   }
 
   removeProgress() {
-    let fp = path.join(__dirname, '../../cxt/', this.groupId + '.cxt');
-    fs.unlinkSync(fp);
+    tool.clearContext(this.groupId + '.cxt');
   }
 
   stop() {
