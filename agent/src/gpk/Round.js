@@ -427,7 +427,7 @@ class Round {
         send.sijTimeoutTxHash = await wanchain.sendSijTimeout(this.groupId, partner);
         console.log("group %s round %d sendSijTimeout to %s hash: %s", this.groupId, this.round, partner, send.sijTimeoutTxHash);
       }
-    }    
+    }
   }
 
   async negotiateSend(partner, index) {
