@@ -71,7 +71,6 @@ contract CreateGpkStorage is BasicStorage {
     enum GroupStatus {PolyCommit, Negotiate, Complete, Close}
 
     struct Src {
-        uint16 checkValidCount;
         bytes polyCommit;
         bytes pkShare;
         /// txAddress->Dest

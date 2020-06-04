@@ -218,10 +218,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
 
         if (isValid) {
             d.checkStatus = CheckStatus.Valid;
-            s.checkValidCount++;
-            if (s.checkValidCount >= round.smNumber) {
-                genPkShare(round, src);
-            }
             round.checkValidCount++;
             if (round.checkValidCount >= round.smNumber ** 2) {
                 round.status = GroupStatus.Complete;
@@ -448,15 +444,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         returns(bool valid)
     {
         return true; // TODO
-    }
-
-    /// @notice                           function for generate pkShare for src storeman
-    /// @param round                      storeman group id
-    /// @param src                        src storeman address
-    function genPkShare(Round storage round, address src)
-        internal
-    {
-        round.srcMap[src].pkShare = round.srcMap[src].pkShare; // TODO
     }
 
     /// @notice                           function for slash
