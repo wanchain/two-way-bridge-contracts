@@ -44,14 +44,22 @@ contract MetricDelegate is MetricStorage, Halt {
      *
      */
     modifier onlyValidGrpId (bytes32 grpId) {
-        require(grpId.length > 0, "Invalid group ID");
+        _checkGrpId(grpId);
         _;
     }
 
     modifier initialized {
-        require(config != IConfig(address(0)), "Global configure is null");
-        require(smg != IStoremanGroup(address(0)), "Smg is null");
+        _initialized();
         _;
+    }
+
+    function _checkGrpId(bytes32 grpId) internal view{
+        require(grpId.length > 0, "grpId null");
+    }
+
+    function _initialized() internal view{
+        require(config != IConfig(address(0)), "IConfig null");
+        require(smg != IStoremanGroup(address(0)), "Smg null");
     }
 
     /**
@@ -74,7 +82,7 @@ contract MetricDelegate is MetricStorage, Halt {
     initialized
     onlyValidGrpId(grpId)
     returns (uint[]) {
-        require(endEpId > startEpId, "End epochId should be more than start epochId");
+        require(endEpId > startEpId, "endEpId<startEpId");
         uint[] memory ret;
         uint8 n = getSMCount(grpId);
         ret = new uint[](n);
@@ -93,7 +101,7 @@ contract MetricDelegate is MetricStorage, Halt {
     onlyValidGrpId(grpId)
     returns (uint[])
     {
-        require(endEpId > startEpId, "End epochId should be more than start epochId");
+        require(endEpId > startEpId, "endEpId<startEpId");
         uint[] memory ret;
         uint8 n = getSMCount(grpId);
         ret = new uint[](n);
@@ -210,69 +218,29 @@ contract MetricDelegate is MetricStorage, Halt {
         }
     }
 
-
-    function wrRSlshPolyCM(bytes32 grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex, bool becauseSndr,
-        bytes polyCM, bytes polyCMR, bytes polyCMS)
-    external
+    function wrRSlsh(bytes32 grpId, bytes32 hashX, MetricTypes.RSlshData memory rslshData)
+    public
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
-
-        require(sndrAndRcvrIndex.length == uint(2), "sender or receiver index missing.");
-
-        uint8 smIndex;
-        if (becauseSndr) {
-            smIndex = sndrAndRcvrIndex[0];
-        } else {
-            smIndex = sndrAndRcvrIndex[1];
-        }
-
-        //todo dupilicate? allow users update the proof?
-        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
-
-        // write working record
-
-        rslshData.polyCMData.polyCM = polyCM;
-        rslshData.polyCMData.polyCMR = polyCMR;
-        rslshData.polyCMData.polyCMS = polyCMS;
-
-
-        rslshData.sndrIndex = sndrAndRcvrIndex[0];
-        rslshData.rcvrIndex = sndrAndRcvrIndex[1];
-        rslshData.becauseSndr = becauseSndr;
-
-    }
-
-    // todo how to make sure atom operation?
-    function wrRSlshPolyData(bytes32 grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex, bool becauseSndr,
-        bytes polyData, bytes polyDataR, bytes polyDataS)
-    external
-    notHalted
-    initialized
-    onlyValidGrpId(grpId)
-    {
-        require(sndrAndRcvrIndex.length == uint(2), "sender or receiver index missing.");
-
-        uint8 smIndex;
-        if (becauseSndr) {
-            smIndex = sndrAndRcvrIndex[0];
-        } else {
-            smIndex = sndrAndRcvrIndex[1];
-        }
-
-        //todo dupilicate? allow users update the proof?
-        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+        uint8 smCount = getSMCount(grpId);
+        require(rslshData.sndrIndex <= smCount, "invalid send index");
+        require(rslshData.rcvrIndex <= smCount, "invalid receiver index");
 
         require(rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
         require(rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
         require(rslshData.polyCMData.polyCMS.length != 0, "polyCMS is empty");
 
-        // write working record
+        require(rslshData.polyDataPln.polyData.length != 0, "polyData is empty");
+        require(rslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
+        require(rslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
 
-        rslshData.polyDataPln.polyData = polyData;
-        rslshData.polyDataPln.polyDataR = polyDataR;
-        rslshData.polyDataPln.polyDataS = polyDataS;
+
+        uint8 smIndex;
+        smIndex = rslshData.becauseSndr ? rslshData.sndrIndex : rslshData.rcvrIndex;
+
+        metricData.mapRSlsh[grpId][hashX][smIndex] = rslshData;
 
         if (checkRProof(grpId, hashX, smIndex)) {
             // update the  count
@@ -285,65 +253,28 @@ contract MetricDelegate is MetricStorage, Halt {
         }
     }
 
-
-    function wrSSlshShare(bytes32 grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex, bool becauseSndr,
-        bytes gpkShare, bytes rpkShare, bytes m)
-    external
+    function wrSSlsh(bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData memory sslshData)
+    public
     notHalted
     initialized
     onlyValidGrpId(grpId)
     {
-        require(sndrAndRcvrIndex.length == uint(2), "sender or receiver index missing.");
-        uint8 smIndex;
-        if (becauseSndr) {
-            smIndex = sndrAndRcvrIndex[0];
-        } else {
-            smIndex = sndrAndRcvrIndex[1];
-        }
 
-        //todo dupilicate? allow users update the proof?
-        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
-        // write working record
-
-        sslshData.m = m;
-        sslshData.rpkShare = rpkShare;
-        sslshData.gpkShare = gpkShare;
-
-
-        sslshData.sndrIndex = sndrAndRcvrIndex[0];
-        sslshData.rcvrIndex = sndrAndRcvrIndex[1];
-        sslshData.becauseSndr = becauseSndr;
-
-    }
-
-    // todo how to make sure atom operation?
-    function wrSSlshPolyPln(bytes32 grpId, bytes32 hashX, uint8[2] sndrAndRcvrIndex, bool becauseSndr,
-        bytes polyData, bytes polyDataR, bytes polyDataS)
-    external
-    notHalted
-    initialized
-    onlyValidGrpId(grpId)
-    {
-        require(sndrAndRcvrIndex.length == uint(2), "sender or receiver index missing.");
-
-        uint8 smIndex;
-        if (becauseSndr) {
-            smIndex = sndrAndRcvrIndex[0];
-        } else {
-            smIndex = sndrAndRcvrIndex[1];
-        }
-
-        //todo dupilicate? allow users update the proof?
-        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+        uint8 smCount = getSMCount(grpId);
+        require(sslshData.sndrIndex <= smCount, "invalid send index");
+        require(sslshData.rcvrIndex <= smCount, "invalid receiver index");
 
         require(sslshData.m.length != 0, "m is empty");
         require(sslshData.rpkShare.length != 0, "rpkShare is empty");
         require(sslshData.gpkShare.length != 0, "gpkShare is empty");
-        // write working record
 
-        sslshData.polyDataPln.polyData = polyData;
-        sslshData.polyDataPln.polyDataR = polyDataR;
-        sslshData.polyDataPln.polyDataS = polyDataS;
+        require(sslshData.polyDataPln.polyData.length != 0, "polyData is empty");
+        require(sslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
+        require(sslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
+
+        uint8 smIndex;
+        smIndex = sslshData.becauseSndr ? sslshData.sndrIndex : sslshData.rcvrIndex;
+        metricData.mapSSlsh[grpId][hashX][smIndex] = sslshData;
 
         if (checkSProof(grpId, hashX, smIndex)) {
             // update the  count
@@ -354,12 +285,10 @@ contract MetricDelegate is MetricStorage, Halt {
             emit SMInvSlshLogger(msg.sender, grpId, hashX, smIndex, MetricTypes.SlshReason.S);
             delete metricData.mapSSlsh[grpId][hashX][smIndex];
         }
-
     }
 
 
     ///=======================================check proof =============================================
-    // todo check the proof for all white list can write working record
     function checkRProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     initialized
@@ -401,7 +330,7 @@ contract MetricDelegate is MetricStorage, Halt {
     returns (bytes)
     {
         bytes memory smPk;
-        //        (, smPk,) = smg.getSelectedSmInfo(grpId, uint(smIndex));
+        (, smPk,) = smg.getSelectedSmInfo(grpId, uint(smIndex));
         return smPk;
     }
 
@@ -422,9 +351,9 @@ contract MetricDelegate is MetricStorage, Halt {
         // build senderpk
         senderPk = getPkBytesByInx(grpId, smIndex);
         // build r
-        r = bytesToBytes32(rslshData.polyDataPln.polyDataR);
+        r = CommonTool.bytesToBytes32(rslshData.polyDataPln.polyDataR);
         // build s
-        s = bytesToBytes32(rslshData.polyDataPln.polyDataS);
+        s = CommonTool.bytesToBytes32(rslshData.polyDataPln.polyDataS);
         return CommonTool.checkSig(h, r, s, senderPk);
     }
 
@@ -434,8 +363,6 @@ contract MetricDelegate is MetricStorage, Halt {
     onlyValidGrpId(grpId)
     returns (bool)
     {
-        uint256 uintSij = bytesToUint(sij);
-
         uint256 xLeft;
         uint256 yLeft;
 
@@ -451,12 +378,14 @@ contract MetricDelegate is MetricStorage, Halt {
 
         // left point compute by CMG
         (xLeft, yLeft, success) = CommonTool.calPolyCommit(rslshData.polyCMData.polyCM, rcvrPk);
-        require(success, 'calPolyCommit does not return right result');
+        require(success, 'calPolyCommit fail');
 
         // right point s[i][i]*G
+        uint256 uintSij = CommonTool.bytes2uint(sij, 0);
         (xRight, yRight, success) = CommonTool.mulG(uintSij);
-        require(success, 'mulG does not return right result');
+        require(success, 'mulG fail');
         return xLeft == xRight && yLeft == yRight;
+        //return true;
     }
 
     // todo check the proof for all white list can write working record
@@ -477,7 +406,21 @@ contract MetricDelegate is MetricStorage, Halt {
     onlyValidGrpId(grpId)
     returns (bool)
     {
-        return true;
+        bytes32 h;
+        bytes32 r;
+        bytes32 s;
+        bytes memory senderPk;
+
+        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+        // build h
+        h = sha256(sslshData.polyDataPln.polyData);
+        // build senderpk
+        senderPk = getPkBytesByInx(grpId, smIndex);
+        // build r
+        r = CommonTool.bytesToBytes32(sslshData.polyDataPln.polyDataR);
+        // build s
+        s = CommonTool.bytesToBytes32(sslshData.polyDataPln.polyDataS);
+        return CommonTool.checkSig(h, r, s, senderPk);
     }
 
     function checkSContent(bytes32 grpId, bytes32 hashX, uint8 smIndex)
@@ -486,7 +429,34 @@ contract MetricDelegate is MetricStorage, Halt {
     onlyValidGrpId(grpId)
     returns (bool)
     {
-        return true;
+        bool success;
+        uint xLeft;
+        uint yLeft;
+
+        uint xRight;
+        uint yRight;
+
+        uint mgpkX;
+        uint mgpkY;
+
+        MetricTypes.SSlshData memory sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+        // s*G
+        (xRight, yRight, success) = CommonTool.mulG(CommonTool.bytes2uint(sslshData.polyDataPln.polyData, 0));
+        require(success, 'mulG fail');
+        // rpkShare + m * gpkShare
+        (mgpkX, mgpkY, success) = CommonTool.mulPk(CommonTool.bytes2uint(sslshData.m, 0),
+            CommonTool.bytes2uint(sslshData.gpkShare, 1),
+            CommonTool.bytes2uint(sslshData.gpkShare, 33));
+        require(success, 'mulPk fail');
+
+        (xLeft, yLeft, success) = CommonTool.add(CommonTool.bytes2uint(sslshData.rpkShare, 1),
+            CommonTool.bytes2uint(sslshData.rpkShare, 33),
+            mgpkX,
+            mgpkY);
+        require(success, 'add fail');
+
+        return xLeft == xRight && yLeft == yRight;
+
     }
 
     /// @notice                           function for set config and smg contract address
@@ -519,22 +489,6 @@ contract MetricDelegate is MetricStorage, Halt {
         return uint8(smg.getSelectedSmNumber(grpId));
     }
 
-    function checkSigTest()
-    external
-    view
-    returns (bool) {
-
-        return CommonTool.checkSigTest();
-    }
-
-    function checkSig(bytes32 hash, bytes32 r, bytes32 s, bytes pk)
-    public
-    view
-    returns (bool) {
-
-        return CommonTool.checkSig(hash, r, s, pk);
-    }
-
     function checkHamming(uint indexes, uint8 smIndex)
     internal
     pure
@@ -543,26 +497,8 @@ contract MetricDelegate is MetricStorage, Halt {
         return indexes & (uint(1) << smIndex) != uint(0);
     }
 
-
     function() public payable {
         revert("Not support");
     }
 
-    function bytesToUint(bytes memory b)
-    private
-    pure
-    returns (uint256){
-
-        uint256 number;
-        for (uint i = 0; i < b.length; i++) {
-            number = number + uint8(b[i]) * (2 ** (8 * (b.length - (i + 1))));
-        }
-        return number;
-    }
-
-    function bytesToBytes32(bytes memory source) pure internal returns (bytes32 result) {
-        assembly {
-            result := mload(add(source, 32))
-        }
-    }
 }
