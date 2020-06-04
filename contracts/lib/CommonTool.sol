@@ -32,26 +32,14 @@ library CommonTool {
 
     using SafeMath for uint;
 
-    /**
-    *
-    * MODIFIERS
-    *
-    */
 
-    /**
-    *
-    * VARIABLES
-    *
-    */
+
+
 
     uint public constant DIVISOR = 10000;
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
 
-    /**
-     *
-     * MANIPULATIONS
-     *
-     */
+
 
     function addTest()
     public
@@ -121,6 +109,14 @@ library CommonTool {
             y := mload(add(freePtr, 32))
         }
 
+    }
+
+
+    function mulPk(uint256 scalar, uint256 xPk, uint256 yPk)
+    public
+    view
+    returns (uint256 x, uint256 y, bool success){
+        return (0,0,true);
     }
 
     function hexStr2bytes(string data)
@@ -297,6 +293,24 @@ library CommonTool {
             return result == 1;
         } else {
             return false;
+        }
+    }
+
+    function bytes2uint(bytes source, uint offset)
+    public
+    pure
+    returns (uint)
+    {
+        uint number = 0;
+        for (uint i = 0; i < 32; i++) {
+            number = number + uint8(source[i + offset]) * (2 ** (8 * (32 - (i + 1))));
+        }
+        return number;
+    }
+
+    function bytesToBytes32(bytes memory source) pure public returns (bytes32 result) {
+        assembly {
+            result := mload(add(source, 32))
         }
     }
 }
