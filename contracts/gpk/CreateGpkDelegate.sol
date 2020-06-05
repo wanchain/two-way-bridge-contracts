@@ -111,6 +111,21 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         encrypt = IPosAvgReturn(encryptAddr);
     }
 
+    /// @notice                           function for set period
+    /// @param groupId                    group id
+    /// @param ployCommitPeriod           ployCommit period
+    /// @param defaultPeriod              default period
+    /// @param negotiatePeriod            negotiate period
+    function setPeriod(bytes32 groupId, uint32 ployCommitPeriod, uint32 defaultPeriod, uint32 negotiatePeriod)
+        external
+        onlyOwner
+    {
+        Group storage group = groupMap[groupId];
+        group.ployCommitPeriod = ployCommitPeriod;
+        group.defaultPeriod = defaultPeriod;
+        group.negotiatePeriod = negotiatePeriod;
+    }
+
     /// @notice                           function for storeman submit poly commit
     /// @param groupId                    storeman group id
     /// @param polyCommit                 poly commit list (17 order in x0,y0,x1,y1... format)
@@ -123,8 +138,8 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         Round storage round = group.roundMap[group.round];
         require(round.status == GroupStatus.PolyCommit, "Invalid status");
         if (round.smNumber == 0) {
-            // init config when the first node submit
-            initConfig(group);
+            // init period when the first node submit
+            initPeriod(group);
             // selected sm list
             round.smNumber = uint16(smg.getSelectedSmNumber(groupId));
             require(round.smNumber > 0, "Invalid sm number");
@@ -363,12 +378,12 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         }
     }
 
-    /// @notice                           function for init config
+    /// @notice                           function for init period
     /// @param group                      storeman group pointer
-    function initConfig(Group storage group)
+    function initPeriod(Group storage group)
         internal
     {
-        if (group.round == 0) { // init once time at the first round
+        if (group.defaultPeriod == 0) { // once per group
             group.ployCommitPeriod = 10 * 60;
             group.defaultPeriod = 5 * 60;
             group.negotiatePeriod = 15 * 60;
