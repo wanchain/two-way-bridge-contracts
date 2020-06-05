@@ -16,15 +16,10 @@ contract FakeSmg {
     bytes32  grpId;
     bytes  enodeId;
 
-//    string[4] Pks =["0x04d9482a01dd8bb0fb997561e734823d6cf341557ab117b7f0de72530c5e2f0913ef74ac187589ed90a2b9b69f736af4b9f87c68ae34c550a60f4499e2559cbfa5",
-//                    "0x043d0461abc005e082021fb2dd81781f676941b2f922422932d56374646328a8132bb0f7956532981bced30a1aa3301e9134041b399058de31d388651fc005b49e",
-//                    "0x04f65f08b31c46e97751865b24a176f28888f2cef91ffdf95d0cbf3fd71b4abdab7f4b4b55cfac5853198854569bad590ed260557f50e6bc944ad63a274369339a",
-//                    "0x042687ff2d4ba1cfa8bbd27aa33d691dabe007a0eaaf109aab2a990154906f00860e5ead9ed95080c144a61a0eabb5df7f109ff348c9b9de68ee133a49c0731fc0"];
-
-    string[4] Pks =["04d9482a01dd8bb0fb997561e734823d6cf341557ab117b7f0de72530c5e2f0913ef74ac187589ed90a2b9b69f736af4b9f87c68ae34c550a60f4499e2559cbfa5",
-                    "043d0461abc005e082021fb2dd81781f676941b2f922422932d56374646328a8132bb0f7956532981bced30a1aa3301e9134041b399058de31d388651fc005b49e",
-                    "04f65f08b31c46e97751865b24a176f28888f2cef91ffdf95d0cbf3fd71b4abdab7f4b4b55cfac5853198854569bad590ed260557f50e6bc944ad63a274369339a",
-                    "042687ff2d4ba1cfa8bbd27aa33d691dabe007a0eaaf109aab2a990154906f00860e5ead9ed95080c144a61a0eabb5df7f109ff348c9b9de68ee133a49c0731fc0"];
+    string[4] Pks = ["04d9482a01dd8bb0fb997561e734823d6cf341557ab117b7f0de72530c5e2f0913ef74ac187589ed90a2b9b69f736af4b9f87c68ae34c550a60f4499e2559cbfa5",
+    "043d0461abc005e082021fb2dd81781f676941b2f922422932d56374646328a8132bb0f7956532981bced30a1aa3301e9134041b399058de31d388651fc005b49e",
+    "04f65f08b31c46e97751865b24a176f28888f2cef91ffdf95d0cbf3fd71b4abdab7f4b4b55cfac5853198854569bad590ed260557f50e6bc944ad63a274369339a",
+    "042687ff2d4ba1cfa8bbd27aa33d691dabe007a0eaaf109aab2a990154906f00860e5ead9ed95080c144a61a0eabb5df7f109ff348c9b9de68ee133a49c0731fc0"];
 
     address constant ADD_0 = 0x0000000000000000000000000000000000000000;
 
@@ -32,10 +27,10 @@ contract FakeSmg {
     mapping(bytes32 => mapping(uint8 => bytes)) mapSmgInfo;
 
     constructor(){
-        grpId = bytesToBytes32(fromHex(GroupIdStr),0);
+        grpId = bytesToBytes32(fromHex(GroupIdStr), 0);
         enodeId = fromHex(EnodeIdStr);
 
-        for(uint i = 0; i< Pks.length; i++){
+        for (uint i = 0; i < Pks.length; i++) {
             mapSmgInfo[grpId][uint8(i)] = fromHex(Pks[i]);
         }
     }
@@ -55,17 +50,17 @@ contract FakeSmg {
     }
 
     function getSelectedSmInfo(bytes32 grpId, uint index) external returns (address txAddress, bytes pk, bytes enId){
-        (txAddress,pk,enodeId) = (ADD_0,mapSmgInfo[grpId][uint8(index)],enodeId);
+        (txAddress,pk,enodeId) = (ADD_0, mapSmgInfo[grpId][uint8(index)], enodeId);
     }
 
     function bytesToBytes32(bytes b, uint offset) internal pure returns (bytes32) {
         bytes32 out;
 
         for (uint i = 0; i < 32; i++) {
-        out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
+            out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
         }
         return out;
-        }
+    }
 
 
     // Convert an hexadecimal character to their value
@@ -79,16 +74,18 @@ contract FakeSmg {
         if (byte(c) >= byte('A') && byte(c) <= byte('F')) {
             return 10 + c - uint(byte('A'));
         }
+        return uint(0);
     }
 
     // Convert an hexadecimal string to raw bytes
     function fromHex(string s) public pure returns (bytes) {
         bytes memory ss = bytes(s);
-        require(ss.length%2 == 0); // length must be even
-        bytes memory r = new bytes(ss.length/2);
-        for (uint i=0; i<ss.length/2; ++i) {
-            r[i] = byte(fromHexChar(uint(ss[2*i])) * 16 +
-            fromHexChar(uint(ss[2*i+1])));
+        require(ss.length % 2 == 0);
+        // length must be even
+        bytes memory r = new bytes(ss.length / 2);
+        for (uint i = 0; i < ss.length / 2; ++i) {
+            r[i] = byte(fromHexChar(uint(ss[2 * i])) * 16 +
+                fromHexChar(uint(ss[2 * i + 1])));
         }
         return r;
     }
