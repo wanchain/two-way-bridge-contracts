@@ -27,6 +27,9 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
+import "../../interfaces/IConfig.sol";
+import "../../interfaces/IStoremanGroup.sol";
+
 library MetricTypes {
     enum SlshReason {CM, R, RNK, S, SNK}
 
@@ -153,6 +156,11 @@ library MetricTypes {
         /// grpId -> epochId -> smIndex -> incentive count
         mapping(bytes32 => mapping(uint256 => mapping(uint8 => uint256))) mapInctCount;
 
+        /// config instance address
+        address config;
+        /// mortgage instance address
+
+        address smg;
     }
 
 }

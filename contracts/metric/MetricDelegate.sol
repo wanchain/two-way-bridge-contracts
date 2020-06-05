@@ -33,10 +33,12 @@ import "./lib/MetricTypes.sol";
 import "../interfaces/IStoremanGroup.sol";
 import "../lib/SafeMath.sol";
 import "../lib/CommonTool.sol";
+import "./lib/MetricLib.sol";
 import "../lib/PosLib.sol";
 
 contract MetricDelegate is MetricStorage, Halt {
     using SafeMath for uint;
+    using MetricLib for MetricTypes.MetricStorageData;
 
     /**
      *
@@ -53,13 +55,13 @@ contract MetricDelegate is MetricStorage, Halt {
         _;
     }
 
-    function _checkGrpId(bytes32 grpId) internal view{
+    function _checkGrpId(bytes32 grpId) internal view {
         require(grpId.length > 0, "grpId null");
     }
 
-    function _initialized() internal view{
-        require(config != IConfig(address(0)), "IConfig null");
-        require(smg != IStoremanGroup(address(0)), "Smg null");
+    function _initialized() internal view {
+        require(IConfig(metricData.config) != IConfig(address(0)), "IConfig null");
+        require(IStoremanGroup(metricData.smg) != IStoremanGroup(address(0)), "Smg null");
     }
 
     /**
@@ -72,7 +74,7 @@ contract MetricDelegate is MetricStorage, Halt {
     view
     returns (address, address)
     {
-        return (config, smg);
+        return (metricData.config, metricData.smg);
     }
 
     ///=======================================statistic=============================================
@@ -133,30 +135,29 @@ contract MetricDelegate is MetricStorage, Halt {
         return metricData.mapSlshCount[grpId][epId][smIndex];
     }
 
-    // todo get proof is used for front end.
-    function getRSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
-    external
-    view
-    initialized
-    onlyValidGrpId(grpId)
-    returns (MetricTypes.SSlshData)
-    {
-        MetricTypes.SSlshData memory sslshData;
-        return sslshData;
-    }
 
-    // todo get proof is used for front end.
-    function getSSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
+    function getRSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
     initialized
     onlyValidGrpId(grpId)
     returns (MetricTypes.RSlshData)
     {
-        MetricTypes.RSlshData memory rslshData;
-        return rslshData;
+        require(slshReason == MetricTypes.SlshReason.R, "invalid slshReason");
+        return metricData.mapRSlsh[grpId][hashX][smIndex];
+
     }
 
+    function getSSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
+    external
+    view
+    initialized
+    onlyValidGrpId(grpId)
+    returns (MetricTypes.SSlshData)
+    {
+        require(slshReason == MetricTypes.SlshReason.S, "invalid slshReason");
+        return metricData.mapSSlsh[grpId][hashX][smIndex];
+    }
 
     ///=======================================write incentive and slash=============================================
 
@@ -224,32 +225,13 @@ contract MetricDelegate is MetricStorage, Halt {
     initialized
     onlyValidGrpId(grpId)
     {
-        uint8 smCount = getSMCount(grpId);
-        require(rslshData.sndrIndex <= smCount, "invalid send index");
-        require(rslshData.rcvrIndex <= smCount, "invalid receiver index");
-
-        require(rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
-        require(rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
-        require(rslshData.polyCMData.polyCMS.length != 0, "polyCMS is empty");
-
-        require(rslshData.polyDataPln.polyData.length != 0, "polyData is empty");
-        require(rslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
-        require(rslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
-
-
+        bool success;
         uint8 smIndex;
-        smIndex = rslshData.becauseSndr ? rslshData.sndrIndex : rslshData.rcvrIndex;
-
-        metricData.mapRSlsh[grpId][hashX][smIndex] = rslshData;
-
-        if (checkRProof(grpId, hashX, smIndex)) {
-            // update the  count
-            metricData.mapSlshCount[grpId][getEpochId()][smIndex] += 1;
-            // emit the event
+        (success, smIndex) = metricData.writeRSlsh(grpId, hashX, rslshData, getSMCount(grpId));
+        if (success) {
             emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.R);
         } else {
             emit SMInvSlshLogger(msg.sender, grpId, hashX, smIndex, MetricTypes.SlshReason.R);
-            delete metricData.mapRSlsh[grpId][hashX][smIndex];
         }
     }
 
@@ -259,204 +241,14 @@ contract MetricDelegate is MetricStorage, Halt {
     initialized
     onlyValidGrpId(grpId)
     {
-
-        uint8 smCount = getSMCount(grpId);
-        require(sslshData.sndrIndex <= smCount, "invalid send index");
-        require(sslshData.rcvrIndex <= smCount, "invalid receiver index");
-
-        require(sslshData.m.length != 0, "m is empty");
-        require(sslshData.rpkShare.length != 0, "rpkShare is empty");
-        require(sslshData.gpkShare.length != 0, "gpkShare is empty");
-
-        require(sslshData.polyDataPln.polyData.length != 0, "polyData is empty");
-        require(sslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
-        require(sslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
-
+        bool success;
         uint8 smIndex;
-        smIndex = sslshData.becauseSndr ? sslshData.sndrIndex : sslshData.rcvrIndex;
-        metricData.mapSSlsh[grpId][hashX][smIndex] = sslshData;
-
-        if (checkSProof(grpId, hashX, smIndex)) {
-            // update the  count
-            metricData.mapSlshCount[grpId][getEpochId()][smIndex] += 1;
-            // emit the event
+        (success, smIndex) = metricData.writeSSlsh(grpId, hashX, sslshData, getSMCount(grpId));
+        if (success) {
             emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
         } else {
             emit SMInvSlshLogger(msg.sender, grpId, hashX, smIndex, MetricTypes.SlshReason.S);
-            delete metricData.mapSSlsh[grpId][hashX][smIndex];
         }
-    }
-
-
-    ///=======================================check proof =============================================
-    function checkRProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
-    internal
-    initialized
-    onlyValidGrpId(grpId)
-    returns (bool)
-    {
-        bool bSig = checkRSig(grpId, hashX, smIndex);
-        bool bContent = checkRContent(grpId, hashX, smIndex);
-        return getChkResult(bSig, bContent, metricData.mapRSlsh[grpId][hashX][smIndex].becauseSndr);
-    }
-
-    function getChkResult(bool bSig, bool bContent, bool becauseSndr)
-    internal
-    pure
-    returns (bool)
-    {
-        if (!bSig || !bContent) {
-            // should be sender
-            if (becauseSndr) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            // should be receiver
-            if (becauseSndr) {
-                return false;
-            } else {
-                return true;
-            }
-        }
-    }
-
-    function getPkBytesByInx(bytes32 grpId, uint8 smIndex)
-    internal
-    view
-    initialized
-    onlyValidGrpId(grpId)
-    returns (bytes)
-    {
-        bytes memory smPk;
-        (, smPk,) = smg.getSelectedSmInfo(grpId, uint(smIndex));
-        return smPk;
-    }
-
-    function checkRSig(bytes32 grpId, bytes32 hashX, uint8 smIndex)
-    internal
-    initialized
-    onlyValidGrpId(grpId)
-    returns (bool)
-    {
-        bytes32 h;
-        bytes32 r;
-        bytes32 s;
-        bytes memory senderPk;
-
-        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
-        // build h
-        h = sha256(rslshData.polyDataPln.polyData);
-        // build senderpk
-        senderPk = getPkBytesByInx(grpId, smIndex);
-        // build r
-        r = CommonTool.bytesToBytes32(rslshData.polyDataPln.polyDataR);
-        // build s
-        s = CommonTool.bytesToBytes32(rslshData.polyDataPln.polyDataS);
-        return CommonTool.checkSig(h, r, s, senderPk);
-    }
-
-    function checkRContent(bytes32 grpId, bytes32 hashX, uint8 smIndex)
-    internal
-    initialized
-    onlyValidGrpId(grpId)
-    returns (bool)
-    {
-        uint256 xLeft;
-        uint256 yLeft;
-
-        uint256 xRight;
-        uint256 yRight;
-        bool success;
-
-        bytes memory sij;
-        bytes memory rcvrPk;
-        MetricTypes.RSlshData memory rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
-        sij = rslshData.polyDataPln.polyData;
-        rcvrPk = getPkBytesByInx(grpId, rslshData.rcvrIndex);
-
-        // left point compute by CMG
-        (xLeft, yLeft, success) = CommonTool.calPolyCommit(rslshData.polyCMData.polyCM, rcvrPk);
-        require(success, 'calPolyCommit fail');
-
-        // right point s[i][i]*G
-        uint256 uintSij = CommonTool.bytes2uint(sij, 0);
-        (xRight, yRight, success) = CommonTool.mulG(uintSij);
-        require(success, 'mulG fail');
-        return xLeft == xRight && yLeft == yRight;
-        //return true;
-    }
-
-    // todo check the proof for all white list can write working record
-    function checkSProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
-    internal
-    initialized
-    onlyValidGrpId(grpId)
-    returns (bool)
-    {
-        bool bSig = checkSSig(grpId, hashX, smIndex);
-        bool bContent = checkSContent(grpId, hashX, smIndex);
-        return getChkResult(bSig, bContent, metricData.mapSSlsh[grpId][hashX][smIndex].becauseSndr);
-    }
-
-    function checkSSig(bytes32 grpId, bytes32 hashX, uint8 smIndex)
-    internal
-    initialized
-    onlyValidGrpId(grpId)
-    returns (bool)
-    {
-        bytes32 h;
-        bytes32 r;
-        bytes32 s;
-        bytes memory senderPk;
-
-        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
-        // build h
-        h = sha256(sslshData.polyDataPln.polyData);
-        // build senderpk
-        senderPk = getPkBytesByInx(grpId, smIndex);
-        // build r
-        r = CommonTool.bytesToBytes32(sslshData.polyDataPln.polyDataR);
-        // build s
-        s = CommonTool.bytesToBytes32(sslshData.polyDataPln.polyDataS);
-        return CommonTool.checkSig(h, r, s, senderPk);
-    }
-
-    function checkSContent(bytes32 grpId, bytes32 hashX, uint8 smIndex)
-    internal
-    initialized
-    onlyValidGrpId(grpId)
-    returns (bool)
-    {
-        bool success;
-        uint xLeft;
-        uint yLeft;
-
-        uint xRight;
-        uint yRight;
-
-        uint mgpkX;
-        uint mgpkY;
-
-        MetricTypes.SSlshData memory sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
-        // s*G
-        (xRight, yRight, success) = CommonTool.mulG(CommonTool.bytes2uint(sslshData.polyDataPln.polyData, 0));
-        require(success, 'mulG fail');
-        // rpkShare + m * gpkShare
-        (mgpkX, mgpkY, success) = CommonTool.mulPk(CommonTool.bytes2uint(sslshData.m, 0),
-            CommonTool.bytes2uint(sslshData.gpkShare, 1),
-            CommonTool.bytes2uint(sslshData.gpkShare, 33));
-        require(success, 'mulPk fail');
-
-        (xLeft, yLeft, success) = CommonTool.add(CommonTool.bytes2uint(sslshData.rpkShare, 1),
-            CommonTool.bytes2uint(sslshData.rpkShare, 33),
-            mgpkX,
-            mgpkY);
-        require(success, 'add fail');
-
-        return xLeft == xRight && yLeft == yRight;
-
     }
 
     /// @notice                           function for set config and smg contract address
@@ -469,8 +261,17 @@ contract MetricDelegate is MetricStorage, Halt {
         require(configAddr != address(0), "Invalid config address");
         require(smgAddr != address(0), "Invalid smg address");
 
-        config = IConfig(configAddr);
-        smg = IStoremanGroup(smgAddr);
+        metricData.config = IConfig(configAddr);
+        metricData.smg = IStoremanGroup(smgAddr);
+    }
+
+
+    function getSMCount(bytes32 grpId)
+    internal
+    view
+    returns (uint8)
+    {
+        return uint8(metricData.getSMCount(grpId));
     }
 
     function getEpochId()
@@ -479,14 +280,6 @@ contract MetricDelegate is MetricStorage, Halt {
     returns (uint)
     {
         return PosLib.getEpochId(now);
-    }
-
-    function getSMCount(bytes32 grpId)
-    internal
-    view
-    returns (uint8)
-    {
-        return uint8(smg.getSelectedSmNumber(grpId));
     }
 
     function checkHamming(uint indexes, uint8 smIndex)
