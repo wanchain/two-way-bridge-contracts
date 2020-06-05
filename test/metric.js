@@ -2,15 +2,19 @@
 const Proxy                 = artifacts.require('Proxy');
 const MetricProxy     = artifacts.require('MetricProxy');
 const MetricDelegate  = artifacts.require('MetricDelegate');
+const FakeSmg  = artifacts.require('FakeSmg');
+const PosLib  = artifacts.require('PosLib');
+
+const MaxEpochNumber = Number(10000);
 
 const BN                    = web3.utils.BN;
 const schnorr               = require('../utils/schnorr/tools');
 
 let metricInstProxy;
 let metricInst;
+let posLib;
 
-const grpId            = stringToBytes("groupID1");
-
+const grpId            = '0x0000000000000000000000000000000000000031353839393533323738313235';
 
 // stage R slash
 let polyCM             = stringToBytes("polyCM");
@@ -32,31 +36,14 @@ let spolyDataS             = stringToBytes("spolyDataS");
 
 
 // x and xhash
-const xInct                    = '0x0000000000000000000000000000000000000000000000000000000000000001';
 const xHashInct                = '0xec4916dd28fc4c10d78e287ca5d9cc51ee1ae73cbfde08c6b37324cbfaac8bc5';
-
-const xRNW                    = '0x0000000000000000000000000000000000000000000000000000000000000002';
 const xHashRNW                = '0x9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2';
-
-const xSNW                    = '0x0000000000000000000000000000000000000000000000000000000000000003';
 const xHashSNW                = '0xd9147961436944f43cd99d28b2bbddbf452ef872b30c8279e255e7daafc7f946';
-
-
-const xSSlsh                  = '0x0000000000000000000000000000000000000000000000000000000000000004';
 const xHashSSlsh                = '0xe38990d0c7fc009880a9c07c23842e886c6bbdc964ce6bdd5817ad357335ee6f';
-
-const xRSlsh                    = '0x0000000000000000000000000000000000000000000000000000000000000005';
 const xHashRSlsh                = '0x96de8fc8c256fa1e1556d41af431cace7dca68707c78dd88c3acab8b17164c47';
-
 
 const R                     = schnorr.getR();
 const s                     = '0x0c595b48605562a1a6492540b875da4ff203946a9dd0e451cd33d06ef568626b';
-
-const ADDRESS_0                     = '0x0000000000000000000000000000000000000000';
-const ADDRESS_CFG                   = '0x0000000000000000000000000000000000000001';
-const ADDRESS_MRTG                  = '0x0000000000000000000000000000000000000002';
-
-
 
 contract('Test Metric', async (accounts) => {
     before("init...   -> success", async () => {
@@ -69,7 +56,14 @@ contract('Test Metric', async (accounts) => {
 
             metricInst = await MetricDelegate.deployed();
 
-            metricInst.setDependence(ADDRESS_CFG,ADDRESS_MRTG);
+            deploy = await FakeSmg.deployed();
+
+            metricInst.setDependence(deploy.address,deploy.address);
+
+            posLib = await PosLib.deployed();
+            let epochId = await posLib.getEpochId(Math.floor(Date.now()/1000));
+            console.log(".....................epochId "+ epochId);
+
         } catch (err) {
             assert.fail(err);
         }
@@ -105,13 +99,18 @@ contract('Test Metric', async (accounts) => {
 
     it('get statics...   -> getPrdInctMetric', async () => {
         try {
-            let startEpID = getEpIDByNow();
-            let endEpID = startEpID+1;
+            let epochIdNow = await getEpIDByNow(posLib);
+            let startEpID = Number(epochIdNow)-MaxEpochNumber;
+            let endEpID = Number(epochIdNow)+1;
 
+            console.log("type of epochIdNow ", typeof(epochIdNow));
             console.log(startEpID);
             console.log(endEpID);
 
             let ret = await metricInst.getPrdInctMetric(grpId,new BN(startEpID),new BN(endEpID));
+            console.log("ret of getPrdInctMetric");
+            console.log(ret);
+
             for(let i=0;i<ret.length;i++){
                 process.stdout.write(ret[i].toString(10)+" ");
             }
@@ -124,8 +123,9 @@ contract('Test Metric', async (accounts) => {
     it('get statics...   -> getPrdSlshMetric', async () => {
         try {
 
-            let startEpID = getEpIDByNow();
-            let endEpID = startEpID+1;
+            let epochIdNow = await getEpIDByNow(posLib);
+            let startEpID = Number(epochIdNow) - MaxEpochNumber;
+            let endEpID = Number(epochIdNow)+1;
 
             console.log(startEpID);
             console.log(endEpID);
@@ -208,8 +208,9 @@ contract('Test Metric', async (accounts) => {
 
     it('get statics...   -> getPrdInctMetric', async () => {
         try {
-            let startEpID = getEpIDByNow();
-            let endEpID = startEpID+1;
+            let epochIdNow = await getEpIDByNow(posLib);
+            let startEpID = Number(epochIdNow) - MaxEpochNumber;
+            let endEpID = Number(epochIdNow)+1;
 
             console.log(startEpID);
             console.log(endEpID);
@@ -227,8 +228,9 @@ contract('Test Metric', async (accounts) => {
     it('get statics...   -> getPrdSlshMetric', async () => {
         try {
 
-            let startEpID = getEpIDByNow();
-            let endEpID = startEpID+1;
+            let epochIdNow = await getEpIDByNow(posLib);
+            let startEpID = Number(epochIdNow) - MaxEpochNumber;
+            let endEpID = Number(epochIdNow)+1;
 
             console.log(startEpID);
             console.log(endEpID);
@@ -330,7 +332,7 @@ function stringToBytes ( str ) {
     return re;
 }
 
-function getEpIDByNow(){
-    let tmstamp = new Date().getTime()/1000;
-    return Math.floor(tmstamp/(5*1440*12));
+async function getEpIDByNow(pos){
+    let epochId = await pos.getEpochId(Math.floor(Date.now()/1000));
+    return epochId;
 }

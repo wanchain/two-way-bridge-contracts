@@ -269,7 +269,7 @@ library MetricLib {
     view
     returns (uint8)
     {
-        //return uint8(metricData.smg.getSelectedSmNumber(grpId));
-        return uint8(4);
+        IStoremanGroup  smgTemp = IStoremanGroup(metricData.smg);
+        return uint8(smgTemp.getSelectedSmNumber(grpId));
     }
 }

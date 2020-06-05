@@ -20,6 +20,7 @@ const CommonTool = artifacts.require('CommonTool');
 const MetricProxy = artifacts.require('MetricProxy');
 const MetricDelegate = artifacts.require('MetricDelegate');
 const MetricLib = artifacts.require('MetricLib');
+const FakeSmg = artifacts.require('FakeSmg');
 
 const Enhancement = artifacts.require('Enhancement');
 
@@ -109,8 +110,9 @@ module.exports = async function (deployer, network) {
 
 
     //deploy CommonTool lib
-
     //deploy metric
+    await deployer.deploy(PosLib);
+    await deployer.deploy(FakeSmg);
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, MetricLib);
     await deployer.link(PosLib, MetricLib);
@@ -130,6 +132,7 @@ module.exports = async function (deployer, network) {
     let metric = await MetricDelegate.at(metricProxy.address);
     await metric.setDependence(smgProxy.address, smgProxy.address);
 
+
     // precompile contract
     await deployer.deploy(Enhancement);
     let pos = await Enhancement.deployed();
@@ -143,4 +146,5 @@ module.exports = async function (deployer, network) {
 
     let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);
     await gpk.setDependence(smgProxy.address, pos.address);
+
 }
