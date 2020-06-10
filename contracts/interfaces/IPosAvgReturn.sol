@@ -31,4 +31,5 @@ interface IPosAvgReturn {
     function add(uint256 x1, uint256 y1, uint256 x2,uint256 y2) public view returns(uint256 retx, uint256 rety,bool success);
     function mulG(uint256 scalar) public view returns(uint256 x, uint256 y,bool success);
     function calPolyCommit(bytes polyCommit, bytes pk) public view returns(uint256 sx, uint256 sy,bool success);
+    function enc(bytes32 rbpri, bytes32 iv, uint256 mes, bytes pub) public view returns (bytes, bool success);
 }

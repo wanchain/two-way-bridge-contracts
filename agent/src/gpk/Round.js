@@ -438,7 +438,7 @@ class Round {
     }
     // sij
     if ((receive.checkStatus == CheckStatus.Invalid) && (!send.sijTxHash)) {
-      send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, send.iv, send.ephemPrivateKey);
+      send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, send.ephemPrivateKey);
       console.log("group %s round %d sendSij to %s hash: %s", this.groupId, this.round, partner, send.sijTxHash);
     }
     if (this.standby) {
@@ -457,17 +457,12 @@ class Round {
   async genEncSij(partner, index) {
     let send = this.send[index];
     let destPk = send.pk;
-    let opts = {
-      iv: encrypt.genRandomBuffer(16),
-      ephemPrivateKey: encrypt.genRandomBuffer(32)
-    };
     console.log("genEncSij for partner %s pk %s", partner, destPk);
     send.sij = '0x' + encrypt.genSij(this.poly, destPk).toBuffer(32).toString('hex');
     try {
-      send.encSij = await encrypt.encryptSij(destPk, send.sij, opts);
-      send.iv = '0x' + opts.iv.toString('hex');
-      send.ephemPrivateKey = '0x' + opts.ephemPrivateKey.toString('hex');
-      console.log("gen sij %s encSij %s", send.sij, send.encSij);
+      let enc = await encrypt.encryptSij(destPk, send.sij);
+      send.encSij = '0x' + enc.ciphertext;
+      send.ephemPrivateKey = '0x' + enc.ephemPrivateKey.toString('hex');
     } catch {
       send.sij = '';
     }

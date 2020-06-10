@@ -76,10 +76,9 @@ contract CreateGpkStorage is BasicStorage {
 
     struct Dest {
         CheckStatus checkStatus;
-        uint128 iv;
         uint setTime;
         uint checkTime;
-        uint Sij;
+        uint sij;
         uint ephemPrivateKey;
         bytes encSij;
     }
