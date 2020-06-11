@@ -74,7 +74,7 @@ var eccEncrypt = async function secp256k1Encrypt(publicKey, data) {
     res += em.toString('hex');
     res += mac.toString('hex');
 
-    return {ephemPublicKey: rbPriv.toString('hex'), ciphertext: res};
+    return {ephemPrivateKey: rbPriv.toString('hex'), ciphertext: res};
 }
 
 var eccDecrypt = async function secp256k1Decrypt(privateKey, data) {

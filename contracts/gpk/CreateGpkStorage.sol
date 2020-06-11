@@ -28,13 +28,13 @@ pragma solidity ^0.4.24;
 
 import "../components/BasicStorage.sol";
 import "../interfaces/IStoremanGroup.sol";
-import "../interfaces/IPosAvgReturn.sol";
+import "../interfaces/IEncrypt.sol";
 
 contract CreateGpkStorage is BasicStorage {
     /// smg instance address
     IStoremanGroup public smg;
     /// encrypt instance address
-    IPosAvgReturn public encrypt;
+    IEncrypt public encrypt;
 
     /// groupId->Group
     mapping(bytes32 => Group) internal groupMap;

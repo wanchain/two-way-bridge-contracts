@@ -282,8 +282,8 @@ class Round {
       if (dest[0]) {
         receive.encSij = dest[0];
         receive.sij = await encrypt.decryptSij(this.selfSk, receive.encSij);
-        console.log("negotiateReceive sij: %s", receive.sij);
-        if (encrypt.verifySij(receive.sij, receive.polyCommit, this.selfPk)) {
+        console.log("negotiateReceive %s sij: %s", partner, receive.sij);
+        if (receive.sij && encrypt.verifySij(receive.sij, receive.polyCommit, this.selfPk)) {
           send.checkStatus = CheckStatus.Valid;
           // check all received
           if (this.checkAllSijReceived()) {
@@ -439,7 +439,7 @@ class Round {
     // sij
     if ((receive.checkStatus == CheckStatus.Invalid) && (!send.sijTxHash)) {
       send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, send.ephemPrivateKey);
-      console.log("group %s round %d sendSij to %s hash: %s", this.groupId, this.round, partner, send.sijTxHash);
+      console.log("group %s round %d sendSij %s to %s hash: %s", this.groupId, this.round, send.sij, partner, send.sijTxHash);
     }
     if (this.standby) {
       return;
@@ -459,11 +459,11 @@ class Round {
     let destPk = send.pk;
     console.log("genEncSij for partner %s pk %s", partner, destPk);
     send.sij = '0x' + encrypt.genSij(this.poly, destPk).toBuffer(32).toString('hex');
-    try {
-      let enc = await encrypt.encryptSij(destPk, send.sij);
+    let enc = await encrypt.encryptSij(destPk, send.sij);
+    if (enc) {
       send.encSij = '0x' + enc.ciphertext;
       send.ephemPrivateKey = '0x' + enc.ephemPrivateKey.toString('hex');
-    } catch {
+    } else {
       send.sij = '';
     }
   }

@@ -108,7 +108,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         require(smgAddr != address(0), "Invalid smg address");
         require(encryptAddr != address(0), "Invalid encrypt address");
         smg = IStoremanGroup(smgAddr);
-        encrypt = IPosAvgReturn(encryptAddr);
+        encrypt = IEncrypt(encryptAddr);
     }
 
     /// @notice                           function for set period
