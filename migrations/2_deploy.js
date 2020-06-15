@@ -22,7 +22,7 @@ const MetricDelegate = artifacts.require('MetricDelegate');
 const MetricLib = artifacts.require('MetricLib');
 const FakeSmg = artifacts.require('FakeSmg');
 
-const Enhancement = artifacts.require('Enhancement');
+const Encrypt = artifacts.require('Encrypt');
 
 const CreateGpkProxy = artifacts.require('CreateGpkProxy');
 const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
@@ -134,8 +134,8 @@ module.exports = async function (deployer, network) {
 
 
     // precompile contract
-    await deployer.deploy(Enhancement);
-    let pos = await Enhancement.deployed();
+    await deployer.deploy(Encrypt);
+    let encrypt = await Encrypt.deployed();
 
     // create gpk sc
     await deployer.deploy(CreateGpkProxy);
@@ -145,6 +145,5 @@ module.exports = async function (deployer, network) {
     await gpkProxy.upgradeTo(gpkDelegate.address);
 
     let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);
-    await gpk.setDependence(smgProxy.address, pos.address);
-
+    await gpk.setDependence(smgProxy.address, encrypt.address);
 }
