@@ -17,12 +17,89 @@
  * phrase from a file you've .gitignored so it doesn't accidentally become public.
  *
  */
+const Transaction = require("wanchain-util").wanchainTx
+const HDWalletProvider = require('@truffle/hdwallet-provider');
+//const infuraKey = "eed9f47eee3d4104a990f9e45ea2c545";
+//`wss://apitest.wanchain.org:8443/ws/v3/57b5005c60b8c444d880afe02d0a41cf4dc269f9c186940aa169412bb245f1c0`
+const fs = require('fs');
+const wanProvider = new HDWalletProvider("0x5ea5559749ba066086313f051eb1c142c6d81d1bed1baf0f26e708a2a9decbec", "http://52.35.168.75:36891");
+wanProvider.engine._providers[0].signTransaction = (txParams, cb) =>{
+  let pkey=Buffer.from("5ea5559749ba066086313f051eb1c142c6d81d1bed1baf0f26e708a2a9decbec", 'hex');
+  txParams.Txtype = 0x01;
+  txParams.gas = 9000000;
+  //console.log("txParams:", txParams)
+  const tx = new Transaction(txParams);
+  tx.sign(pkey);
+  const rawTx = `0x${tx.serialize().toString("hex")}`;
+  //console.log("rawTx:", rawTx)
+  cb(null, rawTx);
+};
+//console.log("wanProvider.engine:", wanProvider.engine)
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
-// const infuraKey = "fj4jll3k.....";
-//
-// const fs = require('fs');
-// const mnemonic = fs.readFileSync(".secret").toString().trim();
+const blockTagForPayload = require("web3-provider-engine/util/rpc-cache-utils.js").blockTagForPayload
+const ethUtil = require('ethereumjs-util')
+
+wanProvider.engine._providers[1].handleRequest = function(payload, next, end){
+  const self = this
+
+  switch(payload.method) {
+
+    case 'eth_getTransactionCount':
+      var blockTag = blockTagForPayload(payload)
+      var address = payload.params[0].toLowerCase()
+      var cachedResult = self.nonceCache[address]
+      // only handle requests against the 'pending' blockTag
+      if (blockTag === 'pending') {
+        // has a result
+        if (cachedResult) {
+          end(null, cachedResult)
+        // fallthrough then populate cache
+        } else {
+          next(function(err, result, cb){
+            if (err) return cb()
+            if (self.nonceCache[address] === undefined) {
+              self.nonceCache[address] = result
+            }
+            cb()
+          })
+        }
+      } else {
+        next()
+      }
+      return
+
+    case 'eth_sendRawTransaction':
+      // allow the request to continue normally
+      next(function(err, result, cb){
+        // only update local nonce if tx was submitted correctly
+        if (err) return cb()
+        // parse raw tx
+        var rawTx = payload.params[0]
+        var stripped = ethUtil.stripHexPrefix(rawTx)
+        var rawData = new Buffer(ethUtil.stripHexPrefix(rawTx), 'hex')
+        var tx = new Transaction(new Buffer(ethUtil.stripHexPrefix(rawTx), 'hex'))
+        // extract address
+        var address = '0x'+tx.getSenderAddress().toString('hex').toLowerCase()
+        // extract nonce and increment
+        var nonce = ethUtil.bufferToInt(tx.nonce)
+        nonce++
+        // hexify and normalize
+        var hexNonce = nonce.toString(16)
+        if (hexNonce.length%2) hexNonce = '0'+hexNonce
+        hexNonce = '0x'+hexNonce
+        // dont update our record on the nonce until the submit was successful
+        // update cache
+        self.nonceCache[address] = hexNonce
+        cb()
+      })
+      return
+
+    default:
+      next()
+      return
+
+  }
+}
 
 module.exports = {
   /**
@@ -51,7 +128,7 @@ module.exports = {
       host: "192.168.1.179",     // Localhost (default: none)
       port: 7654,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
-      from: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
+      //from: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
     },
     // Another network with more advanced options...
     // advanced: {
@@ -65,14 +142,14 @@ module.exports = {
 
     // Useful for deploying to a public network.
     // NB: It's important to wrap the provider as a function.
-    // ropsten: {
-      // provider: () => new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/YOUR-PROJECT-ID`),
-      // network_id: 3,       // Ropsten's id
-      // gas: 5500000,        // Ropsten has a lower block limit than mainnet
-      // confirmations: 2,    // # of confs to wait between deployments. (default: 0)
-      // timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
-      // skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
-    // },
+    testnet: {
+      provider: () => wanProvider,
+      network_id: "*",       // Ropsten's id
+      gas: 5500000,        // Ropsten has a lower block limit than mainnet
+      confirmations: 0,    // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
+    },
 
     // Useful for private networks
     // private: {

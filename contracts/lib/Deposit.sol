@@ -11,14 +11,14 @@ library Deposit {
         mapping(uint=>Record) records;
     }
 
-    function getLastValue(Records storage self) internal returns (uint) {
+    function getLastValue(Records storage self) internal view returns (uint) {
         if(self.total == 0) {
             return 0;
         } else {
             return self.records[self.total-1].value;
         }
     }
-    function getValueById(Records storage self, uint id) internal returns (uint) {
+    function getValueById(Records storage self, uint id) internal view returns (uint) {
         uint value = 0;
         if(self.total == 0) {
             return 0;
@@ -29,6 +29,9 @@ library Deposit {
             }
         }
         return 0;
+    }
+    function clean(Records storage self) internal {
+        self.total = 0;
     }
     function addRecord(Records storage self, Record r) internal {
         if(self.total == 0) {
