@@ -5,6 +5,7 @@ const Round = require('./Round');
 const EventTracker = require('../utils/EventTracker');
 const {GroupStatus} = require('./Types');
 const wanchain = require('../utils/wanchain');
+const tool = require('../utils/tools');
 
 console.log("OpenStoreman gpk agent");
 
@@ -24,8 +25,7 @@ function recoverProcess() {
   files.forEach(file => {
     if (file.match(/^0x[0-9a-f]{64}\.cxt$/)) {
       console.log("recoverProcess: %s", file);
-      let p = path.join(dir, file);
-      let ctx = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      let ctx = tool.readContext(file);
       let round = new Round('', 0);
       Object.assign(round, ctx);
       groupMap.set(round.groupId, round);
@@ -38,6 +38,7 @@ function recoverProcess() {
 const evtTracker = new EventTracker('gpk', config.startBlock, eventHandler);
 evtTracker.subscribe('smg_selectedEvent', config.contractAddress.smg, ["0x62487e9f333516e24026d78ce371e54c664a46271dcf5ffdafd8cd10ea75a5bf"]);
 evtTracker.subscribe('gpk_GpkCreatedLogger', config.contractAddress.createGpk, ["0x69d133e4261cdee685003e1e0520673a36ed3a627535ab05398fa1f9b958bf3a"]);
+evtTracker.subscribe('gpk_SlashLogger', config.contractAddress.createGpk, ["0x3e163d68525f48f0d33c6b6634b51d751200c03e44a61daf4c7636e67ff8f525"]);
 evtTracker.start();
 
 async function eventHandler(evt) {
@@ -49,6 +50,9 @@ async function eventHandler(evt) {
         break;
       case 'gpk_GpkCreatedLogger':
         await procGpkCreatedLogger(evt);
+        break;
+      case 'gpk_SlashLogger':
+        await procGpkSlashLogger(evt);
         break;
       default:
         break;
@@ -81,6 +85,11 @@ async function procSmgSelectedEvent(evt) {
 function procGpkCreatedLogger(evt) {
   let groupId = evt.topics[1];
   console.log("%s gpk agent finish group %s", new Date(), groupId);
+}
+
+function procGpkSlashLogger(evt) {
+  let groupId = evt.topics[1];
+  console.log("%s group %s slash someone", new Date(), groupId);
 }
 
 async function checkSelfSelected(groupId) {

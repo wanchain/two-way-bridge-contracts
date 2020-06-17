@@ -9,7 +9,7 @@ class Receive {
     this.checkStatus = CheckStatus.Init;
     this.sij = ''; // hex string with 0x
     this.revealed = false;
-  }  
+  }
 }
 
 module.exports = Receive;

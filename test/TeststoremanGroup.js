@@ -290,6 +290,7 @@ contract('TestSmg', async (accounts) => {
                         console.log("records", c, r["0"], r["1"])
                     }
                 }
+
             
 
         }

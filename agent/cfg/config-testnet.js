@@ -8,12 +8,12 @@ exports.keystore = {
 }
 
 exports.contractAddress = {
-  smg: '0xdfdBEE10B7a439547Ae369AB95C37aD91C2aDEd8',
-  createGpk: '0xA84510c53050d1d61f45823882B2505f3B0E3FA5',
-  preCompile: '0x89B0d1e52dF9176c4440B5951096b6Ce55578569',
+  smg: '0x46e3Cc4aF8162840cFfd84C1Fd734963Eb51c255',
+  createGpk: '0x6cf6F1434a57c78D25B5D786Fcbca34D562cF86A',
+  preCompile: '0x77bD431230D162eCc0b7B6712831DE43756aa7C1',
 }
 
-exports.startBlock = 2340;
+exports.startBlock = 1380498;
 
 exports.gasPrice = 180000000000;
 exports.gasLimit = 8000000;

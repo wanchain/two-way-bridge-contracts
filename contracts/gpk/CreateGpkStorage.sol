@@ -27,17 +27,14 @@
 pragma solidity ^0.4.24;
 
 import "../components/BasicStorage.sol";
-import "../interfaces/IConfig.sol";
 import "../interfaces/IStoremanGroup.sol";
-import "../interfaces/IPosAvgReturn.sol";
+import "../interfaces/IEncrypt.sol";
 
 contract CreateGpkStorage is BasicStorage {
-    /// config instance address
-    IConfig public config;
     /// smg instance address
     IStoremanGroup public smg;
     /// encrypt instance address
-    IPosAvgReturn public encrypt;
+    IEncrypt public encrypt;
 
     /// groupId->Group
     mapping(bytes32 => Group) internal groupMap;
@@ -71,7 +68,6 @@ contract CreateGpkStorage is BasicStorage {
     enum GroupStatus {PolyCommit, Negotiate, Complete, Close}
 
     struct Src {
-        uint16 checkValidCount;
         bytes polyCommit;
         bytes pkShare;
         /// txAddress->Dest
@@ -80,10 +76,9 @@ contract CreateGpkStorage is BasicStorage {
 
     struct Dest {
         CheckStatus checkStatus;
-        uint128 iv;
         uint setTime;
         uint checkTime;
-        uint Sij;
+        uint sij;
         uint ephemPrivateKey;
         bytes encSij;
     }

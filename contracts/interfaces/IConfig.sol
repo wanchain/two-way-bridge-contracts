@@ -27,5 +27,4 @@
 pragma solidity ^0.4.24;
 
 interface IConfig {
-    function getCreateGpkCfg() external returns(uint ployCommitPeriod, uint defaultPeriod, uint negotiatePeriod);
 }

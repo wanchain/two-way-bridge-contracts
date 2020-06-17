@@ -1,9 +1,9 @@
 const BigInteger = require('bigi');
 const crypto = require('crypto');
-const eccrypto = require("eccrypto");
 const ecurve = require('ecurve');
 const secp256k1 = ecurve.getCurveByName('secp256k1');
 const Point = ecurve.Point;
+const ecies = require("./ecies");
 
 const N = BigInteger.fromHex('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141');
 
@@ -45,30 +45,25 @@ function genSij(polyCoef, pk) {
   return sij;
 };
 
-async function encryptSij(pk, sij, opts) {
+async function encryptSij(pk, sij) {
   let toPk = Buffer.from(pk.substr(2), 'hex');
-  let M = Buffer.from(sij.substr(2), 'hex');
+  let M = sij.substr(2);
   try {
-    let m = await eccrypto.encrypt(toPk, M, opts);
-    console.log("encryptSij: %s", m.ciphertext.toString('hex'));
-    return '0x' + Buffer.concat([m.iv, m.ephemPublicKey, m.ciphertext, m.mac]).toString('hex');
+    let enc = await ecies.eccEncrypt(toPk, M);
+    console.log("%s encryptSij: %s", pk, '0x' + enc.ciphertext);
+    return enc;
   } catch (err) {
-    console.error("encryptSij err: %O", err);
+    console.error("%s encryptSij err: %O", pk, err);
     return null;
   }
 };
 
 async function decryptSij(sk, encSij) {
   try {
-    let opts = {
-      iv: Buffer.from(encSij.substr(2, 32), 'hex'),
-      ephemPublicKey: Buffer.from(encSij.substr(34, 130), 'hex'),
-      ciphertext: Buffer.from(encSij.substr(164, encSij.length - 228), 'hex'),
-      mac: Buffer.from(encSij.substr(-64), 'hex')
-    }
+    console.log("%s decryptSij: %s", sk, encSij);
     let skBuf = Buffer.from(sk.substr(2), 'hex');
-    let M = await eccrypto.decrypt(skBuf, opts);
-    return '0x' + M.toString('hex');
+    let M = await ecies.eccDecrypt(skBuf, encSij.substr(2));
+    return '0x' + M;
   } catch (err) {
     console.error("decryptSij err: %O", err);
     return null;

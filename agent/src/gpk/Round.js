@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const config = require('../../cfg/config');
 const BigInteger = require('bigi');
 const encrypt = require('../utils/encrypt');
@@ -7,8 +5,7 @@ const wanchain = require('../utils/wanchain');
 const {GroupStatus, CheckStatus} = require('./Types');
 const Send = require('./Send');
 const Receive = require('./Receive');
-
-const POC = true;
+const tool = require('../utils/tools');
 
 class Round {
   constructor(groupId, round) {
@@ -36,8 +33,6 @@ class Round {
     this.skShare = ''; // hex string with 0x
     this.pkShare = ''; // hex string with 0x
     this.gpk = ''; // hex string with 0x04
-    this.gpkTxHash = '';
-    this.gpkDone = false;
  
     // global interactive data
     this.polyCommitTimeoutTxHash = '';
@@ -132,13 +127,11 @@ class Round {
     let copy = Object.assign({}, this);
     copy.smgSc = null;
     copy.createGpkSc = null;
-    let fp = path.join(__dirname, '../../cxt/', this.groupId + '.cxt');
-    fs.writeFileSync(fp, JSON.stringify(copy), 'utf8');
+    tool.writeContext(this.groupId + '.cxt', copy);
   }
 
   removeProgress() {
-    let fp = path.join(__dirname, '../../cxt/', this.groupId + '.cxt');
-    fs.unlinkSync(fp);
+    tool.clearContext(this.groupId + '.cxt');
   }
 
   stop() {
@@ -218,7 +211,7 @@ class Round {
     let receipt;
     // self polyCommit
     if (this.polyCommitTxHash && !this.polyCommitDone) {
-      receipt = await wanchain.getTxReceipt(this.polyCommitTxHash);
+      receipt = await wanchain.getTxReceipt(this.polyCommitTxHash, 'polyCommit');
       if (receipt) {
         if (receipt.status) {
           this.polyCommitDone = true;
@@ -264,7 +257,6 @@ class Round {
 
   async procNegotiate() {
     await this.polyCommitReceive();
-    await this.setGpk();
     await Promise.all(this.smList.map((sm, index) => {
       return new Promise(async (resolve, reject) => {
         try {
@@ -290,8 +282,8 @@ class Round {
       if (dest[0]) {
         receive.encSij = dest[0];
         receive.sij = await encrypt.decryptSij(this.selfSk, receive.encSij);
-        console.log("negotiateReceive sij: %s", receive.sij);
-        if (encrypt.verifySij(receive.sij, receive.polyCommit, this.selfPk)) {
+        console.log("negotiateReceive %s sij: %s", partner, receive.sij);
+        if (receive.sij && encrypt.verifySij(receive.sij, receive.polyCommit, this.selfPk)) {
           send.checkStatus = CheckStatus.Valid;
           // check all received
           if (this.checkAllSijReceived()) {
@@ -432,7 +424,7 @@ class Round {
         send.sijTimeoutTxHash = await wanchain.sendSijTimeout(this.groupId, partner);
         console.log("group %s round %d sendSijTimeout to %s hash: %s", this.groupId, this.round, partner, send.sijTimeoutTxHash);
       }
-    }    
+    }
   }
 
   async negotiateSend(partner, index) {
@@ -446,8 +438,8 @@ class Round {
     }
     // sij
     if ((receive.checkStatus == CheckStatus.Invalid) && (!send.sijTxHash)) {
-      send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, send.iv, send.ephemPrivateKey);
-      console.log("group %s round %d sendSij to %s hash: %s", this.groupId, this.round, partner, send.sijTxHash);
+      send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, send.ephemPrivateKey);
+      console.log("group %s round %d sendSij %s to %s hash: %s", this.groupId, this.round, send.sij, partner, send.sijTxHash);
     }
     if (this.standby) {
       return;
@@ -465,18 +457,13 @@ class Round {
   async genEncSij(partner, index) {
     let send = this.send[index];
     let destPk = send.pk;
-    let opts = {
-      iv: encrypt.genRandomBuffer(16),
-      ephemPrivateKey: encrypt.genRandomBuffer(32)
-    };
     console.log("genEncSij for partner %s pk %s", partner, destPk);
     send.sij = '0x' + encrypt.genSij(this.poly, destPk).toBuffer(32).toString('hex');
-    try {
-      send.encSij = await encrypt.encryptSij(destPk, send.sij, opts);
-      send.iv = '0x' + opts.iv.toString('hex');
-      send.ephemPrivateKey = '0x' + opts.ephemPrivateKey.toString('hex');
-      console.log("gen sij %s encSij %s", send.sij, send.encSij);
-    } catch {
+    let enc = await encrypt.encryptSij(destPk, send.sij);
+    if (enc) {
+      send.encSij = '0x' + enc.ciphertext;
+      send.ephemPrivateKey = '0x' + enc.ephemPrivateKey.toString('hex');
+    } else {
       send.sij = '';
     }
   }
@@ -493,8 +480,16 @@ class Round {
     }
     let pkShare = await this.createGpkSc.methods.getPkShare(this.groupId, i).call();
     let gpk = await this.createGpkSc.methods.getGpk(this.groupId).call();
-    console.log("get index %d %s pkShare: %s", i, wanchain.selfAddress, pkShare);
-    console.log("get gpk: %s", gpk);
+    if (pkShare == this.pkShare) {
+      console.log("get index %d %s pkShare: %s", i, wanchain.selfAddress, pkShare);
+    } else {
+      console.log("get index %d %s pkShare %s not match %s", i, wanchain.selfAddress, pkShare, this.pkShare);
+    }
+    if (gpk == this.gpk) {
+      console.log("get gpk: %s", gpk);
+    } else {
+      console.error("get gpk %s not match %s", gpk, this.gpk);
+    }
   }
   
   async procClose() {
@@ -527,28 +522,6 @@ class Round {
     this.gpk = '0x' + gpk.getEncoded(false).toString('hex');
     console.log("gen pkShare: %s", this.pkShare);
     console.log("gen gpk: %s", this.gpk);
-  }
-
-  async setGpk() {
-    if (this.gpkDone || !this.gpk) {
-      return;
-    }
-    if (this.gpkTxHash) {
-      let receipt = await wanchain.getTxReceipt(this.gpkTxHash);
-      if (receipt) {
-        if (receipt.status) {
-          this.gpkDone = true;
-          return;
-        } else {
-          this.gpkTxHash = '';
-        }
-      } else {
-        return;
-      }
-    }
-    // first send or resend
-    this.gpkTxHash = await wanchain.sendGpk(this.groupId, this.gpk, this.pkShare);
-    console.log("group %s round %d sendGpk hash: %s", this.groupId, this.round, this.gpkTxHash );
   }
 }
 

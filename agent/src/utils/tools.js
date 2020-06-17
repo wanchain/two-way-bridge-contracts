@@ -16,10 +16,16 @@ function readContext(fileName) {
 function writeContext(fileName, object) {
   let filePath = path.join(contextPath, fileName);
   let content = JSON.stringify(object);
-  fs.writeFileSync(filePath, content);
+  fs.writeFileSync(filePath, content, 'utf8');
+}
+
+function clearContext(fileName) {
+  let filePath = path.join(contextPath, fileName);
+  fs.unlinkSync(filePath);
 }
 
 module.exports = {
   readContext,
-  writeContext
+  writeContext,
+  clearContext
 }

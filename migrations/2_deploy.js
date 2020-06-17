@@ -1,4 +1,3 @@
-
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const Secp256k1 = artifacts.require('Secp256k1');
@@ -16,19 +15,23 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const TestSmg = artifacts.require('TestSmg');
 
-const MetricProxy     = artifacts.require('MetricProxy');
-const MetricDelegate  = artifacts.require('MetricDelegate');
 
-const Enhancement = artifacts.require('Enhancement');
+const CommonTool = artifacts.require('CommonTool');
+const MetricProxy = artifacts.require('MetricProxy');
+const MetricDelegate = artifacts.require('MetricDelegate');
+const MetricLib = artifacts.require('MetricLib');
+const FakeSmg = artifacts.require('FakeSmg');
 
-const CreateGpkProxy  = artifacts.require('CreateGpkProxy');
+const Encrypt = artifacts.require('Encrypt');
+
+const CreateGpkProxy = artifacts.require('CreateGpkProxy');
 const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
 const Deposit = artifacts.require('Deposit');
 const StoremanLib = artifacts.require('StoremanLib');
 const IncentiveLib = artifacts.require('IncentiveLib');
 
-module.exports = async function(deployer,network){
-    if(network === 'nodeploy') return;
+module.exports = async function (deployer, network) {
+    if (network === 'nodeploy') return;
 
     // token manager sc
     await deployer.deploy(TokenManagerProxy);
@@ -84,6 +87,7 @@ module.exports = async function(deployer,network){
     await deployer.deploy(IncentiveLib);
     await deployer.link(IncentiveLib,StoremanGroupDelegate)
 
+
     await deployer.deploy(StoremanGroupProxy);
     let smgProxy = await StoremanGroupProxy.deployed();
     await deployer.deploy(StoremanGroupDelegate);
@@ -94,7 +98,7 @@ module.exports = async function(deployer,network){
     await deployer.deploy(TestSmg);
     let tsmg = await TestSmg.deployed();
     await tsmg.setSmgAddr(smgProxy.address)
-    
+
     // token manager dependence
     let tm = await TokenManagerDelegate.at(tmProxy.address);
     await tm.setHtlcAddr(htlcProxy.address);
@@ -116,7 +120,20 @@ module.exports = async function(deployer,network){
     // console.log("smgDelegate.address:", smgDelegate.address)
     // await smgProxy.upgradeTo(smgDelegate.address);
 
+
+    //deploy CommonTool lib
     //deploy metric
+    await deployer.deploy(PosLib);
+    await deployer.deploy(FakeSmg);
+    await deployer.deploy(CommonTool);
+    await deployer.link(CommonTool, MetricLib);
+    await deployer.link(PosLib, MetricLib);
+    await deployer.deploy(MetricLib);
+
+
+    await deployer.link(CommonTool, MetricDelegate);
+    await deployer.link(MetricLib, MetricDelegate);
+    await deployer.link(PosLib, MetricDelegate);
 
     await deployer.deploy(MetricProxy);
     let metricProxy = await MetricProxy.deployed();
@@ -125,11 +142,12 @@ module.exports = async function(deployer,network){
     await metricProxy.upgradeTo(metricDlg.address);
 
     let metric = await MetricDelegate.at(metricProxy.address);
-    await metric.setDependence(smgProxy.address,smgProxy.address);
+    await metric.setDependence(smgProxy.address, smgProxy.address);
+
 
     // precompile contract
-    await deployer.deploy(Enhancement);
-    let pos = await Enhancement.deployed();
+    await deployer.deploy(Encrypt);
+    let encrypt = await Encrypt.deployed();
 
     // create gpk sc
     await deployer.deploy(CreateGpkProxy);
@@ -139,5 +157,5 @@ module.exports = async function(deployer,network){
     await gpkProxy.upgradeTo(gpkDelegate.address);
 
     let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);
-    await gpk.setDependence(smgProxy.address, smgProxy.address, pos.address);
+    await gpk.setDependence(smgProxy.address, encrypt.address);
 }

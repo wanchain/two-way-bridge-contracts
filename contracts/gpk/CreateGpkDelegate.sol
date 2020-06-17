@@ -51,7 +51,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     /// @param storeman                   storeman address
     event SetPolyCommitLogger(bytes32 indexed groupId, uint16 indexed round, address storeman);
 
-    /// @notice                           event for storeman submit encoded Sij
+    /// @notice                           event for storeman submit encoded sij
     /// @param groupId                    storeman group id
     /// @param round                      group reset times
     /// @param src                        src storeman address
@@ -66,7 +66,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     /// @param isValid                    whether encSij is valid
     event SetCheckStatusLogger(bytes32 indexed groupId, uint16 indexed round, address src, address dest, bool isValid);
 
-    /// @notice                           event for storeman reveal Sij
+    /// @notice                           event for storeman reveal sij
     /// @param groupId                    storeman group id
     /// @param round                      group reset times
     /// @param src                        src storeman address
@@ -98,20 +98,32 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     *
     */
 
-    /// @notice                           function for set config and smg contract address
-    /// @param configAddr                 config contract address
+    /// @notice                           function for set smg and precompiled encrypt contract address
     /// @param smgAddr                    smg contract address
     /// @param encryptAddr                encrypt contract address
-    function setDependence(address configAddr, address smgAddr, address encryptAddr)
+    function setDependence(address smgAddr, address encryptAddr)
         external
         onlyOwner
     {
-        require(configAddr != address(0), "Invalid config address");
         require(smgAddr != address(0), "Invalid smg address");
         require(encryptAddr != address(0), "Invalid encrypt address");
-        config = IConfig(configAddr);
         smg = IStoremanGroup(smgAddr);
-        encrypt = IPosAvgReturn(encryptAddr);
+        encrypt = IEncrypt(encryptAddr);
+    }
+
+    /// @notice                           function for set period
+    /// @param groupId                    group id
+    /// @param ployCommitPeriod           ployCommit period
+    /// @param defaultPeriod              default period
+    /// @param negotiatePeriod            negotiate period
+    function setPeriod(bytes32 groupId, uint32 ployCommitPeriod, uint32 defaultPeriod, uint32 negotiatePeriod)
+        external
+        onlyOwner
+    {
+        Group storage group = groupMap[groupId];
+        group.ployCommitPeriod = ployCommitPeriod;
+        group.defaultPeriod = defaultPeriod;
+        group.negotiatePeriod = negotiatePeriod;
     }
 
     /// @notice                           function for storeman submit poly commit
@@ -126,8 +138,8 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         Round storage round = group.roundMap[group.round];
         require(round.status == GroupStatus.PolyCommit, "Invalid status");
         if (round.smNumber == 0) {
-            // init config when the first node submit
-            fetchConfig(group);
+            // init period when the first node submit
+            initPeriod(group);
             // selected sm list
             round.smNumber = uint16(smg.getSelectedSmNumber(groupId));
             require(round.smNumber > 0, "Invalid sm number");
@@ -137,7 +149,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             for (uint i = 0; i < round.smNumber; i++) {
                 (txAddress, pk,) = smg.getSelectedSmInfo(groupId, i);
                 round.indexMap[i] = txAddress;
-                round.addressMap[txAddress] = pk;
+                round.addressMap[txAddress] = unifyPk(pk);
             }
             round.statusTime = now;
             emit StartCreateGpkLogger(groupId, group.round);
@@ -146,8 +158,9 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         require(round.srcMap[msg.sender].polyCommit.length == 0, "Duplicate");
         round.srcMap[msg.sender].polyCommit = polyCommit;
         round.polyCommitCount++;
+        updateGpk(round, polyCommit);
+        updatePkShare(round, polyCommit);
         if (round.polyCommitCount >= round.smNumber) {
-            genGpk(round);
             round.status = GroupStatus.Negotiate;
             round.statusTime = now;
         }
@@ -177,27 +190,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             }
         }
         slashMulti(groupId, slashCount, slashTypes, slashSms);
-    }
-
-    /// @notice                           function for storeman submit gpk and pkShare (only for poc)
-    /// @param groupId                    storeman group id
-    /// @param gpk                        gpk, only accept leader's value
-    /// @param pkShare                    storeman group pkShare
-    function setGpk(bytes32 groupId, bytes gpk, bytes pkShare)
-        external
-    {
-        require(gpk.length == 65, "Invalid gpk");
-        require(pkShare.length == 65, "Invalid pkShare");
-
-        Group storage group = groupMap[groupId];
-        Round storage round = group.roundMap[group.round];
-        checkValid(round, GroupStatus.Negotiate, address(0), true);
-        Src storage src = round.srcMap[msg.sender];
-        require(src.pkShare.length == 0, "Duplicate");
-        src.pkShare = pkShare;
-        if (msg.sender == round.indexMap[0]) { // leader
-          round.gpk = gpk;
-        }
     }
 
     /// @notice                           function for src storeman submit encSij
@@ -238,10 +230,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
 
         if (isValid) {
             d.checkStatus = CheckStatus.Valid;
-            s.checkValidCount++;
-            if (s.checkValidCount >= round.smNumber) {
-                genPkShare(round, src);
-            }
             round.checkValidCount++;
             if (round.checkValidCount >= round.smNumber ** 2) {
                 round.status = GroupStatus.Complete;
@@ -269,13 +257,12 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         slash(groupId, SlashType.EncSijTimout, src, msg.sender, true, true);
     }
 
-    /// @notice                           function for src storeman reveal Sij
+    /// @notice                           function for src storeman reveal sij
     /// @param groupId                    storeman group id
     /// @param dest                       dest storeman address
-    /// @param Sij                        Sij
-    /// @param iv                         ecies iv
+    /// @param sij                        sij
     /// @param ephemPrivateKey            ecies ephemPrivateKey
-    function revealSij(bytes32 groupId, address dest, uint Sij, uint128 iv, uint ephemPrivateKey)
+    function revealSij(bytes32 groupId, address dest, uint sij, uint ephemPrivateKey)
         external
     {
         Group storage group = groupMap[groupId];
@@ -284,10 +271,10 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         Src storage src = round.srcMap[msg.sender];
         Dest storage d = src.destMap[dest];
         require(d.checkStatus == CheckStatus.Invalid, "Checked Valid");
-        d.Sij = Sij;
+        d.sij = sij;
         d.ephemPrivateKey = ephemPrivateKey;
         emit RevealSijLogger(groupId, group.round, msg.sender, dest);
-        if (verifySij(d, dest, iv, src.polyCommit)) {
+        if (verifySij(d, round.addressMap[dest], src.polyCommit)) {
           slash(groupId, SlashType.CheckInvalid, msg.sender, dest, false, true);
         } else {
           slash(groupId, SlashType.EncSijInvalid, msg.sender, dest, true, true);
@@ -310,7 +297,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         slash(groupId, SlashType.CheckTimeout, msg.sender, dest, false, true);
     }
 
-    /// @notice                           function for report srcPk submit Sij timeout
+    /// @notice                           function for report srcPk submit sij timeout
     /// @param groupId                    storeman group id
     /// @param src                        src storeman address
     function SijTimeout(bytes32 groupId, address src)
@@ -390,12 +377,12 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         }
     }
 
-    /// @notice                           function for fetch config
+    /// @notice                           function for init period
     /// @param group                      storeman group pointer
-    function fetchConfig(Group storage group)
+    function initPeriod(Group storage group)
         internal
     {
-        if (group.round == 0) { // init once time at the first round
+        if (group.defaultPeriod == 0) { // once per group
             group.ployCommitPeriod = 10 * 60;
             group.defaultPeriod = 5 * 60;
             group.negotiatePeriod = 15 * 60;
@@ -404,46 +391,88 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
 
     /// @notice                           function for generate gpk and pkShare
     /// @param round                      round
-    function genGpk(Round storage round)
+    /// @param polyCommit                 poly commit
+    function updateGpk(Round storage round, bytes polyCommit)
         internal
     {
-        bytes memory gpk = new bytes(65);
-        uint gpkx = 0;
-        uint gpky = 0;
-        bool success;
-        for (uint i = 0; i < round.smNumber; i++) {
-            bytes pc = round.srcMap[round.indexMap[i]].polyCommit;
-            uint pkx = bytes2uint(pc, 2);
-            uint pky = bytes2uint(pc, 34);
-            // (gpkx, gpky, success) = encrypt.add(gpkx, gpky, pkx, pky);
-            // require(success == true, "Gpk failed");
+        bytes memory gpk = round.gpk;
+        uint x = bytes2uint(polyCommit, 1, 32);
+        uint y = bytes2uint(polyCommit, 33, 32);
+        if (gpk.length != 0) {
+            uint gpkX = bytes2uint(gpk, 1, 32);
+            uint gpkY = bytes2uint(gpk, 33, 32);
+            bool success;
+            (x, y, success) = encrypt.add(x, y, gpkX, gpkY);
+            require(success == true, "Gpk failed");
+        } else {
+            gpk = new bytes(65);
+            gpk[0] = 0x04;
         }
-        gpk[0] = 0x04;
-        assembly { mstore(add(gpk, 33), gpkx) }
-        assembly { mstore(add(gpk, 65), gpky) }
+        assembly { mstore(add(gpk, 33), x) }
+        assembly { mstore(add(gpk, 65), y) }
         round.gpk = gpk;
     }
 
-    /// @notice                           function for verify Sij to judge challenge
-    /// @param d                          Dest
-    /// @param dest                       dest storeman address
-    /// @param iv                         ecies iv
-    /// @param polyCommit                 polyCommit of pki
-    function verifySij(Dest storage d, address dest, uint128 iv, bytes polyCommit)
+    /// @notice                           function for generate gpk and pkShare
+    /// @param round                      round
+    /// @param polyCommit                 poly commit
+    function updatePkShare(Round storage round, bytes polyCommit)
         internal
-        pure
-        returns(bool valid)
     {
-        return true; // TODO
+        uint x;
+        uint y;
+        bool success;
+        for (uint i = 0; i < round.smNumber; i++) {
+            address txAddress = round.indexMap[i];
+            bytes memory pk = round.addressMap[txAddress];
+            (x, y, success) = encrypt.calPolyCommit(polyCommit, pk);
+            require(success == true, "pkShare failed");
+
+            bytes memory pkShare = round.srcMap[txAddress].pkShare;
+            if (pkShare.length != 0) {
+                uint pkX = bytes2uint(pkShare, 1, 32);
+                uint pkY = bytes2uint(pkShare, 33, 32);
+                (x, y, success) = encrypt.add(x, y, pkX, pkY);
+                require(success == true, "pkShare error");
+            } else {
+                pkShare = new bytes(65);
+                pkShare[0] = 0x04;
+            }
+            assembly { mstore(add(pkShare, 33), x) }
+            assembly { mstore(add(pkShare, 65), y) }
+            round.srcMap[txAddress].pkShare = pkShare;
+        }
     }
 
-    /// @notice                           function for generate pkShare for src storeman
-    /// @param round                      storeman group id
-    /// @param src                        src storeman address
-    function genPkShare(Round storage round, address src)
+    /// @notice                           function for verify sij to judge challenge
+    /// @param d                          Dest
+    /// @param destPk                     dest storeman pk
+    /// @param polyCommit                 polyCommit of pki
+    function verifySij(Dest storage d, bytes destPk, bytes polyCommit)
         internal
+        view
+        returns(bool valid)
     {
-        round.srcMap[src].pkShare = round.srcMap[src].pkShare; // TODO
+        // check sij
+        uint x;
+        uint y;
+        uint pcX;
+        uint pcY;
+        bool success;
+        (x, y, success) = encrypt.mulG(d.sij);
+        if (success) {
+            (pcX, pcY, success) = encrypt.calPolyCommit(polyCommit, destPk);
+            if (success && (x == pcX) && (y == pcY)) {
+                // check enc
+                uint iv = bytes2uint(d.encSij, 65, 16);
+                bytes memory cipher;
+                (cipher, success) = encrypt.enc(bytes32(d.ephemPrivateKey), bytes32(iv), d.sij, destPk);
+                if (success) {
+                    return (keccak256(cipher) == keccak256(d.encSij));
+                }
+            }
+        }
+        return false;
     }
 
     /// @notice                           function for slash
@@ -503,15 +532,34 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         }
     }
 
-    function bytes2uint(bytes source, uint offset)
+    function bytes2uint(bytes source, uint16 offset, uint16 length)
         internal
+        pure
         returns(uint)
     {
         uint number = 0;
-        for (uint i = 0; i < 32; i++) {
-            number = number + uint8(source[i + offset]) * (2 ** (8 * (32 - (i + 1))));
+        for (uint i = 0; i < length; i++) {
+            number = number + uint8(source[i + offset]) * (2 ** (8 * (length - (i + 1))));
         }
         return number;
+    }
+
+    function unifyPk(bytes pk)
+        internal
+        pure
+        returns(bytes)
+    {
+        if (pk.length == 65) {
+            return pk;
+        }
+        bytes memory uPk = new bytes(65);
+        if (pk.length == 64) {
+            uPk[0] = 0x04;
+            for (uint i = 0; i < 64; i++) {
+                uPk[i + 1] = pk[i];
+            }
+        }
+        return uPk;
     }
 
     function getGroupInfo(bytes32 groupId, int16 roundNum)
@@ -544,7 +592,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         Group storage group = groupMap[groupId];
         Round storage round = group.roundMap[roundNum];
         Dest storage d = round.srcMap[src].destMap[dest];
-        return (d.encSij, uint8(d.checkStatus), d.setTime, d.checkTime, d.Sij, d.ephemPrivateKey);
+        return (d.encSij, uint8(d.checkStatus), d.setTime, d.checkTime, d.sij, d.ephemPrivateKey);
     }
 
     function getPkShare(bytes32 groupId, uint index)
@@ -564,17 +612,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     {
         Group storage group = groupMap[groupId];
         return group.roundMap[group.round].gpk;
-    }
-
-    function getPosAvgReturn(uint256 groupStartTime, uint256 curTime)
-        external
-        view
-        returns(uint256, bool)
-    {
-        uint rt;
-        bool success;
-        (rt, success) = encrypt.getPosAvgReturn(groupStartTime, curTime);
-        return (rt, success);
     }
 
     /// @notice fallback function
