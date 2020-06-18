@@ -29,11 +29,14 @@ var eccEncryptTest = async function() {
 
 }
 
-var eccEncrypt = async function secp256k1Encrypt(publicKey, data) {
+var eccEncrypt = async function secp256k1Encrypt(publicKey, data, ephemPrivateKey, iv0) {
     console.log("plainMsg=" + data)
     var ecdh = crypto.createECDH('secp256k1');
 
     var rbPriv = crypto.randomBytes(32);
+    if (ephemPrivateKey) {
+      rbPriv = Buffer.from(ephemPrivateKey, 'hex');
+    }
     console.log("rbpriv=" + rbPriv.toString('hex'))
     ecdh.setPrivateKey(rbPriv);
     var rbpub = Buffer.from(ecdh.getPublicKey('hex', 'compressed'), 'hex');
@@ -58,6 +61,9 @@ var eccEncrypt = async function secp256k1Encrypt(publicKey, data) {
     console.log("hashmacKey=" + macKey.toString('hex'))
 
     var iv = crypto.randomBytes(16);
+    if (iv0) {
+      iv = Buffer.from(iv0, 'hex');
+    }
     console.log("iv=" + iv.toString('hex'))
 
     var em = aesencrypt(encKey,iv,data);
@@ -149,7 +155,7 @@ async function main() {
 
 }
 
-main();
+// main();
 
 module.exports = {
   eccEncrypt,

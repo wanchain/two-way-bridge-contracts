@@ -40,11 +40,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
      *
      */
 
-    /// @notice                           event for start create gpk for specified storeman group
-    /// @param groupId                    storeman group id
-    /// @param round                      group reset times
-    event StartCreateGpkLogger(bytes32 indexed groupId, uint16 indexed round);
-
     /// @notice                           event for storeman submit poly commit
     /// @param groupId                    storeman group id
     /// @param round                      group reset times
@@ -81,11 +76,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     /// @param dest                       dest storeman address
     /// @param srcOrDest                  if true, slash src, otherwise slash dest
     event SlashLogger(bytes32 indexed groupId, uint16 indexed round, uint8 slashType, address src, address dest, bool srcOrDest);
-
-    /// @notice                           event for reset protocol
-    /// @param groupId                    storeman group id
-    /// @param round                      group reset times
-    event ResetLogger(bytes32 indexed groupId, uint16 indexed round);
 
     /// @notice                           event for reset protocol
     /// @param groupId                    storeman group id
@@ -152,7 +142,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
                 round.addressMap[txAddress] = unifyPk(pk);
             }
             round.statusTime = now;
-            emit StartCreateGpkLogger(groupId, group.round);
         }
         require(round.addressMap[msg.sender].length != 0, "Invalid sender");
         require(round.srcMap[msg.sender].polyCommit.length == 0, "Duplicate");
@@ -468,7 +457,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
                 bytes memory cipher;
                 (cipher, success) = encrypt.enc(bytes32(d.ephemPrivateKey), bytes32(iv), d.sij, destPk);
                 if (success) {
-                    return (keccak256(cipher) == keccak256(d.encSij));
+                    return cmpBytes(d.encSij, cipher);
                 }
             }
         }
@@ -526,7 +515,6 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         Round storage round = group.roundMap[group.round];
         round.status = GroupStatus.Close;
         round.statusTime = now;
-        emit ResetLogger(groupId, group.round);
         if (isContinue) {
           group.round++;
         }
@@ -560,6 +548,29 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             }
         }
         return uPk;
+    }
+
+    function cmpBytes(bytes original, bytes audit)
+        internal
+        pure
+        returns(bool)
+    {
+        uint oLen = original.length;
+        uint aLen2 = audit.length; // maybe has padding
+        if (aLen2 >= oLen) {
+           for (uint i = 0; i < aLen2; i++) {
+              if (i < oLen) {
+                 if (original[i] != audit[i]) {
+                   return false;
+                 }
+              } else if (audit[i] != 0x0) {
+                 return false;
+              }
+           }
+           return true;
+        } else {
+           return false;
+        }
     }
 
     function getGroupInfo(bytes32 groupId, int16 roundNum)
