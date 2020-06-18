@@ -30,6 +30,7 @@ import "../components/BasicStorage.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IHTLC.sol";
 import "../lib/Deposit.sol";
+import "./StoremanType.sol";
 
 
 
@@ -40,8 +41,7 @@ contract StoremanGroupStorage is BasicStorage {
   /// HTLC instance address
   IHTLC public htlc;
 
-  mapping(bytes32 => StoremanGroup) internal groups;
-  mapping(bytes => mapping(bytes => bytes32)) internal storemanGroupMap;
+
 
   uint backupCount = 3;
   uint minStake = 10000;
@@ -49,68 +49,10 @@ contract StoremanGroupStorage is BasicStorage {
   uint[] public badTypes;
   uint memberCountDefault=4;
   uint thresholdDefault = 3;
-  GroupConfig  configDefault = GroupConfig({
+  StoremanType.GroupConfig  configDefault = StoremanType.GroupConfig({
     memberCountDesign:memberCountDefault,
     threshold:thresholdDefault
   });
-  enum GroupStatus {initial,failed,selected,ready,retired,dismissed}
-  struct DepositRecord {
-    uint dayId;
-    uint value; // the value is current total value, include the old deposit
-  }
-  struct Delegator {
-      address sender; // the delegator wallet address
-      address staker;
-      bool  quited;
-      //bool  claimed;
-      //uint  deposit;
-      uint  incentive;
-      Deposit.Records deposits;
-  }
-  struct Candidate {
-      address sender;
-      bytes enodeID;
-      bytes PK;
-      address  pkAddress; // 合约计算一下.
-      bool  quited;
-      //bool  claimed;// 不需要??? 提取后deposit归零.
-      bool  selected;
-      bool  isWorking;
-      uint  delegateFee;
-      uint  delegatorCount;
-      uint  delegateDeposit; // only used when selecting. need not records.
-      uint  incentive;       // without delegation.. set to 0 after incentive.
-      uint  incentivedDelegator; // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
-      Deposit.Records  deposits;         // 自有资金记录
-      //Deposit.Records  delegateDeposits; // delegate total 资金记录.
-
-      mapping(uint=>address) addrMap;
-      mapping(address=>Delegator) delegators;
-  }
-  struct GroupConfig {
-      uint memberCountDesign;
-      uint threshold;
-  }
-
-  struct StoremanGroup {
-      bytes32    groupId;
-      uint    txFeeRatio;               /// the fee ratio required by storeman group
-      GroupStatus    status;
-      Deposit.Records    deposit;                  //用于计算group的总收益
-      Deposit.Records     depositWeight;            /// 用于在group内给各个成员分配利润.
-      uint    unregisterApplyTime;      /// the time point for storeman group applied unregistration
-      uint memberCount;
-      uint whiteCount;
-      uint  workDay;
-      uint  totalDays;
-      GroupConfig config;
-      bytes chain;
-      mapping(address=>Candidate) candidates; // bianli map 不好做.
-      mapping(uint=>address) addrMap;
-      mapping(uint=>address) selectedNode;
-      mapping(uint=>address) workingNode;
-      mapping(uint=>address) whiteMap;
-      mapping(address=>address) whiteWk;   // the white list specified when start group.
-      mapping(uint=>uint) groupIncentive; // by day.
-  }
+  StoremanType.StoremanData data;
+  
 }

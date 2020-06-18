@@ -26,7 +26,9 @@ const Encrypt = artifacts.require('Encrypt');
 
 const CreateGpkProxy = artifacts.require('CreateGpkProxy');
 const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
-
+const Deposit = artifacts.require('Deposit');
+const StoremanLib = artifacts.require('StoremanLib');
+const IncentiveLib = artifacts.require('IncentiveLib');
 
 module.exports = async function (deployer, network) {
     if (network === 'nodeploy') return;
@@ -75,7 +77,17 @@ module.exports = async function (deployer, network) {
     // storeman group admin sc
     let poslibAddr = await deployer.deploy(PosLib);
     console.log("================== poslib address:", poslibAddr.address);
-    await deployer.link(PosLib, StoremanGroupDelegate)
+    await deployer.link(PosLib,StoremanGroupDelegate)
+
+    await deployer.deploy(Deposit);
+    await deployer.link(Deposit,StoremanGroupDelegate)
+    await deployer.deploy(StoremanLib);
+    await deployer.link(StoremanLib,StoremanGroupDelegate)
+    await deployer.link(PosLib,IncentiveLib)
+    await deployer.deploy(IncentiveLib);
+    await deployer.link(IncentiveLib,StoremanGroupDelegate)
+
+
     await deployer.deploy(StoremanGroupProxy);
     let smgProxy = await StoremanGroupProxy.deployed();
     await deployer.deploy(StoremanGroupDelegate);

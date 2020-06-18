@@ -61,3 +61,32 @@ group进入retired状态.
     mapping(bytes => mapping(uint => StoremanGroup)) internal storemanGroupMap;
 
 ```
+
+
+退出的流程.
+1. 退出的时间.
+一个group, 只允许在selected及只会的状态才可以退. 也就是说, 在选择前, 不允许退出.
+
+2. delegator的退出.
+2.1 没有被选中的节点的delegator的退出.
+标志quited状态为true.  
+sk的delegateDeposit减去相应的值.
+
+2.2 选中的节点的delegator的退出
+标志quited状态为true.
+sk的delegateDeposit减去相应的值.
+
+
+2.3 delegator的claim取出资产流程.
+incentive设置为0
+delegator从sk中删除. sk的delegatorCount减一
+资金转入钱包账户中去.
+
+
+钱包 对同一个group的同一个节点的投资合并在一起.
+对同一个group同一个节点的代理合并在一起. 
+
+claim取款的时间.
+被选中者, 必须等group完成其工作才能取出来款. 而且需要提前发出退出指令. 
+未被选中者, 可以直接取款, 不需要额外发退出.指令
+sk的delegatorCount减一
