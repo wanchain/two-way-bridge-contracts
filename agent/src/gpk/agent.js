@@ -88,6 +88,7 @@ function procGpkCreatedLogger(evt) {
 function procGpkSlashLogger(evt) {
   let groupId = evt.topics[1];
   console.log("%s group %s slash someone", new Date(), groupId);
+  console.log("slash evt: %O", evt);
 }
 
 async function checkSelfSelected(groupId) {
