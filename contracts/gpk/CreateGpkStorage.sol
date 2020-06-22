@@ -28,7 +28,6 @@ pragma solidity ^0.4.24;
 
 import "../components/BasicStorage.sol";
 import "../interfaces/IStoremanGroup.sol";
-import "../interfaces/IEncrypt.sol";
 
 contract CreateGpkStorage is BasicStorage {
     /// smg instance address
