@@ -30,6 +30,8 @@ import "../lib/SafeMath.sol";
 import "../lib/Secp256k1.sol";
 import "../components/Halt.sol";
 import "./CreateGpkStorage.sol";
+import "../lib/Encrypt.sol";
+import "../lib/DataConvert.sol";
 
 contract CreateGpkDelegate is CreateGpkStorage, Halt {
     using SafeMath for uint;
@@ -79,6 +81,11 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
 
     /// @notice                           event for reset protocol
     /// @param groupId                    storeman group id
+    /// @param round                      group reset times
+    event ResetLogger(bytes32 indexed groupId, uint16 indexed round);
+
+    /// @notice                           event for reset protocol
+    /// @param groupId                    storeman group id
     /// @param gpk                        group public key
     event GpkCreatedLogger(bytes32 indexed groupId, bytes gpk);
 
@@ -88,17 +95,14 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
     *
     */
 
-    /// @notice                           function for set smg and precompiled encrypt contract address
+    /// @notice                           function for set smg contract address
     /// @param smgAddr                    smg contract address
-    /// @param encryptAddr                encrypt contract address
-    function setDependence(address smgAddr, address encryptAddr)
+    function setDependence(address smgAddr)
         external
         onlyOwner
     {
-        require(smgAddr != address(0), "Invalid smg address");
-        require(encryptAddr != address(0), "Invalid encrypt address");
+        require(smgAddr != address(0), "Invalid smg");
         smg = IStoremanGroup(smgAddr);
-        encrypt = IEncrypt(encryptAddr);
     }
 
     /// @notice                           function for set period
@@ -132,14 +136,14 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
             initPeriod(group);
             // selected sm list
             round.smNumber = uint16(smg.getSelectedSmNumber(groupId));
-            require(round.smNumber > 0, "Invalid sm number");
+            require(round.smNumber > 0, "Invalid number");
             // retrieve nodes
             address txAddress;
             bytes memory pk;
             for (uint i = 0; i < round.smNumber; i++) {
                 (txAddress, pk,) = smg.getSelectedSmInfo(groupId, i);
                 round.indexMap[i] = txAddress;
-                round.addressMap[txAddress] = unifyPk(pk);
+                round.addressMap[txAddress] = DataConvert.unifyPk(pk);
             }
             round.statusTime = now;
         }
@@ -385,13 +389,13 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         internal
     {
         bytes memory gpk = round.gpk;
-        uint x = bytes2uint(polyCommit, 1, 32);
-        uint y = bytes2uint(polyCommit, 33, 32);
+        uint x = DataConvert.bytes2uint(polyCommit, 1, 32);
+        uint y = DataConvert.bytes2uint(polyCommit, 33, 32);
         if (gpk.length != 0) {
-            uint gpkX = bytes2uint(gpk, 1, 32);
-            uint gpkY = bytes2uint(gpk, 33, 32);
+            uint gpkX = DataConvert.bytes2uint(gpk, 1, 32);
+            uint gpkY = DataConvert.bytes2uint(gpk, 33, 32);
             bool success;
-            (x, y, success) = encrypt.add(x, y, gpkX, gpkY);
+            (x, y, success) = Encrypt.add(x, y, gpkX, gpkY);
             require(success == true, "Gpk failed");
         } else {
             gpk = new bytes(65);
@@ -414,15 +418,15 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         for (uint i = 0; i < round.smNumber; i++) {
             address txAddress = round.indexMap[i];
             bytes memory pk = round.addressMap[txAddress];
-            (x, y, success) = encrypt.calPolyCommit(polyCommit, pk);
-            require(success == true, "pkShare failed");
+            (x, y, success) = Encrypt.calPolyCommit(polyCommit, pk);
+            require(success == true, "PolyCommit failed");
 
             bytes memory pkShare = round.srcMap[txAddress].pkShare;
             if (pkShare.length != 0) {
-                uint pkX = bytes2uint(pkShare, 1, 32);
-                uint pkY = bytes2uint(pkShare, 33, 32);
-                (x, y, success) = encrypt.add(x, y, pkX, pkY);
-                require(success == true, "pkShare error");
+                uint pkX = DataConvert.bytes2uint(pkShare, 1, 32);
+                uint pkY = DataConvert.bytes2uint(pkShare, 33, 32);
+                (x, y, success) = Encrypt.add(x, y, pkX, pkY);
+                require(success == true, "Add failed");
             } else {
                 pkShare = new bytes(65);
                 pkShare[0] = 0x04;
@@ -448,16 +452,16 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         uint pcX;
         uint pcY;
         bool success;
-        (x, y, success) = encrypt.mulG(d.sij);
+        (x, y, success) = Encrypt.mulG(d.sij);
         if (success) {
-            (pcX, pcY, success) = encrypt.calPolyCommit(polyCommit, destPk);
+            (pcX, pcY, success) = Encrypt.calPolyCommit(polyCommit, destPk);
             if (success && (x == pcX) && (y == pcY)) {
                 // check enc
-                uint iv = bytes2uint(d.encSij, 65, 16);
+                uint iv = DataConvert.bytes2uint(d.encSij, 65, 16);
                 bytes memory cipher;
-                (cipher, success) = encrypt.enc(bytes32(d.ephemPrivateKey), bytes32(iv), d.sij, destPk);
+                (cipher, success) = Encrypt.enc(bytes32(d.ephemPrivateKey), bytes32(iv), d.sij, destPk);
                 if (success) {
-                    return cmpBytes(d.encSij, cipher);
+                    return DataConvert.cmpBytes(d.encSij, cipher);
                 }
             }
         }
@@ -515,61 +519,9 @@ contract CreateGpkDelegate is CreateGpkStorage, Halt {
         Round storage round = group.roundMap[group.round];
         round.status = GroupStatus.Close;
         round.statusTime = now;
+        emit ResetLogger(groupId, group.round);
         if (isContinue) {
           group.round++;
-        }
-    }
-
-    function bytes2uint(bytes source, uint16 offset, uint16 length)
-        internal
-        pure
-        returns(uint)
-    {
-        uint number = 0;
-        for (uint i = 0; i < length; i++) {
-            number = number + uint8(source[i + offset]) * (2 ** (8 * (length - (i + 1))));
-        }
-        return number;
-    }
-
-    function unifyPk(bytes pk)
-        internal
-        pure
-        returns(bytes)
-    {
-        if (pk.length == 65) {
-            return pk;
-        }
-        bytes memory uPk = new bytes(65);
-        if (pk.length == 64) {
-            uPk[0] = 0x04;
-            for (uint i = 0; i < 64; i++) {
-                uPk[i + 1] = pk[i];
-            }
-        }
-        return uPk;
-    }
-
-    function cmpBytes(bytes original, bytes audit)
-        internal
-        pure
-        returns(bool)
-    {
-        uint oLen = original.length;
-        uint aLen2 = audit.length; // maybe has padding
-        if (aLen2 >= oLen) {
-           for (uint i = 0; i < aLen2; i++) {
-              if (i < oLen) {
-                 if (original[i] != audit[i]) {
-                   return false;
-                 }
-              } else if (audit[i] != 0x0) {
-                 return false;
-              }
-           }
-           return true;
-        } else {
-           return false;
         }
     }
 

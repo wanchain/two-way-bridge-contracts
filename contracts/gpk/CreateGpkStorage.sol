@@ -33,8 +33,6 @@ import "../interfaces/IEncrypt.sol";
 contract CreateGpkStorage is BasicStorage {
     /// smg instance address
     IStoremanGroup public smg;
-    /// encrypt instance address
-    IEncrypt public encrypt;
 
     /// groupId->Group
     mapping(bytes32 => Group) internal groupMap;
