@@ -23,7 +23,7 @@ const MetricLib = artifacts.require('MetricLib');
 const FakeSmg = artifacts.require('FakeSmg');
 
 const Encrypt = artifacts.require('Encrypt');
-
+const DataConvert = artifacts.require('DataConvert');
 const CreateGpkProxy = artifacts.require('CreateGpkProxy');
 const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
 const Deposit = artifacts.require('Deposit');
@@ -145,15 +145,18 @@ module.exports = async function (deployer, network) {
 
     // precompiled encrypt contract
     await deployer.deploy(Encrypt);
-    let encrypt = await Encrypt.deployed();
+    // DataConvert contract
+    await deployer.deploy(DataConvert);
 
     // create gpk sc
-    await deployer.deploy(CreateGpkProxy);
-    let gpkProxy = await CreateGpkProxy.deployed();
+    await deployer.link(Encrypt, CreateGpkDelegate);
+    await deployer.link(DataConvert, CreateGpkDelegate);
     await deployer.deploy(CreateGpkDelegate);
     let gpkDelegate = await CreateGpkDelegate.deployed();
+    await deployer.deploy(CreateGpkProxy);
+    let gpkProxy = await CreateGpkProxy.deployed();
     await gpkProxy.upgradeTo(gpkDelegate.address);
 
     let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);
-    await gpk.setDependence(smgProxy.address, encrypt.address);
+    await gpk.setDependence(smgProxy.address);
 }

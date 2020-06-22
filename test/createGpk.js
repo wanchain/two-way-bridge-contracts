@@ -116,7 +116,7 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
   it('[CreateGpkDelegate_setDependence] should fail: not owner', async () => {
     let result = {};
     try {
-      await gpkSc.setDependence(smgSc.address, encryptSc.address, {from: someone});
+      await gpkSc.setDependence(smgSc.address, {from: someone});
     } catch (e) {
       result = e;
     }
@@ -126,40 +126,32 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
   it('[CreateGpkDelegate_setDependence] should fail: invalid smg address', async () => {
     let result = {};
     try {
-      await gpkSc.setDependence(ADDRESS_0, encryptSc.address, {from: owner});
+      await gpkSc.setDependence(ADDRESS_0, {from: owner});
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Invalid smg address');
+    assert.equal(result.reason, 'Invalid smg');
   })
   
-  it('[CreateGpkDelegate_setDependence] should fail: invalid encrypt address', async () => {
-    let result = {};
-    try {
-      await gpkSc.setDependence(smgSc.address, ADDRESS_0, {from: owner});
-    } catch (e) {
-      result = e;
-    }
-    assert.equal(result.reason, 'Invalid encrypt address');
-  })
-
   it('[CreateGpkDelegate_setDependence] should success', async () => {
     let result = {};
     try {
-      await gpkSc.setDependence(smgSc.address, encryptSc.address, {from: owner});
+      await gpkSc.setDependence(smgSc.address, {from: owner});
     } catch (e) {
       result = e;
     }
     assert.equal(result.reason, undefined);
     assert.equal(await gpkSc.smg.call(), smgSc.address);
-    assert.equal(await gpkSc.encrypt.call(), encryptSc.address);
   })
 
   // setPeriod
   it('[CreateGpkDelegate_setPeriod] should fail: not owner', async () => {
-    let result = {}; 
+    let result = {};
+    let ployCommitPeroid = 10 * 60;
+    let defaultPeroid = 5 * 60;
+    let negotiatePeroid = 15 * 60;
     try {
-      await gpkSc.setPeriod(groupId, 10 * 60, 5 * 60, 15 * 60, {from: someone});
+      await gpkSc.setPeriod(groupId, ployCommitPeroid, defaultPeroid, negotiatePeroid, {from: someone});
     } catch (e) {
       result = e;
     }
