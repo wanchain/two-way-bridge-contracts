@@ -49,6 +49,7 @@ contract StoremanGroupStorage is BasicStorage {
   uint[] public badTypes;
   uint memberCountDefault=4;
   uint thresholdDefault = 3;
+  address  public  greateGpkAddr;
   StoremanType.GroupConfig  configDefault = StoremanType.GroupConfig({
     memberCountDesign:memberCountDefault,
     threshold:thresholdDefault

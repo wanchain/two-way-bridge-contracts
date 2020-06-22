@@ -8,14 +8,13 @@ library StoremanLib {
     event stakeInEvent(bytes32 indexed index,address indexed pkAddr, bytes enodeID);
 
     function getDaybyTime(uint time)  public pure returns(uint) {
-        return time; // TODO; get the day. not minute.
+        return time/10; // TODO; get the day. not minute.
     }
     function calSkWeight(uint deposit) public  returns(uint) {
         return deposit*15/10;
     }
 
-    function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID, uint delegateFee)
-        public 
+    function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID, uint delegateFee) public
     {
         address pkAddr = address(keccak256(PK));
         Deposit.Records memory records = Deposit.Records(0);
@@ -30,6 +29,7 @@ library StoremanLib {
             delegatorCount:0,
             delegateDeposit:0,
             groupId: groupId,
+            incentivedDay: 0,
             nextGroupId: bytes32(0x00),
             incentive:0,       // without delegation.. set to 0 after incentive.
             incentivedDelegator:0, // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
@@ -37,7 +37,6 @@ library StoremanLib {
         });
 
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        
         data.candidates[pkAddr] = sk;
         group.addrMap[group.memberCount] = sk.pkAddress;
         group.memberCount++;
@@ -58,15 +57,16 @@ library StoremanLib {
         emit stakeInEvent(group.groupId, pkAddr, enodeID);
     }
 
-    function stakeAppend(StoremanType.StoremanData storage data, bytes32 groupId, address skPkAddr) internal  {
+    function stakeAppend(StoremanType.StoremanData storage data,  address skPkAddr) internal  {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
-        StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
-        StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
+        require(sk.sender == msg.sender, "Only the sender can use stakeAppend");
 
         uint day = getDaybyTime(now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         sk.deposit.addRecord(r);
+        StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
+        StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
         updateGroup(data, sk, group, r);
         updateGroup(data, sk, nextGroup, r);
     }
@@ -99,6 +99,9 @@ library StoremanLib {
         // 如果group还没选择, 不许提取.
         // 如果已经选择过了, 没选中, 可以提取.
         // 如果选择过了, 而且选中了, 那么必须1. 标记为quited了, 2, group状态是dismissed了.
+        if(group.status == StoremanType.GroupStatus.none) {
+            return true; // group does not exist. maybe it is next group.
+        }
         if(group.status < StoremanType.GroupStatus.selected) {
             return false;
         }

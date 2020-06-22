@@ -75,8 +75,7 @@ module.exports = async function (deployer, network) {
     await htlcProxy.upgradeTo(htlcDelegate.address);
 
     // storeman group admin sc
-    let poslibAddr = await deployer.deploy(PosLib);
-    console.log("================== poslib address:", poslibAddr.address);
+    await deployer.deploy(PosLib);
     await deployer.link(PosLib,StoremanGroupDelegate)
 
     await deployer.deploy(Deposit);
@@ -86,7 +85,6 @@ module.exports = async function (deployer, network) {
     await deployer.link(PosLib,IncentiveLib)
     await deployer.deploy(IncentiveLib);
     await deployer.link(IncentiveLib,StoremanGroupDelegate)
-
 
     await deployer.deploy(StoremanGroupProxy);
     let smgProxy = await StoremanGroupProxy.deployed();
@@ -114,7 +112,7 @@ module.exports = async function (deployer, network) {
     // console.log("smgDelegate.address:", smgDelegate.address)
     // await smgProxy.upgradeTo(smgDelegate.address);
 
-    await smg.setDependence(tmProxy.address, htlcProxy.address);
+    await smg.setDependence(tmProxy.address, htlcProxy.address, tsmg.address);
 
     // console.log("impold:", await smgProxy.implementation())
     // console.log("smgDelegate.address:", smgDelegate.address)

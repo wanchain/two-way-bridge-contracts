@@ -30,54 +30,14 @@ delegator: stakerId*100 ~ stakerID*100+1000
 let EOS = utils.stringTobytes("EOS")
 
 
-
-contract('StoremanGroupDelegate', async (accounts) => {
-    let smgDelegate
-    let tester = accounts[0]
-    let id = utils.stringTobytes32(Date.now().toString())
-    const memberCountDesign = 4
-    const threshold  = 3
-
-    before("init contracts", async() => {
-        if(!contractAddress) {
-            let smgProxy = await StoremanGroupProxy.deployed();
-            smgDelegate = await StoremanGroupDelegate.deployed();
-            await smgProxy.upgradeTo(smgDelegate.address);
-            contractAddress = smgDelegate.address
-            console.log("==============================storemanGroup contractAddress: ", contractAddress)
-        }
-
-    
-        tsmg = await TestSmg.deployed();
-        await tsmg.setSmgAddr(smgDelegate.address)
-
+contract('TestSmg', async (accounts) => {
+    it('addToken ', async ()=>{
         let tmProxy = await TokenManagerProxy.deployed();
-        let tm = await TokenManagerDelegate.deployed();
-        //await tmprx.upgradeTo(tm.address);
+        let tm = await TokenManagerDelegate.at(tmProxy.address);
 
-        await smgDelegate.setDependence(tmProxy.address, tmProxy.address);
 
-        await tm.addToken(EOS, 10000,'0x'+web3.utils.toWei("10").toString('hex'),60 * 60 * 72,EOS,EOS,8)
+        await tm.addToken(EOS, 10000,'0x99999999',60 * 60 * 72,EOS,EOS,8)
         let t = await tm.getTokenInfo(EOS)
         console.log("tokens:", t)
-
-    })
-
-
-
-    it('registerStart_1 ', async ()=>{
-        let count = 4;
-        let wks = []
-        let srs= []
-        for(let i=0; i<count;i++){
-            let {addr:sr} = utils.getAddressFromInt(i+1000)
-            let {addr:wk} = utils.getAddressFromInt(i+2000)
-            wks.push(wk)
-            srs.push(sr)
-        }
-        let tx = await smgDelegate.registerStart(id,memberCountDesign,threshold,12345, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
-            {from: tester})
-        console.log("tx:", tx)
-        console.log("group:",await smgDelegate.groups(id))
     })
 })

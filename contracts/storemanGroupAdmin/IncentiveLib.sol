@@ -9,8 +9,11 @@ library IncentiveLib {
     event incentive(bytes32 indexed groupId, address indexed pkAddr, bool indexed finished);
 
     function getGroupIncentive(StoremanType.StoremanGroup storage group, uint time) public view returns (uint)  {
-        //return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit), time, 10000, 10000);
-        return 30000000;
+        return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit), time, 10000, 10000);
+        //return 30000000;
+    }
+    function getDaybyTime(uint time)  public pure returns(uint) {
+        return time/10; // TODO; get the day. not minute.
     }
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) public returns (uint) {
         return groupIncentive*weight/groupWeight;
@@ -19,41 +22,49 @@ library IncentiveLib {
         return deposit*15/10;
     }
 
+    
     function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr) public  {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
         StoremanType.StoremanGroup storage group = data.groups[sk.groupId];
 
-        uint day = 0;
-        if(group.groupIncentive[group.workDay] == 0){
-            for(day = group.workDay; day < group.workDay+group.totalDays; day++) {
-                group.groupIncentive[day] = getGroupIncentive(group, day); // TODO: change to the correct time
-            }
+        uint fromDay = group.workDay;
+        if(sk.incentivedDay != 0) {
+            fromDay = sk.incentivedDay + 1;
         }
-
-        if(sk.incentivedDelegator == 0){
-            for(day = group.workDay; day < group.workDay+group.totalDays; day++) {
+        uint endDay = getDaybyTime(now)-1;
+        if(endDay > group.workDay+group.totalDays) {
+            endDay = group.workDay+group.totalDays;
+        }
+        uint day;
+        for(day = fromDay; day < endDay; day++) {
+            if(group.groupIncentive[day] == 0){
+                group.groupIncentive[day] = getGroupIncentive(group, day); // TODO: change to the correct time
                 sk.incentive += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day),  calSkWeight(sk.deposit.getValueById(day)));
             }
-        }
 
-        while(sk.incentivedDelegator != sk.delegatorCount) {
-            for(day = group.workDay; day < group.workDay+group.totalDays; day++) {
+            while(sk.incentivedDelegator != sk.delegatorCount) {
                 address deAddr = sk.addrMap[sk.incentivedDelegator];
                 StoremanType.Delegator storage de = sk.delegators[deAddr];
                 de.incentive += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), de.deposit.getValueById(day));
+            
+                sk.incentivedDelegator++;
+                if(msg.gas < 5000000 ){ // check the gas. because calculate delegator incentive need more gas left.
+                    emit incentive(group.groupId, wkAddr, false);
+                    return;
+                }
             }
-            sk.incentivedDelegator++;
-            if(msg.gas < 5000000 ){ // check the gas. because calculate delegator incentive need more gas left.
-                emit incentive(group.groupId, wkAddr, false);
-                return;
-            }
+            //TODO: recoed the incentived day.
+            sk.incentivedDay = day;
         }
-
         emit incentive(group.groupId, wkAddr, true);
 
-        // TODO 所有的sk完成incentive, group状态进入dismissed, sk的当前group变成nextGroup.
-
+            // TODO 所有的sk完成incentive, group状态进入dismissed, sk的当前group变成nextGroup.
+        
     }
+
+
+
+
 
     event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
     function toSelect(StoremanType.StoremanData storage data,bytes32 groupId) public {
