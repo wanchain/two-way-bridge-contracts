@@ -5,7 +5,7 @@ const net = require('net')
 const ethutil = require("ethereumjs-util");
 const pu = require('promisefy-util')
 
-//const TestSmg = artifacts.require('TestSmg')
+const TestSmg = artifacts.require('TestSmg')
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
@@ -29,45 +29,58 @@ delegator: stakerId*100 ~ stakerID*100+1000
 let EOS = utils.stringTobytes("EOS")
 
 
-
 contract('TestSmg', async (accounts) => {
     let tester = accounts[0]
-    let id = utils.stringTobytes32(Date.now().toString())
-    let gaddr = '0xf223ebd621fc35417023fdc52d3cc55de672e6de'
-    //let gpk = '0x047793ef5f8e57e872ea9fbb18bd710ab96ea4f646134d3308930cbf62e73f0e1c8d5b3b793573090fa4a7e7e5c38fd987e889bc3e720e05b243e856f632ae7cc5'
-    let gpk = '0x04a4a90e6b3914780a66e3d34134478ffe455b657705d9c71bf48f66b52e486ed8362d850558f152ff03a5210a63625438cbaa9cb924bd90d597299cf9c3bcbe70';
-    let skSmg ='0x000000000000000000000000000000000000000000000000000000000000270f'
+    let now = parseInt(Date.now()/1000);
+    let id = utils.stringTobytes32(now.toString())
+    const WhiteCount = 4
 
-
-    const memberCountDesign = 4
-    const threshold  = 3
-    let smgProxy
     let  smg
+    let tsmg
 
     before("init contracts", async() => {
-        smgProxy = await StoremanGroupProxy.deployed();
+        let smgProxy = await StoremanGroupProxy.deployed();
 
         smg = await StoremanGroupDelegate.at(smgProxy.address)
         contractAddress = smgProxy.address
         console.log("==============================storemanGroup smgProxy contractAddress: ", contractAddress)
 
+
+    
+        tsmg = await TestSmg.deployed();
+        await tsmg.setSmgAddr(smgProxy.address)
+
+        let tmProxy = await TokenManagerProxy.deployed();
+        let tm = await TokenManagerDelegate.at(tmProxy.address);
+
+
+        await tm.addToken(EOS, 10000,'0x99999999',60 * 60 * 72,EOS,EOS,8)
+        let t = await tm.getTokenInfo(EOS)
+        console.log("tokens:", t)
+
     })
 
 
-
     it('registerStart_1 ', async ()=>{
-        let count = 4;
         let wks = []
         let srs= []
-        for(let i=0; i<count;i++){
+        for(let i=0; i<WhiteCount;i++){
             let {addr:sr} = utils.getAddressFromInt(i+1000)
             let {addr:wk} = utils.getAddressFromInt(i+2000)
             wks.push(wk)
             srs.push(sr)
         }
-        let tx = await smg.registerStart(id,memberCountDesign,threshold,12345, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
+        
+        let tx = await smg.registerStart(id,now+10, 90, 10,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
             {from: tester})
-        console.log("tx:", tx)
-        console.log("group:",await smg.groups(id))
+        console.log("registerStart txhash:", tx.tx)
+        await utils.waitReceipt(tx.tx)
+        let group = await smg.getGroupInfo(id)
+        assert.equal(group.status, 1)
+        assert.equal(group.groupId, id)
+        assert.equal(group.deposit, 0)
+        assert.equal(group.depositWeight, 0)
+        assert.equal(group.memberCount, 0)
+        console.log("group:", group)
     })
 })

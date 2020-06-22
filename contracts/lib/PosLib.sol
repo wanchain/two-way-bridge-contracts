@@ -95,28 +95,30 @@ library PosLib {
      function getMinIncentive2 ()  public view returns(uint256,uint256) {
          return (getMinIncentive(10000000 ether,now - 86400 * 4,10000,10000),0);
      }
-
     function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime,uint256 crossChainCoefficient,uint256 chainTypeCoefficient) public view returns(uint256) {
-        uint256 p1;
-        bool    success;
-
-        (p1,success) = getPosAvgReturn(smgStartTime,now);
-        if(!success) {
-            return 0;
-        }
-        uint256 p1Return = smgDeposit.mul(p1).div(DIVISOR);
-
-        uint256 hardcap;
-        (hardcap,success) = getHardCap(crossChainCoefficient,chainTypeCoefficient,now);
-        if(!success) {
-            return 0;
-        }
-
-        uint256 hardcapReturn = hardcap.mul(1 ether).div(DIVISOR);
-        return hardcapReturn;
-
-        return hardcapReturn<=p1Return?hardcapReturn:p1Return;
+        return 30000000;
     }
+    // function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime,uint256 crossChainCoefficient,uint256 chainTypeCoefficient) public view returns(uint256) {
+    //     uint256 p1;
+    //     bool    success;
+
+    //     (p1,success) = getPosAvgReturn(smgStartTime,now);
+    //     if(!success) {
+    //         return 0;
+    //     }
+    //     uint256 p1Return = smgDeposit.mul(p1).div(DIVISOR);
+
+    //     uint256 hardcap;
+    //     (hardcap,success) = getHardCap(crossChainCoefficient,chainTypeCoefficient,now);
+    //     if(!success) {
+    //         return 0;
+    //     }
+
+    //     uint256 hardcapReturn = hardcap.mul(1 ether).div(DIVISOR);
+    //     return hardcapReturn;
+
+    //     return hardcapReturn<=p1Return?hardcapReturn:p1Return;
+    // }
 
 
 }

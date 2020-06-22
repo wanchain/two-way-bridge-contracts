@@ -29,10 +29,11 @@ library StoremanType {
         uint  delegateDeposit; // only used when selecting. need not records.
         uint  incentive;       // without delegation.. set to 0 after incentive.
         uint  incentivedDelegator; // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
+        uint  incentivedDay;
         bytes32  groupId;
         bytes32  nextGroupId;
         Deposit.Records  deposit;         // 自有资金记录
-
+        
         mapping(uint=>address) addrMap;
         mapping(address=>Delegator) delegators;
     }
