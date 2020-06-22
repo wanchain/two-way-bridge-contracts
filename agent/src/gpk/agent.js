@@ -7,7 +7,7 @@ const {GroupStatus} = require('./Types');
 const wanchain = require('../utils/wanchain');
 const tool = require('../utils/tools');
 
-console.log("OpenStoreman gpk agent");
+console.log("start gpk agent");
 
 // record latest round of each group
 const groupMap = new Map();
@@ -30,7 +30,6 @@ function recoverProcess() {
       Object.assign(round, ctx);
       groupMap.set(round.groupId, round);
       round.resume();
-      console.log("%s gpk agent resume group %s round %d", new Date(), round.groupId, round.round);
     }
   });
 }
@@ -42,7 +41,7 @@ evtTracker.subscribe('gpk_SlashLogger', config.contractAddress.createGpk, ["0x3e
 evtTracker.start();
 
 async function eventHandler(evt) {
-  console.log("receive evt: %O", evt);
+  // console.log("receive evt: %O", evt);
   try {
     switch (evt.name) {
       case 'smg_selectedEvent':
@@ -68,14 +67,13 @@ async function procSmgSelectedEvent(evt) {
   let groupId = evt.topics[1];
   let group = groupMap.get(groupId);
   let info = await createGpkSc.methods.getGroupInfo(groupId, -1).call();
-  console.log("agent get group: %O", info);
+  // console.log("agent get group: %O", info);
   let round = info[0], status = info[1];
   if ((status == GroupStatus.PolyCommit) && checkSelfSelected(groupId)) {
     if ((!group) || (group.round < round)) {
       let newRound = new Round(groupId, round);
       groupMap.set(groupId, newRound);
       await newRound.start();
-      console.log("%s gpk agent start group %s round %d", new Date(), groupId, round);
     } else {
       console.error("%s gpk agent ignore group %s round %d status %d event", new Date(), groupId, round, status);
     }
@@ -90,6 +88,7 @@ function procGpkCreatedLogger(evt) {
 function procGpkSlashLogger(evt) {
   let groupId = evt.topics[1];
   console.log("%s group %s slash someone", new Date(), groupId);
+  console.log("slash evt: %O", evt);
 }
 
 async function checkSelfSelected(groupId) {

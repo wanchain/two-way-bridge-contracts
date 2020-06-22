@@ -45,7 +45,7 @@ class EventTracker {
       if (endBlock > latestBlock) {
         endBlock = latestBlock;
       }
-      console.log("%s eventTracker loop for block %d-%d", this.id, startBlock, endBlock);
+      console.log("%s eventTracker scan block %d-%d", this.id, startBlock, endBlock);
       await Promise.all(this.subscribeArray.map(sub => {
         return new Promise((resolve, reject) => {
           wanchain.getEvents({
@@ -67,7 +67,7 @@ class EventTracker {
       }));
       this.lastBlock = endBlock;
       if (eventArray.length) {
-        console.log("%s eventTracker fetched %d event from block %d-%d", this.id, eventArray.length, startBlock, endBlock);
+        // console.log("%s eventTracker fetched %d event from block %d-%d", this.id, eventArray.length, startBlock, endBlock);
         eventArray.sort(this.sortLog);
         this.eventList = this.eventList.concat(eventArray);
       }

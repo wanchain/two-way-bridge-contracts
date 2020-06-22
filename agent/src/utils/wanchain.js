@@ -14,6 +14,7 @@ const selfPk = ethUtil.privateToPublic(selfSk); // Buffer
 const selfAddress = '0x' + ethUtil.pubToAddress(selfPk).toString('hex').toLowerCase();
 let selfNonce = 0;
 console.log("keystore path: %s", config.keystore.path);
+// console.log("sk: %s", '0x' + selfSk.toString('hex'));
 console.log("pk: %s", '0x04' + selfPk.toString('hex'));
 console.log("address: %s", selfAddress);
 
@@ -40,9 +41,9 @@ function getElapsed(baseTs) {
 async function updateNounce() {
   try {
     selfNonce = await web3.eth.getTransactionCount(selfAddress, 'pending');
-    console.error("update %s nonce %d", selfAddress, selfNonce);
+    console.log("update address %s nonce %d", selfAddress, selfNonce);
   } catch (err) {
-    console.error("update %s old nonce %d err: %O", selfAddress, selfNonce, err);
+    console.error("update address %s nonce err: %O", selfAddress, err);
   }
 }
 
@@ -61,7 +62,7 @@ async function sendTx(contractAddr, data) {
       value: '0x0',
       data: data
   };
-  console.log("sendTx: %O", rawTx);
+  // console.log("sendTx: %O", rawTx);
   let tx = new Tx(rawTx);
   tx.sign(selfSk);
 
@@ -96,7 +97,7 @@ async function sendPloyCommit(groupId, polyCommit) {
     offset += 65;
   }
   let pcStr = '0x' + buf.toString('hex');
-  console.log("group %s sendPloyCommit %s", groupId, pcStr);
+  // console.log("group %s sendPloyCommit %s", groupId, pcStr);
   let txData = await createGpkSc.methods.setPolyCommit(groupId, pcStr).encodeABI();
   let txHash = await sendTx(config.contractAddress.createGpk, txData);
   return txHash;

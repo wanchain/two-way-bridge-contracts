@@ -47,17 +47,18 @@ class Round {
   }
 
   async start() {
+    console.log("start gpk group %s round %d", this.groupId, this.round);
     this.initSc();
     this.initSelfKey();
     await this.initSmList();
     this.initPoly();
-    console.log("start gpk group %s round %d", this.groupId, this.round);
     this.next(3000);
   }
 
   async resume() {
-    this.initSc();
     console.log("resume gpk group %s round %d", this.groupId, this.round);
+    this.initSc();
+    this.initSelfKey();
     this.next(3000);
   }  
 
@@ -96,19 +97,19 @@ class Round {
     }
     await Promise.all(ps);
     this.smList = smList;
-    console.log('%s gpk group %s init smList: %O', new Date(), this.groupId, smList);
-    console.log('send map: %O', this.send);
-    console.log('receive map: %O', this.receive);
+    console.log('init smList: %O', smList);
+    // console.log('send map: %O', this.send);
+    // console.log('receive map: %O', this.receive);
   }
 
   async initPoly() {
     let threshold = await this.smgSc.methods.getThresholdByGrpId(this.groupId).call();
-    console.log("group %s threshold: %d", this.groupId, threshold);
+    console.log("threshold: %d", threshold);
     for (let i = 0; i < threshold; i++) {
       let poly = encrypt.genRandomCoef(32);
       this.poly[i] = '0x' + poly.toBuffer().toString('hex');
       this.polyCommit[i] = '0x' + encrypt.mulG(poly).getEncoded(false).toString('hex');
-      console.log("init polyCommit %i: %s", i, this.polyCommit[i]);
+      // console.log("init polyCommit %i: %s", i, this.polyCommit[i]);
     }
   }
 
@@ -127,6 +128,7 @@ class Round {
     let copy = Object.assign({}, this);
     copy.smgSc = null;
     copy.createGpkSc = null;
+    copy.selfSk = '';
     tool.writeContext(this.groupId + '.cxt', copy);
   }
 
@@ -148,8 +150,8 @@ class Round {
       this.ployCommitPeriod = parseInt(info[3]);
       this.defaultPeriod = parseInt(info[4]);
       this.negotiatePeriod = parseInt(info[5]);
-      console.log('%s gpk group %s round %d status %d from %d main loop', new Date(), this.groupId, this.round, this.status, this.statusTime);
-      console.log("mainLoop group info: %O", info);
+      console.log('%s gpk group %s round %d status %d(%d) main loop', new Date(), this.groupId, this.round, this.status, this.statusTime);
+      // console.log("mainLoop group info: %O", info);
 
       switch (this.status) {
         case GroupStatus.PolyCommit:

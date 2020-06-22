@@ -143,7 +143,7 @@ module.exports = async function (deployer, network) {
     await metric.setDependence(smgProxy.address, smgProxy.address);
 
 
-    // precompile contract
+    // precompiled encrypt contract
     await deployer.deploy(Encrypt);
     let encrypt = await Encrypt.deployed();
 

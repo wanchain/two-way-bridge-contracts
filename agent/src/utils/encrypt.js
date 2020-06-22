@@ -60,7 +60,7 @@ async function encryptSij(pk, sij) {
 
 async function decryptSij(sk, encSij) {
   try {
-    console.log("%s decryptSij: %s", sk, encSij);
+    console.log("decryptSij: %s", encSij);
     let skBuf = Buffer.from(sk.substr(2), 'hex');
     let M = await ecies.eccDecrypt(skBuf, encSij.substr(2));
     return '0x' + M;
