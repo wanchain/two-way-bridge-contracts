@@ -49,11 +49,13 @@ library StoremanType {
         Deposit.Records    deposit;                  //用于计算group的总收益
         Deposit.Records     depositWeight;            /// 用于在group内给各个成员分配利润.
         uint    unregisterApplyTime;      /// the time point for storeman group applied unregistration
+        uint selectedCount;
         uint memberCount;
         uint whiteCount;
         uint  workDay;
         uint  totalDays;
-        GroupConfig config;
+        uint memberCountDesign;
+        uint threshold;
         bytes chain;
         mapping(uint=>address) addrMap;
         mapping(uint=>address) selectedNode;

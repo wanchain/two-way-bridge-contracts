@@ -51,7 +51,7 @@ library StoremanLib {
                 revert("invalid sender");
             }
         } else {
-            realInsert(data,group, pkAddr, calSkWeight(msg.value), group.config.memberCountDesign-1);
+            realInsert(data,group, pkAddr, calSkWeight(msg.value), group.memberCountDesign-1);
         }
 
         emit stakeInEvent(group.groupId, pkAddr, enodeID);
@@ -81,13 +81,13 @@ library StoremanLib {
         // 如果参加了下一个group, 下一个group还没选择, 不许退.
         //否则标志为退出状态 quited==true
         require(group.status >= StoremanType.GroupStatus.selected, "selecting time, can't quit");
-        if(nextGroup.memberCount != 0) {
+        if(nextGroup.status != StoremanType.GroupStatus.none) {
             require(nextGroup.status >= StoremanType.GroupStatus.selected, "selecting time, can't quit");
         }
         sk.quited = true;
     }
     function isWorkingNodeInGroup(StoremanType.StoremanGroup storage group, address skPkAddr) internal  view returns (bool) {
-        uint count = group.config.memberCountDesign;
+        uint count = group.memberCountDesign;
         for(uint8 i = 0; i < count; i++) {
             if(skPkAddr == group.selectedNode[i]) {
                 return true;
@@ -148,7 +148,7 @@ library StoremanLib {
     function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r) internal {
         //如果还没选择, 不需要更新group的值, 在选择的时候一起更新.
         // 如果已经选择过了, 需要更新group的值.
-        if(group.memberCount == 0){ // not exist group.
+        if(group.status == StoremanType.GroupStatus.none){ // not exist group.
             return;
         }
         address skPkAddr = sk.pkAddress;
@@ -158,7 +158,7 @@ library StoremanLib {
             group.depositWeight.addRecord(r);
         } else {
             if(group.whiteWk[skPkAddr] == address(0x00)){
-                for(uint selectedIndex = group.whiteCount; selectedIndex<group.config.memberCountDesign; selectedIndex++){
+                for(uint selectedIndex = group.whiteCount; selectedIndex<group.memberCountDesign; selectedIndex++){
                     if(group.selectedNode[selectedIndex] == skPkAddr) {
                         break;
                     }
@@ -202,7 +202,7 @@ library StoremanLib {
         //否则标志为退出状态 quited==true
 
         require(group.status >= StoremanType.GroupStatus.selected, "selecting time, can't quit");
-        if(nextGroup.memberCount != 0) {
+        if(nextGroup.status != StoremanType.GroupStatus.none) {
             require(nextGroup.status >= StoremanType.GroupStatus.selected, "selecting time, can't quit");
         }
 
