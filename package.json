@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "test": "truffle test",
+    "compile": "truffle compile",
+    "coverage": "truffle run coverage",
+    "migrate": "rm -rf build && truffle migrate --network testnet"
+  },
+  "dependencies": {
+    "bignumber.js": "^7.2.1",
+    "chai": "^4.2.0",
+    "ethereumjs-util": "^5.2.0",
+    "solidity-coverage": "^0.7.4",
+    "truffle": "^5.1.22",
+    "truffle-privatekey-provider": "^0.1.0",
+    "web3": "^1.0.0-beta.36"
+  }
+}
