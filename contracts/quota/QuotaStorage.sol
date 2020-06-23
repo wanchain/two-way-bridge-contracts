@@ -45,50 +45,20 @@ contract QuotaStorage is BasicStorage {
         bool _active;
     }
 
-    event MintLock(address indexed sender, uint indexed tokenId, bytes indexed storemanGroupPK, uint value, uint _receivable, uint _payable);
-
-    event MintRedeem(address indexed sender, uint indexed tokenId, bytes indexed storemanGroupPK, uint value, uint _receivable, uint _payable);
-
-    event MintRevoke(address indexed sender, uint indexed tokenId, bytes indexed storemanGroupPK, uint value, uint _receivable, uint _payable);
-
-    event BurnLock(address indexed sender, uint indexed tokenId, bytes indexed storemanGroupPK, uint value, uint _receivable, uint _payable);
-
-    event BurnRedeem(address indexed sender, uint indexed tokenId, bytes indexed storemanGroupPK, uint value, uint _receivable, uint _payable);
-
-    event BurnRevoke(address indexed sender, uint indexed tokenId, bytes indexed storemanGroupPK, uint value, uint _receivable, uint _payable);
-
-    event DebtLock(
-        address indexed sender,
-        uint256 indexed tokenId,
-        bytes indexed srcStoremanGroupPK,
-        bytes dstStoremanGroupPK,
-        uint256 value);
-
-    event DebtRedeem(
-        address indexed sender,
-        uint256 indexed tokenId,
-        bytes indexed srcStoremanGroupPK,
-        bytes dstStoremanGroupPK,
-        uint256 value);
-
-    event DebtRevoke(
-        address indexed sender,
-        uint256 indexed tokenId,
-        bytes indexed srcStoremanGroupPK,
-        bytes dstStoremanGroupPK,
-        uint256 value);
+    /// @dev the denominator of deposit rate value
+    uint public DENOMINATOR = 10000;
 
     /// @dev mapping: tokenId => storemanPk => Quota
-    mapping(uint => mapping(bytes => Quota)) quotaMap;
+    mapping(uint => mapping(bytes32 => Quota)) quotaMap;
 
     /// @dev mapping: storemanPk => tokenIndex => tokenId, tokenIndex:0,1,2,3...
-    mapping(bytes => mapping(uint => uint)) storemanTokensMap;
+    mapping(bytes32 => mapping(uint => uint)) storemanTokensMap;
 
     /// @dev mapping: storemanPk => token count
-    mapping(bytes => uint) storemanTokenCountMap;
+    mapping(bytes32 => uint) storemanTokenCountMap;
 
-    /// @dev save htlc address
-    address public htlcAddress;
+    /// @dev mapping: htlcAddress => exist
+    mapping(address => bool) public htlcGroupMap;
 
     /// @dev save deposit oracle address (storeman admin or oracle)
     address public depositOracleAddress;
@@ -106,7 +76,7 @@ contract QuotaStorage is BasicStorage {
     address public tokenManagerAddress;
 
     modifier onlyHtlc() {
-        require(msg.sender == htlcAddress, "Not HTLC contract");
+        require(htlcGroupMap[msg.sender], "Not in HTLC group");
         _;
     }
 }
