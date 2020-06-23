@@ -5,7 +5,7 @@ interface IPriceOracle {
 }
 
 interface IDepositOracle {
-    function getDepositAmount(bytes storemanGroupPK) public view returns(uint deposit);
+    function getDepositAmount(bytes32 storemanGroupId) public view returns(uint deposit);
 }
 
 interface ITokenManager {
@@ -30,16 +30,16 @@ contract TestQuotaHelper {
         priceMap[keccak256(key)] = value;
     }
 
-    function getDepositAmount(bytes storemanGroupPK) public view returns(uint deposit) {
-        if (keccak256(storemanGroupPK) == keccak256("0xa")) {
+    function getDepositAmount(bytes32 storemanGroupId) public view returns(uint deposit) {
+        if (keccak256(storemanGroupId) == keccak256("0xa")) {
             return 1000 ether;
         }
 
-        if (keccak256(storemanGroupPK) == keccak256("0xc")) {
+        if (keccak256(storemanGroupId) == keccak256("0xc")) {
             return 1000 ether;
         }
 
-        if (keccak256(storemanGroupPK) == keccak256("0xd")) {
+        if (keccak256(storemanGroupId) == keccak256("0xd")) {
             return 500 ether;
         }
 
