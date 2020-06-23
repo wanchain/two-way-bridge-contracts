@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 library DataConvert {
     function bytes2uint(bytes source, uint16 offset, uint16 length)
-        internal
+        public
         pure
         returns(uint)
     {
@@ -13,26 +13,8 @@ library DataConvert {
         return number;
     }
 
-    function unifyPk(bytes pk)
-        internal
-        pure
-        returns(bytes)
-    {
-        if (pk.length == 65) {
-            return pk;
-        }
-        bytes memory uPk = new bytes(65);
-        if (pk.length == 64) {
-            uPk[0] = 0x04;
-            for (uint i = 0; i < 64; i++) {
-                uPk[i + 1] = pk[i];
-            }
-        }
-        return uPk;
-    }
-
     function cmpBytes(bytes b1, bytes b2)
-        internal
+        public
         pure
         returns(bool)
     {

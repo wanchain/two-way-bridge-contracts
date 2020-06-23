@@ -24,6 +24,7 @@ const FakeSmg = artifacts.require('FakeSmg');
 
 const Encrypt = artifacts.require('Encrypt');
 const DataConvert = artifacts.require('DataConvert');
+const CreateGpkLib = artifacts.require('CreateGpkLib');
 const CreateGpkProxy = artifacts.require('CreateGpkProxy');
 const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
 const Deposit = artifacts.require('Deposit');
@@ -149,12 +150,15 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(DataConvert);
 
     // create gpk sc
-    await deployer.link(Encrypt, CreateGpkDelegate);
+    await deployer.link(Encrypt, CreateGpkLib);
+    await deployer.link(DataConvert, CreateGpkLib);
+    await deployer.deploy(CreateGpkLib);
+    await deployer.link(CreateGpkLib, CreateGpkDelegate);
     await deployer.link(DataConvert, CreateGpkDelegate);
     await deployer.deploy(CreateGpkDelegate);
-    let gpkDelegate = await CreateGpkDelegate.deployed();
     await deployer.deploy(CreateGpkProxy);
     let gpkProxy = await CreateGpkProxy.deployed();
+    let gpkDelegate = await CreateGpkDelegate.deployed();
     await gpkProxy.upgradeTo(gpkDelegate.address);
 
     let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);

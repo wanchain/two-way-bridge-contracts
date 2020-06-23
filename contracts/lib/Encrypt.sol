@@ -1,14 +1,10 @@
 pragma solidity ^0.4.24;
 
-import "./SafeMath.sol";
-
 library Encrypt {
-    using SafeMath for uint;
-
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
 
     function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2)
-        internal
+        public
         view
         returns(uint256 retx, uint256 rety, bool success)
     {
@@ -31,7 +27,7 @@ library Encrypt {
     }
 
     function mulG(uint256 scalar)
-        internal
+        public
         view
         returns(uint256 x, uint256 y, bool success)
     {
@@ -52,7 +48,7 @@ library Encrypt {
     }
 
     function calPolyCommit(bytes polyCommit, bytes pk)
-        internal
+        public
         view
         returns(uint256 sx, uint256 sy, bool success)
     {
@@ -87,7 +83,7 @@ library Encrypt {
     }
 
     function enc(bytes32 rbpri, bytes32 iv, uint256 mes, bytes pub)
-        internal
+        public
         view
         returns(bytes, bool success)
     {

@@ -28,59 +28,12 @@ pragma solidity ^0.4.24;
 
 import "../components/BasicStorage.sol";
 import "../interfaces/IStoremanGroup.sol";
+import "./lib/CreateGpkTypes.sol";
 
 contract CreateGpkStorage is BasicStorage {
     /// smg instance address
     IStoremanGroup public smg;
 
     /// groupId->Group
-    mapping(bytes32 => Group) internal groupMap;
-
-    /* below is structure definition */
-
-    struct Group {
-        uint16 round;
-        uint32 ployCommitPeriod;
-        uint32 defaultPeriod;
-        uint32 negotiatePeriod;
-        /// round->Round
-        mapping(uint => Round) roundMap;
-    }
-
-    struct Round {
-        GroupStatus status;
-        uint16 smNumber;
-        uint16 polyCommitCount;
-        uint32 checkValidCount;
-        uint statusTime;
-        bytes gpk;
-        /// index->txAddress
-        mapping(uint => address) indexMap;
-        /// txAddress->pk
-        mapping(address => bytes) addressMap;
-        /// txAddress->Src
-        mapping(address => Src) srcMap;
-    }
-
-    enum GroupStatus {PolyCommit, Negotiate, Complete, Close}
-
-    struct Src {
-        bytes polyCommit;
-        bytes pkShare;
-        /// txAddress->Dest
-        mapping(address => Dest) destMap;
-    }
-
-    struct Dest {
-        CheckStatus checkStatus;
-        uint setTime;
-        uint checkTime;
-        uint sij;
-        uint ephemPrivateKey;
-        bytes encSij;
-    }
-
-    enum CheckStatus {Init, Valid, Invalid}
-
-    enum SlashType {PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, EncSijInvalid, CheckInvalid, Connive}
+    mapping(bytes32 => CreateGpkTypes.Group) internal groupMap;
 }
