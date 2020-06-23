@@ -95,10 +95,11 @@ const getContracts = async (accounts) => {
     await quota.methods.config(
         helper._address,
         accounts[1],
+        accounts[2],
         helper._address,
-        1500,
+        helper._address,
+        15000,
         stringToBytes("WAN"),
-        helper._address
     ).send({ from: accounts[0], gas: 10000000 });
 
     return {

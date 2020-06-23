@@ -32,21 +32,22 @@ pragma solidity 0.4.26;
 
 import "../components/Halt.sol";
 import "./QuotaStorage.sol";
+import "./QuotaInterface.sol";
 
 interface IPriceOracle {
-    function getValue(bytes symbol) public view returns(uint price);
+    function getValue(bytes symbol) external view returns(uint price);
 }
 
 interface IDepositOracle {
-    function getDepositAmount(bytes32 storemanGroupId) public view returns(uint deposit);
+    function getDeposit(bytes32 smgID) external view returns (uint);
 }
 
 interface ITokenManager {
-    function getTokenPairInfo(uint id) public view returns(bytes ancestorSymbol, uint decimals);
+    function getTokenPairInfo(uint id) external view returns(bytes ancestorSymbol, uint decimals);
 }
 
 
-contract QuotaDelegate is QuotaStorage, Halt {
+contract QuotaDelegate is QuotaStorage, Halt, IQuotaManager {
 
     /// @notice                         config params for owner
     /// @param _priceOracleAddr         token price oracle contract address
@@ -84,7 +85,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint value,
         bool checkQuota
     ) external onlyHtlc {
-        uint deposit = getDepositAmount(storemanGroupId);
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         /// Don't check in the other chain.
         if (checkQuota) {
@@ -278,13 +278,9 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     /// @notice                                 source storeman group revoke the debt transaction,update the detailed quota info. of the storeman group
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param value                            amount of exchange token
     /// @param srcStoremanGroupId               PK of source storeman group
     /// @param dstStoremanGroupId               PK of destination storeman group
     function debtRevoke(
-        uint tokenId,
-        uint value,
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
     ) external onlyHtlc {
@@ -392,7 +388,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         returns (uint deposit)
     {
         IDepositOracle oracle = IDepositOracle(depositOracleAddress);
-        deposit = oracle.getDepositAmount(storemanGroupId);
+        deposit = oracle.getDeposit(storemanGroupId);
     }
 
     function getTokenAncestorInfo(uint tokenId)
