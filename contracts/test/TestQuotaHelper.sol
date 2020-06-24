@@ -30,16 +30,16 @@ contract TestQuotaHelper {
         priceMap[keccak256(key)] = value;
     }
 
-    function getDepositAmount(bytes32 storemanGroupId) public view returns(uint deposit) {
-        if (keccak256(storemanGroupId) == keccak256("0xa")) {
+    function getDeposit(bytes32 storemanGroupId) public view returns(uint deposit) {
+        if (storemanGroupId == keccak256("storeman1")) {
             return 1000 ether;
         }
 
-        if (keccak256(storemanGroupId) == keccak256("0xc")) {
+        if (storemanGroupId == keccak256("storeman2")) {
             return 1000 ether;
         }
 
-        if (keccak256(storemanGroupId) == keccak256("0xd")) {
+        if (storemanGroupId == keccak256("storeman3")) {
             return 500 ether;
         }
 
