@@ -32,7 +32,6 @@ pragma solidity 0.4.26;
 
 import "../components/Halt.sol";
 import "./QuotaStorage.sol";
-import "./QuotaInterface.sol";
 
 interface IPriceOracle {
     function getValue(bytes symbol) external view returns(uint price);
@@ -47,7 +46,7 @@ interface ITokenManager {
 }
 
 
-contract QuotaDelegate is QuotaStorage, Halt, IQuotaManager {
+contract QuotaDelegate is QuotaStorage, Halt {
 
     /// @notice                         config params for owner
     /// @param _priceOracleAddr         token price oracle contract address

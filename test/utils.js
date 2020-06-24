@@ -91,8 +91,7 @@ const getContracts = async (accounts) => {
 
     // const quota = await getContractAt(QuotaDelegate, quotaProxy._address);
     const quota = await getContractAt(QuotaDelegate, quotaDelegate._address);
-
-    await quota.methods.config(
+    let ret = await quota.methods.config(
         helper._address,
         accounts[1],
         accounts[2],
@@ -101,7 +100,6 @@ const getContracts = async (accounts) => {
         15000,
         stringToBytes("WAN"),
     ).send({ from: accounts[0], gas: 10000000 });
-
     return {
         quota,
         quotaDelegate,

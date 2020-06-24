@@ -26,7 +26,7 @@
 
 pragma solidity 0.4.26;
 
-interface IQuotaManager {
+interface IQuota {
     function mintLock(uint tokenId, bytes32 storemanGroupId, uint value, bool checkQuota) external;
 
     function mintRevoke(uint tokenId, bytes32 storemanGroupId, uint value) external;
