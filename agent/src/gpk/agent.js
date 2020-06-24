@@ -19,13 +19,15 @@ const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.cre
 
 recoverProcess();
 
+listenEvent();
+
 function recoverProcess() {
   let dir = path.join(__dirname, '../../cxt/');
   let files = fs.readdirSync(dir);
   files.forEach(file => {
     if (file.match(/^0x[0-9a-f]{64}\.cxt$/)) {
       console.log("recoverProcess: %s", file);
-      let ctx = tool.readContext(file);
+      let ctx = tool.readContextFile(file);
       let round = new Round('', 0);
       Object.assign(round, ctx);
       groupMap.set(round.groupId, round);
@@ -34,11 +36,14 @@ function recoverProcess() {
   });
 }
 
-const evtTracker = new EventTracker('gpk', config.startBlock, eventHandler);
-evtTracker.subscribe('smg_selectedEvent', config.contractAddress.smg, ["0x62487e9f333516e24026d78ce371e54c664a46271dcf5ffdafd8cd10ea75a5bf"]);
-evtTracker.subscribe('gpk_GpkCreatedLogger', config.contractAddress.createGpk, ["0x69d133e4261cdee685003e1e0520673a36ed3a627535ab05398fa1f9b958bf3a"]);
-evtTracker.subscribe('gpk_SlashLogger', config.contractAddress.createGpk, ["0x3e163d68525f48f0d33c6b6634b51d751200c03e44a61daf4c7636e67ff8f525"]);
-evtTracker.start();
+function listenEvent() {
+  let id = wanchain.selfAddress + '_gpk';
+  let evtTracker = new EventTracker(id, 'WAN', eventHandler, false, config.startBlock);
+  evtTracker.subscribe('smg_selectedEvent', config.contractAddress.smg, ["0x62487e9f333516e24026d78ce371e54c664a46271dcf5ffdafd8cd10ea75a5bf"]);
+  evtTracker.subscribe('gpk_GpkCreatedLogger', config.contractAddress.createGpk, ["0x69d133e4261cdee685003e1e0520673a36ed3a627535ab05398fa1f9b958bf3a"]);
+  evtTracker.subscribe('gpk_SlashLogger', config.contractAddress.createGpk, ["0x3e163d68525f48f0d33c6b6634b51d751200c03e44a61daf4c7636e67ff8f525"]);
+  evtTracker.start();
+}
 
 async function eventHandler(evt) {
   // console.log("receive evt: %O", evt);
@@ -56,10 +61,10 @@ async function eventHandler(evt) {
       default:
         break;
     }
-    return true;
+    return {success: true};
   } catch (err) {
     console.error("%s gpk agent process event err: %O", new Date(), err);
-    return false;
+    return {success: false};
   }
 }
 

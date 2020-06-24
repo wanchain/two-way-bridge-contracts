@@ -1,17 +1,19 @@
+const config = require('../../cfg/config');
 const wanchain = require('./wanchain');
 const tool = require('./tools');
+const mongoose = require('mongoose');
+const Event = require('../../db/models/event');
 
 class EventTracker {
-  constructor(id, startBlock, cb, interval = 1 /* 1-10 minute */) {
+  constructor(id, chain, cb, isSave, startBlock, interval = 1 /* 1-10 minute */) {
     // context
     this.id = id;
-    this.contextName = id + '_eventTracker.cxt';
-    let cxt = tool.readContext(this.contextName);
-    if (cxt && cxt.startBlock > startBlock) {
-      startBlock = cxt.startBlock;
-    }
-    this.lastBlock = startBlock - 1;
-    this.cb = cb;
+    this.chain = chain;
+    this.contextName = id + '_eventTracker';
+    this.startBlock = startBlock || 0;
+    this.lastBlock = 0;
+    this.cb = cb || null;
+    this.isSave = isSave || false;
     interval = (interval > 10) ? 10 : interval;
     this.schInterval = interval * 60 * 1000;
     this.schThreshold = interval * 6;
@@ -28,8 +30,31 @@ class EventTracker {
     this.subscribeArray = Array.from(this.subscribeMap);
   }
 
-  start() {
-    this.next(this.schThreshold + 1);
+  async start() {
+    try {
+      // connect db
+      await mongoose.connect(config.dbUrl(), config.dbOptions);
+      console.log('database connected');
+
+      // get block number, ctxBlock > inputBlock > curBlock
+      let cxt = await tool.readContextDb(this.contextName);
+      if (cxt) {
+        let cxtBlock = parseInt(cxt);
+        if (cxtBlock > this.startBlock) {
+          this.startBlock = cxtBlock;
+        }
+      }
+      if (!this.startBlock) {
+        this.startBlock = await wanchain.getBlockNumber();
+      }
+      this.lastBlock = this.startBlock - 1;
+      console.log("%s EventTracker start from block %d", this.id, this.startBlock);
+      
+      // schedual
+      this.next(this.schThreshold + 1);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   stop() {
@@ -56,6 +81,7 @@ class EventTracker {
           }).then((events) => {
             events.forEach((evt) => {
               evt.name = sub[0];
+              evt.cb = this.cb;
               eventArray.push(evt);              
             })
             resolve();
@@ -75,7 +101,7 @@ class EventTracker {
       await this.dispatch();
 
       let nextBlock = this.eventList.length? this.eventList[0].blockNumber : endBlock + 1;
-      tool.writeContext(this.contextName, {startBlock: nextBlock});
+      await tool.writeContextDb(this.contextName, nextBlock);
       this.next(latestBlock - endBlock);
     } catch (err) {
       console.error("%s evevtTracker loop error: %O", this.id, err);
@@ -88,18 +114,37 @@ class EventTracker {
       // console.log("dispatchEvent finished");
       return;
     }
-    let success = await this.cb(this.eventList[0]);
-    if (success) {
-      this.eventList.splice(0, 1);
-      await this.dispatch();
+    let event = this.eventList[0];
+    // invoke callback
+    let result;
+    if (event.cb) {
+      result = await event.cb(event);
+      event.parsed = result.parsed || "";
     } else {
-      console.log("dispatch event error: %O", this.eventList[0]);
-      return;
+      result.success = true;
+      event.parsed = "";
     }
+    if (result.success) {
+      event.cb = null;
+      // save event
+      if (this.isSave) {
+        let filter = {tracker: this.id, chain: this.chain, blockNumber: event.blockNumber, txIndex: event.transactionIndex, logIndex: event.logIndex};
+        let update = Object.assign({}, filter, {txHash: event.transactionHash, topics: event.topics, data: event.data, parsed: event.parsed});
+        result = await Event.updateOne(filter, update, {upsert: true}); // { n: 1, nModified: 0, ok: 1 }
+      } else {
+        result.ok = 1;
+      }
+      if (result.ok) {
+        this.eventList.splice(0, 1);
+        return await this.dispatch();
+      }
+    }
+    console.log("dispatch event error: %O", event);
   }
 
   next(blockLeft = 0) {
     if (this.toStop) {
+      mongoose.disconnect();
       return;
     }
     let interval = this.schInterval;

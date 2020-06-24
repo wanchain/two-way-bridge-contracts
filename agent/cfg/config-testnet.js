@@ -8,11 +8,42 @@ exports.keystore = {
 }
 
 exports.contractAddress = {
-  smg: '0xADD28b92eAB97c00edcA3A13eCf7E7e7066528b6',
-  createGpk: '0x2FcaE98e5123B22f97D31EFa15F7dF0856bcbd37'
+  smg: '0x06D7840Ab88F52248257ec340f2CD2a6213B1369',
+  createGpk: '0xa7D83D33E76e08FF1218AFa9bEa90fED3B732F8D'
 }
 
-exports.startBlock = 2378066;
+exports.startBlock = 2479267;
 
 exports.gasPrice = 180000000000;
 exports.gasLimit = 10000000;
+
+let dbServer = {
+  "hosts" : "192.168.1.58:27017",
+  "replica": "",
+  "database": "osm-testnet",
+  "username": "dev",
+  "password": "wanglu"
+};
+
+exports.dbOptions = {
+  // useNewUrlParser: true,
+  keepAlive: true,
+  reconnectTries: Number.MAX_VALUE
+};
+
+exports.dbUrl = function (readSecondary = false) {
+  let dbString = 'mongodb://';
+  if (dbServer.name) {
+    dbString += (dbServer.username + ':' + dbServer.password + '@');
+  }
+  dbString += dbServer.hosts;
+  dbString += ('/' + dbServer.database);
+  dbString += '?authSource=admin';
+  if (dbServer.replica) {
+    dbString += ('&replicaSet=' + dbServer.replica);
+  }
+  if (readSecondary) {
+    dbString += '&readPreference=secondaryPreferred';
+  }
+  return dbString;
+};

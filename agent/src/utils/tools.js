@@ -1,10 +1,13 @@
 const fs = require('fs');
 const path = require('path');
+const Context = require('../../db/models/context');
 
-const contextPath = path.join(__dirname, '../../cxt/');
+// file
 
-function readContext(fileName) {
-  let filePath = path.join(contextPath, fileName);
+const contextFilePath = path.join(__dirname, '../../cxt/');
+
+function readContextFile(fileName) {
+  let filePath = path.join(contextFilePath, fileName);
   if (fs.existsSync(filePath)) {
     let content = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(content);
@@ -13,19 +16,51 @@ function readContext(fileName) {
   }
 }
 
-function writeContext(fileName, object) {
-  let filePath = path.join(contextPath, fileName);
+function writeContextFile(fileName, object) {
+  let filePath = path.join(contextFilePath, fileName);
   let content = JSON.stringify(object);
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
-function clearContext(fileName) {
-  let filePath = path.join(contextPath, fileName);
+function clearContextFile(fileName) {
+  let filePath = path.join(contextFilePath, fileName);
   fs.unlinkSync(filePath);
 }
 
+// db
+
+async function readContextDb(key) {
+  try {
+    let doc = await Context.findOne({key});
+    return doc.value;
+  } catch {
+    return null;
+  }
+}
+
+async function writeContextDb(key, value) {
+  try {
+    let result = await Context.updateOne({key}, {key, value: value.toString()}, {upsert: true});
+    return result.ok? true : false;
+  } catch (err) {
+    return false;
+  }
+}
+
+async function clearContextDb(key) {
+  try {
+    await Context.remove({key});
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 module.exports = {
-  readContext,
-  writeContext,
-  clearContext
+  readContextFile,
+  writeContextFile,
+  clearContextFile,
+  readContextDb,
+  writeContextDb,
+  clearContextDb,
 }

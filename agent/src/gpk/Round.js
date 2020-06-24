@@ -129,11 +129,11 @@ class Round {
     copy.smgSc = null;
     copy.createGpkSc = null;
     copy.selfSk = '';
-    tool.writeContext(this.groupId + '.cxt', copy);
+    tool.writeContextFile(this.groupId + '.cxt', copy);
   }
 
   removeProgress() {
-    tool.clearContext(this.groupId + '.cxt');
+    tool.clearContextFile(this.groupId + '.cxt');
   }
 
   stop() {
