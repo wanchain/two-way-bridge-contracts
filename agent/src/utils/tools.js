@@ -32,15 +32,16 @@ function clearContextFile(fileName) {
 async function readContextDb(key) {
   try {
     let doc = await Context.findOne({key});
-    return doc.value;
+    return JSON.parse(doc.value);
   } catch {
     return null;
   }
 }
 
-async function writeContextDb(key, value) {
+async function writeContextDb(key, object) {
   try {
-    let result = await Context.updateOne({key}, {key, value: value.toString()}, {upsert: true});
+    let content = JSON.stringify(object);
+    let result = await Context.updateOne({key}, {key, value: content}, {upsert: true});
     return result.ok? true : false;
   } catch (err) {
     return false;

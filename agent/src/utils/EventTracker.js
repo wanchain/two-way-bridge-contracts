@@ -39,7 +39,7 @@ class EventTracker {
       // get block number, ctxBlock > inputBlock > curBlock
       let cxt = await tool.readContextDb(this.contextName);
       if (cxt) {
-        let cxtBlock = parseInt(cxt);
+        let cxtBlock = parseInt(cxt.nextBlock);
         if (cxtBlock > this.startBlock) {
           this.startBlock = cxtBlock;
         }
@@ -101,7 +101,7 @@ class EventTracker {
       await this.dispatch();
 
       let nextBlock = this.eventList.length? this.eventList[0].blockNumber : endBlock + 1;
-      await tool.writeContextDb(this.contextName, nextBlock);
+      await tool.writeContextDb(this.contextName, {nextBlock});
       this.next(latestBlock - endBlock);
     } catch (err) {
       console.error("%s evevtTracker loop error: %O", this.id, err);
