@@ -40,7 +40,11 @@ contract TestQuotaHelper {
         }
 
         if (storemanGroupId == keccak256("storeman3")) {
-            return 500 ether;
+            return 1000 ether;
+        }
+
+        if (storemanGroupId == keccak256("storeman4")) {
+            return 100 ether;
         }
 
         return 0;

@@ -3,3 +3,4 @@ build/
 coverage/
 yarn*
 .DS_Store
+coverage.json
