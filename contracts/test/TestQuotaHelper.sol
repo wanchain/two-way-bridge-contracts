@@ -63,6 +63,10 @@ contract TestQuotaHelper {
             return ("ETH", 18);
         }
 
+        if (id == 3) {
+            return ("ETC", 18);
+        }
+
         return ("", 0);
     }
 }
