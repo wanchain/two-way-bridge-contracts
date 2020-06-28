@@ -89,6 +89,21 @@ const getContracts = async (accounts) => {
 
     await quotaProxy.methods.upgradeTo(quotaDelegate._address).send({ from: accounts[0], gas: 10000000 });
 
+    try {
+        await quotaProxy.methods.upgradeTo(quotaDelegate._address).send({ from: accounts[0], gas: 10000000 });
+        assert(false, 'Should never get here');
+    } catch (e) {
+        assert.ok(e.message.match(/revert/));
+    }
+
+    try {
+        await quotaProxy.methods.upgradeTo("0x0000000000000000000000000000000000000000").send({ from: accounts[0], gas: 10000000 });
+        assert(false, 'Should never get here');
+    } catch (e) {
+        assert.ok(e.message.match(/revert/));
+    }
+
+
     // const quota = await getContractAt(QuotaDelegate, quotaProxy._address);
     const quota = await getContractAt(QuotaDelegate, quotaDelegate._address);
     let ret = await quota.methods.config(
