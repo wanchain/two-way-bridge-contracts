@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { getContracts, getWeb3, stringToBytes } = require('./utils');
+const { getQuotaContracts, getWeb3, stringToBytes } = require('./utils');
 const BigNumber = require('bignumber.js');
 let web3 = getWeb3();
 
@@ -8,7 +8,7 @@ contract('Quota', accounts => {
   });
 
   it('should success when getMintQuota', async () => {
-    const SC = (await getContracts(accounts));
+    const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
     let ret = await quota.methods.getMintQuota(1, web3.utils.keccak256("storeman1")).call();
     assert.equal(ret, 1418837, "1");
@@ -35,13 +35,13 @@ contract('Quota', accounts => {
   });
 
   it('should success when getBurnQuota', async () => {
-    const quota = (await getContracts(accounts)).quota;
+    const quota = (await getQuotaContracts(accounts)).quota;
     let ret = await quota.methods.getBurnQuota(1, web3.utils.keccak256("storeman1")).call();
     assert.equal(ret, '0', "8");
   });
 
   it("should succes when run workflow", async () => {
-    const SC = (await getContracts(accounts));
+    const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
 
     ret = await quota.methods.mintLock(1, web3.utils.keccak256("storeman1"), 10000, true).send({from: accounts[1], gas: 1e7});
@@ -119,7 +119,7 @@ contract('Quota', accounts => {
   });
 
   it("should success when fastCrossChain", async () => {
-    const SC = (await getContracts(accounts));
+    const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
     let ret;
     ret = await quota.methods.getMintQuota(1, web3.utils.keccak256("storeman1")).call();
@@ -172,7 +172,7 @@ contract('Quota', accounts => {
   });
 
   it("should fail when value error", async () => {
-    const SC = (await getContracts(accounts));
+    const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
     let ret;
 

@@ -80,7 +80,7 @@ const getContractAt = (contract, address) => {
     return instance;
 };
 
-const getContracts = async (accounts) => {
+const getQuotaContracts = async (accounts) => {
     const quotaDelegate = await newContract(QuotaDelegate);
     
     const quotaProxy = await newContract(QuotaProxy);
@@ -146,7 +146,7 @@ const resAssert = (res, gasUsed, eventName, item, value) => {
 module.exports = {
     getWeb3,
     newContract,
-    getContracts,
+    getQuotaContracts,
     clone,
     getTestBasicStorage,
     resAssert,
