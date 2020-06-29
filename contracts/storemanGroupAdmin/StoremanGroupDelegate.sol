@@ -269,7 +269,18 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
                 sk.incentive,  sk.delegatorCount
             );
     }
+    function getStoremanInfo(address wkAddress)public view  returns(address sender,bytes PK, address pkAddress,
+        bool quited, uint  delegateFee,uint  deposit, uint delegateDeposit,
+        uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId
+        ){
+            StoremanType.StoremanGroup storage group = data.groups[groupId];
+            StoremanType.Candidate storage sk = data.candidates[wkAddress];
 
+            return (sk.sender,   sk.PK, sk.pkAddress, sk.quited,
+                sk.delegateFee, sk.deposit.getLastValue(), sk.delegateDeposit,
+                sk.incentive,  sk.delegatorCount, sk.groupId, sk.nextGroupId
+            );
+    }
 
     function getSmDelegatorAddr(address wkAddr, uint deIndex) public view  returns (address){
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
