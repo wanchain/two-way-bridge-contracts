@@ -14,9 +14,12 @@ library IncentiveLib {
         return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time,crossChainCo, chainTypeCo);
         //return 30000000;
     }
+    
     function getDaybyTime(uint time)  public pure returns(uint) {
         return time/10; // TODO; get the day. not minute.
+       // return time/(3600);
     }
+    
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) public returns (uint) {
         return groupIncentive*weight/groupWeight;
     }
@@ -71,8 +74,8 @@ library IncentiveLib {
     event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
     function toSelect(StoremanType.StoremanData storage data,bytes32 groupId) public {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        if(group.memberCount < group.config.memberCountDesign){
-            group.status = StoremanType.GroupStatus.failed;
+        if(group.memberCount < group.memberCountDesign){
+             group.status = StoremanType.GroupStatus.failed;
             return;
         }
         // first, select the sm from white list.
@@ -80,11 +83,11 @@ library IncentiveLib {
         for(uint m = 0; m<group.whiteCount;m++){
             group.selectedNode[m] = group.whiteMap[m];
         }
-        address[] memory members = new address[](group.config.memberCountDesign);
+        address[] memory members = new address[](group.memberCountDesign);
         uint groupDeposit = 0;
         uint groupDepositWeight = 0;
         uint day = group.workDay;
-        for(uint i = 0; i<group.config.memberCountDesign; i++){
+        for(uint i = 0; i<group.memberCountDesign; i++){
             members[i] = group.selectedNode[i];
             StoremanType.Candidate storage sk = data.candidates[group.selectedNode[i]];
             groupDeposit += (sk.deposit.getLastValue()+sk.delegateDeposit);
@@ -92,12 +95,11 @@ library IncentiveLib {
         }
         Deposit.Record memory deposit = Deposit.Record(day, groupDeposit);
         Deposit.Record memory depositWeight = Deposit.Record(day, groupDepositWeight);
-        emit selectedEvent(group.groupId, group.config.memberCountDesign, members);
+        emit selectedEvent(group.groupId, group.memberCountDesign, members);
         group.status = StoremanType.GroupStatus.selected;
         group.deposit.addRecord(deposit);
         group.depositWeight.addRecord(depositWeight);
         return;
     }
-    
  
 }
