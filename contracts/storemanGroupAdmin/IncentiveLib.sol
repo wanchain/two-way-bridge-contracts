@@ -56,6 +56,10 @@ library IncentiveLib {
             //TODO: recoed the incentived day.
             sk.incentivedDay = day;
         }
+
+        sk.incentivedDelegator = 0;
+        sk.incentivedDay = 0;
+        
         emit incentive(group.groupId, wkAddr, true);
 
             // TODO 所有的sk完成incentive,  sk的当前group变成nextGroup.
