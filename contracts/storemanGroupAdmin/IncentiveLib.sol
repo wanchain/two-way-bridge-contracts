@@ -39,8 +39,15 @@ library IncentiveLib {
         if(endDay > group.workDay+group.totalDays) {
             endDay = group.workDay+group.totalDays;
         }
+        
         uint day;
         for(day = fromDay; day < endDay; day++) {
+
+            if(msg.gas < 1000000 ){ // check the gas. because calculate delegator incentive need more gas left.
+                    emit incentive(group.groupId, wkAddr, false);
+                    return;
+            }
+
             if(group.groupIncentive[day] == 0){
                 group.groupIncentive[day] = getGroupIncentive(group, day,data.crossChainCo,data.chainTypeCo); // TODO: change to the correct time
                 sk.incentive += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day),  calSkWeight(sk.deposit.getValueById(day)));
@@ -52,10 +59,7 @@ library IncentiveLib {
                 de.incentive += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), de.deposit.getValueById(day));
             
                 sk.incentivedDelegator++;
-                if(msg.gas < 1000000 ){ // check the gas. because calculate delegator incentive need more gas left.
-                    emit incentive(group.groupId, wkAddr, false);
-                    return;
-                }
+
             }
             //TODO: recoed the incentived day.
             sk.incentivedDay = day;
