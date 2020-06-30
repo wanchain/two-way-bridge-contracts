@@ -396,4 +396,15 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return;
     }
 
+
+    function setCoefficient(uint _crossChainCo, uint _chainTypeCo) public {
+        if (_crossChainCo != 0) {
+             crossChainCo = _crossChainCo;
+        }
+
+        if (_chainTypeCo != 0) {
+             chainTypeCo = _chainTypeCo;
+        }
+     }       
+
 }
