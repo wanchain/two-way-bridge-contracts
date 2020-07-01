@@ -32,6 +32,10 @@ interface IStoremanGroup {
         bool quited, bool  isWorking,uint  delegateFee,uint  deposit,uint  depositWeight,
         uint incentive, uint delegatorCount
         );
+    function getStoremanInfo(address wkAddress)public view  returns(address sender,bytes PK, address pkAddress,
+        bool quited, uint  delegateFee,uint  deposit, uint delegateDeposit,
+        uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId
+        );
     function setGpk(bytes32 groupId, bytes gpk) external;
     function setInvalidSm(bytes32 groupId, uint[] slashType, address[] txAddress) external returns(bool isContinue);
 

@@ -4,7 +4,7 @@ import "../lib/Deposit.sol";
 
 library StoremanType {
     using Deposit for Deposit.Records;
-    enum GroupStatus {none, initial,failed,selected,ready,retired, dismissed}
+    enum GroupStatus {none, initial,failed,selected,ready,unregistered, dismissed}
 
     struct Delegator {
         address sender; // the delegator wallet address
@@ -65,6 +65,8 @@ library StoremanType {
     }
   
     struct StoremanData {
+        uint crossChainCo;//need to mul 1000
+        uint chainTypeCo; //need to mul 1000  
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;
         mapping(bytes => mapping(bytes => bytes32))  storemanGroupMap;
         mapping(address=>StoremanType.Candidate) candidates;

@@ -158,7 +158,7 @@ contract('TestSmg', async (accounts) => {
         assert.equal(group.groupId, id)
         assert.equal(group.deposit, 0)
         assert.equal(group.depositWeight, 0)
-        assert.equal(group.memberCount, 0)
+        assert.equal(group.memberCount, 1)
         console.log("group:", group)
     })
     it('test stakeIn prepare', async()=>{
