@@ -13,8 +13,8 @@ library StoremanType {
         //bool  claimed;
         //uint  deposit;
         uint index; // for delete from candidate;
-        uint  incentive;
         Deposit.Records deposit;
+        mapping(uint=>uint) incentive;
     }
     struct Candidate {
         address sender;
@@ -27,16 +27,18 @@ library StoremanType {
         uint  delegateFee;
         uint  delegatorCount;
         uint  delegateDeposit; // only used when selecting. need not records.
-        uint  incentive;       // without delegation.. set to 0 after incentive.
+
         uint  incentivedDelegator; // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
         uint  incentivedDay;
         bytes32  groupId;
         bytes32  nextGroupId;
         Deposit.Records  deposit;         // 自有资金记录
         
+        mapping(uint=>uint) incentive;       // without delegation.. set to 0 after incentive.        
         mapping(uint=>address) addrMap;
         mapping(address=>Delegator) delegators;
     }
+
     struct GroupConfig {
         uint memberCountDesign;
         uint threshold;
