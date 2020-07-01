@@ -221,10 +221,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
     ) external onlyHtlc {
-        uint srcDebt = getFiatDebtTotal(srcStoremanGroupId);
-        uint dstDepost = getFiatDeposit(dstStoremanGroupId);
+        // uint srcDebt = getFiatDebtTotal(srcStoremanGroupId);
+        // uint dstDepost = getFiatDeposit(dstStoremanGroupId);
 
-        require(dstDepost >= srcDebt, "Dest deposit not enough");
+        // require(dstDepost >= srcDebt, "Dest deposit not enough");
 
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
@@ -332,6 +332,20 @@ contract QuotaDelegate is QuotaStorage, Halt {
         burnQuota = quota._debt.sub(quota._payable);
     }
 
+    /// @notice                                 get debt clean state of storeman
+    /// @param storemanGroupId                  PK of source storeman group
+    function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {
+        uint tokenCount = storemanTokenCountMap[storemanGroupId];
+        for (uint i = 0; i < tokenCount; i++) {
+            uint id = storemanTokensMap[storemanGroupId][i];
+            Quota storage src = quotaMap[id][storemanGroupId];
+            if (src._debt > 0 || src._payable > 0 || src._receivable > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // ----------- Private Functions ---------------
 
     /// @notice                                 get storeman group's deposit value in USD
@@ -342,22 +356,22 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     /// get total debt in USD/FIAT
-    function getFiatDebtTotal(bytes32 storemanGroupId) private view returns (uint) {
-        bytes memory symbol;
-        uint decimals;
-        uint tokenPrice;
-        uint totalDebtValue = 0;
-        uint tokenCount = storemanTokenCountMap[storemanGroupId];
-        for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[storemanGroupId][i];
-            (symbol, decimals) = getTokenAncestorInfo(id);
-            tokenPrice = getPrice(symbol);
-            Quota storage q = quotaMap[id][storemanGroupId];
-            uint tokenValue = q._debt.mul(tokenPrice).mul(1 ether).div(10**decimals); /// change Decimals to 18 digits
-            totalDebtValue = totalDebtValue.add(tokenValue);
-        }
-        return totalDebtValue;
-    }
+    // function getFiatDebtTotal(bytes32 storemanGroupId) private view returns (uint) {
+    //     bytes memory symbol;
+    //     uint decimals;
+    //     uint tokenPrice;
+    //     uint totalDebtValue = 0;
+    //     uint tokenCount = storemanTokenCountMap[storemanGroupId];
+    //     for (uint i = 0; i < tokenCount; i++) {
+    //         uint id = storemanTokensMap[storemanGroupId][i];
+    //         (symbol, decimals) = getTokenAncestorInfo(id);
+    //         tokenPrice = getPrice(symbol);
+    //         Quota storage q = quotaMap[id][storemanGroupId];
+    //         uint tokenValue = q._debt.mul(tokenPrice).mul(1 ether).div(10**decimals); /// change Decimals to 18 digits
+    //         totalDebtValue = totalDebtValue.add(tokenValue);
+    //     }
+    //     return totalDebtValue;
+    // }
 
     /// get mint quota in Fiat/USD decimals: 18
     function getFiatMintQuota(bytes32 storemanGroupId) private view returns (uint) {

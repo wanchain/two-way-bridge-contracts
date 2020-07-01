@@ -27,29 +27,32 @@
 pragma solidity 0.4.26;
 
 interface IQuota {
-    function mintLock(uint tokenId, bytes32 storemanGroupId, uint value, bool checkQuota) external;
+  function mintLock(uint tokenId, bytes32 storemanGroupId, uint value, bool checkQuota) external;
 
-    function mintRevoke(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function mintRevoke(uint tokenId, bytes32 storemanGroupId, uint value) external;
 
-    function mintRedeem(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function mintRedeem(uint tokenId, bytes32 storemanGroupId, uint value) external;
 
-    function fastMint(uint tokenId, bytes32 storemanGroupId, uint value, bool checkQuota) external;
+  function fastMint(uint tokenId, bytes32 storemanGroupId, uint value, bool checkQuota) external;
 
-    function fastBurn(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function fastBurn(uint tokenId, bytes32 storemanGroupId, uint value) external;
 
-    function burnLock(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function burnLock(uint tokenId, bytes32 storemanGroupId, uint value) external;
 
-    function burnRevoke(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function burnRevoke(uint tokenId, bytes32 storemanGroupId, uint value) external;
 
-    function burnRedeem(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function burnRedeem(uint tokenId, bytes32 storemanGroupId, uint value) external;
 
-    function debtLock(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
+  function debtLock(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
 
-    function debtRedeem(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
+  function debtRedeem(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
 
-    function debtRevoke(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
+  function debtRevoke(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
 
-    function getMintQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint);
+  function getMintQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint);
 
-    function getBurnQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint burnQuota);
+  function getBurnQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint burnQuota);
+
+  function isDebtClean(bytes32 storemanGroupId) external view returns (bool);
+
 }
