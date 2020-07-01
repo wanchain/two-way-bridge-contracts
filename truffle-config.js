@@ -19,7 +19,7 @@
  */
 const WanProvider = require('wanchain-truffle-sdk').WanProvider;
 //`wss://apitest.wanchain.org:8443/ws/v3/57b5005c60b8c444d880afe02d0a41cf4dc269f9c186940aa169412bb245f1c0`
-const wanProvider = new WanProvider("b417c17cef880cdaaafdefcbc032c51b8e005725d99371371623cdbeff72dc93", "http://52.35.168.75:36891");
+const wanProvider = new WanProvider("0x5ea5559749ba066086313f051eb1c142c6d81d1bed1baf0f26e708a2a9decbec", "http://52.35.168.75:36891");
 
 module.exports = {
   /**
