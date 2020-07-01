@@ -4,7 +4,7 @@ import "../lib/Deposit.sol";
 
 library StoremanType {
     using Deposit for Deposit.Records;
-    enum GroupStatus {none, initial,failed,selected,ready,retired, dismissed}
+    enum GroupStatus {none, initial,failed,selected,ready,unregistered, dismissed}
 
     struct Delegator {
         address sender; // the delegator wallet address

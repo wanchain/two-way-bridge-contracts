@@ -34,6 +34,7 @@ import "./StoremanLib.sol";
 import "./StoremanType.sol";
 import "./IncentiveLib.sol";
 
+
 contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     using SafeMath for uint;
     using Deposit for Deposit.Records;
@@ -56,6 +57,13 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @param storemanGroup              storeman group address
     /// @param applyTime                  the time for storeman applying unregister
     event StoremanGroupApplyUnRegistrationLogger(bytes tokenOrigAccount, bytes storemanGroup, uint applyTime);
+
+
+    /// @notice                           event for dissmiss storeman group
+    /// @param tokenOrigAccount           token account of original chain
+    /// @param storemanGroup              storeman group address
+    /// @param dismissTime                  the time for storeman dismiss
+    event StoremanGroupDismissedLogger(bytes tokenOrigAccount, bytes storemanGroup, uint dismissTime);
 
     /// @notice                           event for storeman group withdraw deposit
     /// @param tokenOrigAccount           token account of original chain
@@ -123,6 +131,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         }        
     }
 
+
+
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param groupId                    the building storeman group index.
     /// @param chain                      the chain that the group will work for.
@@ -187,8 +197,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
 
-
-
     /*
     The logic of incentive
     1) get the incentive by day and groupID.
@@ -202,22 +210,24 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         IncentiveLib.incentiveCandidator(data, wkAddr);
     }
 
-
-
     function stakeIn(bytes32 groupId, bytes PK, bytes enodeID, uint delegateFee)
         public payable
     {
         return StoremanLib.stakeIn(data,groupId, PK, enodeID, delegateFee);
     }
+
     function stakeAppend(address skPkAddr) public payable {
         return StoremanLib.stakeAppend(data, skPkAddr);
     }
+
     function stakeOut(address skPkAddr) public {
         return StoremanLib.stakeOut(data, skPkAddr);
     }
+
     function stakeClaim(address skPkAddr) public {
         return StoremanLib.stakeClaim(data,skPkAddr);
     }
+
     function delegateIn(address skPkAddr)
         public
         payable
@@ -226,9 +236,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
     function delegateOut(address skPkAddr) public {
         return StoremanLib.delegateOut(data,skPkAddr);
+
     }
 
     function delegateClaim(address skPkAddr) public {
+
         return StoremanLib.delegateClaim(data, skPkAddr);
     }
 
@@ -244,6 +256,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function toSelect(bytes32 groupId) public {
         return IncentiveLib.toSelect(data, groupId);
     }
+
     function getSelectedSmInfo(bytes32 groupId, uint index) public view   returns(address, bytes, bytes){
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         address addr = group.selectedNode[index];
@@ -269,6 +282,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
                 sk.incentive,  sk.delegatorCount
             );
     }
+
+
     function getStoremanInfo(address wkAddress)public view  returns(address sender,bytes PK, address pkAddress,
         bool quited, uint  delegateFee,uint  deposit, uint delegateDeposit,
         uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId
@@ -361,9 +376,28 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         //require(msg.sender == smg.delegate, "Sender must be delegate");
         require(smg.unregisterApplyTime == 0, "Duplicate unregister");
         smg.unregisterApplyTime = now;
+        smg.status = StoremanType.GroupStatus.unregistered;
         //htlc.deactivateStoremanGroup(tokenOrigAccount, storemanGroup);
 
         emit StoremanGroupApplyUnRegistrationLogger(tokenOrigAccount, storemanGroup, now);
+    }
+
+    /// @notice                           function for storeman group apply unregistration through the delegate
+    /// @param tokenOrigAccount           token account of original chain
+    /// @param storemanGroup              storeman group PK
+    function storemanGroupDismiss(bytes tokenOrigAccount, bytes storemanGroup)
+        external
+        notHalted
+    {
+        bytes32 groupId = data.storemanGroupMap[tokenOrigAccount][storemanGroup];
+        StoremanType.StoremanGroup storage smg = data.groups[groupId];
+        require(smg.unregisterApplyTime != 0, "please unregister first");    
+
+        uint debt = htlc.getStoremanDebt(storemanGroup);
+        require(debt==0);
+
+        smg.status = StoremanType.GroupStatus.dismissed;
+        emit StoremanGroupDismissedLogger(tokenOrigAccount, storemanGroup, now);
     }
 
 
@@ -373,12 +407,15 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function getStoremanGroupInfo(bytes tokenOrigAccount, bytes storemanGroup)
         external
         view
-        returns(address, uint, uint, uint)
+        returns(address, uint, uint, StoremanType.GroupStatus)
     {
         bytes32 groupId = data.storemanGroupMap[tokenOrigAccount][storemanGroup];
         StoremanType.StoremanGroup storage smg = data.groups[groupId];
-        return (address(0x00), smg.deposit.getLastValue(), smg.txFeeRatio, smg.unregisterApplyTime);
+        return (address(0x00), smg.deposit.getLastValue(), smg.txFeeRatio, smg.status);
     }
+
+
+
     function getGroupInfo(bytes32 id)
         external
         view
@@ -387,6 +424,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage smg = data.groups[id];
         return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.depositWeight.getLastValue(),smg.selectedCount, smg.chain, smg.workDay);
     }
+
     function checkGroupIncentive(bytes32 id, uint day) public view returns ( uint) {
         StoremanType.StoremanGroup storage group = data.groups[id];
         return group.groupIncentive[day];

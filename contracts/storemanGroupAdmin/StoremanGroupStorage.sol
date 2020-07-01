@@ -55,10 +55,6 @@ contract StoremanGroupStorage is BasicStorage {
   //   threshold:thresholdDefault
   // });
 
-  uint public constant DIVISOR = 10000;
-  uint public crossChainCo;//need to mul 1000
-  uint public chainTypeCo; //need to mul 1000
-
   StoremanType.StoremanData data;
   
 }
