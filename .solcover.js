@@ -7,7 +7,7 @@ module.exports = {
         'components/Owned.sol',
         'components/Proxy.sol',
         'Migrations.sol',
-        'test/TestHelper.sol',
+        'test/TestQuotaHelper.sol',
         'test/TestBasicStorage.sol'],
     providerOptions: {
         default_balance_ether: 100000000,

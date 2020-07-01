@@ -217,13 +217,12 @@ contract('Quota', accounts => {
 
 
     await quota.methods.fastMint(1, web3.utils.keccak256("storeman1"), 1000000, true).send({from: accounts[1], gas:1e7});
-    try {
-      await quota.methods.debtLock(web3.utils.keccak256("storeman1"), web3.utils.keccak256("storeman4")).send({from: accounts[1], gas:1e7});
-      assert(false, 'Should never get here');
-    } catch (e) {
-      assert.ok(e.message.match(/revert/));
-    }
-  
+    ret = await quota.methods.isDebtClean(web3.utils.keccak256("storeman1")).call();
+    assert.equal(ret, false);
+    await quota.methods.debtLock(web3.utils.keccak256("storeman1"), web3.utils.keccak256("storeman4")).send({from: accounts[1], gas:1e7});
+    await quota.methods.debtRedeem(web3.utils.keccak256("storeman1"), web3.utils.keccak256("storeman4")).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.isDebtClean(web3.utils.keccak256("storeman1")).call();
+    assert.equal(ret, true);
 
   });
 });
