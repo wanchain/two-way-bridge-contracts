@@ -57,6 +57,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @param storemanGroup              storeman group address
     /// @param applyTime                  the time for storeman applying unregister
     event StoremanGroupApplyUnRegistrationLogger(bytes tokenOrigAccount, bytes storemanGroup, uint applyTime);
+    event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
 
 
     /// @notice                           event for dissmiss storeman group
@@ -117,7 +118,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         }
         group.selectedCount = group.whiteCount;
 
-        // TODO handle the old group member.
+        // TODO handle the old group member. set the group deposit.
         if(preGroupId != bytes32(0x00)) {
             StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
             for(uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
@@ -128,11 +129,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
                     group.selectedCount++;
                 }
             }
-        }        
+        }
     }
-
-
-
+event registerStartEvent(bytes32 indexed groupId, uint workStart,uint workDuration, uint registerDuration, bytes32 indexed preGroupId, bytes chain);
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param groupId                    the building storeman group index.
     /// @param chain                      the chain that the group will work for.
@@ -141,11 +140,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @param workStart                  When the group start to work. the day ID;
     /// @param workDuration               how many days the group will work for
     /// @param registerDuration           how many days the duration that allow transfer staking.
-    /// @param crossFee                   the fee for cross transaction.
     /// @param preGroupId                 the preview group index.
     function registerStart(bytes32 groupId,
-        uint workStart,uint workDuration, uint registerDuration, uint crossFee, bytes32 preGroupId, bytes chain, address[] wkAddrs, address[] senders)
-        public
+        uint workStart,uint workDuration, uint registerDuration,  bytes32 preGroupId, bytes chain, address[] wkAddrs, address[] senders)
+        external
+        onlyOwner
     {
         require(wkAddrs.length == senders.length, "Invalid white list length");
         require(wkAddrs.length > backupCount, "Insufficient white list");
@@ -153,18 +152,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         Deposit.Records memory deposit =  Deposit.Records(0);
         Deposit.Records memory depositWeight =  Deposit.Records(0);
 
-        // StoremanType.StoremanGroup memory group = StoremanType.StoremanGroup({
-        //     groupId:id,
-        //     status:StoremanType.GroupStatus.initial,
-        //     deposit:deposit,                   /// the storeman group deposit in wan coins, change when selecting
-        //     depositWeight:depositWeights,            /// caculate this value when selecting
-        //     unregisterApplyTime:0,              /// the time point for storeman group applied unregistration
-        //     whiteCount:0,
-        //     workDay:workStart,
-        //     totalDays:workDuration,
-        //     chain:chain,
-        //     config: configDefault
-        // });
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(group.status == StoremanType.GroupStatus.none, "group has existed already");
         group.groupId = groupId;
@@ -177,7 +164,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.memberCountDesign = memberCountDefault;
         group.threshold = thresholdDefault;
         group.whiteCount = wkAddrs.length - backupCount;
-
+        emit registerStartEvent(groupId, workStart, workDuration, registerDuration, preGroupId, chain);
         return groupWhiteNode(group, preGroupId, wkAddrs, senders);
     }
 
@@ -365,21 +352,21 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
     /// @notice                           function for storeman group apply unregistration through the delegate
-    /// @param tokenOrigAccount           token account of original chain
-    /// @param storemanGroup              storeman group PK
-    function storemanGroupUnregister(bytes tokenOrigAccount, bytes storemanGroup)
+    /// @param groupId              storeman group groupId
+    function storemanGroupUnregister(bytes32 groupId)
         external
         notHalted
     {
-        bytes32 groupId = data.storemanGroupMap[tokenOrigAccount][storemanGroup];
         StoremanType.StoremanGroup storage smg = data.groups[groupId];
         //require(msg.sender == smg.delegate, "Sender must be delegate");
         require(smg.unregisterApplyTime == 0, "Duplicate unregister");
+
+        // TODO: check the status of group.
         smg.unregisterApplyTime = now;
         smg.status = StoremanType.GroupStatus.unregistered;
         //htlc.deactivateStoremanGroup(tokenOrigAccount, storemanGroup);
 
-        emit StoremanGroupApplyUnRegistrationLogger(tokenOrigAccount, storemanGroup, now);
+        emit StoremanGroupUnregisterEvent(groupId);
     }
 
     /// @notice                           function for storeman group apply unregistration through the delegate
@@ -401,28 +388,14 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
 
-    /// @notice                           function for getting storeman group information
-    /// @param tokenOrigAccount           token account of original chain
-    /// @param storemanGroup              storeman group PK
-    function getStoremanGroupInfo(bytes tokenOrigAccount, bytes storemanGroup)
+
+    function getStoremanGroupInfo(bytes32 id)
         external
         view
-        returns(address, uint, uint, StoremanType.GroupStatus)
-    {
-        bytes32 groupId = data.storemanGroupMap[tokenOrigAccount][storemanGroup];
-        StoremanType.StoremanGroup storage smg = data.groups[groupId];
-        return (address(0x00), smg.deposit.getLastValue(), smg.txFeeRatio, smg.status);
-    }
-
-
-
-    function getGroupInfo(bytes32 id)
-        external
-        view
-        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit,  uint depositWeight, uint memberCount,bytes chain,uint workDay)
+        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint whiteCount,  uint memberCount,bytes chain,uint startTime, uint endTime)
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
-        return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.depositWeight.getLastValue(),smg.selectedCount, smg.chain, smg.workDay);
+        return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.whiteCount, smg.selectedCount, smg.chain, smg.workDay, smg.workDay+smg.totalDays);
     }
 
     function checkGroupIncentive(bytes32 id, uint day) public view returns ( uint) {
