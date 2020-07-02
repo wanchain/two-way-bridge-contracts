@@ -119,12 +119,15 @@ class EventTracker {
     let result;
     if (event.cb) {
       result = await event.cb(event);
-      event.parsed = result.parsed || "";
+      if (typeof(result) == 'object') {
+        event.parsed = result || null;
+        result = true;
+      }
     } else {
-      result.success = true;
-      event.parsed = "";
+      event.parsed = null;
+      result = true;
     }
-    if (result.success) {
+    if (result) {
       event.cb = null;
       // save event
       if (this.isSave) {

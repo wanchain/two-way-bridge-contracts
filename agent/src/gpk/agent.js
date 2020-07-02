@@ -61,10 +61,10 @@ async function eventHandler(evt) {
       default:
         break;
     }
-    return {success: true};
+    return true;
   } catch (err) {
-    console.error("%s gpk agent process event err: %O", new Date(), err);
-    return {success: false};
+    console.error("%s gpk agent process event err: %O", new Date().toISOString(), err);
+    return false;
   }
 }
 
@@ -80,19 +80,19 @@ async function procSmgSelectedEvent(evt) {
       groupMap.set(groupId, newRound);
       await newRound.start();
     } else {
-      console.error("%s gpk agent ignore group %s round %d status %d event", new Date(), groupId, round, status);
+      console.error("%s gpk agent ignore group %s round %d status %d event", new Date().toISOString(), groupId, round, status);
     }
   }
 }
 
 function procGpkCreatedLogger(evt) {
   let groupId = evt.topics[1];
-  console.log("%s gpk agent finish group %s", new Date(), groupId);
+  console.log("%s gpk agent finish group %s", new Date().toISOString(), groupId);
 }
 
 function procGpkSlashLogger(evt) {
   let groupId = evt.topics[1];
-  console.log("%s group %s slash someone", new Date(), groupId);
+  console.log("%s group %s slash someone", new Date().toISOString(), groupId);
   console.log("slash evt: %O", evt);
 }
 

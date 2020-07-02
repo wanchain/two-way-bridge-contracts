@@ -30,7 +30,7 @@ var EventSchema = new mongoose.Schema({
     type: String
   },
   parsed: {
-    type: String
+    type: Object
   }
 }, {
   id: false
