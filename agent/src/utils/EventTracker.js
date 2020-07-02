@@ -5,22 +5,21 @@ const mongoose = require('mongoose');
 const Event = require('../../db/models/event');
 
 class EventTracker {
-  constructor(id, chain, cb, isSave, startBlock, interval = 1 /* 1-10 minute */) {
+  constructor(id, cb, isSave, startBlock, interval = 1, chain = 'WAN', confirmBlocks = 30) {
     // context
     this.id = id;
-    this.chain = chain;
     this.contextName = id + '_eventTracker';
-    this.startBlock = startBlock || 0;
-    this.lastBlock = 0;
     this.cb = cb || null;
     this.isSave = isSave || false;
-    interval = (interval > 10) ? 10 : interval;
+    this.startBlock = startBlock || 0;
+    interval = (interval > 10) ? 10 : interval; // 1-10 minute
     this.schInterval = interval * 60 * 1000;
     this.schThreshold = interval * 6;
-    this.schBatchSize = interval * 360; // half an hour
+    this.schBatchSize = interval * 360; // 30 times
+    this.chain = chain;
+    this.confirmBlocks = confirmBlocks;
     this.toStop = false;
-    // name => {address, topics} 
-    this.subscribeMap = new Map();
+    this.subscribeMap = new Map(); // name => {address, topics}
     this.subscribeArray = [];
     this.eventList = [];
   }
@@ -45,13 +44,12 @@ class EventTracker {
         }
       }
       if (!this.startBlock) {
-        this.startBlock = await wanchain.getBlockNumber();
+        this.startBlock = await wanchain.getBlockNumber() - this.confirmBlocks;
       }
-      this.lastBlock = this.startBlock - 1;
       console.log("%s EventTracker start from block %d", this.id, this.startBlock);
       
       // schedual
-      this.next(this.schThreshold + 1);
+      this.next(this.schThreshold + 1); // delay to schedual
     } catch (err) {
       console.error(err);
     }
@@ -64,19 +62,21 @@ class EventTracker {
   async mainLoop() {
     let eventArray = [];
     try {
-      let latestBlock = await wanchain.getBlockNumber();
-      let startBlock = this.lastBlock + 1;
-      let endBlock = startBlock + this.schBatchSize - 1; // 100 blocks total
+      let latestBlock = await wanchain.getBlockNumber() - this.confirmBlocks;
+      if (this.startBlock > latestBlock) {
+        return this.next();
+      }
+      let endBlock = this.startBlock + this.schBatchSize - 1;
       if (endBlock > latestBlock) {
         endBlock = latestBlock;
       }
-      console.log("%s eventTracker scan block %d-%d", this.id, startBlock, endBlock);
+      console.log("%s eventTracker scan block %d-%d", this.id, this.startBlock, endBlock);
       await Promise.all(this.subscribeArray.map(sub => {
         return new Promise((resolve, reject) => {
           wanchain.getEvents({
             address: sub[1].address,
             topics: sub[1].topics,
-            fromBlock: startBlock,
+            fromBlock: this.startBlock,
             toBlock: endBlock
           }).then((events) => {
             events.forEach((evt) => {
@@ -86,21 +86,21 @@ class EventTracker {
             })
             resolve();
           }).catch((err) => {
-            console.error("%s eventTracker fetch event %s from block %d-%d error: %O", this.id, sub[0], startBlock, endBlock, err);
+            console.error("%s eventTracker fetch event %s from block %d-%d error: %O", this.id, sub[0], this.startBlock, endBlock, err);
             reject(err);
           })
         });
       }));
-      this.lastBlock = endBlock;
+      // console.log("%s eventTracker fetched %d event from block %d-%d", this.id, eventArray.length, this.startBlock, endBlock);
+      this.startBlock = endBlock + 1;
       if (eventArray.length) {
-        // console.log("%s eventTracker fetched %d event from block %d-%d", this.id, eventArray.length, startBlock, endBlock);
         eventArray.sort(this.sortLog);
         this.eventList = this.eventList.concat(eventArray);
       }
 
       await this.dispatch();
 
-      let nextBlock = this.eventList.length? this.eventList[0].blockNumber : endBlock + 1;
+      let nextBlock = this.eventList.length? this.eventList[0].blockNumber : this.startBlock;
       await tool.writeContextDb(this.contextName, {nextBlock});
       this.next(latestBlock - endBlock);
     } catch (err) {
