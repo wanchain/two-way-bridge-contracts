@@ -4,7 +4,7 @@ import "../lib/Deposit.sol";
 
 library StoremanType {
     using Deposit for Deposit.Records;
-    enum GroupStatus {none, initial,failed,selected,ready,unregistered, dismissed}
+    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
 
     struct Delegator {
         address sender; // the delegator wallet address
@@ -53,12 +53,19 @@ library StoremanType {
         uint    unregisterApplyTime;      /// the time point for storeman group applied unregistration
         uint selectedCount;
         uint memberCount;
-        uint whiteCount;
+        uint whiteCount;    // only used, don't include backup.
+        uint whiteCountAll; // all
         uint  workDay;
         uint  totalDays;
         uint memberCountDesign;
         uint threshold;
-        bytes chain;
+        uint chain1;
+        uint chain2;
+        uint curve1;
+        uint curve2;
+        uint tickedCount;
+        mapping(uint=>uint) tickedType;
+        mapping(uint=>address) tickedNode;
         mapping(uint=>address) addrMap;
         mapping(uint=>address) selectedNode;
         mapping(uint=>address) whiteMap;
