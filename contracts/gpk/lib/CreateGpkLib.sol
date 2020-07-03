@@ -28,10 +28,106 @@ pragma solidity ^0.4.24;
 
 import "../../lib/Encrypt.sol";
 import "../../lib/DataConvert.sol";
+import "../../interfaces/IStoremanGroup.sol";
 import "./ICurve.sol";
 import "./CreateGpkTypes.sol";
 
 library CreateGpkLib {
+
+    /**
+     *
+     * EVENTS
+     *
+     */
+
+    /// @notice                           event for gpk created
+    /// @param groupId                    storeman group id
+    /// @param gpk1                       group public key for chain1
+    /// @param gpk2                       group public key for chain2
+    event GpkCreatedLogger(bytes32 indexed groupId, bytes gpk1, bytes gpk2);
+
+    /// @notice                           event for contract slash storeman
+    /// @param groupId                    storeman group id
+    /// @param round                      group reset times
+    /// @param chain                      chain to use this gpk
+    /// @param slashType                  the reason to slash
+    /// @param src                        src storeman address
+    /// @param dest                       dest storeman address
+    /// @param srcOrDest                  if true, slash src, otherwise slash dest
+    event SlashLogger(bytes32 indexed groupId, uint16 indexed round, uint32 chain, uint8 slashType, address src, address dest, bool srcOrDest);
+
+    /// @notice                           event for reset protocol
+    /// @param groupId                    storeman group id
+    /// @param round                      group reset times
+    event ResetLogger(bytes32 indexed groupId, uint16 indexed round);
+
+    /**
+    *
+    * MANIPULATIONS
+    *
+    */
+
+    /// @notice                           function for init period
+    /// @param groupId                    storeman group id
+    /// @param group                      storeman group
+    function initGroup(bytes32 groupId, CreateGpkTypes.Group storage group, CreateGpkTypes.Curve storage curves, address smg)
+        public
+    {
+        // init period
+        if (group.defaultPeriod == 0) { // may have been set in advance
+            group.ployCommitPeriod = 10 * 60;
+            group.defaultPeriod = 5 * 60;
+            group.negotiatePeriod = 15 * 60;
+        }
+
+        // init chain curve
+        uint32 chain1;
+        uint8 curve1;
+        uint32 chain2;
+        uint8 curve2;
+        (chain1, curve1, chain2, curve2) = IStoremanGroup(smg).getChainCurve(groupId);
+        require(curves.curveMap[curve1] != address(0), "No curve");
+        require(curves.curveMap[curve2] != address(0), "No curve");
+        group.chainMap[0] = chain1;
+        group.chainMap[1] = chain2;
+        group.chainCurveMap[chain1] = curves.curveMap[curve1];
+        group.chainCurveMap[chain2] = curves.curveMap[curve2];
+        if (curve1 == curve2) {
+            group.curveNumber = 1;
+            group.roundMap[group.round][group.chainMap[1]].status = CreateGpkTypes.GroupStatus.Complete;
+        } else {
+            group.curveNumber = 2;
+        }
+
+        // selected sm list
+        group.groupId = groupId;
+        group.smNumber = uint16(IStoremanGroup(smg).getSelectedSmNumber(groupId));
+        require(group.smNumber > 0, "Invalid number");
+        // retrieve nodes
+        address txAddress;
+        bytes memory pk;
+        for (uint i = 0; i < group.smNumber; i++) {
+            (txAddress, pk,) = IStoremanGroup(smg).getSelectedSmInfo(groupId, i);
+            group.indexMap[i] = txAddress;
+            group.addressMap[txAddress] = unifyPk(pk);
+        }
+    }
+
+    /// @notice                           function for try to complete
+    /// @param group                      storeman group
+    function tryComplete(CreateGpkTypes.Group storage group, address smg)
+        public
+    {
+        CreateGpkTypes.Round storage round1 = group.roundMap[group.round][group.chainMap[0]];
+        CreateGpkTypes.Round storage round2 = group.roundMap[group.round][group.chainMap[1]];
+        if (group.curveNumber == 1) {
+            round2.gpk = round1.gpk;
+        }
+        if (round1.status == round2.status) {
+            IStoremanGroup(smg).setGpk(group.groupId, round1.gpk, round2.gpk);
+            emit GpkCreatedLogger(group.groupId, round1.gpk, round2.gpk);
+        }
+    }
 
     function unifyPk(bytes pk)
         public
@@ -141,5 +237,74 @@ library CreateGpkLib {
             }
         }
         return false;
+    }
+
+    /// @notice                           function for slash
+    /// @param group                      storeman group
+    /// @param chain                      chain to use this gpk
+    /// @param slashType                  slash reason
+    /// @param src                        src storeman address
+    /// @param dest                       dest storeman address
+    /// @param srcOrDest                  slash src or dest
+    /// @param toReset                    is reset immediately
+    function slash(CreateGpkTypes.Group storage group, uint32 chain,
+        CreateGpkTypes.SlashType slashType, address src, address dest, bool srcOrDest, bool toReset, address smg)
+        public
+    {
+        emit SlashLogger(group.groupId, group.round, chain, uint8(slashType), src, dest, srcOrDest);
+        if (toReset) {
+            uint[] memory types = new uint[](1);
+            types[0] = uint(slashType);
+            address[] memory sms = new address[](1);
+            sms[0] = srcOrDest? src : dest;
+            bool isContinue = IStoremanGroup(smg).setInvalidSm(group.groupId, types, sms);
+            reset(group, isContinue);
+        }
+    }
+
+    /// @notice                           function for slash
+    /// @param group                      storeman group
+    /// @param slashNumber                slash number of storemans
+    /// @param slashTypes                 slash types
+    /// @param slashSms                   slash storeman address
+    function slashMulti(CreateGpkTypes.Group storage group, uint slashNumber,
+        CreateGpkTypes.SlashType[] slashTypes, address[] slashSms, address smg)
+        public
+    {
+        require(slashNumber > 0, "Not slash");
+        uint[] memory types = new uint[](slashNumber);
+        address[] memory sms = new address[](slashNumber);
+        for (uint i = 0; i < slashNumber; i++) {
+          types[i] = uint(slashTypes[i]);
+          sms[i] = slashSms[i];
+        }
+        bool isContinue = IStoremanGroup(smg).setInvalidSm(group.groupId, types, sms);
+        reset(group, isContinue);
+    }
+
+    /// @notice                           function for reset protocol
+    /// @param group                      storeman group
+    /// @param isContinue                 is continue to next round
+    function reset(CreateGpkTypes.Group storage group, bool isContinue)
+        public
+    {
+        CreateGpkTypes.Round storage round = group.roundMap[group.round][group.chainMap[0]];
+        round.status = CreateGpkTypes.GroupStatus.Close;
+        round.statusTime = now;
+        round = group.roundMap[group.round][group.chainMap[1]];
+        round.status = CreateGpkTypes.GroupStatus.Close;
+        round.statusTime = now;
+
+        // clear data
+        for (uint i = 0; i < group.smNumber; i++) {
+            delete group.addressMap[group.indexMap[i]];
+            delete group.indexMap[i];
+        }
+        group.smNumber = 0;
+
+        emit ResetLogger(group.groupId, group.round);
+        if (isContinue) {
+          group.round++;
+        }
     }
 }
