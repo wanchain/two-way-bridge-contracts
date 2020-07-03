@@ -393,8 +393,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage smg = data.groups[groupId];
         require(smg.unregisterApplyTime != 0, "please unregister first");    
 
-        uint debt = htlc.getStoremanDebt(storemanGroup);
-        require(debt==0);
+        bool quitable = htlc.storemanGroupCanQuit(storemanGroup);
+
+        require(quitable);
 
         smg.status = StoremanType.GroupStatus.dismissed;
         emit StoremanGroupDismissedLogger(tokenOrigAccount, storemanGroup, now);
