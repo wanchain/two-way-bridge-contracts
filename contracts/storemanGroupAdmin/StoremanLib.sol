@@ -5,7 +5,7 @@ import "./StoremanType.sol";
 
 library StoremanLib {
     using Deposit for Deposit.Records;
-    event stakeInEvent(bytes32 indexed index,address indexed pkAddr, bytes enodeID);
+    event stakeInEvent(bytes32 indexed index,address indexed pkAddr);
 
     function getDaybyTime(uint time)  public pure returns(uint) {
         return time/10; // TODO; get the day. not minute.
@@ -54,7 +54,7 @@ library StoremanLib {
             realInsert(data,group, pkAddr, calSkWeight(msg.value), group.memberCountDesign-1);
         }
 
-        emit stakeInEvent(group.groupId, pkAddr, enodeID);
+        emit stakeInEvent(group.groupId, pkAddr);
     }
 
     function stakeAppend(StoremanType.StoremanData storage data,  address skPkAddr) internal  {

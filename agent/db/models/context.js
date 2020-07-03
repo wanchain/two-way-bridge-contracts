@@ -8,7 +8,7 @@ var ContextSchema = new mongoose.Schema({
         index: true
     },
     value: {
-        type: String
+        type: Object
     }
 }, {
     id: false

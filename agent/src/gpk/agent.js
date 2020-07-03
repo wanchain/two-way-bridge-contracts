@@ -38,7 +38,7 @@ function recoverProcess() {
 
 function listenEvent() {
   let id = wanchain.selfAddress + '_gpk';
-  let evtTracker = new EventTracker(id, 'WAN', eventHandler, false, config.startBlock);
+  let evtTracker = new EventTracker(id, eventHandler, false, config.startBlock);
   evtTracker.subscribe('smg_selectedEvent', config.contractAddress.smg, ["0x62487e9f333516e24026d78ce371e54c664a46271dcf5ffdafd8cd10ea75a5bf"]);
   evtTracker.subscribe('gpk_GpkCreatedLogger', config.contractAddress.createGpk, ["0x69d133e4261cdee685003e1e0520673a36ed3a627535ab05398fa1f9b958bf3a"]);
   evtTracker.subscribe('gpk_SlashLogger', config.contractAddress.createGpk, ["0x3e163d68525f48f0d33c6b6634b51d751200c03e44a61daf4c7636e67ff8f525"]);
@@ -61,10 +61,10 @@ async function eventHandler(evt) {
       default:
         break;
     }
-    return {success: true};
+    return true;
   } catch (err) {
-    console.error("%s gpk agent process event err: %O", new Date(), err);
-    return {success: false};
+    console.error("%s gpk agent process event err: %O", new Date().toISOString(), err);
+    return false;
   }
 }
 
@@ -80,19 +80,19 @@ async function procSmgSelectedEvent(evt) {
       groupMap.set(groupId, newRound);
       await newRound.start();
     } else {
-      console.error("%s gpk agent ignore group %s round %d status %d event", new Date(), groupId, round, status);
+      console.error("%s gpk agent ignore group %s round %d status %d event", new Date().toISOString(), groupId, round, status);
     }
   }
 }
 
 function procGpkCreatedLogger(evt) {
   let groupId = evt.topics[1];
-  console.log("%s gpk agent finish group %s", new Date(), groupId);
+  console.log("%s gpk agent finish group %s", new Date().toISOString(), groupId);
 }
 
 function procGpkSlashLogger(evt) {
   let groupId = evt.topics[1];
-  console.log("%s group %s slash someone", new Date(), groupId);
+  console.log("%s group %s slash someone", new Date().toISOString(), groupId);
   console.log("slash evt: %O", evt);
 }
 
