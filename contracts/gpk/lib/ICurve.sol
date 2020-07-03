@@ -26,10 +26,8 @@
 
 pragma solidity ^0.4.24;
 
-interface IGPK {
-    function getPkShare(bytes32 groupId, uint index) external view returns(bytes pkShare);
-    function getGpk(bytes32 groupId) external view returns(bytes gpk);
-    function getCurveNumber() external returns(uint number);
-    function getGpk(bytes32 groupId, uint curveIndex) external view returns(bytes gpk);
-    function getPkShare(bytes32 groupId, uint smgIndex, uint curveIndex) external view returns(bytes pkShare);
+interface ICurve {
+    function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2) public view returns(uint256 retx, uint256 rety, bool success);
+    function mulG(uint256 scalar) public view returns(uint256 x, uint256 y, bool success);
+    function calPolyCommit(bytes polyCommit, bytes pk) public view returns(uint256 sx, uint256 sy, bool success);
 }

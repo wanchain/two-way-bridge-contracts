@@ -30,25 +30,30 @@ library CreateGpkTypes {
 
     struct Group {
         uint16 round;
+        uint16 curveNumber;
         uint32 ployCommitPeriod;
         uint32 defaultPeriod;
         uint32 negotiatePeriod;
-        /// round->Round
-        mapping(uint => Round) roundMap;
+        /// index -> chain
+        mapping(uint16 => uint32) chainMap;
+        /// chain -> curve
+        mapping(uint32 => address) chainCurveMap;
+        /// round -> chain -> Round
+        mapping(uint16 => mapping(uint32 => Round)) roundMap;
+        uint16 smNumber;
+        /// index -> txAddress
+        mapping(uint => address) indexMap;
+        /// txAddress -> pk
+        mapping(address => bytes) addressMap;
     }
 
     struct Round {
         GroupStatus status;
-        uint16 smNumber;
         uint16 polyCommitCount;
         uint32 checkValidCount;
         uint statusTime;
         bytes gpk;
-        /// index->txAddress
-        mapping(uint => address) indexMap;
-        /// txAddress->pk
-        mapping(address => bytes) addressMap;
-        /// txAddress->Src
+        /// txAddress -> Src
         mapping(address => Src) srcMap;
     }
 
@@ -57,7 +62,7 @@ library CreateGpkTypes {
     struct Src {
         bytes polyCommit;
         bytes pkShare;
-        /// txAddress->Dest
+        /// txAddress -> Dest
         mapping(address => Dest) destMap;
     }
 
@@ -73,4 +78,6 @@ library CreateGpkTypes {
     enum CheckStatus {Init, Valid, Invalid}
 
     enum SlashType {PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, EncSijInvalid, CheckInvalid, Connive}
+
+    enum CurveType {secp256k1, bn256}
 }

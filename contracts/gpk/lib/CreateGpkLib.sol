@@ -28,6 +28,7 @@ pragma solidity ^0.4.24;
 
 import "../../lib/Encrypt.sol";
 import "../../lib/DataConvert.sol";
+import "./ICurve.sol";
 import "./CreateGpkTypes.sol";
 
 library CreateGpkLib {
@@ -53,7 +54,8 @@ library CreateGpkLib {
     /// @notice                           function for generate gpk and pkShare
     /// @param round                      round
     /// @param polyCommit                 poly commit
-    function updateGpk(CreateGpkTypes.Round storage round, bytes polyCommit)
+    /// @param curve                      curve contract address
+    function updateGpk(CreateGpkTypes.Round storage round, bytes polyCommit, address curve)
         public
     {
         bytes memory gpk = round.gpk;
@@ -63,7 +65,7 @@ library CreateGpkLib {
             uint gpkX = DataConvert.bytes2uint(gpk, 1, 32);
             uint gpkY = DataConvert.bytes2uint(gpk, 33, 32);
             bool success;
-            (x, y, success) = Encrypt.add(x, y, gpkX, gpkY);
+            (x, y, success) = ICurve(curve).add(x, y, gpkX, gpkY);
             require(success == true, "Gpk failed");
         } else {
             gpk = new bytes(65);
@@ -77,23 +79,24 @@ library CreateGpkLib {
     /// @notice                           function for generate gpk and pkShare
     /// @param round                      round
     /// @param polyCommit                 poly commit
-    function updatePkShare(CreateGpkTypes.Round storage round, bytes polyCommit)
+    /// @param curve                      curve contract address
+    function updatePkShare(CreateGpkTypes.Group storage group, CreateGpkTypes.Round storage round, bytes polyCommit, address curve)
         public
     {
         uint x;
         uint y;
         bool success;
-        for (uint i = 0; i < round.smNumber; i++) {
-            address txAddress = round.indexMap[i];
-            bytes memory pk = round.addressMap[txAddress];
-            (x, y, success) = Encrypt.calPolyCommit(polyCommit, pk);
+        for (uint i = 0; i < group.smNumber; i++) {
+            address txAddress = group.indexMap[i];
+            bytes memory pk = group.addressMap[txAddress];
+            (x, y, success) = ICurve(curve).calPolyCommit(polyCommit, pk);
             require(success == true, "PolyCommit failed");
 
             bytes memory pkShare = round.srcMap[txAddress].pkShare;
             if (pkShare.length != 0) {
                 uint pkX = DataConvert.bytes2uint(pkShare, 1, 32);
                 uint pkY = DataConvert.bytes2uint(pkShare, 33, 32);
-                (x, y, success) = Encrypt.add(x, y, pkX, pkY);
+                (x, y, success) = ICurve(curve).add(x, y, pkX, pkY);
                 require(success == true, "Add failed");
             } else {
                 pkShare = new bytes(65);
@@ -102,6 +105,9 @@ library CreateGpkLib {
             assembly { mstore(add(pkShare, 33), x) }
             assembly { mstore(add(pkShare, 65), y) }
             round.srcMap[txAddress].pkShare = pkShare;
+            if (group.curveNumber == 1) {
+                group.roundMap[group.round][group.chainMap[1]].srcMap[txAddress].pkShare = pkShare;
+            }
         }
     }
 
@@ -109,7 +115,8 @@ library CreateGpkLib {
     /// @param d                          Dest
     /// @param destPk                     dest storeman pk
     /// @param polyCommit                 polyCommit of pki
-    function verifySij(CreateGpkTypes.Dest storage d, bytes destPk, bytes polyCommit)
+    /// @param curve                      curve contract address
+    function verifySij(CreateGpkTypes.Dest storage d, bytes destPk, bytes polyCommit, address curve)
         public
         view
         returns(bool)
@@ -120,9 +127,9 @@ library CreateGpkLib {
         uint pcX;
         uint pcY;
         bool success;
-        (x, y, success) = Encrypt.mulG(d.sij);
+        (x, y, success) = ICurve(curve).mulG(d.sij);
         if (success) {
-            (pcX, pcY, success) = Encrypt.calPolyCommit(polyCommit, destPk);
+            (pcX, pcY, success) = ICurve(curve).calPolyCommit(polyCommit, destPk);
             if (success && (x == pcX) && (y == pcY)) {
                 // check enc
                 uint iv = DataConvert.bytes2uint(d.encSij, 65, 16);

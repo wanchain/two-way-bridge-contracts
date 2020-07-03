@@ -26,11 +26,11 @@
 
 pragma solidity ^0.4.24;
 
-import "../components/Halt.sol";
+import "../components/Owned.sol";
 import "./CreateGpkStorage.sol";
 import "../components/Proxy.sol";
 
-contract CreateGpkProxy is CreateGpkStorage, Halt, Proxy {
+contract CreateGpkProxy is CreateGpkStorage, Owned, Proxy {
     /**
     *
     * MANIPULATIONS

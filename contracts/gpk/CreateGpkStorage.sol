@@ -34,6 +34,9 @@ contract CreateGpkStorage is BasicStorage {
     /// smg instance address
     IStoremanGroup public smg;
 
-    /// groupId->Group
-    mapping(bytes32 => CreateGpkTypes.Group) internal groupMap;
+    /// curve -> contract address
+    mapping(uint8 => address) curveMap;
+
+    /// groupId -> Group
+    mapping(bytes32 => CreateGpkTypes.Group) public groupMap;
 }
