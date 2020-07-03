@@ -31,5 +31,5 @@ interface IHTLC {
     function deactivateStoremanGroup(bytes tokenOrigAccount, bytes storemanGroupPK) external;
     function delStoremanGroup(bytes tokenOrigAccount, bytes storemanGroupPK) external;
     function updateStoremanGroup(bytes tokenOrigAccount, bytes storemanGroupPK, uint quota) external;
-    function getStoremanDebt(bytes storemanGroupPK) external returns (uint);
+    function storemanGroupCanQuit(bytes storemanGroupPK) external returns (bool);
 }

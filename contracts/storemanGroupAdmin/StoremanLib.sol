@@ -31,7 +31,6 @@ library StoremanLib {
             groupId: groupId,
             incentivedDay: 0,
             nextGroupId: bytes32(0x00),
-            incentive:0,       // without delegation.. set to 0 after incentive.
             incentivedDelegator:0, // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
             deposit:records
         });
@@ -114,6 +113,7 @@ library StoremanLib {
         }
         return false;
     }
+    
     function stakeClaim(StoremanType.StoremanData storage data, address skPkAddr) public {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
@@ -124,12 +124,16 @@ library StoremanLib {
         require(checkCanClaim(sk, group), "group can't claim");
         require(checkCanClaim(sk, nextGroup), "nextGroup can't claim");
 
-        uint amount;
-        amount = sk.incentive;
+        uint amount = sk.incentive[0];
         amount += sk.deposit.getLastValue();
-        sk.sender.transfer(amount);
-        sk.incentive = 0;
+        
+        sk.incentive[0] = 0;
         sk.deposit.clean();
+        
+        require(amount != 0);        
+        sk.sender.transfer(amount);
+
+
     }
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight, uint last) internal{
         for(uint j = last; j>=group.whiteCount; j--) {
@@ -223,10 +227,10 @@ library StoremanLib {
         require(checkCanClaim(sk, nextGroup), "nextGroup can't claim");
 
         uint amount;
-        amount = dk.incentive;
+        amount = dk.incentive[0];
         amount += dk.deposit.getLastValue();
         dk.sender.transfer(amount);
-        dk.incentive = 0;
+        dk.incentive[0] = 0;
         dk.deposit.clean();
 
         sk.addrMap[dk.index] = sk.addrMap[sk.delegatorCount];
