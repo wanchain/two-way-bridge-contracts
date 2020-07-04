@@ -30,9 +30,9 @@ import "../../lib/Encrypt.sol";
 import "../../lib/DataConvert.sol";
 import "../../interfaces/IStoremanGroup.sol";
 import "./ICurve.sol";
-import "./CreateGpkTypes.sol";
+import "./GpkTypes.sol";
 
-library CreateGpkLib {
+library GpkLib {
 
     /**
      *
@@ -49,17 +49,17 @@ library CreateGpkLib {
     /// @notice                           event for contract slash storeman
     /// @param groupId                    storeman group id
     /// @param round                      group reset times
-    /// @param chain                      chain to use this gpk
+    /// @param curve                      signature curve index
     /// @param slashType                  the reason to slash
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     /// @param srcOrDest                  if true, slash src, otherwise slash dest
-    event SlashLogger(bytes32 indexed groupId, uint16 indexed round, uint32 chain, uint8 slashType, address src, address dest, bool srcOrDest);
+    event SlashLogger(bytes32 indexed groupId, uint8 indexed round, uint8 curve, uint8 slashType, address src, address dest, bool srcOrDest);
 
     /// @notice                           event for reset protocol
     /// @param groupId                    storeman group id
     /// @param round                      group reset times
-    event ResetLogger(bytes32 indexed groupId, uint16 indexed round);
+    event ResetLogger(bytes32 indexed groupId, uint8 indexed round);
 
     /**
     *
@@ -70,7 +70,7 @@ library CreateGpkLib {
     /// @notice                           function for init period
     /// @param groupId                    storeman group id
     /// @param group                      storeman group
-    function initGroup(bytes32 groupId, CreateGpkTypes.Group storage group, CreateGpkTypes.Curve storage curves, address smg)
+    function initGroup(bytes32 groupId, GpkTypes.Group storage group, GpkTypes.Curve storage curves, address smg)
         public
     {
         // init period
@@ -80,28 +80,24 @@ library CreateGpkLib {
             group.negotiatePeriod = 15 * 60;
         }
 
-        // init chain curve
-        uint32 chain1;
+        // init signature curve
         uint8 curve1;
-        uint32 chain2;
         uint8 curve2;
-        (chain1, curve1, chain2, curve2) = IStoremanGroup(smg).getChainCurve(groupId);
-        require(curves.curveMap[curve1] != address(0), "No curve");
-        require(curves.curveMap[curve2] != address(0), "No curve");
-        group.chainMap[0] = chain1;
-        group.chainMap[1] = chain2;
-        group.chainCurveMap[chain1] = curves.curveMap[curve1];
-        group.chainCurveMap[chain2] = curves.curveMap[curve2];
+        (, curve1, , curve2) = IStoremanGroup(smg).getChainCurve(groupId);
+        require(curves.contractAddress[curve1] != address(0), "No curve1");
+        require(curves.contractAddress[curve2] != address(0), "No curve2");
+        group.roundMap[group.round][0].curve = curves.contractAddress[curve1];
+        group.roundMap[group.round][1].curve = curves.contractAddress[curve2];
         if (curve1 == curve2) {
-            group.curveNumber = 1;
-            group.roundMap[group.round][group.chainMap[1]].status = CreateGpkTypes.GroupStatus.Complete;
+            group.curveTypes = 1;
+            group.roundMap[group.round][1].status = GpkTypes.GpkStatus.Complete;
         } else {
-            group.curveNumber = 2;
+            group.curveTypes = 2;
         }
 
         // selected sm list
         group.groupId = groupId;
-        group.smNumber = uint16(IStoremanGroup(smg).getSelectedSmNumber(groupId));
+        group.smNumber = uint8(IStoremanGroup(smg).getSelectedSmNumber(groupId));
         require(group.smNumber > 0, "Invalid number");
         // retrieve nodes
         address txAddress;
@@ -115,12 +111,12 @@ library CreateGpkLib {
 
     /// @notice                           function for try to complete
     /// @param group                      storeman group
-    function tryComplete(CreateGpkTypes.Group storage group, address smg)
+    function tryComplete(GpkTypes.Group storage group, address smg)
         public
     {
-        CreateGpkTypes.Round storage round1 = group.roundMap[group.round][group.chainMap[0]];
-        CreateGpkTypes.Round storage round2 = group.roundMap[group.round][group.chainMap[1]];
-        if (group.curveNumber == 1) {
+        GpkTypes.Round storage round1 = group.roundMap[group.round][0];
+        GpkTypes.Round storage round2 = group.roundMap[group.round][1];
+        if (group.curveTypes == 1) {
             round2.gpk = round1.gpk;
         }
         if (round1.status == round2.status) {
@@ -150,8 +146,7 @@ library CreateGpkLib {
     /// @notice                           function for generate gpk and pkShare
     /// @param round                      round
     /// @param polyCommit                 poly commit
-    /// @param curve                      curve contract address
-    function updateGpk(CreateGpkTypes.Round storage round, bytes polyCommit, address curve)
+    function updateGpk(GpkTypes.Round storage round, bytes polyCommit)
         public
     {
         bytes memory gpk = round.gpk;
@@ -161,7 +156,7 @@ library CreateGpkLib {
             uint gpkX = DataConvert.bytes2uint(gpk, 1, 32);
             uint gpkY = DataConvert.bytes2uint(gpk, 33, 32);
             bool success;
-            (x, y, success) = ICurve(curve).add(x, y, gpkX, gpkY);
+            (x, y, success) = ICurve(round.curve).add(x, y, gpkX, gpkY);
             require(success == true, "Gpk failed");
         } else {
             gpk = new bytes(65);
@@ -173,10 +168,10 @@ library CreateGpkLib {
     }
 
     /// @notice                           function for generate gpk and pkShare
+    /// @param group                      storeman group
     /// @param round                      round
     /// @param polyCommit                 poly commit
-    /// @param curve                      curve contract address
-    function updatePkShare(CreateGpkTypes.Group storage group, CreateGpkTypes.Round storage round, bytes polyCommit, address curve)
+    function updatePkShare(GpkTypes.Group storage group, GpkTypes.Round storage round, bytes polyCommit)
         public
     {
         uint x;
@@ -185,14 +180,14 @@ library CreateGpkLib {
         for (uint i = 0; i < group.smNumber; i++) {
             address txAddress = group.indexMap[i];
             bytes memory pk = group.addressMap[txAddress];
-            (x, y, success) = ICurve(curve).calPolyCommit(polyCommit, pk);
+            (x, y, success) = ICurve(round.curve).calPolyCommit(polyCommit, pk);
             require(success == true, "PolyCommit failed");
 
             bytes memory pkShare = round.srcMap[txAddress].pkShare;
             if (pkShare.length != 0) {
                 uint pkX = DataConvert.bytes2uint(pkShare, 1, 32);
                 uint pkY = DataConvert.bytes2uint(pkShare, 33, 32);
-                (x, y, success) = ICurve(curve).add(x, y, pkX, pkY);
+                (x, y, success) = ICurve(round.curve).add(x, y, pkX, pkY);
                 require(success == true, "Add failed");
             } else {
                 pkShare = new bytes(65);
@@ -201,8 +196,8 @@ library CreateGpkLib {
             assembly { mstore(add(pkShare, 33), x) }
             assembly { mstore(add(pkShare, 65), y) }
             round.srcMap[txAddress].pkShare = pkShare;
-            if (group.curveNumber == 1) {
-                group.roundMap[group.round][group.chainMap[1]].srcMap[txAddress].pkShare = pkShare;
+            if (group.curveTypes == 1) {
+                group.roundMap[group.round][1].srcMap[txAddress].pkShare = pkShare;
             }
         }
     }
@@ -212,7 +207,7 @@ library CreateGpkLib {
     /// @param destPk                     dest storeman pk
     /// @param polyCommit                 polyCommit of pki
     /// @param curve                      curve contract address
-    function verifySij(CreateGpkTypes.Dest storage d, bytes destPk, bytes polyCommit, address curve)
+    function verifySij(GpkTypes.Dest storage d, bytes destPk, bytes polyCommit, address curve)
         public
         view
         returns(bool)
@@ -241,17 +236,17 @@ library CreateGpkLib {
 
     /// @notice                           function for slash
     /// @param group                      storeman group
-    /// @param chain                      chain to use this gpk
+    /// @param curve                      signature curve index
     /// @param slashType                  slash reason
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     /// @param srcOrDest                  slash src or dest
     /// @param toReset                    is reset immediately
-    function slash(CreateGpkTypes.Group storage group, uint32 chain,
-        CreateGpkTypes.SlashType slashType, address src, address dest, bool srcOrDest, bool toReset, address smg)
+    function slash(GpkTypes.Group storage group, uint8 curve,
+        GpkTypes.SlashType slashType, address src, address dest, bool srcOrDest, bool toReset, address smg)
         public
     {
-        emit SlashLogger(group.groupId, group.round, chain, uint8(slashType), src, dest, srcOrDest);
+        emit SlashLogger(group.groupId, group.round, curve, uint8(slashType), src, dest, srcOrDest);
         if (toReset) {
             uint[] memory types = new uint[](1);
             types[0] = uint(slashType);
@@ -267,8 +262,8 @@ library CreateGpkLib {
     /// @param slashNumber                slash number of storemans
     /// @param slashTypes                 slash types
     /// @param slashSms                   slash storeman address
-    function slashMulti(CreateGpkTypes.Group storage group, uint slashNumber,
-        CreateGpkTypes.SlashType[] slashTypes, address[] slashSms, address smg)
+    function slashMulti(GpkTypes.Group storage group, uint slashNumber,
+        GpkTypes.SlashType[] slashTypes, address[] slashSms, address smg)
         public
     {
         require(slashNumber > 0, "Not slash");
@@ -285,14 +280,14 @@ library CreateGpkLib {
     /// @notice                           function for reset protocol
     /// @param group                      storeman group
     /// @param isContinue                 is continue to next round
-    function reset(CreateGpkTypes.Group storage group, bool isContinue)
+    function reset(GpkTypes.Group storage group, bool isContinue)
         public
     {
-        CreateGpkTypes.Round storage round = group.roundMap[group.round][group.chainMap[0]];
-        round.status = CreateGpkTypes.GroupStatus.Close;
+        GpkTypes.Round storage round = group.roundMap[group.round][0];
+        round.status = GpkTypes.GpkStatus.Close;
         round.statusTime = now;
-        round = group.roundMap[group.round][group.chainMap[1]];
-        round.status = CreateGpkTypes.GroupStatus.Close;
+        round = group.roundMap[group.round][1];
+        round.status = GpkTypes.GpkStatus.Close;
         round.statusTime = now;
 
         // clear data

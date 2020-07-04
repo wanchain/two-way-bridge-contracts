@@ -27,7 +27,7 @@
 pragma solidity ^0.4.24;
 
 interface ICurve {
-    function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2) public view returns(uint256 retx, uint256 rety, bool success);
-    function mulG(uint256 scalar) public view returns(uint256 x, uint256 y, bool success);
-    function calPolyCommit(bytes polyCommit, bytes pk) public view returns(uint256 sx, uint256 sy, bool success);
+    function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2) external view returns(uint256 retx, uint256 rety, bool success);
+    function mulG(uint256 scalar) external view returns(uint256 x, uint256 y, bool success);
+    function calPolyCommit(bytes polyCommit, bytes pk) external view returns(uint256 sx, uint256 sy, bool success);
 }

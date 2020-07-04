@@ -25,7 +25,7 @@ const Secp256k1Curve = artifacts.require('Secp256k1Curve');
 const Bn256Curve = artifacts.require('Bn256Curve');
 const Encrypt = artifacts.require('Encrypt');
 const DataConvert = artifacts.require('DataConvert');
-const CreateGpkLib = artifacts.require('CreateGpkLib');
+const GpkLib = artifacts.require('GpkLib');
 const CreateGpkProxy = artifacts.require('CreateGpkProxy');
 const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
 const Deposit = artifacts.require('Deposit');
@@ -151,11 +151,11 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(Encrypt);
     await deployer.deploy(DataConvert);
 
-    await deployer.link(Encrypt, CreateGpkLib);
-    await deployer.link(DataConvert, CreateGpkLib);
-    await deployer.deploy(CreateGpkLib);
+    await deployer.link(Encrypt, GpkLib);
+    await deployer.link(DataConvert, GpkLib);
+    await deployer.deploy(GpkLib);
 
-    await deployer.link(CreateGpkLib, CreateGpkDelegate);
+    await deployer.link(GpkLib, CreateGpkDelegate);
     await deployer.deploy(CreateGpkDelegate);
 
     await deployer.deploy(CreateGpkProxy);

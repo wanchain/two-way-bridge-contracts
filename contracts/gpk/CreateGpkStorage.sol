@@ -28,15 +28,15 @@ pragma solidity ^0.4.24;
 
 import "../components/BasicStorage.sol";
 import "../interfaces/IStoremanGroup.sol";
-import "./lib/CreateGpkTypes.sol";
+import "./lib/GpkTypes.sol";
 
 contract CreateGpkStorage is BasicStorage {
     /// smg instance address
     IStoremanGroup public smg;
 
     /// curve -> contract address
-    CreateGpkTypes.Curve curves;
+    GpkTypes.Curve curves;
 
     /// groupId -> Group
-    mapping(bytes32 => CreateGpkTypes.Group) public groupMap;
+    mapping(bytes32 => GpkTypes.Group) public groupMap;
 }

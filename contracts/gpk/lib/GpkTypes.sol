@@ -26,27 +26,23 @@
 
 pragma solidity ^0.4.24;
 
-library CreateGpkTypes {
+library GpkTypes {
 
     struct Curve {
         /// curve -> contract address
-        mapping(uint8 => address) curveMap;
+        mapping(uint8 => address) contractAddress;
     }
 
     struct Group {
         bytes32 groupId;
-        uint16 round;
-        uint16 curveNumber;
+        uint8 round;
+        uint8  curveTypes;
         uint32 ployCommitPeriod;
         uint32 defaultPeriod;
         uint32 negotiatePeriod;
-        /// index -> chain
-        mapping(uint16 => uint32) chainMap;
-        /// chain -> curve
-        mapping(uint32 => address) chainCurveMap;
-        /// round -> chain -> Round
-        mapping(uint16 => mapping(uint32 => Round)) roundMap;
-        uint16 smNumber;
+        /// round -> curveIndex -> Round
+        mapping(uint8 => mapping(uint8 => Round)) roundMap;
+        uint8 smNumber;
         /// index -> txAddress
         mapping(uint => address) indexMap;
         /// txAddress -> pk
@@ -54,16 +50,17 @@ library CreateGpkTypes {
     }
 
     struct Round {
-        GroupStatus status;
-        uint16 polyCommitCount;
-        uint32 checkValidCount;
+        address curve;
+        GpkStatus status;
+        uint8 polyCommitCount;
+        uint16 checkValidCount;
         uint statusTime;
         bytes gpk;
         /// txAddress -> Src
         mapping(address => Src) srcMap;
     }
 
-    enum GroupStatus {PolyCommit, Negotiate, Complete, Close}
+    enum GpkStatus {PolyCommit, Negotiate, Complete, Close}
 
     struct Src {
         bytes polyCommit;
