@@ -1,8 +1,15 @@
 pragma solidity ^0.4.24;
 
+import '../lib/SafeMath.sol';
+
 contract Bn128 {
+    using SafeMath for uint;
+    
     uint256 constant gx = 0x1;
     uint256 constant gy = 0x2;
+
+    /// @dev Order is the number of elements in both G₁ and G₂: 36u⁴+36u³+18u²+6u+1.
+    uint256 constant order = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     function getGx() public pure returns (uint256) {
         return gx;
@@ -10,6 +17,10 @@ contract Bn128 {
 
     function getGy() public pure returns (uint256) {
         return gy;
+    }
+
+    function getOrder() public pure returns (uint256) {
+        return order;
     }
 
     function ecadd(
