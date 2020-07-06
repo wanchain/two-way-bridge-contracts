@@ -22,7 +22,7 @@ contract Bn128SchnorrVerifier is Bn128 {
     }
 
     function h(bytes32 m, uint256 a, uint256 b) public pure returns (uint256) {
-        return uint256(sha256(abi.encodePacked(m, uint8(0x04), a, b)));
+        return uint256(sha256(abi.encodePacked(m, a, b)));
     }
 
     // function cmul(Point p, uint256 scalar) public pure returns (uint256, uint256) {
@@ -55,6 +55,9 @@ contract Bn128SchnorrVerifier is Bn128 {
         state.message = message;
 
         state._hash = h(state.message, state.randomPoint.x, state.randomPoint.y);
+
+        /// change to bn256 range.
+        state._hash = uint256(state._hash).mod(getOrder());
 
         (state._left.x, state._left.y) = sg(state.signature);
         Point memory rightPart;
