@@ -149,7 +149,7 @@ contract('TestSmg', async (accounts) => {
             srs.push(sr)
         }
         
-        let tx = await smg.registerStart(id,now+10, 90, 10,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
+        let tx = await smg.registerStart(id,now+10, 90, 10,utils.stringTobytes32(""), wks,srs,
             {from: tester})
         console.log("registerStart txhash:", tx.tx)
         await utils.waitReceipt(tx.tx)

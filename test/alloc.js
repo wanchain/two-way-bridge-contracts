@@ -2,7 +2,7 @@
 const Web3 = require('web3')
 const net = require('net')
 //let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
-let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
+let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'))
 //let web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8545'))
 
 
@@ -11,6 +11,7 @@ const pu = require('promisefy-util')
 const fs=require('fs')
 const wanutil = require('wanchain-util');
 
+const sender = "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e"
 
 async function getAddressFromInt(i){
     let b = Buffer.alloc(32)
@@ -20,7 +21,7 @@ async function getAddressFromInt(i){
     let pk = '0x'+pkb.toString('hex')
     let accounts = await pu.promisefy(web3.eth.getAccounts, [],web3.eth)
     try {
-        let tx = await pu.promisefy(web3.eth.sendTransaction,[{from: accounts[0], to: addr, value: web3.utils.toWei("300")}],web3.eth);
+        let tx = await pu.promisefy(web3.eth.sendTransaction,[{from: sender, to: addr, value: web3.utils.toWei("300")}],web3.eth);
         //console.log("tx:", tx)
     }catch(err){
         console.log("err:", err)

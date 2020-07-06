@@ -64,6 +64,8 @@ library StoremanType {
         uint curve1;
         uint curve2;
         uint tickedCount;
+        bytes gpk1;
+        bytes gpk2;
         mapping(uint=>uint) tickedType;
         mapping(uint=>address) tickedNode;
         mapping(uint=>address) addrMap;

@@ -45,19 +45,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
      *
      */
 
-    /// @notice                           event for storeman register
-    /// @param tokenOrigAccount           token account of original chain
-    /// @param storemanGroup              storeman group PK
-    /// @param wanDeposit                 deposit wancoin number
-    /// @param quota                      corresponding token quota
-    /// @param txFeeRatio                 storeman fee ratio
-    event StoremanGroupRegistrationLogger(bytes  tokenOrigAccount, bytes32 indexed groupId,  bytes storemanGroup, uint wanDeposit, uint quota, uint txFeeRatio);
 
-    /// @notice                           event for applying storeman group unregister
-    /// @param tokenOrigAccount           token account of original chain
-    /// @param storemanGroup              storeman group address
-    /// @param applyTime                  the time for storeman applying unregister
-    event StoremanGroupApplyUnRegistrationLogger(bytes tokenOrigAccount, bytes storemanGroup, uint applyTime);
+    event registerStartEvent(bytes32 indexed groupId, uint workStart,uint workDuration, uint registerDuration, bytes32 indexed preGroupId);
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
 
 
@@ -145,7 +134,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
             }
         }
     }
-    event registerStartEvent(bytes32 indexed groupId, uint workStart,uint workDuration, uint registerDuration, bytes32 indexed preGroupId);
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param groupId                    the building storeman group index.
     /// @param wkAddrs                    white list work address.
@@ -405,11 +393,23 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function getStoremanGroupInfo(bytes32 id)
         external
         view
-        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint whiteCount,  uint memberCount, uint chain1, uint chain2, uint startTime, uint endTime)
+        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint whiteCount,  uint memberCount,  uint startTime, uint endTime)
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
-        return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.whiteCount, smg.selectedCount, smg.chain1, smg.chain2, smg.workDay, smg.workDay+smg.totalDays);
+        return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.whiteCount, smg.selectedCount,  smg.workDay, smg.workDay+smg.totalDays);
     }
+
+    function getStoremanGroupConfig(bytes32 id)
+        external
+        view
+        returns(bytes32 groupId, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime)
+    {
+        StoremanType.StoremanGroup storage smg = data.groups[id];
+        return (smg.groupId, smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
+         smg.gpk1, smg.gpk2, smg.workDay, smg.workDay+smg.totalDays);
+    }
+
+
 
     function checkGroupIncentive(bytes32 id, uint day) public view returns ( uint) {
         StoremanType.StoremanGroup storage group = data.groups[id];
@@ -417,6 +417,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
     function contribute() public payable {
+        // TODO add an event.
         return;
     }
 
@@ -429,6 +430,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         if (_chainTypeCo != 0) {
              data.chainTypeCo = _chainTypeCo;
         }
-     }     
+     }
 
 }
