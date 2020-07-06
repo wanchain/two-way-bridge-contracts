@@ -53,17 +53,17 @@ library GpkLib {
 
     /// @notice                           event for contract slash storeman
     /// @param groupId                    storeman group id
-    /// @param round                      group reset times
+    /// @param round                      group negotiate round
     /// @param curve                      signature curve index
     /// @param slashType                  the reason to slash
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     /// @param srcOrDest                  if true, slash src, otherwise slash dest
-    event SlashLogger(bytes32 indexed groupId, uint8 indexed round, uint8 curve, uint8 slashType, address src, address dest, bool srcOrDest);
+    event SlashLogger(bytes32 indexed groupId, uint8 indexed round, uint8 indexed curve, uint8 slashType, address src, address dest, bool srcOrDest);
 
     /// @notice                           event for reset protocol
     /// @param groupId                    storeman group id
-    /// @param round                      group reset times
+    /// @param round                      group negotiate round
     event ResetLogger(bytes32 indexed groupId, uint8 indexed round);
 
     /**

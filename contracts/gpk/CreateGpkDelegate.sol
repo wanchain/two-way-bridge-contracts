@@ -42,14 +42,14 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
 
     /// @notice                           event for storeman submit poly commit
     /// @param groupId                    storeman group id
-    /// @param round                      group reset times
+    /// @param round                      group negotiate round
     /// @param curveIndex                 signature curve index
     /// @param storeman                   storeman address
     event SetPolyCommitLogger(bytes32 indexed groupId, uint8 indexed round, uint8 curveIndex, address storeman);
 
     /// @notice                           event for storeman submit encoded sij
     /// @param groupId                    storeman group id
-    /// @param round                      group reset times
+    /// @param round                      group negotiate round
     /// @param curveIndex                 signature curve index
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
@@ -57,7 +57,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
 
     /// @notice                           event for storeman submit result of checking encSij
     /// @param groupId                    storeman group id
-    /// @param round                      group reset times
+    /// @param round                      group negotiate round
     /// @param curveIndex                 signature curve index
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
@@ -66,7 +66,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
 
     /// @notice                           event for storeman reveal sij
     /// @param groupId                    storeman group id
-    /// @param round                      group reset times
+    /// @param round                      group negotiate round
     /// @param curveIndex                 signature curve index
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
@@ -115,9 +115,10 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
 
     /// @notice                           function for storeman submit poly commit
     /// @param groupId                    storeman group id
+    /// @param roundIndex                 group negotiate round
     /// @param curveIndex                 singnature curve index
     /// @param polyCommit                 poly commit list (17 order in x0,y0,x1,y1... format)
-    function setPolyCommit(bytes32 groupId, uint8 curveIndex, bytes polyCommit)
+    function setPolyCommit(bytes32 groupId, uint8 roundIndex, uint8 curveIndex, bytes polyCommit)
         external
     {
         require(polyCommit.length > 0, "Invalid polyCommit");
@@ -129,7 +130,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
             GpkLib.initGroup(groupId, group, config, smg);
             round.statusTime = now;
         }
-        checkValid(group, curveIndex, GpkTypes.GpkStatus.PolyCommit, address(0), true);
+        checkValid(group, roundIndex, curveIndex, GpkTypes.GpkStatus.PolyCommit, address(0), true);
         require(round.srcMap[msg.sender].polyCommit.length == 0, "Duplicate");
         round.srcMap[msg.sender].polyCommit = polyCommit;
         round.polyCommitCount++;
@@ -150,7 +151,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         external
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        checkValid(group, curveIndex, GpkTypes.GpkStatus.PolyCommit, address(0), false);
+        checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.PolyCommit, address(0), false);
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
         require(now.sub(round.statusTime) > group.ployCommitPeriod, "Not late"); // round.statusTime had be assigned
         uint slashCount = 0;
@@ -170,16 +171,17 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
 
     /// @notice                           function for src storeman submit encSij
     /// @param groupId                    storeman group id
+    /// @param roundIndex                 group negotiate round
     /// @param curveIndex                 singnature curve index
     /// @param dest                       dest storeman address
     /// @param encSij                     encSij
-    function setEncSij(bytes32 groupId, uint8 curveIndex, address dest, bytes encSij)
+    function setEncSij(bytes32 groupId, uint8 roundIndex, uint8 curveIndex, address dest, bytes encSij)
         external
     {
         require(encSij.length > 0, "Invalid encSij");
         GpkTypes.Group storage group = groupMap[groupId];
+        checkValid(group, roundIndex, curveIndex, GpkTypes.GpkStatus.Negotiate, dest, true);
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        checkValid(group, curveIndex, GpkTypes.GpkStatus.Negotiate, dest, true);
         GpkTypes.Dest storage d = round.srcMap[msg.sender].destMap[dest];
         require(d.encSij.length == 0, "Duplicate");
         d.encSij = encSij;
@@ -189,15 +191,16 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
 
     /// @notice                           function for dest storeman set check status for encSij
     /// @param groupId                    storeman group id
+    /// @param roundIndex                 group negotiate round
     /// @param curveIndex                 singnature curve index
     /// @param src                        src storeman address
     /// @param isValid                    whether encSij is valid
-    function setCheckStatus(bytes32 groupId, uint8 curveIndex, address src, bool isValid)
+    function setCheckStatus(bytes32 groupId, uint8 roundIndex, uint8 curveIndex, address src, bool isValid)
         external
     {
         GpkTypes.Group storage group = groupMap[groupId];
+        checkValid(group, roundIndex, curveIndex, GpkTypes.GpkStatus.Negotiate, src, true);
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        checkValid(group, curveIndex, GpkTypes.GpkStatus.Negotiate, src, true);
         GpkTypes.Src storage s = round.srcMap[src];
         GpkTypes.Dest storage d = s.destMap[msg.sender];
         require(d.encSij.length != 0, "Not ready");
@@ -227,8 +230,8 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         external
     {
         GpkTypes.Group storage group = groupMap[groupId];
+        checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.Negotiate, src, true);
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        checkValid(group, curveIndex, GpkTypes.GpkStatus.Negotiate, src, true);
         GpkTypes.Dest storage d = round.srcMap[src].destMap[msg.sender];
         require(d.encSij.length == 0, "Outdated");
         require(now.sub(round.statusTime) > group.defaultPeriod, "Not late");
@@ -237,16 +240,17 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
 
     /// @notice                           function for src storeman reveal sij
     /// @param groupId                    storeman group id
+    /// @param roundIndex                 group negotiate round
     /// @param curveIndex                 singnature curve index
     /// @param dest                       dest storeman address
     /// @param sij                        sij
     /// @param ephemPrivateKey            ecies ephemPrivateKey
-    function revealSij(bytes32 groupId, uint8 curveIndex, address dest, uint sij, uint ephemPrivateKey)
+    function revealSij(bytes32 groupId, uint8 roundIndex, uint8 curveIndex, address dest, uint sij, uint ephemPrivateKey)
         external
     {
         GpkTypes.Group storage group = groupMap[groupId];
+        checkValid(group, roundIndex, curveIndex, GpkTypes.GpkStatus.Negotiate, dest, true);
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        checkValid(group, curveIndex, GpkTypes.GpkStatus.Negotiate, dest, true);
         GpkTypes.Src storage src = round.srcMap[msg.sender];
         GpkTypes.Dest storage d = src.destMap[dest];
         require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Checked Valid");
@@ -268,8 +272,8 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         external
     {
         GpkTypes.Group storage group = groupMap[groupId];
+        checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.Negotiate, dest, true);
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        checkValid(group, curveIndex, GpkTypes.GpkStatus.Negotiate, dest, true);
         GpkTypes.Dest storage d = round.srcMap[msg.sender].destMap[dest];
         require(d.checkStatus == GpkTypes.CheckStatus.Init, "Checked");
         require(d.encSij.length != 0, "Not ready");
@@ -285,8 +289,8 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         external
     {
         GpkTypes.Group storage group = groupMap[groupId];
+        checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.Negotiate, src, true);
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        checkValid(group, curveIndex, GpkTypes.GpkStatus.Negotiate, src, true);
         GpkTypes.Dest storage d = round.srcMap[src].destMap[msg.sender];
         require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Not need");
         require(now.sub(d.checkTime) > group.defaultPeriod, "Not late");
@@ -300,7 +304,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         external
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        checkValid(group, curveIndex, GpkTypes.GpkStatus.Negotiate, address(0), false);
+        checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.Negotiate, address(0), false);
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
         uint slashCount = 0;
         GpkTypes.SlashType[] memory slashTypes = new GpkTypes.SlashType[](group.smNumber * 2);
@@ -342,14 +346,16 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
 
     /// @notice                           function for check paras
     /// @param group                      group
+    /// @param roundIndex                 group negotiate round
     /// @param curveIndex                 singnature curve index
     /// @param status                     check group status
     /// @param storeman                   check storeman address if not address(0)
     /// @param checkSender                whether check msg.sender
-    function checkValid(GpkTypes.Group storage group, uint8 curveIndex, GpkTypes.GpkStatus status, address storeman, bool checkSender)
+    function checkValid(GpkTypes.Group storage group, uint8 roundIndex, uint8 curveIndex, GpkTypes.GpkStatus status, address storeman, bool checkSender)
         internal
         view
     {
+        require(roundIndex == group.round, "Outdated");
         require(curveIndex < group.curveTypes, "Invalid curve");
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
         require(round.status == status, "Invalid status");
@@ -361,35 +367,37 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         }
     }
 
-    function getRoundInfo(bytes32 groupId, int8 roundNum, uint8 curveIndex)
+    function getGroupInfo(bytes32 groupId, int8 roundIndex)
         external
         view
-        returns(uint8 queriedRound, uint8 status, uint statusTime, uint32 ployCommitPeriod, uint32 defaultPeriod, uint32 negotiatePeriod)
+        returns(uint8 queriedRound, uint8 curve1Status, uint curve1StatusTime, uint8 curve2Status, uint curve2StatusTime,
+                uint32 ployCommitPeriod, uint32 defaultPeriod, uint32 negotiatePeriod)
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        uint8 queryRound = (roundNum >= 0)? uint8(roundNum) : group.round;
-        GpkTypes.Round storage round = group.roundMap[queryRound][curveIndex];
-        return (queryRound, uint8(round.status), round.statusTime,
+        uint8 queryRound = (roundIndex >= 0)? uint8(roundIndex) : group.round;
+        GpkTypes.Round storage round1 = group.roundMap[queryRound][0];
+        GpkTypes.Round storage round2 = group.roundMap[queryRound][1];
+        return (queryRound, uint8(round1.status), round1.statusTime, uint8(round2.status), round2.statusTime,
                 group.ployCommitPeriod, group.defaultPeriod, group.negotiatePeriod);
     }
 
-    function getPolyCommit(bytes32 groupId, uint8 roundNum, uint8 curveIndex, address src)
+    function getPolyCommit(bytes32 groupId, uint8 roundIndex, uint8 curveIndex, address src)
         external
         view
         returns(bytes polyCommit)
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        GpkTypes.Round storage round = group.roundMap[roundNum][curveIndex];
+        GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         return round.srcMap[src].polyCommit;
     }
 
-    function getEncSijInfo(bytes32 groupId, uint8 roundNum, uint8 curveIndex, address src, address dest)
+    function getEncSijInfo(bytes32 groupId, uint8 roundIndex, uint8 curveIndex, address src, address dest)
         external
         view
         returns(bytes encSij, uint8 checkStatus, uint setTime, uint checkTime, uint sij, uint ephemPrivateKey)
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        GpkTypes.Round storage round = group.roundMap[roundNum][curveIndex];
+        GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         GpkTypes.Dest storage d = round.srcMap[src].destMap[dest];
         return (d.encSij, uint8(d.checkStatus), d.setTime, d.checkTime, d.sij, d.ephemPrivateKey);
     }
