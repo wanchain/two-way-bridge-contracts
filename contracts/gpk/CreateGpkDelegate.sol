@@ -110,7 +110,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         external
         onlyOwner
     {
-        curves.contractAddress[curveId] = curveAddress;
+        config.curves[curveId] = curveAddress;
     }
 
     /// @notice                           function for storeman submit poly commit
@@ -126,7 +126,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
         if (group.smNumber == 0) {
             // init group when the first node submit
-            GpkLib.initGroup(groupId, group, curves, smg);
+            GpkLib.initGroup(groupId, group, config, smg);
             round.statusTime = now;
         }
         checkValid(group, curveIndex, GpkTypes.GpkStatus.PolyCommit, address(0), true);

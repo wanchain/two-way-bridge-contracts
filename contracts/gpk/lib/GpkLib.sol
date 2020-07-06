@@ -34,6 +34,11 @@ import "./GpkTypes.sol";
 
 library GpkLib {
 
+    /// submit period
+    uint32 constant public DEFAULT_PERIOD = 5 * 60;     // 5 minutes
+    uint32 constant public PLOYCOMMIT_PERIOD = 10 * 60; // 10 minutes
+    uint32 constant public NEGOTIATE_PERIOD = 15 * 60;  // 15 minutes
+
     /**
      *
      * EVENTS
@@ -70,24 +75,24 @@ library GpkLib {
     /// @notice                           function for init period
     /// @param groupId                    storeman group id
     /// @param group                      storeman group
-    function initGroup(bytes32 groupId, GpkTypes.Group storage group, GpkTypes.Curve storage curves, address smg)
+    function initGroup(bytes32 groupId, GpkTypes.Group storage group, GpkTypes.Config storage config, address smg)
         public
     {
         // init period
-        if (group.defaultPeriod == 0) { // may have been set in advance
-            group.ployCommitPeriod = 10 * 60;
-            group.defaultPeriod = 5 * 60;
-            group.negotiatePeriod = 15 * 60;
+        if (group.defaultPeriod == 0) {
+            group.defaultPeriod = DEFAULT_PERIOD;
+            group.ployCommitPeriod = PLOYCOMMIT_PERIOD;
+            group.negotiatePeriod = NEGOTIATE_PERIOD;
         }
 
         // init signature curve
         uint8 curve1;
         uint8 curve2;
         (, curve1, , curve2) = IStoremanGroup(smg).getChainCurve(groupId);
-        require(curves.contractAddress[curve1] != address(0), "No curve1");
-        require(curves.contractAddress[curve2] != address(0), "No curve2");
-        group.roundMap[group.round][0].curve = curves.contractAddress[curve1];
-        group.roundMap[group.round][1].curve = curves.contractAddress[curve2];
+        require(config.curves[curve1] != address(0), "No curve1");
+        require(config.curves[curve2] != address(0), "No curve2");
+        group.roundMap[group.round][0].curve = config.curves[curve1];
+        group.roundMap[group.round][1].curve = config.curves[curve2];
         if (curve1 == curve2) {
             group.curveTypes = 1;
             group.roundMap[group.round][1].status = GpkTypes.GpkStatus.Complete;

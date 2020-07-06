@@ -35,7 +35,7 @@ contract CreateGpkStorage is BasicStorage {
     IStoremanGroup public smg;
 
     /// curve -> contract address
-    GpkTypes.Curve curves;
+    GpkTypes.Config config;
 
     /// groupId -> Group
     mapping(bytes32 => GpkTypes.Group) public groupMap;
