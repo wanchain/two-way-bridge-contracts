@@ -5,7 +5,7 @@ import "./Secp256k1.sol";
 // pragma experimental ABIEncoderV2;
 
 
-contract Secp256k1SchnorrVerifier {
+contract Secp256k1SchnorrVerifier is Secp256k1 {
     struct Point {
         uint256 x; uint256 y;
     }
@@ -27,16 +27,16 @@ contract Secp256k1SchnorrVerifier {
 
     // function cmul(Point p, uint256 scalar) public pure returns (uint256, uint256) {
     function cmul(uint256 x, uint256 y, uint256 scalar) public pure returns (uint256, uint256) {
-        return Secp256k1.ecmul(x, y, scalar);
+        return ecmul(x, y, scalar);
     }
 
     function sg(uint256 sig_s) public pure returns (uint256, uint256) {
-        return Secp256k1.ecmul(Secp256k1.getGx(), Secp256k1.getGy(), sig_s);
+        return ecmul(getGx(), getGy(), sig_s);
     }
 
     // function cadd(Point a, Point b) public pure returns (uint256, uint256) {
     function cadd(uint256 ax, uint256 ay, uint256 bx, uint256 by) public pure returns (uint256, uint256) {
-        return Secp256k1.ecadd(ax, ay, bx, by);
+        return ecadd(ax, ay, bx, by);
     }
 
     function verify(bytes32 signature, bytes32 groupKeyX, bytes32 groupKeyY, bytes32 randomPointX, bytes32 randomPointY, bytes32 message)

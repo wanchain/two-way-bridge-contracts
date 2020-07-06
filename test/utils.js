@@ -169,4 +169,5 @@ module.exports = {
     resAssert,
     stringToBytes,
     bytesToString,
+    getSchnorrVerifierContracts,
 };
