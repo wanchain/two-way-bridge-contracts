@@ -7,8 +7,6 @@ const {GroupStatus} = require('./Types');
 const wanchain = require('../utils/wanchain');
 const tool = require('../utils/tools');
 
-console.log("start gpk agent");
-
 // record latest round of each group
 const groupMap = new Map();
 
@@ -17,9 +15,11 @@ const groupMap = new Map();
 const smgSc = wanchain.getContract('smg', config.contractAddress.smg);
 const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
 
-recoverProcess();
-
-listenEvent();
+function start() {
+  console.log("start gpk agent");
+  recoverProcess();
+  listenEvent();
+}
 
 function recoverProcess() {
   let dir = path.join(__dirname, '../../cxt/');
@@ -100,3 +100,7 @@ async function checkSelfSelected(groupId) {
     let info = await smgSc.methods.getSmInfo(groupId, wanchain.selfAddress);
     return (info[3] == true); // isWorking
 }
+
+module.exports = {
+  start
+};
