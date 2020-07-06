@@ -46,21 +46,21 @@ contract('Verifier', accounts => {
     assert.equal(ret, false);
   });
 
-  it.skip("verifier check secp256k1 signature", async () => {
-    let verifier = (await getSchnorrVerifierContracts(accounts)).secp256;
+  it("verifier check secp256k1 signature", async () => {
+    let verifier = (await getSchnorrVerifierContracts(accounts)).verifier;
 
-    let message = [0xc1, 0xa9, 0xdc, 0x85, 0xa8, 0xa7];
-    let gpkX = '0x2cc4600ca9396e4b2ef7bf1d0b5a98a7f27e994462855ef2d1b8b5fc1b2b8f59';
-    let gpkY = '0xf61348e378f232f7c9e97b5204466ce32b3f31869aed1bea5bb94d3c0e5552a6';
-    let rX = '0xefd0a83f1a57d88ae5db475f01c5d63e1e4555f55b2cd00f6336e3e5e203657b';
-    let rY = '0x8553ef08cd5bcda324652142f136c9f92ad59387615ab1f9581d150e9e71e4e9';
-    let signature = '0x39731aadfd82e34ffd00065da67acb3dd4281b214025695da6934738863b33bf';
+    let message = [0x12, 0x34];
+    let gpkX = '0xee8797b2d53915708fb24cee7dbdddfa43eb2cbfa19cd427cdfd02d2169bb028';
+    let gpkY = '0xe5dfa3514a92fa2eb4da42085bbc7807c1acb08f132c13b2951759d4281ece8b';
+    let rX = '0xfbd41967d0a3cda9f0d67ed430d90c10c84fdca028c544f942ee7e18c10e3881';
+    let rY = '0x8728270784cc9b5b9454b7281df9731681fdb68f384bb6f1e60acdb5d34be4e8';
+    let signature = '0x6de09f9d1887b203a2c6510f08b8241c36d3dd84234a18a58189c9c79e50a3e5';
 
     let hashM = '0x' + hash.sha256(message);
-    console.log('hashM', hashM);
+    // console.log('hashM', hashM);
 
     let ret = await verifier.methods.verify(
-      // 0,
+      0,
       web3.utils.hexToBytes(signature),
       web3.utils.hexToBytes(gpkX),
       web3.utils.hexToBytes(gpkY),
