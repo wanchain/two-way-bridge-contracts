@@ -7,7 +7,7 @@ License: GPL-3.0
 */
 
 
-library Secp256k1 {
+contract Secp256k1 {
 
     uint256 constant gx = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
     uint256 constant gy = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
@@ -15,11 +15,11 @@ library Secp256k1 {
     uint256 constant a = 0;
     uint256 constant b = 7;
 
-    function getGx() external pure returns(uint256) {
+    function getGx() public pure returns(uint256) {
         return gx;
     }
 
-    function getGy() external pure returns(uint256) {
+    function getGy() public pure returns(uint256) {
         return gy;
     }
 
@@ -192,7 +192,7 @@ library Secp256k1 {
     function ecadd(
         uint256 x1, uint256 y1,
         uint256 x2, uint256 y2)
-        external
+        public
         pure
         returns(uint256 x3, uint256 y3)
     {
