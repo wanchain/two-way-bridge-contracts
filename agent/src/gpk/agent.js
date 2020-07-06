@@ -15,8 +15,8 @@ const groupMap = new Map();
 const smgSc = wanchain.getContract('smg', config.contractAddress.smg);
 const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
 
-function start() {
-  console.log("start gpk agent");
+function run() {
+  console.log("run gpk agent");
   recoverProcess();
   listenEvent();
 }
@@ -102,5 +102,5 @@ async function checkSelfSelected(groupId) {
 }
 
 module.exports = {
-  start
+  run
 };

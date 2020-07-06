@@ -1,3 +1,3 @@
 const agent = require('./agent');
 
-agent.start();
+agent.run();
