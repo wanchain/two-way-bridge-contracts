@@ -164,7 +164,7 @@ module.exports = async function (deployer, network) {
     await gpkProxy.upgradeTo(gpkDelegate.address);
 
     let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);
-    // await gpk.setDependence(smgProxy.address);
+    await gpk.setDependence(smgProxy.address);
 
     await deployer.deploy(Secp256k1Curve);
     let secp256k1 = await Secp256k1Curve.deployed();
