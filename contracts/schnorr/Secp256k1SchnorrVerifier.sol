@@ -1,11 +1,11 @@
 pragma solidity ^0.4.24;
 
-import "./Bn128.sol";
+import "./Secp256k1.sol";
 
 // pragma experimental ABIEncoderV2;
 
 
-library SchnorrVerifier {
+contract Secp256k1SchnorrVerifier {
     struct Point {
         uint256 x; uint256 y;
     }
@@ -26,22 +26,22 @@ library SchnorrVerifier {
     }
 
     // function cmul(Point p, uint256 scalar) public pure returns (uint256, uint256) {
-    function cmul(uint256 x, uint256 y, uint256 scalar) public view returns (uint256, uint256) {
-        return Bn128.ecmul(x, y, scalar);
+    function cmul(uint256 x, uint256 y, uint256 scalar) public pure returns (uint256, uint256) {
+        return Secp256k1.ecmul(x, y, scalar);
     }
 
-    function sg(uint256 sig_s) public view returns (uint256, uint256) {
-        return Bn128.ecmul(Bn128.getGx(), Bn128.getGy(), sig_s);
+    function sg(uint256 sig_s) public pure returns (uint256, uint256) {
+        return Secp256k1.ecmul(Secp256k1.getGx(), Secp256k1.getGy(), sig_s);
     }
 
     // function cadd(Point a, Point b) public pure returns (uint256, uint256) {
-    function cadd(uint256 ax, uint256 ay, uint256 bx, uint256 by) public view returns (uint256, uint256) {
-        return Bn128.ecadd(ax, ay, bx, by);
+    function cadd(uint256 ax, uint256 ay, uint256 bx, uint256 by) public pure returns (uint256, uint256) {
+        return Secp256k1.ecadd(ax, ay, bx, by);
     }
 
     function verify(bytes32 signature, bytes32 groupKeyX, bytes32 groupKeyY, bytes32 randomPointX, bytes32 randomPointY, bytes32 message)
         public
-        view
+        pure
         returns(bool)
     {
         bool flag = false;

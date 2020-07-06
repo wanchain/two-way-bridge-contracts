@@ -63,7 +63,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         address _tokenManagerAddress,
         uint _depositRate,
         bytes _depositTokenSymbol
-    ) external {
+    ) external onlyOwner {
         priceOracleAddress = _priceOracleAddr;
         htlcGroupMap[_htlcAddr] = true;
         htlcGroupMap[_fastHtlcAddr] = true;
@@ -83,7 +83,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         bytes32 storemanGroupId,
         uint value,
         bool checkQuota
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         /// Don't check in the other chain.
         if (checkQuota) {
@@ -112,7 +112,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota._receivable = quota._receivable.sub(value);
     }
@@ -125,7 +125,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota._receivable = quota._receivable.sub(value);
         quota._debt = quota._debt.add(value);
@@ -141,7 +141,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         bytes32 storemanGroupId,
         uint value,
         bool checkQuota
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         /// Don't check in the other chain.
         if (checkQuota) {
@@ -168,7 +168,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota._debt = quota._debt.sub(value);
     }
@@ -181,7 +181,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         require(quota._debt.sub(quota._payable) >= value, "Value is invalid");
         quota._payable = quota._payable.add(value);
@@ -195,7 +195,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota._payable = quota._payable.sub(value);
     }
@@ -208,7 +208,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota._debt = quota._debt.sub(value);
         quota._payable = quota._payable.sub(value);
@@ -220,7 +220,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function debtLock(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         // uint srcDebt = getFiatDebtTotal(srcStoremanGroupId);
         // uint dstDepost = getFiatDeposit(dstStoremanGroupId);
 
@@ -258,7 +258,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function debtRedeem(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
@@ -282,7 +282,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function debtRevoke(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
-    ) external onlyHtlc {
+    ) external onlyHtlc notHalted {
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
