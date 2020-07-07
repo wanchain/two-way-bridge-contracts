@@ -22,39 +22,9 @@
 //   \ V  V / (_| | | | | (__| | | | (_| | | | | | (_| |  __/\ V /
 //    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
 //
-//  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
+//
 
 pragma solidity ^0.4.24;
-
-import "../components/BasicStorage.sol";
-import "../interfaces/ITokenManager.sol";
-import "../interfaces/IHTLC.sol";
-import "../lib/Deposit.sol";
-import "./StoremanType.sol";
-import "../interfaces/IQuota.sol";
-
-
-contract StoremanGroupStorage is BasicStorage {
-
-  /// token manager instance address
-  ITokenManager public tokenManager;
-  /// HTLC instance address
-  IHTLC public htlc;
-
-
-
-  uint backupCount = 3;
-  uint minStake = 10000;
-  address[] public badAddrs;
-  uint[] public badTypes;
-  uint memberCountDefault=4;
-  uint thresholdDefault = 3;
-  address  public  greateGpkAddr;
-  // StoremanType.GroupConfig  configDefault = StoremanType.GroupConfig({
-  //   memberCountDesign:memberCountDefault,
-  //   threshold:thresholdDefault
-  // });
-
-  StoremanType.StoremanData data;
-  
+interface IQuota {
+    function isDebtClean(bytes32 storemanGroupId) external view returns (bool);
 }
