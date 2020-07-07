@@ -45,7 +45,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
     /// @param round                      group negotiate round
     /// @param curveIndex                 signature curve index
     /// @param storeman                   storeman address
-    event SetPolyCommitLogger(bytes32 indexed groupId, uint8 indexed round, uint8 curveIndex, address storeman);
+    event SetPolyCommitLogger(bytes32 indexed groupId, uint8 indexed round, uint8 indexed curveIndex, address storeman);
 
     /// @notice                           event for storeman submit encoded sij
     /// @param groupId                    storeman group id
@@ -53,7 +53,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
     /// @param curveIndex                 signature curve index
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
-    event SetEncSijLogger(bytes32 indexed groupId, uint8 indexed round, uint8 curveIndex, address src, address dest);
+    event SetEncSijLogger(bytes32 indexed groupId, uint8 indexed round, uint8 indexed curveIndex, address src, address dest);
 
     /// @notice                           event for storeman submit result of checking encSij
     /// @param groupId                    storeman group id
@@ -62,7 +62,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     /// @param isValid                    whether encSij is valid
-    event SetCheckStatusLogger(bytes32 indexed groupId, uint8 indexed round, uint8 curveIndex, address src, address dest, bool isValid);
+    event SetCheckStatusLogger(bytes32 indexed groupId, uint8 indexed round, uint8 indexed curveIndex, address src, address dest, bool isValid);
 
     /// @notice                           event for storeman reveal sij
     /// @param groupId                    storeman group id
@@ -70,7 +70,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
     /// @param curveIndex                 signature curve index
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
-    event RevealSijLogger(bytes32 indexed groupId, uint8 indexed round, uint8 curveIndex, address src, address dest);
+    event RevealSijLogger(bytes32 indexed groupId, uint8 indexed round, uint8 indexed curveIndex, address src, address dest);
 
     /**
     *
@@ -153,7 +153,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         GpkTypes.Group storage group = groupMap[groupId];
         checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.PolyCommit, address(0), false);
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        require(now.sub(round.statusTime) > group.ployCommitPeriod, "Not late"); // round.statusTime had be assigned
+        require(now.sub(round.statusTime) > group.ployCommitPeriod, "Not late"); // round.statusTime should have be assigned
         uint slashCount = 0;
         GpkTypes.SlashType[] memory slashTypes = new GpkTypes.SlashType[](group.smNumber);
         address[] memory slashSms = new address[](group.smNumber);
@@ -355,8 +355,8 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         internal
         view
     {
-        require(roundIndex == group.round, "Outdated");
-        require(curveIndex < group.curveTypes, "Invalid curve");
+        require(roundIndex == group.round, "Outdated"); // must be latest round
+        require(curveIndex < group.curveTypes, "Invalid curve"); // group is initialized, and curve is permitted
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
         require(round.status == status, "Invalid status");
         if (storeman != address(0)) {
