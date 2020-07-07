@@ -54,6 +54,7 @@ contract StoremanGroupStorage is BasicStorage {
   //   memberCountDesign:memberCountDefault,
   //   threshold:thresholdDefault
   // });
+
   StoremanType.StoremanData data;
   
 }

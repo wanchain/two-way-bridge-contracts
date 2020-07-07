@@ -32,6 +32,7 @@ library CommonTool {
 
     using SafeMath for uint;
 
+    enum CurveType  {SK,BN}
 
 
 
@@ -52,10 +53,10 @@ library CommonTool {
         uint256 x2 = 0xfb4a50e7008341df6390ad3dcd758b1498959bf18369edc335435367088910c6;
         uint256 y2 = 0xe55f58908701c932768c2fd16932f694acd30e21a5f2a4f6242b5f0567696240;
 
-        return add(x1, y1, x2, y2);
+        return add(x1, y1, x2, y2,CurveType.SK);
     }
 
-    function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2)
+    function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2, CurveType curveType)
     public
     view
     returns (uint256 retx, uint256 rety, bool success) {
@@ -85,10 +86,10 @@ library CommonTool {
     view
     returns (uint256 retx, uint256 rety, bool success){
         uint256 scalar = 2;
-        return mulG(scalar);
+        return mulG(scalar,CurveType.SK);
     }
 
-    function mulG(uint256 scalar)
+    function mulG(uint256 scalar, CurveType curveType)
     public
     view
     returns (uint256 x, uint256 y, bool success) {
@@ -112,7 +113,7 @@ library CommonTool {
     }
 
 
-    function mulPk(uint256 scalar, uint256 xPk, uint256 yPk)
+    function mulPk(uint256 scalar, uint256 xPk, uint256 yPk, CurveType curveType)
     public
     view
     returns (uint256 x, uint256 y, bool success){
@@ -163,11 +164,11 @@ library CommonTool {
         bytes memory bpk = hexStr2bytes(pk);
         bytes memory bpoly = hexStr2bytes(poly);
 
-        return calPolyCommit(bpoly, bpk);
+        return calPolyCommit(bpoly, bpk, CurveType.SK);
 
     }
 
-    function calPolyCommit(bytes polyCommit, bytes pk)
+    function calPolyCommit(bytes polyCommit, bytes pk, CurveType curveType)
     public
     view
     returns (uint256 sx, uint256 sy, bool success) {

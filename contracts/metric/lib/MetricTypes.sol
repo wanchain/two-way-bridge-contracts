@@ -29,10 +29,10 @@ pragma experimental ABIEncoderV2;
 
 import "../../interfaces/IConfig.sol";
 import "../../interfaces/IStoremanGroup.sol";
+import "../../lib/CommonTool.sol";
 
 library MetricTypes {
     enum SlshReason {CM, R, RNK, S, SNK}
-
 
 
 
@@ -76,6 +76,7 @@ library MetricTypes {
         uint8 sndrIndex;
         uint8 rcvrIndex;
         bool becauseSndr;
+        CommonTool.CurveType curveType;
     }
 
     // sshare
@@ -92,6 +93,7 @@ library MetricTypes {
         uint8 sndrIndex;
         uint8 rcvrIndex;
         bool becauseSndr;
+        CommonTool.CurveType curveType;
     }
 
     struct InctData {

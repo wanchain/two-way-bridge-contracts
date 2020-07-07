@@ -8,18 +8,18 @@
     "test": "test"
   },
   "dependencies": {
-    "@truffle/hdwallet-provider": "^1.0.35",
     "bigi": "^1.4.2",
     "chai": "^4.2.0",
     "ecurve": "^1.0.6",
     "ethereumjs-tx": "^2",
     "iwan-sdk": "^1.2.0",
+    "keythereum": "^1.0.4",
     "promisefy-util": "^1.2.0",
-    "truffle-hdwallet-provider": "^1.0.17",
+    "solidity-coverage": "^0.6.7",
+    "wanchain-truffle-sdk": "^1.0.0",
     "wanchain-util": "^1.2.0",
     "web3": "^1.2",
-    "keythereum": "^1.0.4",
-    "solidity-coverage": "^0.6.7"
+    "web3-provider-engine": "^15.0.12"
   },
   "devDependencies": {},
   "scripts": {

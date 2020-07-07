@@ -15,21 +15,27 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const TestSmg = artifacts.require('TestSmg');
 
-
 const CommonTool = artifacts.require('CommonTool');
 const MetricProxy = artifacts.require('MetricProxy');
 const MetricDelegate = artifacts.require('MetricDelegate');
 const MetricLib = artifacts.require('MetricLib');
 const FakeSmg = artifacts.require('FakeSmg');
 
+const Secp256k1Curve = artifacts.require('Secp256k1Curve');
+const Bn256Curve = artifacts.require('Bn256Curve');
 const Encrypt = artifacts.require('Encrypt');
 const DataConvert = artifacts.require('DataConvert');
-const CreateGpkLib = artifacts.require('CreateGpkLib');
+const GpkLib = artifacts.require('GpkLib');
 const CreateGpkProxy = artifacts.require('CreateGpkProxy');
 const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
 const Deposit = artifacts.require('Deposit');
 const StoremanLib = artifacts.require('StoremanLib');
 const IncentiveLib = artifacts.require('IncentiveLib');
+
+const curveMap = new Map([
+    ['secp256k1', 0],
+    ['bn256', 1]
+])
 
 module.exports = async function (deployer, network) {
     if (network === 'nodeploy') return;
@@ -119,7 +125,6 @@ module.exports = async function (deployer, network) {
     // console.log("smgDelegate.address:", smgDelegate.address)
     // await smgProxy.upgradeTo(smgDelegate.address);
 
-
     //deploy CommonTool lib
     //deploy metric
     await deployer.deploy(PosLib);
@@ -128,7 +133,6 @@ module.exports = async function (deployer, network) {
     await deployer.link(CommonTool, MetricLib);
     await deployer.link(PosLib, MetricLib);
     await deployer.deploy(MetricLib);
-
 
     await deployer.link(CommonTool, MetricDelegate);
     await deployer.link(MetricLib, MetricDelegate);
@@ -143,19 +147,17 @@ module.exports = async function (deployer, network) {
     let metric = await MetricDelegate.at(metricProxy.address);
     await metric.setDependence(smgProxy.address, smgProxy.address);
 
-
-    // precompiled encrypt contract
+    // create gpk sc
     await deployer.deploy(Encrypt);
-    // DataConvert contract
     await deployer.deploy(DataConvert);
 
-    // create gpk sc
-    await deployer.link(Encrypt, CreateGpkLib);
-    await deployer.link(DataConvert, CreateGpkLib);
-    await deployer.deploy(CreateGpkLib);
-    await deployer.link(CreateGpkLib, CreateGpkDelegate);
-    await deployer.link(DataConvert, CreateGpkDelegate);
+    await deployer.link(Encrypt, GpkLib);
+    await deployer.link(DataConvert, GpkLib);
+    await deployer.deploy(GpkLib);
+
+    await deployer.link(GpkLib, CreateGpkDelegate);
     await deployer.deploy(CreateGpkDelegate);
+
     await deployer.deploy(CreateGpkProxy);
     let gpkProxy = await CreateGpkProxy.deployed();
     let gpkDelegate = await CreateGpkDelegate.deployed();
@@ -163,4 +165,11 @@ module.exports = async function (deployer, network) {
 
     let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);
     await gpk.setDependence(smgProxy.address);
+
+    await deployer.deploy(Secp256k1Curve);
+    let secp256k1 = await Secp256k1Curve.deployed();
+    await gpk.setCurve(curveMap.get('secp256k1'), secp256k1.address);
+    await deployer.deploy(Bn256Curve);
+    let bn256 = await Bn256Curve.deployed();
+    await gpk.setCurve(curveMap.get('bn256'), bn256.address);
 }

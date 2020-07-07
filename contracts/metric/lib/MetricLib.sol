@@ -179,13 +179,13 @@ library MetricLib {
         sij = rslshData.polyDataPln.polyData;
         rcvrPk = getPkBytesByInx(metricData, grpId, rslshData.rcvrIndex);
 
-        // left point compute by CMG
-        (xLeft, yLeft, success) = CommonTool.calPolyCommit(rslshData.polyCMData.polyCM, rcvrPk);
+        // left point compute by CMG  polyCM:= 64*n
+        (xLeft, yLeft, success) = CommonTool.calPolyCommit(rslshData.polyCMData.polyCM, rcvrPk, rslshData.curveType);
         require(success, 'calPolyCommit fail');
 
         // right point s[i][i]*G
         uint256 uintSij = CommonTool.bytes2uint(sij, 0);
-        (xRight, yRight, success) = CommonTool.mulG(uintSij);
+        (xRight, yRight, success) = CommonTool.mulG(uintSij,rslshData.curveType);
         require(success, 'mulG fail');
         return xLeft == xRight && yLeft == yRight;
         //return true;
@@ -237,19 +237,21 @@ library MetricLib {
 
         MetricTypes.SSlshData memory sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
         // s*G
-        (xRight, yRight, success) = CommonTool.mulG(CommonTool.bytes2uint(sslshData.polyDataPln.polyData, 0));
+        (xRight, yRight, success) = CommonTool.mulG(CommonTool.bytes2uint(sslshData.polyDataPln.polyData, 0),sslshData.curveType);
         require(success, 'mulG fail');
 
         // rpkShare + m * gpkShare
         (mgpkX, mgpkY, success) = CommonTool.mulPk(CommonTool.bytes2uint(sslshData.m, 0),
-            CommonTool.bytes2uint(sslshData.gpkShare, 1),
-            CommonTool.bytes2uint(sslshData.gpkShare, 33));
+            CommonTool.bytes2uint(sslshData.gpkShare, 0),
+            CommonTool.bytes2uint(sslshData.gpkShare, 32),
+            sslshData.curveType);
         require(success, 'mulPk fail');
 
-        (xLeft, yLeft, success) = CommonTool.add(CommonTool.bytes2uint(sslshData.rpkShare, 1),
-            CommonTool.bytes2uint(sslshData.rpkShare, 33),
+        (xLeft, yLeft, success) = CommonTool.add(CommonTool.bytes2uint(sslshData.rpkShare, 0),
+            CommonTool.bytes2uint(sslshData.rpkShare, 32),
             mgpkX,
-            mgpkY);
+            mgpkY,
+            sslshData.curveType);
         require(success, 'add fail');
 
         return xLeft == xRight && yLeft == yRight;

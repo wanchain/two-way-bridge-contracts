@@ -11,6 +11,6 @@ contract TestSmg {
         smg = IStoremanGroup(addr);
     }
     function testSetGpk(bytes32 groupId, bytes gpk) public {
-        smg.setGpk(groupId, gpk);
+        smg.setGpk(groupId, gpk, gpk);
     }
 }

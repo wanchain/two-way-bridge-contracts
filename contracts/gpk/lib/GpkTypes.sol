@@ -26,38 +26,46 @@
 
 pragma solidity ^0.4.24;
 
-library CreateGpkTypes {
+library GpkTypes {
+
+    struct Config {
+        /// curve -> contract address
+        mapping(uint8 => address) curves;
+    }
 
     struct Group {
-        uint16 round;
+        bytes32 groupId;
+        uint8 round;
+        uint8 curveTypes;
         uint32 ployCommitPeriod;
         uint32 defaultPeriod;
         uint32 negotiatePeriod;
-        /// round->Round
-        mapping(uint => Round) roundMap;
+        /// round -> curveIndex -> Round
+        mapping(uint8 => mapping(uint8 => Round)) roundMap;
+        uint8 smNumber;
+        /// index -> txAddress
+        mapping(uint => address) indexMap;
+        /// txAddress -> pk
+        mapping(address => bytes) addressMap;
     }
 
     struct Round {
-        GroupStatus status;
-        uint16 smNumber;
-        uint16 polyCommitCount;
-        uint32 checkValidCount;
+        address curve;
+        GpkStatus status;
+        uint8 polyCommitCount;
+        uint16 checkValidCount;
         uint statusTime;
         bytes gpk;
-        /// index->txAddress
-        mapping(uint => address) indexMap;
-        /// txAddress->pk
-        mapping(address => bytes) addressMap;
-        /// txAddress->Src
+        /// txAddress -> Src
         mapping(address => Src) srcMap;
     }
 
-    enum GroupStatus {PolyCommit, Negotiate, Complete, Close}
+    enum GpkStatus {PolyCommit, Negotiate, Complete, Close}
 
     struct Src {
         bytes polyCommit;
         bytes pkShare;
-        /// txAddress->Dest
+        /// txAddress -> Dest
         mapping(address => Dest) destMap;
     }
 
@@ -73,4 +81,6 @@ library CreateGpkTypes {
     enum CheckStatus {Init, Valid, Invalid}
 
     enum SlashType {PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, EncSijInvalid, CheckInvalid, Connive}
+
+    enum CurveType {secp256k1, bn256}
 }

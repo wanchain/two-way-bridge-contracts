@@ -4,7 +4,7 @@ import "../lib/Deposit.sol";
 
 library StoremanType {
     using Deposit for Deposit.Records;
-    enum GroupStatus {none, initial,failed,selected,ready,retired, dismissed}
+    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
 
     struct Delegator {
         address sender; // the delegator wallet address
@@ -13,8 +13,8 @@ library StoremanType {
         //bool  claimed;
         //uint  deposit;
         uint index; // for delete from candidate;
-        uint  incentive;
         Deposit.Records deposit;
+        mapping(uint=>uint) incentive;
     }
     struct Candidate {
         address sender;
@@ -27,16 +27,18 @@ library StoremanType {
         uint  delegateFee;
         uint  delegatorCount;
         uint  delegateDeposit; // only used when selecting. need not records.
-        uint  incentive;       // without delegation.. set to 0 after incentive.
+
         uint  incentivedDelegator; // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
         uint  incentivedDay;
         bytes32  groupId;
         bytes32  nextGroupId;
         Deposit.Records  deposit;         // 自有资金记录
         
+        mapping(uint=>uint) incentive;       // without delegation.. set to 0 after incentive.        
         mapping(uint=>address) addrMap;
         mapping(address=>Delegator) delegators;
     }
+
     struct GroupConfig {
         uint memberCountDesign;
         uint threshold;
@@ -51,12 +53,21 @@ library StoremanType {
         uint    unregisterApplyTime;      /// the time point for storeman group applied unregistration
         uint selectedCount;
         uint memberCount;
-        uint whiteCount;
+        uint whiteCount;    // only used, don't include backup.
+        uint whiteCountAll; // all
         uint  workDay;
         uint  totalDays;
         uint memberCountDesign;
         uint threshold;
-        bytes chain;
+        uint chain1;
+        uint chain2;
+        uint curve1;
+        uint curve2;
+        uint tickedCount;
+        bytes gpk1;
+        bytes gpk2;
+        mapping(uint=>uint) tickedType;
+        mapping(uint=>address) tickedNode;
         mapping(uint=>address) addrMap;
         mapping(uint=>address) selectedNode;
         mapping(uint=>address) whiteMap;
@@ -65,6 +76,8 @@ library StoremanType {
     }
   
     struct StoremanData {
+        uint crossChainCo;//need to mul 1000
+        uint chainTypeCo; //need to mul 1000  
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;
         mapping(bytes => mapping(bytes => bytes32))  storemanGroupMap;
         mapping(address=>StoremanType.Candidate) candidates;

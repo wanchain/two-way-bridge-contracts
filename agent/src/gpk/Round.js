@@ -150,7 +150,7 @@ class Round {
       this.ployCommitPeriod = parseInt(info[3]);
       this.defaultPeriod = parseInt(info[4]);
       this.negotiatePeriod = parseInt(info[5]);
-      console.log('%s gpk group %s round %d status %d(%d) main loop', new Date(), this.groupId, this.round, this.status, this.statusTime);
+      console.log('%s gpk group %s round %d status %d(%d) main loop', new Date().toISOString(), this.groupId, this.round, this.status, this.statusTime);
       // console.log("mainLoop group info: %O", info);
 
       switch (this.status) {
@@ -168,7 +168,7 @@ class Round {
           break;
       }
     } catch (err) {
-      console.error('%s gpk group %s round %d proc status %d err: %O', new Date(), this.groupId, this.round, this.status, err);
+      console.error('%s gpk group %s round %d proc status %d err: %O', new Date().toISOString(), this.groupId, this.round, this.status, err);
     }
     this.next();
   }

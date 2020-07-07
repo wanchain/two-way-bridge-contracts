@@ -26,10 +26,8 @@
 
 pragma solidity ^0.4.24;
 
-interface IHTLC {
-    function addStoremanGroup(bytes tokenOrigAccount, bytes storemanGroupPK, uint quota, uint txFeeRatio) external;
-    function deactivateStoremanGroup(bytes tokenOrigAccount, bytes storemanGroupPK) external;
-    function delStoremanGroup(bytes tokenOrigAccount, bytes storemanGroupPK) external;
-    function updateStoremanGroup(bytes tokenOrigAccount, bytes storemanGroupPK, uint quota) external;
-    function storemanGroupCanQuit(bytes storemanGroupPK) external returns (bool);
+interface ICurve {
+    function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2) external view returns(uint256 retx, uint256 rety, bool success);
+    function mulG(uint256 scalar) external view returns(uint256 x, uint256 y, bool success);
+    function calPolyCommit(bytes polyCommit, bytes pk) external view returns(uint256 sx, uint256 sy, bool success);
 }
