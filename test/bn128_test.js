@@ -10,6 +10,8 @@ contract('Verifier', accounts => {
 
   it("verifier check bn128 signature", async () => {
     let verifier = (await getSchnorrVerifierContracts(accounts)).verifier;
+    let bn128 = (await getSchnorrVerifierContracts(accounts)).bn128;
+
 
     let message = [0x43, 0x21];
     let gpkX = '0x2ab2e3655ebd58b188f9ed3ba466e3ae39f4f6e9bcbe80e355be8f1ccd222f97';
@@ -44,6 +46,27 @@ contract('Verifier', accounts => {
     ).call();
 
     assert.equal(ret, false);
+
+    ret = await verifier.methods.verify(
+      1,
+      web3.utils.hexToBytes(signature),
+      web3.utils.hexToBytes(gpkX),
+      web3.utils.hexToBytes(gpkY),
+      web3.utils.hexToBytes(rX),
+      web3.utils.hexToBytes(rY),
+      web3.utils.hexToBytes(hashM),
+    ).send({from: accounts[0], gas:1e7});
+    console.log('gas used', ret.gasUsed);
+
+    ret = await bn128.methods.verify(
+      web3.utils.hexToBytes(signature),
+      web3.utils.hexToBytes(gpkX),
+      web3.utils.hexToBytes(gpkY),
+      web3.utils.hexToBytes(rX),
+      web3.utils.hexToBytes(rY),
+      web3.utils.hexToBytes(hashM),
+    ).send({from: accounts[0], gas:1e7});
+    console.log('gas used', ret.gasUsed);
   });
 
   it("verifier check secp256k1 signature", async () => {
@@ -83,5 +106,16 @@ contract('Verifier', accounts => {
     ).call();
 
     assert.equal(ret, false);
+
+    ret = await verifier.methods.verify(
+      0,
+      web3.utils.hexToBytes(signature),
+      web3.utils.hexToBytes(gpkX),
+      web3.utils.hexToBytes(gpkY),
+      web3.utils.hexToBytes(rX),
+      web3.utils.hexToBytes(rY),
+      web3.utils.hexToBytes(hashM),
+    ).send({from: accounts[0], gas:1e7});
+    console.log('gas used', ret.gasUsed);
   });
 });
