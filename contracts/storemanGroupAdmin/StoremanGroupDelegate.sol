@@ -34,6 +34,7 @@ import "../lib/PosLib.sol";
 import "./StoremanLib.sol";
 import "./StoremanType.sol";
 import "./IncentiveLib.sol";
+import "../interfaces/IQuota.sol";
 
 
 contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
@@ -90,7 +91,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param tmAddr                     token manager contract address
     /// @param htlcAddr                   htlc contract address
-    function setDependence(address tmAddr, address htlcAddr, address gpkAddr)
+    function setDependence(address tmAddr, address htlcAddr, address gpkAddr,address quotaAddr)
         external
         onlyOwner
     {
@@ -99,7 +100,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         tokenManager = ITokenManager(tmAddr);
         htlc = IHTLC(htlcAddr);
         greateGpkAddr = gpkAddr;
+        quotaInst = IQuota(quotaAddr);
     }
+
 
 
     function setBackupCount(uint backup) 
@@ -378,10 +381,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         bytes32 groupId = data.storemanGroupMap[tokenOrigAccount][storemanGroup];
         StoremanType.StoremanGroup storage smg = data.groups[groupId];
-        require(smg.unregisterApplyTime != 0, "please unregister first");    
-
-        bool quitable = htlc.storemanGroupCanQuit(storemanGroup);
-
+        require(smg.unregisterApplyTime != 0, "please unregister first
+		
+        bool quitable = quotaInst.isDebtClean(groupId);
         require(quitable);
 
         smg.status = StoremanType.GroupStatus.dismissed;
