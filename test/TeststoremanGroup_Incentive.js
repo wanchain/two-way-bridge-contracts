@@ -91,14 +91,7 @@ contract('TestSmg', async (accounts) => {
         tsmg = await TestSmg.deployed();
         await tsmg.setSmgAddr(smgProxy.address)
 
-        let tmProxy = await TokenManagerProxy.deployed();
-        let tm = await TokenManagerDelegate.at(tmProxy.address);
 
-        //await smg.setDependence(tmProxy.address, tmProxy.address);
-
-        await tm.addToken(EOS, 10000,'0x99999999',60 * 60 * 72,EOS,EOS,8)
-        let t = await tm.getTokenInfo(EOS)
-        console.log("tokens:", t)
 
     })
 
@@ -119,7 +112,7 @@ contract('TestSmg', async (accounts) => {
         let tx = await smg.registerStart(id,now, 2, 10,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
             {from: tester})
         //console.log("tx:", tx)
-        console.log("group:",await smg.getGroupInfo(id))
+        console.log("group:",await smg.getStoremanGroupInfo(id))
     })
     it('test stakeIn', async()=>{
         let txs = [];
@@ -187,7 +180,7 @@ contract('TestSmg', async (accounts) => {
         let tx = await smg.toSelect(id,{from: tester})
         //console.log("toSelect tx:", tx)
         await utils.waitReceipt(tx.tx)
-        console.log("group:",await smg.getGroupInfo(id))
+        console.log("group:",await smg.getStoremanGroupInfo(id))
 
         
         let count = await smg.getSelectedSmNumber(id)
@@ -244,7 +237,7 @@ contract('TestSmg', async (accounts) => {
         await pu.sleep(10 * 60 * 1000)
         let count = await smg.getSelectedSmNumber(id)
         console.log("count :", count)
-        console.log("group:",await smg.getGroupInfo(id))
+        console.log("group:",await smg.getStoremanGroupInfo(id))
 
         for(let i=0; i<count; i++){
             let  skAddr = await smg.getSelectedSmInfo(id, i)
@@ -276,7 +269,7 @@ contract('TestSmg', async (accounts) => {
         for(let i=0; i<count; i++) {
             let skAddr = await smg.getSelectedSmInfo(id, i)
             console.log("skAddr:", i,skAddr)
-                let sk = await smg.getSmInfo(id, skAddr[0]);
+                let sk = await smg.getStoremanInfo(skAddr[0]);
                 console.log("sk, i:", i, sk)
 
                 let deCount = sk["9"] ;

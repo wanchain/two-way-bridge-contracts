@@ -85,12 +85,7 @@ contract('TestSmg', async (accounts) => {
         let preCompile = await PreCompile.deployed();
         console.log("PreCompile contractAddress: %s", preCompile.address);
     
-        let tmProxy = await TokenManagerProxy.deployed();
-        let tm = await TokenManagerDelegate.at(tmProxy.address);
 
-        await tm.addToken(EOS, 10000,'0x99999999',60 * 60 * 72,EOS,EOS,8)
-        let t = await tm.getTokenInfo(EOS)
-        console.log("tokens:", t)
     })
 
 
@@ -108,11 +103,10 @@ contract('TestSmg', async (accounts) => {
             {from: tester})
         console.log("registerStart txhash:", tx.tx)
         await utils.waitReceipt(tx.tx)
-        let group = await smg.getGroupInfo(id)
+        let group = await smg.getStoremanGroupInfo(id)
         assert.equal(group.status, 1)
         assert.equal(group.groupId, id)
         assert.equal(group.deposit, 0)
-        assert.equal(group.depositWeight, 0)
         assert.equal(group.memberCount, 0)
         console.log("group:", group)
     })
@@ -143,7 +137,7 @@ contract('TestSmg', async (accounts) => {
             let txhash = await pu.promisefy(web3.eth.sendSignedTransaction,[serializedTx],web3.eth);
             console.log("txhash i:", i, txhash)
             await utils.waitReceipt(txhash)
-            let candidate  = await smg.getSmInfo(id, sw.addr)
+            let candidate  = await smg.getStoremanInfo(sw.addr)
             console.log("candidate:", candidate)
             assert.equal(candidate.sender.toLowerCase(), sf.addr)
             assert.equal(candidate.pkAddress.toLowerCase(), sw.addr)
@@ -166,7 +160,7 @@ contract('TestSmg', async (accounts) => {
                 await utils.waitReceipt(txhash)
                 console.log("txhash ski j:", ski,j, txhash)
             }
-            let candidate  = await smg.getSmInfo(id, sw.addr)
+            let candidate  = await smg.getStoremanInfo(sw.addr)
             assert.equal(candidate.delegatorCount, deCount)
             console.log("after delegateIn,  candidate:",candidate)
 
@@ -185,7 +179,7 @@ contract('TestSmg', async (accounts) => {
         let tx = await smg.toSelect(id,{from: tester})
         console.log("toSelect tx:", tx.tx)
         await utils.waitReceipt(tx.tx)
-        console.log("group:",await smg.getGroupInfo(id))
+        console.log("group:",await smg.getStoremanGroupInfo(id))
 
         
         let count = await smg.getSelectedSmNumber(id)
@@ -243,7 +237,7 @@ contract('TestSmg', async (accounts) => {
         //await pu.sleep(4 * 60 * 1000)
         let count = await smg.getSelectedSmNumber(id)
         console.log("count :", count)
-        console.log("group:",await smg.getGroupInfo(id))
+        console.log("group:",await smg.getStoremanGroupInfo(id))
 
         for(let i=0; i<count; i++){
             let  skAddr = await smg.getSelectedSmInfo(id, i)
@@ -275,7 +269,7 @@ contract('TestSmg', async (accounts) => {
         for(let i=0; i<count; i++) {
             let skAddr = await smg.getSelectedSmInfo(id, i)
             console.log("skAddr:", i,skAddr)
-                let sk = await smg.getSmInfo(id, skAddr[0]);
+                let sk = await smg.getStoremanInfo(skAddr[0]);
                 console.log("sk, i:", i, sk)
 
                 let deCount = sk["9"] ;

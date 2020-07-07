@@ -404,10 +404,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function getStoremanGroupConfig(bytes32 id)
         external
         view
-        returns(bytes32 groupId, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime)
+        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime)
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
-        return (smg.groupId, smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
+        return (smg.groupId, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
          smg.gpk1, smg.gpk2, smg.workDay, smg.workDay+smg.totalDays);
     }
 

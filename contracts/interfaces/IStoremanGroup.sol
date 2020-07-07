@@ -29,10 +29,10 @@ pragma solidity ^0.4.24;
 interface IStoremanGroup {
     function getChainCurve(bytes32 groupId) external returns(uint32 chain1, uint8 curve1, uint32 chain2, uint8 curve2);
     function getSelectedSmNumber(bytes32 groupId) external returns(uint number);
-    function getSmInfo(bytes32 groupId, address wkAddress) external view  returns(address sender,bytes PK,
-        bool quited, bool  isWorking,uint  delegateFee,uint  deposit,uint  depositWeight,
-        uint incentive, uint delegatorCount
-        );
+    // function getSmInfo(bytes32 groupId, address wkAddress) external view  returns(address sender,bytes PK,
+    //     bool quited, bool  isWorking,uint  delegateFee,uint  deposit,uint  depositWeight,
+    //     uint incentive, uint delegatorCount
+    //     );
     function getStoremanInfo(address wkAddress)public view  returns(address sender,bytes PK, address pkAddress,
         bool quited, uint  delegateFee,uint  deposit, uint delegateDeposit,
         uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId

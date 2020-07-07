@@ -53,13 +53,7 @@ contract('TestSmg', async (accounts) => {
         tsmg = await TestSmg.deployed();
         await tsmg.setSmgAddr(smgProxy.address)
 
-        let tmProxy = await TokenManagerProxy.deployed();
-        let tm = await TokenManagerDelegate.at(tmProxy.address);
 
-
-        await tm.addToken(EOS, 10000,'0x99999999',60 * 60 * 72,EOS,EOS,8)
-        let t = await tm.getTokenInfo(EOS)
-        console.log("tokens:", t)
 
     })
 
@@ -78,11 +72,10 @@ contract('TestSmg', async (accounts) => {
             {from: tester})
         console.log("registerStart txhash:", tx.tx)
         await utils.waitReceipt(tx.tx)
-        let group = await smg.getGroupInfo(id)
+        let group = await smg.getStoremanGroupInfo(id)
         assert.equal(group.status, 1)
         assert.equal(group.groupId, id)
         assert.equal(group.deposit, 0)
-        assert.equal(group.depositWeight, 0)
         assert.equal(group.memberCount, 0)
         console.log("group:", group)
     })
