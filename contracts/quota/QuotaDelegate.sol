@@ -180,10 +180,13 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function burnLock(
         uint tokenId,
         bytes32 storemanGroupId,
-        uint value
+        uint value,
+        bool bCheckQuota
     ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        require(quota._debt.sub(quota._payable) >= value, "Value is invalid");
+        if (bCheckQuota) {
+            require(quota._debt.sub(quota._payable) >= value, "Value is invalid");
+        }
         quota._payable = quota._payable.add(value);
     }
 
