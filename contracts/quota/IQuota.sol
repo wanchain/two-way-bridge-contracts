@@ -37,7 +37,7 @@ interface IQuota {
 
   function fastBurn(uint tokenId, bytes32 storemanGroupId, uint value) external;
 
-  function burnLock(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function burnLock(uint tokenId, bytes32 storemanGroupId, uint value, bool bCheckQuota) external;
 
   function burnRevoke(uint tokenId, bytes32 storemanGroupId, uint value) external;
 
