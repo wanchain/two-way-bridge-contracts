@@ -125,7 +125,7 @@ library EnhancementLib {
      * @return success the result for calling precompile contract,true is success,false is failed
      */ 
     function bn256MulG(uint256 scalar)   public view returns(uint256 x, uint256 y,bool success) {
-        bytes32 functionSelector = 0x77f683ba00000000000000000000000000000000000000000000000000000000;
+        bytes32 functionSelector = 0x0e5725cd00000000000000000000000000000000000000000000000000000000;
         address to = PRECOMPILE_CONTRACT_ADDR;
         assembly {
             let freePtr := mload(0x40)
