@@ -190,7 +190,6 @@ library MetricLib {
         (xRight, yRight, success) = CommonTool.mulG(uintSij,rslshData.curveType);
         require(success, 'mulG fail');
         return xLeft == xRight && yLeft == yRight;
-        //return true;
     }
 
     function checkSProof(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
