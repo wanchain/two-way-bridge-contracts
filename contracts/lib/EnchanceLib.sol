@@ -115,6 +115,33 @@ library EnhancementLib {
         }
 
     }
+	
+    /**
+     * public function     
+     * @dev point on curve to multiple base point
+     * @param scalar for mul 
+     * @return x the x value for result point
+     * @return y the y value for result point
+     * @return success the result for calling precompile contract,true is success,false is failed
+     */ 
+    function bn256MulG(uint256 scalar)   public view returns(uint256 x, uint256 y,bool success) {
+        bytes32 functionSelector = 0x77f683ba00000000000000000000000000000000000000000000000000000000;
+        address to = PRECOMPILE_CONTRACT_ADDR;
+        assembly {
+            let freePtr := mload(0x40)
+
+            mstore(freePtr, functionSelector)
+            mstore(add(freePtr, 4), scalar)
+
+            // call ERC20 Token contract transfer function
+            success := staticcall(gas, to, freePtr,36, freePtr, 64)
+
+            x := mload(freePtr)
+            y := mload(add(freePtr,32))   
+        }
+        
+    }
+
 
 
     function s256CalPolyCommit(bytes polyCommit, bytes pk)   public view returns(uint256 sx, uint256 sy,bool success) {
