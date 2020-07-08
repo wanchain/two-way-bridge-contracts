@@ -2,37 +2,36 @@ const config = require('../../cfg/config');
 const BigInteger = require('bigi');
 const encrypt = require('../utils/encrypt');
 const wanchain = require('../utils/wanchain');
-const {GroupStatus, CheckStatus} = require('./Types');
+const {GpkStatus, CheckStatus} = require('./Types');
 const Send = require('./Send');
 const Receive = require('./Receive');
 const tool = require('../utils/tools');
 
 class Round {
-  constructor(groupId, round) {
-    // contract
-    this.smgSc = null;
-    this.createGpkSc = null;
-
-    // group info
-    this.groupId = groupId;
-    this.round = round;
-    this.status = GroupStatus.Init;
-    this.statusTime = 0;
-    this.smList = []; // 21, address
+  constructor(group, curveIndex, smList, threshold) {
+    // group
+    this.group = group;
     this.ployCommitPeriod = 0;
     this.defaultPeriod = 0;
     this.negotiatePeriod = 0;
 
+    // round
+    this.round = group.round;
+    this.curveIndex = curveIndex;
+    this.curve = group.curves[curveIndex];
+    this.smList = smList.concat().map(sm => sm.address);
+    this.threshold = threshold;
+    this.status = GpkStatus.Init;
+    this.statusTime = 0;
+
     // self data
-    this.selfSk = ''; // hex string with 0x
-    this.selfPk = ''; // hex string with 0x
     this.poly = []; // defalt 17 order, hex string with 0x
-    this.polyCommit = []; // poly * G, hex string with 0x04
+    this.polyCommit = []; // poly * G, hex string with 0x
     this.polyCommitTxHash = '';
     this.polyCommitDone = false;
     this.skShare = ''; // hex string with 0x
     this.pkShare = ''; // hex string with 0x
-    this.gpk = ''; // hex string with 0x04
+    this.gpk = ''; // hex string with 0x
  
     // global interactive data
     this.polyCommitTimeoutTxHash = '';
@@ -40,85 +39,42 @@ class Round {
     // p2p interactive data
     this.send = []; // array of Send object
     this.receive = []; // array of Receive object
+    for (let i = 0; i < smList.length; i++) {
+      this.send.push(new Send(smList[i].pk));
+      this.receive.push(new Receive());
+    }
 
     // schedule
     this.standby = false;
     this.toStop = false;
   }
 
-  async start() {
-    console.log("start gpk group %s round %d", this.groupId, this.round);
-    this.initSc();
-    this.initSelfKey();
-    await this.initSmList();
+  start() {
+    console.log("start gpk group %s round %d curve %d", this.group.id, this.round, this.curveIndex);
     this.initPoly();
     this.next(3000);
   }
 
-  async resume() {
-    console.log("resume gpk group %s round %d", this.groupId, this.round);
-    this.initSc();
-    this.initSelfKey();
+  resume() {
+    console.log("resume gpk group %s round %d curve %d", this.group.id, this.round, this.curveIndex);
     this.next(3000);
   }  
 
-  initSc() {
-    this.smgSc = wanchain.getContract('smg', config.contractAddress.smg);
-    this.createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
-  }
-
-  initSelfKey() {
-    this.selfSk = '0x' + wanchain.selfSk.toString('hex');
-    this.selfPk = '0x04' + wanchain.selfPk.toString('hex');
-    this.selfAddress = wanchain.selfAddress;
-  } 
-
-  async initSmList() {
-    let smNumber = await this.smgSc.methods.getSelectedSmNumber(this.groupId).call();
-    let smList = new Array(smNumber);
-    let ps = new Array(smNumber);
-    for (let i = 0; i < smNumber; i++) {
-      ps[i] = new Promise(async (resolve, reject) => {
-        try {
-          let sm = await this.smgSc.methods.getSelectedSmInfo(this.groupId, i).call();
-          let address = sm[0].toLowerCase();
-          smList[i] = address;
-          let pk = sm[1];
-          if (pk.length == 130) {
-            pk = '0x04' + pk.substr(2);
-          }
-          this.send[i] = new Send(pk);
-          this.receive[i] = new Receive();
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      })
-    }
-    await Promise.all(ps);
-    this.smList = smList;
-    console.log('init smList: %O', smList);
-    // console.log('send map: %O', this.send);
-    // console.log('receive map: %O', this.receive);
-  }
-
-  async initPoly() {
-    let threshold = await this.smgSc.methods.getThresholdByGrpId(this.groupId).call();
-    console.log("threshold: %d", threshold);
-    for (let i = 0; i < threshold; i++) {
-      let poly = encrypt.genRandomCoef(32);
+  initPoly() {
+    for (let i = 0; i < this.threshold; i++) {
+      let poly = encrypt.genRandomCoef(this.curve, 32);
       this.poly[i] = '0x' + poly.toBuffer().toString('hex');
-      this.polyCommit[i] = '0x' + encrypt.mulG(poly).getEncoded(false).toString('hex');
+      this.polyCommit[i] = '0x' + encrypt.mulG(this.curve, poly).getEncoded(false).toString('hex').substr(2);
       // console.log("init polyCommit %i: %s", i, this.polyCommit[i]);
     }
   }
 
   next(interval = 60000) {
     if (this.toStop) {
-      this.removeProgress()
+      // this.removeProgress()
       return;
     }
-    this.saveProgress();
+    // this.saveProgress();
     setTimeout(() => {
       this.mainLoop();
     }, interval);
@@ -129,11 +85,11 @@ class Round {
     copy.smgSc = null;
     copy.createGpkSc = null;
     copy.selfSk = '';
-    tool.writeContextFile(this.groupId + '.cxt', copy);
+    tool.writeContextFile(this.group.id + '.cxt', copy);
   }
 
   removeProgress() {
-    tool.clearContextFile(this.groupId + '.cxt');
+    tool.clearContextFile(this.group.id + '.cxt');
   }
 
   stop() {
@@ -144,23 +100,24 @@ class Round {
     try {
       await wanchain.updateNounce();
 
-      let info = await this.createGpkSc.methods.getGroupInfo(this.groupId, this.round).call();
-      this.status = parseInt(info[1]);
-      this.statusTime = parseInt(info[2]);
-      this.ployCommitPeriod = parseInt(info[3]);
-      this.defaultPeriod = parseInt(info[4]);
-      this.negotiatePeriod = parseInt(info[5]);
-      console.log('%s gpk group %s round %d status %d(%d) main loop', new Date().toISOString(), this.groupId, this.round, this.status, this.statusTime);
+      let info = await this.group.createGpkSc.methods.getGroupInfo(this.group.id, this.round).call();
+      this.status = parseInt(info[this.curveIndex * 2 + 1]);
+      this.statusTime = parseInt(info[this.curveIndex * 2 + 2]);
+      this.ployCommitPeriod = parseInt(info[5]);
+      this.defaultPeriod = parseInt(info[6]);
+      this.negotiatePeriod = parseInt(info[7]);
+      console.log('%s gpk group %s round %d curve %d status %d(%d) main loop', new Date().toISOString(), 
+                  this.group.id, this.round, this.curveIndex, this.status, this.statusTime);
       // console.log("mainLoop group info: %O", info);
 
       switch (this.status) {
-        case GroupStatus.PolyCommit:
+        case GpkStatus.PolyCommit:
           await this.procPolyCommit();
           break;
-        case GroupStatus.Negotiate:
+        case GpkStatus.Negotiate:
           await this.procNegotiate();
           break;
-        case GroupStatus.Complete:
+        case GpkStatus.Complete:
           await this.procComplete();
           break;          
         default: // Close
@@ -168,7 +125,8 @@ class Round {
           break;
       }
     } catch (err) {
-      console.error('%s gpk group %s round %d proc status %d err: %O', new Date().toISOString(), this.groupId, this.round, this.status, err);
+      console.error('%s gpk group %s round %d curve %d proc status %d err: %O', new Date().toISOString(), 
+                    this.group.id, this.round, this.curveIndex, this.status, err);
     }
     this.next();
   }
@@ -186,7 +144,7 @@ class Round {
         try {
           let receive = this.receive[index];
           if (!receive.polyCommit) {
-            receive.polyCommit = await this.createGpkSc.methods.getPolyCommit(this.groupId, this.round, sm).call();
+            receive.polyCommit = await this.group.createGpkSc.methods.getPolyCommit(this.group.id, this.round, this.curveIndex, sm).call();
             // console.log("polyCommitReceive %s: %s", sm, receive.polyCommit);
             if (this.checkAllPolyCommitReceived()) {
               this.genPkShare();
@@ -243,8 +201,8 @@ class Round {
     if (i < this.smList.length) {
       if (wanchain.getElapsed(this.statusTime) > this.ployCommitPeriod) {
         if (!this.polyCommitTimeoutTxHash) {
-          this.polyCommitTimeoutTxHash = await wanchain.sendPolyCommitTimeout(this.groupId);
-          console.log("group %s round %d sendPolyCommitTimeout hash: %s", this.groupId, this.round, this.polyCommitTimeoutTxHash);
+          this.polyCommitTimeoutTxHash = await wanchain.sendPolyCommitTimeout(this.group.id, this.curveIndex);
+          console.log("group %s round %d curve %d sendPolyCommitTimeout hash: %s", this.group.id, this.round, this.curveIndex, this.polyCommitTimeoutTxHash);
         }
       }
     }
@@ -252,8 +210,8 @@ class Round {
 
   async polyCommitSend() {
     if (!this.polyCommitTxHash) {
-      this.polyCommitTxHash = await wanchain.sendPloyCommit(this.groupId, this.polyCommit);
-      console.log("group %s round %d sendPloyCommit hash: %s", this.groupId, this.round, this.polyCommitTxHash);
+      this.polyCommitTxHash = await wanchain.sendPloyCommit(this.group.id, this.round, this.curveIndex, this.polyCommit);
+      console.log("group %s round %d curve %d sendPloyCommit hash: %s", this.group.id, this.round, this.curveIndex, this.polyCommitTxHash);
     }
   }
 
@@ -280,12 +238,12 @@ class Round {
     let dest;
     // encSij
     if (!receive.encSij) {
-      dest = await this.createGpkSc.methods.getEncSijInfo(this.groupId, this.round, partner, this.selfAddress).call();
+      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.selfAddress).call();
       if (dest[0]) {
         receive.encSij = dest[0];
-        receive.sij = await encrypt.decryptSij(this.selfSk, receive.encSij);
+        receive.sij = await encrypt.decryptSij(this.group.selfSk, receive.encSij);
         console.log("negotiateReceive %s sij: %s", partner, receive.sij);
-        if (receive.sij && encrypt.verifySij(receive.sij, receive.polyCommit, this.selfPk)) {
+        if (receive.sij && encrypt.verifySij(this.curve, receive.sij, receive.polyCommit, this.group.selfPk)) {
           send.checkStatus = CheckStatus.Valid;
           // check all received
           if (this.checkAllSijReceived()) {
@@ -294,27 +252,27 @@ class Round {
         } else {
           send.checkStatus = CheckStatus.Invalid;
           this.standby = true;
-          console.error('gpk group %s round %d receive %s sij invalid', this.groupId, this.round, partner);
+          console.error('gpk group %s round %d curve %d receive %s sij invalid', this.group.id, this.round, this.curveIndex, partner);
         }
       }
     }
     // checkStatus
     if ((receive.checkStatus == CheckStatus.Init) && send.encSijTxHash) { // already send encSij, do not wait chain confirm
-      dest = await this.createGpkSc.methods.getEncSijInfo(this.groupId, this.round, this.selfAddress, partner).call();
+      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.selfAddress, partner).call();
       if (dest[1]) {
         receive.checkStatus = dest[1];
         if (receive.checkStatus == CheckStatus.Invalid) {
           this.standby = true;
-          console.log('gpk group %s round %d receive %s check sij invalid', this.groupId, this.round, partner);
+          console.log('gpk group %s round %d curve %d receive %s check sij invalid', this.group.id, this.round, this.curveIndex, partner);
         }
       }
     }
     // sij
     if ((send.checkStatus == CheckStatus.Invalid) && send.checkTxHash) { // already send checkStatus, do not wait chain confirm
-      dest = await this.createGpkSc.methods.getEncSijInfo(this.groupId, this.round, partner, this.selfAddress).call();
+      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.selfAddress).call();
       if (dest[4]) {
         receive.revealed = true;
-        console.log('gpk group %s round %d %s sij revealed', this.groupId, this.round, partner);
+        console.log('gpk group %s round %d curve %d %s sij revealed', this.group.id, this.round, this.curveIndex, partner);
       }
     }
   }
@@ -335,15 +293,15 @@ class Round {
       if (skShare == null) {
         skShare = sij;
       } else {
-        skShare = encrypt.addSij(skShare, sij);
+        skShare = encrypt.addSij(this.curve, skShare, sij);
       }
     }
     this.skShare = '0x' + skShare.toBuffer(32).toString('hex');
-    this.pkShare = '0x' + encrypt.mulG(skShare).getEncoded(false).toString('hex');
+    this.pkShare = '0x' + encrypt.mulG(this.curve, skShare).getEncoded(false).toString('hex').substr(2);
     wanchain.genKeystoreFile(this.gpk, this.skShare, config.keystore.pwd);
-    console.log("gen skShare: %s", this.skShare);
-    console.log("gen pkShare: %s", this.pkShare);
-    console.log("gen keystore file: %s", this.gpk);
+    console.log("gen curve %d skShare: %s", this.curveIndex, this.skShare);
+    console.log("gen curve %d pkShare: %s", this.curveIndex, this.pkShare);
+    console.log("gen curve %d keystore file: %s", this.curveIndex, this.gpk);
   }
 
   async negotiateCheckTx(partner, index) {
@@ -354,7 +312,7 @@ class Round {
       receipt = await wanchain.getTxReceipt(send.encSijTxHash);
       if (receipt) {
         if (receipt.status) {
-          dest = await this.createGpkSc.methods.getEncSijInfo(this.groupId, this.round, partner, this.selfAddress).call();
+          dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.selfAddress).call();
           send.chainEncSijTime = dest[2];
         } else {
           send.encSijTxHash = '';
@@ -366,7 +324,7 @@ class Round {
       receipt = await wanchain.getTxReceipt(send.checkTxHash);
       if (receipt) {
         if (receipt.status) {
-          dest = await this.createGpkSc.methods.getEncSijInfo(this.groupId, this.round, partner, this.selfAddress).call();
+          dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.selfAddress).call();
           send.chainCheckTime = dest[3];
         } else {
           send.checkTxHash = '';
@@ -409,22 +367,22 @@ class Round {
     // encSij timeout
     if (!receive.encSij) {
       if (wanchain.getElapsed(this.statusTime) > this.defaultPeriod) {
-        send.encSijTimeoutTxHash = await wanchain.sendEncSijTimeout(this.groupId, partner);
-        console.log("group %s round %d sendEncSijTimeout to %s hash: %s", this.groupId, this.round, partner, send.encSijTimeoutTxHash);
+        send.encSijTimeoutTxHash = await wanchain.sendEncSijTimeout(this.group.id, this.curveIndex, partner);
+        console.log("group %s round %d curve %d sendEncSijTimeout to %s hash: %s", this.group.id, this.round, this.curveIndex, partner, send.encSijTimeoutTxHash);
       }
     }    
     // check timeout
     if ((receive.checkStatus == CheckStatus.Init) && send.chainEncSijTime) {
       if (wanchain.getElapsed(send.chainEncSijTime) > this.defaultPeriod) {
-        send.checkTimeoutTxHash = await wanchain.sendCheckTimeout(this.groupId, partner);
-        console.log("group %s round %d sendCheckTimeout to %s hash: %s", this.groupId, this.round, partner, send.checkTimeoutTxHash);
+        send.checkTimeoutTxHash = await wanchain.sendCheckTimeout(this.group.id, this.curveIndex, partner);
+        console.log("group %s round %d curve %d sendCheckTimeout to %s hash: %s", this.group.id, this.round, this.curveIndex, partner, send.checkTimeoutTxHash);
       }
     }
     // sij timeout
     if ((send.checkStatus == CheckStatus.Invalid) && send.chainCheckTime && !receive.revealed) {
       if (wanchain.getElapsed(send.chainCheckTime) > this.defaultPeriod) {
-        send.sijTimeoutTxHash = await wanchain.sendSijTimeout(this.groupId, partner);
-        console.log("group %s round %d sendSijTimeout to %s hash: %s", this.groupId, this.round, partner, send.sijTimeoutTxHash);
+        send.sijTimeoutTxHash = await wanchain.sendSijTimeout(this.group.id, this.curveIndex, partner);
+        console.log("group %s round %d curve %d sendSijTimeout to %s hash: %s", this.group.id, this.round, this.curveIndex, partner, send.sijTimeoutTxHash);
       }
     }
   }
@@ -435,13 +393,13 @@ class Round {
     // checkStatus
     if ((send.checkStatus != CheckStatus.Init) && (!send.checkTxHash)) {
       let isValid = (send.checkStatus == CheckStatus.Valid);
-      send.checkTxHash = await wanchain.sendCheckStatus(this.groupId, partner, isValid);
-      console.log("group %s round %d sendCheckStatus %d to %s hash: %s", this.groupId, this.round, isValid, partner, send.checkTxHash);
+      send.checkTxHash = await wanchain.sendCheckStatus(this.group.id, this.round, this.curveIndex, partner, isValid);
+      console.log("group %s round %d curve %d sendCheckStatus %d to %s hash: %s", this.group.id, this.round, this.curveIndex, isValid, partner, send.checkTxHash);
     }
     // sij
     if ((receive.checkStatus == CheckStatus.Invalid) && (!send.sijTxHash)) {
-      send.sijTxHash = await wanchain.sendSij(this.groupId, partner, send.sij, send.ephemPrivateKey);
-      console.log("group %s round %d sendSij %s to %s hash: %s", this.groupId, this.round, send.sij, partner, send.sijTxHash);
+      send.sijTxHash = await wanchain.sendSij(this.group.id, this.round, this.curveIndex, partner, send.sij, send.ephemPrivateKey);
+      console.log("group %s round %d curve %d sendSij %s to %s hash: %s", this.group.id, this.round, this.curveIndex, send.sij, partner, send.sijTxHash);
     }
     if (this.standby) {
       return;
@@ -451,8 +409,8 @@ class Round {
       await this.genEncSij(partner, index);
     }
     if (!send.encSijTxHash) {
-      send.encSijTxHash = await wanchain.sendEncSij(this.groupId, partner, send.encSij);
-      console.log("group %s round %d sendEncSij %s to %s hash: %s", this.groupId, this.round, send.encSij, partner, send.encSijTxHash);
+      send.encSijTxHash = await wanchain.sendEncSij(this.group.id, this.round, this.curveIndex, partner, send.encSij);
+      console.log("group %s round %d curve %d sendEncSij %s to %s hash: %s", this.group.id, this.round, this.curveIndex, send.encSij, partner, send.encSijTxHash);
     }
   }
 
@@ -460,7 +418,7 @@ class Round {
     let send = this.send[index];
     let destPk = send.pk;
     console.log("genEncSij for partner %s pk %s", partner, destPk);
-    send.sij = '0x' + encrypt.genSij(this.poly, destPk).toBuffer(32).toString('hex');
+    send.sij = '0x' + encrypt.genSij(this.curve, this.poly, destPk).toBuffer(32).toString('hex');
     let enc = await encrypt.encryptSij(destPk, send.sij);
     if (enc) {
       send.encSij = '0x' + enc.ciphertext;
@@ -472,7 +430,7 @@ class Round {
   
   async procComplete() {
     this.stop();
-    console.log("pk group %s round %d is complete", this.groupId, this.round);
+    console.log("pk group %s round %d curve %d is complete", this.group.id, this.round. this.curveIndex);
 
     let i;
     for (i = 0; i < this.smList.length; i++) {
@@ -480,8 +438,8 @@ class Round {
         break;
       }
     }
-    let pkShare = await this.createGpkSc.methods.getPkShare(this.groupId, i).call();
-    let gpk = await this.createGpkSc.methods.getGpk(this.groupId).call();
+    let pkShare = await this.group.createGpkSc.methods.getPkShare(this.group.id, i).call();
+    let gpk = await this.group.createGpkSc.methods.getGpk(this.group.id).call();
     if (pkShare == this.pkShare) {
       console.log("get index %d %s pkShare: %s", i, wanchain.selfAddress, pkShare);
     } else {
@@ -496,7 +454,7 @@ class Round {
   
   async procClose() {
     this.stop();
-    console.log("gpk group %s round %d is closed", this.groupId, this.round);
+    console.log("gpk group %s round %d curve %d is closed", this.group.id, this.round, this.curveIndex);
   }
 
   // belows are for POC only
@@ -506,14 +464,14 @@ class Round {
     let gpk = null;
     for (let i = 0; i < this.smList.length; i++) {
       // pkShare
-      let share = encrypt.takePolyCommit(this.receive[i].polyCommit, this.selfPk);
+      let share = encrypt.takePolyCommit(this.curve, this.receive[i].polyCommit, this.group.selfPk);
       if (!pkShare) {
         pkShare = share;
       } else {
         pkShare = pkShare.add(share);
       }
       // gpk
-      let siG = encrypt.recoverSiG(this.receive[i].polyCommit);
+      let siG = encrypt.recoverSiG(this.curve, this.receive[i].polyCommit);
       if (!gpk) {
         gpk = siG;
       } else {

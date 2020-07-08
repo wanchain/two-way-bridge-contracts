@@ -15,7 +15,7 @@ const Encrypt = artifacts.require('Encrypt');
 const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
 
-const web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'));
+const web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'));
 
 // common
 const ADDRESS_0 = '0x0000000000000000000000000000000000000000';
@@ -170,9 +170,9 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
     }
     assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, -1);
-    assert.equal(info[3], ployCommitPeroid);
-    assert.equal(info[4], defaultPeroid);
-    assert.equal(info[5], negotiatePeroid);
+    assert.equal(info[5], ployCommitPeroid);
+    assert.equal(info[6], defaultPeroid);
+    assert.equal(info[7], negotiatePeroid);
   })  
 
   // internal functions
@@ -229,8 +229,8 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
       wks.push(wk);
       srs.push(sr);
     }        
-    await smgSc.registerStart(groupId, start, workDuration, registerDuration, crossFee, preGroupId, eosToken.origAddr, wks, srs);
-    console.log("register group: %O", await smgSc.getGroupInfo(groupId));
+    await smgSc.registerStart(groupId, start, workDuration, registerDuration, preGroupId, wks, srs);
+    console.log("register group: %O", await smgSc.getStoremanGroupInfo(groupId));
   }
   
   async function stakeIn() {
@@ -254,7 +254,10 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
   }
   
   async function select() {
-    await smgSc.toSelect(groupId);
+    let leader = utils.getAddressFromInt(2000);
+    // console.log("select leader: %O", leader);
+    let data = smgSc.contract.methods.toSelect(groupId).encodeABI();
+    await sendTx(smgSc.address, leader.addr, leader.priv, 0, 0, data);
     let count = await smgSc.getSelectedSmNumber(groupId);
     console.log("slected sm number: %d", count);
     // get selected
@@ -262,7 +265,7 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
     for (let i = 0; i < count; i++) {
       ps[i] = new Promise(async (resolve, reject) => {
         try {
-          let si = await smgSc.contract.methods.getSelectedSmInfo(groupId, i).call();
+          let si = await smgSc.getSelectedSmInfo(groupId, i);
           let txAddress = si[0].toLowerCase();
           selectedSmList.push({txAddress: txAddress, pk: '0x04' + si[1].substr(2), sk: getSmSk(txAddress)});
           resolve();

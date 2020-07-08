@@ -35,9 +35,9 @@ import "./GpkTypes.sol";
 library GpkLib {
 
     /// submit period
-    uint32 constant public DEFAULT_PERIOD = 5 * 60;     // 5 minutes
-    uint32 constant public PLOYCOMMIT_PERIOD = 10 * 60; // 10 minutes
-    uint32 constant public NEGOTIATE_PERIOD = 15 * 60;  // 15 minutes
+    uint32 constant DEFAULT_PERIOD = 5 * 60;     // 5 minutes
+    uint32 constant PLOYCOMMIT_PERIOD = 10 * 60; // 10 minutes
+    uint32 constant NEGOTIATE_PERIOD = 15 * 60;  // 15 minutes
 
     /**
      *
@@ -75,6 +75,8 @@ library GpkLib {
     /// @notice                           function for init period
     /// @param groupId                    storeman group id
     /// @param group                      storeman group
+    /// @param config                     group config
+    /// @param smg                        storeman group contract address
     function initGroup(bytes32 groupId, GpkTypes.Group storage group, GpkTypes.Config storage config, address smg)
         public
     {
@@ -86,13 +88,13 @@ library GpkLib {
         }
 
         // init signature curve
-        uint8 curve1;
-        uint8 curve2;
-        (, curve1, , curve2) = IStoremanGroup(smg).getChainCurve(groupId);
-        require(config.curves[curve1] != address(0), "No curve1");
-        require(config.curves[curve2] != address(0), "No curve2");
-        group.roundMap[group.round][0].curve = config.curves[curve1];
-        group.roundMap[group.round][1].curve = config.curves[curve2];
+        uint256 curve1;
+        uint256 curve2;
+        (,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
+        require(config.curves[uint8(curve1)] != address(0), "No curve1");
+        require(config.curves[uint8(curve2)] != address(0), "No curve2");
+        group.roundMap[group.round][0].curve = config.curves[uint8(curve1)];
+        group.roundMap[group.round][1].curve = config.curves[uint8(curve2)];
         if (curve1 == curve2) {
             group.curveTypes = 1;
             group.roundMap[group.round][1].status = GpkTypes.GpkStatus.Complete;
@@ -110,7 +112,7 @@ library GpkLib {
         for (uint i = 0; i < group.smNumber; i++) {
             (txAddress, pk,) = IStoremanGroup(smg).getSelectedSmInfo(groupId, i);
             group.indexMap[i] = txAddress;
-            group.addressMap[txAddress] = unifyPk(pk);
+            group.addressMap[txAddress] = pk;
         }
     }
 
@@ -130,24 +132,6 @@ library GpkLib {
         }
     }
 
-    function unifyPk(bytes pk)
-        public
-        pure
-        returns(bytes)
-    {
-        if (pk.length == 65) {
-            return pk;
-        }
-        bytes memory uPk = new bytes(65);
-        if (pk.length == 64) {
-            uPk[0] = 0x04;
-            for (uint i = 0; i < 64; i++) {
-                uPk[i + 1] = pk[i];
-            }
-        }
-        return uPk;
-    }
-
     /// @notice                           function for generate gpk and pkShare
     /// @param round                      round
     /// @param polyCommit                 poly commit
@@ -155,20 +139,19 @@ library GpkLib {
         public
     {
         bytes memory gpk = round.gpk;
-        uint x = DataConvert.bytes2uint(polyCommit, 1, 32);
-        uint y = DataConvert.bytes2uint(polyCommit, 33, 32);
+        uint x = DataConvert.bytes2uint(polyCommit, 0, 32);
+        uint y = DataConvert.bytes2uint(polyCommit, 32, 32);
         if (gpk.length != 0) {
-            uint gpkX = DataConvert.bytes2uint(gpk, 1, 32);
-            uint gpkY = DataConvert.bytes2uint(gpk, 33, 32);
+            uint gpkX = DataConvert.bytes2uint(gpk, 0, 32);
+            uint gpkY = DataConvert.bytes2uint(gpk, 32, 32);
             bool success;
             (x, y, success) = ICurve(round.curve).add(x, y, gpkX, gpkY);
             require(success == true, "Gpk failed");
         } else {
-            gpk = new bytes(65);
-            gpk[0] = 0x04;
+            gpk = new bytes(64);
         }
-        assembly { mstore(add(gpk, 33), x) }
-        assembly { mstore(add(gpk, 65), y) }
+        assembly { mstore(add(gpk, 32), x) }
+        assembly { mstore(add(gpk, 64), y) }
         round.gpk = gpk;
     }
 
@@ -190,8 +173,8 @@ library GpkLib {
 
             bytes memory pkShare = round.srcMap[txAddress].pkShare;
             if (pkShare.length != 0) {
-                uint pkX = DataConvert.bytes2uint(pkShare, 1, 32);
-                uint pkY = DataConvert.bytes2uint(pkShare, 33, 32);
+                uint pkX = DataConvert.bytes2uint(pkShare, 0, 32);
+                uint pkY = DataConvert.bytes2uint(pkShare, 32, 32);
                 (x, y, success) = ICurve(round.curve).add(x, y, pkX, pkY);
                 require(success == true, "Add failed");
             } else {
@@ -228,7 +211,7 @@ library GpkLib {
             (pcX, pcY, success) = ICurve(curve).calPolyCommit(polyCommit, destPk);
             if (success && (x == pcX) && (y == pcY)) {
                 // check enc
-                uint iv = DataConvert.bytes2uint(d.encSij, 65, 16);
+                uint iv = DataConvert.bytes2uint(d.encSij, 64, 16);
                 bytes memory cipher;
                 (cipher, success) = Encrypt.enc(bytes32(d.ephemPrivateKey), bytes32(iv), d.sij, destPk);
                 if (success) {

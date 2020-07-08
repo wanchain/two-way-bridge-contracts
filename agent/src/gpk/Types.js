@@ -1,4 +1,4 @@
-const GroupStatus = {
+const GpkStatus = {
   PolyCommit: 0, Negotiate: 1, Complete: 2, Close: 3
 }
 
@@ -7,6 +7,6 @@ const CheckStatus = {
 }
 
 module.exports = {
-  GroupStatus,
+  GpkStatus,
   CheckStatus
 };

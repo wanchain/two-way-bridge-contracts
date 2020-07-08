@@ -1,6 +1,6 @@
 const path = require('path');
 
-exports.wanNodeURL = 'http://192.168.1.179:7654';
+exports.wanNodeURL = 'http://192.168.1.58:7654';
 
 exports.keystore = {
   path: path.join(__dirname, '../keystore/0x5793e629c061e7fd642ab6a1b4d552cec0e2d606'),
@@ -8,11 +8,11 @@ exports.keystore = {
 }
 
 exports.contractAddress = {
-  smg: '0x06D7840Ab88F52248257ec340f2CD2a6213B1369',
-  createGpk: '0xa7D83D33E76e08FF1218AFa9bEa90fED3B732F8D'
+  smg: '0x1F05d84bB51EdBCD62B566F98a5947440A9a1Fff',
+  createGpk: '0x9892E737147eeA0CA6E44ca225b6Dc89655371a5'
 }
 
-exports.startBlock = 2479267;
+exports.startBlock = 95725;
 
 exports.gasPrice = 180000000000;
 exports.gasLimit = 10000000;

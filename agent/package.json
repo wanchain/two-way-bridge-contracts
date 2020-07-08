@@ -13,12 +13,11 @@
   },
   "dependencies": {
     "bigi": "^1.4.2",
-    "ecurve": "^1.0.6",
     "ethereumjs-util": "^6.2.0",
     "keythereum": "^1.0.4",
-    "secp256k1": "^4.0.1",
+    "ecurve-bn256": "^1.0.15",
     "wanchain-util": "^1.2.0",
-    "web3": "^1.2",
+    "web3_1.2": "npm:web3@1.2.9",
     "mongoose": "^5.0.13"
   }
 }

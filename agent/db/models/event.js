@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-const collection = "event";
+const collection = "eventTracker";
 
 var EventSchema = new mongoose.Schema({
   tracker: {

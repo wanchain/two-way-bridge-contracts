@@ -135,7 +135,7 @@ class EventTracker {
         let update = Object.assign({}, filter, {txHash: event.transactionHash, topics: event.topics, data: event.data, parsed: event.parsed});
         result = await Event.updateOne(filter, update, {upsert: true}); // { n: 1, nModified: 0, ok: 1 }
       } else {
-        result.ok = 1;
+        result = {ok: 1};
       }
       if (result.ok) {
         this.eventList.splice(0, 1);
