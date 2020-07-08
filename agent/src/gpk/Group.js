@@ -15,7 +15,8 @@ class Group {
     this.id = id;
     this.round = round;
     this.selfSk = ''; // hex string with 0x
-    this.selfPk = ''; // hex string with 0x    
+    this.selfPk = ''; // hex string with 0x
+    this.selfAddress = ''; // hex string with 0x
 
     // round
     this.curves = [];

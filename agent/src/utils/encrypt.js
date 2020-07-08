@@ -26,6 +26,16 @@ function mulG(curve, n) {
    return curveMap.get(curve).G.multiply(n);
 }
 
+function unifyPk(pk) {
+  if (pk.indexOf('0x') == 0) {
+    pk = pk.substr(2);
+  }
+  if (pk.length == 128) {
+    pk = '04' + pk;
+  }
+  return pk;
+}
+
 function pk2sha256(pk) {
   if (pk.indexOf('0x') == 0) {
     pk = pk.substr(2);
@@ -51,7 +61,7 @@ function genSij(curve, polyCoef, pk) {
 };
 
 async function encryptSij(pk, sij) {
-  let toPk = Buffer.from(pk.substr(2), 'hex');
+  let toPk = Buffer.from(unifyPk(pk), 'hex');
   let M = sij.substr(2);
   try {
     let enc = await ecies.eccEncrypt(toPk, M);
@@ -83,7 +93,7 @@ function verifySij(curve, sij, polyCommit, selfPk) {
   let hij = BigInteger.fromBuffer(pk2sha256(selfPk)).mod(N);
   for (let i = 0; i < order; i++) {
     let pci = polyCommit.substr(2 + i * PK_STR_LEN, PK_STR_LEN);
-    let tp = Point.decodeFrom(curveMap.get(curve), Buffer.from(pci, 'hex'));
+    let tp = Point.decodeFrom(curveMap.get(curve), Buffer.from(unifyPk(pci), 'hex'));
     let temp = tp.multiply(hij.modPowInt(i, N));
     if (!committed) {
       committed = temp;
@@ -105,7 +115,7 @@ function takePolyCommit(curve, polyCommit, pk) {
   let order = (polyCommit.length - 2) / PK_STR_LEN;
   for (let o = 0; o < order; o++) {
     let pci = polyCommit.substr(2 + o * PK_STR_LEN, PK_STR_LEN);
-    let tp = Point.decodeFrom(curveMap.get(curve), Buffer.from(pci, 'hex'));
+    let tp = Point.decodeFrom(curveMap.get(curve), Buffer.from(unifyPk(pci), 'hex'));
     let scale = hi.modPowInt(o, N);
     let temp = tp.multiply(scale);
     if (!share) {
@@ -118,7 +128,7 @@ function takePolyCommit(curve, polyCommit, pk) {
 };
 
 function recoverSiG(curve, polyCommit) {
-  let siG = Point.decodeFrom(curveMap.get(curve), Buffer.from(polyCommit.substr(2, PK_STR_LEN), 'hex'));
+  let siG = Point.decodeFrom(curveMap.get(curve), Buffer.from(unifyPk(polyCommit.substr(2, PK_STR_LEN)), 'hex'));
   return siG;
 };
 

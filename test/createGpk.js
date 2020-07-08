@@ -218,7 +218,6 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
     let start = parseInt(Date.now() / 1000 / 120);
     let workDuration = 2;
     let registerDuration = 10;
-    let crossFee = 33;
     let preGroupId = '0x';
     let count = 4;
     let wks = [];
@@ -231,6 +230,8 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
     }        
     await smgSc.registerStart(groupId, start, workDuration, registerDuration, preGroupId, wks, srs);
     console.log("register group: %O", await smgSc.getStoremanGroupInfo(groupId));
+    await smgSc.setGroupChain(groupId, 0, 1, 0, 0);
+    console.log("set group curve: [%d, %d]", 0, 0);
   }
   
   async function stakeIn() {

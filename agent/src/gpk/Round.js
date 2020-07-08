@@ -238,7 +238,7 @@ class Round {
     let dest;
     // encSij
     if (!receive.encSij) {
-      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.selfAddress).call();
+      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
       if (dest[0]) {
         receive.encSij = dest[0];
         receive.sij = await encrypt.decryptSij(this.group.selfSk, receive.encSij);
@@ -258,7 +258,7 @@ class Round {
     }
     // checkStatus
     if ((receive.checkStatus == CheckStatus.Init) && send.encSijTxHash) { // already send encSij, do not wait chain confirm
-      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.selfAddress, partner).call();
+      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.group.selfAddress, partner).call();
       if (dest[1]) {
         receive.checkStatus = dest[1];
         if (receive.checkStatus == CheckStatus.Invalid) {
@@ -269,7 +269,7 @@ class Round {
     }
     // sij
     if ((send.checkStatus == CheckStatus.Invalid) && send.checkTxHash) { // already send checkStatus, do not wait chain confirm
-      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.selfAddress).call();
+      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
       if (dest[4]) {
         receive.revealed = true;
         console.log('gpk group %s round %d curve %d %s sij revealed', this.group.id, this.round, this.curveIndex, partner);
@@ -312,7 +312,7 @@ class Round {
       receipt = await wanchain.getTxReceipt(send.encSijTxHash);
       if (receipt) {
         if (receipt.status) {
-          dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.selfAddress).call();
+          dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
           send.chainEncSijTime = dest[2];
         } else {
           send.encSijTxHash = '';
@@ -324,7 +324,7 @@ class Round {
       receipt = await wanchain.getTxReceipt(send.checkTxHash);
       if (receipt) {
         if (receipt.status) {
-          dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.selfAddress).call();
+          dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
           send.chainCheckTime = dest[3];
         } else {
           send.checkTxHash = '';

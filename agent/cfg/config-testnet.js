@@ -8,11 +8,11 @@ exports.keystore = {
 }
 
 exports.contractAddress = {
-  smg: '0x1F05d84bB51EdBCD62B566F98a5947440A9a1Fff',
-  createGpk: '0x9892E737147eeA0CA6E44ca225b6Dc89655371a5'
+  smg: '0x21Da8E6278B0ad2d58e1fcB51E22AFc57d42aBd6',
+  createGpk: '0x40B2BbC5916a4CcF5D8D10f9df486c1907789e1D'
 }
 
-exports.startBlock = 95725;
+exports.startBlock = 108643;
 
 exports.gasPrice = 180000000000;
 exports.gasLimit = 10000000;
