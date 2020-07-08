@@ -430,7 +430,7 @@ class Round {
   
   async procComplete() {
     this.stop();
-    console.log("pk group %s round %d curve %d is complete", this.group.id, this.round. this.curveIndex);
+    console.log("pk group %s round %d curve %d is complete", this.group.id, this.round, this.curveIndex);
 
     let i;
     for (i = 0; i < this.smList.length; i++) {
