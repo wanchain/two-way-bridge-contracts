@@ -40,6 +40,7 @@ contract StoremanGroupStorage is BasicStorage {
   ITokenManager public tokenManager;
   /// HTLC instance address
   IHTLC public htlc;
+  IQuota public quotaInst;
 
 
 

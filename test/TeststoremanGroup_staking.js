@@ -20,8 +20,8 @@ const Tx = wanUtil.wanchainTx;
 let contractAddress //=   "0x4553061E7aD83d83F559487B1EB7847a9F90ad59"; //   
 
 //let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
-let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
-//let web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8545'))
+//let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
+let web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:7654'))
 let gGasLimit=9000000;
 let gGasPrice=200000000000;
 let stakingValue = 2000;
@@ -34,7 +34,8 @@ delegator: stakerId*100 ~ stakerID*100+1000
 
 
 let EOS = utils.stringTobytes("EOS")
-
+const leader = "0x8b179c2b542f47bb2fb2dc40a3cf648aaae1df16"
+const leaderPk = "0xe37be2aa12f3df03953c0a172d0f964a1561f321120c8dfa061df35dac4d52d03bbeb5758c37de915209d412bf2aead300c6e530a46967dfb736a8b4f186d950"
 async function sendRawTransaction(from, priv, data, value) {
     let rawTx = {
         Txtype: 0x01,
@@ -130,39 +131,38 @@ contract('TestSmg', async (accounts) => {
         let preCompile = await PreCompile.deployed();
         console.log("PreCompile contractAddress: %s", preCompile.address);
     
-        let tmProxy = await TokenManagerProxy.deployed();
-        let tm = await TokenManagerDelegate.at(tmProxy.address);
 
-        await tm.addToken(EOS, 10000,'0x99999999',60 * 60 * 72,EOS,EOS,8)
-        let t = await tm.getTokenInfo(EOS)
-        console.log("tokens:", t)
     })
 
 
     it('registerStart_1 ', async ()=>{
         let wks = []
         let srs= []
-        for(let i=0; i<WhiteCount;i++){
+        wks.push(leader)
+        srs.push(leader)
+        for(let i=1; i<WhiteCount;i++){
             let {addr:sr} = utils.getAddressFromInt(i+1000)
             let {addr:wk} = utils.getAddressFromInt(i+2000)
             wks.push(wk)
             srs.push(sr)
         }
-        
         let tx = await smg.registerStart(id,now+10, 90, 10,utils.stringTobytes32(""), wks,srs,
             {from: tester})
         console.log("registerStart txhash:", tx.tx)
         await utils.waitReceipt(tx.tx)
-        let group = await smg.getGroupInfo(id)
+        let group = await smg.getStoremanGroupInfo(id)
         assert.equal(group.status, 1)
         assert.equal(group.groupId, id)
         assert.equal(group.deposit, 0)
-        assert.equal(group.depositWeight, 0)
         assert.equal(group.memberCount, 1)
         console.log("group:", group)
     })
     it('test stakeIn prepare', async()=>{
-        for(let i=0; i<stakerCount; i++){
+        let deFee = 5;
+        let tx =  await smg.stakeIn(id, leaderPk,leaderPk,deFee, {value:stakingValue, from:leader})
+        console.log("txhash stakeIn:", tx.tx)
+        await utils.waitReceipt(tx.tx)
+        for(let i=1; i<stakerCount; i++){
             let sf = utils.getAddressFromInt(i+1000)
             let sw = utils.getAddressFromInt(i+2000)
             let en = utils.getAddressFromInt(i+3000)
@@ -188,7 +188,7 @@ contract('TestSmg', async (accounts) => {
             let txhash = await pu.promisefy(web3.eth.sendSignedTransaction,[serializedTx],web3.eth);
             console.log("txhash i:", i, txhash)
             await utils.waitReceipt(txhash)
-            let candidate  = await smg.getSmInfo(id, sw.addr)
+            let candidate  = await smg.getStoremanInfo(sw.addr)
             console.log("candidate:", candidate)
             assert.equal(candidate.sender.toLowerCase(), sf.addr)
             assert.equal(candidate.pkAddress.toLowerCase(), sw.addr)
@@ -202,7 +202,7 @@ contract('TestSmg', async (accounts) => {
             
             console.log("txhash stakeIn:", tx.tx)
             await utils.waitReceipt(tx.tx)
-            let candidate  = await smg.getSmInfo(id, wAddr)
+            let candidate  = await smg.getStoremanInfo(wAddr)
             console.log("candidate:", candidate)
             assert.equal(candidate.sender.toLowerCase(), tester)
             assert.equal(candidate.pkAddress.toLowerCase(), wAddr)
@@ -215,7 +215,7 @@ contract('TestSmg', async (accounts) => {
         
         console.log("txhash stakeIn:", tx.tx)
         await utils.waitReceipt(tx.tx)
-        let candidate  = await smg.getSmInfo(id, wAddr2)
+        let candidate  = await smg.getStoremanInfo(wAddr2)
         console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), tester)
         assert.equal(candidate.pkAddress.toLowerCase(), wAddr2)
@@ -230,7 +230,7 @@ contract('TestSmg', async (accounts) => {
         txhash = await sendRawTransaction(sf.addr, sf.priv, txdata, appendValue);
         console.log("append txhash i :", i, txhash)
         await utils.waitReceipt(txhash)
-        let candidate  = await smg.getSmInfo(id, sw.addr)
+        let candidate  = await smg.getStoremanInfo(sw.addr)
         console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), sf.addr)
         assert.equal(candidate.pkAddress.toLowerCase(), sw.addr)
@@ -246,7 +246,7 @@ contract('TestSmg', async (accounts) => {
             txhash = await sendRawTransaction(sf.addr, sf.priv, txdata, appendValue);
             console.log("append txhash i :", i, txhash)
             await utils.waitReceipt(txhash)
-            let candidate  = await smg.getSmInfo(id, sw.addr)
+            let candidate  = await smg.getStoremanInfo(sw.addr)
             console.log("candidate:", candidate)
             assert.equal(candidate.sender.toLowerCase(), sf.addr)
             assert.equal(candidate.pkAddress.toLowerCase(), sw.addr)
@@ -272,9 +272,9 @@ contract('TestSmg', async (accounts) => {
                 await utils.waitReceipt(txhash)
                 console.log("txhash ski j:", ski,j, txhash)
             }
-            let candidate  = await smg.getSmInfo(id, sw.addr)
-            assert.equal(candidate.delegatorCount, deCount)
+            let candidate  = await smg.getStoremanInfo(sw.addr)
             console.log("after delegateIn,  candidate:",candidate)
+            assert.equal(candidate.delegatorCount, deCount)
 
             let nde = await smg.getSmDelegatorInfo(sw.addr, de.addr);
             assert.equal(nde.incentive, 0)
@@ -303,10 +303,10 @@ contract('TestSmg', async (accounts) => {
   
     it('test toSelect', async ()=>{
         await pu.sleep(10000)
-        let tx = await smg.toSelect(id,{from: tester})
+        let tx = await smg.toSelect(id,{from: leader})
         console.log("toSelect tx:", tx.tx)
         await utils.waitReceipt(tx.tx)
-        console.log("group:",await smg.getGroupInfo(id))
+        console.log("group:",await smg.getStoremanGroupInfo(id))
 
         
         let count = await smg.getSelectedSmNumber(id)
@@ -326,7 +326,7 @@ contract('TestSmg', async (accounts) => {
             console.log("result:", result);
         }
         assert.equal(result.reason, undefined);
-        let candidate  = await smg.getSmInfo(id, sw.addr)
+        let candidate  = await smg.getStoremanInfo(sw.addr)
         console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), sf.addr)
         assert.equal(candidate.pkAddress.toLowerCase(), sw.addr)

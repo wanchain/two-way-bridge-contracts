@@ -43,12 +43,13 @@ module.exports = {
      host: "192.168.1.58",     // Localhost (default: none)
      port: 7654,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
+     from: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
     },
     development: {
       host: "192.168.1.58",     // Localhost (default: none)
       port: 7654,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
-      // from: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
+      from: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
       gas: 8000000,          // Gas sent with each transaction (default: ~6700000)
       gasPrice: 1000000000   // 20 gwei (in wei) (default: 100 gwei)
     },

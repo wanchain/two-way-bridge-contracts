@@ -39,22 +39,23 @@ library MetricLib {
     internal
     returns (bool, uint8)
     {
-        require(rslshData.sndrIndex <= smCount, "invalid send index");
-        require(rslshData.rcvrIndex <= smCount, "invalid receiver index");
-
-        require(rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
-        require(rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
-        require(rslshData.polyCMData.polyCMS.length != 0, "polyCMS is empty");
-
-        require(rslshData.polyDataPln.polyData.length != 0, "polyData is empty");
-        require(rslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
-        require(rslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
+//        require(rslshData.sndrIndex <= smCount, "invalid send index");
+//        require(rslshData.rcvrIndex <= smCount, "invalid receiver index");
+//
+//        require(rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
+//        require(rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
+//        require(rslshData.polyCMData.polyCMS.length != 0, "polyCMS is empty");
+//
+//        require(rslshData.polyDataPln.polyData.length != 0, "polyData is empty");
+//        require(rslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
+//        require(rslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
 
 
         uint8 smIndex;
         smIndex = rslshData.becauseSndr ? rslshData.sndrIndex : rslshData.rcvrIndex;
 
         metricData.mapRSlsh[grpId][hashX][smIndex] = rslshData;
+
 
         if (checkRProof(metricData, grpId, hashX, smIndex)) {
             // update the  count
@@ -65,6 +66,7 @@ library MetricLib {
             delete metricData.mapRSlsh[grpId][hashX][smIndex];
             return (false, smIndex);
         }
+
     }
 
     function writeSSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData sslshData, uint8 smCount)
@@ -188,7 +190,6 @@ library MetricLib {
         (xRight, yRight, success) = CommonTool.mulG(uintSij,rslshData.curveType);
         require(success, 'mulG fail');
         return xLeft == xRight && yLeft == yRight;
-        //return true;
     }
 
     function checkSProof(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)

@@ -49,9 +49,7 @@ contract('StoremanGroupDelegate', async (accounts) => {
 
         await smgDelegate.setDependence(tmProxy.address, tmProxy.address);
 
-        await tm.addToken(EOS, 10000,'0x'+web3.utils.toWei("10").toString('hex'),60 * 60 * 72,EOS,EOS,8)
-        let t = await tm.getTokenInfo(EOS)
-        console.log("tokens:", t)
+
 
 
     })
@@ -148,7 +146,7 @@ contract('StoremanGroupDelegate', async (accounts) => {
         for(let i=0; i<count; i++) {
             let skAddr = await smgDelegate.getSelectedSmAddress(id, i)
             console.log("skAddr:", i,skAddr)
-            let sk = await smgDelegate.getSmInfo(id, skAddr[0]);
+            let sk = await smgDelegate.getStoremanInfo(skAddr[0]);
             console.log("sk, i:", i, sk)
         }
 
