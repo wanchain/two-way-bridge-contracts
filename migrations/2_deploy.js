@@ -15,6 +15,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const TestSmg = artifacts.require('TestSmg');
 
+const EnhancementLib = artifacts.require('EnhancementLib');
 const CommonTool = artifacts.require('CommonTool');
 const MetricProxy = artifacts.require('MetricProxy');
 const MetricDelegate = artifacts.require('MetricDelegate');
@@ -127,8 +128,10 @@ module.exports = async function (deployer, network) {
 
     //deploy CommonTool lib
     //deploy metric
+    await deployer.deploy(EnhancementLib);
     await deployer.deploy(PosLib);
     await deployer.deploy(FakeSmg);
+    await deployer.link(EnhancementLib, CommonTool);
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, MetricLib);
     await deployer.link(PosLib, MetricLib);
