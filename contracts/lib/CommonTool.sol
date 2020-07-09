@@ -74,6 +74,7 @@ library CommonTool {
     public
     view
     returns (uint256 x, uint256 y, bool success){
+
         if (curveType == CurveType.SK) {
             return EnhancementLib.s256ScalarMul(scalar,xPk,yPk);
         }
