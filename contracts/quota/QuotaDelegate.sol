@@ -167,9 +167,13 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function fastBurn(
         uint tokenId,
         bytes32 storemanGroupId,
-        uint value
+        uint value,
+        bool checkQuota
     ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        if (checkQuota) {
+            require(quota._debt.sub(quota._payable) >= value, "Value is invalid");
+        }
         quota._debt = quota._debt.sub(value);
     }
 
@@ -181,10 +185,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value,
-        bool bCheckQuota
+        bool checkQuota
     ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        if (bCheckQuota) {
+        if (checkQuota) {
             require(quota._debt.sub(quota._payable) >= value, "Value is invalid");
         }
         quota._payable = quota._payable.add(value);
