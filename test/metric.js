@@ -122,7 +122,7 @@ contract('Test Metric', async (accounts) => {
 
     // ===========================================================R proof==============
 
-
+    /*
     it('write proof...   -> wrRSlsh(sk256-R-sig-error)', async () => {
         try {
             let rslshData = {
@@ -150,38 +150,65 @@ contract('Test Metric', async (accounts) => {
             assert.fail(err.toString());
         }
     });
-
+    */
 
     /*
     it('write proof...   -> wrRSlsh(sk256-R-content-error)', async () => {
         try {
             let rslshData = {
                 polyCMData: {
-                    polyCM: stringToBytes("0x0450398721262f3bc3b83f7c19e71ef159ce754dbe75ac36399f41f236427ab2c0277c334de6a5756c8b862e513c6ee8d3a70f468f271d0705b68326b4470ade2104121967b3a0c6656f7a85118be88009ebc049daa7bb290e35066cbee747537af0896e940a1893e720a5ea80d2f3480fcc58ede58654a33ddd95781b56aa379d2004c24ac859eceb8af1c02f3db53e3c4978f3ddaf4b499cd01612e456c18aba38fbd475a64a7e04f4698489694a4f2511472e30ea86a50b815e329808c9ddce73b6",),
-                    polyCMR: stringToBytes("0x089f8eb616f596a10b62be1a161295e7bb82fca13e9a54cbfffabdfd6517fdbb"),
-                    polyCMS: stringToBytes("0x2ff8ae2306cfdfcccf7128121a033dae02c582250cc3ca6b91e38503371d95b8")
+                    polyCM: stringToBytes("0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",),
+                    polyCMR: stringToBytes("0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5"),
+                    polyCMS: stringToBytes("0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118")
                 },
                 polyDataPln: {
-                    polyData: stringToBytes("0x155ab4c28f86434b0cb01b9b1b1e0a99f055eecc69db56cfd07e085f941a4e92"),
-                    polyDataR: stringToBytes("0x7aca0ceb0319e7b3ed9b0614a4f823adf8d41585d9f65c8b867fd9a46629f54f"),
-                    polyDataS: stringToBytes("0x2ff8ae2306cfdfcccf7128121a033dae02c582250cc3ca6b91e38503371d95b8")
+                    polyData: stringToBytes("0x01"),
+                    polyDataR: stringToBytes("0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03"),
+                    polyDataS: stringToBytes("0x30fcf0dc4ecf55304e36ae4bab43678e1f99165715ecb7bffe7fc073e71a6bce")
                 },
-                sndrIndex: 0x08,
-                rcvrIndex: 0x09,
+                sndrIndex: 0x00,
+                rcvrIndex: 0x02,
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
+            console.log(rslshData.polyCMData.polyCM);
+            console.log(rslshData.polyCMData.polyCM.length);
+            let ret = await debug( metricInst.wrRSlsh(grpId, xHashRSlsh, rslshData) );
 
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
+    */
 
-            let ret = await metricInst.wrRSlsh(grpId,
-                xHashRSlsh,
-                rslshData);
+    it('write proof...   -> wrRSlsh(sk256-R-content-error)', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x30fcf0dc4ecf55304e36ae4bab43678e1f99165715ecb7bffe7fc073e71a6bce"
+                },
+                sndrIndex: 0x00,
+                rcvrIndex: 0x02,
+                becauseSndr: 0x01,
+                curveType: 0x00,
+            };
+            console.log(rslshData.polyCMData.polyCM);
+            console.log(rslshData.polyCMData.polyCM.length);
+            let ret = await debug( metricInst.wrRSlsh(grpId, xHashRSlsh, rslshData) );
 
         } catch (err) {
             assert.fail(err.toString());
         }
     });
 
+    /*
     it('write proof...   -> wrRSlsh(bn256-R-sig-error)', async () => {
         try {
             let rslshData = {

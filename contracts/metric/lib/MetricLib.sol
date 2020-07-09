@@ -39,16 +39,16 @@ library MetricLib {
     internal
     returns (bool, uint8)
     {
-//        require(rslshData.sndrIndex <= smCount, "invalid send index");
-//        require(rslshData.rcvrIndex <= smCount, "invalid receiver index");
-//
-//        require(rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
-//        require(rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
-//        require(rslshData.polyCMData.polyCMS.length != 0, "polyCMS is empty");
-//
-//        require(rslshData.polyDataPln.polyData.length != 0, "polyData is empty");
-//        require(rslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
-//        require(rslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
+        require(rslshData.sndrIndex <= smCount, "invalid send index");
+        require(rslshData.rcvrIndex <= smCount, "invalid receiver index");
+
+        require(rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
+        require(rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
+        require(rslshData.polyCMData.polyCMS.length != 0, "polyCMS is empty");
+
+        require(rslshData.polyDataPln.polyData.length != 0, "polyData is empty");
+        require(rslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
+        require(rslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
 
 
         uint8 smIndex;
@@ -69,37 +69,6 @@ library MetricLib {
 
     }
 
-    function writeSSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData sslshData, uint8 smCount)
-    public
-    returns (bool, uint8)
-    {
-        require(sslshData.sndrIndex <= smCount, "invalid send index");
-        require(sslshData.rcvrIndex <= smCount, "invalid receiver index");
-
-        require(sslshData.m.length != 0, "m is empty");
-        require(sslshData.rpkShare.length != 0, "rpkShare is empty");
-        require(sslshData.gpkShare.length != 0, "gpkShare is empty");
-
-        require(sslshData.polyDataPln.polyData.length != 0, "polyData is empty");
-        require(sslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
-        require(sslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
-
-        uint8 smIndex;
-        smIndex = sslshData.becauseSndr ? sslshData.sndrIndex : sslshData.rcvrIndex;
-        metricData.mapSSlsh[grpId][hashX][smIndex] = sslshData;
-
-        if (checkSProof(metricData, grpId, hashX, smIndex)) {
-            // update the  count
-            metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] += 1;
-            // emit the event
-            //emit metricData.SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
-            return (true, smIndex);
-        } else {
-            //emit metricData.SMInvSlshLogger(msg.sender, grpId, hashX, smIndex, MetricTypes.SlshReason.S);
-            delete metricData.mapSSlsh[grpId][hashX][smIndex];
-            return (false, smIndex);
-        }
-    }
 
 
     function checkRProof(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
@@ -109,38 +78,7 @@ library MetricLib {
         bool bSig = checkRSig(metricData, grpId, hashX, smIndex);
         bool bContent = checkRContent(metricData, grpId, hashX, smIndex);
         return getChkResult(bSig, bContent, metricData.mapRSlsh[grpId][hashX][smIndex].becauseSndr);
-    }
-
-    function getChkResult(bool bSig, bool bContent, bool becauseSndr)
-    internal
-    pure
-    returns (bool)
-    {
-        if (!bSig || !bContent) {
-            // should be sender
-            if (becauseSndr) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            // should be receiver
-            if (becauseSndr) {
-                return false;
-            } else {
-                return true;
-            }
-        }
-    }
-
-    function getPkBytesByInx(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint8 smIndex)
-    internal
-    view
-    returns (bytes)
-    {
-        bytes memory smPk;
-        (, smPk,) = (IStoremanGroup)(metricData.smg).getSelectedSmInfo(grpId, uint(smIndex));
-        return smPk;
+        return bContent;
     }
 
     function checkRSig(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
@@ -156,7 +94,7 @@ library MetricLib {
         // build h
         h = sha256(rslshData.polyDataPln.polyData);
         // build senderpk
-        senderPk = getPkBytesByInx(metricData, grpId, smIndex);
+        senderPk = getPkBytesByInx(metricData, grpId, rslshData.sndrIndex);
         // build r
         r = CommonTool.bytesToBytes32(rslshData.polyDataPln.polyDataR);
         // build s
@@ -192,6 +130,61 @@ library MetricLib {
         return xLeft == xRight && yLeft == yRight;
     }
 
+    function getChkResult(bool bSig, bool bContent, bool becauseSndr)
+    internal
+    pure
+    returns (bool)
+    {
+        if (!bSig || !bContent) {
+            // should be sender
+            if (becauseSndr) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            // should be receiver
+            if (becauseSndr) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+
+    function writeSSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData sslshData, uint8 smCount)
+    public
+    returns (bool, uint8)
+    {
+        require(sslshData.sndrIndex <= smCount, "invalid send index");
+        require(sslshData.rcvrIndex <= smCount, "invalid receiver index");
+
+        require(sslshData.m.length != 0, "m is empty");
+        require(sslshData.rpkShare.length != 0, "rpkShare is empty");
+        require(sslshData.gpkShare.length != 0, "gpkShare is empty");
+
+        require(sslshData.polyDataPln.polyData.length != 0, "polyData is empty");
+        require(sslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
+        require(sslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
+
+        uint8 smIndex;
+        smIndex = sslshData.becauseSndr ? sslshData.sndrIndex : sslshData.rcvrIndex;
+        metricData.mapSSlsh[grpId][hashX][smIndex] = sslshData;
+
+        if (checkSProof(metricData, grpId, hashX, smIndex)) {
+            // update the  count
+            metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] += 1;
+            // emit the event
+            //emit metricData.SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
+            return (true, smIndex);
+        } else {
+            //emit metricData.SMInvSlshLogger(msg.sender, grpId, hashX, smIndex, MetricTypes.SlshReason.S);
+            delete metricData.mapSSlsh[grpId][hashX][smIndex];
+            return (false, smIndex);
+        }
+    }
+
+
     function checkSProof(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -214,7 +207,7 @@ library MetricLib {
         // build h
         h = sha256(sslshData.polyDataPln.polyData);
         // build senderpk
-        senderPk = getPkBytesByInx(metricData, grpId, smIndex);
+        senderPk = getPkBytesByInx(metricData, grpId, sslshData.sndrIndex);
         // build r
         r = CommonTool.bytesToBytes32(sslshData.polyDataPln.polyDataR);
         // build s
@@ -257,6 +250,16 @@ library MetricLib {
 
         return xLeft == xRight && yLeft == yRight;
 
+    }
+
+    function getPkBytesByInx(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint8 smIndex)
+    internal
+    view
+    returns (bytes)
+    {
+        bytes memory smPk;
+        (, smPk,) = (IStoremanGroup)(metricData.smg).getSelectedSmInfo(grpId, uint(smIndex));
+        return smPk;
     }
 
     function getEpochId(MetricTypes.MetricStorageData storage metricData)
