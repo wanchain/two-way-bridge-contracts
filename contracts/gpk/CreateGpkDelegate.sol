@@ -135,7 +135,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         round.srcMap[msg.sender].polyCommit = polyCommit;
         round.polyCommitCount++;
         GpkLib.updateGpk(round, polyCommit);
-        // GpkLib.updatePkShare(group, round, polyCommit);
+        GpkLib.updatePkShare(group, round, polyCommit);
         if (round.polyCommitCount >= group.smNumber) {
             round.status = GpkTypes.GpkStatus.Negotiate;
             round.statusTime = now;

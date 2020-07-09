@@ -65,7 +65,7 @@ async function encryptSij(pk, sij) {
   let M = sij.substr(2);
   try {
     let enc = await ecies.eccEncrypt(toPk, M);
-    console.log("%s encryptSij: %s", pk, '0x' + enc.ciphertext);
+    // console.log("%s encryptSij: %s", pk, '0x' + enc.ciphertext);
     return enc;
   } catch (err) {
     console.error("%s encryptSij err: %O", pk, err);
@@ -75,7 +75,7 @@ async function encryptSij(pk, sij) {
 
 async function decryptSij(sk, encSij) {
   try {
-    console.log("decryptSij: %s", encSij);
+    // console.log("decryptSij: %s", encSij);
     let skBuf = Buffer.from(sk.substr(2), 'hex');
     let M = await ecies.eccDecrypt(skBuf, encSij.substr(2));
     return '0x' + M;

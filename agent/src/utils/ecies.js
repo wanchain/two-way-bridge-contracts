@@ -4,16 +4,12 @@ var eccEncrypt = async function secp256k1Encrypt(publicKey, data, ephemPrivateKe
     // console.log("plainMsg=" + data)
     var ecdh = crypto.createECDH('secp256k1');
 
-    var rbPriv = crypto.randomBytes(32);
-    if (ephemPrivateKey) {
-      rbPriv = Buffer.from(ephemPrivateKey, 'hex');
-    }
-    // console.log("rbpriv=" + rbPriv.toString('hex'))
+    var rbPriv = ephemPrivateKey? Buffer.from(ephemPrivateKey, 'hex') : crypto.randomBytes(32);
+    // console.log("rbPriv=" + rbPriv.toString('hex'))
     ecdh.setPrivateKey(rbPriv);
-    var rbpub = Buffer.from(ecdh.getPublicKey('hex', 'compressed'), 'hex');
-    // console.log("rbpub=" + rbpub.toString('hex'))
+
     var rbpubun = Buffer.from(ecdh.getPublicKey('hex', 'uncompressed'), 'hex');
-    // console.log("rbpubuncom=" + rbpubun.toString('hex'))
+    // console.log("rbpubun=" + rbpubun.toString('hex'))
 
     var shared = ecdh.computeSecret(publicKey, null, 'hex');
     // console.log("sharedKey=" + shared.toString('hex'))
@@ -31,11 +27,8 @@ var eccEncrypt = async function secp256k1Encrypt(publicKey, data, ephemPrivateKe
     macKey = keyHash.update(macKey).digest();
     // console.log("hashmacKey=" + macKey.toString('hex'))
 
-    var iv = crypto.randomBytes(16);
-    if (iv0) {
-      iv = Buffer.from(iv0, 'hex');
-    }
-    // console.log("iv=" + iv.toString('hex'))
+    var iv = iv0? Buffer.from(iv0, 'hex') : crypto.randomBytes(16);
+    // console.log("iv=" + iv.toString('hex'));
 
     var em = aesencrypt(encKey,iv,data);
     // console.log("encryptedMsg=" + em.toString('hex'))
@@ -74,7 +67,6 @@ var eccDecrypt = async function secp256k1Decrypt(privateKey, data) {
 
     var mac = bufferData.slice(len - 32)
     // console.log("mac = " + mac.toString('hex'));
-
 
     var shared = ecdh.computeSecret(rbpub, null, 'hex');
     // console.log("sharedKey=" + shared.toString('hex'))

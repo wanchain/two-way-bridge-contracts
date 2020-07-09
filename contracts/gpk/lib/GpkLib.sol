@@ -178,11 +178,10 @@ library GpkLib {
                 (x, y, success) = ICurve(round.curve).add(x, y, pkX, pkY);
                 require(success == true, "Add failed");
             } else {
-                pkShare = new bytes(65);
-                pkShare[0] = 0x04;
+                pkShare = new bytes(64);
             }
-            assembly { mstore(add(pkShare, 33), x) }
-            assembly { mstore(add(pkShare, 65), y) }
+            assembly { mstore(add(pkShare, 32), x) }
+            assembly { mstore(add(pkShare, 64), y) }
             round.srcMap[txAddress].pkShare = pkShare;
             if (group.curveTypes == 1) {
                 group.roundMap[group.round][1].srcMap[txAddress].pkShare = pkShare;
@@ -211,7 +210,7 @@ library GpkLib {
             (pcX, pcY, success) = ICurve(curve).calPolyCommit(polyCommit, destPk);
             if (success && (x == pcX) && (y == pcY)) {
                 // check enc
-                uint iv = DataConvert.bytes2uint(d.encSij, 64, 16);
+                uint iv = DataConvert.bytes2uint(d.encSij, 65, 16);
                 bytes memory cipher;
                 (cipher, success) = Encrypt.enc(bytes32(d.ephemPrivateKey), bytes32(iv), d.sij, destPk);
                 if (success) {

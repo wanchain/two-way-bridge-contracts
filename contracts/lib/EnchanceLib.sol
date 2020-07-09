@@ -215,7 +215,7 @@ library EnhancementLib {
             let loopCnt := 0
             loop:
                 jumpi(loopend, eq(loopCnt,6))
-                mstore(add(cc,mul(loopCnt,32)),mload(add(freePtr,mul(loopCnt,32))))
+                mstore(add(cc,mul(add(loopCnt,1),32)),mload(add(freePtr,mul(loopCnt,32))))
                 loopCnt := add(loopCnt, 1)
                 jump(loop)
             loopend:

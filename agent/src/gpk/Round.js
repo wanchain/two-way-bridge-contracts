@@ -98,8 +98,6 @@ class Round {
 
   async mainLoop() {
     try {
-      await wanchain.updateNounce();
-
       let info = await this.group.createGpkSc.methods.getGroupInfo(this.group.id, this.round).call();
       this.status = parseInt(info[this.curveIndex * 2 + 1]);
       this.statusTime = parseInt(info[this.curveIndex * 2 + 2]);
@@ -301,13 +299,14 @@ class Round {
         gpk = gpk.add(siG);
       }      
     }
+    console.log("gpk group %s round %d curve %d generate key", this.group.id, this.round, this.curveIndex);
     this.skShare = '0x' + skShare.toBuffer(32).toString('hex');
     this.pkShare = '0x' + encrypt.mulG(this.curve, skShare).getEncoded(false).toString('hex').substr(2);
     this.gpk = '0x' + gpk.getEncoded(false).toString('hex').substr(2);
     wanchain.genKeystoreFile(this.gpk, this.skShare, config.keystore.pwd);
-    console.log("gen curve %d skShare: %s", this.curveIndex, this.skShare);
-    console.log("gen curve %d pkShare: %s", this.curveIndex, this.pkShare);
-    console.log("gen curve %d gpk: %s", this.curveIndex, this.gpk);
+    console.log("skShare: %s", this.skShare);
+    console.log("pkShare: %s", this.pkShare);
+    console.log("gpk: %s", this.gpk);
   }
 
   async negotiateCheckTx(partner, index) {
@@ -425,10 +424,12 @@ class Round {
     let destPk = send.pk;
     console.log("genEncSij for partner %s pk %s", partner, destPk);
     send.sij = '0x' + encrypt.genSij(this.curve, this.poly, destPk).toBuffer(32).toString('hex');
+    // console.log("sij=%s", send.sij);
     let enc = await encrypt.encryptSij(destPk, send.sij);
     if (enc) {
       send.encSij = '0x' + enc.ciphertext;
-      send.ephemPrivateKey = '0x' + enc.ephemPrivateKey.toString('hex');
+      send.ephemPrivateKey = '0x' + enc.ephemPrivateKey;
+      // console.log("ephemPrivateKey=%s", send.ephemPrivateKey);
     } else {
       send.sij = '';
     }
@@ -436,7 +437,7 @@ class Round {
   
   async procComplete() {
     this.stop();
-    console.log("pk group %s round %d curve %d is complete", this.group.id, this.round, this.curveIndex);
+    console.log("gpk group %s round %d curve %d is complete", this.group.id, this.round, this.curveIndex);
 
     let i;
     for (i = 0; i < this.smList.length; i++) {
@@ -447,12 +448,12 @@ class Round {
     let pkShare = await this.group.createGpkSc.methods.getPkShare(this.group.id, i).call();
     let gpk = await this.group.createGpkSc.methods.getGpk(this.group.id).call();
     if (pkShare[this.curveIndex] == this.pkShare) {
-      console.log("get index %d %s pkShare: %s", i, wanchain.selfAddress, this.pkShare);
+      console.log("index %d(%s) pkShare: %s", i, wanchain.selfAddress, this.pkShare);
     } else {
-      console.log("get index %d %s pkShare %s not match %s", i, wanchain.selfAddress, pkShare[this.curveIndex], this.pkShare);
+      console.log("get index %d(%s) pkShare %s not match %s", i, wanchain.selfAddress, pkShare[this.curveIndex], this.pkShare);
     }
     if (gpk[this.curveIndex] == this.gpk) {
-      console.log("get gpk: %s", this.gpk);
+      console.log("gpk: %s", this.gpk);
     } else {
       console.error("get gpk %s not match %s", gpk[this.curveIndex], this.gpk);
     }

@@ -1,8 +1,5 @@
 const config = require('../../cfg/config');
 const wanchain = require('../utils/wanchain');
-const Send = require('./Send');
-const Receive = require('./Receive');
-const tool = require('../utils/tools');
 const Round = require('./Round');
 
 class Group {
@@ -28,6 +25,7 @@ class Group {
     this.initSc();
     this.initSelfKey();
     await this.initCurve();
+    await wanchain.updateNounce();
     await this.nextRound(this.round);
   }
 
