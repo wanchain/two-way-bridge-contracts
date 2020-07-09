@@ -60,13 +60,13 @@ library CommonTool {
     view
     returns (uint256 x, uint256 y, bool success) {
         if (curveType == CurveType.SK) {
-            return EnhancementLib.mulG(scalar);
+            return EnhancementLib.s256MulG(scalar);
         }
 
         if (curveType == CurveType.BN) {
-            return EnhancementLib.mulG(scalar);
+            return EnhancementLib.bn256MulG(scalar);
         }
-        return EnhancementLib.mulG(scalar);
+        return EnhancementLib.s256MulG(scalar);
     }
 
     // mulPk
