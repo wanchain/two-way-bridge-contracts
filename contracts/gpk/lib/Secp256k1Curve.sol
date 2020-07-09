@@ -29,16 +29,16 @@ library Secp256k1Curve {
         view
         returns(uint256 x, uint256 y, bool success)
     {
-       address to = 0x43;
-       uint xPk = 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798;
-       uint yPk = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8;
-       assembly {
+        bytes32 functionSelector = 0xbb734c4e00000000000000000000000000000000000000000000000000000000;//keccak256("mulG(uint256)");
+        address to = PRECOMPILE_CONTRACT_ADDR;
+        assembly {
             let freePtr := mload(0x40)
-            mstore(add(freePtr, 0), scalar)
-            mstore(add(freePtr,32), xPk)
-            mstore(add(freePtr,64), yPk)
 
-            success := staticcall(gas, to, freePtr,96, freePtr, 64)
+            mstore(freePtr, functionSelector)
+            mstore(add(freePtr, 4), scalar)
+
+            // call ERC20 Token contract transfer function
+            success := staticcall(gas, to, freePtr,36, freePtr, 64)
 
             x := mload(freePtr)
             y := mload(add(freePtr,32))

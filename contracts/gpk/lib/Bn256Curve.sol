@@ -29,16 +29,16 @@ library Bn256Curve {
         view
         returns(uint256 x, uint256 y, bool success)
     {
-       address to = 0x7;
-       uint xPk = 0x01;
-       uint yPk = 0x02;
-       assembly {
+        bytes32 functionSelector = 0x0e5725cd00000000000000000000000000000000000000000000000000000000;
+        address to = PRECOMPILE_CONTRACT_ADDR;
+        assembly {
             let freePtr := mload(0x40)
-            mstore(add(freePtr,0), xPk)
-            mstore(add(freePtr,32), yPk)
-            mstore(add(freePtr, 64), scalar)
 
-            success := staticcall(gas, to, freePtr,96, freePtr, 64)
+            mstore(freePtr, functionSelector)
+            mstore(add(freePtr, 4), scalar)
+
+            // call ERC20 Token contract transfer function
+            success := staticcall(gas, to, freePtr,36, freePtr, 64)
 
             x := mload(freePtr)
             y := mload(add(freePtr,32))
