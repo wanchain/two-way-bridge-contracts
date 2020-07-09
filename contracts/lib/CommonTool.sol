@@ -37,6 +37,8 @@ library CommonTool {
     uint public constant DIVISOR = 10000;
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
 
+
+
     // add
     function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2, CurveType curveType)
     public
@@ -58,13 +60,13 @@ library CommonTool {
     view
     returns (uint256 x, uint256 y, bool success) {
         if (curveType == CurveType.SK) {
-            return EnhancementLib.mulG(scalar);
+            return EnhancementLib.s256MulG(scalar);
         }
 
         if (curveType == CurveType.BN) {
-            return EnhancementLib.mulG(scalar);
+            return EnhancementLib.bn256MulG(scalar);
         }
-        return EnhancementLib.mulG(scalar);
+        return EnhancementLib.s256MulG(scalar);
     }
 
     // mulPk
@@ -72,6 +74,7 @@ library CommonTool {
     public
     view
     returns (uint256 x, uint256 y, bool success){
+
         if (curveType == CurveType.SK) {
             return EnhancementLib.s256ScalarMul(scalar,xPk,yPk);
         }
@@ -89,6 +92,7 @@ library CommonTool {
     returns (uint256 sx, uint256 sy, bool success) {
 
         if (curveType == CurveType.SK) {
+
             return EnhancementLib.s256CalPolyCommit(polyCommit, pk);
         }
 
@@ -99,32 +103,10 @@ library CommonTool {
     }
 
     function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes pk) public view returns(bool) {
-        bytes32 functionSelector = 0x861731d500000000000000000000000000000000000000000000000000000000;
-        address to = PRECOMPILE_CONTRACT_ADDR;
-        uint256 result;
-        bool success;
-        assembly {
-            let freePtr := mload(0x40)
-
-            mstore(freePtr, functionSelector)
-            mstore(add(freePtr, 4), hash)
-            mstore(add(freePtr, 36), r)
-            mstore(add(freePtr, 68), s)
-            mstore(add(freePtr, 100), mload(add(pk,32)))
-            mstore(add(freePtr, 132), mload(add(pk,64)))
-
-        // call ERC20 Token contract transfer function
-            success := staticcall(gas, to, freePtr,164, freePtr, 32)
-
-            result := mload(freePtr)
-        }
-
-        if (success) {
-            return result == 1;
-        } else {
-            return false;
-        }
+        return EnhancementLib.checkSig(hash,r,s,pk);
     }
+
+
 
     function bytes2uint(bytes source, uint offset)
     public
@@ -132,8 +114,19 @@ library CommonTool {
     returns (uint)
     {
         uint number = 0;
-        for (uint i = 0; i < 32; i++) {
-            number = number + uint8(source[i + offset]) * (2 ** (8 * (32 - (i + 1))));
+        uint8  bytesCount = uint8(source.length);
+        uint8  loopCount = 0;
+        if(bytesCount < 32) {
+            loopCount = bytesCount;
+        }else{
+            loopCount = 32;
+        }
+//        for (uint i = 0; i < 32; i++) {
+//            number = number + uint8(source[i + offset]) * (2 ** (8 * (32 - (i + 1))));
+//        }
+
+        for (uint i = 0; i < loopCount; i++) {
+            number = number + uint8(source[i + offset]) * (2 ** (8 * (loopCount - (i + 1))));
         }
         return number;
     }

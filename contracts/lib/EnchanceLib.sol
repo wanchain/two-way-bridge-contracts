@@ -98,7 +98,7 @@ library EnhancementLib {
      * @return y the y value for result point
      * @return success the result for calling precompile contract,true is success,false is failed
      */
-    function mulG(uint256 scalar)   public view returns(uint256 x, uint256 y,bool success) {
+    function s256MulG(uint256 scalar)   public view returns(uint256 x, uint256 y,bool success) {
         bytes32 functionSelector = 0xbb734c4e00000000000000000000000000000000000000000000000000000000;//keccak256("mulG(uint256)");
         address to = PRECOMPILE_CONTRACT_ADDR;
         assembly {
@@ -145,19 +145,20 @@ library EnhancementLib {
 
 
     function s256CalPolyCommit(bytes polyCommit, bytes pk)   public view returns(uint256 sx, uint256 sy,bool success) {
-       bytes32 functionSelector = 0x66c85fc200000000000000000000000000000000000000000000000000000000;
+
+        bytes32 functionSelector = 0x66c85fc200000000000000000000000000000000000000000000000000000000;
        return polyCal(polyCommit,pk,functionSelector);
     }
 
     function bn256CalPolyCommit(bytes polyCommit, bytes pk)  public view returns (uint256 sx, uint256 sy,bool success) {
+
        bytes32 functionSelector = 0x77f683ba00000000000000000000000000000000000000000000000000000000;
        return polyCal(polyCommit,pk,functionSelector);
     }
 
     function polyCal(bytes polyCommit, bytes pk,bytes32 functionSelector) internal view returns(uint256 sx, uint256 sy,bool success) {
-
-       address to = PRECOMPILE_CONTRACT_ADDR;
-       require((polyCommit.length + pk.length)%64 == 0);
+        address to = PRECOMPILE_CONTRACT_ADDR;
+       require((polyCommit.length + pk.length)%64 == 0, "error len polyCommint or pk");
 
        uint polyCommitCnt = polyCommit.length/64;
        uint total = (polyCommitCnt + 1)*2;
