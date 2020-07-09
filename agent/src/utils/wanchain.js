@@ -155,7 +155,7 @@ function getEvents(options) {
 
 function genKeystoreFile(gpk, sk, password) {
   let keystore = web3.eth.accounts.encrypt(sk, password);
-  let gAddress = ethUtil.pubToAddress(Buffer.from(gpk.substr(4), 'hex')).toString('hex').toLowerCase(); // no 0x
+  let gAddress = ethUtil.pubToAddress(Buffer.from(gpk.substr(2), 'hex')).toString('hex').toLowerCase(); // no 0x
   keystore.address = gAddress;
   let fp = path.join(__dirname, '../../keystore/', gpk);
   fs.writeFileSync(fp, JSON.stringify(keystore), 'utf8');

@@ -146,9 +146,6 @@ class Round {
           if (!receive.polyCommit) {
             receive.polyCommit = await this.group.createGpkSc.methods.getPolyCommit(this.group.id, this.round, this.curveIndex, sm).call();
             // console.log("polyCommitReceive %s: %s", sm, receive.polyCommit);
-            if (this.checkAllPolyCommitReceived()) {
-              this.genPkShare();
-            }
           }
           resolve();
         } catch (err) {
@@ -288,6 +285,7 @@ class Round {
 
   genKeyShare() {
     let skShare = null;
+    let gpk = null;
     for (let i = 0; i < this.smList.length; i++) {
       let sij = BigInteger.fromHex(this.receive[i].sij.substr(2));
       if (skShare == null) {
@@ -295,13 +293,21 @@ class Round {
       } else {
         skShare = encrypt.addSij(this.curve, skShare, sij);
       }
+      // gpk
+      let siG = encrypt.recoverSiG(this.curve, this.receive[i].polyCommit);
+      if (!gpk) {
+        gpk = siG;
+      } else {
+        gpk = gpk.add(siG);
+      }      
     }
     this.skShare = '0x' + skShare.toBuffer(32).toString('hex');
     this.pkShare = '0x' + encrypt.mulG(this.curve, skShare).getEncoded(false).toString('hex').substr(2);
+    this.gpk = '0x' + gpk.getEncoded(false).toString('hex').substr(2);
     wanchain.genKeystoreFile(this.gpk, this.skShare, config.keystore.pwd);
     console.log("gen curve %d skShare: %s", this.curveIndex, this.skShare);
     console.log("gen curve %d pkShare: %s", this.curveIndex, this.pkShare);
-    console.log("gen curve %d keystore file: %s", this.curveIndex, this.gpk);
+    console.log("gen curve %d gpk: %s", this.curveIndex, this.gpk);
   }
 
   async negotiateCheckTx(partner, index) {
@@ -440,48 +446,21 @@ class Round {
     }
     let pkShare = await this.group.createGpkSc.methods.getPkShare(this.group.id, i).call();
     let gpk = await this.group.createGpkSc.methods.getGpk(this.group.id).call();
-    if (pkShare == this.pkShare) {
-      console.log("get index %d %s pkShare: %s", i, wanchain.selfAddress, pkShare);
+    if (pkShare[this.curveIndex] == this.pkShare) {
+      console.log("get index %d %s pkShare: %s", i, wanchain.selfAddress, this.pkShare);
     } else {
-      console.log("get index %d %s pkShare %s not match %s", i, wanchain.selfAddress, pkShare, this.pkShare);
+      console.log("get index %d %s pkShare %s not match %s", i, wanchain.selfAddress, pkShare[this.curveIndex], this.pkShare);
     }
-    if (gpk == this.gpk) {
-      console.log("get gpk: %s", gpk);
+    if (gpk[this.curveIndex] == this.gpk) {
+      console.log("get gpk: %s", this.gpk);
     } else {
-      console.error("get gpk %s not match %s", gpk, this.gpk);
+      console.error("get gpk %s not match %s", gpk[this.curveIndex], this.gpk);
     }
   }
   
   async procClose() {
     this.stop();
     console.log("gpk group %s round %d curve %d is closed", this.group.id, this.round, this.curveIndex);
-  }
-
-  // belows are for POC only
-
-  genPkShare() {
-    let pkShare = null;
-    let gpk = null;
-    for (let i = 0; i < this.smList.length; i++) {
-      // pkShare
-      let share = encrypt.takePolyCommit(this.curve, this.receive[i].polyCommit, this.group.selfPk);
-      if (!pkShare) {
-        pkShare = share;
-      } else {
-        pkShare = pkShare.add(share);
-      }
-      // gpk
-      let siG = encrypt.recoverSiG(this.curve, this.receive[i].polyCommit);
-      if (!gpk) {
-        gpk = siG;
-      } else {
-        gpk = gpk.add(siG);
-      }
-    }
-    this.pkShare = '0x' + pkShare.getEncoded(false).toString('hex');
-    this.gpk = '0x' + gpk.getEncoded(false).toString('hex');
-    console.log("gen pkShare: %s", this.pkShare);
-    console.log("gen gpk: %s", this.gpk);
   }
 }
 
