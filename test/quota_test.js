@@ -129,7 +129,15 @@ contract('Quota', accounts => {
     assert.equal(Number(ret), 1408837, "25");
     ret = await quota.methods.getBurnQuota(1, web3.utils.keccak256("storeman1")).call();
     assert.equal(Number(ret), 10000, "26");
-    ret = await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.burnLock(1, web3.utils.keccak256("storeman1"), 5000, true).send({from: accounts[1], gas:1e7});
+    try {
+      ret = await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), 10000, true).send({from: accounts[1], gas:1e7});
+      assert(false, 'Should never get here');
+    } catch (e) {
+      assert.ok(e.message.match(/revert/));
+    }
+    ret = await quota.methods.burnRevoke(1, web3.utils.keccak256("storeman1"), 5000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), 10000, false).send({from: accounts[1], gas:1e7});
     ret = await quota.methods.getMintQuota(1, web3.utils.keccak256("storeman1")).call();
     assert.equal(Number(ret), 1418837, "27");
 
@@ -141,7 +149,7 @@ contract('Quota', accounts => {
 
 
     ret = await quota.methods.fastMint(1, web3.utils.keccak256("storeman1"), 10000, true).send({from: accounts[1], gas:1e7});
-    ret = await quota.methods.fastMint(2, web3.utils.keccak256("storeman1"), 10000, true).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.fastMint(2, web3.utils.keccak256("storeman1"), 10000, false).send({from: accounts[1], gas:1e7});
     ret = await quota.methods.mintLock(3, web3.utils.keccak256("storeman1"), 10000, true).send({from: accounts[1], gas:1e7});
 
     try {
@@ -153,8 +161,8 @@ contract('Quota', accounts => {
 
     await quota.methods.mintRedeem(3, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
 
-    await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
-    await quota.methods.fastBurn(2, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), 10000, true).send({from: accounts[1], gas:1e7});
+    await quota.methods.fastBurn(2, web3.utils.keccak256("storeman1"), 10000, true).send({from: accounts[1], gas:1e7});
 
     await quota.methods.debtLock(web3.utils.keccak256("storeman1"), web3.utils.keccak256("storeman3")).send({from: accounts[1], gas:1e7});
     await quota.methods.debtRedeem(web3.utils.keccak256("storeman1"), web3.utils.keccak256("storeman3")).send({from: accounts[1], gas:1e7});
@@ -163,7 +171,7 @@ contract('Quota', accounts => {
     await quota.methods.debtRevoke(web3.utils.keccak256("storeman1"), web3.utils.keccak256("storeman3")).send({from: accounts[1], gas:1e7});
 
     try {
-      await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[3], gas:1e7});
+      await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), 10000, true).send({from: accounts[3], gas:1e7});
       assert(false, 'Should never get here');
     } catch (e) {
       assert.ok(e.message.match(/revert/));
@@ -188,7 +196,7 @@ contract('Quota', accounts => {
 
     await quota.methods.mintLock(1, web3.utils.keccak256("storeman1"), "100000000", false).send({from: accounts[1], gas:1e7});
     await quota.methods.mintRedeem(1, web3.utils.keccak256("storeman1"), "100000000").send({from: accounts[1], gas: 1e7});
-    await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), "100000000").send({from: accounts[1], gas: 1e7});
+    await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), "100000000", true).send({from: accounts[1], gas: 1e7});
 
     try {
       await quota.methods.fastMint(1, web3.utils.keccak256("storeman1"), "100000000", true).send({from: accounts[1], gas:1e7});
@@ -199,10 +207,10 @@ contract('Quota', accounts => {
 
     await quota.methods.fastMint(1, web3.utils.keccak256("storeman1"), "100000000", false).send({from: accounts[1], gas:1e7});
 
-    await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), "100000000").send({from: accounts[1], gas:1e7});
+    await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), "100000000", true).send({from: accounts[1], gas:1e7});
 
     try {
-      await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), "100000000").send({from: accounts[1], gas:1e7});
+      await quota.methods.fastBurn(1, web3.utils.keccak256("storeman1"), "100000000", true).send({from: accounts[1], gas:1e7});
       assert(false, 'Should never get here');
     } catch (e) {
       assert.ok(e.message.match(/revert/));
