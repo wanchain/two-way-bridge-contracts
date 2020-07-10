@@ -168,6 +168,17 @@ class EventTracker {
     }
     return (a.logIndex - b.logIndex);
   }
+
+  async getEvent(name, filter) {
+    if (typeof(filter) != 'object') {
+      filter = {};
+    }
+    filter.tracker = this.id;
+    if (name) {
+      filter.name = name;
+    }
+    return await Event.find(filter).exec();
+  }
 }
 
 module.exports = EventTracker;
