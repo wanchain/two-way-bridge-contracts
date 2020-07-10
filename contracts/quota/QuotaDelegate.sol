@@ -37,8 +37,28 @@ interface IPriceOracle {
     function getValue(bytes symbol) external view returns(uint price);
 }
 
+contract StoremanType {
+    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
+}
+
 interface IDepositOracle {
     function getDeposit(bytes32 smgID) external view returns (uint);
+    function getStoremanGroupConfig(bytes32 storemanGroupId)
+        external
+        view
+        returns (
+            bytes32 groupId,
+            StoremanType.GroupStatus status,
+            uint256 deposit,
+            uint256 chain1,
+            uint256 chain2,
+            uint256 curve1,
+            uint256 curve2,
+            bytes gpk1,
+            bytes gpk2,
+            uint256 startTime,
+            uint256 endTime
+        );
 }
 
 interface ITokenManager {
@@ -408,7 +428,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         returns (uint deposit)
     {
         IDepositOracle oracle = IDepositOracle(depositOracleAddress);
-        deposit = oracle.getDeposit(storemanGroupId);
+        (,,deposit,,,,,,,,) = oracle.getStoremanGroupConfig(storemanGroupId);
     }
 
     function getTokenAncestorInfo(uint tokenId)
