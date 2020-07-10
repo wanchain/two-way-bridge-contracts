@@ -24,7 +24,7 @@
 //
 //
 
-pragma solidity ^0.4.24;
+pragma solidity 0.4.26;
 pragma experimental ABIEncoderV2;
 
 /**
@@ -277,42 +277,6 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         decimals = mapAncestorInfo[id].ancestorDecimals;
         chainId = mapAncestorInfo[id].ancestorChainID;
     }
-
-    // function getTokenPairs()
-    //     external
-    //     view
-    //     returns (uint[] id, uint[] fromChainID, bytes32[] fromAccount, uint[] toChainID, address[] tokenAddress, string[] ancestorSymbol, uint8[] ancestorDecimals)
-    // {
-    //     uint cnt = 0;
-    //     uint i = 0;
-    //     for (; i < totalTokenPairs; i++ ) {
-    //         if (!mapTokenPairInfo[mapTokenPairIndex[i + 1]].isDelete) {
-    //             cnt ++;
-    //         }
-    //     }
-
-    //     id = new uint[](cnt);
-    //     fromChainID = new uint[](cnt);
-    //     fromAccount = new bytes32[](cnt);
-    //     toChainID = new uint[](cnt);
-    //     tokenAddress = new address[](cnt);
-
-    //     ancestorSymbol = new string[](cnt);
-    //     ancestorDecimals = new uint8[](cnt);
-
-    //     for (; i < cnt; i++) {
-    //         uint theId = mapTokenPairIndex[i + 1];
-
-    //         id[i] = theId;
-    //         fromChainID[i] = mapTokenPairInfo[theId].fromChainID;
-    //         fromAccount[i] = mapTokenPairInfo[theId].fromAccount;
-    //         toChainID[i] = mapTokenPairInfo[theId].toChainID;
-    //         tokenAddress[i] = mapTokenPairInfo[theId].tokenAddress;
-
-    //         ancestorSymbol[i] = mapAncestorInfo[theId].ancestorSymbol;
-    //         ancestorDecimals[i] = mapAncestorInfo[theId].ancestorDecimals;
-    //     }
-    // }
 
     function getTokenPairs()
         external

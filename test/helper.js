@@ -1,3 +1,4 @@
+
 async function sendAndGetReason(objFunc, args, options) {
   let receipt = null;
   try {
@@ -11,5 +12,5 @@ async function sendAndGetReason(objFunc, args, options) {
 }
 
 module.exports = {
-  sendAndGetReason
-}
+  sendAndGetReason,
+};
