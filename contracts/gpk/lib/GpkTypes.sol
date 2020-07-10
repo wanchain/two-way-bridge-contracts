@@ -81,6 +81,4 @@ library GpkTypes {
     enum CheckStatus {Init, Valid, Invalid}
 
     enum SlashType {PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, EncSijInvalid, CheckInvalid, Connive}
-
-    enum CurveType {secp256k1, bn256}
 }
