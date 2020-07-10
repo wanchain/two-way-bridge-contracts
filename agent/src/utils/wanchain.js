@@ -163,6 +163,24 @@ function genKeystoreFile(gpk, sk, password) {
   fs.writeFileSync(fp, password, 'utf8');
 }
 
+function parseEvent(contractName, eventName, event) {
+  let abi = abiMap.get(contractName);
+  if (!abi) {
+    console.log("invalid contract name %s to parse log", contractName);
+    return null;
+  }
+  
+  for (let i = 0; i < abi.length; i++) {
+    const item = abi[i];
+    if ((item.type == 'event') && (item.name == eventName)) {
+      let decoded = web3.eth.abi.decodeLog(item.inputs, event.data, event.topics.slice(1));
+      decoded._name_ = eventName;
+      return decoded;
+    }
+  }
+  return null;
+}
+
 module.exports = {
   selfSk,
   selfPk,
@@ -182,5 +200,6 @@ module.exports = {
   sendSijTimeout,
   getBlockNumber,
   getEvents,
-  genKeystoreFile
+  genKeystoreFile,
+  parseEvent
 }

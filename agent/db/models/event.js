@@ -3,7 +3,12 @@ const collection = "eventTracker";
 
 var EventSchema = new mongoose.Schema({
   tracker: {
-    type: String
+    type: String,
+    index: true
+  },
+  name: {
+    type: String,
+    index: true
   },
   chain: {
     type: String
