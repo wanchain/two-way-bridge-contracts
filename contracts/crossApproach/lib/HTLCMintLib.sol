@@ -32,7 +32,9 @@ import "./HTLCTxLib.sol";
 import "./CrossTypes.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IRC20Protocol.sol";
+import "../interfaces/ISmgAdminProxy.sol";
 import "../interfaces/ISmgFeeProxy.sol";
+import "../interfaces/IQuota.sol";
 
 library HTLCMintLib {
     using SafeMath for uint;
@@ -51,9 +53,9 @@ library HTLCMintLib {
         bytes32 smgID;                  /// ID of storeman group which user has selected
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
-        // uint lockFee;                   /// exchange token value
+        // uint lockFee;                /// exchange token value
         uint lockedTime;                /// HTLC lock time
-        bytes userShadowAccount;        /// account of shadow chain, used to receive token
+        bytes32 userShadowAccount;      /// account of shadow chain, used to receive token
         ITokenManager tokenManager;     /// interface of token manager
     }
 
@@ -110,7 +112,7 @@ library HTLCMintLib {
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    HTLC value
     /// @param userAccount              account of shadow chain, used to receive token
-    event UserMintLockLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
+    event UserMintLockLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes32 userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -157,42 +159,26 @@ library HTLCMintLib {
     *
     */
 
-    /// @notice       convert bytes to address
-    /// @param b      bytes array
-    function bytesToAddress(bytes memory b) private pure returns (address addr) {
-        assembly {
-            addr := mload(add(b,20))
-        }
-    }
-
-    /// @notice       convert bytes to bytes32
-    /// @param b      bytes array
-    /// @param offset offset of array to begin convert
-    function bytesToBytes32(bytes b, uint offset) private pure returns (bytes32) {
-        bytes32 out;
-
-        for (uint i = 0; i < 32; i++) {
-          out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
-        }
-        return out;
-    }
-
+    // event UserMintLockDebugTokenPair1Logger(bytes32 xHash, uint origChainID, uint shadowChainID, bytes32 tokenOrigAccount, bool isDeleted);
+    // event UserMintLockDebugTokenPair2Logger(bytes32 xHash, uint origChainID, uint shadowChainID, address tokenOrigAccount, bool isDeleted);
+    // event UserMintLockDebugParamsLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint value, bytes32 userAccount);
     /// @notice                         mintBridge, user lock token on token original chain
     /// @notice                         event invoked by user mint lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for user mint lock token on token original chain
-    function userMintLock(CrossTypes.Data storage storageData, HTLCUserMintLockParams memory params)
-        public
-    {
+    function userMintLock(CrossTypes.Data storage storageData, HTLCUserMintLockParams memory params) public {
+        // emit UserMintLockDebugParamsLogger(params.xHash, params.smgID, params.tokenPairID, params.value, params.userShadowAccount);
         uint origChainID;
         uint shadowChainID;
         bool isDeleted;
-        bytes memory tokenOrigAccount;
+        bytes32 tokenOrigAccount;
         (origChainID,tokenOrigAccount,shadowChainID,,isDeleted) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
         require(!isDeleted, "Token doesn't exist");
 
+        // emit UserMintLockDebugTokenPair1Logger(params.xHash, origChainID, shadowChainID, tokenOrigAccount, isDeleted);
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
-        address tokenScAddr = bytesToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
+        // emit UserMintLockDebugTokenPair2Logger(params.xHash, origChainID, shadowChainID, tokenScAddr, isDeleted);
 
         uint left;
         if (tokenScAddr == address(0)) {
@@ -228,9 +214,9 @@ library HTLCMintLib {
         storageData.quota.mintLock(params.tokenPairID, params.smgID, params.value, true);
 
         emit UserMintLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userShadowAccount);
-        // emit UserMintLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, storageData.mapLockFee[origChainID][shadowChainID], params.userShadowAccount);
     }
 
+    event UserMintRedeemDebug1Logger(bytes32 x, bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, uint lockFee);
     /// @notice                         mintBridge, storeman redeem token on token original chain
     /// @notice                         event invoked by user redeem
     /// @param storageData              Cross storage data
@@ -244,13 +230,14 @@ library HTLCMintLib {
         uint tokenPairID;
         uint lockFee;
         uint value;
-        (smgID, tokenPairID, lockFee, value,,) = storageData.htlcTxData.getUserTx(xHash);
+        (smgID, tokenPairID, value, lockFee,,) = storageData.htlcTxData.getUserTx(xHash);
 
+        emit UserMintRedeemDebug1Logger(params.x, xHash, smgID, tokenPairID, value, lockFee);
         // TODO
-        // StoremanType.GroupStatus status;
+        // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == StoremanType.GroupStatus.ready || status == StoremanType.GroupStatus.unregistered, "PK doesn't exist");
+        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         storageData.quota.mintRedeem(tokenPairID, smgID, value);
         if (lockFee > 0) {
@@ -264,6 +251,8 @@ library HTLCMintLib {
         emit SmgMintRedeemLogger(params.x, smgID, tokenPairID, lockFee);
     }
 
+    event UserMintRevokeDebug1Logger(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, uint lockFee, address userAccount);
+    event UserMintRevokeDebug2Logger(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, uint lockFee, uint revokeFee, uint revokeBackFee, address userAccount);
     /// @notice                         mintBridge, user mint revoke token on token original chain
     /// @notice                         event invoked by user revoke
     /// @param storageData              Cross storage data
@@ -276,17 +265,18 @@ library HTLCMintLib {
         uint lockFee;
         uint value;
         address userOrigAccount;
-        (smgID, tokenPairID, lockFee, value, userOrigAccount,) = storageData.htlcTxData.getUserTx(params.xHash);
+        (smgID, tokenPairID, value, lockFee, userOrigAccount,) = storageData.htlcTxData.getUserTx(params.xHash);
 
+        emit UserMintRevokeDebug1Logger(params.xHash, smgID, tokenPairID, value, lockFee, userOrigAccount);
         // TODO
-        // StoremanType.GroupStatus status;
+        // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == StoremanType.GroupStatus.ready || status == StoremanType.GroupStatus.unregistered, "PK doesn't exist");
+        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         uint origChainID;
         uint shadowChainID;
-        bytes memory tokenOrigAccount;
+        bytes32 tokenOrigAccount;
         // (origChainID,tokenOrigAccount,shadowChainID,,isDeleted) = params.tokenManager.getTokenPairInfo(tokenPairID);
         // require(!isDeleted, "Token doesn't exist");
         (origChainID, tokenOrigAccount, shadowChainID,,) = params.tokenManager.getTokenPairInfo(tokenPairID);
@@ -297,6 +287,7 @@ library HTLCMintLib {
         if (left != 0) {
             (msg.sender).transfer(left);
         }
+        emit UserMintRevokeDebug2Logger(params.xHash, smgID, tokenPairID, value, lockFee, revokeFee, left, userOrigAccount);
 
         storageData.htlcTxData.revokeUserTx(params.xHash, revokeFee);
 
@@ -314,7 +305,7 @@ library HTLCMintLib {
             (userOrigAccount).transfer(lockFee);
         }
 
-        address tokenScAddr = bytesToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {
             (userOrigAccount).transfer(value);
@@ -355,10 +346,10 @@ library HTLCMintLib {
         address userShadowAccount;
         (smgID, tokenPairID, value, userShadowAccount) = storageData.htlcTxData.getSmgTx(xHash);
 
-        // StoremanType.GroupStatus status;
+        // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == StoremanType.GroupStatus.ready || status == StoremanType.GroupStatus.unregistered, "PK doesn't exist");
+        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         storageData.quota.mintRedeem(tokenPairID, smgID, value);
 
@@ -381,10 +372,10 @@ library HTLCMintLib {
         uint value;
         (smgID, tokenPairID, value,) = storageData.htlcTxData.getSmgTx(params.xHash);
 
-        // StoremanType.GroupStatus status;
+        // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == StoremanType.GroupStatus.ready || status == StoremanType.GroupStatus.unregistered, "PK doesn't exist");
+        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         storageData.quota.mintRevoke(tokenPairID, smgID, value);
 

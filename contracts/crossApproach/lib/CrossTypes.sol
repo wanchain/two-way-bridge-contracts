@@ -84,4 +84,12 @@ library CrossTypes {
      * MANIPULATIONS
      *
      */
+
+    /// @notice       convert bytes32 to address
+    /// @param b      bytes32
+    function bytes32ToAddress(bytes32 b) internal pure returns (address) {
+        return address(uint160(bytes20(b))); // high
+        // return address(uint160(uint256(b))); // low
+    }
+
 }

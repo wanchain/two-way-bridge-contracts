@@ -25,7 +25,7 @@
 //
 
 pragma solidity ^0.4.26;
-// pragma experimental ABIEncoderV2;
+pragma experimental ABIEncoderV2;
 
 import "../components/Halt.sol";
 import "./CrossStorage.sol";
@@ -33,13 +33,8 @@ import "./lib/HTLCMintLib.sol";
 import "./lib/HTLCBurnLib.sol";
 import "./lib/HTLCDebtLib.sol";
 import "./lib/RapidityLib.sol";
-// import "./lib/HTLCTxLib.sol";
 
-contract StoremanType {
-    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
-}
-
-contract CrossProxy is CrossStorage, Halt {
+contract CrossDelegate is CrossStorage, Halt {
     using SafeMath for uint;
 
     /**
@@ -73,6 +68,34 @@ contract CrossProxy is CrossStorage, Halt {
         _;
     }
 
+    /// @dev Check valid value
+    modifier onlyMeaningfulValue(uint value) {
+        require(value > 0, "Value is null");
+        _;
+    }
+
+    /// @notice                                 check the storeman group active
+    /// @param smgID                            ID of storeman group
+    modifier onlyActiveSmg(bytes32 smgID) {
+        uint8 status;
+        uint startTime;
+        uint endTime;
+        (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+
+        require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        _;
+    }
+
+    /// @notice                                 check the storeman group not active
+    /// @param smgID                            ID of storeman group
+    modifier onlyNotActiveSmg(bytes32 smgID) {
+        uint8 status;
+        (,status,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+
+        require(status == uint8(GroupStatus.unregistered), "PK is active");
+        _;
+    }
+
     /**
      *
      * MANIPULATIONS
@@ -81,8 +104,8 @@ contract CrossProxy is CrossStorage, Halt {
 
     /// @notice                                 check the storeman group active or not
     /// @param smgID                            ID of storeman group
-    /// @return curveID                         true/false
-    /// @return PK                              true/false
+    /// @return curveID                         ID of elliptic curve
+    /// @return PK                              PK of storeman group
     function getSmgInfo(bytes32 smgID)
         private
         view
@@ -93,25 +116,25 @@ contract CrossProxy is CrossStorage, Halt {
         return (curveID, PK);
     }
 
+    // /// @notice                                 check the storeman group active or not
+    // /// @param smgID                            ID of storeman group
+    // function checkSmgActiveByID(bytes32 smgID)
+    //     private
+    //     view
+    // {
+    //     uint8 status;
+    //     uint startTime;
+    //     uint endTime;
+    //     (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+
+    //     require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+    // }
+
     /// @notice                                 check the storeman group active or not
     /// @param smgID                            ID of storeman group
-    function checkSmgActiveByID(bytes32 smgID)
-        private
-        view
-    {
-        uint8 status;
-        uint startTime;
-        uint endTime;
-        (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-        require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
-    }
-
-    /// @notice                                 check the storeman group active or not
-    /// @param smgID                            ID of storeman group
-    /// @return curveID                         true/false
-    /// @return PK                              true/false
-    function acquireSmgActiveInfo(bytes32 smgID)
+    /// @return curveID                         ID of elliptic curve
+    /// @return PK                              PK of storeman group
+    function acquireActiveSmgInfo(bytes32 smgID)
         private
         view
         returns (uint curveID, bytes memory PK)
@@ -121,30 +144,28 @@ contract CrossProxy is CrossStorage, Halt {
         uint endTime;
         (,status,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         return (curveID, PK);
     }
 
-    /// @notice                                 check the storeman group active or not
-    /// @param smgID                            ID of storeman group
-    /// @return curveID                         true/false
-    /// @return PK                              true/false
-    function checkSmgNotActiveByID(bytes32 smgID)
-        private
-        view
-    {
-        uint8 status;
-        (,status,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+    // /// @notice                                 check the storeman group active or not
+    // /// @param smgID                            ID of storeman group
+    // function checkSmgNotActiveByID(bytes32 smgID)
+    //     private
+    //     view
+    // {
+    //     uint8 status;
+    //     (,status,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        require(status == uint8(StoremanType.GroupStatus.unregistered), "PK is active");
-    }
+    //     require(status == uint8(GroupStatus.unregistered), "PK is active");
+    // }
 
     /// @notice                                 check the storeman group active or not
     /// @param smgID                            ID of storeman group
-    /// @return curveID                         true/false
-    /// @return PK                              true/false
-    function acquireSmgNotActiveInfo(bytes32 smgID)
+    /// @return curveID                         ID of elliptic curve
+    /// @return PK                              PK of storeman group
+    function acquireNotActiveSmgInfo(bytes32 smgID)
         private
         view
         returns (uint curveID, bytes memory PK)
@@ -152,41 +173,45 @@ contract CrossProxy is CrossStorage, Halt {
         uint8 status;
         (,status,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        require(status == uint8(StoremanType.GroupStatus.unregistered), "PK is active");
+        require(status == uint8(GroupStatus.unregistered), "PK is active");
     }
 
     // /// @notice                                 check the storeman group existing or not
     // /// @param tokenOrigAccount                 account of token supported
     // /// @param storemanGroupPK                  PK of storeman group
     // /// @return bool                           true/false
-    // function isSmgExist(StoremanType.GroupStatus status)
+    // function isSmgExist(GroupStatus status)
     //     private
     //     view
     //     returns (bool)
     // {
-    //     return status == StoremanType.GroupStatus.ready || status == StoremanType.GroupStatus.unregistered;
+    //     return status == GroupStatus.ready || status == GroupStatus.unregistered;
     // }
 
+    event UserMintLockDebugParamsLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint value, bytes32 userAccount, uint time);
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
     /// @param  xHash                           hash of HTLC random number
     /// @param  smgID                           ID of storeman
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive WRC20 token
-    function userMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+    function userMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes32 userAccount)
         external
+        payable
         initialized
         notHalted
         onlyExternalAccount
-        payable
+        onlyActiveSmg(smgID)
+        onlyMeaningfulValue(value)
     {
-        checkSmgActiveByID(smgID);
+        // checkSmgActiveByID(smgID);
+
         // uint startTime;
         // uint endTime;
         // uint8 status;
         // (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         HTLCMintLib.HTLCUserMintLockParams memory params = HTLCMintLib.HTLCUserMintLockParams({
             xHash: xHash,
@@ -197,6 +222,8 @@ contract CrossProxy is CrossStorage, Halt {
             userShadowAccount: userAccount,
             tokenManager: storageData.tokenManager
         });
+        emit UserMintLockDebugParamsLogger(params.xHash, params.smgID, params.tokenPairID, params.value, params.userShadowAccount, now);
+
         HTLCMintLib.userMintLock(storageData, params);
     }
 
@@ -218,9 +245,9 @@ contract CrossProxy is CrossStorage, Halt {
     /// @param  xHash                           hash of HTLC random number
     function userMintRevoke(bytes32 xHash)
         external
+        payable
         initialized
         notHalted
-        payable
     {
         HTLCMintLib.HTLCUserMintRevokeParams memory params = HTLCMintLib.HTLCUserMintRevokeParams({
             xHash: xHash,
@@ -245,7 +272,7 @@ contract CrossProxy is CrossStorage, Halt {
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireSmgActiveInfo(smgID);
+        (curveID, PK) = acquireActiveSmgInfo(smgID);
         // uint8 status;
         // uint curveID;
         // uint startTime;
@@ -253,7 +280,7 @@ contract CrossProxy is CrossStorage, Halt {
         // bytes memory PK;
         // (,status,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         bytes32 mHash = sha256(abi.encode(xHash, tokenPairID, value, userAccount));
         // verifySignature(mHash, smgID, r, s);
@@ -309,20 +336,23 @@ contract CrossProxy is CrossStorage, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+    function userBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes32 userAccount)
         external
+        payable
         initialized
         notHalted
         onlyExternalAccount
-        payable
+        onlyActiveSmg(smgID)
+        onlyMeaningfulValue(value)
     {
-        checkSmgActiveByID(smgID);
+        // checkSmgActiveByID(smgID);
+
         // uint startTime;
         // uint endTime;
         // uint8 status;
         // (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         HTLCBurnLib.HTLCUserBurnLockParams memory params = HTLCBurnLib.HTLCUserBurnLockParams({
             xHash: xHash,
@@ -355,9 +385,9 @@ contract CrossProxy is CrossStorage, Halt {
     /// @param  xHash                           hash of HTLC random number
     function userBurnRevoke(bytes32 xHash)
         external
+        payable
         initialized
         notHalted
-        payable
     {
         HTLCBurnLib.HTLCUserBurnRevokeParams memory params = HTLCBurnLib.HTLCUserBurnRevokeParams({
             xHash: xHash,
@@ -383,7 +413,7 @@ contract CrossProxy is CrossStorage, Halt {
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireSmgActiveInfo(smgID);
+        (curveID, PK) = acquireActiveSmgInfo(smgID);
         // uint8 status;
         // uint curveID;
         // uint startTime;
@@ -391,7 +421,7 @@ contract CrossProxy is CrossStorage, Halt {
         // bytes memory PK;
         // (,status,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         bytes32 mHash = sha256(abi.encode(xHash, tokenPairID, value, userAccount));
         // verifySignature(mHash, smgID, r, s);
@@ -441,20 +471,23 @@ contract CrossProxy is CrossStorage, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+    function userFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes32 userAccount)
         external
+        payable
         initialized
         notHalted
         onlyExternalAccount
-        payable
+        onlyActiveSmg(smgID)
+        onlyMeaningfulValue(value)
     {
-        checkSmgActiveByID(smgID);
+        // checkSmgActiveByID(smgID);
+
         // uint startTime;
         // uint endTime;
         // uint8 status;
         // (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         RapidityLib.RapidityUserMintParams memory params = RapidityLib.RapidityUserMintParams({
             uniqueID: uniqueID,
@@ -483,7 +516,7 @@ contract CrossProxy is CrossStorage, Halt {
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireSmgActiveInfo(smgID);
+        (curveID, PK) = acquireActiveSmgInfo(smgID);
 
         // uint8 status;
         // uint curveID;
@@ -492,7 +525,7 @@ contract CrossProxy is CrossStorage, Halt {
         // bytes memory PK;
         // (,status,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
         // verifySignature(mHash, smgID, r, s);
@@ -517,20 +550,23 @@ contract CrossProxy is CrossStorage, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+    function userFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes32 userAccount)
         external
+        payable
         initialized
         notHalted
         onlyExternalAccount
-        payable
+        onlyActiveSmg(smgID)
+        onlyMeaningfulValue(value)
     {
-        checkSmgActiveByID(smgID);
+        // checkSmgActiveByID(smgID);
+
         // uint startTime;
         // uint endTime;
         // uint8 status;
         // (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         RapidityLib.RapidityUserBurnParams memory params = RapidityLib.RapidityUserBurnParams({
             uniqueID: uniqueID,
@@ -559,7 +595,7 @@ contract CrossProxy is CrossStorage, Halt {
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireSmgActiveInfo(smgID);
+        (curveID, PK) = acquireActiveSmgInfo(smgID);
         // uint8 status;
         // uint curveID;
         // uint startTime;
@@ -567,7 +603,7 @@ contract CrossProxy is CrossStorage, Halt {
         // bytes memory PK;
         // (,status,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
         // verifySignature(mHash, smgID, r, s);
@@ -594,11 +630,12 @@ contract CrossProxy is CrossStorage, Halt {
         external
         initialized
         notHalted
+        onlyActiveSmg(destSmgID)
     {
+        // checkSmgActiveByID(destSmgID);
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireSmgNotActiveInfo(srcSmgID);
-        checkSmgActiveByID(destSmgID);
+        (curveID, PK) = acquireNotActiveSmgInfo(srcSmgID);
 
         // uint8 srcStatus;
         // uint8 destStatus;
@@ -609,8 +646,8 @@ contract CrossProxy is CrossStorage, Halt {
         // (,srcStatus,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(srcSmgID);
         // (,destStatus,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(destSmgID);
 
-        // require(srcStatus == uint8(StoremanType.GroupStatus.unregistered), "PK is active");
-        // require(destStatus == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(srcStatus == uint8(GroupStatus.unregistered), "PK is active");
+        // require(destStatus == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         bytes32 mHash = sha256(abi.encode(xHash, destSmgID));
         // verifySignature(mHash, srcSmgID, r, s);
@@ -639,7 +676,7 @@ contract CrossProxy is CrossStorage, Halt {
         // bytes memory PK;
         // (,status,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         HTLCDebtLib.HTLCDebtRedeemParams memory params = HTLCDebtLib.HTLCDebtRedeemParams({
             x: x
@@ -661,7 +698,7 @@ contract CrossProxy is CrossStorage, Halt {
         // bytes memory PK;
         // (,status,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        // require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
 
         HTLCDebtLib.HTLCDebtRevokeParams memory params = HTLCDebtLib.HTLCDebtRevokeParams({
             xHash: xHash
@@ -679,11 +716,12 @@ contract CrossProxy is CrossStorage, Halt {
         external
         initialized
         notHalted
+        onlyNotActiveSmg(srcSmgID)
     {
+        // checkSmgNotActiveByID(srcSmgID);
         uint curveID;
         bytes memory PK;
-        checkSmgNotActiveByID(srcSmgID);
-        (curveID, PK) = acquireSmgActiveInfo(destSmgID);
+        (curveID, PK) = acquireActiveSmgInfo(destSmgID);
 
         // uint8 srcStatus;
         // uint8 destStatus;
@@ -694,8 +732,8 @@ contract CrossProxy is CrossStorage, Halt {
         // (,srcStatus,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(srcSmgID);
         // (,destStatus,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(destSmgID);
 
-        // require(srcStatus == uint8(StoremanType.GroupStatus.unregistered), "source PK is active");
-        // require(destStatus == uint8(StoremanType.GroupStatus.ready) && now >= startTime && now <= endTime, "destination PK is not active");
+        // require(srcStatus == uint8(GroupStatus.unregistered), "source PK is active");
+        // require(destStatus == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "destination PK is not active");
 
         bytes32 mHash = sha256(abi.encode(xHash, srcSmgID));
         // verifySignature(mHash, destSmgID, r, s);
@@ -722,7 +760,7 @@ contract CrossProxy is CrossStorage, Halt {
         // bytes memory PK;
         // (,status,,,,curveID,,PK,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) || status == uint8(StoremanType.GroupStatus.unregistered), "PK doesn't exist");
+        // require(status == uint8(GroupStatus.ready) || status == uint8(GroupStatus.unregistered), "PK doesn't exist");
 
         HTLCDebtLib.HTLCDebtRedeemParams memory params = HTLCDebtLib.HTLCDebtRedeemParams({
             x: x
@@ -742,7 +780,7 @@ contract CrossProxy is CrossStorage, Halt {
         // bytes memory PK;
         // (,status,,,,curveID,,PK,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == uint8(StoremanType.GroupStatus.ready) || status == uint8(StoremanType.GroupStatus.unregistered), "PK doesn't exist");
+        // require(status == uint8(GroupStatus.ready) || status == uint8(GroupStatus.unregistered), "PK doesn't exist");
 
         HTLCDebtLib.HTLCDebtRevokeParams memory params = HTLCDebtLib.HTLCDebtRevokeParams({
             xHash: xHash
@@ -794,6 +832,13 @@ contract CrossProxy is CrossStorage, Halt {
         _lockedTime = lockedTime;
     }
 
+    /// @notice                             get the fee of the storeman group should get
+    /// @param  xHash                       hash of HTLC random number
+    /// @return leftLockTime                left time of locked transaction
+    function getLeftLockedTime(bytes32 xHash) external view returns (uint) {
+        return storageData.htlcTxData.getLeftLockedTime(xHash);
+    }
+
     /// @notice                             update the initialized state value of this contract
     /// @param tokenManager                 address of the token manager
     /// @param smgAdminProxy                address of the storeman group admin
@@ -815,14 +860,13 @@ contract CrossProxy is CrossStorage, Halt {
 
     /// @notice                             get the initialized state value of this contract
     /// @return tokenManager                address of the token manager
-    /// @return tokenManager                address of the token manager
     /// @return smgAdminProxy               address of the storeman group admin
     /// @return smgFeeProxy                 address of the proxy to store fee for storeman group
     /// @return quota                       address of the quota
     /// @return sigVerifier                 address of the signature verifier
-    function getPartners() external view returns(address, address, address, address) {
+    function getPartners() external view returns(address, address, address, address, address) {
         return (address(storageData.tokenManager), address(storageData.smgAdminProxy),
-                storageData.smgFeeProxy, address(storageData.quota));
+                storageData.smgFeeProxy, address(storageData.quota), address(storageData.sigVerifier));
     }
 
     /// @notice                             get the fee of the storeman group should get

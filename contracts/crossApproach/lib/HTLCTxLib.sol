@@ -56,7 +56,7 @@ library HTLCTxLib {
         uint value;                     /// exchange token value
         uint lockFee;                   /// exchange token value
         uint lockedTime;                /// HTLC lock time
-        bytes mirrorAccount;            /// account of mirrorAccount chain, used to receive token
+        bytes32 mirrorAccount;            /// account of mirrorAccount chain, used to receive token
     }
 
     /// @notice HTLC(Hashed TimeLock Contract) tx info
@@ -74,7 +74,7 @@ library HTLCTxLib {
         uint value;
         uint fee;
         address userAccount;        // HTLC transaction sender address for the security check while user's revoke
-        bytes mirrorAccount;        // address or account on mirror chain
+        bytes32 mirrorAccount;        // address or account on mirror chain
     }
     /// @notice storeman  tx info
     struct SmgTx {
@@ -136,7 +136,7 @@ library HTLCTxLib {
     // /// @param  tokenPairID         token pair ID of cross chain
     // /// @param  value               HTLC transfer value of token
     // /// @param  mirrorAccount       mirror account. used for receipt coins on opposite block chain
-    // function addUserTx(Data storage self, bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, uint fee, uint lockedTime, bytes mirrorAccount)
+    // function addUserTx(Data storage self, bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, uint fee, uint lockedTime, bytes32 mirrorAccount)
     //     external
     // {
     //     UserTx memory userTx = self.mapHashXUserTxs[xHash];
@@ -201,7 +201,7 @@ library HTLCTxLib {
     function getUserTx(Data storage self, bytes32 xHash)
         external
         view
-        returns (bytes32, uint, uint, uint, address, bytes)
+        returns (bytes32, uint, uint, uint, address, bytes32)
         // returns (address, bytes, uint, uint, bytes32)
     {
         UserTx storage userTx = self.mapHashXUserTxs[xHash];
@@ -275,8 +275,8 @@ library HTLCTxLib {
         view
         returns (bytes32, uint, uint, address)
     {
-        SmgTx storage t = self.mapHashXSmgTxs[xHash];
-        return (t.baseTx.smgID, t.tokenPairID, t.value, t.userAccount);
+        SmgTx storage smgTx = self.mapHashXSmgTxs[xHash];
+        return (smgTx.baseTx.smgID, smgTx.tokenPairID, smgTx.value, smgTx.userAccount);
     }
 
     /// @notice                     add storeman transaction info
@@ -338,7 +338,37 @@ library HTLCTxLib {
         view
         returns (bytes32, bytes32)
     {
-        DebtTx storage t = self.mapHashXDebtTxs[xHash];
-        return (t.srcSmgID, t.baseTx.smgID);
+        DebtTx storage debtTx = self.mapHashXDebtTxs[xHash];
+        return (debtTx.srcSmgID, debtTx.baseTx.smgID);
+    }
+
+    function getLeftTime(uint endTime) private view returns (uint) {
+        if (now < endTime) {
+            return endTime.sub(now);
+        }
+        return 0;
+    }
+
+    /// @notice                     function for get debt info
+    /// @param xHash                hash of HTLC random number
+    /// @return leftTime            the left lock time
+    function getLeftLockedTime(Data storage self, bytes32 xHash)
+        external
+        view
+        returns (uint)
+    {
+        UserTx storage userTx = self.mapHashXUserTxs[xHash];
+        if (userTx.baseTx.status != TxStatus.None) {
+            return getLeftTime(userTx.baseTx.beginLockedTime.add(userTx.baseTx.lockedTime));
+        }
+        SmgTx storage smgTx = self.mapHashXSmgTxs[xHash];
+        if (smgTx.baseTx.status != TxStatus.None) {
+            return getLeftTime(smgTx.baseTx.beginLockedTime.add(smgTx.baseTx.lockedTime));
+        }
+        DebtTx storage debtTx = self.mapHashXDebtTxs[xHash];
+        if (debtTx.baseTx.status != TxStatus.None) {
+            return getLeftTime(debtTx.baseTx.beginLockedTime.add(debtTx.baseTx.lockedTime));
+        }
+        require(false, 'invalid xHash');
     }
 }
