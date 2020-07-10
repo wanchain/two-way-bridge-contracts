@@ -35,45 +35,35 @@ contract TokenManagerStorage is BasicStorage {
      **
      ************************************************************/
 
-    /// token info
     struct TokenInfo {
-        string              name;                /// token name on wanchain mainnet
-        string              symbol;              /// token symbol on wanchain mainnet
-        uint8              decimals;            /// token decimals on wanchain mainnet
+        string  name;
+        string  symbol;
+        uint8   decimals;
     }
 
-    /// infomation for a coin crossing a chain from a chain
     struct AncestorInfo {
-      bytes32   ancestorAccount;        /// coin's the most primitive address
-      string   ancestorName;           /// coin's the most primitive name
-      string   ancestorSymbol;         /// coin's the most primitive symbol
-      uint8   ancestorDecimals;       /// coin's the most primitive decimals
-      uint    ancestorChainID;        /// coin's the most primitive chainID
-    }
-
-    struct TokenPairInfo2 {
-      uint      fromChainID;            /// index in coinType.txt; e.g. eth=60, etc=61, wan=5718350
-      bytes32   fromAccount;            /// from address
-      uint      toChainID;              /// same as before
-      address   tokenAddress;           /// to token address
-
-      bool      isDelete;               /// whether been deleted
+      bytes32 ancestorAccount;
+      string  ancestorName;
+      string  ancestorSymbol;
+      uint8   ancestorDecimals;
+      uint    ancestorChainID;
     }
 
     struct TokenPairInfo {
       uint      fromChainID;            /// index in coinType.txt; e.g. eth=60, etc=61, wan=5718350
       bytes32   fromAccount;            /// from address
-      uint      toChainID;              /// same as before
+      uint      toChainID;              ///
       address   tokenAddress;           /// to token address
 
       bool      isDelete;               /// whether been deleted
     }
 
-    /**
-     *
-     * EVENTS
-     *
-     */
+    /************************************************************
+     **
+     ** EVENTS
+     **
+     ************************************************************/
+
      event TokenAdd(address tokenAddress, string name, string symbol, uint8 decimals);
      event TokenPairAdd(uint id, uint fromChainID, bytes32 fromAccount, uint toChainID, address tokenAddress);
      event UpdateAncestorInfo(uint id, bytes32 ancestorAccount, string ancestorName, string ancestorSymbol, uint ancestorChainID);
