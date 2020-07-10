@@ -4,3 +4,5 @@ coverage/
 yarn*
 .DS_Store
 coverage.json
+.vscode
+package-lock.json

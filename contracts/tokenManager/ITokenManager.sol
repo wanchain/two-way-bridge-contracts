@@ -1,5 +1,4 @@
-
-pragma solidity ^0.4.24;
+pragma solidity 0.4.26;
 
 interface ITokenManager {
   function getTokenPairInfo(uint id) external view
@@ -8,6 +7,4 @@ interface ITokenManager {
     returns (address addr, string name, string symbol, uint8 decimals);
   function getAncestorInfo(uint id) external view
     returns (bytes account, bytes name, bytes symbol, uint8 decimals, uint chainId);
-  function getFeeRatio(uint fromChainID, uint toChainID) external view
-    returns (uint);
 }
