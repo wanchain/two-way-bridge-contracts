@@ -60,7 +60,7 @@ library RapidityTxLib {
     struct UserTx {
         BaseTx baseTx;
         uint fee;
-        bytes shadow;               // Shadow address or account on mirror chain
+        bytes32 mirrorAccount;      // Shadow address or account on mirror chain
     }
     /// @notice storeman  tx info
     struct SmgTx {
@@ -87,9 +87,9 @@ library RapidityTxLib {
     /// @param  tokenPairID         token pair ID of cross chain
     /// @param  value               HTLC transfer value of token
     /// @param  fee                 HTLC transfer lock fee
-    /// @param  shadow              shadow address. used for receipt coins on opposite block chain
+    /// @param  mirrorAccount       mirrorAccount address. used for receipt coins on opposite block chain
     /// @param  status              HTLC tx status
-    function addUserTx(Data storage self, bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, bytes shadow, TxStatus status)
+    function addUserTx(Data storage self, bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, bytes32 mirrorAccount, TxStatus status)
         external
     {
         UserTx memory userTx = self.mapUniqueUserTxs[uniqueID];
@@ -101,7 +101,7 @@ library RapidityTxLib {
         userTx.baseTx.value = value;
         userTx.baseTx.userAccount = msg.sender;
         userTx.fee = fee;
-        userTx.shadow = shadow;
+        userTx.mirrorAccount = mirrorAccount;
 
         self.mapUniqueUserTxs[uniqueID] = userTx;
     }

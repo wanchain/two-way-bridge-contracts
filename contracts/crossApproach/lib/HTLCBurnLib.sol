@@ -50,9 +50,9 @@ library HTLCBurnLib {
         bytes32 smgID;                  /// ID of storeman group which user has selected
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
-        // uint lockFee;                   /// exchange token value
+        // uint lockFee;                /// exchange token value
         uint lockedTime;                /// HTLC lock time
-        bytes userOrigAccount;          /// account of token original chain, used to receive token
+        bytes32 userOrigAccount;        /// account of token original chain, used to receive token
         ITokenManager tokenManager;     /// interface of token manager
     }
 
@@ -110,7 +110,7 @@ library HTLCBurnLib {
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    HTLC value
     /// @param userAccount              account of shadow chain, used to receive token
-    event UserBurnLockLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
+    event UserBurnLockLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes32 userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -156,14 +156,6 @@ library HTLCBurnLib {
     * MANIPULATIONS
     *
     */
-
-    /// @notice       convert bytes to address
-    /// @param b      bytes array
-    function bytesToAddress(bytes memory b) private pure returns (address addr) {
-        assembly {
-            addr := mload(add(b,20))
-        }
-    }
 
     /// @notice                         burnBridge, user lock token on token original chain
     /// @notice                         event invoked by user burn lock
@@ -230,10 +222,10 @@ library HTLCBurnLib {
         uint value;
         (smgID, tokenPairID, lockFee, value,,) = storageData.htlcTxData.getUserTx(xHash);
 
-        // StoremanType.GroupStatus status;
+        // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == StoremanType.GroupStatus.ready || status == StoremanType.GroupStatus.unregistered, "PK doesn't exist");
+        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         storageData.quota.burnRedeem(tokenPairID, smgID, value);
 
@@ -264,10 +256,10 @@ library HTLCBurnLib {
         address userShadowAccount;
         (smgID, tokenPairID, lockFee, value, userShadowAccount,) = storageData.htlcTxData.getUserTx(params.xHash);
 
-        // StoremanType.GroupStatus status;
+        // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == StoremanType.GroupStatus.ready || status == StoremanType.GroupStatus.unregistered, "PK doesn't exist");
+        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         uint origChainID;
         uint shadowChainID;
@@ -338,16 +330,16 @@ library HTLCBurnLib {
         address userOrigAccount;
         (smgID, tokenPairID, value, userOrigAccount) = storageData.htlcTxData.getSmgTx(xHash);
 
-        // StoremanType.GroupStatus status;
+        // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == StoremanType.GroupStatus.ready || status == StoremanType.GroupStatus.unregistered, "PK doesn't exist");
+        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         storageData.quota.burnRedeem(tokenPairID, smgID, value);
 
-        bytes memory tokenOrigAccount;
+        bytes32 tokenOrigAccount;
         (,tokenOrigAccount,,,) = params.tokenManager.getTokenPairInfo(tokenPairID);
-        address tokenScAddr = bytesToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {
             (userOrigAccount).transfer(value);
@@ -372,10 +364,10 @@ library HTLCBurnLib {
         uint value;
         (smgID, tokenPairID, value,) = storageData.htlcTxData.getSmgTx(params.xHash);
 
-        // StoremanType.GroupStatus status;
+        // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        // require(status == StoremanType.GroupStatus.ready || status == StoremanType.GroupStatus.unregistered, "PK doesn't exist");
+        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         storageData.quota.burnRevoke(tokenPairID, smgID, value);
 

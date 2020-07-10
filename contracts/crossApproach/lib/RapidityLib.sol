@@ -46,37 +46,37 @@ library RapidityLib {
 
     /// @notice struct of Rapidity user mint lock parameters
     struct RapidityUserMintParams {
-        bytes32 uniqueID;                  /// hash of Rapidity random number
+        bytes32 uniqueID;               /// hash of Rapidity random number
         bytes32 smgID;                  /// ID of storeman group which user has selected
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
-        // uint lockFee;                   /// exchange token value
-        bytes userShadowAccount;        /// account of shadow chain, used to receive token
+        // uint lockFee;                /// exchange token value
+        bytes32 userShadowAccount;      /// account of shadow chain, used to receive token
         address smgFeeProxy;
         ITokenManager tokenManager;     /// interface of token manager
     }
 
     /// @notice struct of Rapidity storeman mint lock parameters
     struct RapiditySmgMintParams {
-        bytes32 uniqueID;                      /// hash of Rapidity random number
+        bytes32 uniqueID;                   /// hash of Rapidity random number
         bytes32 smgID;                      /// ID of storeman group which user has selected
         uint tokenPairID;                   /// token pair id on cross chain
         uint value;                         /// exchange token value
         address userShadowAccount;          /// account of shadow chain, used to receive token
-        // bytes r;                            /// R in schnorr signature
-        // bytes32 s;                          /// s in schnorr signature
+        // bytes r;                         /// R in schnorr signature
+        // bytes32 s;                       /// s in schnorr signature
         ITokenManager tokenManager;         /// interface of token manager
         // ISignatureVerifier sigVerifier;     /// interface of signature verifier
     }
 
     /// @notice struct of Rapidity user burn lock parameters
     struct RapidityUserBurnParams {
-        bytes32 uniqueID;                  /// hash of Rapidity random number
+        bytes32 uniqueID;               /// hash of Rapidity random number
         bytes32 smgID;                  /// ID of storeman group which user has selected
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
-        // uint lockFee;                   /// exchange token value
-        bytes userOrigAccount;          /// account of token original chain, used to receive token
+        // uint lockFee;                /// exchange token value
+        bytes32 userOrigAccount;       /// account of token original chain, used to receive token
         address smgFeeProxy;
         ITokenManager tokenManager;     /// interface of token manager
     }
@@ -109,7 +109,7 @@ library RapidityLib {
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    Rapidity value
     /// @param userAccount              account of shadow chain, used to receive token
-    event UserFastMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
+    event UserFastMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes32 userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -127,7 +127,7 @@ library RapidityLib {
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    Rapidity value
     /// @param userAccount              account of shadow chain, used to receive token
-    event UserFastBurnLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
+    event UserFastBurnLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes32 userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -144,14 +144,6 @@ library RapidityLib {
     *
     */
 
-    /// @notice       convert bytes to address
-    /// @param b      bytes array
-    function bytesToAddress(bytes memory b) private pure returns (address addr) {
-        assembly {
-            addr := mload(add(b,20))
-        }
-    }
-
     /// @notice                         mintBridge, user lock token on token original chain
     /// @notice                         event invoked by user mint lock
     /// @param storageData              Cross storage data
@@ -162,12 +154,12 @@ library RapidityLib {
         uint origChainID;
         uint shadowChainID;
         bool isDeleted;
-        bytes memory tokenOrigAccount;
+        bytes32 tokenOrigAccount;
         (origChainID,tokenOrigAccount,shadowChainID,,isDeleted) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
         require(!isDeleted, "Token doesn't exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
-        address tokenScAddr = bytesToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
 
         uint left;
         if (tokenScAddr == address(0)) {
@@ -277,9 +269,9 @@ library RapidityLib {
 
         storageData.quota.fastBurn(params.tokenPairID, params.smgID, params.value, false);
 
-        bytes memory tokenOrigAccount;
+        bytes32 tokenOrigAccount;
         (,tokenOrigAccount,,,) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
-        address tokenScAddr = bytesToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {
             (params.userOrigAccount).transfer(params.value);

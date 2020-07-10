@@ -51,4 +51,6 @@ contract CrossStorage is BasicStorage {
     /// @notice     unit: second
     uint public _smgFeeReceiverTimeout = uint(10*60);
 
+    enum GroupStatus { none, initial, curveSeted, failed, selected, ready, unregistered, dismissed }
+
 }
