@@ -1,20 +1,29 @@
 pragma solidity 0.4.26;
 
 interface IPriceOracle {
-    function getValue(bytes symbol) public view returns(uint price);
+    function getValue(bytes symbol) public view returns (uint256 price);
 }
 
 interface IDepositOracle {
-    function getDepositAmount(bytes32 storemanGroupId) public view returns(uint deposit);
+    function getDepositAmount(bytes32 storemanGroupId)
+        public
+        view
+        returns (uint256 deposit);
 }
 
 interface ITokenManager {
-    function getTokenPairInfo(uint id) public view returns(bytes ancestorSymbol);
+    function getTokenPairInfo(uint256 id)
+        public
+        view
+        returns (bytes ancestorSymbol);
+}
+
+contract StoremanType {
+    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
 }
 
 contract TestQuotaHelper {
-
-    mapping(bytes32 => uint) priceMap;
+    mapping(bytes32 => uint256) priceMap;
 
     constructor() public {
         priceMap[keccak256("BTC")] = 998000000000;
@@ -22,15 +31,53 @@ contract TestQuotaHelper {
         priceMap[keccak256("WAN")] = 21240000;
     }
 
-    function getValue(bytes key) public view returns(uint price) {
+    function getValue(bytes key) public view returns (uint256 price) {
         return priceMap[keccak256(key)];
     }
 
-    function setValue(bytes key, uint value) public {
+    function setValue(bytes key, uint256 value) public {
         priceMap[keccak256(key)] = value;
     }
 
-    function getDeposit(bytes32 storemanGroupId) public view returns(uint deposit) {
+    function getStoremanGroupConfig(bytes32 storemanGroupId)
+        external
+        view
+        returns (
+            bytes32 groupId,
+            StoremanType.GroupStatus status,
+            uint256 deposit,
+            uint256 chain1,
+            uint256 chain2,
+            uint256 curve1,
+            uint256 curve2,
+            bytes gpk1,
+            bytes gpk2,
+            uint256 startTime,
+            uint256 endTime
+        )
+    {
+        if (storemanGroupId == keccak256("storeman1")) {
+            deposit = 1000 ether;
+        }
+
+        if (storemanGroupId == keccak256("storeman2")) {
+            deposit = 1000 ether;
+        }
+
+        if (storemanGroupId == keccak256("storeman3")) {
+            deposit = 1000 ether;
+        }
+
+        if (storemanGroupId == keccak256("storeman4")) {
+            deposit = 1000 ether;
+        }
+    }
+
+    function getDeposit(bytes32 storemanGroupId)
+        public
+        view
+        returns (uint256 deposit)
+    {
         if (storemanGroupId == keccak256("storeman1")) {
             return 1000 ether;
         }
@@ -50,7 +97,11 @@ contract TestQuotaHelper {
         return 0;
     }
 
-    function getTokenPairInfo(uint id) public view returns(bytes ancestorSymbol, uint decimails) {
+    function getTokenPairInfo(uint256 id)
+        public
+        view
+        returns (bytes ancestorSymbol, uint256 decimails)
+    {
         if (id == 0) {
             return ("WAN", 8);
         }
