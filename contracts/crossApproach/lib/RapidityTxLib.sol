@@ -89,7 +89,8 @@ library RapidityTxLib {
     /// @param  fee                 HTLC transfer lock fee
     /// @param  mirrorAccount       mirrorAccount address. used for receipt coins on opposite block chain
     /// @param  status              HTLC tx status
-    function addUserTx(Data storage self, bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, bytes32 mirrorAccount, TxStatus status)
+    function addUserTx(Data storage self, bytes32 uniqueID, bytes32 smgID, uint tokenPairID,
+                    uint value, uint fee, bytes32 mirrorAccount, TxStatus status)
         external
     {
         UserTx memory userTx = self.mapUniqueUserTxs[uniqueID];

@@ -109,7 +109,8 @@ library RapidityLib {
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    Rapidity value
     /// @param userAccount              account of shadow chain, used to receive token
-    event UserFastMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes32 userAccount);
+    event UserFastMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID,
+                        uint value, uint fee, bytes32 userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
