@@ -1,6 +1,7 @@
 const encoder = require("../utils/encoder");
 const crossChainAccount = require('../utils/account/crossChainAccount');
-const BN = web3.utils.BN;
+
+
 
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
@@ -8,7 +9,12 @@ const HTLCProxy = artifacts.require('HTLCProxy');
 const HTLCDelegate = artifacts.require('HTLCDelegate');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
+
+
+
 const web3 = require('web3')
+const BN = web3.utils.BN;
+
 web3.from
 // common
 const ADDRESS_0 = '0x0000000000000000000000000000000000000000';

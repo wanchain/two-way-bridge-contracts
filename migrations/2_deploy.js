@@ -33,6 +33,8 @@ const Deposit = artifacts.require('Deposit');
 const StoremanLib = artifacts.require('StoremanLib');
 const IncentiveLib = artifacts.require('IncentiveLib');
 
+const fakeQuota = artifacts.require('fakeQuota');
+
 const curveMap = new Map([
     ['secp256k1', 0],
     ['bn256', 1]
@@ -119,8 +121,10 @@ module.exports = async function (deployer, network) {
     // console.log("impold:", await smgProxy.implementation())
     // console.log("smgDelegate.address:", smgDelegate.address)
     // await smgProxy.upgradeTo(smgDelegate.address);
+    await deployer.deploy(fakeQuota);
+    let fakeQuotaInst = await fakeQuota.deployed();
 
-    await smg.setDependence(tmProxy.address, htlcProxy.address, tsmg.address);
+    await smg.setDependence(tmProxy.address, htlcProxy.address, tsmg.address,fakeQuotaInst.address);
 
     // console.log("impold:", await smgProxy.implementation())
     // console.log("smgDelegate.address:", smgDelegate.address)

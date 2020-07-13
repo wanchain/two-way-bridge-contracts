@@ -381,7 +381,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         bytes32 groupId = data.storemanGroupMap[tokenOrigAccount][storemanGroup];
         StoremanType.StoremanGroup storage smg = data.groups[groupId];
-        require(smg.unregisterApplyTime != 0, "please unregister first
+        require(smg.unregisterApplyTime != 0, "please unregister first");
 		
         bool quitable = quotaInst.isDebtClean(groupId);
         require(quitable);
