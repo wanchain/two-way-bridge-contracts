@@ -7,4 +7,8 @@ interface ITokenManager {
     returns (address addr, string name, string symbol, uint8 decimals);
   function getAncestorInfo(uint id) external view
     returns (bytes account, bytes name, bytes symbol, uint8 decimals, uint chainId);
+  function getTokenPairs() external view
+    returns (uint[] id, uint[] fromChainID, bytes32[] fromAccount, uint[] toChainID, address[] tokenAddress, string[] ancestorSymbol, uint8[] ancestorDecimals);
+  function getTokenPairsByChainID(uint chainID1, uint chainID2) external view
+    returns (uint[] id, uint[] fromChainID, bytes32[] fromAccount, uint[] toChainID, address[] tokenAddress, string[] ancestorSymbol, uint8[] ancestorDecimals)
 }
