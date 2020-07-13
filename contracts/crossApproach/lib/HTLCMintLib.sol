@@ -159,15 +159,11 @@ library HTLCMintLib {
     *
     */
 
-    // event UserMintLockDebugTokenPair1Logger(bytes32 xHash, uint origChainID, uint shadowChainID, bytes32 tokenOrigAccount, bool isDeleted);
-    // event UserMintLockDebugTokenPair2Logger(bytes32 xHash, uint origChainID, uint shadowChainID, address tokenOrigAccount, bool isDeleted);
-    // event UserMintLockDebugParamsLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint value, bytes32 userAccount);
     /// @notice                         mintBridge, user lock token on token original chain
     /// @notice                         event invoked by user mint lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for user mint lock token on token original chain
     function userMintLock(CrossTypes.Data storage storageData, HTLCUserMintLockParams memory params) public {
-        // emit UserMintLockDebugParamsLogger(params.xHash, params.smgID, params.tokenPairID, params.value, params.userShadowAccount);
         uint origChainID;
         uint shadowChainID;
         bool isDeleted;
@@ -175,10 +171,8 @@ library HTLCMintLib {
         (origChainID,tokenOrigAccount,shadowChainID,,isDeleted) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
         require(!isDeleted, "Token doesn't exist");
 
-        // emit UserMintLockDebugTokenPair1Logger(params.xHash, origChainID, shadowChainID, tokenOrigAccount, isDeleted);
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
         address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
-        // emit UserMintLockDebugTokenPair2Logger(params.xHash, origChainID, shadowChainID, tokenScAddr, isDeleted);
 
         uint left;
         if (tokenScAddr == address(0)) {
@@ -216,7 +210,6 @@ library HTLCMintLib {
         emit UserMintLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userShadowAccount);
     }
 
-    event UserMintRedeemDebug1Logger(bytes32 x, bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, uint lockFee);
     /// @notice                         mintBridge, storeman redeem token on token original chain
     /// @notice                         event invoked by user redeem
     /// @param storageData              Cross storage data
@@ -232,7 +225,6 @@ library HTLCMintLib {
         uint value;
         (smgID, tokenPairID, value, lockFee,,) = storageData.htlcTxData.getUserTx(xHash);
 
-        emit UserMintRedeemDebug1Logger(params.x, xHash, smgID, tokenPairID, value, lockFee);
         // TODO
         // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
@@ -251,8 +243,6 @@ library HTLCMintLib {
         emit SmgMintRedeemLogger(params.x, smgID, tokenPairID, lockFee);
     }
 
-    event UserMintRevokeDebug1Logger(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, uint lockFee, address userAccount);
-    event UserMintRevokeDebug2Logger(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, uint lockFee, uint revokeFee, uint revokeBackFee, address userAccount);
     /// @notice                         mintBridge, user mint revoke token on token original chain
     /// @notice                         event invoked by user revoke
     /// @param storageData              Cross storage data
@@ -267,7 +257,6 @@ library HTLCMintLib {
         address userOrigAccount;
         (smgID, tokenPairID, value, lockFee, userOrigAccount,) = storageData.htlcTxData.getUserTx(params.xHash);
 
-        emit UserMintRevokeDebug1Logger(params.xHash, smgID, tokenPairID, value, lockFee, userOrigAccount);
         // TODO
         // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
@@ -287,7 +276,6 @@ library HTLCMintLib {
         if (left != 0) {
             (msg.sender).transfer(left);
         }
-        emit UserMintRevokeDebug2Logger(params.xHash, smgID, tokenPairID, value, lockFee, revokeFee, left, userOrigAccount);
 
         storageData.htlcTxData.revokeUserTx(params.xHash, revokeFee);
 

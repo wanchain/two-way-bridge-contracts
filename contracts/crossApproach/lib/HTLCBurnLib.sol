@@ -220,7 +220,7 @@ library HTLCBurnLib {
         uint tokenPairID;
         uint lockFee;
         uint value;
-        (smgID, tokenPairID, lockFee, value,,) = storageData.htlcTxData.getUserTx(xHash);
+        (smgID, tokenPairID, value, lockFee,,) = storageData.htlcTxData.getUserTx(xHash);
 
         // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
@@ -254,7 +254,7 @@ library HTLCBurnLib {
         uint lockFee;
         uint value;
         address userShadowAccount;
-        (smgID, tokenPairID, lockFee, value, userShadowAccount,) = storageData.htlcTxData.getUserTx(params.xHash);
+        (smgID, tokenPairID, value, lockFee, userShadowAccount,) = storageData.htlcTxData.getUserTx(params.xHash);
 
         // GroupStatus status;
         // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
