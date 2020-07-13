@@ -256,9 +256,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         uint cnt = 0;
         uint i = 0;
         for (; i < totalTokenPairs; i++ ) {
-            if (mapTokenPairIndex[i + 1] > 0) {
-                cnt ++;
-            }
+            cnt ++;
         }
 
         id = new uint[](cnt);
