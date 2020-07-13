@@ -119,7 +119,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         string   ancestorSymbol,
         uint    ancestorChainID
     )
-        public
+        external
         onlyOwner
         onlyValidID(id)
     {
@@ -143,7 +143,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         uint     toChainID,
         address  tokenAddress
     )
-        public
+        external
         onlyOwner
         onlyValidID(id)
     {
@@ -158,7 +158,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     function removeTokenPair(
         uint id
     )
-        public
+        external
         onlyOwner
         onlyValidID(id)
     {
@@ -172,7 +172,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         address to,
         uint    value
     )
-        public
+        external
         onlyAdmin
         onlyValidID(id)
     {
@@ -186,7 +186,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         uint    id,
         uint    value
     )
-        public
+        external
         onlyAdmin
         onlyValidID(id)
     {
@@ -199,7 +199,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     function addAdmin(
         address admin
     )
-        public
+        external
         onlyOwner
     {
         mapAdmin[admin] = true;
@@ -210,7 +210,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     function removeAdmin(
         address admin
     )
-        public
+        external
         onlyOwner
     {
         delete mapAdmin[admin];
