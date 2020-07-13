@@ -94,6 +94,7 @@ contract MappingToken is StandardToken, Owned {
     function mint(address account, uint value)
         external
         onlyOwner
+        onlyMeaningfulValue(value)
     {
         balances[account] = balances[account].add(value);
         totalSupply = totalSupply.add(value);
@@ -108,6 +109,7 @@ contract MappingToken is StandardToken, Owned {
     function burn(address account, uint value)
         external
         onlyOwner
+        onlyMeaningfulValue(value)
     {
         balances[account] = balances[account].sub(value);
         totalSupply = totalSupply.sub(value);

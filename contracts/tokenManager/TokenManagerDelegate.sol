@@ -45,8 +45,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
      */
 
     modifier onlyValidID(uint id) {
-        require(mapTokenPairInfo[id].tokenAddress != address(0), "id not exists");
-        require(!(mapTokenPairInfo[id].isDelete), "token deleted");
+        require(mapTokenPairInfo[id].isValid, "token deleted");
         _;
     }
 
@@ -100,7 +99,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         require(bytes(aInfo.ancestorSymbol).length != 0, "ancestorSymbol is null");
 
         // create a new record
-        mapTokenPairInfo[id] = TokenPairInfo(fromChainID, fromAccount, toChainID, tokenAddress, false);
+        mapTokenPairInfo[id] = TokenPairInfo(fromChainID, fromAccount, toChainID, tokenAddress, true);
         mapAncestorInfo[id] = AncestorInfo(aInfo.ancestorAccount, aInfo.ancestorName, aInfo.ancestorSymbol,
                                     aInfo.ancestorDecimals, aInfo.ancestorChainID);
 
@@ -162,7 +161,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         onlyOwner
         onlyValidID(id)
     {
-        mapTokenPairInfo[id].isDelete = true;
+        mapTokenPairInfo[id].isValid = false;
 
         emit RemoveTokenPair(id);
     }
@@ -223,13 +222,13 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     )
         external
         view
-        returns (uint fromChainID, bytes32 fromAccount, uint toChainID, address tokenAddress, bool isDelete)
+        returns (uint fromChainID, bytes32 fromAccount, uint toChainID, address tokenAddress, bool isValid)
     {
         fromChainID = mapTokenPairInfo[id].fromChainID;
         fromAccount = mapTokenPairInfo[id].fromAccount;
         toChainID = mapTokenPairInfo[id].toChainID;
         tokenAddress = mapTokenPairInfo[id].tokenAddress;
-        isDelete = mapTokenPairInfo[id].isDelete;
+        isValid = mapTokenPairInfo[id].isValid;
     }
 
     function getTokenInfo(uint id) external view returns (address addr, string name, string symbol, uint8 decimals) {
@@ -293,7 +292,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         uint[] memory id_valid = new uint[](totalTokenPairs);
         for (; i < totalTokenPairs; i++ ) {
             theId = mapTokenPairIndex[i + 1];
-            if (!mapTokenPairInfo[theId].isDelete) {
+            if (mapTokenPairInfo[theId].isValid) {
                 if ((mapTokenPairInfo[theId].fromChainID == chainID1) && (mapTokenPairInfo[theId].toChainID == chainID2) ||
                 (mapTokenPairInfo[theId].toChainID == chainID1) && (mapTokenPairInfo[theId].fromChainID == chainID2)) {
                     id_valid[cnt] = theId;
@@ -323,5 +322,15 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
             ancestorSymbol[i] = mapAncestorInfo[theId].ancestorSymbol;
             ancestorDecimals[i] = mapAncestorInfo[theId].ancestorDecimals;
         }
+    }
+
+    function updateToken(uint id, string name, string symbol)
+        external
+        onlyOwner
+    {
+        address instance = mapTokenPairInfo[id].tokenAddress;
+        IMappingToken(instance).update(name, symbol);
+
+        emit UpdateToken(id, name, symbol);
     }
 }

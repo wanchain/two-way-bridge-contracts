@@ -55,7 +55,7 @@ contract TokenManagerStorage is BasicStorage {
       uint      toChainID;              ///
       address   tokenAddress;           /// to token address
 
-      bool      isDelete;               /// whether been deleted
+      bool      isValid;               /// whether been deleted
     }
 
     /************************************************************
@@ -74,6 +74,7 @@ contract TokenManagerStorage is BasicStorage {
      event SetFeeRatio(uint fromChainID, uint toChainID, uint feeRatio);
      event AddAdmin(address admin);
      event RemoveAdmin(address admin);
+     event UpdateToken(uint id, string name, string symbol);
 
     /************************************************************
      **
