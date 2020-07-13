@@ -45,6 +45,8 @@ contract('TokenManagerDelegate', (accounts) => {
 
   const nameDAI = 'ETH DAI';
   const symbolDAI = 'DAI';
+  const nameDAI_NEW = 'NEW ETH DAI';
+  const symbolDAI_NEW = 'NEW DAI';
   const nameETH = 'ETH ETH';
   const symbolETH = 'ETH';
   const nameBTC = 'BTC BTC';
@@ -61,23 +63,28 @@ contract('TokenManagerDelegate', (accounts) => {
       const { tokenManagerDelegate } = await newTokenManager(accounts);
 
       let receipt = await tokenManagerDelegate.addToken(nameDAI, symbolDAI, decimals, {from: owner});
-      addTokenPairParam[0] = 11;
-      addTokenPairParam[2] = 61;
-      addTokenPairParam[4] = 5718351;
-      addTokenPairParam[5] = receipt.logs[0].args.tokenAddress;
-      await tokenManagerDelegate.addTokenPair(...addTokenPairParam, {from: owner});
+      let param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[0] = 11;
+      param[2] = 61;
+      param[4] = 5718351;
+      param[5] = receipt.logs[0].args.tokenAddress;
+      await tokenManagerDelegate.addTokenPair(...param, {from: owner});
 
       receipt = await tokenManagerDelegate.addToken(nameETH, symbolETH, decimals, {from: owner});
-      addTokenPairParam[0] = 12;
-      addTokenPairParam[5] = receipt.logs[0].args.tokenAddress;
-      await tokenManagerDelegate.addTokenPair(...addTokenPairParam, {from: owner});
+      param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[0] = 12;
+      param[2] = 61;
+      param[4] = 5718351;
+      param[5] = receipt.logs[0].args.tokenAddress;
+      await tokenManagerDelegate.addTokenPair(...param, {from: owner});
 
       receipt = await tokenManagerDelegate.addToken(nameBTC, symbolBTC, decimals, {from: owner});
-      addTokenPairParam[0] = 13;
-      addTokenPairParam[2] = 63;
-      addTokenPairParam[4] = 5718353;
-      addTokenPairParam[5] = receipt.logs[0].args.tokenAddress;
-      await tokenManagerDelegate.addTokenPair(...addTokenPairParam, {from: owner});
+      param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[0] = 13;
+      param[2] = 63;
+      param[4] = 5718353;
+      param[5] = receipt.logs[0].args.tokenAddress;
+      await tokenManagerDelegate.addTokenPair(...param, {from: owner});
 
       await tokenManagerDelegate.addAdmin(admin, {from: owner});
 
@@ -94,8 +101,14 @@ contract('TokenManagerDelegate', (accounts) => {
       const tokenPairInfo_get = await tokenManagerDelegate.getTokenPairInfo(tokenPairID);
       assert.equal(tokenPairInfo_get.fromChainID.toNumber(), tokenPairInfo.fromChainID.toNumber());
       
-      const tokenInfo = await tokenManagerDelegate.getTokenInfo(tokenPairID);
+      let tokenInfo = await tokenManagerDelegate.getTokenInfo(tokenPairID);
       assert.equal(tokenInfo.name, nameDAI);
+      assert.equal(tokenInfo.symbol, symbolDAI);
+
+      await tokenManagerDelegate.updateToken(tokenPairID, nameDAI_NEW, symbolDAI_NEW);
+      tokenInfo = await tokenManagerDelegate.getTokenInfo(tokenPairID);
+      assert.equal(tokenInfo.name, nameDAI_NEW);
+      assert.equal(tokenInfo.symbol, symbolDAI_NEW);
       
       const ancestorInfo = await tokenManagerDelegate.getAncestorInfo(tokenPairID);
       const padAccount = web3.utils.padRight("0x6b175474e89094c44da98b954eedeac495271d0f", 64);
@@ -134,6 +147,43 @@ contract('TokenManagerDelegate', (accounts) => {
       const obj = await tokenManagerDelegate.removeAdmin(admin, {from: owner});
       assert.equal(obj.receipt.status, true);
     });
+  });
+
+  describe('addToken', () => {
+    it('onlyOwner, name.length != 0, symbol.length != 0', async function() {
+      const { tokenManagerDelegate } = await newTokenManager(accounts);
+
+      const addTokenParam = [nameBTC, symbolBTC, decimals];
+      let obj = await sendAndGetReason(tokenManagerDelegate.addToken, addTokenParam, {from: admin});
+      assert.equal(obj.reason, "Not owner");
+
+      let param = JSON.parse(JSON.stringify(addTokenParam));
+      param[0] = "";
+      obj = await sendAndGetReason(tokenManagerDelegate.addToken, param, {from: owner});
+      assert.equal(obj.reason, "name is null");
+
+      param = JSON.parse(JSON.stringify(addTokenParam));
+      param[1] = "";
+      obj = await sendAndGetReason(tokenManagerDelegate.addToken, param, {from: owner});
+      assert.equal(obj.reason, "symbol is null");
+    });
+  });
+
+  describe('addTokenPair', () => {
+    it('ancestorName, ancestorSymbol length', async function() {
+      const { tokenManagerDelegate } = await newTokenManager(accounts);
+      let param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[1][1] = "";
+      param[5] = "0x6b175474e89094c44da98b954eedeac495271d0f";
+      let obj = await sendAndGetReason(tokenManagerDelegate.addTokenPair, param, {from: owner});
+      assert.equal(obj.reason, "ancestorName is null");
+
+      param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[1][2] = "";
+      param[5] = "0x6b175474e89094c44da98b954eedeac495271d0f";
+      obj = await sendAndGetReason(tokenManagerDelegate.addTokenPair, param, {from: owner});
+      assert.equal(obj.reason, "ancestorSymbol is null");
+    });
   })
 
   describe('fallback', () => {
@@ -153,19 +203,74 @@ contract('TokenManagerDelegate', (accounts) => {
   });
 
   describe('updateAncestorInfo', () => {
-    const updateAncestorInfoParam = [1, aAccount, aName, aSymbol, aChainID];
-    it('onlyOwner', async function() {
+    it('onlyOwner, onlyValidID, requires', async function() {
       const { tokenManagerDelegate } = await newTokenManager(accounts);
-      const param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
-      const obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: admin});
+
+      const updateAncestorInfoParam = [addTokenPairParam[0], aAccount, aName, aSymbol, aChainID];
+
+      let obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, updateAncestorInfoParam, {from: admin});
       assert.equal(obj.reason, "Not owner");
-    });
-    it('onlyValidID', async function() {
-      const { tokenManagerDelegate } = await newTokenManager(accounts);
-      const param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
-      param[0] = parseInt(await tokenManagerDelegate.totalTokenPairs()) + 1;
-      const obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: owner});
-      assert.equal(obj.reason, "id not exists");
+
+      let param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
+      obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: owner});
+      assert.equal(obj.reason, "token deleted");
+
+      let receipt = await tokenManagerDelegate.addToken(nameDAI, symbolDAI, decimals, {from: owner});
+      param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[5] = receipt.logs[0].args.tokenAddress;
+      await tokenManagerDelegate.addTokenPair(...param, {from: owner});
+
+      param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
+      param[2] = "";
+      obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: owner});
+      assert.equal(obj.reason, "ancestorName is null");
+
+      param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
+      param[3] = "";
+      obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: owner});
+      assert.equal(obj.reason, "ancestorSymbol is null");
+
+      await tokenManagerDelegate.removeTokenPair(addTokenPairParam[0]);
+
+      param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
+      obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: owner});
+      assert.equal(obj.reason, "token deleted");
     });
   });
+
+  describe('mintToken', () => {
+    it('onlyAdmin', async function() {
+      const { tokenManagerDelegate } = await newTokenManager(accounts);
+
+      let receipt = await tokenManagerDelegate.addToken(nameDAI, symbolDAI, decimals, {from: owner});
+      param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[5] = receipt.logs[0].args.tokenAddress;
+      await tokenManagerDelegate.addTokenPair(...param, {from: owner});
+
+      await tokenManagerDelegate.addAdmin(admin, {from: owner});
+
+      obj = await sendAndGetReason(tokenManagerDelegate.mintToken, [addTokenPairParam[0], other, 100], {from: owner});
+      assert.equal(obj.reason, "not admin");
+
+      obj = await sendAndGetReason(tokenManagerDelegate.mintToken, [addTokenPairParam[0], other, 0], {from: admin});
+      assert.equal(obj.reason, "Value is null");
+    });
+  });
+
+  describe('upgradeTo', () => {
+    it('onlyOwner, require', async function() {
+      const { tokenManagerDelegate, tokenManagerProxy } = await newTokenManager(accounts);
+      const param = ["0x6b175474e89094c44da98b954eedeac495271d0f"];
+      let obj = await sendAndGetReason(tokenManagerProxy.upgradeTo, param, {from: admin});
+      assert.equal(obj.reason, "Not owner");
+
+      param[0] = "0x0000000000000000000000000000000000000000";
+      obj = await sendAndGetReason(tokenManagerProxy.upgradeTo, param, {from: owner});
+      assert.equal(obj.reason, "Cannot upgrade to invalid address");
+
+      param[0] = tokenManagerDelegate.address;
+      obj = await sendAndGetReason(tokenManagerProxy.upgradeTo, param, {from: owner});
+      assert.equal(obj.reason, "Cannot upgrade to the same implementation");
+    })
+  })
 })

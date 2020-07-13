@@ -34,6 +34,7 @@ contract('Oracle', function(accounts) {
   const tokenETH = web3.utils.hexToBytes(web3.utils.toHex("ETH"));
   const tokenBTC = web3.utils.hexToBytes(web3.utils.toHex("BTC"));
 
+  const smgID = web3.utils.hexToBytes("0x6b175474e89094c44da98b954eedeac495271d0f");
   const v = 100000;
 
   before('init', async function() {})
@@ -50,6 +51,33 @@ contract('Oracle', function(accounts) {
 
       assert.equal(value, v);
       assert.equal(values[0], v);
+
+      await oracleDelegate.updateDeposit(smgID, v, { from: white });
+      const amount = web3.utils.toBN(await oracleDelegate.getDeposit(smgID)).toNumber();
+      assert.equal(v, amount);
+
+      await oracleDelegate.removeWhitelist(owner, { from: owner});
+      await oracleDelegate.removeWhitelist(white, { from: owner});
+
+      const gpk1 = web3.utils.hexToBytes("0x1234");
+      const gpk2 = web3.utils.hexToBytes("0x5678");
+      await oracleDelegate.setStoremanGroupConfig(smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10, { from: owner});
+      let obj = await oracleDelegate.getStoremanGroupConfig(smgID);
+      assert.equal(obj.groupId, "0x6b175474e89094c44da98b954eedeac495271d0f000000000000000000000000");
+      assert.equal(obj.status.toNumber(), 1);
+      assert.equal(obj.deposit.toNumber(), 2);
+      assert.equal(obj.chain1.toNumber(), 3);
+      assert.equal(obj.chain2.toNumber(), 4);
+      assert.equal(obj.curve1.toNumber(), 5);
+      assert.equal(obj.curve2.toNumber(), 6);
+      assert.equal(obj.gpk1, "0x1234");
+      assert.equal(obj.gpk2, "0x5678");
+      assert.equal(obj.startTime.toNumber(), 9);
+      assert.equal(obj.endTime.toNumber(), 10);
+
+      await oracleDelegate.setStoremanGroupStatus(smgID, 8, {from: owner});
+      obj = await oracleDelegate.getStoremanGroupConfig(smgID);
+      assert.equal(obj.status.toNumber(), 8);
     })
   });
 
@@ -109,6 +137,23 @@ contract('Oracle', function(accounts) {
       assert.equal(values[0], v1);
       assert.equal(values[1], v2);
       assert.equal(values[2], v3);
+    })
+  })
+
+  describe('upgradeTo', () => {
+    it('onlyOwner, require', async function() {
+      const { oracleDelegate, oracleProxy } = await newOracle(accounts);
+      const param = ["0x6b175474e89094c44da98b954eedeac495271d0f"];
+      let obj = await sendAndGetReason(oracleProxy.upgradeTo, param, {from: white});
+      assert.equal(obj.reason, "Not owner");
+
+      param[0] = "0x0000000000000000000000000000000000000000";
+      obj = await sendAndGetReason(oracleProxy.upgradeTo, param, {from: owner});
+      assert.equal(obj.reason, "Cannot upgrade to invalid address");
+
+      param[0] = oracleDelegate.address;
+      obj = await sendAndGetReason(oracleProxy.upgradeTo, param, {from: owner});
+      assert.equal(obj.reason, "Cannot upgrade to the same implementation");
     })
   })
 })
