@@ -135,4 +135,37 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(obj.receipt.status, true);
     });
   })
+
+  describe('fallback', () => {
+    it('revert', async function() {
+      try {
+        const { tokenManagerDelegate } = await newTokenManager(accounts);
+        const r = await web3.eth.sendTransaction({from: owner, to: tokenManagerDelegate.address});
+      } catch (e) {
+        const isHave = e.message.includes("revert Not support");
+        if (isHave) {
+          assert.ok("fallback is right");
+          return;
+        }
+      }
+      assert.fail("fallback error");
+    });
+  });
+
+  describe('updateAncestorInfo', () => {
+    const updateAncestorInfoParam = [1, aAccount, aName, aSymbol, aChainID];
+    it('onlyOwner', async function() {
+      const { tokenManagerDelegate } = await newTokenManager(accounts);
+      const param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
+      const obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: admin});
+      assert.equal(obj.reason, "Not owner");
+    });
+    it('onlyValidID', async function() {
+      const { tokenManagerDelegate } = await newTokenManager(accounts);
+      const param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
+      param[0] = parseInt(await tokenManagerDelegate.totalTokenPairs()) + 1;
+      const obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: owner});
+      assert.equal(obj.reason, "id not exists");
+    });
+  });
 })

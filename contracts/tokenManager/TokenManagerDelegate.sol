@@ -57,25 +57,6 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
 
     /**
     *
-    * PRIVATE
-    *
-    */
-
-    function bytesToBytes32(bytes b, uint offset) private pure returns (bytes32) {
-        bytes32 out;
-
-        for (uint i = 0; i < 32; i++) {
-            out |= bytes32(b[offset + i] & 0xFF) << (i * 8);
-        }
-        return out;
-    }
-
-    function bytes32ToBytes(bytes32 data) private pure returns (bytes) {
-        return abi.encodePacked(data);
-    }
-
-    /**
-    *
     * MANIPULATIONS
     *
     */
@@ -240,7 +221,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     function getTokenPairInfo(
         uint id
     )
-        public
+        external
         view
         returns (uint fromChainID, bytes32 fromAccount, uint toChainID, address tokenAddress, bool isDelete)
     {
@@ -251,7 +232,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         isDelete = mapTokenPairInfo[id].isDelete;
     }
 
-    function getTokenInfo(uint id) public view returns (address addr, string name, string symbol, uint8 decimals) {
+    function getTokenInfo(uint id) external view returns (address addr, string name, string symbol, uint8 decimals) {
         address instance = mapTokenPairInfo[id].tokenAddress;
         name = IMappingToken(instance).name();
         symbol = IMappingToken(instance).symbol();
@@ -259,7 +240,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         addr = instance;
     }
 
-    function getAncestorInfo(uint id) public view returns (bytes32 account, string name, string symbol, uint8 decimals, uint chainId) {
+    function getAncestorInfo(uint id) external view returns (bytes32 account, string name, string symbol, uint8 decimals, uint chainId) {
         account = mapAncestorInfo[id].ancestorAccount;
         name = mapAncestorInfo[id].ancestorName;
         symbol = mapAncestorInfo[id].ancestorSymbol;
