@@ -90,7 +90,7 @@ library GpkLib {
         // init signature curve
         uint256 curve1;
         uint256 curve2;
-        (,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
+        (,,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
         require(config.curves[uint8(curve1)] != address(0), "No curve1");
         require(config.curves[uint8(curve2)] != address(0), "No curve2");
         group.roundMap[group.round][0].curve = config.curves[uint8(curve1)];

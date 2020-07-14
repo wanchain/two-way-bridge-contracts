@@ -50,8 +50,8 @@ class Group {
 
   async initCurve() {
     let info = await this.smgSc.methods.getStoremanGroupConfig(this.id).call();
-    this.curves[0] = parseInt(info[4]);
-    this.curves[1] = parseInt(info[5]);
+    this.curves[0] = parseInt(info[5]);
+    this.curves[1] = parseInt(info[6]);
     console.log("initCurve: %O", this.curves)
   }  
 

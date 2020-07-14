@@ -158,7 +158,13 @@ class Round {
           this.polyCommitDone = true;
           console.log("polyCommitSend done");
         } else {
-          this.polyCommitTxHash = '';
+          let sent = this.group.createGpkSc.methods.getPolyCommit(this.group.id, this.round, this.curveIndex, this.group.selfAddress).call();
+          if (sent) { // already sent but lost txHash
+            this.polyCommitDone = true;
+            console.log("polyCommitSend already done");
+          } else {
+            this.polyCommitTxHash = '';
+          }
         }
       }
     }
@@ -302,8 +308,8 @@ class Round {
     if (send.encSijTxHash && !send.chainEncSijTime) {
       receipt = await wanchain.getTxReceipt(send.encSijTxHash);
       if (receipt) {
-        if (receipt.status) {
-          dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
+        dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.group.selfAddress, partner).call();
+        if (receipt.status || dest[0]) { // already sent but lost txHash
           send.chainEncSijTime = dest[2];
         } else {
           send.encSijTxHash = '';
@@ -314,8 +320,8 @@ class Round {
     if (send.checkTxHash && !send.chainCheckTime) {
       receipt = await wanchain.getTxReceipt(send.checkTxHash);
       if (receipt) {
-        if (receipt.status) {
-          dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
+        dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
+        if (receipt.status || dest[1]) { // already sent but lost txHash
           send.chainCheckTime = dest[3];
         } else {
           send.checkTxHash = '';
@@ -326,7 +332,10 @@ class Round {
     if (send.sijTxHash) {
       receipt = await wanchain.getTxReceipt(send.sijTxHash);
       if (receipt && !receipt.status) {
-        send.sijTxHash = '';
+        dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.group.selfAddress, partner).call();
+        if (!dest[4]) {
+          send.sijTxHash = '';
+        }
       }
     }
     // encSij timeout
