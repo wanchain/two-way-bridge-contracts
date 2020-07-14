@@ -5,7 +5,6 @@ const wanchain = require('../utils/wanchain');
 const {GpkStatus, CheckStatus} = require('./Types');
 const Send = require('./Send');
 const Receive = require('./Receive');
-const tool = require('../utils/tools');
 
 class Round {
   constructor(group, curveIndex, smList, threshold) {
@@ -21,7 +20,7 @@ class Round {
     this.curve = group.curves[curveIndex];
     this.smList = smList.concat().map(sm => sm.address);
     this.threshold = threshold;
-    this.status = GpkStatus.Init;
+    this.status = GpkStatus.PolyCommit;
     this.statusTime = 0;
 
     // self data
@@ -49,47 +48,34 @@ class Round {
     this.toStop = false;
   }
 
-  start() {
+  async start(isResume = false) {
     console.log("start gpk group %s round %d curve %d", this.group.id, this.round, this.curveIndex);
-    this.initPoly();
-    this.next(3000);
+    if (!isResume) {
+       this.initPoly();
+    }
+    await this.next(3000, isResume);
   }
-
-  resume() {
-    console.log("resume gpk group %s round %d curve %d", this.group.id, this.round, this.curveIndex);
-    this.next(3000);
-  }  
 
   initPoly() {
     for (let i = 0; i < this.threshold; i++) {
       let poly = encrypt.genRandomCoef(this.curve, 32);
       this.poly[i] = '0x' + poly.toBuffer().toString('hex');
       this.polyCommit[i] = '0x' + encrypt.mulG(this.curve, poly).getEncoded(false).toString('hex').substr(2);
-      // console.log("init polyCommit %i: %s", i, this.polyCommit[i]);
+      console.log("init polyCommit %i: %s", i, this.polyCommit[i]);
     }
   }
 
-  next(interval = 60000) {
+  async next(interval = 60000, isResume = false) {
     if (this.toStop) {
-      // this.removeProgress()
+      await this.group.removeProgress(this.round)
       return;
     }
-    // this.saveProgress();
+    if (!isResume) {
+      await this.group.saveProgress(this.round);
+    }
     setTimeout(() => {
       this.mainLoop();
     }, interval);
-  }
-
-  saveProgress() {
-    let copy = Object.assign({}, this);
-    copy.smgSc = null;
-    copy.createGpkSc = null;
-    copy.selfSk = '';
-    tool.writeContextFile(this.group.id + '.cxt', copy);
-  }
-
-  removeProgress() {
-    tool.clearContextFile(this.group.id + '.cxt');
   }
 
   stop() {

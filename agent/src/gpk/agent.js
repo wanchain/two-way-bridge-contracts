@@ -1,12 +1,11 @@
-const fs = require('fs');
-const path = require('path');
 const config = require('../../cfg/config');
 const Group = require('./Group');
-const Round = require('./Round');
 const EventTracker = require('../utils/EventTracker');
 const {GpkStatus} = require('./Types');
 const wanchain = require('../utils/wanchain');
-const tool = require('../utils/tools');
+const mongoose = require('mongoose');
+const GroupInfo = require('../../db/models/group_info');
+const Round = require('./Round');
 
 // record latest round of each group
 const groupMap = new Map();
@@ -18,23 +17,39 @@ const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.cre
 
 function run() {
   console.log("run gpk agent");
-  // recoverProcess();
-  listenEvent();
-}
-
-function recoverProcess() {
-  let dir = path.join(__dirname, '../../cxt/');
-  let files = fs.readdirSync(dir);
-  files.forEach(file => {
-    if (file.match(/^0x[0-9a-f]{64}\.cxt$/)) {
-      console.log("recoverProcess: %s", file);
-      let ctx = tool.readContextFile(file);
-      let round = new Round('', 0);
-      Object.assign(round, ctx);
-      groupMap.set(round.groupId, round);
-      round.resume();
+  // connect db
+  mongoose.connect(config.dbUrl(), config.dbOptions, async (err) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log('database connected');
+      await recoverGroup();
+      listenEvent();
     }
   });
+}
+
+async function recoverGroup() {
+  let groups = await GroupInfo.find({selfAddress: wanchain.selfAddress}).exec();
+  // console.log("read db group: %O", groups)
+  await Promise.all(groups.map(group => {
+    return new Promise(async (resolve) => {
+      console.log("recover group: %s", group.id);
+      let resumeGroup = new Group(group.id, group.round);
+      resumeGroup.curves = group.curves;
+      let r0 = new Round(resumeGroup, 0, [], 0);
+      Object.assign(r0, group.rounds[0]);
+      resumeGroup.rounds[0] = r0;
+      if (group.rounds[1]) {
+        let r1 = new Round(resumeGroup, 1, [], 0);
+        Object.assign(r1, group.rounds[1]);
+        resumeGroup.rounds[1] = r1;
+      }
+      groupMap.set(resumeGroup.id, resumeGroup);
+      await resumeGroup.start(true);
+      resolve();
+    });
+  }));
 }
 
 function listenEvent() {
@@ -77,7 +92,7 @@ async function procSmgSelectedEvent(evt) {
       groupMap.set(groupId, newGroup);
       await newGroup.start();
     } else if (group.round < round) {
-      await group.netxRound(round);
+      await group.nextRound(round);
     } else {
       console.error("%s gpk agent ignore group %s round %d status %d event", new Date().toISOString(), groupId, round, status);
     }

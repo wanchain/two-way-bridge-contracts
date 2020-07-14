@@ -1,6 +1,7 @@
 const config = require('../../cfg/config');
 const wanchain = require('../utils/wanchain');
 const Round = require('./Round');
+const GroupInfo = require('../../db/models/group_info');
 
 class Group {
   constructor(id, round) {
@@ -20,13 +21,20 @@ class Group {
     this.rounds = [];
   }
 
-  async start() {
+  async start(isResume = false) {
     console.log("start gpk group %s round %d", this.id, this.round);
     this.initSc();
     this.initSelfKey();
-    await this.initCurve();
     await wanchain.updateNounce();
-    await this.nextRound(this.round);
+    if (isResume) {
+      await this.rounds[0].start(isResume);
+      if (this.rounds[1]) {
+        await this.rounds[1].start(isResume);
+      }
+    } else {
+      await this.initCurve();
+      await this.nextRound(this.round);
+    }
   }
 
   initSc() {
@@ -69,24 +77,47 @@ class Group {
     return smList;
   }
 
-  initRound(smList, threshold) {
-    // curve1 round
-    this.rounds[0] = new Round(this, 0, smList, threshold);
-    this.rounds[0].start();
-    // curve2 round
-    if (this.curves[1] != this.curves[0]) {
-      this.rounds[1] = new Round(this, 1, smList, threshold)
-      this.rounds[1].start();
-    }
-  }
-
   async nextRound(round) {
     this.round = round;
     console.log("start gpk group %s round %d", this.id, this.round);
     let smList = await this.getSmList();
     let threshold = await this.smgSc.methods.getThresholdByGrpId(this.id).call();
-    this.initRound(smList, threshold);
-  }  
+    // curve1 round
+    this.rounds[0] = new Round(this, 0, smList, threshold);
+    await this.rounds[0].start();
+    // curve2 round
+    if (this.curves[1] != this.curves[0]) {
+      this.rounds[1] = new Round(this, 1, smList, threshold)
+      await this.rounds[1].start();
+    }
+  }
+
+  async saveProgress(round) {
+    if (round < this.round) {
+      console.log("ignore old round %d/%d process", round, this.round);
+      return;
+    }
+    let gCopy = Object.assign({}, this);
+    delete gCopy.smgSc;
+    delete gCopy.createGpkSc;
+    delete gCopy.selfSk;
+    gCopy.rounds = [];
+    let r0Copy = Object.assign({}, this.rounds[0]);
+    delete r0Copy.group;
+    gCopy.rounds[0] = r0Copy;
+    if (this.rounds[1]) {
+      let r1Copy = Object.assign({}, this.rounds[1]);
+      delete r1Copy.group;
+      gCopy.rounds[1] = r1Copy;
+    }
+    let key = {id: this.id, selfAddress: this.selfAddress};
+    await GroupInfo.updateOne(key, gCopy, {upsert: true});
+  }
+
+  async removeProgress(round) {
+    let key = {id: this.id, round, selfAddress: this.selfAddress};
+    await GroupInfo.deleteOne(key);
+  }
 }
 
 module.exports = Group;

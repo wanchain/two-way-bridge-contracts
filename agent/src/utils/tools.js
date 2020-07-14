@@ -49,7 +49,7 @@ async function writeContextDb(key, object) {
 
 async function clearContextDb(key) {
   try {
-    await Context.remove({key});
+    await Context.deleteOne({key});
     return true;
   } catch {
     return false;
