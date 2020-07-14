@@ -63,12 +63,26 @@ contract('TokenManagerDelegate', (accounts) => {
       const { tokenManagerDelegate } = await newTokenManager(accounts);
 
       let receipt = await tokenManagerDelegate.addToken(nameDAI, symbolDAI, decimals, {from: owner});
+      // check AddToken event log
+      const addTokenEvent = receipt.logs[0].args;
+      assert.ok(addTokenEvent.tokenAddress != "0x0000000000000000000000000000000000000000");
+      assert.equal(nameDAI, addTokenEvent.name);
+      assert.equal(symbolDAI, addTokenEvent.symbol);
+      assert.equal(decimals, addTokenEvent.decimals.toNumber());
+
       let param = JSON.parse(JSON.stringify(addTokenPairParam));
       param[0] = 11;
       param[2] = 61;
       param[4] = 5718351;
       param[5] = receipt.logs[0].args.tokenAddress;
-      await tokenManagerDelegate.addTokenPair(...param, {from: owner});
+      receipt = await tokenManagerDelegate.addTokenPair(...param, {from: owner})
+      // check AddTokenPair event log
+      const addTokenPairEvent = receipt.logs[0].args;
+      assert.equal(param[0], addTokenPairEvent.id.toNumber());
+      assert.equal(param[2], addTokenPairEvent.fromChainID.toNumber());
+      assert.equal(web3.utils.padRight(web3.utils.bytesToHex(param[3]), 64), addTokenPairEvent.fromAccount);
+      assert.equal(param[4], addTokenPairEvent.toChainID.toNumber());
+      assert.equal(param[5].toLowerCase(), addTokenPairEvent.tokenAddress.toLowerCase());
 
       receipt = await tokenManagerDelegate.addToken(nameETH, symbolETH, decimals, {from: owner});
       param = JSON.parse(JSON.stringify(addTokenPairParam));
@@ -86,14 +100,27 @@ contract('TokenManagerDelegate', (accounts) => {
       param[5] = receipt.logs[0].args.tokenAddress;
       await tokenManagerDelegate.addTokenPair(...param, {from: owner});
 
-      await tokenManagerDelegate.addAdmin(admin, {from: owner});
+      receipt = await tokenManagerDelegate.addAdmin(admin, {from: owner});
+      // check AddAdmin event log
+      assert.equal(admin.toLowerCase(), receipt.logs[0].args.admin.toLowerCase());
 
       const tokenPairID = parseInt(await tokenManagerDelegate.mapTokenPairIndex(1));
       const tokenPairInfo = await tokenManagerDelegate.mapTokenPairInfo(tokenPairID);
       const token = await MappingToken.at(tokenPairInfo.tokenAddress);
-      await tokenManagerDelegate.mintToken(tokenPairID, other, 100, {from: admin});
+      receipt = await tokenManagerDelegate.mintToken(tokenPairID, other, 100, {from: admin});
+      // check MintToken event log
+      const mintTokenEvent = receipt.logs[0].args;
+      assert.equal(tokenPairID, mintTokenEvent.id.toNumber());
+      assert.equal(other.toLowerCase(), mintTokenEvent.to.toLowerCase());
+      assert.equal(100, mintTokenEvent.value.toNumber());
+
       await token.transfer(admin, 80, {from: other});
-      await tokenManagerDelegate.burnToken(tokenPairID, 20, {from: admin});
+
+      receipt = await tokenManagerDelegate.burnToken(tokenPairID, 20, {from: admin});
+      // check BurnToken event log
+      const burnTokenEvent = receipt.logs[0].args;
+      assert.equal(tokenPairID, burnTokenEvent.id.toNumber());
+      assert.equal(20, burnTokenEvent.value.toNumber());
 
       assert.equal(web3.utils.toBN(await token.balanceOf(admin)).toNumber(), 60);
       assert.equal(web3.utils.toBN(await token.balanceOf(other)).toNumber(), 20);
@@ -105,7 +132,13 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(tokenInfo.name, nameDAI);
       assert.equal(tokenInfo.symbol, symbolDAI);
 
-      await tokenManagerDelegate.updateToken(tokenPairID, nameDAI_NEW, symbolDAI_NEW);
+      receipt = await tokenManagerDelegate.updateToken(tokenPairID, nameDAI_NEW, symbolDAI_NEW);
+      // check UpdateToken event log
+      const updateTokenEvent = receipt.logs[0].args;
+      assert.equal(tokenPairID, updateTokenEvent.id.toNumber());
+      assert.equal(nameDAI_NEW, updateTokenEvent.name);
+      assert.equal(symbolDAI_NEW, updateTokenEvent.symbol);
+
       tokenInfo = await tokenManagerDelegate.getTokenInfo(tokenPairID);
       assert.equal(tokenInfo.name, nameDAI_NEW);
       assert.equal(tokenInfo.symbol, symbolDAI_NEW);
@@ -118,7 +151,15 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(ancestorInfo.decimals.toNumber(), aDecimals);
       assert.equal(ancestorInfo.chainId.toNumber(), aChainID);
 
-      await tokenManagerDelegate.updateAncestorInfo(tokenPairID, aAccount, "new name", aSymbol, aChainID);
+      receipt = await tokenManagerDelegate.updateAncestorInfo(tokenPairID, aAccount, "new name", aSymbol, aChainID);
+      // check UpdateAncestorInfo event log
+      const updateAncestorInfoEvent = receipt.logs[0].args;
+      assert.equal(tokenPairID, updateAncestorInfoEvent.id.toNumber());
+      assert.equal(web3.utils.padRight(web3.utils.bytesToHex(aAccount), 64), updateAncestorInfoEvent.ancestorAccount);
+      assert.equal("new name", updateAncestorInfoEvent.ancestorName);
+      assert.equal(aSymbol, updateAncestorInfoEvent.ancestorSymbol);
+      assert.equal(aChainID, updateAncestorInfoEvent.ancestorChainID.toNumber());
+
       const ancestorInfo2 = await tokenManagerDelegate.getAncestorInfo(tokenPairID);
       assert.equal(ancestorInfo2.name, "new name");
 
@@ -133,12 +174,23 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(tokenPairs2.id[1].toNumber(), 12);
       assert.equal(tokenPairs2.id.length, 2);
 
-      await tokenManagerDelegate.removeTokenPair(11);
+      receipt = await tokenManagerDelegate.removeTokenPair(11);
+      // check RemoveTokenPair event log
+      assert.equal(receipt.logs[0].args.id.toNumber(), 11);
+
       const tokenPairs3 = await tokenManagerDelegate.getTokenPairsByChainID(fromChainID + 1, toChainID + 1);
       assert.equal(tokenPairs3.id[0].toNumber(), 12);
       assert.equal(tokenPairs3.id.length, 1);
 
-      await tokenManagerDelegate.updateTokenPair(13, toChainID + 1, fromAccount, fromChainID + 1, token.address);
+      receipt = await tokenManagerDelegate.updateTokenPair(13, toChainID + 1, fromAccount, fromChainID + 1, token.address);
+      // check UpdateTokenPair event log
+      const updateTokenPairEvent = receipt.logs[0].args;
+      assert.equal(updateTokenPairEvent.id.toNumber(), 13);
+      assert.equal(updateTokenPairEvent.fromChainID.toNumber(), toChainID + 1);
+      assert.equal(updateTokenPairEvent.fromAccount, web3.utils.padRight(web3.utils.bytesToHex(fromAccount), 64));
+      assert.equal(updateTokenPairEvent.toChainID.toNumber(), fromChainID + 1);
+      assert.equal(addTokenPairEvent.tokenAddress.toLowerCase(), token.address.toLowerCase());
+
       const tokenPairs4 = await tokenManagerDelegate.getTokenPairsByChainID(fromChainID + 1, toChainID + 1);
       assert.equal(tokenPairs4.id[0].toNumber(), 12);
       assert.equal(tokenPairs4.id[1].toNumber(), 13);
@@ -146,6 +198,9 @@ contract('TokenManagerDelegate', (accounts) => {
 
       const obj = await tokenManagerDelegate.removeAdmin(admin, {from: owner});
       assert.equal(obj.receipt.status, true);
+      // check RemoveAdmin event log
+      const removeAdminEvent = obj.logs[0].args;
+      assert.equal(admin.toLowerCase(), removeAdminEvent.admin.toLowerCase());
     });
   });
 

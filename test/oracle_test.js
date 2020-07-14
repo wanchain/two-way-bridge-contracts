@@ -43,25 +43,47 @@ contract('Oracle', function(accounts) {
   describe('normal', function() {
     it('good quick oracle example', async function() {
       const { oracleDelegate } = await newOracle(accounts);
-      await oracleDelegate.addWhitelist(white);
 
-      await oracleDelegate.updatePrice([tokenDAI], [v], { from: white });
+      let receipt = await oracleDelegate.updatePrice([tokenDAI], [v], { from: owner });
+      // check UpdatePrice event log
+      const updatePriceEvent = receipt.logs[0].args;
+      for (let i = 0; i<updatePriceEvent.keys.length; i++) {
+        assert.equal(web3.utils.padRight(web3.utils.bytesToHex(tokenDAI), 64), updatePriceEvent.keys[i]);
+        assert.equal(v, updatePriceEvent.prices[i].toNumber());
+      }
+      // check storage
       const value = web3.utils.toBN(await oracleDelegate.getValue(tokenDAI)).toNumber();
       const values = (await oracleDelegate.getValues([tokenDAI])).map(i => {return web3.utils.toBN(i).toNumber();});
 
       assert.equal(value, v);
       assert.equal(values[0], v);
 
-      await oracleDelegate.updateDeposit(smgID, v, { from: white });
+      receipt = await oracleDelegate.updateDeposit(smgID, v, { from: owner });
+      // check UpdateDeposit event log
+      const updateDepositEvent = receipt.logs[0].args;
+      assert.equal(web3.utils.padRight(web3.utils.bytesToHex(smgID), 64), updateDepositEvent.smgID);
+      assert.equal(v, updateDepositEvent.amount.toNumber());
+      // check storage
       const amount = web3.utils.toBN(await oracleDelegate.getDeposit(smgID)).toNumber();
       assert.equal(v, amount);
 
-      await oracleDelegate.removeWhitelist(owner, { from: owner});
-      await oracleDelegate.removeWhitelist(white, { from: owner});
-
       const gpk1 = web3.utils.hexToBytes("0x1234");
       const gpk2 = web3.utils.hexToBytes("0x5678");
-      await oracleDelegate.setStoremanGroupConfig(smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10, { from: owner});
+      receipt = await oracleDelegate.setStoremanGroupConfig(smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10, { from: owner});
+      // check UpdateDeposit event log
+      const setStoremanGroupConfigEvent = receipt.logs[0].args;
+      assert.equal(web3.utils.padRight(web3.utils.bytesToHex(smgID), 64), setStoremanGroupConfigEvent.id);
+      assert.equal(1, setStoremanGroupConfigEvent.status.toNumber());
+      assert.equal(2, setStoremanGroupConfigEvent.deposit.toNumber());
+      assert.equal(3, setStoremanGroupConfigEvent.chain[0].toNumber());
+      assert.equal(4, setStoremanGroupConfigEvent.chain[1].toNumber());
+      assert.equal(5, setStoremanGroupConfigEvent.curve[0].toNumber());
+      assert.equal(6, setStoremanGroupConfigEvent.curve[1].toNumber());
+      assert.equal(web3.utils.bytesToHex(gpk1), setStoremanGroupConfigEvent.gpk1);
+      assert.equal(web3.utils.bytesToHex(gpk2), setStoremanGroupConfigEvent.gpk2);
+      assert.equal(9, setStoremanGroupConfigEvent.startTime.toNumber());
+      assert.equal(10, setStoremanGroupConfigEvent.endTime.toNumber());
+      // check storage
       let obj = await oracleDelegate.getStoremanGroupConfig(smgID);
       assert.equal(obj.groupId, "0x6b175474e89094c44da98b954eedeac495271d0f000000000000000000000000");
       assert.equal(obj.status.toNumber(), 1);
@@ -75,35 +97,37 @@ contract('Oracle', function(accounts) {
       assert.equal(obj.startTime.toNumber(), 9);
       assert.equal(obj.endTime.toNumber(), 10);
 
-      await oracleDelegate.setStoremanGroupStatus(smgID, 8, {from: owner});
+      receipt = await oracleDelegate.setStoremanGroupStatus(smgID, 8, {from: owner});
+      // check SetStoremanGroupStatus event log
+      const setStoremanGroupStatusEvent = receipt.logs[0].args;
+      assert.equal(web3.utils.padRight(web3.utils.bytesToHex(smgID), 64), setStoremanGroupStatusEvent.id);
+      assert.equal(8, setStoremanGroupStatusEvent.status.toNumber());
+      // check storage
       obj = await oracleDelegate.getStoremanGroupConfig(smgID);
       assert.equal(obj.status.toNumber(), 8);
     })
   });
 
   describe('updatePrice', function() {
-    it('onlyWhitelist', async function() {
+    it('onlyOwner', async function() {
       const { oracleDelegate } = await newOracle(accounts);
-      await oracleDelegate.addWhitelist(white);
 
       const obj = await sendAndGetReason(oracleDelegate.updatePrice, [[tokenDAI], [v]], {from: other});
-      assert.equal(obj.reason, "Not in whitelist");
+      assert.equal(obj.reason, "Not owner");
     });
     it('keys.length == prices.length', async function() {
       const { oracleDelegate } = await newOracle(accounts);
-      await oracleDelegate.addWhitelist(white);
 
-      let obj = await sendAndGetReason(oracleDelegate.updatePrice, [[tokenDAI], [v, v]], {from: white});
+      let obj = await sendAndGetReason(oracleDelegate.updatePrice, [[tokenDAI], [v, v]], {from: owner});
       assert.equal(obj.reason, "length not same");
-      obj = await sendAndGetReason(oracleDelegate.updatePrice, [[tokenDAI, tokenETH], [v]], {from: white});
+      obj = await sendAndGetReason(oracleDelegate.updatePrice, [[tokenDAI, tokenETH], [v]], {from: owner});
       assert.equal(obj.reason, "length not same");
     });
 
     it('success', async function() {
       const { oracleDelegate } = await newOracle(accounts);
-      await oracleDelegate.addWhitelist(white);
 
-      const obj = await oracleDelegate.updatePrice([tokenDAI, tokenETH, tokenBTC], [100, 200, 300], {from: white});
+      const obj = await oracleDelegate.updatePrice([tokenDAI, tokenETH, tokenBTC], [100, 200, 300], {from: owner});
       assert.equal(obj.receipt.status, true);
     });
   });
@@ -111,11 +135,10 @@ contract('Oracle', function(accounts) {
   describe('getValue', () => {
     it('success', async function() {
       const { oracleDelegate } = await newOracle(accounts);
-      await oracleDelegate.addWhitelist(white);
 
       const v1 = 1600;
       const v2 = 1700; 
-      await oracleDelegate.updatePrice([tokenDAI, tokenETH], [v1, v2], {from: white});
+      await oracleDelegate.updatePrice([tokenDAI, tokenETH], [v1, v2], {from: owner});
 
       let value = web3.utils.toBN(await oracleDelegate.getValue(tokenDAI)).toNumber();
       assert.equal(value, v1);
@@ -127,12 +150,11 @@ contract('Oracle', function(accounts) {
   describe('getValues', () => {
     it('success', async function() {
       const { oracleDelegate } = await newOracle(accounts);
-      await oracleDelegate.addWhitelist(white);
 
       const v1 = 1600;
       const v2 = 1700; 
       const v3 = 1800; 
-      await oracleDelegate.updatePrice([tokenDAI, tokenETH, tokenBTC], [v1, v2, v3], {from: white});
+      await oracleDelegate.updatePrice([tokenDAI, tokenETH, tokenBTC], [v1, v2, v3], {from: owner});
       const values = (await oracleDelegate.getValues([tokenDAI, tokenETH, tokenBTC])).map(i => {return web3.utils.toBN(i).toNumber();});
       assert.equal(values[0], v1);
       assert.equal(values[1], v2);
