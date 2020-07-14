@@ -26,36 +26,9 @@
 
 pragma solidity ^0.4.24;
 
-import "../components/BasicStorage.sol";
-import "../interfaces/ITokenManager.sol";
-import "../interfaces/IMetric.sol";
-import "../lib/Deposit.sol";
-import "./StoremanType.sol";
-import "../interfaces/IQuota.sol";
 
-
-contract StoremanGroupStorage is BasicStorage {
-
-  /// token manager instance address
-  ITokenManager public tokenManager;
-  /// HTLC instance address
-  IMetric public metric;
-  IQuota public quotaInst;
-
-
-
-  uint backupCount = 3;
-  uint minStake = 10000;
-  address[] public badAddrs;
-  uint[] public badTypes;
-  uint memberCountDefault=4;
-  uint thresholdDefault = 3;
-  address  public  greateGpkAddr;
-  // StoremanType.GroupConfig  configDefault = StoremanType.GroupConfig({
-  //   memberCountDesign:memberCountDefault,
-  //   threshold:thresholdDefault
-  // });
-
-  StoremanType.StoremanData data;
-  
+contract fakeQuota {
+     function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {
+        return true;
+     }
 }

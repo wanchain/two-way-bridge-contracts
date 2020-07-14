@@ -91,8 +91,6 @@ contract('TestSmg', async (accounts) => {
         tsmg = await TestSmg.deployed();
         await tsmg.setSmgAddr(smgProxy.address)
 
-
-
     })
 
 

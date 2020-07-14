@@ -13,9 +13,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
-let contractAddress = undefined //    "0x4553061E7aD83d83F559487B1EB7847a9F90ad59"; //   
 
-//let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
 let gGasLimit=9000000;
 let gGasPrice=200000000000;
 

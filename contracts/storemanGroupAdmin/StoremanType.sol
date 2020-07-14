@@ -5,6 +5,8 @@ import "../lib/Deposit.sol";
 library StoremanType {
     using Deposit for Deposit.Records;
     enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
+    //ready: gpk finished.
+    
 
     struct Delegator {
         address sender; // the delegator wallet address
@@ -39,10 +41,10 @@ library StoremanType {
         mapping(address=>Delegator) delegators;
     }
 
-    struct GroupConfig {
-        uint memberCountDesign;
-        uint threshold;
-    }
+    // struct GroupConfig {
+    //     uint memberCountDesign;
+    //     uint threshold;
+    // }
 
     struct StoremanGroup {
         bytes32    groupId;
@@ -57,6 +59,8 @@ library StoremanType {
         uint whiteCountAll; // all
         uint  workDay;
         uint  totalDays;
+        uint registerTime;
+        uint registerDuration; // how long allow to staking.
         uint memberCountDesign;
         uint threshold;
         uint chain1;
@@ -64,6 +68,7 @@ library StoremanType {
         uint curve1;
         uint curve2;
         uint tickedCount;
+        uint minStakeIn;
         bytes gpk1;
         bytes gpk2;
         mapping(uint=>uint) tickedType;
@@ -77,7 +82,7 @@ library StoremanType {
   
     struct StoremanData {
         uint crossChainCo;//need to mul 1000
-        uint chainTypeCo; //need to mul 1000  
+        uint chainTypeCo; //need to mul 1000
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;
         mapping(bytes => mapping(bytes => bytes32))  storemanGroupMap;
         mapping(address=>StoremanType.Candidate) candidates;
