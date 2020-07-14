@@ -78,7 +78,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
 
         address tokenAddress = new MappingToken(string(name), string(symbol), decimals);
         // fire event
-        emit TokenAdd(tokenAddress, name, symbol, decimals);
+        emit AddToken(tokenAddress, name, symbol, decimals);
     }
 
     function addTokenPair(
@@ -107,7 +107,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         mapTokenPairIndex[totalTokenPairs] = id;
 
         // fire event
-        emit TokenPairAdd(id, fromChainID, fromAccount, toChainID, tokenAddress);
+        emit AddTokenPair(id, fromChainID, fromAccount, toChainID, tokenAddress);
     }
 
     function updateAncestorInfo(

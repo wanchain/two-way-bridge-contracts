@@ -8,16 +8,6 @@ import "../components/Owned.sol";
 import "./OracleStorage.sol";
 
 contract OracleDelegate is OracleStorage, Owned {
-  /**
-    *
-    * MODIFIERS
-    *
-    */
-  modifier onlyWhitelist() {
-        require(mapWhitelist[msg.sender], "Not in whitelist");
-        _;
-  }
-
   /// @notice update price
   /// @dev update price
   /// @param keys tokenPair keys
@@ -27,7 +17,7 @@ contract OracleDelegate is OracleStorage, Owned {
     uint[] prices
   )
     external
-    onlyWhitelist
+    onlyOwner
   {
     require(keys.length == prices.length, "length not same");
 
@@ -54,7 +44,7 @@ contract OracleDelegate is OracleStorage, Owned {
     uint amount
   )
     external
-    onlyWhitelist
+    onlyOwner
   {
     mapStoremanGroupAmount[smgID] = amount;
 
@@ -65,29 +55,6 @@ contract OracleDelegate is OracleStorage, Owned {
     return mapStoremanGroupAmount[smgID];
   }
 
-  function addWhitelist(
-    address addr
-  )
-    external
-    onlyOwner
-  {
-    mapWhitelist[addr] = true;
-
-    emit AddWhitelist(addr);
-  }
-
-  function removeWhitelist(
-    address addr
-  )
-    external
-    onlyOwner
-  {
-    if (mapWhitelist[addr]) {
-      delete mapWhitelist[addr];
-    }
-    emit RemoveWhitelist(addr);
-  }
-
   function setStoremanGroupStatus(
     bytes32 id,
     uint8  status
@@ -96,6 +63,8 @@ contract OracleDelegate is OracleStorage, Owned {
     onlyOwner
   {
     mapStoremanGroupConfig[id].status = status;
+
+    emit SetStoremanGroupStatus(id, status);
   }
 
   function setStoremanGroupConfig(
@@ -122,6 +91,8 @@ contract OracleDelegate is OracleStorage, Owned {
     mapStoremanGroupConfig[id].gpk2 = gpk2;
     mapStoremanGroupConfig[id].startTime = startTime;
     mapStoremanGroupConfig[id].endTime = endTime;
+
+    emit SetStoremanGroupConfig(id, status, deposit, chain, curve, gpk1, gpk2, startTime, endTime);
   }
 
   function getStoremanGroupConfig(
