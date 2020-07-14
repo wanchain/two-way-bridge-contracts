@@ -7,146 +7,59 @@ const TestSmg = artifacts.require('TestSmg')
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
-const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');const pu = require('promisefy-util')
+const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
+const pu = require('promisefy-util')
+const assert = require('chai').assert;
 
 const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
 let contractAddress = undefined //    "0x4553061E7aD83d83F559487B1EB7847a9F90ad59"; //   
 
-let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
 let EOS = utils.stringTobytes("EOS")
 
 let gGasLimit=9000000;
 let gGasPrice=200000000000;
 
 
+const { registerStart,stakeInPre, web3url,g } = require('./base.js')
 
 contract('StoremanGroupDelegate', async (accounts) => {
-    let tester = accounts[0]
-    const memberCountDesign = 4
-    const threshold  = 3
-    let id = utils.stringTobytes32(Date.now().toString())
-    let smgDelegate 
-    let tsmg;
+ 
+    let  smg
+    let groupId
+    let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
     before("init contracts", async() => {
-        if(!contractAddress) {
-            let smgProxy = await StoremanGroupProxy.deployed();
-            smgDelegate = await StoremanGroupDelegate.deployed();
-            await smgProxy.upgradeTo(smgDelegate.address);
-            contractAddress = smgDelegate.address
-            console.log("==============================storemanGroup contractAddress: ", contractAddress)
-        }
-
- 
-        tsmg = await TestSmg.deployed();
-        await tsmg.setSmgAddr(smgDelegate.address)
-
-
-        let tmProxy = await TokenManagerProxy.deployed();
-        let tm = await TokenManagerDelegate.deployed();
-        //await tmprx.upgradeTo(tm.address);
-
-        await smgDelegate.setDependence(tmProxy.address, tmProxy.address);
-
-
-
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
 
     })
 
-    it('registerStart_1 ', async ()=>{
-        let count = 4;
-        let wks = []
-        let srs= []
-        for(let i=0; i<count;i++){
-            let {addr:sr} = utils.getAddressFromInt(i+1000)
-            let {addr:wk} = utils.getAddressFromInt(i+2000)
-            wks.push(wk)
-            srs.push(sr)
-        }
-        let tx = await smgDelegate.registerStart(id,memberCountDesign,threshold,12345, 90, 14,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
-            {from: tester})
-        console.log("tx:", tx)
-        console.log("group:",await smgDelegate.groups(id))
+
+    it('registerStart', async ()=>{
+        groupId = await registerStart(smg);
+        console.log("groupId: ", groupId)
     })
 
-
-    it('test stakeIn', async()=>{
-        let stakerCount = 2
-        for(let i=0; i<stakerCount; i++){
-            let sf = utils.getAddressFromInt(i+1000)
-            let sw = utils.getAddressFromInt(i+2000)
-            let en = utils.getAddressFromInt(i+3000)
-            let sdata =  smgDelegate.contract.methods.stakeIn(id, sw.pk,en.pk,2000+i).encodeABI()
-            console.log("sdata:",sdata)
-            let rawTx = {
-                Txtype: 0x01,
-                nonce:  await pu.promisefy(web3.eth.getTransactionCount,[sf.addr,"pending"], web3.eth),
-                gasPrice: gGasPrice,
-                gas: gGasLimit,
-                to: contractAddress,
-                chainId: 6,
-                value: i+2000,
-                data: sdata,
-            }
-            //console.log("rawTx:", rawTx)
-            let tx = new Tx(rawTx)
-            tx.sign(sf.priv)
-            const serializedTx = '0x'+tx.serialize().toString('hex');
-            console.log("serializedTx:",serializedTx)
-            //let txhash = await web3.eth.sendSignedTransaction(serializedTx)
-            let txhash = await pu.promisefy(web3.eth.sendSignedTransaction,[serializedTx],web3.eth);
-            await utils.waitReceipt(txhash)
-            console.log("txhash i:", i, txhash)
-
-
-            let deCount=2;
-            for(let j=0; j<deCount; j++){
-                let de = utils.getAddressFromInt((i+1000)*10*1000 + j)
-                let dedata = smgDelegate.contract.methods.addDelegator(id,sw.addr).encodeABI()
-                let rawTx = {
-                    Txtype: 0x01,
-                    nonce: await pu.promisefy(web3.eth.getTransactionCount,[de.addr,"pending"], web3.eth),
-                    gasPrice: gGasPrice,
-                    gasLimit: gGasLimit,
-                    to: contractAddress,
-                    chainId: 6,
-                    value: j+10000,
-                    data: dedata,
-                }
-                console.log("rawTx j:", j, rawTx)
-
-                let tx = new Tx(rawTx)
-                tx.sign(de.priv)
-                const serializedTx = '0x'+tx.serialize().toString('hex');
-                txhash = await pu.promisefy(web3.eth.sendSignedTransaction,[serializedTx],web3.eth)
-                console.log("txhash i j:", i,j, txhash)
-            }
-
-            let candidate = undefined;
-            while(!(candidate && candidate["2"] == deCount)){
-                console.log("candicate i", i, candidate)
-                await pu.sleep(3000)
-                candidate  = await smgDelegate.getStaker(id, sw.addr)
-            }
-        }
-
-
+    it('stakeInPre ', async ()=>{
+        await stakeInPre(smg, groupId)
     })
+    
     it('test toSelect', async ()=>{
-        let tx = await smgDelegate.toSelect(id,{from: tester})
+        let tx = await smg.toSelect(groupId,{from: g.leader})
         console.log("toSelect tx:", tx)
         await utils.waitReceipt(tx.tx)
-        console.log("group:",await smgDelegate.groups(id))
+        console.log("group:",await smg.getStoremanGroupInfo(groupId))
 
         
-        let count = await smgDelegate.getSelectedSmNumber(id)
+        let count = await smg.getSelectedSmNumber(groupId)
+        assert.equal()
         console.log("count :", count)
 
         for(let i=0; i<count; i++) {
-            let skAddr = await smgDelegate.getSelectedSmAddress(id, i)
+            let skAddr = await smg.getSelectedSmInfo(groupId, i)
             console.log("skAddr:", i,skAddr)
-            let sk = await smgDelegate.getStoremanInfo(skAddr[0]);
+            let sk = await smg.getStoremanInfo(skAddr[0]);
             console.log("sk, i:", i, sk)
         }
 

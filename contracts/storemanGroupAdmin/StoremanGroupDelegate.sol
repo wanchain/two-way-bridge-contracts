@@ -25,7 +25,6 @@
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
 pragma solidity ^0.4.24;
-//pragma experimental ABIEncoderV2;
 
 import "../lib/SafeMath.sol";
 import "../components/Halt.sol";
@@ -168,6 +167,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.threshold = thresholdDefault;
         group.whiteCount = wkAddrs.length - backupCount;
         group.whiteCountAll = wkAddrs.length;
+        group.registerTime = now;
+        group.registerDuration = registerDuration;
         emit registerStartEvent(groupId, workStart, workDuration, registerDuration, preGroupId);
         return groupWhiteNode(group, preGroupId, wkAddrs, senders);
     }
@@ -187,7 +188,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         external
         onlyOwner
     {
-
+        group.minStakeIn = 0; // TODO: set min stakeIn value
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.memberCountDesign = memberCountdesign;
         group.threshold = threshold;
@@ -212,7 +213,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     2) calculate the sk incentive all days.
     3) calculate the delegator all days one by one.
      */
-    function testIncentiveAll( address wkAddr) public  {
+    function toIncentiveAll( address wkAddr) public  {
         IncentiveLib.incentiveCandidator(data, wkAddr);
     }
 
@@ -410,7 +411,14 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return (smg.groupId, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
          smg.gpk1, smg.gpk2, smg.workDay, smg.workDay+smg.totalDays);
     }
-
+    function getStoremanGroupTime(bytes32 id)
+        external
+        view
+        returns(bytes32 groupId,  uint registerTime, uint registerDuration,  uint startTime, uint endTime)
+    {
+        StoremanType.StoremanGroup storage smg = data.groups[id];
+        return (smg.groupId, smg.registerTime, smg.registerDuration, smg.workDay, smg.workDay+smg.totalDays);
+    }
 
 
     function checkGroupIncentive(bytes32 id, uint day) public view returns ( uint) {
@@ -423,7 +431,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return;
     }
 
-
+    function smgTransfer(bytes32 smgID) external payable{
+        // TODO htlc 转账手续费给admin. 
+    }
     function setCoefficient(uint _crossChainCo, uint _chainTypeCo) public {
         if (_crossChainCo != 0) {
             data.crossChainCo = _crossChainCo;

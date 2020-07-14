@@ -37,7 +37,7 @@ async function main() {
         await getAddressFromInt(i+1000)
         let a = await getAddressFromInt(i+2000)
         // let keystore = web3.eth.accounts.encrypt(a.priv.toString('hex'),'wanglu')
-        // keystore.waddress = wanutil.generateWaddrFromPriv(a.priv, a.priv);
+        // keystore.waddress = wanutil.generateWaddrFromPriv(a.priv, a.priv).slice(2);
         // keystore.crypto2 = keystore.crypto;
         // fs.writeFileSync('0x'+keystore.address, JSON.stringify(keystore))
         for(let j=0; j<dlCount; j++){

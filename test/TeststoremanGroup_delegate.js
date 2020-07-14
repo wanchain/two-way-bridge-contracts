@@ -1,126 +1,61 @@
+const lib = require("./lib");
 const utils = require("./utils");
 const Web3 = require('web3')
 const net = require('net')
 const ethutil = require("ethereumjs-util");
-const pu = require('promisefy-util')
-const schnorr = require('../utils/schnorr/tools.js');
-const assert = require('chai').assert;
 const TestSmg = artifacts.require('TestSmg')
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const HTLCProxy = artifacts.require('HTLCProxy');
-const HTLCDelegate = artifacts.require('HTLCDelegate');
-const CreateGpkProxy = artifacts.require('CreateGpkProxy');
-const PreCompile = artifacts.require('Enhancement');
+const pu = require('promisefy-util')
+const assert = require('chai').assert;
 
 const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
+let contractAddress = undefined //    "0x4553061E7aD83d83F559487B1EB7847a9F90ad59"; //   
 
-//let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
-let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
-//let web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8545'))
+let EOS = utils.stringTobytes("EOS")
+
 let gGasLimit=9000000;
 let gGasPrice=200000000000;
-let stakingValue = 2000;
 
-/*************************************
-staker: 1000 ~ 1000+100
-delegator: stakerId*100 ~ stakerID*100+1000
- ****************************************/
+   
 
+const sk = [{
+    addr:"0xaa79ac2e8a9d1831cc542a519f4d81576bdf3b20", pk:"0x1e38477d09aee7bfa3900d42b327ff711f42a5e1f1a8156d17a7621edd3a55455c8280f5af89b5e8f2a2a5216114ba5cf8a454593cb10614479557d2bc2f1588",
+},{
+    addr:"0x0beba6154f527596b4b8bb45326131a90c5c6140", pk:"0x28b11382ec24a15d5fa7ae77f9e9531ddc0f83a8ab2faab942db77411e17fdcf8160b0fa132933f1afa613eb19e73cef5d869e06ca58ad7787ddc5f7c11c369b",
+}]
+const { registerStart,stakeInPre, web3url,g } = require('./base.js')
 
-
-
-
-contract('TestSmg', async (accounts) => {
-    let tester = accounts[0].toLowerCase()
-    let wPK = "0x4ad3d9fe84de2cb5a7ac496d902e05a9ce63a338c541c742800d892ccc82b03c6caaed191be6dd1c9d633ee3f7c8ac1cc64cd8d8895940dbd927cd3eb4e30336"
-    let wAddr = "0x84f2742a958e49e4f976793de111c2cee733f47a"
-
-    let wAddr2 = "0x1fd1f74ba6be9538e1f1d1581fe206058e1090bb"
-    let wPK2 = "0x23bdcd1b58db079df94517a52fcfb5bd76efe0106074bffd97d5036700085d23d264b08f06aeaa604df8ecd3ed81e901c4baa2e61799a4f3e9673fcc3887bd1a"
-    let now = parseInt(Date.now()/1000);
-    let id = utils.stringTobytes32(now.toString())
-    //let id = "0x0000000000000000000000000000000000000031353930303435363333303733"
-
-    let deCount=1;
-
-    const WhiteCount = 4
-    const whiteBackup = 3
-    const memberCountDesign = 4
-    const threshold  = 3
-    let stakerCount = memberCountDesign+whiteBackup
-
+contract('StoremanGroupDelegate', async (accounts) => {
+ 
     let  smg
+    let groupId
+    let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
         smg = await StoremanGroupDelegate.at(smgProxy.address)
+
     })
 
 
-    it('registerStart_1 ', async ()=>{
-        let wks = []
-        let srs= []
-        for(let i=0; i<WhiteCount;i++){
-            let {addr:sr} = utils.getAddressFromInt(i+1000)
-            let {addr:wk} = utils.getAddressFromInt(i+2000)
-            wks.push(wk)
-            srs.push(sr)
-        }
-        
-        let tx = await smg.registerStart(id,now+10, 90, 10,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
-            {from: tester})
-        console.log("registerStart txhash:", tx.tx)
-        await utils.waitReceipt(tx.tx)
-        let group = await smg.getStoremanGroupInfo(id)
-        assert.equal(group.status, 1)
-        assert.equal(group.groupId, id)
-        assert.equal(group.deposit, 0)
-        assert.equal(group.memberCount, 0)
-        console.log("group:", group)
+    it('registerStart', async ()=>{
+        groupId = await registerStart(smg);
+        console.log("groupId: ", groupId)
     })
-    it('test stakeIn prepare', async()=>{
-        for(let i=0; i<stakerCount; i++){
-            let sf = utils.getAddressFromInt(i+1000)
-            let sw = utils.getAddressFromInt(i+2000)
-            let en = utils.getAddressFromInt(i+3000)
-            let stakingValue = 2000;
-            let sdata =  smg.contract.methods.stakeIn(id, sw.pk,en.pk,666).encodeABI()
-            //console.log("sdata:",sdata)
-            let rawTx = {
-                Txtype: 0x01,
-                nonce:  await pu.promisefy(web3.eth.getTransactionCount,[sf.addr,"pending"], web3.eth),
-                gasPrice: gGasPrice,
-                gas: gGasLimit,
-                to: contractAddress,
-                chainId: 6,
-                value: 2000,
-                data: sdata,
-            }
-            //console.log("rawTx:", rawTx)
-            let tx = new Tx(rawTx)
-            tx.sign(sf.priv)
-            const serializedTx = '0x'+tx.serialize().toString('hex');
-            //console.log("serializedTx:",serializedTx)
-            //let txhash = await web3.eth.sendSignedTransaction(serializedTx)
-            let txhash = await pu.promisefy(web3.eth.sendSignedTransaction,[serializedTx],web3.eth);
-            console.log("txhash i:", i, txhash)
-            await utils.waitReceipt(txhash)
-            let candidate  = await smg.getStoremanInfo(sw.addr)
-            console.log("candidate:", candidate)
-            assert.equal(candidate.sender.toLowerCase(), sf.addr)
-            assert.equal(candidate.pkAddress.toLowerCase(), sw.addr)
-            assert.equal(candidate.deposit, stakingValue)
-        }
+
+    it('stakeInPre ', async ()=>{
+        await stakeInPre(smg, groupId)
     })
+    
     it('test stakeIn', async()=>{
-            let stakingValue = 6000;
+        for(let i=0; i<sk.length; i++){
+            let stakingValue = 1 + i*100000000;
             let deFee = 5;
-            let tx =  await smg.stakeIn(id, wPK,wPK,deFee, {value:stakingValue})
-            
+            let tx =  await smg.stakeIn(id, sk[i].pk,sk[i].pk,deFee, {value:stakingValue})
             console.log("txhash stakeIn:", tx.tx)
             await utils.waitReceipt(tx.tx)
             let candidate  = await smg.getStoremanInfo(wAddr)
@@ -128,20 +63,9 @@ contract('TestSmg', async (accounts) => {
             assert.equal(candidate.sender.toLowerCase(), tester)
             assert.equal(candidate.pkAddress.toLowerCase(), wAddr)
             assert.equal(candidate.deposit, stakingValue)
+        }
     })
-    it('test stakeIn2', async()=>{
-        let stakingValue = 1000;
-        let deFee = 5;
-        let tx =  await smg.stakeIn(id, wPK2,wPK2,deFee, {value:stakingValue})
-        
-        console.log("txhash stakeIn:", tx.tx)
-        await utils.waitReceipt(tx.tx)
-        let candidate  = await smg.getStoremanInfo(wAddr2)
-        console.log("candidate:", candidate)
-        assert.equal(candidate.sender.toLowerCase(), tester)
-        assert.equal(candidate.pkAddress.toLowerCase(), wAddr2)
-        assert.equal(candidate.deposit, stakingValue)
-    })
+
 
     it('test delegateIn', async()=>{
         let payCount=1;
