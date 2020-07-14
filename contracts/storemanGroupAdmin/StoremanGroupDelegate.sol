@@ -74,15 +74,15 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     */
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param tmAddr                     token manager contract address
-    /// @param htlcAddr                   htlc contract address
-    function setDependence(address tmAddr, address htlcAddr, address gpkAddr,address quotaAddr)
+    /// @param metricAddr                 metricAddr contract address
+    function setDependence(address tmAddr, address metricAddr, address gpkAddr,address quotaAddr)
         external
         onlyOwner
     {
         require(tmAddr != address(0), "Invalid tokenManager address");
-        require(htlcAddr != address(0), "Invalid htlc address");
+        require(metricAddr != address(0), "Invalid htlc address");
         tokenManager = ITokenManager(tmAddr);
-        htlc = IHTLC(htlcAddr);
+        metric = IMetric(metricAddr);
         greateGpkAddr = gpkAddr;
         quotaInst = IQuota(quotaAddr);
     }
@@ -390,7 +390,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         emit StoremanGroupDismissedLogger(tokenOrigAccount, storemanGroup, now);
     }
 
-    function checkGroupDismissable(bytes32 groupId) public returns(bool dismissable) {
+    function checkGroupDismissable(bytes32 groupId) public returns(bool) {
         bool dismissable = quotaInst.isDebtClean(groupId);
         return dismissable;
     }
