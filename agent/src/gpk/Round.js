@@ -67,7 +67,7 @@ class Round {
 
   async next(interval = 60000, isResume = false) {
     if (this.toStop) {
-      await this.group.removeProgress(this.round)
+      await this.group.removeProgress(this.round);
       return;
     }
     if (!isResume) {
@@ -178,19 +178,17 @@ class Round {
   }
 
   async polyCommitTimeout() {
-    let i = 0;
-    for (; i < this.smList.length; i++) {
-      let receive = this.receive[i];
-      if (!receive.polyCommit) {
-        break;
-      }
-    }
-    if (i < this.smList.length) {
-      if (wanchain.getElapsed(this.statusTime) > this.ployCommitPeriod) {
-        if (!this.polyCommitTimeoutTxHash) {
-          this.polyCommitTimeoutTxHash = await wanchain.sendPolyCommitTimeout(this.group.id, this.curveIndex);
-          console.log("group %s round %d curve %d sendPolyCommitTimeout hash: %s", this.group.id, this.round, this.curveIndex, this.polyCommitTimeoutTxHash);
+    if ((wanchain.getElapsed(this.statusTime) > this.ployCommitPeriod) && !this.polyCommitTimeoutTxHash) {
+      let i = 0;
+      for (; i < this.smList.length; i++) {
+        let receive = this.receive[i];
+        if (!receive.polyCommit) {
+          break;
         }
+      }
+      if (i < this.smList.length) {
+        this.polyCommitTimeoutTxHash = await wanchain.sendPolyCommitTimeout(this.group.id, this.curveIndex);
+        console.log("group %s round %d curve %d sendPolyCommitTimeout hash: %s", this.group.id, this.round, this.curveIndex, this.polyCommitTimeoutTxHash);
       }
     }
   }
