@@ -69,7 +69,7 @@ contract('Verifier', accounts => {
     console.log('gas used', ret.gasUsed);
   });
 
-  it("verifier check secp256k1 signature", async () => {
+  it.skip("verifier check secp256k1 signature", async () => {
     let verifier = (await getSchnorrVerifierContracts(accounts)).verifier;
 
     let message = [0x12, 0x34];
@@ -93,6 +93,7 @@ contract('Verifier', accounts => {
     ).call();
 
     assert.equal(ret, true);
+    console.log('ret', ret);
 
     signature = '0x39731aadfd82e34ffd00065da67acb3dd4281b214025695da6934738863b33be';
     ret = await verifier.methods.verify(
@@ -106,6 +107,7 @@ contract('Verifier', accounts => {
     ).call();
 
     assert.equal(ret, false);
+    console.log('ret', ret);
 
     ret = await verifier.methods.verify(
       0,
