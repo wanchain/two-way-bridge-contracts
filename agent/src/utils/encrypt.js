@@ -69,10 +69,15 @@ async function encryptSij(pk, sij) {
 };
 
 async function decryptSij(sk, encSij) {
-  // console.log("decryptSij: %s", encSij);
-  let skBuf = Buffer.from(sk.substr(2), 'hex');
-  let M = await ecies.eccDecrypt(skBuf, encSij.substr(2));
-  return '0x' + M;
+  try {
+    // console.log("decryptSij: %s", encSij);
+    let skBuf = Buffer.from(sk.substr(2), 'hex');
+    let M = await ecies.eccDecrypt(skBuf, encSij.substr(2));
+    return '0x' + M;
+  } catch (err) {
+    console.error("decryptSij err: %O", err);
+    return null;
+  }
 };
 
 function verifySij(curve, sij, polyCommit, selfPk) {

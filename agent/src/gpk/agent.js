@@ -10,14 +10,11 @@ const Round = require('./Round');
 // record latest round of each group
 const groupMap = new Map();
 
-// TODO: restore group agent after reboot
-
 const smgSc = wanchain.getContract('smg', config.contractAddress.smg);
 const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
 
 function run() {
   console.log("run gpk agent");
-  // connect db
   mongoose.connect(config.dbUrl(), config.dbOptions, async (err) => {
     if (err) {
       console.error(err);
@@ -31,23 +28,27 @@ function run() {
 
 async function recoverGroup() {
   let groups = await GroupInfo.find({selfAddress: wanchain.selfAddress}).exec();
-  // console.log("read db group: %O", groups)
   await Promise.all(groups.map(group => {
-    return new Promise(async (resolve) => {
-      console.log("recover group: %s", group.id);
-      let resumeGroup = new Group(group.id, group.round);
-      resumeGroup.curves = group.curves;
-      let r0 = new Round(resumeGroup, 0, [], 0);
-      Object.assign(r0, group.rounds[0]);
-      resumeGroup.rounds[0] = r0;
-      if (group.rounds[1]) {
-        let r1 = new Round(resumeGroup, 1, [], 0);
-        Object.assign(r1, group.rounds[1]);
-        resumeGroup.rounds[1] = r1;
+    return new Promise(async (resolve, reject) => {
+      console.log("gpk agent recover group %s", group.id);
+      try {
+        let resumeGroup = new Group(group.id, group.round);
+        resumeGroup.curves = group.curves;
+        let r0 = new Round(resumeGroup, 0, [], 0);
+        Object.assign(r0, group.rounds[0]);
+        resumeGroup.rounds[0] = r0;
+        if (group.rounds[1]) {
+          let r1 = new Round(resumeGroup, 1, [], 0);
+          Object.assign(r1, group.rounds[1]);
+          resumeGroup.rounds[1] = r1;
+        }
+        groupMap.set(resumeGroup.id, resumeGroup);
+        await resumeGroup.start(true);
+        resolve();
+      } catch (err) {
+        console.log("gpk agent recover group %s error: %O", group.id, err);
+        reject(err);
       }
-      groupMap.set(resumeGroup.id, resumeGroup);
-      await resumeGroup.start(true);
-      resolve();
     });
   }));
 }
@@ -90,7 +91,7 @@ async function procSmgSelectedEvent(evt) {
   let groupId = evt.topics[1];
   let group = groupMap.get(groupId);
   let info = await createGpkSc.methods.getGroupInfo(groupId, -1).call();
-  console.log("agent get group: %O", info);
+  console.log("gpk agent get group info: %O", info);
   let round = parseInt(info[0]), status = parseInt(info[1]);
   if ((status == GpkStatus.PolyCommit) && checkSelfSelected(groupId)) {
     if (!group) {
@@ -121,11 +122,8 @@ function procGpkSlashLogger(evt) {
   let groupId = evt.topics[1];
   let round = evt.topics[2];
   let curve = evt.topics[3];
-  console.log("%s group %s round %d curve %d slash someone", new Date().toISOString(), groupId, round, curve);
-  console.log("slash evt: %O", evt);
+  console.log("%s group %s round %d curve %d slash someone: %O", new Date().toISOString(), groupId, round, curve, evt);
 }
-
-
 
 module.exports = {
   run

@@ -97,7 +97,7 @@ async function sendPloyCommit(groupId, round, curve, polyCommit) {
     offset += 64;
   }
   let pcStr = '0x' + buf.toString('hex');
-  console.log("group %s round %d curve %d sendPloyCommit %s", groupId, round, curve, pcStr);
+  console.log("group %s round %d curve %d sendPloyCommit %s", groupId, round, curve, "*" || pcStr);
   let txData = await createGpkSc.methods.setPolyCommit(groupId, round, curve, pcStr).encodeABI();
   let txHash = await sendTx(config.contractAddress.createGpk, txData);
   return txHash;

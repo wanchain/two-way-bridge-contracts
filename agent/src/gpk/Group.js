@@ -52,7 +52,7 @@ class Group {
     let info = await this.smgSc.methods.getStoremanGroupConfig(this.id).call();
     this.curves[0] = parseInt(info[5]);
     this.curves[1] = parseInt(info[6]);
-    console.log("initCurve: %O", this.curves)
+    console.log("gpk group %s curves: %O", this.id, this.curves);
   }  
 
   async getSmList() {
@@ -73,13 +73,21 @@ class Group {
       })
     }
     await Promise.all(ps);
-    console.log('get smList: %O', smList);    
+    console.log('gpk group get smList: %O', smList);
     return smList;
   }
 
   async nextRound(round) {
     this.round = round;
-    console.log("start gpk group %s round %d", this.id, this.round);
+    console.log("gpk group %s next round %d", this.id, this.round);
+    // stop previous round
+    if (this.rounds[0]) {
+      this.rounds[0].stop();
+    }
+    if (this.rounds[1]) {
+      this.rounds[1].stop();
+    }
+    // get new round sm list
     let smList = await this.getSmList();
     let threshold = await this.smgSc.methods.getThresholdByGrpId(this.id).call();
     // curve1 round
@@ -94,7 +102,7 @@ class Group {
 
   async saveProgress(round) {
     if (round < this.round) {
-      console.log("ignore old round %d/%d process", round, this.round);
+      console.log("gpk group ignore old round %d(<%d) process", round, this.round);
       return;
     }
     let gCopy = Object.assign({}, this);

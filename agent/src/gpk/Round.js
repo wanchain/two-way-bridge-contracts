@@ -61,7 +61,7 @@ class Round {
       let poly = encrypt.genRandomCoef(this.curve, 32);
       this.poly[i] = '0x' + poly.toBuffer().toString('hex');
       this.polyCommit[i] = '0x' + encrypt.mulG(this.curve, poly).getEncoded(false).toString('hex').substr(2);
-      console.log("init polyCommit %i: %s", i, this.polyCommit[i]);
+      // console.log("init polyCommit %i: %s", i, this.polyCommit[i]);
     }
   }
 
@@ -156,12 +156,12 @@ class Round {
       if (receipt) {
         if (receipt.status) {
           this.polyCommitDone = true;
-          console.log("polyCommitSend done");
+          // console.log("polyCommitSend done");
         } else {
           let sent = this.group.createGpkSc.methods.getPolyCommit(this.group.id, this.round, this.curveIndex, this.group.selfAddress).call();
           if (sent) { // already sent but lost txHash
             this.polyCommitDone = true;
-            console.log("polyCommitSend already done");
+            // console.log("polyCommitSend already done");
           } else {
             this.polyCommitTxHash = '';
           }
@@ -229,7 +229,7 @@ class Round {
       if (dest[0]) {
         let encSij = dest[0];
         receive.sij = await encrypt.decryptSij(this.group.selfSk, encSij);
-        console.log("negotiateReceive %s sij: %s", partner, receive.sij);
+        console.log('gpk group %s round %d curve %d receive %s sij %s', this.group.id, this.round, this.curveIndex, partner, "*" || receive.sij);
         if (receive.sij && encrypt.verifySij(this.curve, receive.sij, receive.polyCommit, this.group.selfPk)) {
           send.checkStatus = CheckStatus.Valid;
           // check all received
@@ -412,14 +412,14 @@ class Round {
     }
     if (!send.encSijTxHash) {
       send.encSijTxHash = await wanchain.sendEncSij(this.group.id, this.round, this.curveIndex, partner, send.encSij);
-      console.log("group %s round %d curve %d sendEncSij %s to %s hash: %s", this.group.id, this.round, this.curveIndex, send.encSij, partner, send.encSijTxHash);
+      console.log("group %s round %d curve %d sendEncSij %s to %s hash: %s", this.group.id, this.round, this.curveIndex, "*" || send.encSij, partner, send.encSijTxHash);
     }
   }
 
   async genEncSij(partner, index) {
     let send = this.send[index];
     let destPk = send.pk;
-    console.log("genEncSij for partner %s pk %s", partner, destPk);
+    // console.log("genEncSij for partner %s pk %s", partner, destPk);
     let sij = '0x' + encrypt.genSij(this.curve, this.poly, destPk).toBuffer(32).toString('hex');
     // console.log("sij=%s", sij);
     let enc = await encrypt.encryptSij(destPk, sij);
