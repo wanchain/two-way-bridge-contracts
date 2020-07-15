@@ -63,26 +63,16 @@ function genSij(curve, polyCoef, pk) {
 async function encryptSij(pk, sij) {
   let toPk = Buffer.from(unifyPk(pk), 'hex');
   let M = sij.substr(2);
-  try {
-    let enc = await ecies.eccEncrypt(toPk, M);
-    // console.log("%s encryptSij: %s", pk, '0x' + enc.ciphertext);
-    return enc;
-  } catch (err) {
-    console.error("%s encryptSij err: %O", pk, err);
-    return null;
-  }
+  let enc = await ecies.eccEncrypt(toPk, M);
+  // console.log("%s encryptSij: %s", pk, '0x' + enc.ciphertext);
+  return enc;
 };
 
 async function decryptSij(sk, encSij) {
-  try {
-    // console.log("decryptSij: %s", encSij);
-    let skBuf = Buffer.from(sk.substr(2), 'hex');
-    let M = await ecies.eccDecrypt(skBuf, encSij.substr(2));
-    return '0x' + M;
-  } catch (err) {
-    console.error("decryptSij err: %O", err);
-    return null;
-  }
+  // console.log("decryptSij: %s", encSij);
+  let skBuf = Buffer.from(sk.substr(2), 'hex');
+  let M = await ecies.eccDecrypt(skBuf, encSij.substr(2));
+  return '0x' + M;
 };
 
 function verifySij(curve, sij, polyCommit, selfPk) {

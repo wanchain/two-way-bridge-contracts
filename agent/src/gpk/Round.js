@@ -227,8 +227,8 @@ class Round {
     if (!receive.encSij) {
       dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
       if (dest[0]) {
-        receive.encSij = dest[0];
-        receive.sij = await encrypt.decryptSij(this.group.selfSk, receive.encSij);
+        let encSij = dest[0];
+        receive.sij = await encrypt.decryptSij(this.group.selfSk, encSij);
         console.log("negotiateReceive %s sij: %s", partner, receive.sij);
         if (receive.sij && encrypt.verifySij(this.curve, receive.sij, receive.polyCommit, this.group.selfPk)) {
           send.checkStatus = CheckStatus.Valid;
@@ -241,6 +241,7 @@ class Round {
           this.standby = true;
           console.error('gpk group %s round %d curve %d receive %s sij invalid', this.group.id, this.round, this.curveIndex, partner);
         }
+        receive.encSij = encSij;
       }
     }
     // checkStatus
@@ -407,6 +408,7 @@ class Round {
     // encSij
     if (!send.encSij) {
       await this.genEncSij(partner, index);
+      await this.group.saveProgress(this.round);
     }
     if (!send.encSijTxHash) {
       send.encSijTxHash = await wanchain.sendEncSij(this.group.id, this.round, this.curveIndex, partner, send.encSij);
@@ -418,16 +420,13 @@ class Round {
     let send = this.send[index];
     let destPk = send.pk;
     console.log("genEncSij for partner %s pk %s", partner, destPk);
-    send.sij = '0x' + encrypt.genSij(this.curve, this.poly, destPk).toBuffer(32).toString('hex');
-    // console.log("sij=%s", send.sij);
-    let enc = await encrypt.encryptSij(destPk, send.sij);
-    if (enc) {
-      send.encSij = '0x' + enc.ciphertext;
-      send.ephemPrivateKey = '0x' + enc.ephemPrivateKey;
-      // console.log("ephemPrivateKey=%s", send.ephemPrivateKey);
-    } else {
-      send.sij = '';
-    }
+    let sij = '0x' + encrypt.genSij(this.curve, this.poly, destPk).toBuffer(32).toString('hex');
+    // console.log("sij=%s", sij);
+    let enc = await encrypt.encryptSij(destPk, sij);
+    send.sij = sij;
+    send.encSij = '0x' + enc.ciphertext;
+    send.ephemPrivateKey = '0x' + enc.ephemPrivateKey;
+    // console.log("ephemPrivateKey=%s", send.ephemPrivateKey);
   }
   
   async procComplete() {
