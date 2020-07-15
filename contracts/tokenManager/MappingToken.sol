@@ -46,27 +46,6 @@ contract MappingToken is StandardToken, Owned {
      ** EVENTS
      **
      ****************************************************************************/
-    /// @notice Logger for token mint
-    /// @dev Logger for token mint
-    /// @param account Whom these token will be minted to
-    /// @param value Amount of ETH/WETH to be minted
-    /// @param totalSupply Total amount of WETH after token mint
-    event TokenMintedLogger(
-        address indexed account,
-        uint indexed value,
-        uint indexed totalSupply
-    );
-
-    /// @notice Logger for token burn
-    /// @dev Logger for token burn
-    /// @param account Initiator address
-    /// @param value Amount of WETH to be burnt
-    /// @param totalSupply Total amount of WETH after token burn
-    event TokenBurntLogger(
-        address indexed account,
-        uint indexed value,
-        uint indexed totalSupply
-    );
 
     ///@notice Initialize the TokenManager address
     ///@dev Initialize the TokenManager address
@@ -99,7 +78,8 @@ contract MappingToken is StandardToken, Owned {
         balances[account] = balances[account].add(value);
         totalSupply = totalSupply.add(value);
 
-        emit TokenMintedLogger(account, value, totalSupply);
+        // emit TokenMintedLogger(account, value, totalSupply);
+        emit Transfer(address(0), account, value);
     }
 
     /// @notice Burn token
@@ -114,7 +94,7 @@ contract MappingToken is StandardToken, Owned {
         balances[account] = balances[account].sub(value);
         totalSupply = totalSupply.sub(value);
 
-        emit TokenBurntLogger(account, value, totalSupply);
+        emit Transfer(account, address(0), value);
     }
 
     /// @notice update token name, symbol
