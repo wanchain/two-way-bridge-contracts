@@ -92,8 +92,8 @@ contract('Verifier', accounts => {
       web3.utils.hexToBytes(hashM),
     ).call();
 
+    // console.log('ret', ret);
     assert.equal(ret, true);
-    console.log('ret', ret);
 
     signature = '0x39731aadfd82e34ffd00065da67acb3dd4281b214025695da6934738863b33be';
     ret = await verifier.methods.verify(
@@ -106,8 +106,8 @@ contract('Verifier', accounts => {
       web3.utils.hexToBytes(hashM),
     ).call();
 
+    // console.log('ret', ret);
     assert.equal(ret, false);
-    console.log('ret', ret);
 
     ret = await verifier.methods.verify(
       0,
