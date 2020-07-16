@@ -42,7 +42,7 @@ contract TokenManagerStorage is BasicStorage {
     }
 
     struct AncestorInfo {
-      bytes32 ancestorAccount;
+      bytes   ancestorAccount;
       string  ancestorName;
       string  ancestorSymbol;
       uint8   ancestorDecimals;
@@ -51,7 +51,7 @@ contract TokenManagerStorage is BasicStorage {
 
     struct TokenPairInfo {
       uint      fromChainID;            /// index in coinType.txt; e.g. eth=60, etc=61, wan=5718350
-      bytes32   fromAccount;            /// from address
+      bytes     fromAccount;            /// from address
       uint      toChainID;              ///
       address   tokenAddress;           /// to token address
 
@@ -65,9 +65,9 @@ contract TokenManagerStorage is BasicStorage {
      ************************************************************/
 
      event AddToken(address tokenAddress, string name, string symbol, uint8 decimals);
-     event AddTokenPair(uint id, uint fromChainID, bytes32 fromAccount, uint toChainID, address tokenAddress);
-     event UpdateAncestorInfo(uint id, bytes32 ancestorAccount, string ancestorName, string ancestorSymbol, uint ancestorChainID);
-     event UpdateTokenPair(uint id, uint fromChainID, bytes32 fromAccount, uint toChainID, address tokenAddress);
+     event AddTokenPair(uint id, uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress);
+     event UpdateAncestorInfo(uint id, bytes ancestorAccount, string ancestorName, string ancestorSymbol, uint ancestorChainID);
+     event UpdateTokenPair(uint id, uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress);
      event RemoveTokenPair(uint id);
      event MintToken(uint id, address to, uint value);
      event BurnToken(uint id, uint value);
