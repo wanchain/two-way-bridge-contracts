@@ -71,6 +71,7 @@ library StoremanType {
         uint minStakeIn;
         bytes gpk1;
         bytes gpk2;
+		uint  incentiveThresHold;
         mapping(uint=>uint) tickedType;
         mapping(uint=>address) tickedNode;
         mapping(uint=>address) addrMap;
