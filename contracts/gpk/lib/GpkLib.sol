@@ -39,8 +39,8 @@ library GpkLib {
     uint32 constant PLOYCOMMIT_PERIOD = 10 * 60; // 10 minutes
     uint32 constant NEGOTIATE_PERIOD = 15 * 60;  // 15 minutes
 
-    //
-    uint8 constant MAX_ROUND = 255
+    // negotiate max round
+    uint8 constant MAX_ROUND = 255;
 
     /**
      *
