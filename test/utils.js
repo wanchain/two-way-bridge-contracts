@@ -1,5 +1,7 @@
 const Web3 = require('web3');
 const assert = require('assert');
+const MappingToken = artifacts.require("MappingToken");
+
 // const JacksPotDelegate = artifacts.require('./JacksPotDelegate.sol');
 // const JacksPotProxy = artifacts.require('./JacksPotProxy.sol');
 // const TestHelper = artifacts.require('./test/TestHelper.sol');
@@ -163,6 +165,30 @@ const resAssert = (res, gasUsed, eventName, item, value) => {
     }
 }
 
+async function sleep(time) {
+    return new Promise(function (resolve, reject) {
+        setTimeout(function () {
+            resolve();
+        }, time);
+    });
+};
+
+async function getRC20TokenInstance(tokenAccount) {
+    return await MappingToken.at(tokenAccount);
+};
+
+async function getRC20TokenBalance(tokenAccount, userAccount) {
+    let tokenInstance = await getRC20TokenInstance(tokenAccount);
+    let balance = await tokenInstance.balanceOf(userAccount);
+    console.log("typeof(balance)", balance);
+    return balance.toString();
+};
+
+async function getBalance(userAccount) {
+    let balance = await web3.eth.getBalance(userAccount);
+    return Number(balance);
+}
+
 module.exports = {
     getWeb3,
     newContract,
@@ -173,4 +199,8 @@ module.exports = {
     stringToBytes,
     bytesToString,
     getSchnorrVerifierContracts,
+    sleep,
+    getRC20TokenInstance,
+    getRC20TokenBalance,
+    getBalance
 };
