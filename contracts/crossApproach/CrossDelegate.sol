@@ -63,8 +63,8 @@ contract CrossDelegate is CrossStorage, Halt {
 
     /// @dev Check relevant contract addresses must be initialized before call its method
     modifier initialized {
-        require(storageData.tokenManager != ITokenManager(address(0)), "Token manager is null");
-        require(address(storageData.smgAdminProxy) != address(0), "Storeman admin proxy is null");
+        require(address(storageData.tokenManager) != address(0) && address(storageData.smgAdminProxy) != address(0) && address(storageData.quota) != address(0) && address(storageData.sigVerifier) != address(0),
+                "Invalid parnters");
         _;
     }
 
@@ -687,7 +687,8 @@ contract CrossDelegate is CrossStorage, Halt {
         external
         onlyOwner
     {
-        require(tokenManager != address(0) && smgAdminProxy != address(0) && quota != address(0), "Parameter is invalid");
+        require(tokenManager != address(0) && smgAdminProxy != address(0) && quota != address(0) && sigVerifier != address(0),
+            "Parameter is invalid");
 
         storageData.smgAdminProxy = ISmgAdminProxy(smgAdminProxy);
         storageData.tokenManager = ITokenManager(tokenManager);

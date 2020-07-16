@@ -154,10 +154,10 @@ library RapidityLib {
     {
         uint origChainID;
         uint shadowChainID;
-        bool isDeleted;
+        bool isValid;
         bytes32 tokenOrigAccount;
-        (origChainID,tokenOrigAccount,shadowChainID,,isDeleted) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
-        require(!isDeleted, "Token doesn't exist");
+        (origChainID,tokenOrigAccount,shadowChainID,,isValid) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
+        require(isValid, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
         address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
@@ -218,10 +218,10 @@ library RapidityLib {
     {
         uint origChainID;
         uint shadowChainID;
-        bool isDeleted;
+        bool isValid;
         address tokenShadowAccount;
-        (origChainID,,shadowChainID,tokenShadowAccount,isDeleted) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
-        require(!isDeleted, "Token doesn't exist");
+        (origChainID,,shadowChainID,tokenShadowAccount,isValid) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
+        require(isValid, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
 
