@@ -42,7 +42,7 @@ library GpkTypes {
         uint32 negotiatePeriod;
         /// round -> curveIndex -> Round
         mapping(uint8 => mapping(uint8 => Round)) roundMap;
-        uint8 smNumber;
+        uint16 smNumber;
         /// index -> txAddress
         mapping(uint => address) indexMap;
         /// txAddress -> pk
@@ -52,8 +52,8 @@ library GpkTypes {
     struct Round {
         address curve;
         GpkStatus status;
-        uint8 polyCommitCount;
-        uint16 checkValidCount;
+        uint16 polyCommitCount;
+        uint32 checkValidCount;
         uint statusTime;
         bytes gpk;
         /// txAddress -> Src

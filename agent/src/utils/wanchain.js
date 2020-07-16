@@ -58,7 +58,6 @@ async function sendTx(contractAddr, data) {
       gasPrice: config.gasPrice,
       gasLimit: config.gasLimit,
       to: contractAddr,
-      chainId: '0x06',
       value: '0x0',
       data: data
   };

@@ -39,6 +39,9 @@ library GpkLib {
     uint32 constant PLOYCOMMIT_PERIOD = 10 * 60; // 10 minutes
     uint32 constant NEGOTIATE_PERIOD = 15 * 60;  // 15 minutes
 
+    //
+    uint8 constant MAX_ROUND = 255
+
     /**
      *
      * EVENTS
@@ -54,12 +57,12 @@ library GpkLib {
     /// @notice                           event for contract slash storeman
     /// @param groupId                    storeman group id
     /// @param round                      group negotiate round
-    /// @param curve                      signature curve index
+    /// @param curveIndex                 signature curve index
     /// @param slashType                  the reason to slash
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     /// @param srcOrDest                  if true, slash src, otherwise slash dest
-    event SlashLogger(bytes32 indexed groupId, uint8 indexed round, uint8 indexed curve, uint8 slashType, address src, address dest, bool srcOrDest);
+    event SlashLogger(bytes32 indexed groupId, uint8 indexed round, uint8 indexed curveIndex, uint8 slashType, address src, address dest, bool srcOrDest);
 
     /// @notice                           event for reset protocol
     /// @param groupId                    storeman group id
@@ -104,7 +107,7 @@ library GpkLib {
 
         // selected sm list
         group.groupId = groupId;
-        group.smNumber = uint8(IStoremanGroup(smg).getSelectedSmNumber(groupId));
+        group.smNumber = uint16(IStoremanGroup(smg).getSelectedSmNumber(groupId));
         require(group.smNumber > 0, "Invalid number");
         // retrieve nodes
         address txAddress;
@@ -223,17 +226,17 @@ library GpkLib {
 
     /// @notice                           function for slash
     /// @param group                      storeman group
-    /// @param curve                      signature curve index
+    /// @param curveIndex                 signature curve index
     /// @param slashType                  slash reason
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     /// @param srcOrDest                  slash src or dest
     /// @param toReset                    is reset immediately
-    function slash(GpkTypes.Group storage group, uint8 curve,
+    function slash(GpkTypes.Group storage group, uint8 curveIndex,
         GpkTypes.SlashType slashType, address src, address dest, bool srcOrDest, bool toReset, address smg)
         public
     {
-        emit SlashLogger(group.groupId, group.round, curve, uint8(slashType), src, dest, srcOrDest);
+        emit SlashLogger(group.groupId, group.round, curveIndex, uint8(slashType), src, dest, srcOrDest);
         if (toReset) {
             uint[] memory types = new uint[](1);
             types[0] = uint(slashType);
@@ -285,7 +288,7 @@ library GpkLib {
         group.smNumber = 0;
 
         emit ResetLogger(group.groupId, group.round);
-        if (isContinue) {
+        if (isContinue && (group.round < MAX_ROUND)) {
           group.round++;
         }
     }

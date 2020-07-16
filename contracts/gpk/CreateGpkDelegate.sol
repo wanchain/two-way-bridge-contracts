@@ -367,7 +367,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         }
     }
 
-    function getGroupInfo(bytes32 groupId, int8 roundIndex)
+    function getGroupInfo(bytes32 groupId, int16 roundIndex)
         external
         view
         returns(uint8 queriedRound, uint8 curve1Status, uint curve1StatusTime, uint8 curve2Status, uint curve2StatusTime,
