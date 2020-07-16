@@ -87,7 +87,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         AncestorInfo aInfo,
 
         uint    fromChainID,
-        bytes32   fromAccount,
+        bytes   fromAccount,
         uint    toChainID,
         address tokenAddress
     )
@@ -113,7 +113,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     function updateAncestorInfo(
         uint    id,
 
-        bytes32   ancestorAccount,
+        bytes   ancestorAccount,
         string   ancestorName,
         string   ancestorSymbol,
         uint    ancestorChainID
@@ -137,7 +137,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         uint    id,
 
         uint    fromChainID,
-        bytes32   fromAccount,
+        bytes   fromAccount,
 
         uint     toChainID,
         address  tokenAddress
@@ -222,7 +222,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     )
         external
         view
-        returns (uint fromChainID, bytes32 fromAccount, uint toChainID, address tokenAddress, bool isValid)
+        returns (uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress, bool isValid)
     {
         fromChainID = mapTokenPairInfo[id].fromChainID;
         fromAccount = mapTokenPairInfo[id].fromAccount;
@@ -239,7 +239,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         addr = instance;
     }
 
-    function getAncestorInfo(uint id) external view returns (bytes32 account, string name, string symbol, uint8 decimals, uint chainId) {
+    function getAncestorInfo(uint id) external view returns (bytes account, string name, string symbol, uint8 decimals, uint chainId) {
         account = mapAncestorInfo[id].ancestorAccount;
         name = mapAncestorInfo[id].ancestorName;
         symbol = mapAncestorInfo[id].ancestorSymbol;
@@ -250,7 +250,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     function getTokenPairs()
         external
         view
-        returns (uint[] id, uint[] fromChainID, bytes32[] fromAccount, uint[] toChainID, address[] tokenAddress, string[] ancestorSymbol, uint8[] ancestorDecimals)
+        returns (uint[] id, uint[] fromChainID, bytes[] fromAccount, uint[] toChainID, address[] tokenAddress, string[] ancestorSymbol, uint8[] ancestorDecimals)
     {
         uint cnt = 0;
         uint i = 0;
@@ -260,7 +260,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
 
         id = new uint[](cnt);
         fromChainID = new uint[](cnt);
-        fromAccount = new bytes32[](cnt);
+        fromAccount = new bytes[](cnt);
         toChainID = new uint[](cnt);
         tokenAddress = new address[](cnt);
 
@@ -284,7 +284,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     function getTokenPairsByChainID(uint chainID1, uint chainID2)
         external
         view
-        returns (uint[] id, uint[] fromChainID, bytes32[] fromAccount, uint[] toChainID, address[] tokenAddress, string[] ancestorSymbol, uint8[] ancestorDecimals)
+        returns (uint[] id, uint[] fromChainID, bytes[] fromAccount, uint[] toChainID, address[] tokenAddress, string[] ancestorSymbol, uint8[] ancestorDecimals)
     {
         uint cnt = 0;
         uint i = 0;
@@ -303,7 +303,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
 
         id = new uint[](cnt);
         fromChainID = new uint[](cnt);
-        fromAccount = new bytes32[](cnt);
+        fromAccount = new bytes[](cnt);
         toChainID = new uint[](cnt);
         tokenAddress = new address[](cnt);
 
