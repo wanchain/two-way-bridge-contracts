@@ -166,10 +166,10 @@ library HTLCBurnLib {
     {
         uint origChainID;
         uint shadowChainID;
-        bool isDeleted;
+        bool isValid;
         address tokenShadowAccount;
-        (origChainID,,shadowChainID,tokenShadowAccount,isDeleted) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
-        require(!isDeleted, "Token doesn't exist");
+        (origChainID,,shadowChainID,tokenShadowAccount,isValid) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
+        require(isValid, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
 
@@ -264,8 +264,8 @@ library HTLCBurnLib {
         uint origChainID;
         uint shadowChainID;
         address tokenShadowAccount;
-        // (origChainID,,shadowChainID,tokenShadowAccount,isDeleted) = params.tokenManager.getTokenPairInfo(tokenPairID);
-        // require(!isDeleted, "Token doesn't exist");
+        // (origChainID,,shadowChainID,tokenShadowAccount,isValid) = params.tokenManager.getTokenPairInfo(tokenPairID);
+        // require(isValid, "Token does not exist");
         (origChainID,,shadowChainID,tokenShadowAccount,) = params.tokenManager.getTokenPairInfo(tokenPairID);
 
         uint revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];

@@ -166,10 +166,10 @@ library HTLCMintLib {
     function userMintLock(CrossTypes.Data storage storageData, HTLCUserMintLockParams memory params) public {
         uint origChainID;
         uint shadowChainID;
-        bool isDeleted;
+        bool isValid;
         bytes32 tokenOrigAccount;
-        (origChainID,tokenOrigAccount,shadowChainID,,isDeleted) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
-        require(!isDeleted, "Token doesn't exist");
+        (origChainID,tokenOrigAccount,shadowChainID,,isValid) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
+        require(isValid, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
         address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
@@ -266,8 +266,8 @@ library HTLCMintLib {
         uint origChainID;
         uint shadowChainID;
         bytes32 tokenOrigAccount;
-        // (origChainID,tokenOrigAccount,shadowChainID,,isDeleted) = params.tokenManager.getTokenPairInfo(tokenPairID);
-        // require(!isDeleted, "Token doesn't exist");
+        // (origChainID,tokenOrigAccount,shadowChainID,,isValid) = params.tokenManager.getTokenPairInfo(tokenPairID);
+        // require(isValid, "Token does not exist");
         (origChainID, tokenOrigAccount, shadowChainID,,) = params.tokenManager.getTokenPairInfo(tokenPairID);
 
         uint revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
