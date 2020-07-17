@@ -68,7 +68,8 @@ let coins = {
         decimals              : 18,
         name                  : 'WAN',
         symbol                : 'WAN',
-        price                 : 2.3
+        // price                 : 2.3
+        price                 : 23e-16
     },
     coin2: {
         tokenPairID           : 1,
@@ -79,7 +80,8 @@ let coins = {
         decimals              : 18,
         name                  : 'ETH',
         symbol                : 'ETH',
-        price                 : 243
+        // price                 : 243
+        price                 : 243e-15
     }
 }
 
@@ -94,7 +96,8 @@ let tokens = {
         decimals              : 18,
         name                  : 'TST1',
         symbol                : 'TST1',
-        price                 : 3
+        // price                 : 3
+        price                 : 3e-17
     },
     token2: {
         tokenCreator          : null,
@@ -106,7 +109,8 @@ let tokens = {
         decimals              : 16,
         name                  : 'TST2',
         symbol                : 'TST2',
-        price                 : 7
+        // price                 : 7
+        price                 : 7e-17
     }
 };
 
@@ -204,23 +208,23 @@ let storemanGroups = {
     },
 };
 
-let userMintLockParams       = {
-    // xHash: xInfo[1].hash,
+let userLockParams       = {
+    // xHash: xInfo.mintRedeem.hash,
     xHash: '',
     smgID: storemanGroups[1].ID,
     tokenPairID: tokens.token1.tokenPairID,
     value: 10,
     origUserAccount: '', // accounts 3 or 4
     shadowUserAccount: '', // accounts 3 or 4
-    lockFee: crossApproach.chain1.origLockFee + 1,
-    revokeFee: crossApproach.chain1.origRevokeFee + 2
+    // lockFee: 0, //crossApproach.chain1.origLockFee + 1,
+    // revokeFee: 0, //crossApproach.chain1.origRevokeFee + 2
 };
 
 let smgMintLockParams       = {
     xHash: '',
     smgID: storemanGroups[1].ID,
     tokenPairID: tokens.token1.tokenPairID,
-    value: userMintLockParams.value,
+    value: userLockParams.value,
     origUserAccount: '', // accounts 3 or 4
     shadowUserAccount: '', // accounts 3 or 4
     R: '',
@@ -578,6 +582,7 @@ contract('Test HTLC', async (accounts) => {
             assert.equal(oraclePrices[1].eq(new BN(tokenPrices[1])), true);
             assert.equal(oraclePrices[2].eq(new BN(tokenPrices[2])), true);
             assert.equal(oraclePrices[3].eq(new BN(tokenPrices[3])), true);
+            console.log(oraclePrices);
 
             // quota config
             let quota1ConfigReceipt = await quota1.config(
@@ -745,22 +750,44 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Token1 -> userMintLock  ==> Halted', async () => {
+    // MintBridge
+    it("Original -> userMintLock  ==> Invalid parnters", async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.mintRedeem.hash;
+            await crossDelegateNotInit.userMintLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.shadowUserAccount, {from: userLockParamsTemp.origUserAccount});
+        } catch (err) {
+            //assert.fail(err);
+            assert.include(err.toString(), "Invalid parnters");
+        }
+    });
+
+    it('Original -> userMintLock  ==> Halted', async () => {
         let crossProxy;
         try {
             crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
             await crossProxy.setHalt(true, {from: owner});
-            // accounts[1] is the chain1 original address of the user.
-            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-            userMintLockParamsTemp.origUserAccount = accounts[3];
-            userMintLockParamsTemp.shadowUserAccount = accounts[4];
-            userMintLockParamsTemp.xHash = xInfo[1].hash;
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.mintRedeem.hash;
             await crossApproach.chain1.instance.userMintLock(
-                userMintLockParamsTemp.xHash,
-                userMintLockParamsTemp.smgID,
-                userMintLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userMintLockParamsTemp.value.toString()),
-                userMintLockParamsTemp.shadowUserAccount, {from: userMintLockParamsTemp.origUserAccount});
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.shadowUserAccount, {from: userLockParamsTemp.origUserAccount});
         } catch (err) {
             assert.include(err.toString(), "Smart contract is halted");
         } finally {
@@ -768,70 +795,53 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it("Token1 -> userMintLock  ==> Invalid parnters", async () => {
+    it("Original -> Token1 -> userMintLock  ==> Token does not exist", async () => {
         try {
-            // accounts[1] is the chain1 original address of the user.
-            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-            userMintLockParamsTemp.origUserAccount = accounts[3];
-            userMintLockParamsTemp.shadowUserAccount = accounts[4];
-            userMintLockParamsTemp.xHash = xInfo[1].hash;
-            await crossDelegateNotInit.userMintLock(
-                userMintLockParamsTemp.xHash,
-                userMintLockParamsTemp.smgID,
-                userMintLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userMintLockParamsTemp.value.toString()),
-                userMintLockParamsTemp.shadowUserAccount, {from: userMintLockParamsTemp.origUserAccount});
-        } catch (err) {
-            //assert.fail(err);
-            assert.include(err.toString(), "Invalid parnters");
-        }
-    });
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.mintRedeem.hash;
 
-    it("Token1 -> userMintLock  ==> Token does not exist", async () => {
-        try {
-            // accounts[1] is the chain1 original address of the user.
-            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-            userMintLockParamsTemp.origUserAccount = accounts[3];
-            userMintLockParamsTemp.shadowUserAccount = accounts[4];
-            userMintLockParamsTemp.xHash = xInfo[1].hash;
-
-            let value = web3.utils.toWei(userMintLockParamsTemp.value.toString());
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             // user mint lock
             await crossApproach.chain1.instance.userMintLock(
-                userMintLockParamsTemp.xHash,
-                userMintLockParamsTemp.smgID,
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
                 InvalidTokenPairID,
                 value,
-                userMintLockParamsTemp.shadowUserAccount,
-                {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+                userLockParamsTemp.shadowUserAccount,
+                {from: userLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
         } catch (err) {
             assert.include(err.toString(), "Token does not exist");
         }
     });
 
-    it("Token1 -> userMintLock  ==> Value is null", async () => {
+    it("Original -> Token1 -> userMintLock  ==> Value is null", async () => {
         try {
-            // accounts[1] is the chain1 original address of the user.
-            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-            userMintLockParamsTemp.origUserAccount = accounts[3];
-            userMintLockParamsTemp.shadowUserAccount = accounts[4];
-            userMintLockParamsTemp.xHash = xInfo[1].hash;
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.mintRedeem.hash;
 
             let value = web3.utils.toWei("0");
             // user mint lock
             await crossApproach.chain1.instance.userMintLock(
-                userMintLockParamsTemp.xHash,
-                userMintLockParamsTemp.smgID,
-                userMintLockParamsTemp.tokenPairID,
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
                 value,
-                userMintLockParamsTemp.shadowUserAccount,
-                {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+                userLockParamsTemp.shadowUserAccount,
+                {from: userLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
         } catch (err) {
             assert.include(err.toString(), "Value is null");
         }
     });
 
-    it('Token1 -> smgMintLock  ==> Halted', async () => {
+    it('Shadow -> Token1 -> smgMintLock  ==> Halted', async () => {
         let crossProxy;
         try {
             crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
@@ -841,7 +851,7 @@ contract('Test HTLC', async (accounts) => {
             let smgMintLockParamsTemp = Object.assign({}, smgMintLockParams);
             smgMintLockParamsTemp.origUserAccount = accounts[3];
             smgMintLockParamsTemp.shadowUserAccount = accounts[4];
-            smgMintLockParamsTemp.xHash = xInfo[1].hash;
+            smgMintLockParamsTemp.xHash = xInfo.mintRedeem.hash;
             smgMintLockParamsTemp.R = storemanGroups[1].R;
             smgMintLockParamsTemp.s = storemanGroups[1].s;
 
@@ -865,59 +875,84 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Token1 -> userMintLock  ==>success', async () => {
+    it('Original -> Token1 -> smgMintRedeem ==> Smart contract is halted', async () => {
+        crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+        await crossProxy.setHalt(true, {from: owner});
         try {
-            // accounts[1] is the chain1 original address of the user.
-            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-            userMintLockParamsTemp.origUserAccount = accounts[3];
-            userMintLockParamsTemp.shadowUserAccount = accounts[4];
-            userMintLockParamsTemp.xHash = xInfo[1].hash;
+            await crossApproach.chain1.instance.smgMintRedeem(xInfo.mintRedeem.x);
+        } catch (err) {
+            assert.include(err.toString(), "Smart contract is halted");
+        } finally {
+            await crossProxy.setHalt(false, {from: owner});
+        }
+    });
 
-            let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userMintLockParamsTemp.smgID);
+    it('Original -> Token1 -> userMintLock  ==> [revoke] success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.mintRevoke.hash;
+
+            let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             console.log("mintOracleValue", mintOracleValue);
 
-            let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userMintLockParamsTemp.tokenPairID, userMintLockParamsTemp.smgID);
-            console.log("mintQuotaValue", mintQuotaValue);
+            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
 
-            let value = web3.utils.toWei(userMintLockParamsTemp.value.toString());
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             await tokens.token1.tokenCreator.mintToken(tokens.token1.name, tokens.token1.symbol,
-                userMintLockParamsTemp.origUserAccount, value);
+                userLockParamsTemp.origUserAccount, value);
             // get token instance
             let tokenInstance = await getRC20TokenInstance(tokens.token1.origTokenAccount);
-            let balance = await tokenInstance.balanceOf(userMintLockParamsTemp.origUserAccount);
+            let balance = await tokenInstance.balanceOf(userLockParamsTemp.origUserAccount);
             assert.equal(value, balance.toString());
 
             // approve value
-            await tokenInstance.approve(crossApproach.chain1.instance.address, 0, {from: userMintLockParamsTemp.origUserAccount});
-            await tokenInstance.approve(crossApproach.chain1.instance.address, value, {from: userMintLockParamsTemp.origUserAccount});
-            let allowance = await tokenInstance.allowance(userMintLockParamsTemp.origUserAccount, crossApproach.chain1.instance.address);
+            await tokenInstance.approve(crossApproach.chain1.instance.address, 0, {from: userLockParamsTemp.origUserAccount});
+            await tokenInstance.approve(crossApproach.chain1.instance.address, value, {from: userLockParamsTemp.origUserAccount});
+            let allowance = await tokenInstance.allowance(userLockParamsTemp.origUserAccount, crossApproach.chain1.instance.address);
             assert.equal(value, allowance.toString());
 
-            // console.log("before origUserAccount", await web3.eth.getBalance(userMintLockParamsTemp.origUserAccount));
+            // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
             // user mint lock
             let userMintLockReceipt = await crossApproach.chain1.instance.userMintLock(
-                userMintLockParamsTemp.xHash,
-                userMintLockParamsTemp.smgID,
-                userMintLockParamsTemp.tokenPairID,
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
                 value,
-                userMintLockParamsTemp.shadowUserAccount,
-                {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+                userLockParamsTemp.shadowUserAccount,
+                {from: userLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+            // assert.checkWeb3Event(userMintLockReceipt, {
+            //     event: 'UserMintLockLogger',
+            //     args: {
+            //         xHash: userLockParamsTemp.xHash,
+            //         smgID: userLockParamsTemp.smgID,
+            //         tokenPairID: userLockParamsTemp.tokenPairID,
+            //         value: userLockParamsTemp.value,
+            //         fee: userLockParamsTemp.crossApproach.chain1.origLockFee,
+            //         userAccount: userLockParamsTemp.shadowUserAccount,
+            //     }
+            // });
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
-            // console.log("after origUserAccount", await web3.eth.getBalance(userMintLockParamsTemp.origUserAccount));
+            // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
         } catch (err) {
             assert.fail(err);
         }
     });
 
-    it('Token1 -> smgMintLock  ==>success', async () => {
+    it('Shadow -> Token1 -> smgMintLock  ==> [revoke] success', async () => {
         try {
-            // accounts[1] is the chain1 original address of the user.
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
             let smgMintLockParamsTemp = Object.assign({}, smgMintLockParams);
             smgMintLockParamsTemp.origUserAccount = accounts[3];
             smgMintLockParamsTemp.shadowUserAccount = accounts[4];
-            smgMintLockParamsTemp.xHash = xInfo[1].hash;
+            smgMintLockParamsTemp.xHash = xInfo.mintRevoke.hash;
             smgMintLockParamsTemp.R = storemanGroups[1].R;
             smgMintLockParamsTemp.s = storemanGroups[1].s;
 
@@ -939,38 +974,34 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Token1 -> userMintRevoke  ==> should wait 2*lockedTime, not wait', async () => {
+    it('Shadow -> Token1 -> userMintRedeem  ==> Redeem timeout', async () => {
         try {
-            let origUserAccount = accounts[3];;
-            await crossApproach.chain2.instance.userMintRevoke(xInfo[1].hash, {from: origUserAccount, value: crossApproach.chain1.origRevokeFee});
-        } catch (err) {
-            assert.include(err.toString(), "Revoke is not permitted");
-        }
-    });
-
-    it('Token1 -> userMintRedeem  ==>success', async () => {
-        try {
+            let lockedTime = htlcLockedTime * 1000 + 1;
+            console.log("await", lockedTime, "ms");
+            await sleep(lockedTime); // ms
             let shadowUserAccount = accounts[4];
-            await crossApproach.chain2.instance.userMintRedeem(xInfo[1].x, {from: shadowUserAccount});
+            await crossApproach.chain2.instance.userMintRedeem(xInfo.mintRevoke.x, {from: shadowUserAccount});
         } catch (err) {
-            assert.fail(err);
+            assert.include(err.toString(), "Redeem timeout");
         }
     });
 
-    it('Token1 -> userMintRedeem ==> redeem twice, Status is not locked', async () => {
+    it('Original -> Token1 -> smgMintRedeem  ==> Redeem timeout', async () => {
         try {
-            let shadowUserAccount = accounts[4];
-            await crossApproach.chain2.instance.userMintRedeem(xInfo[1].x, {from: shadowUserAccount});
+            let lockedTime = 2 * htlcLockedTime * 1000 + 1;
+            console.log("await", lockedTime, "ms");
+            await sleep(lockedTime); // ms
+            await crossApproach.chain1.instance.smgMintRedeem(xInfo.mintRevoke.x, {from: storemanGroups[1].account});
         } catch (err) {
-            assert.include(err.toString(), "Status is not locked");
+            assert.include(err.toString(), "Redeem timeout");
         }
     });
 
-    it('Token1 -> smgMintRedeem ==> Smart contract is halted', async () => {
-        crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+    it('Shadow -> Token1 -> smgMintRevoke ==> Smart contract is halted', async () => {
+        crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
         await crossProxy.setHalt(true, {from: owner});
         try {
-            await crossApproach.chain1.instance.smgMintRedeem(xInfo[1].x);
+            await crossApproach.chain2.instance.smgMintRevoke(xInfo.mintRevoke.hash, {from: storemanGroups[1].account});
         } catch (err) {
             assert.include(err.toString(), "Smart contract is halted");
         } finally {
@@ -978,17 +1009,641 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Token1 -> smgMintRedeem  ==>success', async () => {
+    it('Shadow -> Token1 -> smgMintRevoke  ==> success', async () => {
         try {
-            await crossApproach.chain1.instance.smgMintRedeem(xInfo[1].x, {from: storemanGroups[1].account});
+            await crossApproach.chain2.instance.smgMintRevoke(xInfo.mintRevoke.hash, {from: storemanGroups[1].account});
         } catch (err) {
             assert.fail(err);
         }
     });
 
-    it('Token1 -> smgMintRedeem ==> redeem twice, Status is not locked', async () => {
+    it('Shadow -> Token1 -> smgMintRevoke  ==> revoke twice, Status is not locked', async () => {
         try {
-            await crossApproach.chain1.instance.smgMintRedeem(xInfo[1].x, {from: storemanGroups[1].account});
+            await crossApproach.chain2.instance.smgMintRevoke(xInfo.mintRevoke.hash, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Original -> Token1 -> userMintRevoke ==> Smart contract is halted', async () => {
+        crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+        await crossProxy.setHalt(true, {from: owner});
+        try {
+            let origUserAccount = accounts[3];;
+            await crossApproach.chain1.instance.userMintRevoke(xInfo.mintRevoke.hash, {from: origUserAccount, value: crossApproach.chain1.origRevokeFee});
+        } catch (err) {
+            assert.include(err.toString(), "Smart contract is halted");
+        } finally {
+            await crossProxy.setHalt(false, {from: owner});
+        }
+    });
+
+    it('Original -> Token1 -> userMintRevoke  ==> success', async () => {
+        try {
+            let origUserAccount = accounts[3];
+            let value = web3.utils.toWei(userLockParams.value.toString());
+            await crossApproach.chain1.instance.userMintRevoke(xInfo.mintRevoke.hash, {from: origUserAccount, value: crossApproach.chain1.origRevokeFee});
+            await tokens.token1.tokenCreator.burnToken(tokens.token1.name, tokens.token1.symbol,
+                origUserAccount, value);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original -> Token1 -> userMintRevoke  ==> revoke twice, Status is not locked', async () => {
+        try {
+            let origUserAccount = accounts[3];;
+            await crossApproach.chain1.instance.userMintRevoke(xInfo.mintRevoke.hash, {from: origUserAccount, value: crossApproach.chain1.origRevokeFee});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Original -> userMintLock  ==> success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.mintRedeem.hash;
+
+            let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
+            console.log("mintOracleValue", mintOracleValue);
+
+            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            await tokens.token1.tokenCreator.mintToken(tokens.token1.name, tokens.token1.symbol,
+                userLockParamsTemp.origUserAccount, value);
+            // get token instance
+            let tokenInstance = await getRC20TokenInstance(tokens.token1.origTokenAccount);
+            let balance = await tokenInstance.balanceOf(userLockParamsTemp.origUserAccount);
+            assert.equal(value, balance.toString());
+
+            // approve value
+            await tokenInstance.approve(crossApproach.chain1.instance.address, 0, {from: userLockParamsTemp.origUserAccount});
+            await tokenInstance.approve(crossApproach.chain1.instance.address, value, {from: userLockParamsTemp.origUserAccount});
+            let allowance = await tokenInstance.allowance(userLockParamsTemp.origUserAccount, crossApproach.chain1.instance.address);
+            assert.equal(value, allowance.toString());
+
+            // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+            // user mint lock
+            let userMintLockReceipt = await crossApproach.chain1.instance.userMintLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                value,
+                userLockParamsTemp.shadowUserAccount,
+                {from: userLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+            // console.log("userMintLock receipt", userMintLockReceipt.logs);
+            // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original -> Token1 -> userMintRevoke  ==> should wait lockedTime, not wait', async () => {
+        try {
+            let origUserAccount = accounts[3];;
+            await crossApproach.chain1.instance.userMintRevoke(xInfo.mintRedeem.hash, {from: origUserAccount, value: crossApproach.chain1.origRevokeFee});
+        } catch (err) {
+            assert.include(err.toString(), "Revoke is not permitted");
+        }
+    });
+
+    it('Shadow -> Token1 -> smgMintLock  ==> success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let smgMintLockParamsTemp = Object.assign({}, smgMintLockParams);
+            smgMintLockParamsTemp.origUserAccount = accounts[3];
+            smgMintLockParamsTemp.shadowUserAccount = accounts[4];
+            smgMintLockParamsTemp.xHash = xInfo.mintRedeem.hash;
+            smgMintLockParamsTemp.R = storemanGroups[1].R;
+            smgMintLockParamsTemp.s = storemanGroups[1].s;
+
+            let value = web3.utils.toWei(smgMintLockParamsTemp.value.toString());
+
+            // user mint lock
+            let smgMintLockReceipt = await crossApproach.chain2.instance.smgMintLock(
+                smgMintLockParamsTemp.xHash,
+                smgMintLockParamsTemp.smgID,
+                smgMintLockParamsTemp.tokenPairID,
+                value,
+                smgMintLockParamsTemp.shadowUserAccount,
+                smgMintLockParamsTemp.R,
+                smgMintLockParamsTemp.s,
+                {from: storemanGroups[1].account});
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Shadow -> Token1 -> smgMintRevoke  ==> should wait 2*lockedTime, not wait', async () => {
+        try {
+            await crossApproach.chain2.instance.smgMintRevoke(xInfo.mintRedeem.hash, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.include(err.toString(), "Revoke is not permitted");
+        }
+    });
+
+    it('Shadow -> Token1 -> userMintRedeem  ==> use wrong x', async () => {
+        try {
+            let shadowUserAccount = accounts[4];
+            await crossApproach.chain2.instance.userMintRedeem(xInfo.wrong.x, {from: shadowUserAccount});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Shadow -> Token1 -> userMintRedeem  ==> success', async () => {
+        try {
+            let shadowUserAccount = accounts[4];
+            await crossApproach.chain2.instance.userMintRedeem(xInfo.mintRedeem.x, {from: shadowUserAccount});
+
+            let value = web3.utils.toWei(userLockParams.value.toString());
+            console.log
+            let tokenInstance = await getRC20TokenInstance(tokens.token1.shadowTokenAccount);
+            let balance = await tokenInstance.balanceOf(shadowUserAccount);
+            assert.equal(value, balance.toString());
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Shadow -> Token1 -> userMintRedeem ==> redeem twice, Status is not locked', async () => {
+        try {
+            let shadowUserAccount = accounts[4];
+            await crossApproach.chain2.instance.userMintRedeem(xInfo.mintRedeem.x, {from: shadowUserAccount});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Original -> Token1 -> smgMintRedeem  ==> success', async () => {
+        try {
+            await crossApproach.chain1.instance.smgMintRedeem(xInfo.mintRedeem.x, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original -> Token1 -> smgMintRedeem  ==> use wrong x', async () => {
+        try {
+            await crossApproach.chain1.instance.smgMintRedeem(xInfo.wrong.x, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Original -> Token1 -> smgMintRedeem ==> redeem twice, Status is not locked', async () => {
+        try {
+            await crossApproach.chain1.instance.smgMintRedeem(xInfo.mintRedeem.x, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    // BurnBridge
+    it('Shadow -> Token1 -> userBurnLock  ==> [revoke] success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.burnRevoke.hash;
+
+            let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
+            console.log("mintOracleValue", mintOracleValue);
+
+            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            // get token instance
+            let tokenInstance = await getRC20TokenInstance(tokens.token1.shadowTokenAccount);
+            let balance = await tokenInstance.balanceOf(userLockParamsTemp.shadowUserAccount);
+            assert.equal(value, balance.toString());
+
+            // approve value
+            await tokenInstance.approve(crossApproach.chain2.instance.address, 0, {from: userLockParamsTemp.shadowUserAccount});
+            await tokenInstance.approve(crossApproach.chain2.instance.address, value, {from: userLockParamsTemp.shadowUserAccount});
+            let allowance = await tokenInstance.allowance(userLockParamsTemp.shadowUserAccount, crossApproach.chain2.instance.address);
+            assert.equal(value, allowance.toString());
+
+            // console.log("before shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
+            // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+            // user mint lock
+            let userLockReceipt = await crossApproach.chain2.instance.userBurnLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.origUserAccount,
+                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
+            // console.log("userBurnLock receipt", userLockReceipt.logs);
+            // console.log("after shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
+            // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original -> Token1 -> smgBurnLock  ==> [revoke] success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let smgMintLockParamsTemp = Object.assign({}, smgMintLockParams);
+            smgMintLockParamsTemp.origUserAccount = accounts[3];
+            smgMintLockParamsTemp.shadowUserAccount = accounts[4];
+            smgMintLockParamsTemp.xHash = xInfo.burnRevoke.hash;
+            smgMintLockParamsTemp.R = storemanGroups[1].R;
+            smgMintLockParamsTemp.s = storemanGroups[1].s;
+
+            let value = web3.utils.toWei(smgMintLockParamsTemp.value.toString());
+
+            // user mint lock
+            let smgMintLockReceipt = await crossApproach.chain1.instance.smgBurnLock(
+                smgMintLockParamsTemp.xHash,
+                smgMintLockParamsTemp.smgID,
+                smgMintLockParamsTemp.tokenPairID,
+                value,
+                smgMintLockParamsTemp.origUserAccount,
+                smgMintLockParamsTemp.R,
+                smgMintLockParamsTemp.s,
+                {from: storemanGroups[1].account});
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original -> Token1 -> userBurnRedeem  ==> Redeem timeout', async () => {
+        try {
+            let lockedTime = htlcLockedTime * 1000 + 1;
+            console.log("await", lockedTime, "ms");
+            await sleep(lockedTime); // ms
+            let origUserAccount = accounts[4];
+            await crossApproach.chain1.instance.userBurnRedeem(xInfo.burnRevoke.x, {from: origUserAccount});
+        } catch (err) {
+            assert.include(err.toString(), "Redeem timeout");
+        }
+    });
+
+    it('Shadow -> Token1 -> smgBurnRedeem  ==> Redeem timeout', async () => {
+        try {
+            let lockedTime = 2 * htlcLockedTime * 1000 + 1;
+            console.log("await", lockedTime, "ms");
+            await sleep(lockedTime); // ms
+            await crossApproach.chain2.instance.smgBurnRedeem(xInfo.burnRevoke.x, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.include(err.toString(), "Redeem timeout");
+        }
+    });
+
+    it('Original -> Token1 -> smgBurnRevoke ==> Smart contract is halted', async () => {
+        crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+        await crossProxy.setHalt(true, {from: owner});
+        try {
+            await crossApproach.chain1.instance.smgMintRevoke(xInfo.burnRevoke.hash, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.include(err.toString(), "Smart contract is halted");
+        } finally {
+            await crossProxy.setHalt(false, {from: owner});
+        }
+    });
+
+    it('Original -> Token1 -> smgBurnRevoke  ==> success', async () => {
+        try {
+            await crossApproach.chain1.instance.smgBurnRevoke(xInfo.burnRevoke.hash, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original -> Token1 -> smgBurnRevoke  ==> revoke twice, Status is not locked', async () => {
+        try {
+            await crossApproach.chain1.instance.smgBurnRevoke(xInfo.burnRevoke.hash, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Shadow -> Token1 -> userBurnRevoke ==> Smart contract is halted', async () => {
+        crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
+        await crossProxy.setHalt(true, {from: owner});
+        try {
+            let shadowUserAccount = accounts[4];;
+            await crossApproach.chain2.instance.userBurnRevoke(xInfo.burnRevoke.hash, {from: shadowUserAccount, value: crossApproach.chain2.shadowRevokeFee});
+        } catch (err) {
+            assert.include(err.toString(), "Smart contract is halted");
+        } finally {
+            await crossProxy.setHalt(false, {from: owner});
+        }
+    });
+
+    it('Shadow -> Token1 -> userBurnRevoke  ==> success', async () => {
+        try {
+            let shadowUserAccount = accounts[4];;
+            await crossApproach.chain2.instance.userBurnRevoke(xInfo.burnRevoke.hash, {from: shadowUserAccount, value: crossApproach.chain2.shadowRevokeFee});
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Shadow -> Token1 -> userBurnRevoke  ==> revoke twice, Status is not locked', async () => {
+        try {
+            let shadowUserAccount = accounts[4];;
+            await crossApproach.chain2.instance.userBurnRevoke(xInfo.burnRevoke.hash, {from: shadowUserAccount, value: crossApproach.chain2.shadowRevokeFee});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it("Shadow -> userBurnLock  ==> Invalid parnters", async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.burnRedeem.hash;
+            await crossDelegateNotInit.userBurnLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.origUserAccount, {from: userLockParamsTemp.shadowUserAccount});
+        } catch (err) {
+            //assert.fail(err);
+            assert.include(err.toString(), "Invalid parnters");
+        }
+    });
+
+    it('Shadow -> userBurnLock  ==> Halted', async () => {
+        let crossProxy;
+        try {
+            crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
+            await crossProxy.setHalt(true, {from: owner});
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.burnRedeem.hash;
+            await crossApproach.chain2.instance.userBurnLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.origUserAccount, {from: userLockParamsTemp.shadowUserAccount});
+        } catch (err) {
+            assert.include(err.toString(), "Smart contract is halted");
+        } finally {
+            await crossProxy.setHalt(false, {from: owner});
+        }
+    });
+
+    it("Shadow -> Token1 -> userBurnLock  ==> Token does not exist", async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.burnRedeem.hash;
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            // user mint lock
+            await crossApproach.chain2.instance.userBurnLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                InvalidTokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.origUserAccount,
+                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
+        } catch (err) {
+            assert.include(err.toString(), "Token does not exist");
+        }
+    });
+
+    it("Shadow -> Token1 -> userBurnLock  ==> Value is null", async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.burnRedeem.hash;
+
+            let value = web3.utils.toWei("0");
+            // user mint lock
+            await crossApproach.chain2.instance.userBurnLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                value,
+                userLockParamsTemp.origUserAccount,
+                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
+        } catch (err) {
+            assert.include(err.toString(), "Value is null");
+        }
+    });
+
+    it('Original -> Token1 -> smgBurnLock  ==> Halted', async () => {
+        let crossProxy;
+        try {
+            crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
+            await crossProxy.setHalt(true, {from: owner});
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let smgMintLockParamsTemp = Object.assign({}, smgMintLockParams);
+            smgMintLockParamsTemp.origUserAccount = accounts[3];
+            smgMintLockParamsTemp.shadowUserAccount = accounts[4];
+            smgMintLockParamsTemp.xHash = xInfo.burnRedeem.hash;
+            smgMintLockParamsTemp.R = storemanGroups[1].R;
+            smgMintLockParamsTemp.s = storemanGroups[1].s;
+
+            let value = web3.utils.toWei(smgMintLockParamsTemp.value.toString());
+
+            // storeman mint lock
+            let smgMintLockReceipt = await crossApproach.chain2.instance.smgBurnLock(
+                smgMintLockParamsTemp.xHash,
+                smgMintLockParamsTemp.smgID,
+                smgMintLockParamsTemp.tokenPairID,
+                value,
+                smgMintLockParamsTemp.shadowUserAccount,
+                smgMintLockParamsTemp.R,
+                smgMintLockParamsTemp.s,
+                {from: storemanGroups[1].account});
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+        } catch (err) {
+            assert.include(err.toString(), "Smart contract is halted");
+        } finally {
+            await crossProxy.setHalt(false, {from: owner});
+        }
+    });
+
+    it('Shadow -> Token1 -> smgBurnRedeem ==> Smart contract is halted', async () => {
+        crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
+        await crossProxy.setHalt(true, {from: owner});
+        try {
+            await crossApproach.chain2.instance.smgBurnRedeem(xInfo.burnRedeem.x);
+        } catch (err) {
+            assert.include(err.toString(), "Smart contract is halted");
+        } finally {
+            await crossProxy.setHalt(false, {from: owner});
+        }
+    });
+
+    it('Shadow -> userBurnLock  ==> success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.burnRedeem.hash;
+
+            let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
+            console.log("mintOracleValue", mintOracleValue);
+
+            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            // get token instance
+            let tokenInstance = await getRC20TokenInstance(tokens.token1.shadowTokenAccount);
+            let balance = await tokenInstance.balanceOf(userLockParamsTemp.shadowUserAccount);
+            assert.equal(value, balance.toString());
+
+            // approve value
+            await tokenInstance.approve(crossApproach.chain2.instance.address, 0, {from: userLockParamsTemp.shadowUserAccount});
+            await tokenInstance.approve(crossApproach.chain2.instance.address, value, {from: userLockParamsTemp.shadowUserAccount});
+            let allowance = await tokenInstance.allowance(userLockParamsTemp.shadowUserAccount, crossApproach.chain2.instance.address);
+            assert.equal(value, allowance.toString());
+
+            // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+            // user mint lock
+            let userMintLockReceipt = await crossApproach.chain2.instance.userBurnLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.origUserAccount,
+                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
+            // console.log("userMintLock receipt", userMintLockReceipt.logs);
+            // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Shadow -> Token1 -> userBurnRevoke  ==> should wait lockedTime, not wait', async () => {
+        try {
+            let shadowUserAccount = accounts[3];;
+            await crossApproach.chain2.instance.userBurnRevoke(xInfo.burnRedeem.hash, {from: shadowUserAccount, value: crossApproach.chain2.shadowRevokeFee});
+        } catch (err) {
+            assert.include(err.toString(), "Revoke is not permitted");
+        }
+    });
+
+    it('Original -> Token1 -> smgBurnLock  ==> success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let smgMintLockParamsTemp = Object.assign({}, smgMintLockParams);
+            smgMintLockParamsTemp.origUserAccount = accounts[3];
+            smgMintLockParamsTemp.shadowUserAccount = accounts[4];
+            smgMintLockParamsTemp.xHash = xInfo.burnRedeem.hash;
+            smgMintLockParamsTemp.R = storemanGroups[1].R;
+            smgMintLockParamsTemp.s = storemanGroups[1].s;
+
+            let value = web3.utils.toWei(smgMintLockParamsTemp.value.toString());
+
+            // user mint lock
+            let smgMintLockReceipt = await crossApproach.chain1.instance.smgBurnLock(
+                smgMintLockParamsTemp.xHash,
+                smgMintLockParamsTemp.smgID,
+                smgMintLockParamsTemp.tokenPairID,
+                value,
+                smgMintLockParamsTemp.origUserAccount,
+                smgMintLockParamsTemp.R,
+                smgMintLockParamsTemp.s,
+                {from: storemanGroups[1].account});
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original -> Token1 -> smgBurnRevoke  ==> should wait lockedTime, not wait', async () => {
+        try {
+            await crossApproach.chain1.instance.smgBurnRevoke(xInfo.burnRedeem.hash, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.include(err.toString(), "Revoke is not permitted");
+        }
+    });
+
+    it('Original -> Token1 -> userBurnRedeem  ==> use wrong x', async () => {
+        try {
+            let origUserAccount = accounts[3];
+            await crossApproach.chain1.instance.userBurnRedeem(xInfo.wrong.x, {from: origUserAccount});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Original -> Token1 -> userBurnRedeem  ==> success', async () => {
+        try {
+            let origUserAccount = accounts[3];
+            await crossApproach.chain1.instance.userBurnRedeem(xInfo.burnRedeem.x, {from: origUserAccount});
+
+            let value = web3.utils.toWei(userLockParams.value.toString());
+            let tokenInstance = await getRC20TokenInstance(tokens.token1.origTokenAccount);
+            let balance = await tokenInstance.balanceOf(origUserAccount);
+            assert.equal(value, balance.toString());
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original -> Token1 -> userBurnRedeem ==> redeem twice, Status is not locked', async () => {
+        try {
+            let origUserAccount = accounts[3];
+            await crossApproach.chain1.instance.userBurnRedeem(xInfo.burnRedeem.x, {from: origUserAccount});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Shadow -> Token1 -> smgBurnRedeem  ==> success', async () => {
+        try {
+            await crossApproach.chain2.instance.smgBurnRedeem(xInfo.burnRedeem.x, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Shadow -> Token1 -> smgBurnRedeem  ==> use wrong x', async () => {
+        try {
+            await crossApproach.chain2.instance.smgBurnRedeem(xInfo.wrong.x, {from: storemanGroups[1].account});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Shadow -> Token1 -> smgBurnRedeem ==> redeem twice, Status is not locked', async () => {
+        try {
+            await crossApproach.chain2.instance.smgBurnRedeem(xInfo.wrong.x, {from: storemanGroups[1].account});
         } catch (err) {
             assert.include(err.toString(), "Status is not locked");
         }
