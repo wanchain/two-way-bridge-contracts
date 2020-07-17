@@ -99,4 +99,6 @@ contract TestStoremanAdmin {
         mapStoreman[id] = smgData;
     }
 
+    function smgTransfer(bytes32 smgID) external payable {
+    }
 }
