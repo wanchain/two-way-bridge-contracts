@@ -656,18 +656,22 @@ contract('Test HTLC', async (accounts) => {
             let ret = await crossApproach.chain1.instance.getFees(defaultChainID.chain1, defaultChainID.chain2);
             assert.equal(crossApproach.chain1.origLockFee, ret[0]);
             assert.equal(crossApproach.chain1.origRevokeFee, ret[1]);
+            console.log("chain1 orig fees", ret[0], ret[1]);
 
             ret = await crossApproach.chain1.instance.getFees(defaultChainID.chain2, defaultChainID.chain1);
             assert.equal(crossApproach.chain1.shadowLockFee, ret[0]);
             assert.equal(crossApproach.chain1.shadowRevokeFee, ret[1]);
+            console.log("chain1 shadow fees", ret[0], ret[1]);
 
             ret = await crossApproach.chain2.instance.getFees(defaultChainID.chain2, defaultChainID.chain1);
             assert.equal(crossApproach.chain2.origLockFee, ret[0]);
             assert.equal(crossApproach.chain2.origRevokeFee, ret[1]);
+            console.log("chain2 orig fees", ret[0], ret[1]);
 
             ret = await crossApproach.chain2.instance.getFees(defaultChainID.chain1, defaultChainID.chain2);
             assert.equal(crossApproach.chain2.shadowLockFee, ret[0]);
             assert.equal(crossApproach.chain2.shadowRevokeFee, ret[1]);
+            console.log("chain1 shadow fees", ret[0], ret[1]);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1654,6 +1658,7 @@ contract('Test HTLC', async (accounts) => {
             userLockParamsTemp.origUserAccount = accounts[3];
             userLockParamsTemp.shadowUserAccount = accounts[4];
             userLockParamsTemp.xHash = xInfo.chain2MintTokenRevoke.hash;
+            userLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
 
             let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             console.log("mintOracleValue", mintOracleValue);
@@ -1696,7 +1701,7 @@ contract('Test HTLC', async (accounts) => {
             //         userAccount: userLockParamsTemp.shadowUserAccount,
             //     }
             // });
-            // console.log("userMintLock receipt", userMintLockReceipt.logs);
+            console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
         } catch (err) {
@@ -1714,6 +1719,7 @@ contract('Test HTLC', async (accounts) => {
             smgMintLockParamsTemp.xHash = xInfo.chain2MintTokenRevoke.hash;
             smgMintLockParamsTemp.R = storemanGroups[1].R;
             smgMintLockParamsTemp.s = storemanGroups[1].s;
+            smgMintLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
 
             let value = web3.utils.toWei(smgMintLockParamsTemp.value.toString());
 
@@ -1784,6 +1790,7 @@ contract('Test HTLC', async (accounts) => {
             userLockParamsTemp.origUserAccount = accounts[3];
             userLockParamsTemp.shadowUserAccount = accounts[4];
             userLockParamsTemp.xHash = xInfo.chain2MintTokenRedeem.hash;
+            userLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
 
             let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             console.log("mintOracleValue", mintOracleValue);
@@ -1833,6 +1840,7 @@ contract('Test HTLC', async (accounts) => {
             smgMintLockParamsTemp.xHash = xInfo.chain2MintTokenRedeem.hash;
             smgMintLockParamsTemp.R = storemanGroups[1].R;
             smgMintLockParamsTemp.s = storemanGroups[1].s;
+            smgMintLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
 
             let value = web3.utils.toWei(smgMintLockParamsTemp.value.toString());
 
@@ -1883,6 +1891,7 @@ contract('Test HTLC', async (accounts) => {
             userLockParamsTemp.origUserAccount = accounts[3];
             userLockParamsTemp.shadowUserAccount = accounts[4];
             userLockParamsTemp.xHash = xInfo.chain2BurnTokenRevoke.hash;
+            userLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
 
             let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             console.log("mintOracleValue", mintOracleValue);
@@ -1930,6 +1939,7 @@ contract('Test HTLC', async (accounts) => {
             smgMintLockParamsTemp.xHash = xInfo.chain2BurnTokenRevoke.hash;
             smgMintLockParamsTemp.R = storemanGroups[1].R;
             smgMintLockParamsTemp.s = storemanGroups[1].s;
+            smgMintLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
 
             let value = web3.utils.toWei(smgMintLockParamsTemp.value.toString());
 
@@ -1997,6 +2007,7 @@ contract('Test HTLC', async (accounts) => {
             userLockParamsTemp.origUserAccount = accounts[3];
             userLockParamsTemp.shadowUserAccount = accounts[4];
             userLockParamsTemp.xHash = xInfo.chain2BurnTokenRedeem.hash;
+            userLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
 
             let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             console.log("mintOracleValue", mintOracleValue);
@@ -2044,6 +2055,7 @@ contract('Test HTLC', async (accounts) => {
             smgMintLockParamsTemp.xHash = xInfo.chain2BurnTokenRedeem.hash;
             smgMintLockParamsTemp.R = storemanGroups[1].R;
             smgMintLockParamsTemp.s = storemanGroups[1].s;
+            smgMintLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
 
             let value = web3.utils.toWei(smgMintLockParamsTemp.value.toString());
 
