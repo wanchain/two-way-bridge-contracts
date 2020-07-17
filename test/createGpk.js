@@ -227,7 +227,8 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
       let {addr: wk} = utils.getAddressFromInt(i + 2000);
       wks.push(wk);
       srs.push(sr);
-    }        
+      console.log("white list %i: %s, %s", i, wk, sr);
+    }
     await smgSc.registerStart(groupId, start, workDuration, registerDuration, preGroupId, wks, srs);
     console.log("register group: %O", await smgSc.getStoremanGroupInfo(groupId));
     await smgSc.setGroupChain(groupId, 0, 1, 0, 1);

@@ -35,13 +35,13 @@ library GpkTypes {
 
     struct Group {
         bytes32 groupId;
-        uint8 round;
+        uint16 round;
         uint8 curveTypes;
         uint32 ployCommitPeriod;
         uint32 defaultPeriod;
         uint32 negotiatePeriod;
         /// round -> curveIndex -> Round
-        mapping(uint8 => mapping(uint8 => Round)) roundMap;
+        mapping(uint16 => mapping(uint8 => Round)) roundMap;
         uint16 smNumber;
         /// index -> txAddress
         mapping(uint => address) indexMap;

@@ -39,9 +39,6 @@ library GpkLib {
     uint32 constant PLOYCOMMIT_PERIOD = 10 * 60; // 10 minutes
     uint32 constant NEGOTIATE_PERIOD = 15 * 60;  // 15 minutes
 
-    // negotiate max round
-    uint8 constant MAX_ROUND = 255;
-
     /**
      *
      * EVENTS
@@ -62,12 +59,12 @@ library GpkLib {
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     /// @param srcOrDest                  if true, slash src, otherwise slash dest
-    event SlashLogger(bytes32 indexed groupId, uint8 indexed round, uint8 indexed curveIndex, uint8 slashType, address src, address dest, bool srcOrDest);
+    event SlashLogger(bytes32 indexed groupId, uint16 indexed round, uint8 indexed curveIndex, uint8 slashType, address src, address dest, bool srcOrDest);
 
     /// @notice                           event for reset protocol
     /// @param groupId                    storeman group id
     /// @param round                      group negotiate round
-    event ResetLogger(bytes32 indexed groupId, uint8 indexed round);
+    event ResetLogger(bytes32 indexed groupId, uint16 indexed round);
 
     /**
     *
@@ -288,7 +285,7 @@ library GpkLib {
         group.smNumber = 0;
 
         emit ResetLogger(group.groupId, group.round);
-        if (isContinue && (group.round < MAX_ROUND)) {
+        if (isContinue) {
           group.round++;
         }
     }
