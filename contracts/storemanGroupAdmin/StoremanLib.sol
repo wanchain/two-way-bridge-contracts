@@ -132,7 +132,7 @@ library StoremanLib {
         
         require(amount != 0);        
         sk.sender.transfer(amount);
-
+        // TODO; transfer crossIncoming/21;
 
     }
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight, uint last) internal{

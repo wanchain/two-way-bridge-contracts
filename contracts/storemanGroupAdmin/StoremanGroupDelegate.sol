@@ -39,6 +39,8 @@ import "../interfaces/IQuota.sol";
 contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     using SafeMath for uint;
     using Deposit for Deposit.Records;
+    address[] oldAddr;
+
     /**
      *
      * EVENTS
@@ -97,7 +99,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function getBackupCount() public view returns (uint) {
         return backupCount;
     }
-
+    event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
     function groupWhiteNode(StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal{
         for(uint i = 0; i < wkAddrs.length; i++){
             group.whiteMap[i] = wkAddrs[i];
@@ -111,14 +113,17 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         // TODO handle the old group member. set the group deposit.
         if(preGroupId != bytes32(0x00)) {
             StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
+            oldAddr.length = 0;
             for(uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
                 address skAddr = oldGroup.selectedNode[m];
                 StoremanType.Candidate sk = data.candidates[skAddr];
                 if(sk.groupId == preGroupId && sk.quited == false) {
                     group.selectedNode[group.selectedCount] = sk.pkAddress;
                     group.selectedCount++;
+                    oldAddr.push(sk.pkAddress);
                 }
             }
+            emit storemanTransferEvent(group.groupId, preGroupId, oldAddr);
         }
     }
     /// @notice                           function for owner set token manager and htlc contract address
@@ -297,7 +302,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         bool quited, uint  delegateFee,uint  deposit, uint delegateDeposit,
         uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId
         ){
-            StoremanType.StoremanGroup storage group = data.groups[groupId];
             StoremanType.Candidate storage sk = data.candidates[wkAddress];
 
             return (sk.sender,   sk.PK, sk.pkAddress, sk.quited,
@@ -305,16 +309,26 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
                 sk.incentive[0],  sk.delegatorCount, sk.groupId, sk.nextGroupId 
             );
     }
-
+    function getStoremanIncentive(address wkAddress, uint day) public view returns(uint incentive) {
+        StoremanType.Candidate storage sk = data.candidates[wkAddress];
+        return sk.incentive[day];
+    }
     function getSmDelegatorAddr(address wkAddr, uint deIndex) public view  returns (address){
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
         return sk.addrMap[deIndex];
     }
+    function getSmDelegatorInfoIncentive(address wkAddr, address deAddr, uint day) public view returns ( uint) {
+        StoremanType.Candidate storage sk = data.candidates[wkAddr];
+        StoremanType.Delegator storage de = sk.delegators[deAddr];
+        return (de.incentive[day]);
+    }
+
     function getSmDelegatorInfo(address wkAddr, address deAddr) public view returns (address sender, uint deposit, uint incentive) {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
         StoremanType.Delegator storage de = sk.delegators[deAddr];
         return (de.sender, de.deposit.getLastValue(),  0); // TODO
     }
+    // TODO: delete this one?
     function getSmDelegatorInfoRecord(bytes32 groupId, address wkAddr, address deAddr, uint index) public view returns (uint, uint) {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
@@ -331,7 +345,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         //emit storemanGroupRegisterEvent(groupId, group.chain, gpk1, gpk2);
     }
 
-    function setInvalidSm(bytes32 groupId, uint[] slashType,  address[] badAddrs) 
+    function setInvalidSm(bytes32 groupId, uint[] slashType,  address[] badAddrs)
         external
         notHalted
         onlyGpk
@@ -429,13 +443,15 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return group.groupIncentive[day];
     }
 
+    event storemanGroupContributeEvent(address indexed sender, uint indexed value);
     function contribute() public payable {
-        // TODO add an event.
+        emit storemanGroupContributeEvent(msg.sender, msg.value);
         return;
     }
 
     function smgTransfer(bytes32 smgID) external payable{
-        // TODO htlc 转账手续费给admin. 
+        StoremanType.StoremanGroup storage group = data.groups[smgID];
+        group.crossIncoming += msg.value;
     }
     function setCoefficient(uint _crossChainCo, uint _chainTypeCo) public {
         if (_crossChainCo != 0) {
