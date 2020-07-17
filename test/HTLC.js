@@ -566,10 +566,14 @@ contract('Test HTLC', async (accounts) => {
                 web3.utils.hexToBytes(web3.utils.asciiToHex(coins.coin2.symbol)),
             ];
             let tokenPrices = [
-                web3.utils.toWei(toNonExponential(tokens.token1.price)),
-                web3.utils.toWei(toNonExponential(tokens.token2.price)),
-                web3.utils.toWei(toNonExponential(coins.coin1.price)),
-                web3.utils.toWei(toNonExponential(coins.coin2.price)),
+                toNonExponential(tokens.token1.price),
+                toNonExponential(tokens.token2.price),
+                toNonExponential(coins.coin1.price),
+                toNonExponential(coins.coin2.price),
+                // web3.utils.toWei(toNonExponential(tokens.token1.price)),
+                // web3.utils.toWei(toNonExponential(tokens.token2.price)),
+                // web3.utils.toWei(toNonExponential(coins.coin1.price)),
+                // web3.utils.toWei(toNonExponential(coins.coin2.price)),
             ];
             let priceLogger = await oracle.updatePrice(tokenSymbols, tokenPrices);
             console.log("init 46", await getBalance(owner));
@@ -771,7 +775,7 @@ contract('Test HTLC', async (accounts) => {
     it("Token1 -> userMintLock  ==> Invalid parnters", async () => {
         try {
             // accounts[1] is the chain1 original address of the user.
-            let userMintLockParamsTemp = Object.assign({}, userMintLosetValueckParams);
+            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
             userMintLockParamsTemp.origUserAccount = accounts[3];
             userMintLockParamsTemp.shadowUserAccount = accounts[4];
             userMintLockParamsTemp.xHash = xInfo[1].hash;
