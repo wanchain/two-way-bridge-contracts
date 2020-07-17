@@ -189,6 +189,11 @@ async function getBalance(userAccount) {
     return Number(balance);
 }
 
+function toNonExponential(num) {
+    let m = num.toExponential().match(/\d(?:\.(\d*))?e([+-]\d+)/);
+    return num.toFixed(Math.max(0, (m[1] || '').length - m[2]));
+}
+
 module.exports = {
     getWeb3,
     newContract,
@@ -202,5 +207,6 @@ module.exports = {
     sleep,
     getRC20TokenInstance,
     getRC20TokenBalance,
-    getBalance
+    getBalance,
+    toNonExponential
 };
