@@ -25,6 +25,7 @@ const {
     getBalance,
     getRC20TokenInstance,
     getRC20TokenBalance,
+    toNonExponential
 }                               = require('./utils');
 
 const {
@@ -40,7 +41,10 @@ const from = require('../truffle').networks.development.from;
 
 const InvalidTokenPairID          = 100;
 const htlcLockedTime              = 40; //unit: s
+const quotaDepositRate            = 15000;
+
 const ADDRESS_0                   = "0x0000000000000000000000000000000000000000";
+const ADDRESS_CROSS_PROXY_IMPL    = '0x0000000000000000000000000000000000000003';
 
 let defaultCurve = {
     curve1                    : 1,
@@ -50,33 +54,6 @@ let defaultCurve = {
 let defaultChainID = {
     chain1                    : 10,
     chain2                    : 11
-};
-
-let tokens = {
-    token1: {
-        tokenCreator          : null,
-        tokenPairID           : 2,
-        origChainID           : defaultChainID.chain1,
-        shadowChainID         : defaultChainID.chain2,
-        origTokenAccount      : "",
-        shadowTokenAccount    : "",
-        decimals              : 18,
-        name                  : 'TST1',
-        symbol                : 'TST1',
-        price                 : 0.0000000000003
-    },
-    token2: {
-        tokenCreator          : null,
-        tokenPairID           : 3,
-        origChainID           : defaultChainID.chain2,
-        shadowChainID         : defaultChainID.chain1,
-        origTokenAccount      : "",
-        shadowTokenAccount    : "",
-        decimals              : 16,
-        name                  : 'TST2',
-        symbol                : 'TST2',
-        price                 : 0.00000000001
-    }
 };
 
 let coins = {
@@ -89,20 +66,47 @@ let coins = {
         decimals              : 18,
         name                  : 'WAN',
         symbol                : 'WAN',
-        price                 : 0.00000000002023
+        price                 : 23e-18
     },
     coin2: {
         tokenPairID           : 1,
         origChainID           : defaultChainID.chain1,
         shadowChainID         : defaultChainID.chain2,
-        origTokenAccount      : "",
-        shadowTokenAccount    : ADDRESS_0,
+        origTokenAccount      : ADDRESS_0,
+        shadowTokenAccount    : "",
         decimals              : 18,
         name                  : 'ETH',
         symbol                : 'ETH',
-        price                 : 0.0000000243
+        price                 : 243e-18
     }
 }
+
+let tokens = {
+    token1: {
+        tokenCreator          : null,
+        tokenPairID           : 2,
+        origChainID           : defaultChainID.chain1,
+        shadowChainID         : defaultChainID.chain2,
+        origTokenAccount      : "",
+        shadowTokenAccount    : "",
+        decimals              : 18,
+        name                  : 'TST1',
+        symbol                : 'TST1',
+        price                 : 3e-18
+    },
+    token2: {
+        tokenCreator          : null,
+        tokenPairID           : 3,
+        origChainID           : defaultChainID.chain2,
+        shadowChainID         : defaultChainID.chain1,
+        origTokenAccount      : "",
+        shadowTokenAccount    : "",
+        decimals              : 16,
+        name                  : 'TST2',
+        symbol                : 'TST2',
+        price                 : 7e-18
+    }
+};
 
 let crossApproach = {
     chain1: {
@@ -117,6 +121,7 @@ let crossApproach = {
             smgAdminProxy     : null,
             smgFeeProxy       : null,
             quota             : null,
+            oracle            : null,
             sigVerifier       : null,
         },
     },
@@ -131,10 +136,26 @@ let crossApproach = {
             smgAdminProxy     : null,
             smgFeeProxy       : null,
             quota             : null,
+            oracle            : null,
             sigVerifier       : null,
         },
     },
 };
+
+let chains = {
+    1: {
+        ID                     : defaultChainID.chain1,
+        coin                   : coins.coin1,
+        token                  : tokens.token1,
+        approach               : crossApproach.chain1
+    },
+    2: {
+        ID                     : defaultChainID.chain2,
+        coin                   : coins.coin2,
+        token                  : tokens.token2,
+        approach               : crossApproach.chain2
+    }
+}
 
 let storemanGroupStatus = {
     none                      : 0,
@@ -150,7 +171,8 @@ let storemanGroupStatus = {
 let storemanGroups = {
     1: {
         ID                    : "0x01",
-        deposit               : "100000000000000000000000",
+        // deposit               : new BN(web3.utils.padRight(0x1, 50)),
+        deposit               : "90000000000000000000000000000000000",
         status                : storemanGroupStatus.none,
         chain1                : defaultChainID.chain1,
         chain2                : defaultChainID.chain2,
@@ -163,7 +185,8 @@ let storemanGroups = {
     },
     2: {
         ID                    : "0x02",
-        deposit               : "1000000000000000000000000",
+        // deposit               : new BN(web3.utils.padRight(0x2, 50)),
+        deposit               : "99000000000000000000000000000000000",
         status                : storemanGroupStatus.none,
         chain1                : defaultChainID.chain1,
         chain2                : defaultChainID.chain2,
@@ -252,11 +275,12 @@ contract('Test HTLC', async (accounts) => {
             console.log("init 12", await getBalance(owner));
             await crossApproach.chain1.instance.setFees(defaultChainID.chain2, defaultChainID.chain1, crossApproach.chain1.shadowLockFee, crossApproach.chain1.shadowRevokeFee);
             console.log("init 13", await getBalance(owner));
-            crossApproach.chain1.parnters.tokenManager = tokenManager.address;
-            crossApproach.chain1.parnters.smgAdminProxy = smgAdminProxy.address;
+            crossApproach.chain1.parnters.tokenManager = tokenManager;
+            crossApproach.chain1.parnters.smgAdminProxy = smgAdminProxy;
             crossApproach.chain1.parnters.smgFeeProxy = smgAdminProxy.address;
-            crossApproach.chain1.parnters.quota = quota1.address;
-            crossApproach.chain1.parnters.sigVerifier = sigVerifier.address;
+            crossApproach.chain1.parnters.quota = quota1;
+            crossApproach.chain1.parnters.oracle = oracle;
+            crossApproach.chain1.parnters.sigVerifier = sigVerifier;
             crossApproach.chain1.delegate = crossDelegate;
 
             // storeman admin setup
@@ -264,6 +288,8 @@ contract('Test HTLC', async (accounts) => {
             console.log("init 14", await getBalance(owner));
             var totalChainPair = await smgAdminProxy.getChainPairIDCount.call();
             var chainPairID = Number(totalChainPair) - 1;
+            console.log("deposit", typeof(storemanGroups[1].deposit));
+            console.log("deposit", web3.utils.toWei(storemanGroups[1].deposit));
             // storeman group 1
             await smgAdminProxy.addStoremanGroup(storemanGroups[1].ID, storemanGroupStatus.ready,
                 web3.utils.toWei(storemanGroups[1].deposit), chainPairID, storemanGroups[1].gpk1,
@@ -314,11 +340,12 @@ contract('Test HTLC', async (accounts) => {
             console.log("init 21", await getBalance(owner));
             await crossApproach.chain2.instance.setFees(defaultChainID.chain1, defaultChainID.chain2, crossApproach.chain2.shadowLockFee, crossApproach.chain2.shadowRevokeFee);
             console.log("init 22", await getBalance(owner));
-            crossApproach.chain2.parnters.tokenManager = tokenManager.address;
-            crossApproach.chain2.parnters.smgAdminProxy = oracle.address;
+            crossApproach.chain2.parnters.tokenManager = tokenManager;
+            crossApproach.chain2.parnters.smgAdminProxy = oracle;
             crossApproach.chain2.parnters.smgFeeProxy = ADDRESS_0;
-            crossApproach.chain2.parnters.quota = quota2.address;
-            crossApproach.chain2.parnters.sigVerifier = sigVerifier.address;
+            crossApproach.chain2.parnters.quota = quota2;
+            crossApproach.chain2.parnters.oracle = oracle;
+            crossApproach.chain2.parnters.sigVerifier = sigVerifier;
 
             // original token creator contract
             tokens.token1.tokenCreator = await TestOrigTokenCreator.new();
@@ -380,9 +407,6 @@ contract('Test HTLC', async (accounts) => {
             });
             console.log("init 30", await getBalance(owner));
 
-            await tokenManager.addAdmin(crossApproach.chain1.instance.address, {from: owner});
-            console.log("init 31", await getBalance(owner));
-
             // token2
             let shadowToken2Receipt = await tokenManager.addToken(tokens.token2.name, tokens.token2.symbol, tokens.token2.decimals);
             console.log("init 32", await getBalance(owner));
@@ -409,27 +433,86 @@ contract('Test HTLC', async (accounts) => {
                     tokenAddress: tokens.token2.shadowTokenAccount
                 }
             });
-            await tokenManager.addAdmin(crossApproach.chain2.instance.address, {from: owner});
+
+            // coin1
+            let shadowCoin1Receipt = await tokenManager.addToken(coins.coin1.name, coins.coin1.symbol, coins.coin1.decimals);
             console.log("init 34", await getBalance(owner));
+            // console.log(shadowCoin1Receipt.logs);
+            let shadowCoin1Logger = assert.getWeb3Log(shadowCoin1Receipt, {
+                event: 'AddToken'
+            });
+            coins.coin1.shadowTokenAccount = shadowCoin1Logger.args.tokenAddress;
+            assert.equal(coins.coin1.name, shadowCoin1Logger.args.name);
+            assert.equal(coins.coin1.symbol, shadowCoin1Logger.args.symbol);
+            assert.equal(coins.coin1.decimals, Number(shadowCoin1Logger.args.decimals));
+
+            let coin1PairReceipt = await tokenManager.addTokenPair(coins.coin1.tokenPairID,
+                [coins.coin1.origTokenAccount, coins.coin1.name, coins.coin1.symbol, coins.coin1.decimals, coins.coin1.origChainID],
+                coins.coin1.origChainID, coins.coin1.origTokenAccount, coins.coin1.shadowChainID, coins.coin1.shadowTokenAccount);
+            assert.checkWeb3Event(coin1PairReceipt, {
+                event: 'AddTokenPair',
+                args: {
+                    id: coins.coin1.tokenPairID,
+                    fromChainID: coins.coin1.origChainID,
+                    fromAccount: web3.utils.padRight(coins.coin1.origTokenAccount, 64).toLowerCase(),
+                    toChainID: coins.coin1.shadowChainID,
+                    tokenAddress: coins.coin1.shadowTokenAccount
+                }
+            });
+            console.log("init 35", await getBalance(owner));
+
+            // coin2
+            let shadowCoin2Receipt = await tokenManager.addToken(coins.coin2.name, coins.coin2.symbol, coins.coin2.decimals);
+            console.log("init 36", await getBalance(owner));
+            let shadowCoin2Logger = assert.getWeb3Log(shadowCoin2Receipt, {
+                event: 'AddToken'
+            });
+            coins.coin2.shadowTokenAccount = shadowCoin2Logger.args.tokenAddress;
+            assert.equal(coins.coin2.name, shadowCoin2Logger.args.name);
+            assert.equal(coins.coin2.symbol, shadowCoin2Logger.args.symbol);
+            assert.equal(coins.coin2.decimals, shadowCoin2Logger.args.decimals);
+            // console.log("check OK");
+
+            let coin2PairReceipt = await tokenManager.addTokenPair(coins.coin2.tokenPairID,
+                [coins.coin2.origTokenAccount, coins.coin2.name, coins.coin2.symbol, coins.coin2.decimals, coins.coin2.origChainID],
+                coins.coin2.origChainID, coins.coin2.origTokenAccount, coins.coin2.shadowChainID, coins.coin2.shadowTokenAccount);
+            console.log("init 37", await getBalance(owner));
+            assert.checkWeb3Event(coin2PairReceipt, {
+                event: 'AddTokenPair',
+                args: {
+                    id: coins.coin2.tokenPairID,
+                    fromChainID: coins.coin2.origChainID,
+                    fromAccount: web3.utils.padRight(coins.coin2.origTokenAccount, 64).toLowerCase(),
+                    toChainID: coins.coin2.shadowChainID,
+                    tokenAddress: coins.coin2.shadowTokenAccount
+                }
+            });
+
+            // token manager admin
+            await tokenManager.addAdmin(crossApproach.chain1.instance.address, {from: owner});
+            console.log("init 38", await getBalance(owner));
+
+            await tokenManager.addAdmin(crossApproach.chain2.instance.address, {from: owner});
+            console.log("init 39", await getBalance(owner));
 
             // oracle config
             let smg1ConfigReceipt = await oracle.setStoremanGroupConfig(storemanGroups[1].ID, storemanGroups[1].status,
                 web3.utils.toWei(storemanGroups[1].deposit), [storemanGroups[1].chain1, storemanGroups[1].chain1],
-                [web3.utils.padRight(web3.utils.toHex(storemanGroups[1].curve2), 64),
-                web3.utils.padRight(web3.utils.toHex(storemanGroups[1].curve1), 64)],
+                [web3.utils.padRight(web3.utils.toHex(defaultCurve.curve2), 64),
+                web3.utils.padRight(web3.utils.toHex(defaultCurve.curve1), 64)],
                 storemanGroups[1].gpk2, storemanGroups[1].gpk1,
                 storemanGroups[1].startTime, storemanGroups[1].endTime, {from: owner});
             console.log("smg1ConfigReceipt", smg1ConfigReceipt.logs);
-            console.log("init 35", await getBalance(owner));
+            console.log("init 40", await getBalance(owner));
 
             let smg2ConfigReceipt = await oracle.setStoremanGroupConfig(storemanGroups[2].ID, storemanGroups[2].status,
                 web3.utils.toWei(storemanGroups[2].deposit), [storemanGroups[2].chain2, storemanGroups[2].chain1],
-                [web3.utils.padRight(web3.utils.toHex(storemanGroups[2].curve2), 64),
-                web3.utils.padRight(web3.utils.toHex(storemanGroups[2].curve1), 64)],
+                [web3.utils.padRight(web3.utils.toHex(defaultCurve.curve2), 64),
+                web3.utils.padRight(web3.utils.toHex(defaultCurve.curve1), 64)],
                 storemanGroups[2].gpk2, storemanGroups[2].gpk1,
                 storemanGroups[2].startTime, storemanGroups[2].endTime, {from: owner});
             console.log("smg2ConfigReceipt", smg2ConfigReceipt.logs);
-            console.log("init 36", await getBalance(owner));
+            console.log("init 41", await getBalance(owner));
             let smg1DepositReceipt = await oracle.updateDeposit(storemanGroups[1].ID, web3.utils.toWei(storemanGroups[1].deposit), {from: owner});
             // assert.checkWeb3Event(smg1DepositReceipt, {
             //     event: 'UpdateDeposit',
@@ -438,7 +521,8 @@ contract('Test HTLC', async (accounts) => {
             //         amount:web3.utils.toWei(storemanGroups[1].deposit)
             //     }
             // });
-            console.log("init 37", await getBalance(owner));
+            console.log("smg1DepositReceipt", smg1DepositReceipt.logs);
+            console.log("init 42", await getBalance(owner));
             let smg2DepositReceipt = await oracle.updateDeposit(storemanGroups[2].ID, web3.utils.toWei(storemanGroups[2].deposit), {from: owner});
             // assert.checkWeb3Event(smg2DepositReceipt, {
             //     event: 'UpdateDeposit',
@@ -448,50 +532,51 @@ contract('Test HTLC', async (accounts) => {
             //     }
             // });
             console.log("smg2DepositReceipt", smg2DepositReceipt.logs);
-            console.log("init 38", await getBalance(owner));
+            console.log("init 43", await getBalance(owner));
             let tokenSymbols = [
-                web3.utils.hexToBytes(web3.utils.toHex(tokens.token1.symbol)),
-                web3.utils.hexToBytes(web3.utils.toHex(tokens.token2.symbol)),
-                web3.utils.hexToBytes(web3.utils.toHex(coins.coin1.symbol)),
-                web3.utils.hexToBytes(web3.utils.toHex(coins.coin2.symbol)),
+                web3.utils.hexToBytes(web3.utils.asciiToHex(tokens.token1.symbol)),
+                web3.utils.hexToBytes(web3.utils.asciiToHex(tokens.token2.symbol)),
+                web3.utils.hexToBytes(web3.utils.asciiToHex(coins.coin1.symbol)),
+                web3.utils.hexToBytes(web3.utils.asciiToHex(coins.coin2.symbol)),
             ];
             let tokenPrices = [
-                web3.utils.toWei(tokens.token1.price.toString()),
-                web3.utils.toWei(tokens.token2.price.toString()),
-                web3.utils.toWei(coins.coin1.price.toString()),
-                web3.utils.toWei(coins.coin2.price.toString()),
+                web3.utils.toWei(toNonExponential(tokens.token1.price)),
+                web3.utils.toWei(toNonExponential(tokens.token2.price)),
+                web3.utils.toWei(toNonExponential(coins.coin1.price)),
+                web3.utils.toWei(toNonExponential(coins.coin2.price)),
             ];
             let priceLogger = await oracle.updatePrice(tokenSymbols, tokenPrices);
+            console.log("init 44", await getBalance(owner));
             let oraclePrices = await oracle.getValues(tokenSymbols);
-            assert.equal(oraclePrices[0] === tokenPrices[0]);
-            assert.equal(oraclePrices[1] === tokenPrices[1]);
-            assert.equal(oraclePrices[2] === tokenPrices[2]);
-            assert.equal(oraclePrices[3] === tokenPrices[3]);
-            console.log("priceLogger", priceLogger.logs);
-            console.log("init 39", await getBalance(owner));
+            assert.equal(oraclePrices[0].eq(new BN(tokenPrices[0])), true);
+            assert.equal(oraclePrices[1].eq(new BN(tokenPrices[1])), true);
+            assert.equal(oraclePrices[2].eq(new BN(tokenPrices[2])), true);
+            assert.equal(oraclePrices[3].eq(new BN(tokenPrices[3])), true);
 
             // quota config
             let quota1ConfigReceipt = await quota1.config(
-                oracle._address,
+                oracle.address,
                 crossApproach.chain1.instance.address,
                 crossApproach.chain1.instance.address,
-                smgAdminProxy._address,
-                tokenManager._address,
-                web3.utils.toWei(storemanGroups[1].deposit),
+                smgAdminProxy.address,
+                tokenManager.address,
+                quotaDepositRate,
                 stringToBytes("WAN"),
+                {from: owner}
             );
-            console.log("init 40", await getBalance(owner));
+            console.log("init 45", await getBalance(owner));
 
             let quota2ConfigReceipt = await quota2.config(
-                oracle._address,
+                oracle.address,
                 crossApproach.chain2.instance.address,
                 crossApproach.chain2.instance.address,
-                oracle._address,
-                tokenManager._address,
-                web3.utils.toWei(storemanGroups[2].deposit),
+                oracle.address,
+                tokenManager.address,
+                quotaDepositRate,
                 stringToBytes("ETH"),
+                {from: owner}
             );
-            console.log("init 41", await getBalance(owner));
+            console.log("init 46", await getBalance(owner));
 
         } catch (err) {
             // console.log(err);
@@ -499,250 +584,226 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('init...   -> getStoremanFee success', async () => {
-        try {
-            let smgFee = await crossApproach.chain1.instance.getStoremanFee(storemanGroups[1].ID);
-            assert.equal(new BN(smgFee).eq(new BN(0)), true);
-            smgFee = await crossApproach.chain2.instance.getStoremanFee(storemanGroups[2].ID);
-            assert.equal(new BN(smgFee).eq(new BN(0)), true);
-        } catch (err) {
-            assert.fail(err.toString());
-        }
-    });
+    // it('init...   -> getStoremanFee success', async () => {
+    //     try {
+    //         let smgFee = await crossApproach.chain1.instance.getStoremanFee(storemanGroups[1].ID);
+    //         assert.equal(new BN(smgFee).eq(new BN(0)), true);
+    //         smgFee = await crossApproach.chain2.instance.getStoremanFee(storemanGroups[2].ID);
+    //         assert.equal(new BN(smgFee).eq(new BN(0)), true);
+    //     } catch (err) {
+    //         assert.fail(err.toString());
+    //     }
+    // });
 
-    it('Others getPartners  ==> The config value', async () => {
-        try {
-            let ret = await crossApproach.chain1.instance.getPartners();
-            assert.equal(crossApproach.chain1.parnters.tokenManager, ret[0]);
-            assert.equal(crossApproach.chain1.parnters.smgAdminProxy, ret[1]);
-            assert.equal(crossApproach.chain1.parnters.smgFeeProxy, ret[2]);
-            assert.equal(crossApproach.chain1.parnters.quota, ret[3]);
-            assert.equal(crossApproach.chain1.parnters.sigVerifier, ret[4]);
+    // it('Others getPartners  ==> The config value', async () => {
+    //     try {
+    //         let ret = await crossApproach.chain1.instance.getPartners();
+    //         assert.equal(crossApproach.chain1.parnters.tokenManager.address, ret[0]);
+    //         assert.equal(crossApproach.chain1.parnters.smgAdminProxy.address, ret[1]);
+    //         assert.equal(crossApproach.chain1.parnters.smgFeeProxy, ret[2]);
+    //         assert.equal(crossApproach.chain1.parnters.quota.address, ret[3]);
+    //         assert.equal(crossApproach.chain1.parnters.sigVerifier.address, ret[4]);
 
-            ret = await crossApproach.chain2.instance.getPartners();
-            assert.equal(crossApproach.chain2.parnters.tokenManager, ret[0]);
-            assert.equal(crossApproach.chain2.parnters.smgAdminProxy, ret[1]);
-            assert.equal(ADDRESS_0, ret[2]);
-            assert.equal(crossApproach.chain2.parnters.quota, ret[3]);
-            assert.equal(crossApproach.chain2.parnters.sigVerifier, ret[4]);
-        } catch (err) {
-            assert.fail(err.toString());
-        }
-    });
+    //         ret = await crossApproach.chain2.instance.getPartners();
+    //         assert.equal(crossApproach.chain2.parnters.tokenManager.address, ret[0]);
+    //         assert.equal(crossApproach.chain2.parnters.smgAdminProxy.address, ret[1]);
+    //         assert.equal(ADDRESS_0, ret[2]);
+    //         assert.equal(crossApproach.chain2.parnters.quota.address, ret[3]);
+    //         assert.equal(crossApproach.chain2.parnters.sigVerifier.address, ret[4]);
+    //     } catch (err) {
+    //         assert.fail(err.toString());
+    //     }
+    // });
 
-    it('Others setEconomics  ==> Parameter is invalid', async () => {
-        try {
-            await crossApproach.chain1.instance.setPartners(ADDRESS_0, ADDRESS_0, crossApproach.chain1.parnters.smgFeeProxy, ADDRESS_0, ADDRESS_0);
-        } catch (err) {
-            assert.include(err.toString(), "Parameter is invalid");
-        }
-    });
+    // it('Others setEconomics  ==> Parameter is invalid', async () => {
+    //     try {
+    //         await crossApproach.chain1.instance.setPartners(ADDRESS_0, ADDRESS_0, crossApproach.chain1.parnters.smgFeeProxy, ADDRESS_0, ADDRESS_0);
+    //     } catch (err) {
+    //         assert.include(err.toString(), "Parameter is invalid");
+    //     }
+    // });
 
-    it('Others getFees  ==> The config value', async () => {
-        try {
-            let ret = await crossApproach.chain1.instance.getFees(defaultChainID.chain1, defaultChainID.chain2);
-            assert.equal(crossApproach.chain1.origLockFee, ret[0]);
-            assert.equal(crossApproach.chain1.origRevokeFee, ret[1]);
+    // it('Others getFees  ==> The config value', async () => {
+    //     try {
+    //         let ret = await crossApproach.chain1.instance.getFees(defaultChainID.chain1, defaultChainID.chain2);
+    //         assert.equal(crossApproach.chain1.origLockFee, ret[0]);
+    //         assert.equal(crossApproach.chain1.origRevokeFee, ret[1]);
 
-            ret = await crossApproach.chain1.instance.getFees(defaultChainID.chain2, defaultChainID.chain1);
-            assert.equal(crossApproach.chain1.shadowLockFee, ret[0]);
-            assert.equal(crossApproach.chain1.shadowRevokeFee, ret[1]);
+    //         ret = await crossApproach.chain1.instance.getFees(defaultChainID.chain2, defaultChainID.chain1);
+    //         assert.equal(crossApproach.chain1.shadowLockFee, ret[0]);
+    //         assert.equal(crossApproach.chain1.shadowRevokeFee, ret[1]);
 
-            ret = await crossApproach.chain2.instance.getFees(defaultChainID.chain2, defaultChainID.chain1);
-            assert.equal(crossApproach.chain2.origLockFee, ret[0]);
-            assert.equal(crossApproach.chain2.origRevokeFee, ret[1]);
+    //         ret = await crossApproach.chain2.instance.getFees(defaultChainID.chain2, defaultChainID.chain1);
+    //         assert.equal(crossApproach.chain2.origLockFee, ret[0]);
+    //         assert.equal(crossApproach.chain2.origRevokeFee, ret[1]);
 
-            ret = await crossApproach.chain2.instance.getFees(defaultChainID.chain1, defaultChainID.chain2);
-            assert.equal(crossApproach.chain2.shadowLockFee, ret[0]);
-            assert.equal(crossApproach.chain2.shadowRevokeFee, ret[1]);
+    //         ret = await crossApproach.chain2.instance.getFees(defaultChainID.chain1, defaultChainID.chain2);
+    //         assert.equal(crossApproach.chain2.shadowLockFee, ret[0]);
+    //         assert.equal(crossApproach.chain2.shadowRevokeFee, ret[1]);
 
-        } catch (err) {
-            assert.fail(err.toString());
-        }
-    });
+    //     } catch (err) {
+    //         assert.fail(err.toString());
+    //     }
+    // });
 
-    it('Others lockedTime  ==> The config value', async () => {
-        try {
-            let ret = await crossApproach.chain1.instance._lockedTime();
-            assert.equal(htlcLockedTime, ret);
-        } catch (err) {
-            assert.fail(err.toString());
-        }
-    });
+    // it('Others lockedTime  ==> The config value', async () => {
+    //     try {
+    //         let ret = await crossApproach.chain1.instance._lockedTime();
+    //         assert.equal(htlcLockedTime, ret);
+    //     } catch (err) {
+    //         assert.fail(err.toString());
+    //     }
+    // });
 
-    it('Proxy   -> get the implementation address', async () => {
-        try {
-            let crossProxy = await CrossProxy.deployed();
-            let address = await crossProxy.implementation();
-            assert.equal(address, crossApproach.chain1.delegate.address);
-        } catch (err) {
-            assert.fail(err.toString());
-        }
-    });
+    // it('Proxy   -> get the implementation address', async () => {
+    //     try {
+    //         let crossProxy = await CrossProxy.deployed();
+    //         let address = await crossProxy.implementation();
+    //         assert.equal(address, crossApproach.chain1.delegate.address);
+    //     } catch (err) {
+    //         assert.fail(err.toString());
+    //     }
+    // });
 
-    it('Proxy   -> upgradeTo', async () => {
-        try {
-            let crossProxy = await CrossProxy.deployed();
-            await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
+    // it('Proxy   -> upgradeTo', async () => {
+    //     try {
+    //         let crossProxy = await CrossProxy.deployed();
+    //         await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
 
-            let address = await crossProxy.implementation();
-            assert.equal(address, ADDRESS_CROSS_PROXY_IMPL);
-        } catch (err) {
-            assert.fail(err.toString());
-        }
-    });
+    //         let address = await crossProxy.implementation();
+    //         assert.equal(address, ADDRESS_CROSS_PROXY_IMPL);
+    //     } catch (err) {
+    //         assert.fail(err.toString());
+    //     }
+    // });
 
-    it('Proxy   -> upgradeTo with the same implementation address', async () => {
-        try {
-            let crossProxy = await CrossProxy.deployed();
-            await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
+    // it('Proxy   -> upgradeTo with the same implementation address', async () => {
+    //     try {
+    //         let crossProxy = await CrossProxy.deployed();
+    //         await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
 
-            let address = await crossProxy.implementation();
-            assert.equal(address, ADDRESS_CROSS_PROXY_IMPL);
-        } catch (err) {
-            assert.include(err.toString(), "Cannot upgrade to the same implementation");
-        }
-    });
+    //         let address = await crossProxy.implementation();
+    //         assert.equal(address, ADDRESS_CROSS_PROXY_IMPL);
+    //     } catch (err) {
+    //         assert.include(err.toString(), "Cannot upgrade to the same implementation");
+    //     }
+    // });
 
-    it('Proxy   -> upgradeTo with 0x address', async () => {
-        try {
-            let crossProxy = await CrossProxy.deployed();
-            await crossProxy.upgradeTo(ADDRESS_0);
+    // it('Proxy   -> upgradeTo with 0x address', async () => {
+    //     try {
+    //         let crossProxy = await CrossProxy.deployed();
+    //         await crossProxy.upgradeTo(ADDRESS_0);
 
-            let address = await crossProxy.implementation();
-            assert.equal(address, ADDRESS_0);
-        } catch (err) {
-            assert.include(err.toString(), "Cannot upgrade to invalid address");
-        }
-    });
+    //         let address = await crossProxy.implementation();
+    //         assert.equal(address, ADDRESS_0);
+    //     } catch (err) {
+    //         assert.include(err.toString(), "Cannot upgrade to invalid address");
+    //     }
+    // });
 
-    it('Proxy   -> restore', async () => {
-        try {
-            let crossProxy = await CrossProxy.deployed();
-            let ret = await crossProxy.upgradeTo(crossApproach.chain1.instance.address);
-            let address = await crossProxy.implementation();
-            assert.equal(address, crossApproach.chain1.instance.address);
+    // it('Proxy   -> restore', async () => {
+    //     try {
+    //         let crossProxy = await CrossProxy.deployed();
+    //         let ret = await crossProxy.upgradeTo(crossApproach.chain1.instance.address);
+    //         let address = await crossProxy.implementation();
+    //         assert.equal(address, crossApproach.chain1.instance.address);
 
-            assert.checkWeb3Event(ret, {
-                event: 'Upgraded',
-                args: {
-                    implementation:address
-                }
-            });
-        } catch (err) {
-            assert.fail(err.toString());
-        }
-    });
+    //         assert.checkWeb3Event(ret, {
+    //             event: 'Upgraded',
+    //             args: {
+    //                 implementation:address
+    //             }
+    //         });
+    //     } catch (err) {
+    //         assert.fail(err.toString());
+    //     }
+    // });
 
-    it('Token1 -> userMintLock  ==> Halted', async () => {
-        let crossProxy;
-        try {
-            crossProxy = await CrossProxy.deployed();
-            await crossProxy.setHalt(true);
-            // accounts[1] is the chain1 original address of the user.
-            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-            userMintLockParamsTemp.origUserAccount = accounts[1];
-            userMintLockParamsTemp.shadowUserAccount = accounts[2];
-            userMintLockParamsTemp.xHash = xInfo[1].hash;
-            await crossApproach.chain1.instance.userMintLock(
-                userMintLockParamsTemp.xHash,
-                userMintLockParamsTemp.smgID,
-                userMintLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userMintLockParamsTemp.value.toString()),
-                userMintLockParamsTemp.shadowUserAccount, {from: userMintLockParamsTemp.origUserAccount});
-        } catch (err) {
-            assert.include(err.toString(), "Smart contract is halted");
-        } finally {
-            await crossProxy.setHalt(false);
-        }
-    });
+    // it('Token1 -> userMintLock  ==> Halted', async () => {
+    //     let crossProxy;
+    //     try {
+    //         crossProxy = await CrossProxy.deployed();
+    //         await crossProxy.setHalt(true, {from: owner});
+    //         // accounts[1] is the chain1 original address of the user.
+    //         let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
+    //         userMintLockParamsTemp.origUserAccount = accounts[1];
+    //         userMintLockParamsTemp.shadowUserAccount = accounts[2];
+    //         userMintLockParamsTemp.xHash = xInfo[1].hash;
+    //         await crossApproach.chain1.instance.userMintLock(
+    //             userMintLockParamsTemp.xHash,
+    //             userMintLockParamsTemp.smgID,
+    //             userMintLockParamsTemp.tokenPairID,
+    //             web3.utils.toWei(userMintLockParamsTemp.value.toString()),
+    //             userMintLockParamsTemp.shadowUserAccount, {from: userMintLockParamsTemp.origUserAccount});
+    //     } catch (err) {
+    //         assert.include(err.toString(), "Smart contract is halted");
+    //     } finally {
+    //         await crossProxy.setHalt(false, {from: owner});
+    //     }
+    // });
 
-    it("Token1 -> userMintLock  ==> Invalid parnters", async () => {
-        try {
-            // accounts[1] is the chain1 original address of the user.
-            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-            userMintLockParamsTemp.origUserAccount = accounts[1];
-            userMintLockParamsTemp.shadowUserAccount = accounts[2];
-            userMintLockParamsTemp.xHash = xInfo[1].hash;
-            await crossDelegateNotInit.userMintLock(
-                userMintLockParamsTemp.xHash,
-                userMintLockParamsTemp.smgID,
-                userMintLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userMintLockParamsTemp.value.toString()),
-                userMintLockParamsTemp.shadowUserAccount, {from: userMintLockParamsTemp.origUserAccount});
-        } catch (err) {
-            //assert.fail(err);
-            assert.include(err.toString(), "Invalid parnters");
-        }
-    });
+    // it("Token1 -> userMintLock  ==> Invalid parnters", async () => {
+    //     try {
+    //         // accounts[1] is the chain1 original address of the user.
+    //         let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
+    //         userMintLockParamsTemp.origUserAccount = accounts[1];
+    //         userMintLockParamsTemp.shadowUserAccount = accounts[2];
+    //         userMintLockParamsTemp.xHash = xInfo[1].hash;
+    //         await crossDelegateNotInit.userMintLock(
+    //             userMintLockParamsTemp.xHash,
+    //             userMintLockParamsTemp.smgID,
+    //             userMintLockParamsTemp.tokenPairID,
+    //             web3.utils.toWei(userMintLockParamsTemp.value.toString()),
+    //             userMintLockParamsTemp.shadowUserAccount, {from: userMintLockParamsTemp.origUserAccount});
+    //     } catch (err) {
+    //         //assert.fail(err);
+    //         assert.include(err.toString(), "Invalid parnters");
+    //     }
+    // });
 
-    it("Token1 -> userMintLock  ==> Token does not exist", async () => {
-        try {
-            // accounts[1] is the chain1 original address of the user.
-            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-            userMintLockParamsTemp.origUserAccount = accounts[1];
-            userMintLockParamsTemp.shadowUserAccount = accounts[2];
-            userMintLockParamsTemp.xHash = xInfo[1].hash;
+    // it("Token1 -> userMintLock  ==> Token does not exist", async () => {
+    //     try {
+    //         // accounts[1] is the chain1 original address of the user.
+    //         let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
+    //         userMintLockParamsTemp.origUserAccount = accounts[1];
+    //         userMintLockParamsTemp.shadowUserAccount = accounts[2];
+    //         userMintLockParamsTemp.xHash = xInfo[1].hash;
 
-            // let mintValue = web3.utils.toWei((userMintLockParamsTemp.value * 2).toString());
-            let value = web3.utils.toWei(userMintLockParamsTemp.value.toString());
-            await tokens.token1.tokenCreator.mintToken(tokens.token1.name, tokens.token1.symbol,
-                userMintLockParamsTemp.origUserAccount, value);
-                // get token instance
-            let tokenInstance = await getRC20TokenInstance(tokens.token1.origTokenAccount);
-            let balance = await tokenInstance.balanceOf(userMintLockParamsTemp.origUserAccount);
-            assert.equal(value, balance.toString());
-            // approve value
-            await tokenInstance.approve(crossApproach.chain1.instance.address, 0, {from: userMintLockParamsTemp.origUserAccount});
-            await tokenInstance.approve(crossApproach.chain1.instance.address, value, {from: userMintLockParamsTemp.origUserAccount});
-            let allowance = await tokenInstance.allowance(userMintLockParamsTemp.origUserAccount, crossApproach.chain1.instance.address);
-            assert.equal(value, allowance.toString());
-            // user mint lock
-            await crossApproach.chain1.instance.userMintLock(
-                userMintLockParamsTemp.xHash,
-                userMintLockParamsTemp.smgID,
-                InvalidTokenPairID,
-                value,
-                userMintLockParamsTemp.shadowUserAccount,
-                {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
-        } catch (err) {
-            assert.include(err.toString(), "Token does not exist");
-        }
-    });
+    //         let value = web3.utils.toWei(userMintLockParamsTemp.value.toString());
+    //         // user mint lock
+    //         await crossApproach.chain1.instance.userMintLock(
+    //             userMintLockParamsTemp.xHash,
+    //             userMintLockParamsTemp.smgID,
+    //             InvalidTokenPairID,
+    //             value,
+    //             userMintLockParamsTemp.shadowUserAccount,
+    //             {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+    //     } catch (err) {
+    //         assert.include(err.toString(), "Token does not exist");
+    //     }
+    // });
 
-    it("Token1 -> userMintLock  ==> Value is null", async () => {
-        try {
-            // accounts[1] is the chain1 original address of the user.
-            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-            userMintLockParamsTemp.origUserAccount = accounts[1];
-            userMintLockParamsTemp.shadowUserAccount = accounts[2];
-            userMintLockParamsTemp.xHash = xInfo[1].hash;
+    // it("Token1 -> userMintLock  ==> Value is null", async () => {
+    //     try {
+    //         // accounts[1] is the chain1 original address of the user.
+    //         let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
+    //         userMintLockParamsTemp.origUserAccount = accounts[1];
+    //         userMintLockParamsTemp.shadowUserAccount = accounts[2];
+    //         userMintLockParamsTemp.xHash = xInfo[1].hash;
 
-            // let mintValue = web3.utils.toWei((userMintLockParamsTemp.value * 2).toString());
-            let value = web3.utils.toWei(userMintLockParamsTemp.value.toString());
-            await tokens.token1.tokenCreator.mintToken(tokens.token1.name, tokens.token1.symbol,
-                userMintLockParamsTemp.origUserAccount, value);
-                // get token instance
-            let tokenInstance = await getRC20TokenInstance(tokens.token1.origTokenAccount);
-            let balance = await tokenInstance.balanceOf(userMintLockParamsTemp.origUserAccount);
-            assert.equal(value, balance.toString());
-            // approve value
-            await tokenInstance.approve(crossApproach.chain1.instance.address, 0, {from: userMintLockParamsTemp.origUserAccount});
-            await tokenInstance.approve(crossApproach.chain1.instance.address, value, {from: userMintLockParamsTemp.origUserAccount});
-            let allowance = await tokenInstance.allowance(userMintLockParamsTemp.origUserAccount, crossApproach.chain1.instance.address);
-            assert.equal(value, allowance.toString());
-            // user mint lock
-            await crossApproach.chain1.instance.userMintLock(
-                userMintLockParamsTemp.xHash,
-                userMintLockParamsTemp.smgID,
-                userMintLockParamsTemp.tokenPairID,
-                "0",
-                userMintLockParamsTemp.shadowUserAccount,
-                {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
-        } catch (err) {
-            assert.include(err.toString(), "Value is null");
-        }
-    });
+    //         let value = web3.utils.toWei("0");
+    //         // user mint lock
+    //         await crossApproach.chain1.instance.userMintLock(
+    //             userMintLockParamsTemp.xHash,
+    //             userMintLockParamsTemp.smgID,
+    //             userMintLockParamsTemp.tokenPairID,
+    //             value,
+    //             userMintLockParamsTemp.shadowUserAccount,
+    //             {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+    //     } catch (err) {
+    //         assert.include(err.toString(), "Value is null");
+    //     }
+    // });
 
     it('Token1 -> userMintLock  ==>success', async () => {
         try {
@@ -752,13 +813,20 @@ contract('Test HTLC', async (accounts) => {
             userMintLockParamsTemp.shadowUserAccount = accounts[2];
             userMintLockParamsTemp.xHash = xInfo[1].hash;
 
+            let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userMintLockParamsTemp.smgID);
+            console.log("mintOracleValue", mintOracleValue);
+
+            let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userMintLockParamsTemp.tokenPairID, userMintLockParamsTemp.smgID);
+            console.log("mintQuotaValue", mintQuotaValue);
+
             let value = web3.utils.toWei(userMintLockParamsTemp.value.toString());
             await tokens.token1.tokenCreator.mintToken(tokens.token1.name, tokens.token1.symbol,
                 userMintLockParamsTemp.origUserAccount, value);
-                // get token instance
+            // get token instance
             let tokenInstance = await getRC20TokenInstance(tokens.token1.origTokenAccount);
             let balance = await tokenInstance.balanceOf(userMintLockParamsTemp.origUserAccount);
             assert.equal(value, balance.toString());
+
             // approve value
             await tokenInstance.approve(crossApproach.chain1.instance.address, 0, {from: userMintLockParamsTemp.origUserAccount});
             await tokenInstance.approve(crossApproach.chain1.instance.address, value, {from: userMintLockParamsTemp.origUserAccount});
