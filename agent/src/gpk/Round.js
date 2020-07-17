@@ -409,8 +409,7 @@ class Round {
       await this.group.saveProgress(this.round);
     }
     if (!send.encSijTxHash) {
-      let fake = '0x04af1ddbcae65e5883a9f9773b0d2be276cfaabda422002edd3808b6bc442a0f020bd314201a1ba5d674ea660169d269eb9658fad700d46731d91e644ffd76b3f188760f8283a03192b314491d9cebd29bd961d37e01f014367a6330cc71f6195760ad6d0d333ce0a25240f378c7bf6153f3d29154286289eb6afdeff23b7737afead6caa1c29cabb5a127d0fda19e92e89025f267fc4efe5b6b7b5b04caba193d'
-      send.encSijTxHash = await wanchain.sendEncSij(this.group.id, this.round, this.curveIndex, partner, fake || send.encSij);
+      send.encSijTxHash = await wanchain.sendEncSij(this.group.id, this.round, this.curveIndex, partner, send.encSij);
       console.log("group %s round %d curve %d sendEncSij %s to %s hash: %s", this.group.id, this.round, this.curveIndex, "*" || send.encSij, partner, send.encSijTxHash);
     }
   }
