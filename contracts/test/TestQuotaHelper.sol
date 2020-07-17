@@ -19,24 +19,44 @@ interface ITokenManager {
 }
 
 contract StoremanType {
-    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
+    enum GroupStatus {
+        none,
+        initial,
+        curveSeted,
+        failed,
+        selected,
+        ready,
+        unregistered,
+        dismissed
+    }
 }
 
 contract TestQuotaHelper {
     mapping(bytes32 => uint256) priceMap;
 
     constructor() public {
-        priceMap[keccak256("BTC")] = 998000000000;
-        priceMap[keccak256("ETH")] = 24500000000;
-        priceMap[keccak256("WAN")] = 21240000;
+        priceMap[stringToBytes32("BTC")] = 998000000000;
+        priceMap[stringToBytes32("ETH")] = 24500000000;
+        priceMap[stringToBytes32("WAN")] = 21240000;
     }
 
-    function getValue(bytes key) public view returns (uint256 price) {
-        return priceMap[keccak256(key)];
+    function stringToBytes32(string memory source) public pure returns (bytes32 result) {
+        bytes memory tempEmptyStringTest = bytes(source);
+        if (tempEmptyStringTest.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            result := mload(add(source, 32))
+        }
     }
 
-    function setValue(bytes key, uint256 value) public {
-        priceMap[keccak256(key)] = value;
+    function getValue(bytes32 key) public view returns (uint256 price) {
+        return priceMap[key];
+    }
+
+    function setValue(string key, uint256 value) public {
+        priceMap[stringToBytes32(key)] = value;
     }
 
     function getStoremanGroupConfig(bytes32 storemanGroupId)
@@ -44,7 +64,7 @@ contract TestQuotaHelper {
         view
         returns (
             bytes32 groupId,
-            StoremanType.GroupStatus status,
+            uint256 status,
             uint256 deposit,
             uint256 chain1,
             uint256 chain2,
@@ -97,8 +117,16 @@ contract TestQuotaHelper {
         return 0;
     }
 
-  function getAncestorInfo(uint id) external view
-    returns (bytes account, bytes name, bytes symbol, uint8 decimals, uint chainId)
+    function getAncestorInfo(uint256 id)
+        external
+        view
+        returns (
+            bytes account,
+            string name,
+            string symbol,
+            uint8 decimals,
+            uint256 chainId
+        )
     {
         if (id == 0) {
             return ("", "", "WAN", 18, 1);
