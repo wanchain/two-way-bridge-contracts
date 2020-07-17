@@ -97,27 +97,25 @@ contract TestQuotaHelper {
         return 0;
     }
 
-    function getTokenPairInfo(uint256 id)
-        public
-        view
-        returns (bytes ancestorSymbol, uint256 decimails)
+  function getAncestorInfo(uint id) external view
+    returns (bytes account, bytes name, bytes symbol, uint8 decimals, uint chainId)
     {
         if (id == 0) {
-            return ("WAN", 8);
+            return ("", "", "WAN", 18, 1);
         }
 
         if (id == 1) {
-            return ("BTC", 8);
+            return ("", "", "BTC", 8, 1);
         }
 
         if (id == 2) {
-            return ("ETH", 18);
+            return ("", "", "ETH", 18, 1);
         }
 
         if (id == 3) {
-            return ("ETC", 18);
+            return ("", "", "ETC", 18, 1);
         }
 
-        return ("", 0);
+        return ("", "", "", 0, 1);
     }
 }
