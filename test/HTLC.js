@@ -395,12 +395,13 @@ contract('Test HTLC', async (accounts) => {
             let token1PairReceipt = await tokenManager.addTokenPair(tokens.token1.tokenPairID,
                 [tokens.token1.origTokenAccount, tokens.token1.name, tokens.token1.symbol, tokens.token1.decimals, tokens.token1.origChainID],
                 tokens.token1.origChainID, tokens.token1.origTokenAccount, tokens.token1.shadowChainID, tokens.token1.shadowTokenAccount);
+            console.log("token1PairReceipt", token1PairReceipt.logs);
             assert.checkWeb3Event(token1PairReceipt, {
                 event: 'AddTokenPair',
                 args: {
                     id: tokens.token1.tokenPairID,
                     fromChainID: tokens.token1.origChainID,
-                    fromAccount: web3.utils.padRight(tokens.token1.origTokenAccount, 64).toLowerCase(),
+                    fromAccount: tokens.token1.origTokenAccount.toLowerCase(),//web3.utils.hexToBytes(tokens.token1.origTokenAccount),// web3.utils.padRight(tokens.token1.origTokenAccount, 64).toLowerCase(),
                     toChainID: tokens.token1.shadowChainID,
                     tokenAddress: tokens.token1.shadowTokenAccount
                 }
@@ -428,7 +429,7 @@ contract('Test HTLC', async (accounts) => {
                 args: {
                     id: tokens.token2.tokenPairID,
                     fromChainID: tokens.token2.origChainID,
-                    fromAccount: web3.utils.padRight(tokens.token2.origTokenAccount, 64).toLowerCase(),
+                    fromAccount: tokens.token2.origTokenAccount.toLowerCase(),//web3.utils.hexToBytes(tokens.token2.origTokenAccount),//web3.utils.padRight(tokens.token2.origTokenAccount, 64).toLowerCase(),
                     toChainID: tokens.token2.shadowChainID,
                     tokenAddress: tokens.token2.shadowTokenAccount
                 }
@@ -454,7 +455,7 @@ contract('Test HTLC', async (accounts) => {
                 args: {
                     id: coins.coin1.tokenPairID,
                     fromChainID: coins.coin1.origChainID,
-                    fromAccount: web3.utils.padRight(coins.coin1.origTokenAccount, 64).toLowerCase(),
+                    fromAccount: coins.coin1.origTokenAccount.toLowerCase(),//web3.utils.hexToBytes(coins.coin1.origTokenAccount),//web3.utils.padRight(coins.coin1.origTokenAccount, 64).toLowerCase(),
                     toChainID: coins.coin1.shadowChainID,
                     tokenAddress: coins.coin1.shadowTokenAccount
                 }
@@ -482,7 +483,7 @@ contract('Test HTLC', async (accounts) => {
                 args: {
                     id: coins.coin2.tokenPairID,
                     fromChainID: coins.coin2.origChainID,
-                    fromAccount: web3.utils.padRight(coins.coin2.origTokenAccount, 64).toLowerCase(),
+                    fromAccount: coins.coin2.origTokenAccount.toLowerCase(),//web3.utils.hexToBytes(coins.coin2.origTokenAccount),//web3.utils.padRight(coins.coin2.origTokenAccount, 64).toLowerCase(),
                     toChainID: coins.coin2.shadowChainID,
                     tokenAddress: coins.coin2.shadowTokenAccount
                 }
@@ -584,226 +585,228 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    // it('init...   -> getStoremanFee success', async () => {
-    //     try {
-    //         let smgFee = await crossApproach.chain1.instance.getStoremanFee(storemanGroups[1].ID);
-    //         assert.equal(new BN(smgFee).eq(new BN(0)), true);
-    //         smgFee = await crossApproach.chain2.instance.getStoremanFee(storemanGroups[2].ID);
-    //         assert.equal(new BN(smgFee).eq(new BN(0)), true);
-    //     } catch (err) {
-    //         assert.fail(err.toString());
-    //     }
-    // });
+    it('init...   -> getStoremanFee success', async () => {
+        try {
+            let smgFee = await crossApproach.chain1.instance.getStoremanFee(storemanGroups[1].ID);
+            assert.equal(new BN(smgFee).eq(new BN(0)), true);
+            smgFee = await crossApproach.chain2.instance.getStoremanFee(storemanGroups[2].ID);
+            assert.equal(new BN(smgFee).eq(new BN(0)), true);
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
 
-    // it('Others getPartners  ==> The config value', async () => {
-    //     try {
-    //         let ret = await crossApproach.chain1.instance.getPartners();
-    //         assert.equal(crossApproach.chain1.parnters.tokenManager.address, ret[0]);
-    //         assert.equal(crossApproach.chain1.parnters.smgAdminProxy.address, ret[1]);
-    //         assert.equal(crossApproach.chain1.parnters.smgFeeProxy, ret[2]);
-    //         assert.equal(crossApproach.chain1.parnters.quota.address, ret[3]);
-    //         assert.equal(crossApproach.chain1.parnters.sigVerifier.address, ret[4]);
+    it('Others getPartners  ==> The config value', async () => {
+        try {
+            let ret = await crossApproach.chain1.instance.getPartners();
+            assert.equal(crossApproach.chain1.parnters.tokenManager.address, ret[0]);
+            assert.equal(crossApproach.chain1.parnters.smgAdminProxy.address, ret[1]);
+            assert.equal(crossApproach.chain1.parnters.smgFeeProxy, ret[2]);
+            assert.equal(crossApproach.chain1.parnters.quota.address, ret[3]);
+            assert.equal(crossApproach.chain1.parnters.sigVerifier.address, ret[4]);
 
-    //         ret = await crossApproach.chain2.instance.getPartners();
-    //         assert.equal(crossApproach.chain2.parnters.tokenManager.address, ret[0]);
-    //         assert.equal(crossApproach.chain2.parnters.smgAdminProxy.address, ret[1]);
-    //         assert.equal(ADDRESS_0, ret[2]);
-    //         assert.equal(crossApproach.chain2.parnters.quota.address, ret[3]);
-    //         assert.equal(crossApproach.chain2.parnters.sigVerifier.address, ret[4]);
-    //     } catch (err) {
-    //         assert.fail(err.toString());
-    //     }
-    // });
+            ret = await crossApproach.chain2.instance.getPartners();
+            assert.equal(crossApproach.chain2.parnters.tokenManager.address, ret[0]);
+            assert.equal(crossApproach.chain2.parnters.smgAdminProxy.address, ret[1]);
+            assert.equal(ADDRESS_0, ret[2]);
+            assert.equal(crossApproach.chain2.parnters.quota.address, ret[3]);
+            assert.equal(crossApproach.chain2.parnters.sigVerifier.address, ret[4]);
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
 
-    // it('Others setEconomics  ==> Parameter is invalid', async () => {
-    //     try {
-    //         await crossApproach.chain1.instance.setPartners(ADDRESS_0, ADDRESS_0, crossApproach.chain1.parnters.smgFeeProxy, ADDRESS_0, ADDRESS_0);
-    //     } catch (err) {
-    //         assert.include(err.toString(), "Parameter is invalid");
-    //     }
-    // });
+    it('Others setEconomics  ==> Parameter is invalid', async () => {
+        try {
+            await crossApproach.chain1.instance.setPartners(ADDRESS_0, ADDRESS_0, crossApproach.chain1.parnters.smgFeeProxy, ADDRESS_0, ADDRESS_0);
+        } catch (err) {
+            assert.include(err.toString(), "Parameter is invalid");
+        }
+    });
 
-    // it('Others getFees  ==> The config value', async () => {
-    //     try {
-    //         let ret = await crossApproach.chain1.instance.getFees(defaultChainID.chain1, defaultChainID.chain2);
-    //         assert.equal(crossApproach.chain1.origLockFee, ret[0]);
-    //         assert.equal(crossApproach.chain1.origRevokeFee, ret[1]);
+    it('Others getFees  ==> The config value', async () => {
+        try {
+            let ret = await crossApproach.chain1.instance.getFees(defaultChainID.chain1, defaultChainID.chain2);
+            assert.equal(crossApproach.chain1.origLockFee, ret[0]);
+            assert.equal(crossApproach.chain1.origRevokeFee, ret[1]);
 
-    //         ret = await crossApproach.chain1.instance.getFees(defaultChainID.chain2, defaultChainID.chain1);
-    //         assert.equal(crossApproach.chain1.shadowLockFee, ret[0]);
-    //         assert.equal(crossApproach.chain1.shadowRevokeFee, ret[1]);
+            ret = await crossApproach.chain1.instance.getFees(defaultChainID.chain2, defaultChainID.chain1);
+            assert.equal(crossApproach.chain1.shadowLockFee, ret[0]);
+            assert.equal(crossApproach.chain1.shadowRevokeFee, ret[1]);
 
-    //         ret = await crossApproach.chain2.instance.getFees(defaultChainID.chain2, defaultChainID.chain1);
-    //         assert.equal(crossApproach.chain2.origLockFee, ret[0]);
-    //         assert.equal(crossApproach.chain2.origRevokeFee, ret[1]);
+            ret = await crossApproach.chain2.instance.getFees(defaultChainID.chain2, defaultChainID.chain1);
+            assert.equal(crossApproach.chain2.origLockFee, ret[0]);
+            assert.equal(crossApproach.chain2.origRevokeFee, ret[1]);
 
-    //         ret = await crossApproach.chain2.instance.getFees(defaultChainID.chain1, defaultChainID.chain2);
-    //         assert.equal(crossApproach.chain2.shadowLockFee, ret[0]);
-    //         assert.equal(crossApproach.chain2.shadowRevokeFee, ret[1]);
+            ret = await crossApproach.chain2.instance.getFees(defaultChainID.chain1, defaultChainID.chain2);
+            assert.equal(crossApproach.chain2.shadowLockFee, ret[0]);
+            assert.equal(crossApproach.chain2.shadowRevokeFee, ret[1]);
 
-    //     } catch (err) {
-    //         assert.fail(err.toString());
-    //     }
-    // });
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
 
-    // it('Others lockedTime  ==> The config value', async () => {
-    //     try {
-    //         let ret = await crossApproach.chain1.instance._lockedTime();
-    //         assert.equal(htlcLockedTime, ret);
-    //     } catch (err) {
-    //         assert.fail(err.toString());
-    //     }
-    // });
+    it('Others lockedTime  ==> The config value', async () => {
+        try {
+            let ret = await crossApproach.chain1.instance._lockedTime();
+            assert.equal(htlcLockedTime, ret);
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
 
-    // it('Proxy   -> get the implementation address', async () => {
-    //     try {
-    //         let crossProxy = await CrossProxy.deployed();
-    //         let address = await crossProxy.implementation();
-    //         assert.equal(address, crossApproach.chain1.delegate.address);
-    //     } catch (err) {
-    //         assert.fail(err.toString());
-    //     }
-    // });
+    it('Proxy   -> get the implementation address', async () => {
+        try {
+            let crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+            console.log(1, crossApproach.chain1.instance.address, crossApproach.chain1.delegate.address);
+            let address = await crossProxy.implementation();
+            console.log(1, address);
+            assert.equal(address, crossApproach.chain1.delegate.address);
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
 
-    // it('Proxy   -> upgradeTo', async () => {
-    //     try {
-    //         let crossProxy = await CrossProxy.deployed();
-    //         await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
+    it('Proxy   -> upgradeTo', async () => {
+        try {
+            let crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+            await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
 
-    //         let address = await crossProxy.implementation();
-    //         assert.equal(address, ADDRESS_CROSS_PROXY_IMPL);
-    //     } catch (err) {
-    //         assert.fail(err.toString());
-    //     }
-    // });
+            let address = await crossProxy.implementation();
+            assert.equal(address, ADDRESS_CROSS_PROXY_IMPL);
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
 
-    // it('Proxy   -> upgradeTo with the same implementation address', async () => {
-    //     try {
-    //         let crossProxy = await CrossProxy.deployed();
-    //         await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
+    it('Proxy   -> upgradeTo with the same implementation address', async () => {
+        try {
+            let crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+            await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
 
-    //         let address = await crossProxy.implementation();
-    //         assert.equal(address, ADDRESS_CROSS_PROXY_IMPL);
-    //     } catch (err) {
-    //         assert.include(err.toString(), "Cannot upgrade to the same implementation");
-    //     }
-    // });
+            let address = await crossProxy.implementation();
+            assert.equal(address, ADDRESS_CROSS_PROXY_IMPL);
+        } catch (err) {
+            assert.include(err.toString(), "Cannot upgrade to the same implementation");
+        }
+    });
 
-    // it('Proxy   -> upgradeTo with 0x address', async () => {
-    //     try {
-    //         let crossProxy = await CrossProxy.deployed();
-    //         await crossProxy.upgradeTo(ADDRESS_0);
+    it('Proxy   -> upgradeTo with 0x address', async () => {
+        try {
+            let crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+            await crossProxy.upgradeTo(ADDRESS_0);
 
-    //         let address = await crossProxy.implementation();
-    //         assert.equal(address, ADDRESS_0);
-    //     } catch (err) {
-    //         assert.include(err.toString(), "Cannot upgrade to invalid address");
-    //     }
-    // });
+            let address = await crossProxy.implementation();
+            assert.equal(address, ADDRESS_0);
+        } catch (err) {
+            assert.include(err.toString(), "Cannot upgrade to invalid address");
+        }
+    });
 
-    // it('Proxy   -> restore', async () => {
-    //     try {
-    //         let crossProxy = await CrossProxy.deployed();
-    //         let ret = await crossProxy.upgradeTo(crossApproach.chain1.instance.address);
-    //         let address = await crossProxy.implementation();
-    //         assert.equal(address, crossApproach.chain1.instance.address);
+    it('Proxy   -> restore', async () => {
+        try {
+            let crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+            let ret = await crossProxy.upgradeTo(crossApproach.chain1.delegate.address);
+            let address = await crossProxy.implementation();
+            assert.equal(address, crossApproach.chain1.delegate.address);
 
-    //         assert.checkWeb3Event(ret, {
-    //             event: 'Upgraded',
-    //             args: {
-    //                 implementation:address
-    //             }
-    //         });
-    //     } catch (err) {
-    //         assert.fail(err.toString());
-    //     }
-    // });
+            assert.checkWeb3Event(ret, {
+                event: 'Upgraded',
+                args: {
+                    implementation:address
+                }
+            });
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
 
-    // it('Token1 -> userMintLock  ==> Halted', async () => {
-    //     let crossProxy;
-    //     try {
-    //         crossProxy = await CrossProxy.deployed();
-    //         await crossProxy.setHalt(true, {from: owner});
-    //         // accounts[1] is the chain1 original address of the user.
-    //         let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-    //         userMintLockParamsTemp.origUserAccount = accounts[1];
-    //         userMintLockParamsTemp.shadowUserAccount = accounts[2];
-    //         userMintLockParamsTemp.xHash = xInfo[1].hash;
-    //         await crossApproach.chain1.instance.userMintLock(
-    //             userMintLockParamsTemp.xHash,
-    //             userMintLockParamsTemp.smgID,
-    //             userMintLockParamsTemp.tokenPairID,
-    //             web3.utils.toWei(userMintLockParamsTemp.value.toString()),
-    //             userMintLockParamsTemp.shadowUserAccount, {from: userMintLockParamsTemp.origUserAccount});
-    //     } catch (err) {
-    //         assert.include(err.toString(), "Smart contract is halted");
-    //     } finally {
-    //         await crossProxy.setHalt(false, {from: owner});
-    //     }
-    // });
+    it('Token1 -> userMintLock  ==> Halted', async () => {
+        let crossProxy;
+        try {
+            crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+            await crossProxy.setHalt(true, {from: owner});
+            // accounts[1] is the chain1 original address of the user.
+            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
+            userMintLockParamsTemp.origUserAccount = accounts[1];
+            userMintLockParamsTemp.shadowUserAccount = accounts[2];
+            userMintLockParamsTemp.xHash = xInfo[1].hash;
+            await crossApproach.chain1.instance.userMintLock(
+                userMintLockParamsTemp.xHash,
+                userMintLockParamsTemp.smgID,
+                userMintLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userMintLockParamsTemp.value.toString()),
+                userMintLockParamsTemp.shadowUserAccount, {from: userMintLockParamsTemp.origUserAccount});
+        } catch (err) {
+            assert.include(err.toString(), "Smart contract is halted");
+        } finally {
+            await crossProxy.setHalt(false, {from: owner});
+        }
+    });
 
-    // it("Token1 -> userMintLock  ==> Invalid parnters", async () => {
-    //     try {
-    //         // accounts[1] is the chain1 original address of the user.
-    //         let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-    //         userMintLockParamsTemp.origUserAccount = accounts[1];
-    //         userMintLockParamsTemp.shadowUserAccount = accounts[2];
-    //         userMintLockParamsTemp.xHash = xInfo[1].hash;
-    //         await crossDelegateNotInit.userMintLock(
-    //             userMintLockParamsTemp.xHash,
-    //             userMintLockParamsTemp.smgID,
-    //             userMintLockParamsTemp.tokenPairID,
-    //             web3.utils.toWei(userMintLockParamsTemp.value.toString()),
-    //             userMintLockParamsTemp.shadowUserAccount, {from: userMintLockParamsTemp.origUserAccount});
-    //     } catch (err) {
-    //         //assert.fail(err);
-    //         assert.include(err.toString(), "Invalid parnters");
-    //     }
-    // });
+    it("Token1 -> userMintLock  ==> Invalid parnters", async () => {
+        try {
+            // accounts[1] is the chain1 original address of the user.
+            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
+            userMintLockParamsTemp.origUserAccount = accounts[1];
+            userMintLockParamsTemp.shadowUserAccount = accounts[2];
+            userMintLockParamsTemp.xHash = xInfo[1].hash;
+            await crossDelegateNotInit.userMintLock(
+                userMintLockParamsTemp.xHash,
+                userMintLockParamsTemp.smgID,
+                userMintLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userMintLockParamsTemp.value.toString()),
+                userMintLockParamsTemp.shadowUserAccount, {from: userMintLockParamsTemp.origUserAccount});
+        } catch (err) {
+            //assert.fail(err);
+            assert.include(err.toString(), "Invalid parnters");
+        }
+    });
 
-    // it("Token1 -> userMintLock  ==> Token does not exist", async () => {
-    //     try {
-    //         // accounts[1] is the chain1 original address of the user.
-    //         let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-    //         userMintLockParamsTemp.origUserAccount = accounts[1];
-    //         userMintLockParamsTemp.shadowUserAccount = accounts[2];
-    //         userMintLockParamsTemp.xHash = xInfo[1].hash;
+    it("Token1 -> userMintLock  ==> Token does not exist", async () => {
+        try {
+            // accounts[1] is the chain1 original address of the user.
+            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
+            userMintLockParamsTemp.origUserAccount = accounts[1];
+            userMintLockParamsTemp.shadowUserAccount = accounts[2];
+            userMintLockParamsTemp.xHash = xInfo[1].hash;
 
-    //         let value = web3.utils.toWei(userMintLockParamsTemp.value.toString());
-    //         // user mint lock
-    //         await crossApproach.chain1.instance.userMintLock(
-    //             userMintLockParamsTemp.xHash,
-    //             userMintLockParamsTemp.smgID,
-    //             InvalidTokenPairID,
-    //             value,
-    //             userMintLockParamsTemp.shadowUserAccount,
-    //             {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
-    //     } catch (err) {
-    //         assert.include(err.toString(), "Token does not exist");
-    //     }
-    // });
+            let value = web3.utils.toWei(userMintLockParamsTemp.value.toString());
+            // user mint lock
+            await crossApproach.chain1.instance.userMintLock(
+                userMintLockParamsTemp.xHash,
+                userMintLockParamsTemp.smgID,
+                InvalidTokenPairID,
+                value,
+                userMintLockParamsTemp.shadowUserAccount,
+                {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+        } catch (err) {
+            assert.include(err.toString(), "Token does not exist");
+        }
+    });
 
-    // it("Token1 -> userMintLock  ==> Value is null", async () => {
-    //     try {
-    //         // accounts[1] is the chain1 original address of the user.
-    //         let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
-    //         userMintLockParamsTemp.origUserAccount = accounts[1];
-    //         userMintLockParamsTemp.shadowUserAccount = accounts[2];
-    //         userMintLockParamsTemp.xHash = xInfo[1].hash;
+    it("Token1 -> userMintLock  ==> Value is null", async () => {
+        try {
+            // accounts[1] is the chain1 original address of the user.
+            let userMintLockParamsTemp = Object.assign({}, userMintLockParams);
+            userMintLockParamsTemp.origUserAccount = accounts[1];
+            userMintLockParamsTemp.shadowUserAccount = accounts[2];
+            userMintLockParamsTemp.xHash = xInfo[1].hash;
 
-    //         let value = web3.utils.toWei("0");
-    //         // user mint lock
-    //         await crossApproach.chain1.instance.userMintLock(
-    //             userMintLockParamsTemp.xHash,
-    //             userMintLockParamsTemp.smgID,
-    //             userMintLockParamsTemp.tokenPairID,
-    //             value,
-    //             userMintLockParamsTemp.shadowUserAccount,
-    //             {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
-    //     } catch (err) {
-    //         assert.include(err.toString(), "Value is null");
-    //     }
-    // });
+            let value = web3.utils.toWei("0");
+            // user mint lock
+            await crossApproach.chain1.instance.userMintLock(
+                userMintLockParamsTemp.xHash,
+                userMintLockParamsTemp.smgID,
+                userMintLockParamsTemp.tokenPairID,
+                value,
+                userMintLockParamsTemp.shadowUserAccount,
+                {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+        } catch (err) {
+            assert.include(err.toString(), "Value is null");
+        }
+    });
 
     it('Token1 -> userMintLock  ==>success', async () => {
         try {
@@ -816,8 +819,8 @@ contract('Test HTLC', async (accounts) => {
             let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userMintLockParamsTemp.smgID);
             console.log("mintOracleValue", mintOracleValue);
 
-            let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userMintLockParamsTemp.tokenPairID, userMintLockParamsTemp.smgID);
-            console.log("mintQuotaValue", mintQuotaValue);
+            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userMintLockParamsTemp.tokenPairID, userMintLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
 
             let value = web3.utils.toWei(userMintLockParamsTemp.value.toString());
             await tokens.token1.tokenCreator.mintToken(tokens.token1.name, tokens.token1.symbol,
@@ -833,13 +836,14 @@ contract('Test HTLC', async (accounts) => {
             let allowance = await tokenInstance.allowance(userMintLockParamsTemp.origUserAccount, crossApproach.chain1.instance.address);
             assert.equal(value, allowance.toString());
             // user mint lock
-            await crossApproach.chain1.instance.userMintLock(
+            let userMintLockReceipt = await crossApproach.chain1.instance.userMintLock(
                 userMintLockParamsTemp.xHash,
                 userMintLockParamsTemp.smgID,
                 userMintLockParamsTemp.tokenPairID,
                 value,
                 userMintLockParamsTemp.shadowUserAccount,
                 {from: userMintLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+            // console.log("userMintLock receipt", userMintLockReceipt.logs);
         } catch (err) {
             assert.fail(err);
         }
@@ -875,7 +879,7 @@ function parseEventsBy(receipt, expectedEvents, filterByName) {
                     return previous;
                 }, {});
             }
-
+            // console.log("parseEventsBy:", event);
             events.push(event);
         }
     });
@@ -896,12 +900,15 @@ async function testInit(){
         };
 
         assert.checkWeb3Event = function(receipt, expectedEvent, message) {
+            // console.log("receipt", receipt);
+            // console.log("expectedEvent", expectedEvent);
             let events = parseEventsBy(receipt, [expectedEvent], true);
             let entry = events[0];
             if(entry == null){
                 assert.fail("Not get the expected event: event is null");
             }
 
+            // console.log("parsed event", entry);
             assert.equal(entry.event, expectedEvent.event);
             let expectArgs = expectedEvent.args;
             let entryArgs = entry.args;
