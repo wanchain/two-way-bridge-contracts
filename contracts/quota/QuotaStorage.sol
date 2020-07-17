@@ -70,7 +70,7 @@ contract QuotaStorage is BasicStorage {
     uint public depositRate;
 
     /// @dev deposit token's symbol
-    bytes public depositTokenSymbol;
+    string public depositTokenSymbol;
 
     /// @dev token manger contract address
     address public tokenManagerAddress;

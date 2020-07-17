@@ -33,34 +33,8 @@ pragma solidity 0.4.26;
 import "../components/Halt.sol";
 import "./QuotaStorage.sol";
 import "../tokenManager/ITokenManager.sol";
-
-interface IPriceOracle {
-    function getValue(bytes symbol) external view returns(uint price);
-}
-
-contract StoremanType {
-    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
-}
-
-interface IDepositOracle {
-    function getDeposit(bytes32 smgID) external view returns (uint);
-    function getStoremanGroupConfig(bytes32 storemanGroupId)
-        external
-        view
-        returns (
-            bytes32 groupId,
-            StoremanType.GroupStatus status,
-            uint256 deposit,
-            uint256 chain1,
-            uint256 chain2,
-            uint256 curve1,
-            uint256 curve2,
-            bytes gpk1,
-            bytes gpk2,
-            uint256 startTime,
-            uint256 endTime
-        );
-}
+import "../crossApproach/interfaces/ISmgAdminProxy.sol";
+import "../oracle/IOracle.sol";
 
 
 contract QuotaDelegate is QuotaStorage, Halt {
@@ -79,7 +53,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         address _depositOracleAddr,
         address _tokenManagerAddress,
         uint _depositRate,
-        bytes _depositTokenSymbol
+        string _depositTokenSymbol
     ) external onlyOwner {
         priceOracleAddress = _priceOracleAddr;
         htlcGroupMap[_htlcAddr] = true;
@@ -245,11 +219,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
     ) external onlyHtlc notHalted {
-        // uint srcDebt = getFiatDebtTotal(srcStoremanGroupId);
-        // uint dstDepost = getFiatDeposit(dstStoremanGroupId);
-
-        // require(dstDepost >= srcDebt, "Dest deposit not enough");
-
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
@@ -329,7 +298,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         view
         returns (uint)
     {
-        bytes memory symbol;
+        string memory symbol;
         uint decimals;
         uint tokenPrice;
 
@@ -379,27 +348,9 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return deposit.mul(getPrice(depositTokenSymbol));
     }
 
-    /// get total debt in USD/FIAT
-    // function getFiatDebtTotal(bytes32 storemanGroupId) private view returns (uint) {
-    //     bytes memory symbol;
-    //     uint decimals;
-    //     uint tokenPrice;
-    //     uint totalDebtValue = 0;
-    //     uint tokenCount = storemanTokenCountMap[storemanGroupId];
-    //     for (uint i = 0; i < tokenCount; i++) {
-    //         uint id = storemanTokensMap[storemanGroupId][i];
-    //         (symbol, decimals) = getTokenAncestorInfo(id);
-    //         tokenPrice = getPrice(symbol);
-    //         Quota storage q = quotaMap[id][storemanGroupId];
-    //         uint tokenValue = q._debt.mul(tokenPrice).mul(1 ether).div(10**decimals); /// change Decimals to 18 digits
-    //         totalDebtValue = totalDebtValue.add(tokenValue);
-    //     }
-    //     return totalDebtValue;
-    // }
-
     /// get mint quota in Fiat/USD decimals: 18
     function getFiatMintQuota(bytes32 storemanGroupId) private view returns (uint) {
-        bytes memory symbol;
+        string memory symbol;
         uint decimals;
 
         uint totalTokenUsedValue = 0;
@@ -424,21 +375,32 @@ contract QuotaDelegate is QuotaStorage, Halt {
         view
         returns (uint deposit)
     {
-        IDepositOracle oracle = IDepositOracle(depositOracleAddress);
-        (,,deposit,,,,,,,,) = oracle.getStoremanGroupConfig(storemanGroupId);
+        ISmgAdminProxy smgAdmin = ISmgAdminProxy(depositOracleAddress);
+        (,,deposit,,,,,,,,) = smgAdmin.getStoremanGroupConfig(storemanGroupId);
     }
 
     function getTokenAncestorInfo(uint tokenId)
         private
         view
-        returns (bytes ancestorSymbol, uint decimals)
+        returns (string ancestorSymbol, uint decimals)
     {
         ITokenManager tokenManager = ITokenManager(tokenManagerAddress);
         (,,ancestorSymbol,decimals,) = tokenManager.getAncestorInfo(tokenId);
     }
 
-    function getPrice(bytes symbol) private view returns (uint price) {
-        IPriceOracle oracle = IPriceOracle(priceOracleAddress);
-        price = oracle.getValue(symbol);
+    function stringToBytes32(string memory source) public pure returns (bytes32 result) {
+        bytes memory tempEmptyStringTest = bytes(source);
+        if (tempEmptyStringTest.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            result := mload(add(source, 32))
+        }
+    }
+
+    function getPrice(string symbol) private view returns (uint price) {
+        IOracle oracle = IOracle(priceOracleAddress);
+        price = oracle.getValue(stringToBytes32(symbol));
     }
 }

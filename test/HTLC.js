@@ -68,7 +68,7 @@ let coins = {
         decimals              : 18,
         name                  : 'WAN',
         symbol                : 'WAN',
-        price                 : 23e-18
+        price                 : 2.3
     },
     coin2: {
         tokenPairID           : 1,
@@ -79,7 +79,7 @@ let coins = {
         decimals              : 18,
         name                  : 'ETH',
         symbol                : 'ETH',
-        price                 : 243e-18
+        price                 : 243
     }
 }
 
@@ -94,7 +94,7 @@ let tokens = {
         decimals              : 18,
         name                  : 'TST1',
         symbol                : 'TST1',
-        price                 : 3e-18
+        price                 : 3
     },
     token2: {
         tokenCreator          : null,
@@ -106,7 +106,7 @@ let tokens = {
         decimals              : 16,
         name                  : 'TST2',
         symbol                : 'TST2',
-        price                 : 7e-18
+        price                 : 7
     }
 };
 
@@ -566,14 +566,10 @@ contract('Test HTLC', async (accounts) => {
                 web3.utils.hexToBytes(web3.utils.asciiToHex(coins.coin2.symbol)),
             ];
             let tokenPrices = [
-                toNonExponential(tokens.token1.price),
-                toNonExponential(tokens.token2.price),
-                toNonExponential(coins.coin1.price),
-                toNonExponential(coins.coin2.price),
-                // web3.utils.toWei(toNonExponential(tokens.token1.price)),
-                // web3.utils.toWei(toNonExponential(tokens.token2.price)),
-                // web3.utils.toWei(toNonExponential(coins.coin1.price)),
-                // web3.utils.toWei(toNonExponential(coins.coin2.price)),
+                web3.utils.toWei(toNonExponential(tokens.token1.price)),
+                web3.utils.toWei(toNonExponential(tokens.token2.price)),
+                web3.utils.toWei(toNonExponential(coins.coin1.price)),
+                web3.utils.toWei(toNonExponential(coins.coin2.price)),
             ];
             let priceLogger = await oracle.updatePrice(tokenSymbols, tokenPrices);
             console.log("init 46", await getBalance(owner));
@@ -591,7 +587,7 @@ contract('Test HTLC', async (accounts) => {
                 smgAdminProxy.address,
                 tokenManager.address,
                 quotaDepositRate,
-                web3.utils.hexToBytes(web3.utils.asciiToHex(coins.coin1.symbol)),
+                coins.coin1.symbol,
                 {from: owner}
             );
             console.log("init 47", await getBalance(owner));
@@ -603,7 +599,7 @@ contract('Test HTLC', async (accounts) => {
                 oracle.address,
                 tokenManager.address,
                 quotaDepositRate,
-                web3.utils.hexToBytes(web3.utils.asciiToHex(coins.coin2.symbol)),
+                coins.coin2.symbol,
                 {from: owner}
             );
             console.log("init 48", await getBalance(owner));

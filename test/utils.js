@@ -135,7 +135,7 @@ const getQuotaContracts = async (accounts) => {
         helper._address,
         helper._address,
         15000,
-        stringToBytes("WAN"),
+        "WAN",
     ).send({ from: accounts[0], gas: 10000000 });
     return {
         quota,
