@@ -52,8 +52,8 @@ library RapidityLib {
         uint value;                     /// exchange token value
         // uint lockFee;                /// exchange token value
         bytes32 userShadowAccount;      /// account of shadow chain, used to receive token
-        address smgFeeProxy;
-        ITokenManager tokenManager;     /// interface of token manager
+        // address smgFeeProxy;
+        // ITokenManager tokenManager;     /// interface of token manager
     }
 
     /// @notice struct of Rapidity storeman mint lock parameters
@@ -65,7 +65,7 @@ library RapidityLib {
         address userShadowAccount;          /// account of shadow chain, used to receive token
         // bytes r;                         /// R in schnorr signature
         // bytes32 s;                       /// s in schnorr signature
-        ITokenManager tokenManager;         /// interface of token manager
+        // ITokenManager tokenManager;         /// interface of token manager
         // ISignatureVerifier sigVerifier;     /// interface of signature verifier
     }
 
@@ -77,8 +77,8 @@ library RapidityLib {
         uint value;                     /// exchange token value
         // uint lockFee;                /// exchange token value
         bytes32 userOrigAccount;       /// account of token original chain, used to receive token
-        address smgFeeProxy;
-        ITokenManager tokenManager;     /// interface of token manager
+        // address smgFeeProxy;
+        // ITokenManager tokenManager;     /// interface of token manager
     }
 
 
@@ -91,7 +91,7 @@ library RapidityLib {
         address userOrigAccount;            /// account of token original chain, used to receive token
         // bytes r;                            /// R in schnorr signature
         // bytes32 s;                          /// s in schnorr signature
-        ITokenManager tokenManager;         /// interface of token manager
+        // ITokenManager tokenManager;         /// interface of token manager
         // ISignatureVerifier sigVerifier;     /// interface of signature verifier
     }
 
@@ -156,7 +156,7 @@ library RapidityLib {
         uint shadowChainID;
         bool isValid;
         bytes memory tokenOrigAccount;
-        (origChainID,tokenOrigAccount,shadowChainID,,isValid) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
+        (origChainID,tokenOrigAccount,shadowChainID,,isValid) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
         require(isValid, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
@@ -182,10 +182,10 @@ library RapidityLib {
         storageData.quota.fastMint(params.tokenPairID, params.smgID, params.value, true);
 
         if (lockFee > 0) {
-            if (params.smgFeeProxy == address(0)) {
+            if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[params.smgID] = storageData.mapStoremanFee[params.smgID].add(lockFee);
             } else {
-                ISmgFeeProxy(params.smgFeeProxy).smgTransfer.value(lockFee)(params.smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(params.smgID);
             }
         }
 
@@ -204,7 +204,7 @@ library RapidityLib {
 
         storageData.quota.fastMint(params.tokenPairID, params.smgID, params.value, false);
 
-        params.tokenManager.mintToken(params.tokenPairID, params.userShadowAccount, params.value);
+        storageData.tokenManager.mintToken(params.tokenPairID, params.userShadowAccount, params.value);
 
         emit SmgFastMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.userShadowAccount);
     }
@@ -220,7 +220,7 @@ library RapidityLib {
         uint shadowChainID;
         bool isValid;
         address tokenShadowAccount;
-        (origChainID,,shadowChainID,tokenShadowAccount,isValid) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
+        (origChainID,,shadowChainID,tokenShadowAccount,isValid) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
         require(isValid, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
@@ -245,13 +245,13 @@ library RapidityLib {
 
         storageData.quota.fastBurn(params.tokenPairID, params.smgID, params.value, true);
 
-        params.tokenManager.burnToken(params.tokenPairID, params.value);
+        storageData.tokenManager.burnToken(params.tokenPairID, params.value);
 
         if (lockFee > 0) {
-            if (params.smgFeeProxy == address(0)) {
+            if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[params.smgID] = storageData.mapStoremanFee[params.smgID].add(lockFee);
             } else {
-                ISmgFeeProxy(params.smgFeeProxy).smgTransfer.value(lockFee)(params.smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(params.smgID);
             }
         }
 
@@ -271,7 +271,7 @@ library RapidityLib {
         storageData.quota.fastBurn(params.tokenPairID, params.smgID, params.value, false);
 
         bytes memory tokenOrigAccount;
-        (,tokenOrigAccount,,,) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
+        (,tokenOrigAccount,,,) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
         address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {

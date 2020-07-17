@@ -56,21 +56,21 @@ library HTLCMintLib {
         // uint lockFee;                /// exchange token value
         uint lockedTime;                /// HTLC lock time
         bytes32 userShadowAccount;      /// account of shadow chain, used to receive token
-        ITokenManager tokenManager;     /// interface of token manager
+        // ITokenManager tokenManager;     /// interface of token manager
     }
 
     /// @notice struct of HTLC user/storeman mint lock parameters
     struct HTLCUserMintRedeemParams {
         bytes32 x;                      /// HTLC random number
-        ITokenManager tokenManager;     /// interface of token manager
+        // ITokenManager tokenManager;     /// interface of token manager
     }
 
     /// @notice struct of HTLC user mint revoke parameters
     struct HTLCUserMintRevokeParams {
         bytes32 xHash;                  /// hash of HTLC random number
         // uint revokeFee;                   /// exchange token value
-        address smgFeeProxy;
-        ITokenManager tokenManager;     /// interface of token manager
+        // address smgFeeProxy;
+        // ITokenManager tokenManager;     /// interface of token manager
     }
 
     /// @notice struct of HTLC storeman mint lock parameters
@@ -90,7 +90,7 @@ library HTLCMintLib {
     /// @notice struct of HTLC storeman mint lock parameters
     struct HTLCSmgMintRedeemParams {
         bytes32 x;                      /// HTLC random number
-        address smgFeeProxy;
+        // address smgFeeProxy;
     }
 
     /// @notice struct of HTLC storeman mint revoke parameters
@@ -168,7 +168,7 @@ library HTLCMintLib {
         uint shadowChainID;
         bool isValid;
         bytes memory tokenOrigAccount;
-        (origChainID,tokenOrigAccount,shadowChainID,,isValid) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
+        (origChainID,tokenOrigAccount,shadowChainID,,isValid) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
         require(isValid, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
@@ -227,16 +227,16 @@ library HTLCMintLib {
 
         // TODO
         // GroupStatus status;
-        // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
+        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         storageData.quota.mintRedeem(tokenPairID, smgID, value);
         if (lockFee > 0) {
-            if (params.smgFeeProxy == address(0)) {
+            if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(lockFee);
             } else {
-                ISmgFeeProxy(params.smgFeeProxy).smgTransfer.value(lockFee)(smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(smgID);
             }
         }
 
@@ -259,16 +259,16 @@ library HTLCMintLib {
 
         // TODO
         // GroupStatus status;
-        // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
+        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         uint origChainID;
         uint shadowChainID;
         bytes memory tokenOrigAccount;
-        // (origChainID,tokenOrigAccount,shadowChainID,,isValid) = params.tokenManager.getTokenPairInfo(tokenPairID);
+        // (origChainID,tokenOrigAccount,shadowChainID,,isValid) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
         // require(isValid, "Token does not exist");
-        (origChainID, tokenOrigAccount, shadowChainID,,) = params.tokenManager.getTokenPairInfo(tokenPairID);
+        (origChainID, tokenOrigAccount, shadowChainID,,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
 
         uint revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
 
@@ -282,10 +282,10 @@ library HTLCMintLib {
         storageData.quota.mintRevoke(tokenPairID, smgID, value);
 
         if (revokeFee > 0) {
-            if (params.smgFeeProxy == address(0)) {
+            if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(revokeFee);
             } else {
-                ISmgFeeProxy(params.smgFeeProxy).smgTransfer.value(revokeFee)(smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(revokeFee)(smgID);
             }
         }
 
@@ -335,13 +335,13 @@ library HTLCMintLib {
         (smgID, tokenPairID, value, userShadowAccount) = storageData.htlcTxData.getSmgTx(xHash);
 
         // GroupStatus status;
-        // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
+        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         storageData.quota.mintRedeem(tokenPairID, smgID, value);
 
-        params.tokenManager.mintToken(tokenPairID, userShadowAccount, value);
+        storageData.tokenManager.mintToken(tokenPairID, userShadowAccount, value);
 
         emit UserMintRedeemLogger(params.x, smgID, tokenPairID);
     }
@@ -361,7 +361,7 @@ library HTLCMintLib {
         (smgID, tokenPairID, value,) = storageData.htlcTxData.getSmgTx(params.xHash);
 
         // GroupStatus status;
-        // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
+        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
