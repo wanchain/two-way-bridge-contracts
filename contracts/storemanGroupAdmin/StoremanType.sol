@@ -69,6 +69,7 @@ library StoremanType {
         uint curve2;
         uint tickedCount;
         uint minStakeIn;
+        uint crossIncoming;
         bytes gpk1;
         bytes gpk2;
 		uint  incentiveThresHold;
