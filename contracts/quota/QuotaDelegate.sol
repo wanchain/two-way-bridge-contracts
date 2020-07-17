@@ -32,6 +32,7 @@ pragma solidity 0.4.26;
 
 import "../components/Halt.sol";
 import "./QuotaStorage.sol";
+import "../tokenManager/ITokenManager.sol";
 
 interface IPriceOracle {
     function getValue(bytes symbol) external view returns(uint price);
@@ -59,10 +60,6 @@ interface IDepositOracle {
             uint256 startTime,
             uint256 endTime
         );
-}
-
-interface ITokenManager {
-    function getTokenPairInfo(uint id) external view returns(bytes ancestorSymbol, uint decimals);
 }
 
 
@@ -437,7 +434,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         returns (bytes ancestorSymbol, uint decimals)
     {
         ITokenManager tokenManager = ITokenManager(tokenManagerAddress);
-        (ancestorSymbol, decimals) = tokenManager.getTokenPairInfo(tokenId);
+        (,,ancestorSymbol,decimals,) = tokenManager.getAncestorInfo(tokenId);
     }
 
     function getPrice(bytes symbol) private view returns (uint price) {
