@@ -167,12 +167,12 @@ library HTLCMintLib {
         uint origChainID;
         uint shadowChainID;
         bool isValid;
-        bytes32 tokenOrigAccount;
+        bytes memory tokenOrigAccount;
         (origChainID,tokenOrigAccount,shadowChainID,,isValid) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
         require(isValid, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
-        address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
         uint left;
         if (tokenScAddr == address(0)) {
@@ -265,7 +265,7 @@ library HTLCMintLib {
 
         uint origChainID;
         uint shadowChainID;
-        bytes32 tokenOrigAccount;
+        bytes memory tokenOrigAccount;
         // (origChainID,tokenOrigAccount,shadowChainID,,isValid) = params.tokenManager.getTokenPairInfo(tokenPairID);
         // require(isValid, "Token does not exist");
         (origChainID, tokenOrigAccount, shadowChainID,,) = params.tokenManager.getTokenPairInfo(tokenPairID);
@@ -293,7 +293,7 @@ library HTLCMintLib {
             (userOrigAccount).transfer(lockFee);
         }
 
-        address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {
             (userOrigAccount).transfer(value);

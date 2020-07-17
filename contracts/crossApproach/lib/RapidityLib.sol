@@ -155,12 +155,12 @@ library RapidityLib {
         uint origChainID;
         uint shadowChainID;
         bool isValid;
-        bytes32 tokenOrigAccount;
+        bytes memory tokenOrigAccount;
         (origChainID,tokenOrigAccount,shadowChainID,,isValid) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
         require(isValid, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
-        address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
         uint left;
         if (tokenScAddr == address(0)) {
@@ -270,9 +270,9 @@ library RapidityLib {
 
         storageData.quota.fastBurn(params.tokenPairID, params.smgID, params.value, false);
 
-        bytes32 tokenOrigAccount;
+        bytes memory tokenOrigAccount;
         (,tokenOrigAccount,,,) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
-        address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {
             (params.userOrigAccount).transfer(params.value);
