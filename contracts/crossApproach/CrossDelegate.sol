@@ -241,7 +241,7 @@ contract CrossDelegate is CrossStorage, Halt {
         emit SigVerifierLogger(xHash, smgID, tokenPairID, curveID, PK);
 
         bytes32 mHash = sha256(abi.encode(xHash, tokenPairID, value, userAccount));
-        // verifySignature(curveID, mHash, PK, r, s);
+        verifySignature(curveID, mHash, PK, r, s);
 
         HTLCMintLib.HTLCSmgMintLockParams memory params = HTLCMintLib.HTLCSmgMintLockParams({
             xHash: xHash,
