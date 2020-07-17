@@ -53,21 +53,21 @@ library HTLCBurnLib {
         // uint lockFee;                /// exchange token value
         uint lockedTime;                /// HTLC lock time
         bytes32 userOrigAccount;        /// account of token original chain, used to receive token
-        ITokenManager tokenManager;     /// interface of token manager
+        // ITokenManager tokenManager;     /// interface of token manager
     }
 
     /// @notice struct of HTLC user/storeman burn lock parameters
     struct HTLCUserBurnRedeemParams {
         bytes32 x;                      /// HTLC random number
-        ITokenManager tokenManager;     /// interface of token manager
+        // ITokenManager tokenManager;     /// interface of token manager
     }
 
     /// @notice struct of HTLC user burn revoke parameters
     struct HTLCUserBurnRevokeParams {
         bytes32 xHash;                  /// hash of HTLC random number
         // uint revokeFee;                   /// exchange token value
-        address smgFeeProxy;
-        ITokenManager tokenManager;     /// interface of token manager
+        // address smgFeeProxy;
+        // ITokenManager tokenManager;     /// interface of token manager
     }
 
     /// @notice struct of HTLC storeman burn lock parameters
@@ -87,8 +87,8 @@ library HTLCBurnLib {
     /// @notice struct of HTLC storeman burn lock parameters
     struct HTLCSmgBurnRedeemParams {
         bytes32 x;                          /// HTLC random number
-        address smgFeeProxy;
-        ITokenManager tokenManager;         /// interface of token manager
+        // address smgFeeProxy;
+        // ITokenManager tokenManager;         /// interface of token manager
     }
 
     /// @notice struct of HTLC storeman burn revoke parameters
@@ -168,7 +168,7 @@ library HTLCBurnLib {
         uint shadowChainID;
         bool isValid;
         address tokenShadowAccount;
-        (origChainID,,shadowChainID,tokenShadowAccount,isValid) = params.tokenManager.getTokenPairInfo(params.tokenPairID);
+        (origChainID,,shadowChainID,tokenShadowAccount,isValid) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
         require(isValid, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
@@ -223,19 +223,19 @@ library HTLCBurnLib {
         (smgID, tokenPairID, value, lockFee,,) = storageData.htlcTxData.getUserTx(xHash);
 
         // GroupStatus status;
-        // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
+        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         storageData.quota.burnRedeem(tokenPairID, smgID, value);
 
-        params.tokenManager.burnToken(tokenPairID, value);
+        storageData.tokenManager.burnToken(tokenPairID, value);
 
         if (lockFee > 0) {
-            if (params.smgFeeProxy == address(0)) {
+            if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(lockFee);
             } else {
-                ISmgFeeProxy(params.smgFeeProxy).smgTransfer.value(lockFee)(smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(smgID);
             }
         }
 
@@ -257,16 +257,16 @@ library HTLCBurnLib {
         (smgID, tokenPairID, value, lockFee, userShadowAccount,) = storageData.htlcTxData.getUserTx(params.xHash);
 
         // GroupStatus status;
-        // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
+        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         uint origChainID;
         uint shadowChainID;
         address tokenShadowAccount;
-        // (origChainID,,shadowChainID,tokenShadowAccount,isValid) = params.tokenManager.getTokenPairInfo(tokenPairID);
+        // (origChainID,,shadowChainID,tokenShadowAccount,isValid) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
         // require(isValid, "Token does not exist");
-        (origChainID,,shadowChainID,tokenShadowAccount,) = params.tokenManager.getTokenPairInfo(tokenPairID);
+        (origChainID,,shadowChainID,tokenShadowAccount,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
 
         uint revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
 
@@ -280,10 +280,10 @@ library HTLCBurnLib {
         storageData.quota.burnRevoke(tokenPairID, smgID, value);
 
         if (revokeFee > 0) {
-            if (params.smgFeeProxy == address(0)) {
+            if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(revokeFee);
             } else {
-                ISmgFeeProxy(params.smgFeeProxy).smgTransfer.value(revokeFee)(smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(revokeFee)(smgID);
             }
         }
 
@@ -331,14 +331,14 @@ library HTLCBurnLib {
         (smgID, tokenPairID, value, userOrigAccount) = storageData.htlcTxData.getSmgTx(xHash);
 
         // GroupStatus status;
-        // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
+        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
         storageData.quota.burnRedeem(tokenPairID, smgID, value);
 
         bytes memory tokenOrigAccount;
-        (,tokenOrigAccount,,,) = params.tokenManager.getTokenPairInfo(tokenPairID);
+        (,tokenOrigAccount,,,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
         address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {
@@ -365,7 +365,7 @@ library HTLCBurnLib {
         (smgID, tokenPairID, value,) = storageData.htlcTxData.getSmgTx(params.xHash);
 
         // GroupStatus status;
-        // (,status,,,,,,,,,,) = params.smgAdminProxy.getStoremanGroupConfig(smgID);
+        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
