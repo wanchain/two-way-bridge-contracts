@@ -11,6 +11,7 @@ contract('Quota', accounts => {
     const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
     let ret = await quota.methods.getMintQuota(1, web3.utils.keccak256("storeman1")).call();
+    console.log('quota:', ret);
     assert.equal(ret, 1418837, "1");
     
     ret = await quota.methods.getMintQuota(2, web3.utils.keccak256("storeman1")).call();
@@ -27,7 +28,7 @@ contract('Quota', accounts => {
     assert.equal(ret, 1408837, "5");
 
     const helper = SC.helper;
-    await helper.methods.setValue(stringToBytes("WAN"), 100).send({from: accounts[1], gas: 1e7});
+    await helper.methods.setValue("WAN", 100).send({from: accounts[1], gas: 1e7});
     ret = await quota.methods.getMintQuota(1, web3.utils.keccak256("storeman1")).call();
     assert.equal(ret, 0, "6");
     ret = await helper.methods.getValue(stringToBytes("WAN")).call();
@@ -142,10 +143,10 @@ contract('Quota', accounts => {
     assert.equal(Number(ret), 1418837, "27");
 
     const helper = SC.helper;
-    await helper.methods.setValue(stringToBytes("WAN"), "224000").send({from: accounts[1], gas: 1e7});
-    await helper.methods.setValue(stringToBytes("ETH"), "221900000").send({from: accounts[1], gas: 1e7});
-    await helper.methods.setValue(stringToBytes("BTC"), "9000000000").send({from: accounts[1], gas: 1e7});
-    await helper.methods.setValue(stringToBytes("ETC"), "200000000").send({from: accounts[1], gas: 1e7});
+    await helper.methods.setValue("WAN", "224000").send({from: accounts[1], gas: 1e7});
+    await helper.methods.setValue("ETH", "221900000").send({from: accounts[1], gas: 1e7});
+    await helper.methods.setValue("BTC", "9000000000").send({from: accounts[1], gas: 1e7});
+    await helper.methods.setValue("ETC", "200000000").send({from: accounts[1], gas: 1e7});
 
 
     ret = await quota.methods.fastMint(1, web3.utils.keccak256("storeman1"), 10000, true).send({from: accounts[1], gas:1e7});
