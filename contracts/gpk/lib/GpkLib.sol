@@ -47,9 +47,10 @@ library GpkLib {
 
     /// @notice                           event for gpk created
     /// @param groupId                    storeman group id
+    /// @param round                      group negotiate round
     /// @param gpk1                       group public key for chain1
     /// @param gpk2                       group public key for chain2
-    event GpkCreatedLogger(bytes32 indexed groupId, bytes gpk1, bytes gpk2);
+    event GpkCreatedLogger(bytes32 indexed groupId, uint16 indexed round, bytes gpk1, bytes gpk2);
 
     /// @notice                           event for contract slash storeman
     /// @param groupId                    storeman group id
@@ -61,10 +62,15 @@ library GpkLib {
     /// @param srcOrDest                  if true, slash src, otherwise slash dest
     event SlashLogger(bytes32 indexed groupId, uint16 indexed round, uint8 indexed curveIndex, uint8 slashType, address src, address dest, bool srcOrDest);
 
-    /// @notice                           event for reset protocol
+    /// @notice                           event for group reset protocol
     /// @param groupId                    storeman group id
     /// @param round                      group negotiate round
     event ResetLogger(bytes32 indexed groupId, uint16 indexed round);
+
+    /// @notice                           event for group close protocol
+    /// @param groupId                    storeman group id
+    /// @param round                      group negotiate max round
+    event CloseLogger(bytes32 indexed groupId, uint16 indexed round);
 
     /**
     *
@@ -128,7 +134,7 @@ library GpkLib {
         }
         if (round1.status == round2.status) {
             IStoremanGroup(smg).setGpk(group.groupId, round1.gpk, round2.gpk);
-            emit GpkCreatedLogger(group.groupId, round1.gpk, round2.gpk);
+            emit GpkCreatedLogger(group.groupId, group.round, round1.gpk, round2.gpk);
         }
     }
 
@@ -284,9 +290,11 @@ library GpkLib {
         }
         group.smNumber = 0;
 
-        emit ResetLogger(group.groupId, group.round);
         if (isContinue) {
+          emit ResetLogger(group.groupId, group.round);
           group.round++;
+        } else {
+          emit CloseLogger(group.groupId, group.round);
         }
     }
 }

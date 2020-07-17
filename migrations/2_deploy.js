@@ -124,12 +124,6 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(fakeQuota);
     let fakeQuotaInst = await fakeQuota.deployed();
 
-    await smg.setDependence(tmProxy.address, htlcProxy.address, tsmg.address,fakeQuotaInst.address);
-
-    // console.log("impold:", await smgProxy.implementation())
-    // console.log("smgDelegate.address:", smgDelegate.address)
-    // await smgProxy.upgradeTo(smgDelegate.address);
-
     //deploy CommonTool lib
     //deploy metric
     await deployer.deploy(EnhancementLib);
@@ -179,4 +173,6 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(Bn256Curve);
     let bn256 = await Bn256Curve.deployed();
     await gpk.setCurve(curveMap.get('bn256'), bn256.address);
+
+    await smg.setDependence(tmProxy.address, htlcProxy.address, gpkProxy.address, fakeQuotaInst.address);
 }

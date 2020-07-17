@@ -48,31 +48,32 @@ async function updateNounce() {
 }
 
 async function sendTx(contractAddr, data) {
-  if (0 != data.indexOf('0x')){
-    data = '0x' + data;
-  }
-
-  let rawTx = {
-      Txtype: 0x01, // wanchain only
-      nonce: selfNonce++,
-      gasPrice: config.gasPrice,
-      gasLimit: config.gasLimit,
-      to: contractAddr,
-      value: '0x0',
-      data: data
-  };
-  // console.log("sendTx: %O", rawTx);
-  let tx = new Tx(rawTx);
-  tx.sign(selfSk);
-
-  try {
-    let result = await web3.eth.sendSignedTransaction('0x' + tx.serialize().toString('hex'));
-    // console.log("%s txHash: %s", selfAddress, result.transactionHash);
-    return result.transactionHash;
-  } catch(err) {
-    console.error("send tx data %s to contract %s error: %O", data, contractAddr, err);
-    return '';
-  }
+  return new Promise((resolve) => {
+    if (0 != data.indexOf('0x')){
+      data = '0x' + data;
+    }
+    let rawTx = {
+        Txtype: 0x01, // wanchain only
+        nonce: selfNonce++,
+        gasPrice: config.gasPrice,
+        gasLimit: config.gasLimit,
+        to: contractAddr,
+        value: '0x0',
+        data: data
+    };
+    // console.log("sendTx: %O", rawTx);
+    let tx = new Tx(rawTx);
+    tx.sign(selfSk);
+    web3.eth.sendSignedTransaction('0x' + tx.serialize().toString('hex'))
+    .on('transactionHash', txHash => {
+      // console.log("txHash: %s", txHash);
+      resolve(txHash);
+    })
+    .on('error', err => {
+      console.error("send tx data %s to contract %s error: %O", data, contractAddr, err);
+      resolve('');
+    })
+  });
 }
 
 async function getTxReceipt(txHash, name = '') {
