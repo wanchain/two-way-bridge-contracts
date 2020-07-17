@@ -337,9 +337,9 @@ library HTLCBurnLib {
 
         storageData.quota.burnRedeem(tokenPairID, smgID, value);
 
-        bytes32 tokenOrigAccount;
+        bytes memory tokenOrigAccount;
         (,tokenOrigAccount,,,) = params.tokenManager.getTokenPairInfo(tokenPairID);
-        address tokenScAddr = CrossTypes.bytes32ToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {
             (userOrigAccount).transfer(value);

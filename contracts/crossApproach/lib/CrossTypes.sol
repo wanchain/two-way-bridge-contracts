@@ -92,4 +92,12 @@ library CrossTypes {
         // return address(uint160(uint256(b))); // low
     }
 
+    /// @notice       convert bytes to address
+    /// @param b      bytes
+    function bytesToAddress(bytes b) internal pure returns (address addr) {
+        assembly {
+            addr := mload(add(b,20))
+        }
+    }
+
 }
