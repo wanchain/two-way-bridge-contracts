@@ -1,5 +1,6 @@
 pragma solidity ^0.4.24;
 
+import '../storemanGroupAdmin/StoremanType.sol';
 contract FakeSmg {
     /*
     *
@@ -9,10 +10,19 @@ contract FakeSmg {
     uint constant SelectedSMNumber = 4;
     uint constant ThresholdNumber = 3;
     string constant GroupIdStr = "0000000000000000000000000000000000000031353839393533323738313235";
+    string constant GroupIdStr1 = "0000000000000000000000000000000000000031353839393533323738313236";
     string constant EnodeIdStr = "0000000000000000000000000000000000000000000000000000000000000001";
+    string constant bytestr = "bytes";
+
+    string constant gpk1Str = "82e5d4ad633e9e028b283e52338e4fe4c5467091fd4f5d9aec74cb78c25738be1154a9b1cff44b7fe935e774da7a9fad873b76323573138bc361a9cfdb6a20d2";
+    string constant gpk2Str = "1761e90a6287d8e771373074626befaf4a46e6e3a2d45f8b7a2ec5361f1de7a102d43cd0d14e5a438d754c01d0d94cf2a8ff8fd9df49c9f7291975c831bcb983";
+
+
+    string constant gpkShare1Str = "f716e789cd79d106343b8e9c3ac494865d02241337cf6ce8df4df6548ec1eccc900963c639664b1667df09d322a8e5c8a9185a09742f96b204b4fcc59dae7fab";
+    string constant gpkShare2Str = "17a4f5c4add16108a4ab16fc1635635af0df9798176459ca3cd58a15ceb64d4808651a691e5f89ed012ee076bc39bff193064b852ce11741f0110a81c6d876d7";
+
 
     bytes32  grpId;
-    bytes  enodeId;
 
 //    string[4] Pks = ["0425fa6a4190ddc87d9f9dd986726cafb901e15c21aafd2ed729efed1200c73de89f1657726631d29733f4565a97dc00200b772b4bc2f123a01e582e7e56b80cf8",
 //    "04be3b7fd88613dc272a36f4de570297f5f33b87c26de3060ad04e2ea697e13125a2454acd296e1879a7ddd0084d9e4e724fca9ef610b21420978476e2632a1782",
@@ -31,11 +41,17 @@ contract FakeSmg {
 
     constructor(){
         grpId = bytesToBytes32(fromHex(GroupIdStr), 0);
-        enodeId = fromHex(EnodeIdStr);
 
         for (uint i = 0; i < Pks.length; i++) {
             mapSmgInfo[grpId][uint8(i)] = fromHex(Pks[i]);
         }
+
+        grpId = bytesToBytes32(fromHex(GroupIdStr1), 0);
+
+        for (uint j = 0; j < Pks.length; j++) {
+            mapSmgInfo[grpId][uint8(j)] = fromHex(Pks[j]);
+        }
+
     }
 
     /*
@@ -52,9 +68,37 @@ contract FakeSmg {
         return ThresholdNumber;
     }
 
-    function getSelectedSmInfo(bytes32 grpId, uint index) external returns (address txAddress, bytes pk, bytes enId){
-        (txAddress,pk,enodeId) = (ADD_0, mapSmgInfo[grpId][uint8(index)], enodeId);
+    function getSelectedSmInfo(bytes32 grpId, uint index) external returns (address txAddress, bytes pk, bytes enodeId){
+        (txAddress,pk,enodeId) = (ADD_0, mapSmgInfo[grpId][uint8(index)], fromHex(EnodeIdStr));
     }
+
+
+    function getStoremanInfo(address wkAddress) external view  returns(
+        bytes32 groupId,
+        bytes32 nextGroupId)
+    {
+        return (bytesToBytes32(fromHex(GroupIdStr),0),bytesToBytes32(fromHex(GroupIdStr1),0));
+    }
+
+    function getStoremanGroupInfo(bytes32 id)
+    external
+    view
+    returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint whiteCount,  uint memberCount,  uint startTime, uint endTime){
+        return (bytesToBytes32(fromHex(GroupIdStr),0),StoremanType.GroupStatus.ready,uint(0),uint(0),uint(0),uint(0),uint(0));
+    }
+
+
+    function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2,
+        uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime){
+        return (bytesToBytes32(fromHex(GroupIdStr),0),0,0,0,0,0x00,0x01,fromHex(gpk1Str),fromHex(gpk2Str),0,0);
+    }
+
+
+    function getPkShare(bytes32 groupId, uint index) external view returns(bytes pkShare1, bytes pkShare2){
+        return (fromHex(gpkShare1Str),fromHex(gpkShare2Str));
+    }
+
+
 
     function bytesToBytes32(bytes b, uint offset) internal pure returns (bytes32) {
         bytes32 out;
@@ -64,7 +108,6 @@ contract FakeSmg {
         }
         return out;
     }
-
 
     // Convert an hexadecimal character to their value
     function fromHexChar(uint c) public pure returns (uint) {
