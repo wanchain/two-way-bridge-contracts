@@ -194,6 +194,50 @@ function toNonExponential(num) {
     return num.toFixed(Math.max(0, (m[1] || '').length - m[2]));
 }
 
+function buildMpcSign (schnorr, sk, typesArray, ...args) {
+    let result = {
+      R: schnorr.getR(),
+      s: schnorr.getS(sk, typesArray, args)
+    };
+    return result;
+}
+
+function parseEventsBy(receipt, expectedEvents, filterByName) {
+    let events = new Array();
+
+    receipt.logs.forEach(function(logEntry) {
+        let expectedEntry = expectedEvents.find(function(evt) {
+            return (evt.event === logEntry.event)
+        });
+
+        // When filtering, ignore events that are not expected
+        if ((! filterByName) || expectedEntry) {
+            // Event name
+            let event = {
+                event: logEntry.event
+            };
+
+            // Event arguments
+            // Ignore the arguments when they are not tested
+            // (ie. expectedEntry.args is undefined)
+            if ((! expectedEntry) || (expectedEntry && expectedEntry.args)) {
+                event.args = Object.keys(logEntry.args).reduce(function(previous, current) {
+                    previous[current] =
+                        (typeof logEntry.args[current].toNumber === 'function')
+                            ? logEntry.args[current].toString()
+                            : logEntry.args[current];
+                    // console.log("previous:", previous);
+                    return previous;
+                }, {});
+            }
+            // console.log("parseEventsBy:", event);
+            events.push(event);
+        }
+    });
+
+    return events;
+}
+
 module.exports = {
     getWeb3,
     newContract,
@@ -208,5 +252,7 @@ module.exports = {
     getRC20TokenInstance,
     getRC20TokenBalance,
     getBalance,
-    toNonExponential
+    toNonExponential,
+    buildMpcSign,
+    parseEventsBy
 };
