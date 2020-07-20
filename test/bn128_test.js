@@ -8,7 +8,7 @@ contract('Verifier', accounts => {
   before(async () => {
   });
 
-  it("verifier check bn128 signature", async () => {
+  it.only("verifier check bn128 signature 1", async () => {
     let verifier = (await getSchnorrVerifierContracts(accounts)).verifier;
     let bn128 = (await getSchnorrVerifierContracts(accounts)).bn128;
 
@@ -21,6 +21,67 @@ contract('Verifier', accounts => {
     let signature = '0x1fe44cc08265229ab0e28ff75f14b1ef306f518e612803c7fc461676cdab8fa6';
 
     let hashM = '0x' + hash.sha256(message);
+
+    let ret = await verifier.methods.verify(
+      1,
+      web3.utils.hexToBytes(signature),
+      web3.utils.hexToBytes(gpkX),
+      web3.utils.hexToBytes(gpkY),
+      web3.utils.hexToBytes(rX),
+      web3.utils.hexToBytes(rY),
+      web3.utils.hexToBytes(hashM),
+    ).call();
+
+    assert.equal(ret, true);
+
+    signature = '0x1fe44cc08265229ab0e28ff75f14b1ef306f518e612803c7fc461676cdab8fa5';
+    ret = await verifier.methods.verify(
+      1,
+      web3.utils.hexToBytes(signature),
+      web3.utils.hexToBytes(gpkX),
+      web3.utils.hexToBytes(gpkY),
+      web3.utils.hexToBytes(rX),
+      web3.utils.hexToBytes(rY),
+      web3.utils.hexToBytes(hashM),
+    ).call();
+
+    assert.equal(ret, false);
+
+    ret = await verifier.methods.verify(
+      1,
+      web3.utils.hexToBytes(signature),
+      web3.utils.hexToBytes(gpkX),
+      web3.utils.hexToBytes(gpkY),
+      web3.utils.hexToBytes(rX),
+      web3.utils.hexToBytes(rY),
+      web3.utils.hexToBytes(hashM),
+    ).send({from: accounts[0], gas:1e7});
+    console.log('gas used', ret.gasUsed);
+
+    ret = await bn128.methods.verify(
+      web3.utils.hexToBytes(signature),
+      web3.utils.hexToBytes(gpkX),
+      web3.utils.hexToBytes(gpkY),
+      web3.utils.hexToBytes(rX),
+      web3.utils.hexToBytes(rY),
+      web3.utils.hexToBytes(hashM),
+    ).send({from: accounts[0], gas:1e7});
+    console.log('gas used', ret.gasUsed);
+  });
+
+  it.only("verifier check bn128 signature 2", async () => {
+    let verifier = (await getSchnorrVerifierContracts(accounts)).verifier;
+    let bn128 = (await getSchnorrVerifierContracts(accounts)).bn128;
+
+
+    let message = [0x43, 0x21];
+    let gpkX = '0x0038c8e52318773522675cd2f3536b105c556ff788281d3439b6c048c05c9dfe';
+    let gpkY = '0x1f807d0617f926f0c11a4d2e785ac2f0c48dc50b687a3918cf860aef303bae87';
+    let rX = '0x176ea0b925448604be3fc30a5fb648b49847a58340c9a142caeeefcae2177f99';
+    let rY = '0x11f0853e42e5fa5f9c81ed6c0095b30394177acdb2ba55fad309eed6638dea93';
+    let signature = '0x0c02f3c44929c2f598a29da5d789e0ae8ea2ec763c209ef88d94e5a58a2b5ceb';
+
+    let hashM = '0x' + '50173254f9780541f758b9a5c9e4266ced10fda660074c1f72e7d8565057e1ad';
 
     let ret = await verifier.methods.verify(
       1,
