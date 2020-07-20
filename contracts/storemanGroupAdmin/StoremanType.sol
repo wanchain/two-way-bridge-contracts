@@ -68,7 +68,7 @@ library StoremanType {
         uint curve1;
         uint curve2;
         uint tickedCount;
-        uint minStakeIn;
+        uint minStakeIn;// TODO: default 5 wan
         uint crossIncoming;
         bytes gpk1;
         bytes gpk2;

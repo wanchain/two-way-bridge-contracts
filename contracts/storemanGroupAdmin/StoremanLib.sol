@@ -126,9 +126,8 @@ library StoremanLib {
 
         uint amount = sk.incentive[0];
         amount += sk.deposit.getLastValue();
-        
-        sk.incentive[0] = 0;
         sk.deposit.clean();
+        sk.incentive[0] = 0;
         
         require(amount != 0);        
         sk.sender.transfer(amount);

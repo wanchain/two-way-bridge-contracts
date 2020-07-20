@@ -83,7 +83,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         onlyOwner
     {
         require(tmAddr != address(0), "Invalid tokenManager address");
-        require(metricAddr != address(0), "Invalid htlc address");
+        require(metricAddr != address(0), "Invalid metric address");
         tokenManager = ITokenManager(tmAddr);
         metric = IMetric(metricAddr);
         greateGpkAddr = gpkAddr;
@@ -101,21 +101,35 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return backupCount;
     }
     function inheritNode(StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal{
-        for(uint i = 0; i < wkAddrs.length; i++){
-            group.whiteMap[i] = wkAddrs[i];
-            group.whiteWk[wkAddrs[i]] = senders[i];
-            if(i < group.whiteCount) {
-                group.selectedNode[i] = wkAddrs[i];
+        StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
+        oldAddr.length = 0;
+        if(wkAddrs.length == 0){ // If there are no new white nodes, use the old.
+            group.whiteCount = oldGroup.whiteCount;
+            group.whiteCountAll = oldGroup.whiteCountAll;
+            for(uint k = 0; k<oldGroup.whiteCountAll; k++){
+                group.whiteMap[k] = oldGroup.whiteMap[k];
+                group.whiteWk[group.whiteMap[k]] = oldGroup.whiteWk[oldGroup.whiteMap[k]];
+                if(k < group.whiteCount){
+                    group.selectedNode[k] = group.whiteMap[k];
+                }
+                oldAddr.push(group.whiteMap[k]);
             }
+            group.selectedCount = oldGroup.selectedCount;
+        } else {   // If there are new white nodes, use the new.
+            group.whiteCount = wkAddrs.length - backupCount;
+            group.whiteCountAll = wkAddrs.length;
+            for(uint i = 0; i < wkAddrs.length; i++){
+                group.whiteMap[i] = wkAddrs[i];
+                group.whiteWk[wkAddrs[i]] = senders[i];
+                if(i < group.whiteCount) {
+                    group.selectedNode[i] = wkAddrs[i];
+                }
+            }
+            group.selectedCount = group.whiteCount;
         }
-        group.selectedCount = group.whiteCount;
-        // TODO; 如果没有白名单, 用旧的.
-        // 如果有, 完整替换.
-        // 3个替换4个也可以.
+
         // TODO handle the old group member. set the group deposit.
         if(preGroupId != bytes32(0x00)) {
-            StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
-            oldAddr.length = 0;
             for(uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
                 address skAddr = oldGroup.selectedNode[m];
                 StoremanType.Candidate sk = data.candidates[skAddr];
@@ -142,7 +156,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         onlyOwner
     {
         require(wkAddrs.length == senders.length, "Invalid white list length");
-        require(wkAddrs.length >= backupCount, "Insufficient white list");
+        if(preGroupId == bytes32(0x00)) {
+            require(wkAddrs.length >= backupCount, "Insufficient white list");
+        }
+        
 
         Deposit.Records memory deposit =  Deposit.Records(0);
         Deposit.Records memory depositWeight =  Deposit.Records(0);
@@ -157,8 +174,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.totalDays = workDuration;
         group.memberCountDesign = memberCountDefault;
         group.threshold = thresholdDefault;
-        group.whiteCount = wkAddrs.length - backupCount;
-        group.whiteCountAll = wkAddrs.length;
+
         group.registerTime = now;
         group.registerDuration = registerDuration;
         emit StoremanGroupRegisterStartEvent(groupId, workStart, workDuration, registerDuration, preGroupId);
