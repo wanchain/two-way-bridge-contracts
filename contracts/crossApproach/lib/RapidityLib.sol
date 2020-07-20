@@ -51,7 +51,7 @@ library RapidityLib {
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
         // uint lockFee;                /// exchange token value
-        bytes32 userShadowAccount;      /// account of shadow chain, used to receive token
+        bytes userShadowAccount;      /// account of shadow chain, used to receive token
         // address smgFeeProxy;
         // ITokenManager tokenManager;     /// interface of token manager
     }
@@ -76,7 +76,7 @@ library RapidityLib {
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
         // uint lockFee;                /// exchange token value
-        bytes32 userOrigAccount;       /// account of token original chain, used to receive token
+        bytes userOrigAccount;       /// account of token original chain, used to receive token
         // address smgFeeProxy;
         // ITokenManager tokenManager;     /// interface of token manager
     }
@@ -110,7 +110,7 @@ library RapidityLib {
     /// @param value                    Rapidity value
     /// @param userAccount              account of shadow chain, used to receive token
     event UserFastMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID,
-                        uint value, uint fee, bytes32 userAccount);
+                        uint value, uint fee, bytes userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -128,7 +128,7 @@ library RapidityLib {
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    Rapidity value
     /// @param userAccount              account of shadow chain, used to receive token
-    event UserFastBurnLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes32 userAccount);
+    event UserFastBurnLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
