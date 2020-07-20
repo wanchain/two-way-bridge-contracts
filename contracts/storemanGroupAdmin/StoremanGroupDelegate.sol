@@ -97,6 +97,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         backupCount = backup;
     }
+    function setMinStake(uint amount){
+
+    }
     function getBackupCount() public view returns (uint) {
         return backupCount;
     }
@@ -174,6 +177,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.totalDays = workDuration;
         group.memberCountDesign = memberCountDefault;
         group.threshold = thresholdDefault;
+        group.minStakeIn = minStakeInDefault;
 
         group.registerTime = now;
         group.registerDuration = registerDuration;
@@ -199,7 +203,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.memberCountDesign = memberCountdesign;
         group.threshold = threshold;
-        group.minStakeIn = 0; // TODO: set min stakeIn value
+        group.minStakeIn = minStakeIn;
     }
 
     // function getStaker(bytes32 groupId, address pkAddr) public view returns (bytes PK,uint delegateFee,uint delegatorCount) {
@@ -221,7 +225,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     2) calculate the sk incentive all days.
     3) calculate the delegator all days one by one.
      */
-    function toIncentiveAll( address wkAddr) public  {
+    function incentiveCandidator( address wkAddr) public  {
         IncentiveLib.incentiveCandidator(data, wkAddr,metric);
     }
 
@@ -353,8 +357,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.gpk1 = gpk1;
         group.gpk2 = gpk2;
         group.status = StoremanType.GroupStatus.ready;
-        //storemanGroupRegister(group.chain,groupId, gpk1, group.txFeeRatio);
-        //emit storemanGroupRegisterEvent(groupId, group.chain, gpk1, gpk2);
     }
 
     function setInvalidSm(bytes32 groupId, uint[] slashType,  address[] badAddrs)
@@ -363,13 +365,13 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         onlyGpk
         returns(bool isContinue){
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        for(uint k=0; k<group.memberCount; k++){
-            if(group.tickedCount + group.whiteCount >=group.whiteCountAll){
+        for(uint k = 0; k<group.memberCount; k++){
+            if(group.tickedCount + group.whiteCount >= group.whiteCountAll){
                 return false;
             }
             for(uint i = 0; i<badAddrs.length; i++){
                 if(group.selectedNode[k] == badAddrs[i]){
-                    group.selectedNode[k] = group.whiteMap[group.tickedCount+ group.whiteCount];
+                    group.selectedNode[k] = group.whiteMap[group.tickedCount + group.whiteCount];
                     group.tickedCount += 1;
                     break;
                 }
