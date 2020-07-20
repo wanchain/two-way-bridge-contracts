@@ -2518,7 +2518,7 @@ contract('Test HTLC', async (accounts) => {
     });
 
     ///------fast cross chain----------
-    it.only("Original[1] -> userFastMint  ==> Invalid parnters", async () => {
+    it("Original[1] -> userFastMint  ==> Invalid parnters", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -2538,7 +2538,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only('Original[1] -> userFastMint  ==> Halted', async () => {
+    it('Original[1] -> userFastMint  ==> Halted', async () => {
         let crossProxy;
         try {
             crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
@@ -2562,7 +2562,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only("Original[1] -> Token1 -> userFastMint  ==> Token does not exist", async () => {
+    it("Original[1] -> Token1 -> userFastMint  ==> Token does not exist", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -2585,7 +2585,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only("Original[1] -> Token1 -> userFastMint  ==> Value is null", async () => {
+    it("Original[1] -> Token1 -> userFastMint  ==> Value is null", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -2608,7 +2608,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only('Shadow[2] -> Token1 -> smgFastMint  ==> Halted', async () => {
+    it('Shadow[2] -> Token1 -> smgFastMint  ==> Halted', async () => {
         let crossProxy;
         try {
             crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
@@ -2642,7 +2642,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only('Original[1] -> Token1 -> userFastMint  ==>  success', async () => {
+    it('Original[1] -> Token1 -> userFastMint  ==>  success', async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -2702,7 +2702,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only('Shadow[2] -> Token1 -> smgFastMint  ==>  success', async () => {
+    it('Shadow[2] -> Token1 -> smgFastMint  ==>  success', async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -2731,7 +2731,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only('Shadow[2] -> Token1 -> userFastBurn  ==>  success', async () => {
+    it('Shadow[2] -> Token1 -> userFastBurn  ==>  success', async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -2776,7 +2776,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only('Original[1] -> Token1 -> smgFastBurn  ==>  success', async () => {
+    it('Original[1] -> Token1 -> smgFastBurn  ==>  success', async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -2805,7 +2805,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only("Shadow[2] -> userFastBurn  ==> Invalid parnters", async () => {
+    it("Shadow[2] -> userFastBurn  ==> Invalid parnters", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -2825,7 +2825,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only('Shadow[2] -> userFastBurn  ==> Halted', async () => {
+    it('Shadow[2] -> userFastBurn  ==> Halted', async () => {
         let crossProxy;
         try {
             crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
@@ -2849,7 +2849,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only("Shadow[2] -> Token1 -> userFastBurn  ==> Value is null", async () => {
+    it("Shadow[2] -> Token1 -> userFastBurn  ==> Value is null", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -2872,7 +2872,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it.only('Original[1] -> Token1 -> smgFastBurn  ==> Halted', async () => {
+    it('Original[1] -> Token1 -> smgFastBurn  ==> Halted', async () => {
         let crossProxy;
         try {
             crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
