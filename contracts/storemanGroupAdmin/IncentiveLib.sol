@@ -60,14 +60,14 @@ library IncentiveLib {
                 metric.getPrdInctMetric(group.groupId, day, day)[idx] > group.incentiveThresHold){
                 
                 group.groupIncentive[day] = getGroupIncentive(group, day,data.crossChainCo,data.chainTypeCo); // TODO: change to the correct time
-                sk.incentive[day - group.workDay + 1] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day),  calSkWeight(sk.deposit.getValueById(day)));
+                sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day),  calSkWeight(sk.deposit.getValueById(day)));
                 sk.incentive[0] +=  sk.incentive[day - group.workDay + 1];
                 
                 
                 while(sk.incentivedDelegator != sk.delegatorCount) {
                     address deAddr = sk.addrMap[sk.incentivedDelegator];
                     StoremanType.Delegator storage de = sk.delegators[deAddr];           
-                    de.incentive[day - group.workDay + 1] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), de.deposit.getValueById(day));
+                    de.incentive[day] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), de.deposit.getValueById(day));
                     de.incentive[0] = de.incentive[day - group.workDay + 1];
                     sk.incentivedDelegator++;
                 }
