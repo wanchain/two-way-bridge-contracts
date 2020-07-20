@@ -8,7 +8,7 @@ contract('Verifier', accounts => {
   before(async () => {
   });
 
-  it.only("verifier check bn128 signature 1", async () => {
+  it("verifier check bn128 signature 1", async () => {
     let verifier = (await getSchnorrVerifierContracts(accounts)).verifier;
     let bn128 = (await getSchnorrVerifierContracts(accounts)).bn128;
 
@@ -69,7 +69,7 @@ contract('Verifier', accounts => {
     console.log('gas used', ret.gasUsed);
   });
 
-  it.only("verifier check bn128 signature 2", async () => {
+  it("verifier check bn128 signature 2", async () => {
     let verifier = (await getSchnorrVerifierContracts(accounts)).verifier;
     let bn128 = (await getSchnorrVerifierContracts(accounts)).bn128;
 
