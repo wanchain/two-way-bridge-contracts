@@ -220,13 +220,12 @@ contract CrossDelegate is CrossStorage, Halt {
         HTLCMintLib.userMintRevoke(storageData, params);
     }
 
-    event SigVerifierLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint curveID, bytes PK);
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
     /// @param  xHash                           hash of HTLC random number
     /// @param  smgID                           ID of storeman
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
-    /// @param  userAccount                        address of user, used to receive WRC20 token
+    /// @param  userAccount                     address of user, used to receive WRC20 token
     /// @param  r                               signature
     /// @param  s                               signature
     function smgMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
@@ -238,7 +237,6 @@ contract CrossDelegate is CrossStorage, Halt {
         uint curveID;
         bytes memory PK;
         (curveID, PK) = acquireActiveSmgInfo(smgID);
-        emit SigVerifierLogger(xHash, smgID, tokenPairID, curveID, PK);
 
         bytes32 mHash = sha256(abi.encode(xHash, tokenPairID, value, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
