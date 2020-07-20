@@ -84,7 +84,7 @@ class Round {
 
   async mainLoop() {
     try {
-      let info = await this.group.createGpkSc.methods.getGroupInfo(this.group.id, this.round).call();
+      let info = await this.group.gpkSc.methods.getGroupInfo(this.group.id, this.round).call();
       this.status = parseInt(info[this.curveIndex * 2 + 1]);
       this.statusTime = parseInt(info[this.curveIndex * 2 + 2]);
       this.ployCommitPeriod = parseInt(info[5]);
@@ -128,7 +128,7 @@ class Round {
         try {
           let receive = this.receive[index];
           if (!receive.polyCommit) {
-            receive.polyCommit = await this.group.createGpkSc.methods.getPolyCommit(this.group.id, this.round, this.curveIndex, sm).call();
+            receive.polyCommit = await this.group.gpkSc.methods.getPolyCommit(this.group.id, this.round, this.curveIndex, sm).call();
             // console.log("polyCommitReceive %s: %s", sm, receive.polyCommit);
           }
           resolve();
@@ -158,7 +158,7 @@ class Round {
           this.polyCommitDone = true;
           // console.log("polyCommitSend done");
         } else {
-          let sent = this.group.createGpkSc.methods.getPolyCommit(this.group.id, this.round, this.curveIndex, this.group.selfAddress).call();
+          let sent = this.group.gpkSc.methods.getPolyCommit(this.group.id, this.round, this.curveIndex, this.group.selfAddress).call();
           if (sent) { // already sent but lost txHash
             this.polyCommitDone = true;
             // console.log("polyCommitSend already done");
@@ -223,7 +223,7 @@ class Round {
     let dest;
     // encSij
     if (!receive.encSij) {
-      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
+      dest = await this.group.gpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
       if (dest[0]) {
         let encSij = dest[0];
         receive.sij = await encrypt.decryptSij(this.group.selfSk, encSij);
@@ -244,7 +244,7 @@ class Round {
     }
     // checkStatus
     if ((receive.checkStatus == CheckStatus.Init) && send.encSijTxHash) { // already send encSij, do not wait chain confirm
-      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.group.selfAddress, partner).call();
+      dest = await this.group.gpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.group.selfAddress, partner).call();
       if (dest[1] != '0') {
         receive.checkStatus = parseInt(dest[1]);
         if (receive.checkStatus == CheckStatus.Invalid) {
@@ -255,7 +255,7 @@ class Round {
     }
     // sij
     if ((send.checkStatus == CheckStatus.Invalid) && send.checkTxHash) { // already send checkStatus, do not wait chain confirm
-      dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
+      dest = await this.group.gpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
       if (dest[4] != '0') {
         receive.revealed = true;
         console.log('gpk group %s round %d curve %d %s sij %s revealed', this.group.id, this.round, this.curveIndex, partner, dest[4]);
@@ -307,7 +307,7 @@ class Round {
     if (send.encSijTxHash && !send.chainEncSijTime) {
       receipt = await wanchain.getTxReceipt(send.encSijTxHash);
       if (receipt) {
-        dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.group.selfAddress, partner).call();
+        dest = await this.group.gpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.group.selfAddress, partner).call();
         if (receipt.status || dest[0]) { // already sent but lost txHash
           send.chainEncSijTime = parseInt(dest[2]);
         } else {
@@ -319,7 +319,7 @@ class Round {
     if (send.checkTxHash && !send.chainCheckTime) {
       receipt = await wanchain.getTxReceipt(send.checkTxHash);
       if (receipt) {
-        dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
+        dest = await this.group.gpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, partner, this.group.selfAddress).call();
         if (receipt.status || (dest[1] != '0')) { // already sent but lost txHash
           send.chainCheckTime = parseInt(dest[3]);
         } else {
@@ -331,7 +331,7 @@ class Round {
     if (send.sijTxHash) {
       receipt = await wanchain.getTxReceipt(send.sijTxHash);
       if (receipt && !receipt.status) {
-        dest = await this.group.createGpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.group.selfAddress, partner).call();
+        dest = await this.group.gpkSc.methods.getEncSijInfo(this.group.id, this.round, this.curveIndex, this.group.selfAddress, partner).call();
         if (dest[4] == '0') {
           send.sijTxHash = '';
         }
@@ -437,8 +437,8 @@ class Round {
         break;
       }
     }
-    let pkShare = await this.group.createGpkSc.methods.getPkShare(this.group.id, i).call();
-    let gpk = await this.group.createGpkSc.methods.getGpk(this.group.id).call();
+    let pkShare = await this.group.gpkSc.methods.getPkShare(this.group.id, i).call();
+    let gpk = await this.group.gpkSc.methods.getGpk(this.group.id).call();
     if (pkShare[this.curveIndex] == this.pkShare) {
       console.log("index %d(%s) pkShare: %s", i, wanchain.selfAddress, this.pkShare);
     } else {

@@ -7,7 +7,7 @@ class Group {
   constructor(id, round) {
     // contract
     this.smgSc = null;
-    this.createGpkSc = null;
+    this.gpkSc = null;
 
     // group info
     this.id = id;
@@ -39,7 +39,7 @@ class Group {
 
   initSc() {
     this.smgSc = wanchain.getContract('smg', config.contractAddress.smg);
-    this.createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
+    this.gpkSc = wanchain.getContract('gpk', config.contractAddress.gpk);
   }
   
   initSelfKey() {
@@ -107,7 +107,7 @@ class Group {
     }
     let gCopy = Object.assign({}, this);
     delete gCopy.smgSc;
-    delete gCopy.createGpkSc;
+    delete gCopy.gpkSc;
     delete gCopy.selfSk;
     gCopy.rounds = [];
     let r0Copy = Object.assign({}, this.rounds[0]);

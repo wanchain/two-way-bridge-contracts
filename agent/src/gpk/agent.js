@@ -11,7 +11,7 @@ const Round = require('./Round');
 const groupMap = new Map();
 
 const smgSc = wanchain.getContract('smg', config.contractAddress.smg);
-const createGpkSc = wanchain.getContract('CreateGpk', config.contractAddress.createGpk);
+const gpkSc = wanchain.getContract('gpk', config.contractAddress.gpk);
 
 function run() {
   console.log("run gpk agent");
@@ -57,10 +57,10 @@ function listenEvent() {
   let id = wanchain.selfAddress + '_gpk';
   let evtTracker = new EventTracker(id, eventHandler, true, config.startBlock);
   evtTracker.subscribe('smg_selectedEvent', config.contractAddress.smg, ["0x62487e9f333516e24026d78ce371e54c664a46271dcf5ffdafd8cd10ea75a5bf"]);
-  evtTracker.subscribe('gpk_GpkCreatedLogger', config.contractAddress.createGpk, ["0x884822611cfb227c03601397b3912b6e3f6c0559500336651a8214a2e5bc290e"]);
-  evtTracker.subscribe('gpk_SlashLogger', config.contractAddress.createGpk, ["0x6db7153a0195112b574e9c22db0cf9526d68f6951c394ed1b179447813515b42"]);
-  evtTracker.subscribe('gpk_ResetLogger', config.contractAddress.createGpk, ["0x13beb2234bbbe2e676ea7d404e3cf57bf7e167ebdf43c97bf34007c878a06e88"]);
-  evtTracker.subscribe('gpk_CloseLogger', config.contractAddress.createGpk, ["0xa9ae7136d2e2e390eb5f98304af73123f4b84e37bd83d1101c08ff39456f0b5f"]);
+  evtTracker.subscribe('gpk_GpkCreatedLogger', config.contractAddress.gpk, ["0x884822611cfb227c03601397b3912b6e3f6c0559500336651a8214a2e5bc290e"]);
+  evtTracker.subscribe('gpk_SlashLogger', config.contractAddress.gpk, ["0x6db7153a0195112b574e9c22db0cf9526d68f6951c394ed1b179447813515b42"]);
+  evtTracker.subscribe('gpk_ResetLogger', config.contractAddress.gpk, ["0x13beb2234bbbe2e676ea7d404e3cf57bf7e167ebdf43c97bf34007c878a06e88"]);
+  evtTracker.subscribe('gpk_CloseLogger', config.contractAddress.gpk, ["0xa9ae7136d2e2e390eb5f98304af73123f4b84e37bd83d1101c08ff39456f0b5f"]);
   evtTracker.start();
 }
 
@@ -94,7 +94,7 @@ async function eventHandler(evt) {
 async function procSmgSelectedEvent(evt) {
   let groupId = evt.topics[1];
   let group = groupMap.get(groupId);
-  let info = await createGpkSc.methods.getGroupInfo(groupId, -1).call();
+  let info = await gpkSc.methods.getGroupInfo(groupId, -1).call();
   // console.log("gpk agent get group info: %O", info);
   let round = parseInt(info[0]), status = parseInt(info[1]);
   if (status == GpkStatus.PolyCommit) {

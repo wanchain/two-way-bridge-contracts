@@ -20,7 +20,7 @@ console.log("address: %s", selfAddress);
 
 const web3 = new Web3(new Web3.providers.HttpProvider(config.wanNodeURL));
 
-const createGpkSc = getContract('CreateGpk', config.contractAddress.createGpk);
+const gpkSc = getContract('gpk', config.contractAddress.gpk);
 
 function getContract(name, address) {
   let abi = abiMap.get(name);
@@ -98,50 +98,50 @@ async function sendPloyCommit(groupId, round, curve, polyCommit) {
   }
   let pcStr = '0x' + buf.toString('hex');
   console.log("group %s round %d curve %d sendPloyCommit %s", groupId, round, curve, "*" || pcStr);
-  let txData = await createGpkSc.methods.setPolyCommit(groupId, round, curve, pcStr).encodeABI();
-  let txHash = await sendTx(config.contractAddress.createGpk, txData);
+  let txData = await gpkSc.methods.setPolyCommit(groupId, round, curve, pcStr).encodeABI();
+  let txHash = await sendTx(config.contractAddress.gpk, txData);
   return txHash;
 }
 
 async function sendEncSij(groupId, round, curve, dest, encSij) {
-  let txData = await createGpkSc.methods.setEncSij(groupId, round, curve, dest, encSij).encodeABI();
-  let txHash = await sendTx(config.contractAddress.createGpk, txData);
+  let txData = await gpkSc.methods.setEncSij(groupId, round, curve, dest, encSij).encodeABI();
+  let txHash = await sendTx(config.contractAddress.gpk, txData);
   return txHash;  
 }
 
 async function sendCheckStatus(groupId, round, curve, src, isValid) {
-  let txData = await createGpkSc.methods.setCheckStatus(groupId, round, curve, src, isValid).encodeABI();
-  let txHash = await sendTx(config.contractAddress.createGpk, txData);
+  let txData = await gpkSc.methods.setCheckStatus(groupId, round, curve, src, isValid).encodeABI();
+  let txHash = await sendTx(config.contractAddress.gpk, txData);
   return txHash;  
 }
 
 async function sendSij(groupId, round, curve, dest, sij, ephemPrivateKey) {
-  let txData = await createGpkSc.methods.revealSij(groupId, round, curve, dest, sij, ephemPrivateKey).encodeABI();
-  let txHash = await sendTx(config.contractAddress.createGpk, txData);
+  let txData = await gpkSc.methods.revealSij(groupId, round, curve, dest, sij, ephemPrivateKey).encodeABI();
+  let txHash = await sendTx(config.contractAddress.gpk, txData);
   return txHash;
 }
 
 async function sendPolyCommitTimeout(groupId, curve) {
-  let txData = await createGpkSc.methods.polyCommitTimeout(groupId, curve).encodeABI();
-  let txHash = await sendTx(config.contractAddress.createGpk, txData);
+  let txData = await gpkSc.methods.polyCommitTimeout(groupId, curve).encodeABI();
+  let txHash = await sendTx(config.contractAddress.gpk, txData);
   return txHash;
 }
 
 async function sendEncSijTimeout(groupId, curve, src) {
-  let txData = await createGpkSc.methods.encSijTimeout(groupId, curve, src).encodeABI();
-  let txHash = await sendTx(config.contractAddress.createGpk, txData);
+  let txData = await gpkSc.methods.encSijTimeout(groupId, curve, src).encodeABI();
+  let txHash = await sendTx(config.contractAddress.gpk, txData);
   return txHash;
 }
 
 async function sendCheckTimeout(groupId, curve, dest) {
-  let txData = await createGpkSc.methods.checkEncSijTimeout(groupId, curve, dest).encodeABI();
-  let txHash = await sendTx(config.contractAddress.createGpk, txData);
+  let txData = await gpkSc.methods.checkEncSijTimeout(groupId, curve, dest).encodeABI();
+  let txHash = await sendTx(config.contractAddress.gpk, txData);
   return txHash;
 }
 
 async function sendSijTimeout(groupId, curve, src) {
-  let txData = await createGpkSc.methods.SijTimeout(groupId, curve, src).encodeABI();
-  let txHash = await sendTx(config.contractAddress.createGpk, txData);
+  let txData = await gpkSc.methods.SijTimeout(groupId, curve, src).encodeABI();
+  let txHash = await sendTx(config.contractAddress.gpk, txData);
   return txHash;
 }
 
