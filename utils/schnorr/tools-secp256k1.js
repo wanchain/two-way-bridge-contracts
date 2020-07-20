@@ -1,14 +1,13 @@
 const crypto 			= require('crypto');
 const BigInteger 	    = require('bigi');
-const ecurve 			= require('ecurve-bn256');
+const ecurve 			= require('ecurve');
 const Web3EthAbi 	    = require('web3-eth-abi');
-const  ecparams 	    = ecurve.getCurveByName('bn256g1');
+const  ecparams 	    = ecurve.getCurveByName('secp256k1');
 
 // buffer
 const r 			    = new Buffer("e7e59bebdcee876e84d03832544f5a517e96a9e3f60cd8f564bece6719d5af52", 'hex');
 // buffer
 let R					= baseScarMulti(r);
-// console.log('R:', R.toString('hex'));
 
 // sk*G
 // return: buff
@@ -42,7 +41,6 @@ function getSBuff(sk, m) {
 // return: buffer
 function computeM1(M) {
     let M1 = h(M);
-    // console.log("M1", M1.toString('hex'));
     return M1;
 }
 
@@ -57,7 +55,6 @@ function computem(M1, R) {
     list.push(M1);
     list.push(R);
     // hash(M1||R)
-    // console.log("R", R);
     let m = Buffer.concat(list);
     return h(m)
 }
