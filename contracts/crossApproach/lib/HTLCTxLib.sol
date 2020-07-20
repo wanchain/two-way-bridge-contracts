@@ -56,7 +56,7 @@ library HTLCTxLib {
         uint value;                     /// exchange token value
         uint lockFee;                   /// exchange token value
         uint lockedTime;                /// HTLC lock time
-        bytes32 mirrorAccount;            /// account of mirrorAccount chain, used to receive token
+        bytes mirrorAccount;            /// account of mirrorAccount chain, used to receive token
     }
 
     /// @notice HTLC(Hashed TimeLock Contract) tx info
@@ -74,7 +74,7 @@ library HTLCTxLib {
         uint value;
         uint fee;
         address userAccount;        // HTLC transaction sender address for the security check while user's revoke
-        bytes32 mirrorAccount;        // address or account on mirror chain
+        bytes mirrorAccount;        // address or account on mirror chain
     }
     /// @notice storeman  tx info
     struct SmgTx {
@@ -201,7 +201,7 @@ library HTLCTxLib {
     function getUserTx(Data storage self, bytes32 xHash)
         external
         view
-        returns (bytes32, uint, uint, uint, address, bytes32)
+        returns (bytes32, uint, uint, uint, address, bytes)
         // returns (address, bytes, uint, uint, bytes32)
     {
         UserTx storage userTx = self.mapHashXUserTxs[xHash];

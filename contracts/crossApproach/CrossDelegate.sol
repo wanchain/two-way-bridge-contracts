@@ -168,7 +168,7 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive WRC20 token
-    function userMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes32 userAccount)
+    function userMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
         initialized
@@ -293,7 +293,7 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes32 userAccount)
+    function userBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
         initialized
@@ -410,7 +410,7 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes32 userAccount)
+    function userFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
         initialized
@@ -436,7 +436,7 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  smgID                           ID of storeman
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
-    /// @param  userAccount                        address of user, used to receive WRC20 token
+    /// @param  userAccount                     address of user, used to receive WRC20 token
     /// @param  r                               signature
     /// @param  s                               signature
     function smgFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
@@ -470,7 +470,7 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes32 userAccount)
+    function userFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
         initialized
@@ -768,11 +768,11 @@ contract CrossDelegate is CrossStorage, Halt {
         internal
         // view
     {
-        bytes32 PKx = bytesToBytes32(PK, 1);
-        bytes32 PKy = bytesToBytes32(PK, 33);
+        bytes32 PKx = bytesToBytes32(PK, 0);
+        bytes32 PKy = bytesToBytes32(PK, 32);
 
-        bytes32 Rx = bytesToBytes32(r, 1);
-        bytes32 Ry = bytesToBytes32(r, 33);
+        bytes32 Rx = bytesToBytes32(r, 0);
+        bytes32 Ry = bytesToBytes32(r, 32);
 
         require(storageData.sigVerifier.verify(curveID, s, PKx, PKy, Rx, Ry, message), "Signature verification failed");
     }
