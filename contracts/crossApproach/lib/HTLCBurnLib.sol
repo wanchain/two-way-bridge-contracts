@@ -52,7 +52,7 @@ library HTLCBurnLib {
         uint value;                     /// exchange token value
         // uint lockFee;                /// exchange token value
         uint lockedTime;                /// HTLC lock time
-        bytes32 userOrigAccount;        /// account of token original chain, used to receive token
+        bytes userOrigAccount;        /// account of token original chain, used to receive token
         // ITokenManager tokenManager;     /// interface of token manager
     }
 
@@ -110,7 +110,7 @@ library HTLCBurnLib {
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    HTLC value
     /// @param userAccount              account of shadow chain, used to receive token
-    event UserBurnLockLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes32 userAccount);
+    event UserBurnLockLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
