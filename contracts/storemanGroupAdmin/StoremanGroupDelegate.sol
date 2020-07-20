@@ -97,15 +97,16 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         backupCount = backup;
     }
-    function setMinStake(uint amount){
 
-    }
     function getBackupCount() public view returns (uint) {
         return backupCount;
     }
     function inheritNode(StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal{
-        StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
-        oldAddr.length = 0;
+        StoremanType.StoremanGroup storage oldGroup;
+        if(preGroupId != bytes32(0x00)) {
+            oldGroup = data.groups[preGroupId];
+            oldAddr.length = 0;
+       }
         if(wkAddrs.length == 0){ // If there are no new white nodes, use the old.
             group.whiteCount = oldGroup.whiteCount;
             group.whiteCountAll = oldGroup.whiteCountAll;
