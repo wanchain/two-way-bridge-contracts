@@ -48,27 +48,25 @@ library IncentiveLib {
             }
             
             uint idx = 0;
-              for(;idx < group.selectedCount;idx++) {
+            for(;idx < group.selectedCount;idx++) {
                  address addr = group.selectedNode[idx];
                  if (addr == sk.pkAddress) {
-                     
                      break;
                  }
-             }
+            }
      
             if( group.groupIncentive[day] == 0 && 
                 metric.getPrdInctMetric(group.groupId, day, day)[idx] > group.incentiveThresHold){
                 
                 group.groupIncentive[day] = getGroupIncentive(group, day,data.crossChainCo,data.chainTypeCo); // TODO: change to the correct time
                 sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day),  calSkWeight(sk.deposit.getValueById(day)));
-                sk.incentive[0] +=  sk.incentive[day - group.workDay + 1];
-                
+                sk.incentive[0] +=  sk.incentive[day];
                 
                 while(sk.incentivedDelegator != sk.delegatorCount) {
                     address deAddr = sk.addrMap[sk.incentivedDelegator];
                     StoremanType.Delegator storage de = sk.delegators[deAddr];           
                     de.incentive[day] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), de.deposit.getValueById(day));
-                    de.incentive[0] = de.incentive[day - group.workDay + 1];
+                    de.incentive[0] = de.incentive[day];
                     sk.incentivedDelegator++;
                 }
             }
