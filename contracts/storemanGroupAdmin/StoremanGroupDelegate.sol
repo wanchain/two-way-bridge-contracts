@@ -100,13 +100,14 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function getBackupCount() public view returns (uint) {
         return backupCount;
     }
-    function inheritNode(StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal{
+    function inheritNode(StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal
+    {
 
         StoremanType.StoremanGroup storage oldGroup;
         if(preGroupId != bytes32(0x00)) {
             oldGroup = data.groups[preGroupId];
             oldAddr.length = 0;
-       }
+        }
         if(wkAddrs.length == 0){ // If there are no new white nodes, use the old.
             group.whiteCount = oldGroup.whiteCount;
             group.whiteCountAll = oldGroup.whiteCountAll;
@@ -128,15 +129,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
                 if(i < group.whiteCount) {
                     group.selectedNode[i] = wkAddrs[i];
                 }
-
-        for(uint i = 0; i < wkAddrs.length; i++){
-            group.whiteMap[i] = wkAddrs[i];
-            group.whiteWk[wkAddrs[i]] = senders[i];
-            if(i < group.whiteCount) {
-                group.selectedNode[i] = wkAddrs[i];
             }
+            group.selectedCount = group.whiteCount;
         }
-        group.selectedCount = group.whiteCount;
         // TODO; 如果没有白名单, 用旧的.
         // 如果有, 完整替换.
         // 3个替换4个也可以.
