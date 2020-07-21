@@ -225,20 +225,12 @@ library RapidityLib {
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
 
-        uint left;
-        if (tokenShadowAccount == address(0)) {
-            left = (msg.value).sub(params.value).sub(lockFee);
-            if (left != 0) {
-                (msg.sender).transfer(left);
-            }
-        } else {
-            left = (msg.value).sub(lockFee);
-            if (left != 0) {
-                (msg.sender).transfer(left);
-            }
-
-            require(IRC20Protocol(tokenShadowAccount).transferFrom(msg.sender, this, params.value), "Lock token failed");
+        uint left = (msg.value).sub(lockFee);
+        if (left != 0) {
+            (msg.sender).transfer(left);
         }
+
+        require(IRC20Protocol(tokenShadowAccount).transferFrom(msg.sender, this, params.value), "Lock token failed");
 
         storageData.rapidityTxData.addUserTx(params.uniqueID, params.smgID, params.tokenPairID,
                                         params.value, lockFee, params.userOrigAccount, RapidityTxLib.TxStatus.Burned);

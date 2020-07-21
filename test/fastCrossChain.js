@@ -228,11 +228,33 @@ let userLockParams       = {
     // revokeFee: 0, //crossApproach.chain1.origRevokeFee + 2
 };
 
+let userLockParams1       = {
+    xHash: '',
+    smgID: storemanGroups[1].ID,
+    tokenPairID: coins.coin1.tokenPairID,
+    value: 10,
+    origUserAccount: '', // accounts 3 or 4
+    shadowUserAccount: '', // accounts 3 or 4
+    // lockFee: 0, //crossApproach.chain1.origLockFee + 1,
+    // revokeFee: 0, //crossApproach.chain1.origRevokeFee + 2
+};
+
 let smgMintLockParams       = {
     xHash: '',
     smgID: storemanGroups[1].ID,
     tokenPairID: tokens.token1.tokenPairID,
     value: userLockParams.value,
+    origUserAccount: '', // accounts 3 or 4
+    shadowUserAccount: '', // accounts 3 or 4
+    R: '',
+    s: ''
+};
+
+let smgMintLockParams1       = {
+    xHash: '',
+    smgID: storemanGroups[1].ID,
+    tokenPairID: coins.coin1.tokenPairID,
+    value: userLockParams1.value,
     origUserAccount: '', // accounts 3 or 4
     shadowUserAccount: '', // accounts 3 or 4
     R: '',
@@ -935,7 +957,7 @@ contract('Test Fast Cross Chain', async (accounts) => {
                 smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.origUserAccount);
 
             // user mint lock
-            let smgMintLockReceipt = await crossApproach.chain1.instance.smgBurnLock(
+            let smgMintLockReceipt = await crossApproach.chain1.instance.smgFastBurn(
                 smgLockParamsTemp.xHash,
                 smgLockParamsTemp.smgID,
                 smgLockParamsTemp.tokenPairID,
@@ -1017,6 +1039,29 @@ contract('Test Fast Cross Chain', async (accounts) => {
         }
     });
 
+    it("Shadow[2] -> Token1 -> userFastBurn  ==> Token does not exist", async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.chain1BurnTokenRedeem.hash;
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            // user mint lock
+            await crossApproach.chain2.instance.userFastBurn(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                InvalidTokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.origUserAccount,
+                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
+        } catch (err) {
+            assert.include(err.toString(), "Token does not exist");
+        }
+    });
+
     it('Original[1] -> Token1 -> smgFastBurn  ==> Halted', async () => {
         let crossProxy;
         try {
@@ -1051,6 +1096,491 @@ contract('Test Fast Cross Chain', async (accounts) => {
             assert.include(err.toString(), "Smart contract is halted");
         } finally {
             await crossProxy.setHalt(false, {from: owner});
+        }
+    });
+
+    it('Original[1] -> Coin1 -> userFastMint  ==>  success', async () => {
+        try {
+            // accounts[5] is the chain1 original address of the user.
+            // accounts[6] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[5];
+            userLockParamsTemp.shadowUserAccount = accounts[6];
+            userLockParamsTemp.xHash = xInfo.chain1MintCoinRevoke.hash;
+            userLockParamsTemp.tokenPairID = coins.coin1.tokenPairID;
+
+            // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
+            // console.log("mintOracleValue", mintOracleValue);
+
+            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            // console.log("lock", value);
+            let totalValue = new BN(value).add(new BN(crossApproach.chain1.origLockFee)).toString();
+            // console.log("lockFee", crossApproach.chain1.origLockFee);
+            // console.log("totalLock", totalValue);
+
+            // user mint lock
+            let userMintLockReceipt = await crossApproach.chain1.instance.userFastMint(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                value,
+                userLockParamsTemp.shadowUserAccount,
+                {from: userLockParamsTemp.origUserAccount, value: totalValue});
+            // assert.checkWeb3Event(userMintLockReceipt, {
+            //     event: 'UserMintLockLogger',
+            //     args: {
+            //         xHash: userLockParamsTemp.xHash,
+            //         smgID: userLockParamsTemp.smgID,
+            //         tokenPairID: userLockParamsTemp.tokenPairID,
+            //         value: userLockParamsTemp.value,
+            //         fee: crossApproach.chain1.origLockFee,
+            //         userAccount: userLockParamsTemp.shadowUserAccount,
+            //     }
+            // });
+            // console.log("userMintLock receipt", userMintLockReceipt.logs);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Shadow[2] -> Coin1 -> smgFastMint  ==>  success', async () => {
+        try {
+            // accounts[5] is the chain1 original address of the user.
+            // accounts[6] is the chain2 shadow address of the user.
+            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            smgLockParamsTemp.origUserAccount = accounts[5];
+            smgLockParamsTemp.shadowUserAccount = accounts[6];
+            smgLockParamsTemp.xHash = xInfo.chain1MintCoinRevoke.hash;
+            smgLockParamsTemp.tokenPairID = coins.coin1.tokenPairID;
+
+            let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
+
+            let pkId = 2;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve2, sk, typesArrayList.smgMintLock, smgLockParamsTemp.xHash,
+                smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.shadowUserAccount);
+
+            // user mint lock
+            let smgMintLockReceipt = await crossApproach.chain2.instance.smgFastMint(
+                smgLockParamsTemp.xHash,
+                smgLockParamsTemp.smgID,
+                smgLockParamsTemp.tokenPairID,
+                value,
+                smgLockParamsTemp.shadowUserAccount,
+                R,
+                s,
+                {from: storemanGroups[1].account});
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Shadow[2] -> Coin1 -> userFastBurn  ==>  success', async () => {
+        try {
+            // accounts[5] is the chain1 original address of the user.
+            // accounts[6] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[5];
+            userLockParamsTemp.shadowUserAccount = accounts[6];
+            userLockParamsTemp.xHash = xInfo.chain1BurnCoinRevoke.hash;
+            userLockParamsTemp.tokenPairID = coins.coin1.tokenPairID;
+
+            // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
+            // console.log("mintOracleValue", mintOracleValue);
+
+            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            // get token instance
+            let tokenInstance = await getRC20TokenInstance(coins.coin1.shadowTokenAccount);
+            let balance = await tokenInstance.balanceOf(userLockParamsTemp.shadowUserAccount);
+            assert.equal(value, balance.toString());
+
+            // approve value
+            await tokenInstance.approve(crossApproach.chain2.instance.address, 0, {from: userLockParamsTemp.shadowUserAccount});
+            await tokenInstance.approve(crossApproach.chain2.instance.address, value, {from: userLockParamsTemp.shadowUserAccount});
+            let allowance = await tokenInstance.allowance(userLockParamsTemp.shadowUserAccount, crossApproach.chain2.instance.address);
+            assert.equal(value, allowance.toString());
+
+            // console.log("before shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
+            // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+            // user mint lock
+            let userLockReceipt = await crossApproach.chain2.instance.userFastBurn(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.origUserAccount,
+                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
+            // console.log("userBurnLock receipt", userLockReceipt.logs);
+            // console.log("after shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
+            // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original[1] -> Coin1 -> smgFastBurn  ==>  success', async () => {
+        try {
+            // accounts[5] is the chain1 original address of the user.
+            // accounts[6] is the chain2 shadow address of the user.
+            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            smgLockParamsTemp.origUserAccount = accounts[5];
+            smgLockParamsTemp.shadowUserAccount = accounts[6];
+            smgLockParamsTemp.xHash = xInfo.chain1BurnCoinRevoke.hash;
+            smgLockParamsTemp.tokenPairID = coins.coin1.tokenPairID;
+
+            let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
+
+            let pkId = 1;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgBurnLock, smgLockParamsTemp.xHash,
+                smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.origUserAccount);
+
+            // user mint lock
+            let smgMintLockReceipt = await crossApproach.chain1.instance.smgFastBurn(
+                smgLockParamsTemp.xHash,
+                smgLockParamsTemp.smgID,
+                smgLockParamsTemp.tokenPairID,
+                value,
+                smgLockParamsTemp.origUserAccount,
+                R,
+                s,
+                {from: storemanGroups[1].account});
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    
+
+    //------give more fee------
+    it('Original[2] -> Token2 -> userFastMint  ==> [revoke] success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.chain2MintTokenRevoke.hash;
+            userLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
+
+            // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
+            // console.log("mintOracleValue", mintOracleValue);
+
+            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            await tokens.token2.tokenCreator.mintToken(tokens.token2.name, tokens.token2.symbol,
+                userLockParamsTemp.origUserAccount, value);
+            // get token instance
+            let tokenInstance = await getRC20TokenInstance(tokens.token2.origTokenAccount);
+            let balance = await tokenInstance.balanceOf(userLockParamsTemp.origUserAccount);
+            assert.equal(value, balance.toString());
+
+            // approve value
+            await tokenInstance.approve(crossApproach.chain2.instance.address, 0, {from: userLockParamsTemp.origUserAccount});
+            await tokenInstance.approve(crossApproach.chain2.instance.address, value, {from: userLockParamsTemp.origUserAccount});
+            let allowance = await tokenInstance.allowance(userLockParamsTemp.origUserAccount, crossApproach.chain2.instance.address);
+            assert.equal(value, allowance.toString());
+
+            // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+            // user mint lock
+            let userMintLockReceipt = await crossApproach.chain2.instance.userFastMint(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                value,
+                userLockParamsTemp.shadowUserAccount,
+                {from: userLockParamsTemp.origUserAccount, value: crossApproach.chain2.origLockFee*2});
+            // assert.checkWeb3Event(userMintLockReceipt, {
+            //     event: 'UserMintLockLogger',
+            //     args: {
+            //         xHash: userLockParamsTemp.xHash,
+            //         smgID: userLockParamsTemp.smgID,
+            //         tokenPairID: userLockParamsTemp.tokenPairID,
+            //         value: userLockParamsTemp.value,
+            //         fee: crossApproach.chain2.origLockFee,
+            //         userAccount: userLockParamsTemp.shadowUserAccount,
+            //     }
+            // });
+            // console.log("userMintLock receipt", userMintLockReceipt.logs);
+            // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Shadow[1] -> Token2 -> smgFastMint  ==> [revoke] success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            smgLockParamsTemp.origUserAccount = accounts[3];
+            smgLockParamsTemp.shadowUserAccount = accounts[4];
+            smgLockParamsTemp.xHash = xInfo.chain2MintTokenRevoke.hash;
+            smgLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
+
+            let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
+
+            let pkId = 1;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgBurnLock, smgLockParamsTemp.xHash,
+                smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.shadowUserAccount);
+
+            // user mint lock
+            let smgMintLockReceipt = await crossApproach.chain1.instance.smgFastMint(
+                smgLockParamsTemp.xHash,
+                smgLockParamsTemp.smgID,
+                smgLockParamsTemp.tokenPairID,
+                value,
+                smgLockParamsTemp.shadowUserAccount,
+                R,
+                s,
+                {from: storemanGroups[1].account});
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Shadow[1] -> Token2 -> userFastBurn  ==> success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.chain2BurnTokenRedeem.hash;
+            userLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
+
+            // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
+            // console.log("mintOracleValue", mintOracleValue);
+
+            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            // get token instance
+            let tokenInstance = await getRC20TokenInstance(tokens.token2.shadowTokenAccount);
+            let balance = await tokenInstance.balanceOf(userLockParamsTemp.shadowUserAccount);
+            assert.equal(value, balance.toString());
+
+            // approve value
+            await tokenInstance.approve(crossApproach.chain1.instance.address, 0, {from: userLockParamsTemp.shadowUserAccount});
+            await tokenInstance.approve(crossApproach.chain1.instance.address, value, {from: userLockParamsTemp.shadowUserAccount});
+            let allowance = await tokenInstance.allowance(userLockParamsTemp.shadowUserAccount, crossApproach.chain1.instance.address);
+            assert.equal(value, allowance.toString());
+
+            // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+            // user mint lock
+            let userMintLockReceipt = await crossApproach.chain1.instance.userFastBurn(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.origUserAccount,
+                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain1.shadowLockFee*2});
+            // console.log("userMintLock receipt", userMintLockReceipt.logs);
+            // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original[2] -> Token2 -> smgFastBurn  ==> success', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            smgLockParamsTemp.origUserAccount = accounts[3];
+            smgLockParamsTemp.shadowUserAccount = accounts[4];
+            smgLockParamsTemp.xHash = xInfo.chain2BurnTokenRedeem.hash;
+            smgLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
+
+            let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
+
+            let pkId = 2;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve2, sk, typesArrayList.smgBurnLock, smgLockParamsTemp.xHash,
+                smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.origUserAccount);
+
+            // user mint lock
+            let smgMintLockReceipt = await crossApproach.chain2.instance.smgFastBurn(
+                smgLockParamsTemp.xHash,
+                smgLockParamsTemp.smgID,
+                smgLockParamsTemp.tokenPairID,
+                value,
+                smgLockParamsTemp.origUserAccount,
+                R,
+                s,
+                {from: storemanGroups[1].account});
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original[2] -> Coin2 -> userFastMint  ==> success', async () => {
+        try {
+            // accounts[5] is the chain1 original address of the user.
+            // accounts[6] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[5];
+            userLockParamsTemp.shadowUserAccount = accounts[6];
+            userLockParamsTemp.xHash = xInfo.chain2MintCoinRedeem.hash;
+            userLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+
+            // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
+            // console.log("mintOracleValue", mintOracleValue);
+
+            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            let totalValue = new BN(value).add(new BN(crossApproach.chain2.origLockFee*2)).toString();
+
+            // user mint lock
+            let userMintLockReceipt = await crossApproach.chain2.instance.userFastMint(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                value,
+                userLockParamsTemp.shadowUserAccount,
+                {from: userLockParamsTemp.origUserAccount, value: totalValue});
+            // console.log("userMintLock receipt", userMintLockReceipt.logs);
+            // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Shadow[1] -> Coin2 -> smgFastMint  ==> success', async () => {
+        try {
+            // accounts[5] is the chain1 original address of the user.
+            // accounts[6] is the chain2 shadow address of the user.
+            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            smgLockParamsTemp.origUserAccount = accounts[5];
+            smgLockParamsTemp.shadowUserAccount = accounts[6];
+            smgLockParamsTemp.xHash = xInfo.chain2MintCoinRedeem.hash;
+            smgLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+
+            let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
+
+            let pkId = 1;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgMintLock, smgLockParamsTemp.xHash,
+                smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.shadowUserAccount);
+
+            // user mint lock
+            let smgMintLockReceipt = await crossApproach.chain1.instance.smgFastMint(
+                smgLockParamsTemp.xHash,
+                smgLockParamsTemp.smgID,
+                smgLockParamsTemp.tokenPairID,
+                value,
+                smgLockParamsTemp.shadowUserAccount,
+                R,
+                s,
+                {from: storemanGroups[1].account});
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    
+
+    it('Shadow[1] -> Coin2 -> userFastBurn  ==> success', async () => {
+        try {
+            // accounts[5] is the chain1 original address of the user.
+            // accounts[6] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[5];
+            userLockParamsTemp.shadowUserAccount = accounts[6];
+            userLockParamsTemp.xHash = xInfo.chain2BurnCoinRedeem.hash;
+            userLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+
+            // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
+            // console.log("mintOracleValue", mintOracleValue);
+
+            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("mintQuotaValue", mintQuotaValue);
+
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            // get token instance
+            let tokenInstance = await getRC20TokenInstance(coins.coin2.shadowTokenAccount);
+            let balance = await tokenInstance.balanceOf(userLockParamsTemp.shadowUserAccount);
+            assert.equal(value, balance.toString());
+
+            // approve value
+            await tokenInstance.approve(crossApproach.chain1.instance.address, 0, {from: userLockParamsTemp.shadowUserAccount});
+            await tokenInstance.approve(crossApproach.chain1.instance.address, value, {from: userLockParamsTemp.shadowUserAccount});
+            let allowance = await tokenInstance.allowance(userLockParamsTemp.shadowUserAccount, crossApproach.chain1.instance.address);
+            assert.equal(value, allowance.toString());
+
+            // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+            // user mint lock
+            let userMintLockReceipt = await crossApproach.chain1.instance.userFastBurn(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.origUserAccount,
+                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain1.shadowLockFee*2});
+            // console.log("userMintLock receipt", userMintLockReceipt.logs);
+            // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Original[2] -> Coin2 -> smgFastBurn  ==> success', async () => {
+        try {
+            // accounts[5] is the chain1 original address of the user.
+            // accounts[6] is the chain2 shadow address of the user.
+            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            smgLockParamsTemp.origUserAccount = accounts[5];
+            smgLockParamsTemp.shadowUserAccount = accounts[6];
+            smgLockParamsTemp.xHash = xInfo.chain2BurnCoinRedeem.hash;
+            smgLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+
+            let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
+
+            let pkId = 2;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve2, sk, typesArrayList.smgBurnLock, smgLockParamsTemp.xHash,
+                smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.origUserAccount);
+
+            // console.log("pk1:", storemanGroups[1].gpk1);
+            // console.log("pk2:", storemanGroups[1].gpk2);
+            // user mint lock
+            let smgMintLockReceipt = await crossApproach.chain2.instance.smgFastBurn(
+                smgLockParamsTemp.xHash,
+                smgLockParamsTemp.smgID,
+                smgLockParamsTemp.tokenPairID,
+                value,
+                smgLockParamsTemp.origUserAccount,
+                R,
+                s,
+                {from: storemanGroups[1].account});
+                // console.log("smgMintLock receipt", smgMintLockReceipt);
+                // console.log("smgMintLock receipt logs", smgMintLockReceipt.logs);
+            } catch (err) {
+            assert.fail(err);
         }
     });
 });
