@@ -83,7 +83,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         onlyOwner
     {
         require(tmAddr != address(0), "Invalid tokenManager address");
-        require(metricAddr != address(0), "Invalid metric address");
+        require(metricAddr != address(0), "Invalid htlc address");
         tokenManager = ITokenManager(tmAddr);
         metric = IMetric(metricAddr);
         greateGpkAddr = gpkAddr;
@@ -97,11 +97,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         backupCount = backup;
     }
-
     function getBackupCount() public view returns (uint) {
         return backupCount;
     }
     function inheritNode(StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal{
+
         StoremanType.StoremanGroup storage oldGroup;
         if(preGroupId != bytes32(0x00)) {
             oldGroup = data.groups[preGroupId];
@@ -128,12 +128,22 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
                 if(i < group.whiteCount) {
                     group.selectedNode[i] = wkAddrs[i];
                 }
-            }
-            group.selectedCount = group.whiteCount;
-        }
 
+        for(uint i = 0; i < wkAddrs.length; i++){
+            group.whiteMap[i] = wkAddrs[i];
+            group.whiteWk[wkAddrs[i]] = senders[i];
+            if(i < group.whiteCount) {
+                group.selectedNode[i] = wkAddrs[i];
+            }
+        }
+        group.selectedCount = group.whiteCount;
+        // TODO; 如果没有白名单, 用旧的.
+        // 如果有, 完整替换.
+        // 3个替换4个也可以.
         // TODO handle the old group member. set the group deposit.
         if(preGroupId != bytes32(0x00)) {
+            StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
+            oldAddr.length = 0;
             for(uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
                 address skAddr = oldGroup.selectedNode[m];
                 StoremanType.Candidate sk = data.candidates[skAddr];
@@ -160,10 +170,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         onlyOwner
     {
         require(wkAddrs.length == senders.length, "Invalid white list length");
-        if(preGroupId == bytes32(0x00)) {
-            require(wkAddrs.length >= backupCount, "Insufficient white list");
-        }
-        
+        require(wkAddrs.length >= backupCount, "Insufficient white list");
 
         Deposit.Records memory deposit =  Deposit.Records(0);
         Deposit.Records memory depositWeight =  Deposit.Records(0);
@@ -178,8 +185,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.totalDays = workDuration;
         group.memberCountDesign = memberCountDefault;
         group.threshold = thresholdDefault;
-        group.minStakeIn = minStakeInDefault;
-
+        group.whiteCount = wkAddrs.length - backupCount;
+        group.whiteCountAll = wkAddrs.length;
         group.registerTime = now;
         group.registerDuration = registerDuration;
         emit StoremanGroupRegisterStartEvent(groupId, workStart, workDuration, registerDuration, preGroupId);
@@ -204,7 +211,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.memberCountDesign = memberCountdesign;
         group.threshold = threshold;
-        group.minStakeIn = minStakeIn;
+        group.minStakeIn = 0; // TODO: set min stakeIn value
     }
 
     // function getStaker(bytes32 groupId, address pkAddr) public view returns (bytes PK,uint delegateFee,uint delegatorCount) {
@@ -226,7 +233,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     2) calculate the sk incentive all days.
     3) calculate the delegator all days one by one.
      */
-    function incentiveCandidator( address wkAddr) public  {
+    function toIncentiveAll( address wkAddr) public  {
         IncentiveLib.incentiveCandidator(data, wkAddr,metric);
     }
 
@@ -358,6 +365,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.gpk1 = gpk1;
         group.gpk2 = gpk2;
         group.status = StoremanType.GroupStatus.ready;
+        //storemanGroupRegister(group.chain,groupId, gpk1, group.txFeeRatio);
+        //emit storemanGroupRegisterEvent(groupId, group.chain, gpk1, gpk2);
     }
 
     function setInvalidSm(bytes32 groupId, uint[] slashType,  address[] badAddrs)
@@ -366,13 +375,13 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         onlyGpk
         returns(bool isContinue){
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        for(uint k = 0; k<group.memberCount; k++){
-            if(group.tickedCount + group.whiteCount >= group.whiteCountAll){
+        for(uint k=0; k<group.memberCount; k++){
+            if(group.tickedCount + group.whiteCount >=group.whiteCountAll){
                 return false;
             }
             for(uint i = 0; i<badAddrs.length; i++){
                 if(group.selectedNode[k] == badAddrs[i]){
-                    group.selectedNode[k] = group.whiteMap[group.tickedCount + group.whiteCount];
+                    group.selectedNode[k] = group.whiteMap[group.tickedCount+ group.whiteCount];
                     group.tickedCount += 1;
                     break;
                 }

@@ -51,38 +51,28 @@ library IncentiveLib {
             for(;idx < group.selectedCount;idx++) {
                  address addr = group.selectedNode[idx];
                  if (addr == sk.pkAddress) {
-                     
                      break;
                  }
-             }
+            }
      
             if( group.groupIncentive[day] == 0 && 
                 metric.getPrdInctMetric(group.groupId, day, day)[idx] > group.incentiveThresHold){
                 
                 group.groupIncentive[day] = getGroupIncentive(group, day,data.crossChainCo,data.chainTypeCo); // TODO: change to the correct time
                 sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day),  calSkWeight(sk.deposit.getValueById(day)));
-                sk.incentive[0] +=  sk.incentive[day - group.workDay + 1];
-                if( day == group.workDay+group.totalDays){
-                    sk.incentive[day] += group.crossIncoming/group.memberCountDesign;
-                    sk.incentive[0] += group.crossIncoming/group.memberCountDesign;
-                    // TODO 所有的sk完成incentive,  sk的当前group变成nextGroup.
-                    sk.groupId = sk.nextGroupId;
-                    sk.nextGroupId = bytes32(0x00);
-                }
+                sk.incentive[0] +=  sk.incentive[day];
                 
                 while(sk.incentivedDelegator != sk.delegatorCount) {
                     address deAddr = sk.addrMap[sk.incentivedDelegator];
                     StoremanType.Delegator storage de = sk.delegators[deAddr];           
                     de.incentive[day] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), de.deposit.getValueById(day));
-                    de.incentive[0] = de.incentive[day - group.workDay + 1];
+                    de.incentive[0] = de.incentive[day];
                     sk.incentivedDelegator++;
                 }
             }
 
             //TODO: recoed the incentived day.
             sk.incentivedDay = day;
-
-
         }
         
         
@@ -91,7 +81,7 @@ library IncentiveLib {
         
         emit incentive(group.groupId, wkAddr, true);
 
-            
+            // TODO 所有的sk完成incentive, group状态进入dismissed, sk的当前group变成nextGroup.
         
     }
 

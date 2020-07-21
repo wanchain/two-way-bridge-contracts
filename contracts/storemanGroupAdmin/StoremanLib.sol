@@ -6,6 +6,8 @@ import "./StoremanType.sol";
 library StoremanLib {
     using Deposit for Deposit.Records;
     event stakeInEvent(bytes32 indexed index,address indexed pkAddr);
+    event incentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
+    event delegateIncentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
 
     function getDaybyTime(uint time)  public pure returns(uint) {
         return time/10; // TODO; get the day. not minute.
@@ -85,6 +87,7 @@ library StoremanLib {
         }
         sk.quited = true;
     }
+
     function isWorkingNodeInGroup(StoremanType.StoremanGroup storage group, address skPkAddr) internal  view returns (bool) {
         uint count = group.memberCountDesign;
         for(uint8 i = 0; i < count; i++) {
@@ -94,6 +97,7 @@ library StoremanLib {
         }
         return false;
     }
+
     function checkCanClaim(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) internal returns (bool) {
         // 如果group还没选择, 不许提取.
         // 如果已经选择过了, 没选中, 可以提取.
@@ -124,17 +128,31 @@ library StoremanLib {
         require(checkCanClaim(sk, group), "group can't claim");
         require(checkCanClaim(sk, nextGroup), "nextGroup can't claim");
 
-        uint amount = sk.incentive[0];
-        amount += sk.deposit.getLastValue();
+        uint amount = sk.deposit.getLastValue();
         sk.deposit.clean();
-        sk.incentive[0] = 0;
         
         require(amount != 0);        
         sk.sender.transfer(amount);
         // todo 加事件
         // TODO; transfer crossIncoming/21;　／／ｚｈａｎｇ
+    }
+
+    function incentiveClaim(StoremanType.StoremanData storage data, address skPkAddr) public {
+        StoremanType.Candidate storage sk = data.candidates[skPkAddr];
+        require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
+        StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
+        StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
+
+        uint amount = sk.incentive[0];
+        sk.incentive[0] = 0;
+
+        require(amount != 0);
+        sk.sender.transfer(amount);
+
+        emit incentiveClaimEvent(sk.sender,pkAddr,amount);
 
     }
+
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight, uint last) internal{
         for(uint j = last; j>=group.whiteCount; j--) {
             if(weight > data.candidates[group.selectedNode[j]].delegateDeposit + calSkWeight(data.candidates[group.selectedNode[j]].deposit.getLastValue())){
@@ -195,6 +213,7 @@ library StoremanLib {
         updateGroup(data, sk, group, r);
         updateGroup(data, sk, nextGroup, r);
     }
+
     function delegateOut(StoremanType.StoremanData storage data, address skPkAddr) public {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
@@ -226,19 +245,30 @@ library StoremanLib {
         require(checkCanClaim(sk, group), "group can't claim");
         require(checkCanClaim(sk, nextGroup), "nextGroup can't claim");
 
-        uint amount;
-        amount = dk.incentive[0];
-        amount += dk.deposit.getLastValue();
-        dk.sender.transfer(amount);
-        dk.incentive[0] = 0;
+        uint amount = dk.deposit.getLastValue();
         dk.deposit.clean();
 
         sk.addrMap[dk.index] = sk.addrMap[sk.delegatorCount];
         delete sk.addrMap[sk.delegatorCount];
         sk.delegatorCount--;
         delete sk.delegators[msg.sender];
+
+        dk.sender.transfer(amount);
     }
 
+    function delegateIncentiveClaim(StoremanType.StoremanData storage data, address skPkAddr) public {
+        StoremanType.Candidate storage sk = data.candidates[skPkAddr];
+        require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
+        StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
+        StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
+        StoremanType.Delegator storage dk = sk.delegators[msg.sender];
 
+        uint amount = dk.incentive[0];
+        dk.incentive[0] = 0;
+
+        require(amount!=0);
+        dk.sender.transfer(amount);
+        emit delegateIncentiveClaimEvent(msg.sender,skPkAddr,amount);
+    }
 
 }
