@@ -21,7 +21,6 @@ const { assert }                = require('chai');
 const schnorrTool               = require('../utils/schnorr/tools');
 const {
     sleep,
-    stringToBytes,
     getBalance,
     getRC20TokenInstance,
     getRC20TokenBalance,
@@ -228,7 +227,7 @@ let userLockParams       = {
     // revokeFee: 0, //crossApproach.chain1.origRevokeFee + 2
 };
 
-let smgMintLockParams       = {
+let smgLockParams       = {
     xHash: '',
     smgID: storemanGroups[1].ID,
     tokenPairID: tokens.token1.tokenPairID,
@@ -883,7 +882,7 @@ contract('Test HTLC', async (accounts) => {
             await crossProxy.setHalt(true, {from: owner});
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[3];
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain1MintTokenRedeem.hash;
@@ -989,7 +988,7 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[3];
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain1MintTokenRevoke.hash;
@@ -1061,7 +1060,14 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[2] -> Token1 -> smgMintRevoke  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain2.instance.smgMintRevoke(xInfo.chain1MintTokenRevoke.hash, {from: storemanGroups[1].account});
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
+            let value = web3.utils.toWei(userLockParams.value.toString());
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1090,11 +1096,17 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[1] -> Token1 -> userMintRevoke  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+
             let origUserAccount = accounts[3];
             let value = web3.utils.toWei(userLockParams.value.toString());
             await crossApproach.chain1.instance.userMintRevoke(xInfo.chain1MintTokenRevoke.hash, {from: origUserAccount, value: crossApproach.chain1.origRevokeFee});
             await tokens.token1.tokenCreator.burnToken(tokens.token1.name, tokens.token1.symbol,
                 origUserAccount, value);
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1121,8 +1133,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before MintQuotaValue", beforeMintQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             await tokens.token1.tokenCreator.mintToken(tokens.token1.name, tokens.token1.symbol,
@@ -1151,6 +1163,10 @@ contract('Test HTLC', async (accounts) => {
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1169,10 +1185,12 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[3];
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain1MintTokenRedeem.hash;
+
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -1192,6 +1210,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1216,6 +1238,8 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[2] -> Token1 -> userMintRedeem  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+
             let shadowUserAccount = accounts[4];
             await crossApproach.chain2.instance.userMintRedeem(xInfo.chain1MintTokenRedeem.x, {from: shadowUserAccount});
 
@@ -1223,6 +1247,10 @@ contract('Test HTLC', async (accounts) => {
             let tokenInstance = await getRC20TokenInstance(tokens.token1.shadowTokenAccount);
             let balance = await tokenInstance.balanceOf(shadowUserAccount);
             assert.equal(value, balance.toString());
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1239,7 +1267,13 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[1] -> Token1 -> smgMintRedeem  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain1.instance.smgMintRedeem(xInfo.chain1MintTokenRedeem.x, {from: storemanGroups[1].account});
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1274,7 +1308,7 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
             // console.log("mintQuotaValue", mintQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
@@ -1296,12 +1330,16 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                value,
                 userLockParamsTemp.origUserAccount,
                 {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
             // console.log("userBurnLock receipt", userLockReceipt.logs);
             // console.log("after shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1311,10 +1349,12 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[3];
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain1BurnTokenRevoke.hash;
+
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -1334,6 +1374,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1376,7 +1420,14 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[1] -> Token1 -> smgBurnRevoke  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain1.instance.smgBurnRevoke(xInfo.chain1BurnTokenRevoke.hash, {from: storemanGroups[1].account});
+
+            let value = web3.utils.toWei(userLockParams.value.toString());
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterBurnQuotaValue).sub(beforeBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1405,8 +1456,15 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[2] -> Token1 -> userBurnRevoke  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+
             let shadowUserAccount = accounts[4];;
             await crossApproach.chain2.instance.userBurnRevoke(xInfo.chain1BurnTokenRevoke.hash, {from: shadowUserAccount, value: crossApproach.chain2.shadowRevokeFee});
+
+            let value = web3.utils.toWei(userLockParams.value.toString());
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterBurnQuotaValue).sub(beforeBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1518,7 +1576,7 @@ contract('Test HTLC', async (accounts) => {
             await crossProxy.setHalt(true, {from: owner});
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[3];
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain1BurnTokenRedeem.hash;
@@ -1572,8 +1630,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before BurnQuotaValue", beforeBurnQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             // get token instance
@@ -1594,12 +1652,16 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                value,
                 userLockParamsTemp.origUserAccount,
                 {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1618,10 +1680,12 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[3];
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain1BurnTokenRedeem.hash;
+
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -1641,6 +1705,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1665,6 +1733,8 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[1] -> Token1 -> userBurnRedeem  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+
             let origUserAccount = accounts[3];
             await crossApproach.chain1.instance.userBurnRedeem(xInfo.chain1BurnTokenRedeem.x, {from: origUserAccount});
 
@@ -1672,6 +1742,10 @@ contract('Test HTLC', async (accounts) => {
             let tokenInstance = await getRC20TokenInstance(tokens.token1.origTokenAccount);
             let balance = await tokenInstance.balanceOf(origUserAccount);
             assert.equal(value, balance.toString());
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1688,7 +1762,13 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[2] -> Token1 -> smgBurnRedeem  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain2.instance.smgBurnRedeem(xInfo.chain1BurnTokenRedeem.x, {from: storemanGroups[1].account});
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1724,8 +1804,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before MintQuotaValue", beforeMintQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             await tokens.token2.tokenCreator.mintToken(tokens.token2.name, tokens.token2.symbol,
@@ -1765,6 +1845,10 @@ contract('Test HTLC', async (accounts) => {
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1774,11 +1858,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[3];
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain2MintTokenRevoke.hash;
             smgLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
+
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -1798,6 +1884,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1828,7 +1918,14 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[1] -> Token2 -> smgMintRevoke  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain1.instance.smgMintRevoke(xInfo.chain2MintTokenRevoke.hash, {from: storemanGroups[1].account});
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
+            let value = web3.utils.toWei(smgLockParams.value.toString());
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1836,12 +1933,18 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[2] -> Token2 -> userMintRevoke  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+
             let origUserAccount = accounts[3];
             let value = web3.utils.toWei(userLockParams.value.toString());
             await crossApproach.chain2.instance.userMintRevoke(xInfo.chain2MintTokenRevoke.hash, {from: origUserAccount, value: crossApproach.chain2.origRevokeFee});
             await tokens.token2.tokenCreator.burnToken(tokens.token2.name, tokens.token2.symbol,
                 origUserAccount, value);
-        } catch (err) {
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
+            assert.equal(value === difference, true);
+            } catch (err) {
             assert.fail(err);
         }
     });
@@ -1859,8 +1962,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before MintQuotaValue", beforeMintQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             await tokens.token2.tokenCreator.mintToken(tokens.token2.name, tokens.token2.symbol,
@@ -1889,6 +1992,10 @@ contract('Test HTLC', async (accounts) => {
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1898,11 +2005,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[3];
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain2MintTokenRedeem.hash;
             smgLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
+
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -1922,6 +2031,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1929,6 +2042,8 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[1] -> Token2 -> userMintRedeem  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+
             let shadowUserAccount = accounts[4];
             await crossApproach.chain1.instance.userMintRedeem(xInfo.chain2MintTokenRedeem.x, {from: shadowUserAccount});
 
@@ -1936,6 +2051,10 @@ contract('Test HTLC', async (accounts) => {
             let tokenInstance = await getRC20TokenInstance(tokens.token2.shadowTokenAccount);
             let balance = await tokenInstance.balanceOf(shadowUserAccount);
             assert.equal(value, balance.toString());
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1943,7 +2062,13 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[2] -> Token2 -> smgMintRedeem  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain2.instance.smgMintRedeem(xInfo.chain2MintTokenRedeem.x, {from: storemanGroups[1].account});
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1963,8 +2088,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before BurnQuotaValue", beforeBurnQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             // get token instance
@@ -1985,12 +2110,16 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                value,
                 userLockParamsTemp.origUserAccount,
                 {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain1.shadowLockFee});
             // console.log("userBurnLock receipt", userLockReceipt.logs);
             // console.log("after shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2000,11 +2129,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[3];
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain2BurnTokenRevoke.hash;
             smgLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
+
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -2024,6 +2155,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2054,7 +2189,14 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[2] -> Token2 -> smgBurnRevoke  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain2.instance.smgBurnRevoke(xInfo.chain2BurnTokenRevoke.hash, {from: storemanGroups[1].account});
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterBurnQuotaValue).sub(beforeBurnQuotaValue).toString();
+            let value = web3.utils.toWei(smgLockParams.value.toString());
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2062,8 +2204,15 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[1] -> Token2 -> userBurnRevoke  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+
             let shadowUserAccount = accounts[4];;
             await crossApproach.chain1.instance.userBurnRevoke(xInfo.chain2BurnTokenRevoke.hash, {from: shadowUserAccount, value: crossApproach.chain1.shadowRevokeFee});
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterBurnQuotaValue).sub(beforeBurnQuotaValue).toString();
+            let value = web3.utils.toWei(userLockParams.value.toString());
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2082,8 +2231,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before BurnQuotaValue", beforeBurnQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             // get token instance
@@ -2104,12 +2253,16 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                value,
                 userLockParamsTemp.origUserAccount,
                 {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain1.shadowLockFee});
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2119,11 +2272,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[3];
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain2BurnTokenRedeem.hash;
             smgLockParamsTemp.tokenPairID = tokens.token2.tokenPairID;
+
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -2143,6 +2298,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2150,6 +2309,8 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[2] -> Token2 -> userBurnRedeem  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+
             let origUserAccount = accounts[3];
             await crossApproach.chain2.instance.userBurnRedeem(xInfo.chain2BurnTokenRedeem.x, {from: origUserAccount});
 
@@ -2157,6 +2318,10 @@ contract('Test HTLC', async (accounts) => {
             let tokenInstance = await getRC20TokenInstance(tokens.token2.origTokenAccount);
             let balance = await tokenInstance.balanceOf(origUserAccount);
             assert.equal(value, balance.toString());
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2164,7 +2329,13 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[1] -> Token2 -> smgBurnRedeem  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain1.instance.smgBurnRedeem(xInfo.chain2BurnTokenRedeem.x, {from: storemanGroups[1].account});
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(tokens.token2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2184,7 +2355,7 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
             // console.log("mintQuotaValue", mintQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
@@ -2213,6 +2384,10 @@ contract('Test HTLC', async (accounts) => {
             //     }
             // });
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2222,11 +2397,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[5] is the chain1 original address of the user.
             // accounts[6] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[5];
             smgLockParamsTemp.shadowUserAccount = accounts[6];
             smgLockParamsTemp.xHash = xInfo.chain1MintCoinRevoke.hash;
             smgLockParamsTemp.tokenPairID = coins.coin1.tokenPairID;
+
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -2246,6 +2423,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2276,7 +2457,14 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[2] -> Coin1 -> smgMintRevoke  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain2.instance.smgMintRevoke(xInfo.chain1MintCoinRevoke.hash, {from: storemanGroups[1].account});
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
+            let value = web3.utils.toWei(userLockParams.value.toString());
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2284,12 +2472,18 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[1] -> Coin1 -> userMintRevoke  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+
             let origUserAccount = accounts[5];
             let value = web3.utils.toWei(userLockParams.value.toString());
             let balance1 = await getBalance(origUserAccount);
             await crossApproach.chain1.instance.userMintRevoke(xInfo.chain1MintCoinRevoke.hash, {from: origUserAccount, value: crossApproach.chain2.origRevokeFee});
             let balance2 = await getBalance(origUserAccount);
             assert.equal(value >= balance2 - balance1, true);
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2308,8 +2502,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before MintQuotaValue", beforeMintQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             let totalValue = new BN(value).add(new BN(crossApproach.chain1.origLockFee)).toString();
@@ -2325,6 +2519,10 @@ contract('Test HTLC', async (accounts) => {
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2334,11 +2532,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[5] is the chain1 original address of the user.
             // accounts[6] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[5];
             smgLockParamsTemp.shadowUserAccount = accounts[6];
             smgLockParamsTemp.xHash = xInfo.chain1MintCoinRedeem.hash;
             smgLockParamsTemp.tokenPairID = coins.coin1.tokenPairID;
+
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -2358,6 +2558,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2365,6 +2569,8 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[2] -> Coin1 -> userMintRedeem  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+
             let shadowUserAccount = accounts[6];
             await crossApproach.chain2.instance.userMintRedeem(xInfo.chain1MintCoinRedeem.x, {from: shadowUserAccount});
 
@@ -2372,6 +2578,10 @@ contract('Test HTLC', async (accounts) => {
             let tokenInstance = await getRC20TokenInstance(coins.coin1.shadowTokenAccount);
             let balance = await tokenInstance.balanceOf(shadowUserAccount);
             assert.equal(value, balance.toString());
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2379,7 +2589,13 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[1] -> Coin1 -> smgMintRedeem  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain1.instance.smgMintRedeem(xInfo.chain1MintCoinRedeem.x, {from: storemanGroups[1].account});
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2399,8 +2615,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before BurnQuotaValue", beforeBurnQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             // get token instance
@@ -2421,12 +2637,16 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                value,
                 userLockParamsTemp.origUserAccount,
                 {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
             // console.log("userBurnLock receipt", userLockReceipt.logs);
             // console.log("after shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2436,11 +2656,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[5] is the chain1 original address of the user.
             // accounts[6] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[5];
             smgLockParamsTemp.shadowUserAccount = accounts[6];
             smgLockParamsTemp.xHash = xInfo.chain1BurnCoinRevoke.hash;
             smgLockParamsTemp.tokenPairID = coins.coin1.tokenPairID;
+
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -2460,6 +2682,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2490,7 +2716,14 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[1] -> Coin1 -> smgBurnRevoke  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain1.instance.smgBurnRevoke(xInfo.chain1BurnCoinRevoke.hash, {from: storemanGroups[1].account});
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterBurnQuotaValue).sub(beforeBurnQuotaValue).toString();
+            let value = web3.utils.toWei(smgLockParams.value.toString());
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2498,8 +2731,15 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[2] -> Coin1 -> userBurnRevoke  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+
             let shadowUserAccount = accounts[6];;
             await crossApproach.chain2.instance.userBurnRevoke(xInfo.chain1BurnCoinRevoke.hash, {from: shadowUserAccount, value: crossApproach.chain2.shadowRevokeFee});
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterBurnQuotaValue).sub(beforeBurnQuotaValue).toString();
+            let value = web3.utils.toWei(userLockParams.value.toString());
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2518,8 +2758,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before BurnQuotaValue", beforeBurnQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             // get token instance
@@ -2540,12 +2780,16 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                value,
                 userLockParamsTemp.origUserAccount,
                 {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2555,11 +2799,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[5] is the chain1 original address of the user.
             // accounts[6] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[5];
             smgLockParamsTemp.shadowUserAccount = accounts[6];
             smgLockParamsTemp.xHash = xInfo.chain1BurnCoinRedeem.hash;
             smgLockParamsTemp.tokenPairID = coins.coin1.tokenPairID;
+
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -2579,6 +2825,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2586,9 +2836,15 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[1] -> Coin1 -> userBurnRedeem  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+
             let origUserAccount = accounts[5];
             await crossApproach.chain1.instance.userBurnRedeem(xInfo.chain1BurnCoinRedeem.x, {from: origUserAccount});
             // let balance2 = await getBalance(origUserAccount);
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2596,7 +2852,13 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[2] -> Coin1 -> smgBurnRedeem  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain2.instance.smgBurnRedeem(xInfo.chain1BurnCoinRedeem.x, {from: storemanGroups[1].account});
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(coins.coin1.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2616,8 +2878,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before MintQuotaValue", beforeMintQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             // console.log("lock", value);
@@ -2645,6 +2907,10 @@ contract('Test HTLC', async (accounts) => {
             //     }
             // });
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2654,11 +2920,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[5] is the chain1 original address of the user.
             // accounts[6] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[5];
             smgLockParamsTemp.shadowUserAccount = accounts[6];
             smgLockParamsTemp.xHash = xInfo.chain2MintCoinRevoke.hash;
             smgLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -2678,6 +2946,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2708,7 +2980,14 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[1] -> Coin2 -> smgMintRevoke  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain1.instance.smgMintRevoke(xInfo.chain2MintCoinRevoke.hash, {from: storemanGroups[1].account});
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
+            let value = web3.utils.toWei(smgLockParams.value.toString());
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2716,12 +2995,18 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[2] -> Coin2 -> userMintRevoke  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+
             let origUserAccount = accounts[5];
             let value = web3.utils.toWei(userLockParams.value.toString());
             let balance1 = await getBalance(origUserAccount);
             await crossApproach.chain2.instance.userMintRevoke(xInfo.chain2MintCoinRevoke.hash, {from: origUserAccount, value: crossApproach.chain2.origRevokeFee});
             let balance2 = await getBalance(origUserAccount);
             assert.equal(value >= balance2 - balance1, true);
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2740,8 +3025,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before MintQuotaValue", beforeMintQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             let totalValue = new BN(value).add(new BN(crossApproach.chain2.origLockFee)).toString();
@@ -2757,6 +3042,10 @@ contract('Test HTLC', async (accounts) => {
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2766,11 +3055,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[5] is the chain1 original address of the user.
             // accounts[6] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[5];
             smgLockParamsTemp.shadowUserAccount = accounts[6];
             smgLockParamsTemp.xHash = xInfo.chain2MintCoinRedeem.hash;
             smgLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -2790,6 +3081,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2797,6 +3092,8 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[1] -> Coin2 -> userMintRedeem  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+
             let shadowUserAccount = accounts[6];
             await crossApproach.chain1.instance.userMintRedeem(xInfo.chain2MintCoinRedeem.x, {from: shadowUserAccount});
 
@@ -2804,6 +3101,10 @@ contract('Test HTLC', async (accounts) => {
             let tokenInstance = await getRC20TokenInstance(coins.coin2.shadowTokenAccount);
             let balance = await tokenInstance.balanceOf(shadowUserAccount);
             assert.equal(value, balance.toString());
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2811,7 +3112,13 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[2] -> Coin2 -> smgMintRedeem  ==> success', async () => {
         try {
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain2.instance.smgMintRedeem(xInfo.chain2MintCoinRedeem.x, {from: storemanGroups[1].account});
+
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2831,8 +3138,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before BurnQuotaValue", beforeBurnQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             // get token instance
@@ -2853,12 +3160,16 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                value,
                 userLockParamsTemp.origUserAccount,
                 {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain1.shadowLockFee});
             // console.log("userBurnLock receipt", userLockReceipt.logs);
             // console.log("after shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2868,11 +3179,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[5] is the chain1 original address of the user.
             // accounts[6] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[5];
             smgLockParamsTemp.shadowUserAccount = accounts[6];
             smgLockParamsTemp.xHash = xInfo.chain2BurnCoinRevoke.hash;
             smgLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -2892,6 +3205,10 @@ contract('Test HTLC', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2922,7 +3239,14 @@ contract('Test HTLC', async (accounts) => {
 
     it('Original[2] -> Coin2 -> smgBurnRevoke  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain2.instance.smgBurnRevoke(xInfo.chain2BurnCoinRevoke.hash, {from: storemanGroups[1].account});
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            let value = web3.utils.toWei(smgLockParams.value.toString());
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2930,8 +3254,15 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[1] -> Coin2 -> userBurnRevoke  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+
             let shadowUserAccount = accounts[6];;
             await crossApproach.chain1.instance.userBurnRevoke(xInfo.chain2BurnCoinRevoke.hash, {from: shadowUserAccount, value: crossApproach.chain1.shadowRevokeFee});
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            let value = web3.utils.toWei(userLockParams.value.toString());
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2950,8 +3281,8 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-            // console.log("mintQuotaValue", mintQuotaValue);
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("before BurnQuotaValue", beforeBurnQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
             // get token instance
@@ -2972,12 +3303,16 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
-                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                value,
                 userLockParamsTemp.origUserAccount,
                 {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain1.shadowLockFee});
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -2987,11 +3322,13 @@ contract('Test HTLC', async (accounts) => {
         try {
             // accounts[5] is the chain1 original address of the user.
             // accounts[6] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgMintLockParams);
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
             smgLockParamsTemp.origUserAccount = accounts[5];
             smgLockParamsTemp.shadowUserAccount = accounts[6];
             smgLockParamsTemp.xHash = xInfo.chain2BurnCoinRedeem.hash;
             smgLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
@@ -3014,16 +3351,26 @@ contract('Test HTLC', async (accounts) => {
                 {from: storemanGroups[1].account});
                 // console.log("smgMintLock receipt", smgMintLockReceipt);
                 // console.log("smgMintLock receipt logs", smgMintLockReceipt.logs);
-            } catch (err) {
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(value === difference, true);
+        } catch (err) {
             assert.fail(err);
         }
     });
 
     it('Original[2] -> Coin2 -> userBurnRedeem  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+
             let origUserAccount = accounts[5];
             await crossApproach.chain2.instance.userBurnRedeem(xInfo.chain2BurnCoinRedeem.x, {from: origUserAccount});
             // let balance2 = await getBalance(origUserAccount);
+
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -3031,7 +3378,13 @@ contract('Test HTLC', async (accounts) => {
 
     it('Shadow[1] -> Coin2 -> smgBurnRedeem  ==> success', async () => {
         try {
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+
             await crossApproach.chain1.instance.smgBurnRedeem(xInfo.chain2BurnCoinRedeem.x, {from: storemanGroups[1].account});
+
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
         } catch (err) {
             assert.fail(err);
         }
