@@ -137,7 +137,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         // 3个替换4个也可以.
         // TODO handle the old group member. set the group deposit.
         if(preGroupId != bytes32(0x00)) {
-            StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
+            oldGroup = data.groups[preGroupId];
             oldAddr.length = 0;
             for(uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
                 address skAddr = oldGroup.selectedNode[m];

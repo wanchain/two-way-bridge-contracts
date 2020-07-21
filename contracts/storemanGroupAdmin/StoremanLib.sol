@@ -149,7 +149,7 @@ library StoremanLib {
         require(amount != 0);
         sk.sender.transfer(amount);
 
-        emit incentiveClaimEvent(sk.sender,pkAddr,amount);
+        emit incentiveClaimEvent(sk.sender,skPkAddr,amount);
 
     }
 
