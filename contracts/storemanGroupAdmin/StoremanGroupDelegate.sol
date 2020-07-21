@@ -101,6 +101,34 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return backupCount;
     }
     function inheritNode(StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal{
+
+        StoremanType.StoremanGroup storage oldGroup;
+        if(preGroupId != bytes32(0x00)) {
+            oldGroup = data.groups[preGroupId];
+            oldAddr.length = 0;
+       }
+        if(wkAddrs.length == 0){ // If there are no new white nodes, use the old.
+            group.whiteCount = oldGroup.whiteCount;
+            group.whiteCountAll = oldGroup.whiteCountAll;
+            for(uint k = 0; k<oldGroup.whiteCountAll; k++){
+                group.whiteMap[k] = oldGroup.whiteMap[k];
+                group.whiteWk[group.whiteMap[k]] = oldGroup.whiteWk[oldGroup.whiteMap[k]];
+                if(k < group.whiteCount){
+                    group.selectedNode[k] = group.whiteMap[k];
+                }
+                oldAddr.push(group.whiteMap[k]);
+            }
+            group.selectedCount = oldGroup.selectedCount;
+        } else {   // If there are new white nodes, use the new.
+            group.whiteCount = wkAddrs.length - backupCount;
+            group.whiteCountAll = wkAddrs.length;
+            for(uint i = 0; i < wkAddrs.length; i++){
+                group.whiteMap[i] = wkAddrs[i];
+                group.whiteWk[wkAddrs[i]] = senders[i];
+                if(i < group.whiteCount) {
+                    group.selectedNode[i] = wkAddrs[i];
+                }
+
         for(uint i = 0; i < wkAddrs.length; i++){
             group.whiteMap[i] = wkAddrs[i];
             group.whiteWk[wkAddrs[i]] = senders[i];
