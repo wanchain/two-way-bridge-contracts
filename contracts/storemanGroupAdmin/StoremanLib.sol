@@ -5,7 +5,7 @@ import "./StoremanType.sol";
 
 library StoremanLib {
     using Deposit for Deposit.Records;
-    event stakeInEvent(bytes32 indexed index,address indexed pkAddr);
+    event stakeInEvent(bytes32 indexed index,address indexed pkAddr, uint indexed value);
     event incentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
     event delegateIncentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
 
@@ -55,7 +55,7 @@ library StoremanLib {
             realInsert(data,group, pkAddr, calSkWeight(msg.value), group.memberCountDesign-1);
         }
 
-        emit stakeInEvent(group.groupId, pkAddr);
+        emit stakeInEvent(group.groupId, pkAddr, msg.value);
     }
 
     function stakeAppend(StoremanType.StoremanData storage data,  address skPkAddr) internal  {
