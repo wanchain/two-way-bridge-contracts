@@ -137,7 +137,7 @@ library RapidityLib {
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    Rapidity value
     /// @param userAccount              account of original chain, used to receive token
-    event SmgBurnLockLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address userAccount);
+    event SmgFastBurnLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address userAccount);
 
     /**
     *
@@ -272,7 +272,7 @@ library RapidityLib {
             require(IRC20Protocol(tokenScAddr).transfer(params.userOrigAccount, params.value), "Transfer token failed");
         }
 
-        emit SmgBurnLockLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.userOrigAccount);
+        emit SmgFastBurnLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.userOrigAccount);
     }
 
 }
