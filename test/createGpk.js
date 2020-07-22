@@ -40,11 +40,13 @@ const ksPath = path.join(__dirname, './keystore/');
 let smgSc, gpkProxy, gpkDelegate, gpkSc, encryptSc;
 let selectedSmList = []; // {txAddress, pk, sk}
 
-contract('CreateGpk_UNITs', async ([owner, someone]) => {
-  before("should do all preparations", async() => {
-    console.log("onwer address: %s", owner);
-    console.log("someone address: %s", someone);
+contract('CreateGpk_UNITs', async ([a1, a2]) => {
+  let owner = '0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e';
+  let someone = (a1 == owner)? a2 : a1;
+  console.log("onwer address: %s", owner);
+  console.log("someone address: %s", someone);
 
+  before("should do all preparations", async() => {
     // unlock account
     await web3.eth.personal.unlockAccount(owner, 'wanglu', 99999);
     await web3.eth.personal.unlockAccount(someone, 'wanglu', 99999);
@@ -229,9 +231,9 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
       srs.push(sr);
       console.log("white list %i: %s, %s", i, wk, sr);
     }
-    await smgSc.registerStart(groupId, start, workDuration, registerDuration, preGroupId, wks, srs);
+    await smgSc.storemanGroupRegisterStart(groupId, start, workDuration, registerDuration, preGroupId, wks, srs);
     console.log("register group: %O", await smgSc.getStoremanGroupInfo(groupId));
-    await smgSc.setGroupChain(groupId, 0, 1, 0, 1);
+    await smgSc.updateGroupChain(groupId, 0, 1, 0, 1);
     console.log("set group curve: [%d, %d]", 0, 1);
   }
   
@@ -258,7 +260,7 @@ contract('CreateGpk_UNITs', async ([owner, someone]) => {
   async function select() {
     let leader = utils.getAddressFromInt(2000);
     // console.log("select leader: %O", leader);
-    let data = smgSc.contract.methods.toSelect(groupId).encodeABI();
+    let data = smgSc.contract.methods.select(groupId).encodeABI();
     await sendTx(smgSc.address, leader.addr, leader.priv, 0, 0, data);
     let count = await smgSc.getSelectedSmNumber(groupId);
     console.log("slected sm number: %d", count);
