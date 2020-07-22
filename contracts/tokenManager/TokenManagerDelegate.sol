@@ -49,6 +49,11 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         _;
     }
 
+    modifier onlyExistID(uint id) {
+        require(mapTokenPairInfo[id].fromChainID > 0, "token not exist");
+        _;
+    }
+
     modifier onlyAdmin() {
         require(mapAdmin[msg.sender], "not admin");
         _;
@@ -97,6 +102,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         // check ancestor
         require(bytes(aInfo.ancestorName).length != 0, "ancestorName is null");
         require(bytes(aInfo.ancestorSymbol).length != 0, "ancestorSymbol is null");
+        require(!mapTokenPairInfo[id].isValid, "token pair id in use");
 
         // create a new record
         mapTokenPairInfo[id] = TokenPairInfo(fromChainID, fromAccount, toChainID, tokenAddress, true);
@@ -110,48 +116,37 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         emit AddTokenPair(id, fromChainID, fromAccount, toChainID, tokenAddress);
     }
 
-    function updateAncestorInfo(
-        uint    id,
-
-        bytes   ancestorAccount,
-        string   ancestorName,
-        string   ancestorSymbol,
-        uint    ancestorChainID
-    )
-        external
-        onlyOwner
-        onlyValidID(id)
-    {
-        require(bytes(ancestorName).length != 0, "ancestorName is null");
-        require(bytes(ancestorSymbol).length != 0, "ancestorSymbol is null");
-
-        mapAncestorInfo[id].ancestorAccount = ancestorAccount;
-        mapAncestorInfo[id].ancestorName = ancestorName;
-        mapAncestorInfo[id].ancestorSymbol = ancestorSymbol;
-        mapAncestorInfo[id].ancestorChainID = ancestorChainID;
-
-        emit UpdateAncestorInfo(id, ancestorAccount, ancestorName, ancestorSymbol, ancestorChainID);
-    }
-
     function updateTokenPair(
         uint    id,
 
+        AncestorInfo aInfo,
+
         uint    fromChainID,
         bytes   fromAccount,
-
-        uint     toChainID,
-        address  tokenAddress
+        uint    toChainID,
+        address tokenAddress,
+        bool    isValid
     )
-        external
+        public
         onlyOwner
-        onlyValidID(id)
+        onlyExistID(id)
     {
+        require(bytes(aInfo.ancestorName).length != 0, "ancestorName is null");
+        require(bytes(aInfo.ancestorSymbol).length != 0, "ancestorSymbol is null");
+
+        mapAncestorInfo[id].ancestorAccount = aInfo.ancestorAccount;
+        mapAncestorInfo[id].ancestorName = aInfo.ancestorName;
+        mapAncestorInfo[id].ancestorSymbol = aInfo.ancestorSymbol;
+        mapAncestorInfo[id].ancestorDecimals = aInfo.ancestorDecimals;
+        mapAncestorInfo[id].ancestorChainID = aInfo.ancestorChainID;
+
         mapTokenPairInfo[id].fromChainID = fromChainID;
         mapTokenPairInfo[id].fromAccount = fromAccount;
         mapTokenPairInfo[id].toChainID = toChainID;
         mapTokenPairInfo[id].tokenAddress = tokenAddress;
-
-        emit UpdateTokenPair(id, fromChainID, fromAccount, toChainID, tokenAddress);
+        mapTokenPairInfo[id].isValid = isValid;
+        emit UpdateTokenPair(id, aInfo.ancestorAccount, aInfo.ancestorName, aInfo.ancestorSymbol, aInfo.ancestorDecimals, aInfo.ancestorChainID,
+            fromChainID, fromAccount, toChainID, tokenAddress, isValid);
     }
 
     function removeTokenPair(

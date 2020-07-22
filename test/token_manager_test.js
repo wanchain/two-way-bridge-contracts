@@ -33,6 +33,7 @@ contract('TokenManagerDelegate', (accounts) => {
   const admin = admin_bk.toLowerCase() === owner.toLowerCase() ? owner_bk : admin_bk;
 
   const aAccount = web3.utils.hexToBytes("0x6b175474e89094c44da98b954eedeac495271d0f");
+  const aNewAccount = web3.utils.hexToBytes("0x0b175474e89094c44da98b954eedeac495271d0f");
   const aName = "eth dai";
   const aSymbol = "DAI";
   const aDecimals = 18;
@@ -41,7 +42,7 @@ contract('TokenManagerDelegate', (accounts) => {
   const fromChainID = 60;
   const toChainID = 5718350;
   const decimals = 18;
-  const fromAccount = web3.utils.hexToBytes('0x6b175474e89094c44da98b954eedeac495271d0f');
+  const fromAccount = web3.utils.hexToBytes('0x7b175474e89094c44da98b954eedeac495271d0f');
 
   const nameDAI = 'ETH DAI';
   const symbolDAI = 'DAI';
@@ -92,6 +93,8 @@ contract('TokenManagerDelegate', (accounts) => {
       param[4] = 5718351;
       param[5] = receipt.logs[0].args.tokenAddress;
       await tokenManagerDelegate.addTokenPair(...param, {from: owner});
+      let obj2 = await sendAndGetReason(tokenManagerDelegate.addTokenPair, param, {from: owner});
+      assert.equal(obj2.reason, "token pair id in use");
 
       receipt = await tokenManagerDelegate.addToken(nameBTC, symbolBTC, decimals, {from: owner});
       param = JSON.parse(JSON.stringify(addTokenPairParam));
@@ -153,18 +156,18 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(ancestorInfo.decimals.toNumber(), aDecimals);
       assert.equal(ancestorInfo.chainId.toNumber(), aChainID);
 
-      receipt = await tokenManagerDelegate.updateAncestorInfo(tokenPairID, aAccount, "new name", aSymbol, aChainID);
-      // check UpdateAncestorInfo event log
-      const updateAncestorInfoEvent = receipt.logs[0].args;
-      assert.equal(tokenPairID, updateAncestorInfoEvent.id.toNumber());
-      // assert.equal(web3.utils.padRight(web3.utils.bytesToHex(aAccount), 64), updateAncestorInfoEvent.ancestorAccount);
-      assert.equal(web3.utils.bytesToHex(aAccount), updateAncestorInfoEvent.ancestorAccount);
-      assert.equal("new name", updateAncestorInfoEvent.ancestorName);
-      assert.equal(aSymbol, updateAncestorInfoEvent.ancestorSymbol);
-      assert.equal(aChainID, updateAncestorInfoEvent.ancestorChainID.toNumber());
+      // receipt = await tokenManagerDelegate.updateAncestorInfo(tokenPairID, aAccount, "new name", aSymbol, aChainID);
+      // // check UpdateAncestorInfo event log
+      // const updateAncestorInfoEvent = receipt.logs[0].args;
+      // assert.equal(tokenPairID, updateAncestorInfoEvent.id.toNumber());
+      // // assert.equal(web3.utils.padRight(web3.utils.bytesToHex(aAccount), 64), updateAncestorInfoEvent.ancestorAccount);
+      // assert.equal(web3.utils.bytesToHex(aAccount), updateAncestorInfoEvent.ancestorAccount);
+      // assert.equal("new name", updateAncestorInfoEvent.ancestorName);
+      // assert.equal(aSymbol, updateAncestorInfoEvent.ancestorSymbol);
+      // assert.equal(aChainID, updateAncestorInfoEvent.ancestorChainID.toNumber());
 
-      const ancestorInfo2 = await tokenManagerDelegate.getAncestorInfo(tokenPairID);
-      assert.equal(ancestorInfo2.name, "new name");
+      // const ancestorInfo2 = await tokenManagerDelegate.getAncestorInfo(tokenPairID);
+      // assert.equal(ancestorInfo2.name, "new name");
 
       const tokenPairs = await tokenManagerDelegate.getTokenPairs();
       assert.equal(tokenPairs.id[0].toNumber(), 11);
@@ -185,15 +188,21 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(tokenPairs3.id[0].toNumber(), 12);
       assert.equal(tokenPairs3.id.length, 1);
 
-      receipt = await tokenManagerDelegate.updateTokenPair(13, toChainID + 1, fromAccount, fromChainID + 1, token.address);
+      receipt = await tokenManagerDelegate.updateTokenPair(13, [aNewAccount, "new name", "new symbol", 8, aChainID + 100],
+        toChainID + 1, fromAccount, fromChainID + 1, token.address, true);
       // check UpdateTokenPair event log
       const updateTokenPairEvent = receipt.logs[0].args;
       assert.equal(updateTokenPairEvent.id.toNumber(), 13);
+      assert.equal(updateTokenPairEvent.ancestorAccount, web3.utils.bytesToHex(aNewAccount));
+      assert.equal(updateTokenPairEvent.ancestorName, "new name");
+      assert.equal(updateTokenPairEvent.ancestorSymbol, "new symbol");
+      assert.equal(updateTokenPairEvent.ancestorDecimals.toNumber(), 8);
+      assert.equal(updateTokenPairEvent.ancestorChainID.toNumber(), aChainID + 100);
       assert.equal(updateTokenPairEvent.fromChainID.toNumber(), toChainID + 1);
-      // assert.equal(updateTokenPairEvent.fromAccount, web3.utils.padRight(web3.utils.bytesToHex(fromAccount), 64));
       assert.equal(updateTokenPairEvent.fromAccount, web3.utils.bytesToHex(fromAccount));
       assert.equal(updateTokenPairEvent.toChainID.toNumber(), fromChainID + 1);
-      assert.equal(addTokenPairEvent.tokenAddress.toLowerCase(), token.address.toLowerCase());
+      assert.equal(updateTokenPairEvent.tokenAddress.toLowerCase(), token.address.toLowerCase());
+      assert.equal(updateTokenPairEvent.isValid, true);
 
       const tokenPairs4 = await tokenManagerDelegate.getTokenPairsByChainID(fromChainID + 1, toChainID + 1);
       assert.equal(tokenPairs4.id[0].toNumber(), 12);
