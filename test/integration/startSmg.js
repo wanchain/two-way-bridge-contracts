@@ -11,7 +11,7 @@ const Tx = wanUtil.wanchainTx;
 const web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'));
 
 // group
-const groupId = utils.stringTobytes32(parseInt(Date.now()/1000/90).toString());
+const groupId = utils.stringTobytes32(parseInt(Date.now()/1000/120).toString());
 const stakerCount = 7;
 const ksPath = path.join(__dirname, '../keystore/');
 
