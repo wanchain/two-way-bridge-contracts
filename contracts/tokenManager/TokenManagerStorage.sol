@@ -66,8 +66,9 @@ contract TokenManagerStorage is BasicStorage {
 
      event AddToken(address tokenAddress, string name, string symbol, uint8 decimals);
      event AddTokenPair(uint id, uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress);
-     event UpdateAncestorInfo(uint id, bytes ancestorAccount, string ancestorName, string ancestorSymbol, uint ancestorChainID);
-     event UpdateTokenPair(uint id, uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress);
+    //  event UpdateAncestorInfo(uint id, bytes ancestorAccount, string ancestorName, string ancestorSymbol, uint ancestorChainID);
+     event UpdateTokenPair(uint id, bytes ancestorAccount, string ancestorName, string ancestorSymbol, uint8 ancestorDecimals,
+      uint ancestorChainID,uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress, bool isValid);
      event RemoveTokenPair(uint id);
      event MintToken(uint id, address to, uint value);
      event BurnToken(uint id, uint value);
