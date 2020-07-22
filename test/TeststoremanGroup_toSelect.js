@@ -45,9 +45,9 @@ contract('StoremanGroupDelegate', async (accounts) => {
         await stakeInPre(smg, groupId)
     })
     
-    it('test toSelect', async ()=>{
-        let tx = await smg.toSelect(groupId,{from: g.leader})
-        console.log("toSelect tx:", tx)
+    it('test select', async ()=>{
+        let tx = await smg.select(groupId,{from: g.leader})
+        console.log("select tx:", tx)
         await utils.waitReceipt(tx.tx)
         console.log("group:",await smg.getStoremanGroupInfo(groupId))
 

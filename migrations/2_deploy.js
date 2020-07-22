@@ -4,6 +4,7 @@ const Secp256k1 = artifacts.require('Secp256k1');
 const SchnorrVerifier = artifacts.require('SchnorrVerifier');
 const QuotaLib = artifacts.require('QuotaLib');
 const PosLib = artifacts.require('PosLib');
+const StoremanUtil = artifacts.require('StoremanUtil');
 
 const HTLCLib = artifacts.require('HTLCLib');
 const HTLCDebtLib = artifacts.require('HTLCDebtLib');
@@ -85,6 +86,10 @@ module.exports = async function (deployer, network) {
     await htlcProxy.upgradeTo(htlcDelegate.address);
 
     // storeman group admin sc
+    await deployer.deploy(StoremanUtil);
+    await deployer.link(StoremanUtil,StoremanLib)
+    await deployer.link(StoremanUtil,IncentiveLib)
+
     await deployer.deploy(PosLib);
     await deployer.link(PosLib,StoremanGroupDelegate)
 
@@ -95,6 +100,7 @@ module.exports = async function (deployer, network) {
     await deployer.link(PosLib,IncentiveLib)
     await deployer.deploy(IncentiveLib);
     await deployer.link(IncentiveLib,StoremanGroupDelegate)
+    await deployer.link(StoremanUtil,StoremanGroupDelegate)
 
     await deployer.deploy(StoremanGroupProxy);
     let smgProxy = await StoremanGroupProxy.deployed();

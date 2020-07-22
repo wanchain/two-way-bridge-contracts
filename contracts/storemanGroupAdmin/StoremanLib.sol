@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./StoremanType.sol";
+import "./StoremanUtil.sol";
 
 
 library StoremanLib {
@@ -9,13 +10,9 @@ library StoremanLib {
     event incentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
     event delegateIncentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
 
-    function getDaybyTime(uint time)  public pure returns(uint) {
-        return time/10; // TODO; get the day. not minute.
+    function calSkWeight(StoremanType.StoremanData storage data) internal  view returns (uint){
+        return StoremanUtil.calSkWeight(data.standaloneWeight, msg.value);
     }
-    function calSkWeight(uint deposit) public  returns(uint) {
-        return deposit*15/10;
-    }
-
     function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID, uint delegateFee) public
     {
         address pkAddr = address(keccak256(PK));
@@ -24,7 +21,7 @@ library StoremanLib {
             sender:msg.sender,
             enodeID:enodeID,
             PK:PK,
-            pkAddress:pkAddr, // 合约计算一下.
+            pkAddress:pkAddr,
             quited:false,
             selected:false,
             delegateFee:delegateFee,
@@ -42,7 +39,7 @@ library StoremanLib {
         group.addrMap[group.memberCount] = sk.pkAddress;
         group.memberCount++;
 
-        uint day = getDaybyTime(now);
+        uint day = StoremanUtil.getDaybyTime(now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         data.candidates[pkAddr].deposit.addRecord(r);
 
@@ -52,7 +49,7 @@ library StoremanLib {
                 revert("invalid sender");
             }
         } else {
-            realInsert(data,group, pkAddr, calSkWeight(msg.value), group.memberCountDesign-1);
+            realInsert(data,group, pkAddr, calSkWeight(data), group.memberCountDesign-1);
         }
 
         emit stakeInEvent(group.groupId, pkAddr, msg.value);
@@ -63,7 +60,7 @@ library StoremanLib {
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
         require(sk.sender == msg.sender, "Only the sender can use stakeAppend");
 
-        uint day = getDaybyTime(now);
+        uint day = StoremanUtil.getDaybyTime(now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         sk.deposit.addRecord(r);
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
@@ -155,7 +152,7 @@ library StoremanLib {
 
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight, uint last) internal{
         for(uint j = last; j>=group.whiteCount; j--) {
-            if(weight > data.candidates[group.selectedNode[j]].delegateDeposit + calSkWeight(data.candidates[group.selectedNode[j]].deposit.getLastValue())){
+            if(weight > data.candidates[group.selectedNode[j]].delegateDeposit + StoremanUtil.calSkWeight(data.standaloneWeight,data.candidates[group.selectedNode[j]].deposit.getLastValue())){
                 continue;
             }
             break;
@@ -185,7 +182,7 @@ library StoremanLib {
                         break;
                     }
                 }
-                realInsert(data, group, skPkAddr, calSkWeight(sk.deposit.getLastValue())+sk.delegateDeposit, selectedIndex);
+                realInsert(data, group, skPkAddr, StoremanUtil.calSkWeight(data.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit, selectedIndex);
             }
         }
     }
@@ -207,7 +204,7 @@ library StoremanLib {
             sk.delegators[msg.sender] = dk;
         }
         sk.delegateDeposit += msg.value;
-        uint day = getDaybyTime(now);
+        uint day = StoremanUtil.getDaybyTime(now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         dk.deposit.addRecord(r);
         updateGroup(data, sk, group, r);

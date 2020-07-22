@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 import "./StoremanType.sol";
 import "../lib/PosLib.sol";
 import "../interfaces/IMetric.sol";
+import "./StoremanUtil.sol";
 
 library IncentiveLib {
     using Deposit for Deposit.Records;
@@ -13,38 +14,30 @@ library IncentiveLib {
         return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time,crossChainCo, chainTypeCo);
         //return 30000000;
     }
-    
-    function getDaybyTime(uint time)  public pure returns(uint) {
-        return time/10; // TODO; get the day. not minute.
-       // return time/(3600);
-    }
-    
+
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) public returns (uint) {
         return groupIncentive*weight/groupWeight;
     }
-    function calSkWeight(uint deposit) public  returns(uint) {
-        return deposit*15/10;
-    }
-    
+
     function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr,IMetric metric) public  {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
         StoremanType.StoremanGroup storage group = data.groups[sk.groupId];
         
-        uint fromDay = group.workDay;
+        uint fromDay = group.workTime;
         if(sk.incentivedDay != 0) {
             fromDay = sk.incentivedDay + 1;
         }
-        uint endDay = getDaybyTime(now)-1;
-        if(endDay > group.workDay+group.totalDays) {
-            endDay = group.workDay+group.totalDays;
+        uint endDay = StoremanUtil.getDaybyTime(now)-1;
+        if(endDay > group.workTime+group.totalTime) {
+            endDay = group.workTime+group.totalTime;
         }
         
         uint day;
         for(day = fromDay; day < endDay; day++) {
 
             if(msg.gas < 1000000 ){ // check the gas. because calculate delegator incentive need more gas left.
-                    emit incentive(group.groupId, wkAddr, false);
-                    return;
+                emit incentive(group.groupId, wkAddr, false);
+                return;
             }
             
             uint idx = 0;
@@ -59,14 +52,19 @@ library IncentiveLib {
                 metric.getPrdInctMetric(group.groupId, day, day)[idx] > group.incentiveThresHold){
                 
                 group.groupIncentive[day] = getGroupIncentive(group, day,data.crossChainCo,data.chainTypeCo); // TODO: change to the correct time
-                sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day),  calSkWeight(sk.deposit.getValueById(day)));
+                sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day),  StoremanUtil.calSkWeight(data.standaloneWeight,sk.deposit.getValueById(day)));
                 sk.incentive[0] +=  sk.incentive[day];
                 
                 while(sk.incentivedDelegator != sk.delegatorCount) {
                     address deAddr = sk.addrMap[sk.incentivedDelegator];
-                    StoremanType.Delegator storage de = sk.delegators[deAddr];           
-                    de.incentive[day] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), de.deposit.getValueById(day));
-                    de.incentive[0] = de.incentive[day];
+                    //StoremanType.Delegator storage de = sk.delegators[deAddr];           
+                    sk.delegators[deAddr].incentive[day] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), sk.delegators[deAddr].deposit.getValueById(day));
+                    sk.delegators[deAddr].incentive[0] = sk.delegators[deAddr].incentive[day];
+
+
+                    // StoremanType.Delegator storage de = sk.delegators[deAddr];           
+                    // de.incentive[day] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), de.deposit.getValueById(day));
+                    // de.incentive[0] = de.incentive[day];
                     sk.incentivedDelegator++;
                 }
             }
@@ -100,12 +98,12 @@ library IncentiveLib {
         address[] memory members = new address[](group.memberCountDesign);
         uint groupDeposit = 0;
         uint groupDepositWeight = 0;
-        uint day = group.workDay;
+        uint day = group.workTime;
         for(uint i = 0; i<group.memberCountDesign; i++){
             members[i] = group.selectedNode[i];
             StoremanType.Candidate storage sk = data.candidates[group.selectedNode[i]];
             groupDeposit += (sk.deposit.getLastValue()+sk.delegateDeposit);
-            groupDepositWeight += (calSkWeight(sk.deposit.getLastValue())+sk.delegateDeposit);
+            groupDepositWeight += (StoremanUtil.calSkWeight(data.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
         }
         Deposit.Record memory deposit = Deposit.Record(day, groupDeposit);
         Deposit.Record memory depositWeight = Deposit.Record(day, groupDepositWeight);
