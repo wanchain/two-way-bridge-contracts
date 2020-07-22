@@ -50,6 +50,7 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(TokenManagerDelegate);
     let tmDelegate = await TokenManagerDelegate.deployed();
     await tmProxy.upgradeTo(tmDelegate.address);
+    console.log("tm address:", tmProxy.address);
 
     // htlc sc
     await deployer.deploy(Secp256k1);
@@ -84,6 +85,7 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(HTLCDelegate);
     let htlcDelegate = await HTLCDelegate.deployed();
     await htlcProxy.upgradeTo(htlcDelegate.address);
+    console.log("htlc address:", htlcProxy.address);
 
     // storeman group admin sc
     await deployer.deploy(StoremanUtil);
@@ -106,8 +108,8 @@ module.exports = async function (deployer, network) {
     let smgProxy = await StoremanGroupProxy.deployed();
     await deployer.deploy(StoremanGroupDelegate);
     let smgDelegate = await StoremanGroupDelegate.deployed();
-    console.log("smgDelegate.address:", smgDelegate.address)
     await smgProxy.upgradeTo(smgDelegate.address);
+    console.log("smg address:", smgProxy.address);
 
     await deployer.deploy(TestSmg);
     let tsmg = await TestSmg.deployed();
@@ -150,6 +152,7 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(MetricDelegate);
     let metricDlg = await MetricDelegate.deployed();
     await metricProxy.upgradeTo(metricDlg.address);
+    console.log("metric address:", metricProxy.address);
 
     let metric = await MetricDelegate.at(metricProxy.address);
     await metric.setDependence(smgProxy.address, smgProxy.address);
@@ -169,6 +172,7 @@ module.exports = async function (deployer, network) {
     let gpkProxy = await CreateGpkProxy.deployed();
     let gpkDelegate = await CreateGpkDelegate.deployed();
     await gpkProxy.upgradeTo(gpkDelegate.address);
+    console.log("gpk address:", gpkProxy.address);
 
     let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);
     await gpk.setDependence(smgProxy.address);
