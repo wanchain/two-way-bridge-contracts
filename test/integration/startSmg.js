@@ -11,7 +11,7 @@ const Tx = wanUtil.wanchainTx;
 const web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'));
 
 // group
-const groupId = utils.stringTobytes32(parseInt(Date.now()/1000/120).toString());
+const groupId = utils.stringTobytes32(parseInt(Date.now()/1000/60).toString());
 const stakerCount = 7;
 const ksPath = path.join(__dirname, '../keystore/');
 
@@ -109,6 +109,7 @@ contract('open_storeman_it', async () => {
       ps[i] = new Promise(async (resolve, reject) => {
         try {
           let si = await smgSc.getSelectedSmInfo(groupId, i);
+          console.log("selected node %d: %O", i, si);
           let txAddress = si[0].toLowerCase();
           selectedSmList.push({txAddress: txAddress, pk: '0x04' + si[1].substr(2), sk: getSmSk(txAddress)});
           resolve();
