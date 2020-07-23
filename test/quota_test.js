@@ -13,6 +13,10 @@ contract('Quota', accounts => {
     let ret = await quota.methods.getMintQuota(1, web3.utils.keccak256("storeman1")).call();
     console.log('quota:', ret);
     assert.equal(ret, 1418837, "1");
+
+    ret = await quota.methods.getMintQuota(0, web3.utils.keccak256("storeman1")).call();
+    console.log('quota:', ret);
+    assert.equal(ret, "1000000000000000000000", "0");
     
     ret = await quota.methods.getMintQuota(2, web3.utils.keccak256("storeman1")).call();
     assert.equal(ret, '577959183673469387', "2");

@@ -302,13 +302,15 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint decimals;
         uint tokenPrice;
 
-        uint fiatQuota = getFiatMintQuota(storemanGroupId);
-
         (symbol, decimals) = getTokenAncestorInfo(tokenId);
         tokenPrice = getPrice(symbol);
         if (tokenPrice == 0) {
             return 0;
         }
+
+        uint fiatQuota = getFiatMintQuota(storemanGroupId, symbol);
+
+        
 
         return fiatQuota.div(tokenPrice).mul(10**decimals).div(1 ether);
     }
@@ -349,7 +351,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     /// get mint quota in Fiat/USD decimals: 18
-    function getFiatMintQuota(bytes32 storemanGroupId) private view returns (uint) {
+    function getFiatMintQuota(bytes32 storemanGroupId, string rawSymbol) private view returns (uint) {
         string memory symbol;
         uint decimals;
 
@@ -361,8 +363,14 @@ contract QuotaDelegate is QuotaStorage, Halt {
             uint tokenValue = q._receivable.add(q._debt).mul(getPrice(symbol)).mul(1 ether).div(10**decimals); /// change Decimals to 18 digits
             totalTokenUsedValue = totalTokenUsedValue.add(tokenValue);
         }
+        
+        uint depositValue = 0;
+        if (keccak256(rawSymbol) == keccak256("WAN")) {
+            depositValue = getFiatDeposit(storemanGroupId);
+        } else {
+            depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); // 15000 = 150%
+        }
 
-        uint depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); // 15000 = 150%
         if (depositValue <= totalTokenUsedValue) {
             return 0;
         }
