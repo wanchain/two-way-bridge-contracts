@@ -33,7 +33,7 @@ async function readContextDb(key) {
   try {
     let doc = await Context.findOne({key});
     return doc.value;
-  } catch {
+  } catch (err) {
     return null;
   }
 }
@@ -51,7 +51,7 @@ async function clearContextDb(key) {
   try {
     await Context.deleteOne({key});
     return true;
-  } catch {
+  } catch (err) {
     return false;
   }
 }
