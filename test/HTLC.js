@@ -214,6 +214,9 @@ let storemanGroups = {
         R                     : "",
         s                     : ""
     },
+    wrong: {
+        ID                    : "0x03",
+    }
 };
 
 let userLockParams       = {
@@ -4011,6 +4014,137 @@ contract('Test HTLC', async (accounts) => {
             let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(coins.coin2.tokenPairID, storemanGroups[1].ID);
             let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
             assert.equal(new BN(0).toString() === difference, true);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Chain[1] -> smgWithdrawFee  ==> The receiver address expired', async () => {
+        try {
+            let timestamp = parseInt(Date.now() / 1000); //s
+            let timeout = await crossApproach.chain1.instance._smgFeeReceiverTimeout();
+            timestamp -= timeout;
+
+            let pkId = 1;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgWithdrawFee, timestamp, storemanGroups[1].account);
+            let smgWithdrawFeeReceipt = await crossApproach.chain1.instance.smgWithdrawFee(storemanGroups[1].ID, timestamp, storemanGroups[1].account, R, s, {from: storemanGroups[1].account});
+
+            let smgFee = await crossApproach.chain1.instance.getStoremanFee(storemanGroups[1].ID);
+
+            assert.checkWeb3Event(smgWithdrawFeeReceipt, {
+                event: 'SmgWithdrawFeeLogger',
+                args: {
+                    smgID: web3.utils.padRight(storemanGroups[1].ID, 64),
+                    // timeStamp: coins.coin2.tokenPairID,
+                    receiver: storemanGroups[1].account,
+                    fee: smgFee
+                }
+            });
+
+        } catch (err) {
+            assert.include(err.toString(), "The receiver address expired");
+        }
+    });
+
+    it('Chain[1] -> smgWithdrawFee  ==> Invalid storeman group ID', async () => {
+        try {
+            let timestamp = parseInt(Date.now() / 1000); //s
+            // let smgFee = await crossApproach.chain1.instance.getStoremanFee(storemanGroups.wrong.ID);
+            // console.log("chain1 storeman wrong fee", smgFee);
+
+            let pkId = 1;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgWithdrawFee, timestamp, storemanGroups[1].account);
+            let smgWithdrawFeeReceipt = await crossApproach.chain1.instance.smgWithdrawFee(storemanGroups.wrong.ID, timestamp, storemanGroups[1].account, R, s, {from: storemanGroups[1].account});
+
+            assert.checkWeb3Event(smgWithdrawFeeReceipt, {
+                event: 'SmgWithdrawFeeLogger',
+                args: {
+                    smgID: web3.utils.padRight(storemanGroups.wrong.ID, 64),
+                    receiver: storemanGroups[1].account,
+                    fee: smgFee
+                }
+            });
+        } catch (err) {
+            assert.include(err.toString(), "revert");
+        }
+    });
+
+    it('Chain[1] -> smgWithdrawFee  ==> Fee is null', async () => {
+        try {
+            let timestamp = parseInt(Date.now() / 1000); //s
+            let smgFee = await crossApproach.chain1.instance.getStoremanFee(storemanGroups[1].ID);
+            console.log("chain1 storeman 1 fee", smgFee);
+
+            let pkId = 1;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgWithdrawFee, timestamp, storemanGroups[1].account);
+            let smgWithdrawFeeReceipt = await crossApproach.chain1.instance.smgWithdrawFee(storemanGroups[1].ID, timestamp, storemanGroups[1].account, R, s, {from: storemanGroups[1].account});
+
+            assert.checkWeb3Event(smgWithdrawFeeReceipt, {
+                event: 'SmgWithdrawFeeLogger',
+                args: {
+                    smgID: web3.utils.padRight(storemanGroups[1].ID, 64),
+                    receiver: storemanGroups[1].account,
+                    fee: smgFee
+                }
+            });
+        } catch (err) {
+            assert.include(err.toString(), "Fee is null");
+        }
+    });
+
+    it('Chain[2] -> smgWithdrawFee  ==> The receiver address expired', async () => {
+        try {
+            let timestamp = parseInt(Date.now() / 1000); //s
+            let timeout = await crossApproach.chain1.instance._smgFeeReceiverTimeout();
+            timestamp -= timeout;
+
+            let pkId = 1;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve2, sk, typesArrayList.smgWithdrawFee, timestamp, storemanGroups[1].account);
+            let smgWithdrawFeeReceipt = await crossApproach.chain2.instance.smgWithdrawFee(storemanGroups[1].ID, timestamp, storemanGroups[1].account, R, s, {from: storemanGroups[1].account});
+
+            let smgFee = await crossApproach.chain2.instance.getStoremanFee(storemanGroups[1].ID);
+
+            assert.checkWeb3Event(smgWithdrawFeeReceipt, {
+                event: 'SmgWithdrawFeeLogger',
+                args: {
+                    smgID: web3.utils.padRight(storemanGroups[1].ID, 64),
+                    // timeStamp: coins.coin2.tokenPairID,
+                    receiver: storemanGroups[1].account,
+                    fee: smgFee
+                }
+            });
+
+        } catch (err) {
+            assert.include(err.toString(), "The receiver address expired");
+        }
+    });
+
+    it('Chain[2] -> smgWithdrawFee  ==> success', async () => {
+        try {
+            let timestamp = parseInt(Date.now() / 1000); //s
+
+            let smgFee = await crossApproach.chain2.instance.getStoremanFee(storemanGroups[1].ID);
+            console.log("chain2 storeman 1 fee", smgFee);
+
+            let pkId = 2;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve2, sk, typesArrayList.smgWithdrawFee, timestamp, storemanGroups[1].account);
+            let smgWithdrawFeeReceipt = await crossApproach.chain2.instance.smgWithdrawFee(storemanGroups[1].ID, timestamp, storemanGroups[1].account, R, s, {from: storemanGroups[1].account});
+
+            // let smgFee = await crossApproach.chain2.instance.getStoremanFee(storemanGroups[1].ID);
+
+            assert.checkWeb3Event(smgWithdrawFeeReceipt, {
+                event: 'SmgWithdrawFeeLogger',
+                args: {
+                    smgID: web3.utils.padRight(storemanGroups[1].ID, 64),
+                    receiver: storemanGroups[1].account,
+                    fee: smgFee
+                }
+            });
         } catch (err) {
             assert.fail(err);
         }
