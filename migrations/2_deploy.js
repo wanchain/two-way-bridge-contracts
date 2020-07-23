@@ -184,5 +184,5 @@ module.exports = async function (deployer, network) {
     let bn256 = await Bn256Curve.deployed();
     await gpk.setCurve(curveMap.get('bn256'), bn256.address);
 
-    await smg.setDependence(tmProxy.address, htlcProxy.address, gpkProxy.address, fakeQuotaInst.address);
+    await smg.setDependence(htlcProxy.address, gpkProxy.address, fakeQuotaInst.address);
 }

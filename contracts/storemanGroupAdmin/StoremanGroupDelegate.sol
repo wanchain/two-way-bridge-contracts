@@ -75,15 +75,14 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     *
     */
     /// @notice                           function for owner set token manager and htlc contract address
-    /// @param tmAddr                     token manager contract address
     /// @param metricAddr                 metricAddr contract address
-    function setDependence(address tmAddr, address metricAddr, address gpkAddr,address quotaAddr)
+    function setDependence(address metricAddr, address gpkAddr,address quotaAddr)
         external
         onlyOwner
     {
-        require(tmAddr != address(0), "Invalid tokenManager address");
+        //require(tmAddr != address(0), "Invalid tokenManager address");
         require(metricAddr != address(0), "Invalid htlc address");
-        tokenManager = ITokenManager(tmAddr);
+        //tokenManager = ITokenManager(tmAddr);
         metric = IMetric(metricAddr);
         greateGpkAddr = gpkAddr;
         quotaInst = IQuota(quotaAddr);
@@ -214,7 +213,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.memberCountDesign = memberCountdesign;
         group.threshold = threshold;
-        group.minStakeIn = 0; // TODO: set min stakeIn value
+        group.minStakeIn = minStakeIn; // TODO: set min stakeIn value
     }
 
     // function getStaker(bytes32 groupId, address pkAddr) public view returns (bytes PK,uint delegateFee,uint delegatorCount) {
@@ -236,7 +235,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     2) calculate the sk incentive all days.
     3) calculate the delegator all days one by one.
      */
-    function toIncentiveAll( address wkAddr) public  {
+    function incentiveCandidator( address wkAddr) public  {
         IncentiveLib.incentiveCandidator(data, wkAddr,metric);
     }
 
@@ -480,14 +479,23 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage group = data.groups[smgID];
         group.crossIncoming += msg.value; // 提取时，　选中的人均分．
     }
-    function setCoefficient(uint _crossChainCo, uint _chainTypeCo) public {
+    function setCoefficient(uint _crossChainCo) public {
         if (_crossChainCo != 0) {
             data.crossChainCo = _crossChainCo;
         }
 
-        if (_chainTypeCo != 0) {
-             data.chainTypeCo = _chainTypeCo; // TODO: change to map[smallChainId][bigChainId]
+        // if (_chainTypeCo != 0) {
+        //      data.chainTypeCo = _chainTypeCo; // TODO: change to map[smallChainId][bigChainId]
+        // }
+    }
+    function setChainTypeCo(uint chain1, uint chain2, uint co) public {
+        if(chain1 < chain2) {
+            data.chainTypeCo[chain1][chain2] = co;
+        } else {
+            data.chainTypeCo[chain2][chain1] = co;
         }
-     }
-
+    }
+    function getChainTypeCo(uint chain1, uint chain2) public view returns(uint co){
+        return IncentiveLib.getChainTypeCo(data, chain1, chain2);
+    }
 }

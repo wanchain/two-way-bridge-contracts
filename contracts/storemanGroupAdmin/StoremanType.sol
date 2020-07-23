@@ -84,12 +84,13 @@ library StoremanType {
   
     struct StoremanData {
         uint crossChainCo;//need to mul 1000
-        uint chainTypeCo; //need to mul 1000
+        //uint chainTypeCo; //need to mul 1000
         uint contribution;
         uint standaloneWeight;
 
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;
         mapping(bytes => mapping(bytes => bytes32))  storemanGroupMap;
         mapping(address=>StoremanType.Candidate) candidates;
+        mapping(uint=> mapping(uint => uint)) chainTypeCo;
     }
 }

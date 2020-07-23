@@ -9,8 +9,17 @@ library IncentiveLib {
     
 
     event incentive(bytes32 indexed groupId, address indexed pkAddr, bool indexed finished);
-
-    function getGroupIncentive(StoremanType.StoremanGroup storage group, uint time,uint crossChainCo,uint chainTypeCo) public view returns (uint)  {
+    function getChainTypeCo(StoremanType.StoremanData storage data, uint chain1, uint chain2) public view returns(uint co){
+        if(chain1 < chain2) {
+            co = data.chainTypeCo[chain1][chain2];
+        } else {
+            co = data.chainTypeCo[chain2][chain1];
+        }
+        return co;
+    }
+    function getGroupIncentive(StoremanType.StoremanGroup storage group, uint time,StoremanType.StoremanData storage data) public view returns (uint)  {
+        uint crossChainCo = data.crossChainCo;
+        uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
         return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time,crossChainCo, chainTypeCo);
         //return 30000000;
     }
@@ -48,10 +57,10 @@ library IncentiveLib {
                  }
             }
      
-            if( group.groupIncentive[day] == 0 && 
+            if( group.groupIncentive[day] == 0 &&
                 metric.getPrdInctMetric(group.groupId, day, day)[idx] > group.incentiveThresHold){
                 
-                group.groupIncentive[day] = getGroupIncentive(group, day,data.crossChainCo,data.chainTypeCo); // TODO: change to the correct time
+                group.groupIncentive[day] = getGroupIncentive(group, day,data); // TODO: change to the correct time
                 sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day),  StoremanUtil.calSkWeight(data.standaloneWeight,sk.deposit.getValueById(day)));
                 sk.incentive[0] +=  sk.incentive[day];
                 
