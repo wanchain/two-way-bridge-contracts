@@ -39,7 +39,6 @@ import "../interfaces/IQuota.sol";
 contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     using SafeMath for uint;
     using Deposit for Deposit.Records;
-    address[] oldAddr;
 
     /**
      *
@@ -97,8 +96,17 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         backupCount = backup;
     }
+
+    function setstandaloneWeight(uint weight)
+        public onlyOwner
+    {
+        data.standaloneWeight = weight;
+    }
     function getBackupCount() public view returns (uint) {
         return backupCount;
+    }
+    function getstandaloneWeight() public view returns (uint) {
+        return data.standaloneWeight;
     }
     function inheritNode(StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal
     {
@@ -176,8 +184,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.status = StoremanType.GroupStatus.initial;
         group.deposit = deposit;
         group.depositWeight = depositWeight;
-        group.workDay = workStart;
-        group.totalDays = workDuration;
+        group.workTime = workStart;
+        group.totalTime = workDuration;
         group.memberCountDesign = memberCountDefault;
         group.threshold = thresholdDefault;
         group.whiteCount = wkAddrs.length - backupCount;
@@ -434,7 +442,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint whiteCount,  uint memberCount,  uint startTime, uint endTime)
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
-        return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.whiteCount, smg.selectedCount,  smg.workDay, smg.workDay+smg.totalDays);
+        return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.whiteCount, smg.selectedCount,  smg.workTime, smg.workTime+smg.totalTime);
     }
 
     function getStoremanGroupConfig(bytes32 id)
@@ -444,7 +452,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
         return (smg.groupId, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
-         smg.gpk1, smg.gpk2, smg.workDay, smg.workDay+smg.totalDays);
+         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime);
     }
     function getStoremanGroupTime(bytes32 id)
         external
@@ -452,7 +460,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         returns(bytes32 groupId,  uint registerTime, uint registerDuration,  uint startTime, uint endTime)
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
-        return (smg.groupId, smg.registerTime, smg.registerDuration, smg.workDay, smg.workDay+smg.totalDays);
+        return (smg.groupId, smg.registerTime, smg.registerDuration, smg.workTime, smg.workTime+smg.totalTime);
     }
 
 
@@ -478,7 +486,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         }
 
         if (_chainTypeCo != 0) {
-             data.chainTypeCo = _chainTypeCo;
+             data.chainTypeCo = _chainTypeCo; // TODO: change to map[smallChainId][bigChainId]
         }
      }
 

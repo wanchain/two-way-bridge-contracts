@@ -57,8 +57,8 @@ library StoremanType {
         uint memberCount;
         uint whiteCount;    // only used, don't include backup.
         uint whiteCountAll; // all
-        uint  workDay;
-        uint  totalDays;
+        uint  workTime;
+        uint  totalTime;
         uint registerTime;
         uint registerDuration; // how long allow to staking.
         uint memberCountDesign;
@@ -86,6 +86,7 @@ library StoremanType {
         uint crossChainCo;//need to mul 1000
         uint chainTypeCo; //need to mul 1000
         uint contribution;
+        uint standaloneWeight;
 
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;
         mapping(bytes => mapping(bytes => bytes32))  storemanGroupMap;
