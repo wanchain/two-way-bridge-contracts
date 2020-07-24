@@ -59,6 +59,8 @@ interface IQuota {
 
   function getMintQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint);
   function getBurnQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint burnQuota);
+  function getAsset(uint tokenId, bytes32 storemanGroupId) external view returns (uint asset);
+  function getDebt(uint tokenId, bytes32 storemanGroupId) external view returns (uint debt);
 
   function isDebtClean(bytes32 storemanGroupId) external view returns (bool);
 }
