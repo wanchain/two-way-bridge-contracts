@@ -50,8 +50,12 @@ async function registerStart(smg){
     assert.equal(group.deposit, 0)
     assert.equal(group.memberCount, 1)
     console.log("group:", group)
+    let curve1 = 0, curve2 = 1;
+    await smg.updateGroupChain(id, 0, 1, curve1, curve2);
+    console.log("group curves: [%d, %d]", curve1, curve2);
     return group.groupId
 }
+
 async function stakeInPre(smg, id){
     console.log("smg.contract:", smg.contract._address)
     for(let i=0; i<stakerCount; i++){
@@ -89,7 +93,16 @@ async function stakeInPre(smg, id){
 }
 async function toSelect(smg, groupId){
     let tx = await smg.select(groupId,{from: g.leader})
-    return tx.tx;
+    console.log("group %s select tx:", groupId, tx.tx)
+    await utils.waitReceipt(tx.tx)
+    let count = await smg.getSelectedSmNumber(groupId)
+    console.log("slected sm number: %d", count);  
+    for (let i = 0; i<count; i++) {
+        let skAddr = await smg.getSelectedSmInfo(groupId, i)
+        console.log("selected node %d: %O", i, skAddr);
+        let sk = await smg.getStoremanInfo(skAddr[0]);
+        console.log("storeman %d info: %", i, sk);
+    }    
 }
 module.exports = {
     g,

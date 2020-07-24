@@ -46,21 +46,6 @@ contract('StoremanGroupDelegate', async (accounts) => {
     })
     
     it('test select', async ()=>{
-        let tx = await toSelect(smg, groupId);
-        console.log("select tx:", tx)
-        await utils.waitReceipt(tx)
-        console.log("group:",await smg.getStoremanGroupInfo(groupId))
-       
-        let count = await smg.getSelectedSmNumber(groupId)
-        //assert.equal()
-        console.log("count :", count)
-
-        for(let i=0; i<count; i++) {
-            let skAddr = await smg.getSelectedSmInfo(groupId, i)
-            console.log("skAddr:", i,skAddr)
-            let sk = await smg.getStoremanInfo(skAddr[0]);
-            console.log("sk, i:", i, sk)
-        }
-
+        await toSelect(smg, groupId);
     })
 })
