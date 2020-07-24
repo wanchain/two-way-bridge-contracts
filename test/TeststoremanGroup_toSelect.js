@@ -21,7 +21,7 @@ let gGasLimit=9000000;
 let gGasPrice=200000000000;
 
 
-const { registerStart,stakeInPre, web3url,g } = require('./base.js')
+const { registerStart,stakeInPre, web3url,g, toSelect, } = require('./base.js')
 
 contract('StoremanGroupDelegate', async (accounts) => {
  
@@ -46,14 +46,13 @@ contract('StoremanGroupDelegate', async (accounts) => {
     })
     
     it('test select', async ()=>{
-        let tx = await smg.select(groupId,{from: g.leader})
+        let tx = await toSelect(smg, groupId);
         console.log("select tx:", tx)
-        await utils.waitReceipt(tx.tx)
+        await utils.waitReceipt(tx)
         console.log("group:",await smg.getStoremanGroupInfo(groupId))
-
-        
+       
         let count = await smg.getSelectedSmNumber(groupId)
-        assert.equal()
+        //assert.equal()
         console.log("count :", count)
 
         for(let i=0; i<count; i++) {

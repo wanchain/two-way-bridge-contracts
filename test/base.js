@@ -87,9 +87,12 @@ async function stakeInPre(smg, id){
         assert.equal(candidate.deposit, stakingValue)
     }
 }
-
+async function toSelect(smg, groupId){
+    let tx = await smg.select(groupId,{from: g.leader})
+    return tx.tx;
+}
 module.exports = {
     g,
     registerStart,
-    stakeInPre,
+    stakeInPre,toSelect,
 }

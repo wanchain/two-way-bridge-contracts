@@ -17,7 +17,6 @@ const Tx = wanUtil.wanchainTx;
 let contractAddress
 
 //let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
-let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
 let gGasLimit=9000000;
 let gGasPrice=200000000000;
 
@@ -33,56 +32,36 @@ let EOS = utils.stringTobytes("EOS")
 
 
 contract('TestSmg', async (accounts) => {
-    let tester = accounts[0]
-    let now = parseInt(Date.now()/1000);
-    let id = utils.stringTobytes32(now.toString())
-    const WhiteCount = 4
-
     let  smg
-    let tsmg
+    let groupId
+    let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
-
         smg = await StoremanGroupDelegate.at(smgProxy.address)
-        contractAddress = smgProxy.address
-        console.log("==============================storemanGroup smgProxy contractAddress: ", contractAddress)
-
-
-    
-        tsmg = await TestSmg.deployed();
-        await tsmg.setSmgAddr(smgProxy.address)
-
-
 
     })
 
 
-    it('registerStart_1 ', async ()=>{
-        let wks = []
-        let srs= []
-        for(let i=0; i<WhiteCount;i++){
-            let {addr:sr} = utils.getAddressFromInt(i+1000)
-            let {addr:wk} = utils.getAddressFromInt(i+2000)
-            wks.push(wk)
-            srs.push(sr)
-        }
-        
-        let tx = await smg.registerStart(id,now+10, 90, 10,33,utils.stringTobytes32(""), utils.stringTobytes("EOS"),wks,srs,
-            {from: tester})
-        console.log("registerStart txhash:", tx.tx)
+    it('registerStart', async ()=>{
+        groupId = await registerStart(smg);
+        console.log("groupId: ", groupId)
+    })
+
+    it('stakeInPre ', async ()=>{
+        await stakeInPre(smg, groupId)
+    })
+    
+    it('test select', async ()=>{
+        let tx = await toSelect(groupId);
+        console.log("select tx:", tx)
         await utils.waitReceipt(tx.tx)
-        let group = await smg.getStoremanGroupInfo(id)
-        assert.equal(group.status, 1)
-        assert.equal(group.groupId, id)
-        assert.equal(group.deposit, 0)
-        assert.equal(group.memberCount, 0)
-        console.log("group:", group)
     })
 
     it('testSetGpk', async() => {
+        let tsmg = await TestSmg.deployed();
         let gpk = "0x04d2386b8a684e7be9f0d911c936092035dc2b112fe8c83fb602beac098183800237d173cf0e1e5a8cbb159bcdbdfbef67e25dbcc8b852e032aa2a9d7b0fe912a4"
-        let tx =  await tsmg.testSetGpk(id, gpk)
+        let tx =  await tsmg.testSetGpk(id, gpk, gpk)
         console.log("tx:", tx)
     })
 
