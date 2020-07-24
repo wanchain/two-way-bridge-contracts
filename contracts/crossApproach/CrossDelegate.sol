@@ -74,25 +74,25 @@ contract CrossDelegate is CrossStorage, Halt {
         _;
     }
 
-    /// @notice                                 check the storeman group active
+    /// @notice                                 check the storeman group is ready
     /// @param smgID                            ID of storeman group
-    modifier onlyActiveSmg(bytes32 smgID) {
+    modifier onlyReadySmg(bytes32 smgID) {
         uint8 status;
         uint startTime;
         uint endTime;
         (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
         _;
     }
 
-    /// @notice                                 check the storeman group not active
+    /// @notice                                 check the storeman group is unregistered
     /// @param smgID                            ID of storeman group
-    modifier onlyNotActiveSmg(bytes32 smgID) {
+    modifier onlyUnregisteredSmg(bytes32 smgID) {
         uint8 status;
         (,status,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        require(status == uint8(GroupStatus.unregistered), "PK is active");
+        require(status == uint8(GroupStatus.unregistered), "PK is not unregistered");
         _;
     }
 
@@ -102,7 +102,7 @@ contract CrossDelegate is CrossStorage, Halt {
      *
      */
 
-    /// @notice                                 check the storeman group active or not
+    /// @notice                                 get ready the storeman group info
     /// @param smgID                            ID of storeman group
     /// @return curveID                         ID of elliptic curve
     /// @return PK                              PK of storeman group
@@ -116,11 +116,11 @@ contract CrossDelegate is CrossStorage, Halt {
         return (curveID, PK);
     }
 
-    /// @notice                                 check the storeman group active or not
+    /// @notice                                 check the storeman group is ready or not
     /// @param smgID                            ID of storeman group
     /// @return curveID                         ID of elliptic curve
     /// @return PK                              PK of storeman group
-    function acquireActiveSmgInfo(bytes32 smgID)
+    function acquireReadySmgInfo(bytes32 smgID)
         private
         view
         returns (uint curveID, bytes memory PK)
@@ -130,16 +130,16 @@ contract CrossDelegate is CrossStorage, Halt {
         uint endTime;
         (,status,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not active");
+        require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
 
         return (curveID, PK);
     }
 
-    /// @notice                                 check the storeman group active or not
+    /// @notice                                 get the unregistered storeman group info
     /// @param smgID                            ID of storeman group
     /// @return curveID                         ID of elliptic curve
     /// @return PK                              PK of storeman group
-    function acquireNotActiveSmgInfo(bytes32 smgID)
+    function acquireUnregisteredSmgInfo(bytes32 smgID)
         private
         view
         returns (uint curveID, bytes memory PK)
@@ -147,7 +147,7 @@ contract CrossDelegate is CrossStorage, Halt {
         uint8 status;
         (,status,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        require(status == uint8(GroupStatus.unregistered), "PK is active");
+        require(status == uint8(GroupStatus.unregistered), "PK is not unregistered");
     }
 
     // /// @notice                                 check the storeman group existing or not
@@ -174,7 +174,7 @@ contract CrossDelegate is CrossStorage, Halt {
         initialized
         notHalted
         onlyExternalAccount
-        onlyActiveSmg(smgID)
+        onlyReadySmg(smgID)
         onlyMeaningfulValue(value)
     {
         HTLCMintLib.HTLCUserMintLockParams memory params = HTLCMintLib.HTLCUserMintLockParams({
@@ -236,7 +236,7 @@ contract CrossDelegate is CrossStorage, Halt {
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireActiveSmgInfo(smgID);
+        (curveID, PK) = acquireReadySmgInfo(smgID);
 
         bytes32 mHash = sha256(abi.encode(xHash, tokenPairID, value, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
@@ -297,7 +297,7 @@ contract CrossDelegate is CrossStorage, Halt {
         initialized
         notHalted
         onlyExternalAccount
-        onlyActiveSmg(smgID)
+        onlyReadySmg(smgID)
         onlyMeaningfulValue(value)
     {
         HTLCBurnLib.HTLCUserBurnLockParams memory params = HTLCBurnLib.HTLCUserBurnLockParams({
@@ -359,7 +359,7 @@ contract CrossDelegate is CrossStorage, Halt {
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireActiveSmgInfo(smgID);
+        (curveID, PK) = acquireReadySmgInfo(smgID);
 
         bytes32 mHash = sha256(abi.encode(xHash, tokenPairID, value, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
@@ -407,14 +407,14 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  smgID                           ID of storeman
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
-    /// @param  userAccount                     account of user, used to receive original chain token
+    /// @param  userAccount                     account of user, used to receive shadow chain token
     function userFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
         initialized
         notHalted
         onlyExternalAccount
-        onlyActiveSmg(smgID)
+        onlyReadySmg(smgID)
         onlyMeaningfulValue(value)
     {
         RapidityLib.RapidityUserMintParams memory params = RapidityLib.RapidityUserMintParams({
@@ -445,7 +445,7 @@ contract CrossDelegate is CrossStorage, Halt {
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireActiveSmgInfo(smgID);
+        (curveID, PK) = acquireReadySmgInfo(smgID);
 
         bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
@@ -474,7 +474,7 @@ contract CrossDelegate is CrossStorage, Halt {
         initialized
         notHalted
         onlyExternalAccount
-        onlyActiveSmg(smgID)
+        onlyReadySmg(smgID)
         onlyMeaningfulValue(value)
     {
         RapidityLib.RapidityUserBurnParams memory params = RapidityLib.RapidityUserBurnParams({
@@ -494,7 +494,7 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  smgID                           ID of storeman
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
-    /// @param  userAccount                        address of user, used to receive WRC20 token
+    /// @param  userAccount                     address of user, used to receive original token/coin
     /// @param  r                               signature
     /// @param  s                               signature
     function smgFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
@@ -505,7 +505,7 @@ contract CrossDelegate is CrossStorage, Halt {
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireActiveSmgInfo(smgID);
+        (curveID, PK) = acquireReadySmgInfo(smgID);
 
         bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
@@ -531,11 +531,11 @@ contract CrossDelegate is CrossStorage, Halt {
         external
         initialized
         notHalted
-        onlyActiveSmg(destSmgID)
+        onlyReadySmg(destSmgID)
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireNotActiveSmgInfo(srcSmgID);
+        (curveID, PK) = acquireUnregisteredSmgInfo(srcSmgID);
 
         bytes32 mHash = sha256(abi.encode(xHash, destSmgID));
         verifySignature(curveID, mHash, PK, r, s);
@@ -585,11 +585,11 @@ contract CrossDelegate is CrossStorage, Halt {
         external
         initialized
         notHalted
-        onlyNotActiveSmg(srcSmgID)
+        onlyUnregisteredSmg(srcSmgID)
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireActiveSmgInfo(destSmgID);
+        (curveID, PK) = acquireReadySmgInfo(destSmgID);
 
         bytes32 mHash = sha256(abi.encode(xHash, srcSmgID));
         verifySignature(curveID, mHash, PK, r, s);
