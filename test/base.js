@@ -101,7 +101,7 @@ async function toSelect(smg, groupId){
         let skAddr = await smg.getSelectedSmInfo(groupId, i)
         console.log("selected node %d: %O", i, skAddr);
         let sk = await smg.getStoremanInfo(skAddr[0]);
-        console.log("storeman %d info: %", i, sk);
+        console.log("storeman %d info: %O", i, sk);
     }    
 }
 module.exports = {

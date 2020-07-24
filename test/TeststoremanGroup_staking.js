@@ -13,7 +13,6 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const HTLCProxy = artifacts.require('HTLCProxy');
 const HTLCDelegate = artifacts.require('HTLCDelegate');
 const CreateGpkProxy = artifacts.require('CreateGpkProxy');
-const PreCompile = artifacts.require('Enhancement');
 
 const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
@@ -127,11 +126,6 @@ contract('TestSmg', async (accounts) => {
 
         let gpkProxy = await CreateGpkProxy.deployed();
         console.log("CreateGpk contractAddress: %s", gpkProxy.address);
-
-        let preCompile = await PreCompile.deployed();
-        console.log("PreCompile contractAddress: %s", preCompile.address);
-    
-
     })
 
 

@@ -1,8 +1,4 @@
 const Web3 = require('web3')
-const encoder = require("../utils/encoder");
-const crossChainAccount = require('../utils/account/crossChainAccount');
-const TokenManagerProxy = artifacts.require('TokenManagerProxy');
-const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const CreateGpkProxy = artifacts.require('CreateGpkProxy');
@@ -15,19 +11,8 @@ const web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'
 // common
 const ADDRESS_0 = '0x0000000000000000000000000000000000000000';
 
-// token
-const eosAccount = new crossChainAccount("eos", "ascii");
-
-const eosToken = {
-  // for register
-  origAddr: eosAccount.encodeAccount('eosio.token:EOS'),
-  name: encoder.str2hex('Wanchain EOS Crosschain Token'),
-  symbol: encoder.str2hex('EOS'),
-  decimals: 4
-}
-
 // group
-let groupId = ''; //utils.stringTobytes32(parseInt(Date.now()/1000/120).toString());
+let groupId = '';
 
 // contract
 let smgSc, gpkProxy, gpkDelegate, gpkSc;
@@ -56,7 +41,6 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
 
     encryptSc = await Encrypt.deployed();
 
-    await registerToken();
     groupId = await registerStart(smgSc);
     await stakeInPre(smgSc, groupId);
     await toSelect(smgSc, groupId);
@@ -167,18 +151,5 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
     assert.equal(info[5], ployCommitPeroid);
     assert.equal(info[6], defaultPeroid);
     assert.equal(info[7], negotiatePeroid);
-  })  
-
-  // internal functions
-
-  async function registerToken() {
-    let tmProxy = await TokenManagerProxy.deployed();
-    let tm = await TokenManagerDelegate.at(tmProxy.address);
-    let ratio = 10000;
-    let minDeposit = '0x99999999';
-    let withdrawDelayTime = 60 * 60 * 72;
-    await tm.addToken(eosToken.origAddr, ratio, minDeposit, withdrawDelayTime, eosToken.name, eosToken.symbol, eosToken.decimals)
-    let token = await tm.getTokenInfo(eosToken.origAddr);
-    console.log("register tokens:", token);
-  }
+  })
 })
