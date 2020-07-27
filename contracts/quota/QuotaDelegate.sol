@@ -78,7 +78,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         /// Don't check in the other chain.
         if (checkQuota) {
-            uint mintQuota = getMintQuota(tokenId, storemanGroupId);
+            uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
             require(
                 mintQuota.sub(quota.asset_receivable.add(quota._asset)) >= value,
                 "Quota is not enough"
@@ -109,7 +109,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         /// Don't check in the other chain.
         if (checkQuota) {
-            uint mintQuota = getMintQuota(tokenId, storemanGroupId);
+            uint mintQuota = getSmgMintQuota(tokenId, storemanGroupId);
             require(
                 mintQuota.sub(quota.debt_receivable.add(quota._debt)) >= value,
                 "Quota is not enough"
@@ -194,7 +194,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         /// Don't check in the other chain.
         if (checkQuota) {
-            uint mintQuota = getMintQuota(tokenId, storemanGroupId);
+            uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
             require(
                 mintQuota.sub(quota.asset_receivable.add(quota._asset)) >= value,
                 "Quota is not enough"
@@ -223,7 +223,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         /// Don't check in the other chain.
         if (checkQuota) {
-            uint mintQuota = getMintQuota(tokenId, storemanGroupId);
+            uint mintQuota = getSmgMintQuota(tokenId, storemanGroupId);
             require(
                 mintQuota.sub(quota.debt_receivable.add(quota._debt)) >= value,
                 "Quota is not enough"
