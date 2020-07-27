@@ -7,7 +7,7 @@ contract('Quota', accounts => {
   before(async () => {
   });
 
-  it.only('should success when getUserMintQuota', async () => {
+  it('should success when getUserMintQuota', async () => {
     const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
     let ret = await quota.methods.getUserMintQuota(1, web3.utils.keccak256("storeman1")).call();
@@ -68,7 +68,7 @@ contract('Quota', accounts => {
     // console.log('price:', ret, "7");
   });
 
-  it.only('should success when getUserBurnQuota', async () => {
+  it('should success when getUserBurnQuota', async () => {
     const quota = (await getQuotaContracts(accounts)).quota;
     let ret = await quota.methods.getUserBurnQuota(1, web3.utils.keccak256("storeman1")).call();
     assert.equal(ret, '0', "8");
@@ -77,7 +77,7 @@ contract('Quota', accounts => {
     assert.equal(ret, '0', "8");
   });
 
-  it.only("should succes when run workflow", async () => {
+  it("should succes when run workflow", async () => {
     const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
 
@@ -218,7 +218,31 @@ contract('Quota', accounts => {
     assert.equal(Number(ret), 1408837, "23");
   });
 
-  it.only("should success when fastCrossChain", async () => {
+  it("should success when smg mint lock", async () => {
+    const SC = (await getQuotaContracts(accounts));
+    const quota = SC.quota;
+
+    ret = await quota.methods.smgMintLock(1, web3.utils.keccak256("storeman1"), 10000, true).send({from: accounts[1], gas: 1e7});
+    ret = await quota.methods.getSmgMintQuota(1, web3.utils.keccak256("storeman1")).call();
+    assert.equal(ret, 1408837, "9");
+
+    ret = await quota.methods.smgFastMint(1, web3.utils.keccak256("storeman2"), 10000, true).send({from: accounts[1], gas: 1e7});
+    ret = await quota.methods.getSmgMintQuota(1, web3.utils.keccak256("storeman2")).call();
+    assert.equal(ret, 1408837, "9");
+    console.log('ret', ret);
+
+    ret = await quota.methods.getAsset(1, web3.utils.keccak256("storeman1")).call();
+    assert.equal(ret.asset, 0);
+    assert.equal(ret.asset_receivable, 0);
+    assert.equal(ret.asset_payable, 0);
+
+    ret = await quota.methods.getDebt(1, web3.utils.keccak256("storeman2")).call();
+    assert.equal(ret.debt, 10000);
+    assert.equal(ret.debt_receivable, 0);
+    assert.equal(ret.debt_payable, 0);
+  });
+
+  it("should success when fastCrossChain", async () => {
     const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
     let ret;
@@ -323,7 +347,7 @@ contract('Quota', accounts => {
 
   });
 
-  it.only("should fail when value error", async () => {
+  it("should fail when value error", async () => {
     const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
     let ret;
