@@ -451,7 +451,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
             Quota storage src = quotaMap[id][srcStoremanGroupId];
 
             require( src.asset_receivable == uint(0) && src.asset_payable == uint(0),
-                "There are debt_receivable or debt_payable in src storeman"
+                "There are asset_receivable or asset_payable in src storeman"
             );
 
             if (src._asset == 0) {
@@ -516,7 +516,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
     }
 
-    /// @notice                                 get mint quota of storeman, tokenId
+    /// @notice                                 get user mint quota of storeman, tokenId
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     function getUserMintQuota(uint tokenId, bytes32 storemanGroupId)
@@ -539,7 +539,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return fiatQuota.div(tokenPrice).mul(10**decimals).div(1 ether);
     }
 
-    /// @notice                                 get mint quota of storeman, tokenId
+    /// @notice                                 get smg mint quota of storeman, tokenId
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     function getSmgMintQuota(uint tokenId, bytes32 storemanGroupId)
@@ -562,7 +562,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return fiatQuota.div(tokenPrice).mul(10**decimals).div(1 ether);
     }
 
-    /// @notice                                 get burn quota of storeman, tokenId
+    /// @notice                                 get user burn quota of storeman, tokenId
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     function getUserBurnQuota(uint tokenId, bytes32 storemanGroupId)
@@ -574,7 +574,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         burnQuota = quota._debt.sub(quota.debt_payable);
     }
 
-    /// @notice                                 get burn quota of storeman, tokenId
+    /// @notice                                 get smg burn quota of storeman, tokenId
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     function getSmgBurnQuota(uint tokenId, bytes32 storemanGroupId)
@@ -586,7 +586,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         burnQuota = quota._asset.sub(quota.asset_payable);
     }
 
-    /// @notice                                 get burn quota of storeman, tokenId
+    /// @notice                                 get asset of storeman, tokenId
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     function getAsset(uint tokenId, bytes32 storemanGroupId)
@@ -598,7 +598,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return (quota._asset, quota.asset_receivable, quota.asset_payable);
     }
 
-    /// @notice                                 get burn quota of storeman, tokenId
+    /// @notice                                 get debt of storeman, tokenId
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     function getDebt(uint tokenId, bytes32 storemanGroupId)
