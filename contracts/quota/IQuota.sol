@@ -57,10 +57,14 @@ interface IQuota {
   function debtRedeem(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
   function debtRevoke(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
 
-  function getMintQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint);
-  function getBurnQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint burnQuota);
-  function getAsset(uint tokenId, bytes32 storemanGroupId) external view returns (uint asset);
-  function getDebt(uint tokenId, bytes32 storemanGroupId) external view returns (uint debt);
+  function getUserMintQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint);
+  function getSmgMintQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint);
+
+  function getUserBurnQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint);
+  function getSmgBurnQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint);
+
+  function getAsset(uint tokenId, bytes32 storemanGroupId) external view returns (uint asset, uint asset_receivable, uint asset_payable);
+  function getDebt(uint tokenId, bytes32 storemanGroupId) external view returns (uint debt, uint debt_receivable, uint debt_payable);
 
   function isDebtClean(bytes32 storemanGroupId) external view returns (bool);
 }
