@@ -16,7 +16,7 @@ contract('open_storeman_it', async () => {
 
     groupId = await registerStart(smgSc);
     await stakeInPre(smgSc, groupId);
-    await toSelect(smgSc, groupId);
+    // await toSelect(smgSc, groupId);
   })
 
   it('it_stub', async () => {
