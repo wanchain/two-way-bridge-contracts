@@ -986,7 +986,7 @@ contract('Test HTLC', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getUserMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
             // console.log("before MintQuotaValue", beforeMintQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
@@ -1028,7 +1028,7 @@ contract('Test HTLC', async (accounts) => {
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
 
-            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getUserMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
             let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
             assert.equal(value === difference, true);
         } catch (err) {
@@ -1036,7 +1036,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it("Chain[1] -> Asset -> srcDebtLock  ==> There are _receivable or _payable in src storeman", async () => {
+    it("Chain[1] -> Asset -> srcDebtLock  ==> There are asset_receivable or asset_payable in src storeman", async () => {
         try {
             let debtLockParamsTemp = Object.assign({}, debtLockParams);
             debtLockParamsTemp.srcSmgID = storemanGroups[1].ID;
@@ -1060,7 +1060,7 @@ contract('Test HTLC', async (accounts) => {
 
             assert.fail(ERROR_INFO);
         } catch (err) {
-            assert.include(err.toString(), "There are _receivable or _payable in src storeman");
+            assert.include(err.toString(), "There are asset_receivable or asset_payable in src storeman");
         }
     });
 
@@ -1077,7 +1077,7 @@ contract('Test HTLC', async (accounts) => {
 
     it('Asset -> Original[1] -> Token1 -> userMintRevoke  ==> success', async () => {
         try {
-            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getUserMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
 
             let origUserAccount = accounts[7];
             let value = web3.utils.toWei(userLockParams.value.toString());
@@ -1095,7 +1095,7 @@ contract('Test HTLC', async (accounts) => {
                 }
             });
 
-            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getUserMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
             let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
             assert.equal(value === difference, true);
         } catch (err) {
@@ -1119,7 +1119,7 @@ contract('Test HTLC', async (accounts) => {
             await crossApproach.chain1.parnters.smgAdminProxy.setStoremanGroupStatus(fastMintParamsTemp.smgID, storemanGroupStatus.ready);
             await crossApproach.chain2.parnters.smgAdminProxy.setStoremanGroupStatus(fastMintParamsTemp.smgID, storemanGroupStatus.ready);
 
-            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(fastMintParamsTemp.tokenPairID, fastMintParamsTemp.smgID);
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getUserMintQuota(fastMintParamsTemp.tokenPairID, fastMintParamsTemp.smgID);
 
             let value = web3.utils.toWei(fastMintParamsTemp.value.toString());
             let totalValue = new BN(value).add(new BN(crossApproach.chain2.origLockFee)).toString();
@@ -1146,7 +1146,7 @@ contract('Test HTLC', async (accounts) => {
                 }
             });
 
-            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(fastMintParamsTemp.tokenPairID, fastMintParamsTemp.smgID);
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getUserMintQuota(fastMintParamsTemp.tokenPairID, fastMintParamsTemp.smgID);
             let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
             assert.equal(value === difference, true);
         } catch (err) {

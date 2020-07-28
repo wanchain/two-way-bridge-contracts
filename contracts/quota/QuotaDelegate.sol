@@ -69,7 +69,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     /// @param storemanGroupId                  PK of source storeman group
     /// @param value                            amount of exchange token
     /// @param checkQuota                       input whether need to check quota
-    function mintLock(
+    function userMintLock(
         uint tokenId,
         bytes32 storemanGroupId,
         uint value,
@@ -78,9 +78,9 @@ contract QuotaDelegate is QuotaStorage, Halt {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         /// Don't check in the other chain.
         if (checkQuota) {
-            uint mintQuota = getMintQuota(tokenId, storemanGroupId);
+            uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
             require(
-                mintQuota.sub(quota._receivable.add(quota._debt)) >= value,
+                mintQuota.sub(quota.asset_receivable.add(quota._asset)) >= value,
                 "Quota is not enough"
             );
         }
@@ -92,42 +92,15 @@ contract QuotaDelegate is QuotaStorage, Halt {
                 .add(1);
         }
 
-        quota._receivable = quota._receivable.add(value);
+        quota.asset_receivable = quota.asset_receivable.add(value);
     }
 
-    /// @notice                                 revoke quota in mint direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
-    function mintRevoke(
-        uint tokenId,
-        bytes32 storemanGroupId,
-        uint value
-    ) external onlyHtlc notHalted {
-        Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        quota._receivable = quota._receivable.sub(value);
-    }
-
-    /// @notice                                 redeem quota in mint direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
-    function mintRedeem(
-        uint tokenId,
-        bytes32 storemanGroupId,
-        uint value
-    ) external onlyHtlc notHalted {
-        Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        quota._receivable = quota._receivable.sub(value);
-        quota._debt = quota._debt.add(value);
-    }
-
-    /// @notice                                 perform a fast crosschain mint
+    /// @notice                                 lock quota in mint direction
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     /// @param value                            amount of exchange token
     /// @param checkQuota                       input whether need to check quota
-    function fastMint(
+    function smgMintLock(
         uint tokenId,
         bytes32 storemanGroupId,
         uint value,
@@ -136,9 +109,123 @@ contract QuotaDelegate is QuotaStorage, Halt {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         /// Don't check in the other chain.
         if (checkQuota) {
-            uint mintQuota = getMintQuota(tokenId, storemanGroupId);
+            uint mintQuota = getSmgMintQuota(tokenId, storemanGroupId);
             require(
-                mintQuota.sub(quota._receivable.add(quota._debt)) >= value,
+                mintQuota.sub(quota.debt_receivable.add(quota._debt)) >= value,
+                "Quota is not enough"
+            );
+        }
+
+        if (!quota._active) {
+            quota._active = true;
+            storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenId;
+            storemanTokenCountMap[storemanGroupId] = storemanTokenCountMap[storemanGroupId]
+                .add(1);
+        }
+
+        quota.debt_receivable = quota.debt_receivable.add(value);
+    }
+
+    /// @notice                                 revoke quota in mint direction
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    /// @param value                            amount of exchange token
+    function userMintRevoke(
+        uint tokenId,
+        bytes32 storemanGroupId,
+        uint value
+    ) external onlyHtlc notHalted {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        quota.asset_receivable = quota.asset_receivable.sub(value);
+    }
+
+    /// @notice                                 revoke quota in mint direction
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    /// @param value                            amount of exchange token
+    function smgMintRevoke(
+        uint tokenId,
+        bytes32 storemanGroupId,
+        uint value
+    ) external onlyHtlc notHalted {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        quota.debt_receivable = quota.debt_receivable.sub(value);
+    }
+
+    /// @notice                                 redeem quota in mint direction
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    /// @param value                            amount of exchange token
+    function userMintRedeem(
+        uint tokenId,
+        bytes32 storemanGroupId,
+        uint value
+    ) external onlyHtlc notHalted {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        quota.debt_receivable = quota.debt_receivable.sub(value);
+        quota._debt = quota._debt.add(value);
+    }
+
+    /// @notice                                 redeem quota in mint direction
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    /// @param value                            amount of exchange token
+    function smgMintRedeem(
+        uint tokenId,
+        bytes32 storemanGroupId,
+        uint value
+    ) external onlyHtlc notHalted {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        quota.asset_receivable = quota.asset_receivable.sub(value);
+        quota._asset = quota._asset.add(value);
+    }
+
+    /// @notice                                 perform a fast crosschain mint
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    /// @param value                            amount of exchange token
+    /// @param checkQuota                       input whether need to check quota
+    function userFastMint(
+        uint tokenId,
+        bytes32 storemanGroupId,
+        uint value,
+        bool checkQuota
+    ) external onlyHtlc notHalted {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        /// Don't check in the other chain.
+        if (checkQuota) {
+            uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
+            require(
+                mintQuota.sub(quota.asset_receivable.add(quota._asset)) >= value,
+                "Quota is not enough"
+            );
+        }
+        if (!quota._active) {
+            quota._active = true;
+            storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenId;
+            storemanTokenCountMap[storemanGroupId] = storemanTokenCountMap[storemanGroupId]
+                .add(1);
+        }
+        quota._asset = quota._asset.add(value);
+    }
+
+    /// @notice                                 perform a fast crosschain mint
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    /// @param value                            amount of exchange token
+    /// @param checkQuota                       input whether need to check quota
+    function smgFastMint(
+        uint tokenId,
+        bytes32 storemanGroupId,
+        uint value,
+        bool checkQuota
+    ) external onlyHtlc notHalted {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        /// Don't check in the other chain.
+        if (checkQuota) {
+            uint mintQuota = getSmgMintQuota(tokenId, storemanGroupId);
+            require(
+                mintQuota.sub(quota.debt_receivable.add(quota._debt)) >= value,
                 "Quota is not enough"
             );
         }
@@ -155,7 +242,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     /// @param value                            amount of exchange token
-    function fastBurn(
+    function userFastBurn(
         uint tokenId,
         bytes32 storemanGroupId,
         uint value,
@@ -163,16 +250,33 @@ contract QuotaDelegate is QuotaStorage, Halt {
     ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         if (checkQuota) {
-            require(quota._debt.sub(quota._payable) >= value, "Value is invalid");
+            require(quota._debt.sub(quota.debt_payable) >= value, "Value is invalid");
         }
         quota._debt = quota._debt.sub(value);
+    }
+
+    /// @notice                                 perform a fast crosschain burn
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    /// @param value                            amount of exchange token
+    function smgFastBurn(
+        uint tokenId,
+        bytes32 storemanGroupId,
+        uint value,
+        bool checkQuota
+    ) external onlyHtlc notHalted {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        if (checkQuota) {
+            require(quota._asset.sub(quota.asset_payable) >= value, "Value is invalid");
+        }
+        quota._asset = quota._asset.sub(value);
     }
 
     /// @notice                                 lock quota in burn direction
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     /// @param value                            amount of exchange token
-    function burnLock(
+    function userBurnLock(
         uint tokenId,
         bytes32 storemanGroupId,
         uint value,
@@ -180,36 +284,80 @@ contract QuotaDelegate is QuotaStorage, Halt {
     ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         if (checkQuota) {
-            require(quota._debt.sub(quota._payable) >= value, "Value is invalid");
+            require(quota._debt.sub(quota.debt_payable) >= value, "Value is invalid");
         }
-        quota._payable = quota._payable.add(value);
+        quota.debt_payable = quota.debt_payable.add(value);
+    }
+
+    /// @notice                                 lock quota in burn direction
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    /// @param value                            amount of exchange token
+    function smgBurnLock(
+        uint tokenId,
+        bytes32 storemanGroupId,
+        uint value,
+        bool checkQuota
+    ) external onlyHtlc notHalted {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        if (checkQuota) {
+            require(quota._asset.sub(quota.asset_payable) >= value, "Value is invalid");
+        }
+        quota.asset_payable = quota.asset_payable.add(value);
     }
 
     /// @notice                                 revoke quota in burn direction
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     /// @param value                            amount of exchange token
-    function burnRevoke(
+    function userBurnRevoke(
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
     ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        quota._payable = quota._payable.sub(value);
+        quota.debt_payable = quota.debt_payable.sub(value);
+    }
+
+    /// @notice                                 revoke quota in burn direction
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    /// @param value                            amount of exchange token
+    function smgBurnRevoke(
+        uint tokenId,
+        bytes32 storemanGroupId,
+        uint value
+    ) external onlyHtlc notHalted {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        quota.asset_payable = quota.asset_payable.sub(value);
     }
 
     /// @notice                                 redeem quota in burn direction
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     /// @param value                            amount of exchange token
-    function burnRedeem(
+    function userBurnRedeem(
+        uint tokenId,
+        bytes32 storemanGroupId,
+        uint value
+    ) external onlyHtlc notHalted {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        quota._asset = quota._asset.sub(value);
+        quota.asset_payable = quota.asset_payable.sub(value);
+    }
+
+    /// @notice                                 redeem quota in burn direction
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    /// @param value                            amount of exchange token
+    function smgBurnRedeem(
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
     ) external onlyHtlc notHalted {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota._debt = quota._debt.sub(value);
-        quota._payable = quota._payable.sub(value);
+        quota.debt_payable = quota.debt_payable.sub(value);
     }
 
     /// @notice                                 source storeman group lock the debt transaction,update the detailed quota info. of the storeman group
@@ -224,8 +372,8 @@ contract QuotaDelegate is QuotaStorage, Halt {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
             Quota storage src = quotaMap[id][srcStoremanGroupId];
 
-            require( src._receivable == uint(0) && src._payable == uint(0),
-                "There are _receivable or _payable in src storeman"
+            require( src.debt_receivable == uint(0) && src.debt_payable == uint(0),
+                "There are debt_receivable or debt_payable in src storeman"
             );
 
             if (src._debt == 0) {
@@ -240,8 +388,8 @@ contract QuotaDelegate is QuotaStorage, Halt {
                     .add(1);
             }
 
-            dst._receivable = dst._receivable.add(src._debt);
-            src._payable = src._payable.add(src._debt);
+            dst.debt_receivable = dst.debt_receivable.add(src._debt);
+            src.debt_payable = src.debt_payable.add(src._debt);
         }
     }
 
@@ -261,10 +409,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
             }
             Quota storage dst = quotaMap[id][dstStoremanGroupId];
             /// Adjust quota record
-            dst._receivable = dst._receivable.sub(src._payable);
+            dst.debt_receivable = dst.debt_receivable.sub(src.debt_payable);
             dst._debt = dst._debt.add(src._debt);
 
-            src._payable = 0;
+            src.debt_payable = 0;
             src._debt = 0;
         }
     }
@@ -285,15 +433,93 @@ contract QuotaDelegate is QuotaStorage, Halt {
             }
             Quota storage dst = quotaMap[id][dstStoremanGroupId];
             
-            dst._receivable = dst._receivable.sub(src._payable);
-            src._payable = 0;
+            dst.debt_receivable = dst.debt_receivable.sub(src.debt_payable);
+            src.debt_payable = 0;
         }
     }
 
-    /// @notice                                 get mint quota of storeman, tokenId
+    /// @notice                                 source storeman group lock the debt transaction,update the detailed quota info. of the storeman group
+    /// @param srcStoremanGroupId               PK of source storeman group
+    /// @param dstStoremanGroupId               PK of destination storeman group
+    function assetLock(
+        bytes32 srcStoremanGroupId,
+        bytes32 dstStoremanGroupId
+    ) external onlyHtlc notHalted {
+        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
+        for (uint i = 0; i < tokenCount; i++) {
+            uint id = storemanTokensMap[srcStoremanGroupId][i];
+            Quota storage src = quotaMap[id][srcStoremanGroupId];
+
+            require( src.asset_receivable == uint(0) && src.asset_payable == uint(0),
+                "There are asset_receivable or asset_payable in src storeman"
+            );
+
+            if (src._asset == 0) {
+                continue;
+            }
+
+            Quota storage dst = quotaMap[id][dstStoremanGroupId];
+            if (!dst._active) {
+                dst._active = true;
+                storemanTokensMap[dstStoremanGroupId][storemanTokenCountMap[dstStoremanGroupId]] = id;
+                storemanTokenCountMap[dstStoremanGroupId] = storemanTokenCountMap[dstStoremanGroupId]
+                    .add(1);
+            }
+
+            dst.asset_receivable = dst.asset_receivable.add(src._asset);
+            src.asset_payable = src.asset_payable.add(src._asset);
+        }
+    }
+
+    /// @notice                                 destination storeman group redeem the debt transaction,update the detailed quota info. of the storeman group
+    /// @param srcStoremanGroupId               PK of source storeman group
+    /// @param dstStoremanGroupId               PK of destination storeman group
+    function assetRedeem(
+        bytes32 srcStoremanGroupId,
+        bytes32 dstStoremanGroupId
+    ) external onlyHtlc notHalted {
+        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
+        for (uint i = 0; i < tokenCount; i++) {
+            uint id = storemanTokensMap[srcStoremanGroupId][i];
+            Quota storage src = quotaMap[id][srcStoremanGroupId];
+            if (src._asset == 0) {
+                continue;
+            }
+            Quota storage dst = quotaMap[id][dstStoremanGroupId];
+            /// Adjust quota record
+            dst.asset_receivable = dst.asset_receivable.sub(src.asset_payable);
+            dst._asset = dst._asset.add(src._asset);
+
+            src.asset_payable = 0;
+            src._asset = 0;
+        }
+    }
+
+    /// @notice                                 source storeman group revoke the debt transaction,update the detailed quota info. of the storeman group
+    /// @param srcStoremanGroupId               PK of source storeman group
+    /// @param dstStoremanGroupId               PK of destination storeman group
+    function assetRevoke(
+        bytes32 srcStoremanGroupId,
+        bytes32 dstStoremanGroupId
+    ) external onlyHtlc notHalted {
+        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
+        for (uint i = 0; i < tokenCount; i++) {
+            uint id = storemanTokensMap[srcStoremanGroupId][i];
+            Quota storage src = quotaMap[id][srcStoremanGroupId];
+            if (src._asset == 0) {
+                continue;
+            }
+            Quota storage dst = quotaMap[id][dstStoremanGroupId];
+            
+            dst.asset_receivable = dst.asset_receivable.sub(src.asset_payable);
+            src.asset_payable = 0;
+        }
+    }
+
+    /// @notice                                 get user mint quota of storeman, tokenId
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
-    function getMintQuota(uint tokenId, bytes32 storemanGroupId)
+    function getUserMintQuota(uint tokenId, bytes32 storemanGroupId)
         public
         view
         returns (uint)
@@ -308,23 +534,80 @@ contract QuotaDelegate is QuotaStorage, Halt {
             return 0;
         }
 
-        uint fiatQuota = getFiatMintQuota(storemanGroupId, symbol);
-
-        
+        uint fiatQuota = getUserFiatMintQuota(storemanGroupId, symbol);
 
         return fiatQuota.div(tokenPrice).mul(10**decimals).div(1 ether);
     }
 
-    /// @notice                                 get burn quota of storeman, tokenId
+    /// @notice                                 get smg mint quota of storeman, tokenId
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
-    function getBurnQuota(uint tokenId, bytes32 storemanGroupId)
+    function getSmgMintQuota(uint tokenId, bytes32 storemanGroupId)
+        public
+        view
+        returns (uint)
+    {
+        string memory symbol;
+        uint decimals;
+        uint tokenPrice;
+
+        (symbol, decimals) = getTokenAncestorInfo(tokenId);
+        tokenPrice = getPrice(symbol);
+        if (tokenPrice == 0) {
+            return 0;
+        }
+
+        uint fiatQuota = getSmgFiatMintQuota(storemanGroupId, symbol);
+
+        return fiatQuota.div(tokenPrice).mul(10**decimals).div(1 ether);
+    }
+
+    /// @notice                                 get user burn quota of storeman, tokenId
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    function getUserBurnQuota(uint tokenId, bytes32 storemanGroupId)
         public
         view
         returns (uint burnQuota)
     {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        burnQuota = quota._debt.sub(quota._payable);
+        burnQuota = quota._debt.sub(quota.debt_payable);
+    }
+
+    /// @notice                                 get smg burn quota of storeman, tokenId
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    function getSmgBurnQuota(uint tokenId, bytes32 storemanGroupId)
+        public
+        view
+        returns (uint burnQuota)
+    {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        burnQuota = quota._asset.sub(quota.asset_payable);
+    }
+
+    /// @notice                                 get asset of storeman, tokenId
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    function getAsset(uint tokenId, bytes32 storemanGroupId)
+        public
+        view
+        returns (uint asset, uint asset_receivable, uint asset_payable)
+    {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        return (quota._asset, quota.asset_receivable, quota.asset_payable);
+    }
+
+    /// @notice                                 get debt of storeman, tokenId
+    /// @param tokenId                          tokenPairId of crosschain
+    /// @param storemanGroupId                  PK of source storeman group
+    function getDebt(uint tokenId, bytes32 storemanGroupId)
+        public
+        view
+        returns (uint debt, uint debt_receivable, uint debt_payable)
+    {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        return (quota._debt, quota.debt_receivable, quota.debt_payable);
     }
 
     /// @notice                                 get debt clean state of storeman
@@ -334,7 +617,11 @@ contract QuotaDelegate is QuotaStorage, Halt {
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[storemanGroupId][i];
             Quota storage src = quotaMap[id][storemanGroupId];
-            if (src._debt > 0 || src._payable > 0 || src._receivable > 0) {
+            if (src._debt > 0 || src.debt_payable > 0 || src.debt_receivable > 0) {
+                return false;
+            }
+
+            if (src._asset > 0 || src.asset_payable > 0 || src.asset_receivable > 0) {
                 return false;
             }
         }
@@ -351,7 +638,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     /// get mint quota in Fiat/USD decimals: 18
-    function getFiatMintQuota(bytes32 storemanGroupId, string rawSymbol) private view returns (uint) {
+    function getUserFiatMintQuota(bytes32 storemanGroupId, string rawSymbol) private view returns (uint) {
         string memory symbol;
         uint decimals;
 
@@ -360,7 +647,35 @@ contract QuotaDelegate is QuotaStorage, Halt {
             uint id = storemanTokensMap[storemanGroupId][i];
             (symbol, decimals) = getTokenAncestorInfo(id);
             Quota storage q = quotaMap[id][storemanGroupId];
-            uint tokenValue = q._receivable.add(q._debt).mul(getPrice(symbol)).mul(1 ether).div(10**decimals); /// change Decimals to 18 digits
+            uint tokenValue = q.asset_receivable.add(q._asset).mul(getPrice(symbol)).mul(1 ether).div(10**decimals); /// change Decimals to 18 digits
+            totalTokenUsedValue = totalTokenUsedValue.add(tokenValue);
+        }
+        
+        uint depositValue = 0;
+        if (keccak256(rawSymbol) == keccak256("WAN")) {
+            depositValue = getFiatDeposit(storemanGroupId);
+        } else {
+            depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); // 15000 = 150%
+        }
+
+        if (depositValue <= totalTokenUsedValue) {
+            return 0;
+        }
+
+        return depositValue.sub(totalTokenUsedValue); /// decimals: 18
+    }
+
+    /// get mint quota in Fiat/USD decimals: 18
+    function getSmgFiatMintQuota(bytes32 storemanGroupId, string rawSymbol) private view returns (uint) {
+        string memory symbol;
+        uint decimals;
+
+        uint totalTokenUsedValue = 0;
+        for (uint i = 0; i < storemanTokenCountMap[storemanGroupId]; i++) {
+            uint id = storemanTokensMap[storemanGroupId][i];
+            (symbol, decimals) = getTokenAncestorInfo(id);
+            Quota storage q = quotaMap[id][storemanGroupId];
+            uint tokenValue = q.debt_receivable.add(q._debt).mul(getPrice(symbol)).mul(1 ether).div(10**decimals); /// change Decimals to 18 digits
             totalTokenUsedValue = totalTokenUsedValue.add(tokenValue);
         }
         
