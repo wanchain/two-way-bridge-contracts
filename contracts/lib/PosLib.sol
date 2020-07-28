@@ -62,11 +62,11 @@ library PosLib {
 
 
     function testGetHardCap ()  public view returns(uint256,bool) {
-        return getHardCap(10000,10000,now - 3600 * 24);
+        return getHardCap(now - 3600 * 24);
     }
 
 
-    function getHardCap (uint256 crossChainCoefficient,uint256 chainTypeCoefficient,uint256 time) public view returns(uint256,bool) {
+    function getHardCap (uint256 time) public view returns(uint256,bool) {
        bytes32 functionSelector = 0xfa7c2faf00000000000000000000000000000000000000000000000000000000;
        address to = PRECOMPILE_CONTRACT_ADDR;
        uint256 posReturn;
@@ -79,26 +79,26 @@ library PosLib {
             posReturn := mload(freePtr)
         }
 
+        // TODO
+        // uint256 res = posReturn.mul(crossChainCoefficient).mul(chainTypeCoefficient).div(DIVISOR*DIVISOR);
 
-        uint256 res = posReturn.mul(crossChainCoefficient).mul(chainTypeCoefficient).div(DIVISOR*DIVISOR);
-
-        return (res,success);
+        return (posReturn,success);
 
     }
 
 
      function getMinIncentive1 ()  public view returns(uint256,uint256) {
-         return (getMinIncentive(100000 ether,now - 86400 * 4,10000,10000),0);
+         return (getMinIncentive(100000 ether,now - 86400 * 4),0);
      }
 
 
      function getMinIncentive2 ()  public view returns(uint256,uint256) {
-         return (getMinIncentive(10000000 ether,now - 86400 * 4,10000,10000),0);
+         return (getMinIncentive(10000000 ether,now - 86400 * 4),0);
      }
-    function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime,uint256 crossChainCoefficient,uint256 chainTypeCoefficient) public view returns(uint256) {
+    function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime) public view returns(uint256) {
         return 30000000;
     }
-    // function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime,uint256 crossChainCoefficient,uint256 chainTypeCoefficient) public view returns(uint256) {
+    // function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime) public view returns(uint256) {
     //     uint256 p1;
     //     bool    success;
 
@@ -109,7 +109,7 @@ library PosLib {
     //     uint256 p1Return = smgDeposit.mul(p1).div(DIVISOR);
 
     //     uint256 hardcap;
-    //     (hardcap,success) = getHardCap(crossChainCoefficient,chainTypeCoefficient,now);
+    //     (hardcap,success) = getHardCap(now);
     //     if(!success) {
     //         return 0;
     //     }

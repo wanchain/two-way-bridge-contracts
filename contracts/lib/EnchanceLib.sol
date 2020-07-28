@@ -273,7 +273,7 @@ library EnhancementLib {
      * @return uint256 the hard cap for storeman return
      * @return bool the result for calling precompile contract,true is success,false is failed
      */
-    function getHardCap (uint256 crossChainCoefficient,uint256 chainTypeCoefficient,uint256 time) public view returns(uint256,bool) {
+    function getHardCap (uint256 time) public view returns(uint256,bool) {
        bytes32 functionSelector = 0xfa7c2faf00000000000000000000000000000000000000000000000000000000;
        address to = PRECOMPILE_CONTRACT_ADDR;
        uint256 posReturn;
@@ -286,9 +286,7 @@ library EnhancementLib {
             posReturn := mload(freePtr)
         }
 
-        uint256 res = posReturn.mul(crossChainCoefficient).mul(chainTypeCoefficient).div(DIVISOR*DIVISOR);
-
-        return (res,success);
+        return (posReturn,success);
 
     }
 
@@ -301,7 +299,7 @@ library EnhancementLib {
      * @param chainTypeCoefficient the efficient for chain type
      * @return uint256 the minimum return for storeman group
      */
-    function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime,uint256 crossChainCoefficient,uint256 chainTypeCoefficient) public view returns(uint256) {
+    function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime) public view returns(uint256) {
 
         uint256 p1;
         bool    success;
@@ -313,7 +311,7 @@ library EnhancementLib {
         uint256 p1Return = smgDeposit.mul(p1).div(DIVISOR);
 
         uint256 hardcap;
-        (hardcap,success) = getHardCap(crossChainCoefficient,chainTypeCoefficient,now);
+        (hardcap,success) = getHardCap(now);
         if(!success) {
             return 0;
         }

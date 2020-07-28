@@ -27,7 +27,7 @@ const PosLib = artifacts.require('PosLib');
 // }
 
 async function trygetMinIncentive(poslib, deposit, epochId){
-    let tx = await poslib.getMinIncentive(deposit,epochId, 10000,10000);
+    let tx = await poslib.getMinIncentive(deposit,epochId);
     console.log("getMinIncentive:", tx)
 }
 async function test() {
