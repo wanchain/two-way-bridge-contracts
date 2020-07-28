@@ -179,7 +179,7 @@ library RapidityLib {
         storageData.rapidityTxData.addUserTx(params.uniqueID, params.smgID, params.tokenPairID,
                                         params.value, lockFee, params.userShadowAccount, RapidityTxLib.TxStatus.Minted);
 
-        storageData.quota.fastMint(params.tokenPairID, params.smgID, params.value, true);
+        storageData.quota.userFastMint(params.tokenPairID, params.smgID, params.value, true);
 
         if (lockFee > 0) {
             if (storageData.smgFeeProxy == address(0)) {
@@ -202,7 +202,7 @@ library RapidityLib {
         storageData.rapidityTxData.addSmgTx(params.uniqueID, params.smgID, params.tokenPairID,
                                         params.value, params.userShadowAccount, RapidityTxLib.TxStatus.Minted);
 
-        storageData.quota.fastMint(params.tokenPairID, params.smgID, params.value, false);
+        storageData.quota.smgFastMint(params.tokenPairID, params.smgID, params.value, false);
 
         storageData.tokenManager.mintToken(params.tokenPairID, params.userShadowAccount, params.value);
 
@@ -235,7 +235,7 @@ library RapidityLib {
         storageData.rapidityTxData.addUserTx(params.uniqueID, params.smgID, params.tokenPairID,
                                         params.value, lockFee, params.userOrigAccount, RapidityTxLib.TxStatus.Burned);
 
-        storageData.quota.fastBurn(params.tokenPairID, params.smgID, params.value, true);
+        storageData.quota.userFastBurn(params.tokenPairID, params.smgID, params.value, true);
 
         storageData.tokenManager.burnToken(params.tokenPairID, params.value);
 
@@ -260,7 +260,7 @@ library RapidityLib {
         storageData.rapidityTxData.addSmgTx(params.uniqueID, params.smgID, params.tokenPairID,
                                         params.value, params.userOrigAccount, RapidityTxLib.TxStatus.Burned);
 
-        storageData.quota.fastBurn(params.tokenPairID, params.smgID, params.value, false);
+        storageData.quota.smgFastBurn(params.tokenPairID, params.smgID, params.value, false);
 
         bytes memory tokenOrigAccount;
         (,tokenOrigAccount,,,) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
