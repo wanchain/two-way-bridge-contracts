@@ -18,9 +18,7 @@ library IncentiveLib {
         return co;
     }
     function getGroupIncentive(StoremanType.StoremanGroup storage group, uint time,StoremanType.StoremanData storage data) public view returns (uint)  {
-        uint crossChainCo = data.crossChainCo;
-        uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
-        return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time,crossChainCo, chainTypeCo);
+        return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time);
         //return 30000000;
     }
 

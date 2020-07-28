@@ -267,8 +267,6 @@ library EnhancementLib {
     /**
      * public function
      * @dev get the hard cap for storeman return rate
-     * @param crossChainCoefficient the efficient for cross chain storeman
-     * @param chainTypeCoefficient the efficient for chain type
      * @param time for caculation
      * @return uint256 the hard cap for storeman return
      * @return bool the result for calling precompile contract,true is success,false is failed
@@ -295,8 +293,6 @@ library EnhancementLib {
      * @dev get minimum incentive for storeman group
      * @param smgDeposit the storeman deposit
      * @param smgStartTime the storeman group start time
-     * @param crossChainCoefficient the efficient for cross chain storeman
-     * @param chainTypeCoefficient the efficient for chain type
      * @return uint256 the minimum return for storeman group
      */
     function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime) public view returns(uint256) {
