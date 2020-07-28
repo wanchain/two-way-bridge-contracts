@@ -202,7 +202,7 @@ library HTLCBurnLib {
         //                             params.value, lockFee, params.lockedTime, params.userOrigAccount);
         storageData.htlcTxData.addUserTx(userTxParams);
 
-        storageData.quota.burnLock(params.tokenPairID, params.smgID, params.value, true);
+        storageData.quota.userBurnLock(params.tokenPairID, params.smgID, params.value, true);
 
         emit UserBurnLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userOrigAccount);
     }
@@ -227,7 +227,7 @@ library HTLCBurnLib {
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
-        storageData.quota.burnRedeem(tokenPairID, smgID, value);
+        storageData.quota.smgBurnRedeem(tokenPairID, smgID, value);
 
         storageData.tokenManager.burnToken(tokenPairID, value);
 
@@ -277,7 +277,7 @@ library HTLCBurnLib {
 
         storageData.htlcTxData.revokeUserTx(params.xHash, revokeFee);
 
-        storageData.quota.burnRevoke(tokenPairID, smgID, value);
+        storageData.quota.userBurnRevoke(tokenPairID, smgID, value);
 
         if (revokeFee > 0) {
             if (storageData.smgFeeProxy == address(0)) {
@@ -310,7 +310,7 @@ library HTLCBurnLib {
         storageData.htlcTxData.addSmgTx(params.xHash, params.smgID, params.tokenPairID,
                                         params.value, params.userOrigAccount, params.lockedTime);
 
-        storageData.quota.burnLock(params.tokenPairID, params.smgID, params.value, false);
+        storageData.quota.smgBurnLock(params.tokenPairID, params.smgID, params.value, false);
 
         emit SmgBurnLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, params.userOrigAccount);
     }
@@ -335,7 +335,7 @@ library HTLCBurnLib {
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
-        storageData.quota.burnRedeem(tokenPairID, smgID, value);
+        storageData.quota.userBurnRedeem(tokenPairID, smgID, value);
 
         bytes memory tokenOrigAccount;
         (,tokenOrigAccount,,,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
@@ -369,7 +369,7 @@ library HTLCBurnLib {
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
-        storageData.quota.burnRevoke(tokenPairID, smgID, value);
+        storageData.quota.smgBurnRevoke(tokenPairID, smgID, value);
 
         emit SmgBurnRevokeLogger(params.xHash, smgID, tokenPairID);
     }

@@ -114,7 +114,7 @@ library HTLCDebtLib {
     {
         storageData.htlcTxData.addDebtTx(params.xHash, params.srcSmgID, params.destSmgID, params.lockedTime);
 
-        storageData.quota.debtLock(params.srcSmgID, params.destSmgID);
+        storageData.quota.assetLock(params.srcSmgID, params.destSmgID);
 
         emit SrcDebtLockLogger(params.xHash, params.srcSmgID, params.destSmgID);
     }
@@ -131,7 +131,7 @@ library HTLCDebtLib {
         bytes32 destSmgID;
         (srcSmgID, destSmgID) = storageData.htlcTxData.getDebtTx(xHash);
 
-        storageData.quota.debtRedeem(srcSmgID, destSmgID);
+        storageData.quota.assetRedeem(srcSmgID, destSmgID);
 
         emit DestDebtRedeemLogger(params.x, srcSmgID, destSmgID);
     }
@@ -148,7 +148,7 @@ library HTLCDebtLib {
         bytes32 destSmgID;
         (srcSmgID, destSmgID) = storageData.htlcTxData.getDebtTx(params.xHash);
 
-        storageData.quota.debtRevoke(srcSmgID, destSmgID);
+        storageData.quota.assetRevoke(srcSmgID, destSmgID);
 
         emit SrcDebtRevokeLogger(params.xHash, srcSmgID, destSmgID);
     }

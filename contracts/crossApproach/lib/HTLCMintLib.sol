@@ -205,7 +205,7 @@ library HTLCMintLib {
         //                             params.value, lockFee, params.lockedTime, params.userShadowAccount);
         storageData.htlcTxData.addUserTx(userTxParams);
 
-        storageData.quota.mintLock(params.tokenPairID, params.smgID, params.value, true);
+        storageData.quota.userMintLock(params.tokenPairID, params.smgID, params.value, true);
 
         emit UserMintLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userShadowAccount);
     }
@@ -231,7 +231,7 @@ library HTLCMintLib {
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
-        storageData.quota.mintRedeem(tokenPairID, smgID, value);
+        storageData.quota.smgMintRedeem(tokenPairID, smgID, value);
         if (lockFee > 0) {
             if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(lockFee);
@@ -279,7 +279,7 @@ library HTLCMintLib {
 
         storageData.htlcTxData.revokeUserTx(params.xHash, revokeFee);
 
-        storageData.quota.mintRevoke(tokenPairID, smgID, value);
+        storageData.quota.userMintRevoke(tokenPairID, smgID, value);
 
         if (revokeFee > 0) {
             if (storageData.smgFeeProxy == address(0)) {
@@ -314,7 +314,7 @@ library HTLCMintLib {
         storageData.htlcTxData.addSmgTx(params.xHash, params.smgID, params.tokenPairID,
                                         params.value, params.userShadowAccount, params.lockedTime);
 
-        storageData.quota.mintLock(params.tokenPairID, params.smgID, params.value, false);
+        storageData.quota.smgMintLock(params.tokenPairID, params.smgID, params.value, false);
 
         emit SmgMintLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, params.userShadowAccount);
     }
@@ -339,7 +339,7 @@ library HTLCMintLib {
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
-        storageData.quota.mintRedeem(tokenPairID, smgID, value);
+        storageData.quota.userMintRedeem(tokenPairID, smgID, value);
 
         storageData.tokenManager.mintToken(tokenPairID, userShadowAccount, value);
 
@@ -365,7 +365,7 @@ library HTLCMintLib {
 
         // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
 
-        storageData.quota.mintRevoke(tokenPairID, smgID, value);
+        storageData.quota.smgMintRevoke(tokenPairID, smgID, value);
 
         emit SmgMintRevokeLogger(params.xHash, smgID, tokenPairID);
     }
