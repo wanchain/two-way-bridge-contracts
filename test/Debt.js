@@ -276,7 +276,9 @@ let typesArrayList             = {
     destDebtLock: ['bytes32', 'bytes32'],
     //xHash   tokenPairID   value   userAccount
     smgBurnLock: ['bytes32', 'uint', 'uint', 'address'],
-    // timeout receiver
+    //uniqueID   tokenPairID   value   userAccount
+    smgFastMint: ['bytes32', 'uint', 'uint', 'address'],
+     // timeout receiver
     smgWithdrawFee: ['uint','address'],
     // x
     outSmgRedeem: ['bytes32'],
@@ -955,7 +957,7 @@ contract('Test HTLC', async (accounts) => {
             // console.log("revoke hash", xInfo.chain1DebtRevoke.hash);
             let srcDebtRevokeReceipt = await crossApproach.chain1.instance.srcDebtRevoke(xInfo.chain1DebtRevoke.hash, {from: storemanGroups[1].account});
 
-            console.log("srcDebtRevokeReceipt", srcDebtRevokeReceipt.logs);
+            // console.log("srcDebtRevokeReceipt", srcDebtRevokeReceipt.logs);
             assert.checkWeb3Event(srcDebtRevokeReceipt, {
                 event: 'SrcDebtRevokeLogger',
                 args: {
@@ -1042,7 +1044,7 @@ contract('Test HTLC', async (accounts) => {
             debtLockParamsTemp.xHash = xInfo.chain1NoDebtRedeem.hash;
 
             await crossApproach.chain1.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
-            await crossApproach.chain2.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.destSmgID, storemanGroupStatus.unregistered);
+            await crossApproach.chain2.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
 
             let pkId = 1;
             let sk = skInfo.smg1[pkId];
@@ -1166,7 +1168,7 @@ contract('Test HTLC', async (accounts) => {
 
             let pkId = 1;
             let sk = skInfo.smg1[pkId];
-            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgMintLock, smgLockParamsTemp.xHash,
+            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgFastMint, smgLockParamsTemp.uniqueID,
                 smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.shadowUserAccount);
 
             // user mint lock
@@ -1193,8 +1195,8 @@ contract('Test HTLC', async (accounts) => {
             debtLockParamsTemp.destSmgID = storemanGroups[2].ID;
             debtLockParamsTemp.xHash = xInfo.chain1NoDebtRedeem.hash;
 
-            await crossApproach.chain1.parnters.smgAdminProxy.setStoremanGroupStatus(fastMintParamsTemp.srcSmgID, storemanGroupStatus.ready);
-            await crossApproach.chain2.parnters.smgAdminProxy.setStoremanGroupStatus(fastMintParamsTemp.srcSmgID, storemanGroupStatus.ready);
+            await crossApproach.chain1.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
+            await crossApproach.chain2.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
 
             let pkId = 1;
             let sk = skInfo.smg1[pkId];
@@ -1229,6 +1231,9 @@ contract('Test HTLC', async (accounts) => {
             debtLockParamsTemp.destSmgID = storemanGroups[2].ID;
             debtLockParamsTemp.xHash = xInfo.chain1NoDebtRedeem.hash;
 
+            await crossApproach.chain1.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
+            await crossApproach.chain2.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
+
             let pkId = 1;
             let sk = skInfo.smg1[pkId];
             let {R, s} = buildMpcSign(schnorr.curve2, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
@@ -1253,6 +1258,9 @@ contract('Test HTLC', async (accounts) => {
             debtLockParamsTemp.srcSmgID = storemanGroups[1].ID;
             debtLockParamsTemp.destSmgID = storemanGroups[2].ID;
             debtLockParamsTemp.xHash = xInfo.chain1NoDebtRedeem.hash;
+
+            // await crossApproach.chain1.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.destSmgID, storemanGroupStatus.ready);
+            // await crossApproach.chain2.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.destSmgID, storemanGroupStatus.ready);
 
             let pkId = 2;
             let sk = skInfo.smg2[pkId];
