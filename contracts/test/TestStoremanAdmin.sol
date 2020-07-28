@@ -91,7 +91,7 @@ contract TestStoremanAdmin {
             smgData.gpk1, smgData.gpk2, smgData.startTime, smgData.endTime);
     }
 
-    function updateStoremanGroupStatus(bytes32 id, uint8 status)
+    function setStoremanGroupStatus(bytes32 id, uint8 status)
         public
     {
         SmgData memory smgData = mapStoreman[id];
