@@ -232,15 +232,6 @@ let userLockParams       = {
     shadowUserAccount: '', // accounts 3 or 4
 };
 
-let userFastParams       = {
-    uniqueID: '',
-    smgID: storemanGroups[1].ID,
-    tokenPairID: tokens.token1.tokenPairID,
-    value: 10,
-    origUserAccount: '', // accounts 7
-    shadowUserAccount: '', // accounts 8
-};
-
 let smgLockParams       = {
     xHash: '',
     smgID: storemanGroups[1].ID,
@@ -248,25 +239,30 @@ let smgLockParams       = {
     value: userLockParams.value,
     origUserAccount: '', // accounts 3 or 4
     shadowUserAccount: '', // accounts 3 or 4
-    R: '',
-    s: ''
 };
 
-let debtLockParams       = {
-    xHash: '',
-    srcSmgID: storemanGroups[1].ID,
-    destSmgID: storemanGroups[2].ID,
+let userFastParams       = {
+    uniqueID: '',
+    smgID: storemanGroups[1].ID,
+    tokenPairID: tokens.token1.tokenPairID,
+    value: userLockParams.value,
+    origUserAccount: '', // accounts 7
+    shadowUserAccount: '', // accounts 8
 };
 
 let smgFastParams       = {
     uniqueID: '',
     smgID: storemanGroups[1].ID,
     tokenPairID: tokens.token1.tokenPairID,
-    value: userLockParams.value,
-    origUserAccount: '', // accounts 3 or 4
-    shadowUserAccount: '', // accounts 3 or 4
-    R: '',
-    s: ''
+    value: userFastParams.value,
+    origUserAccount: '', // accounts 7 or 8
+    shadowUserAccount: '', // accounts 7 or 8
+};
+
+let debtLockParams       = {
+    xHash: '',
+    srcSmgID: storemanGroups[1].ID,
+    destSmgID: storemanGroups[2].ID,
 };
 
 let typesArrayList             = {
@@ -280,12 +276,6 @@ let typesArrayList             = {
     smgFastMint: ['bytes32', 'uint', 'uint', 'address'],
      // timeout receiver
     smgWithdrawFee: ['uint','address'],
-    // x
-    outSmgRedeem: ['bytes32'],
-    // x
-    inDebtRedeem: ['bytes32'],
-    //tokenOrigAccount    xHash   srcStoremanPK value
-    inDebtLock: ['bytes', 'bytes32', 'bytes', 'uint']
 };
 
 let owner = require('../truffle.js').networks.development.from;
@@ -330,10 +320,10 @@ contract('Test HTLC', async (accounts) => {
             storemanGroups[2].gpk1 = schnorr.curve2.getPKBySk(skInfo.smg2[1]);
             storemanGroups[2].gpk2 = schnorr.curve2.getPKBySk(skInfo.smg2[2]);
             console.log("init 4", await getBalance(owner));
-            console.log("1 pk1:", storemanGroups[1].gpk1);
-            console.log("1 pk2:", storemanGroups[1].gpk2);
-            console.log("2 pk1:", storemanGroups[2].gpk1);
-            console.log("2 pk2:", storemanGroups[2].gpk2);
+            // console.log("1 pk1:", storemanGroups[1].gpk1);
+            // console.log("1 pk2:", storemanGroups[1].gpk2);
+            // console.log("2 pk1:", storemanGroups[2].gpk1);
+            // console.log("2 pk2:", storemanGroups[2].gpk2);
 
             // quota1
             let quotaProxy = await QuotaProxy.deployed();
@@ -1114,7 +1104,7 @@ contract('Test HTLC', async (accounts) => {
             fastMintParamsTemp.uniqueID = uniqueInfo.chain1DebtFastMint;
             fastMintParamsTemp.tokenPairID = coins.coin2.tokenPairID;
 
-            console.log(fastMintParamsTemp);
+            // console.log(fastMintParamsTemp);
 
             await crossApproach.chain1.parnters.smgAdminProxy.setStoremanGroupStatus(fastMintParamsTemp.smgID, storemanGroupStatus.ready);
             await crossApproach.chain2.parnters.smgAdminProxy.setStoremanGroupStatus(fastMintParamsTemp.smgID, storemanGroupStatus.ready);
@@ -1124,6 +1114,8 @@ contract('Test HTLC', async (accounts) => {
             let value = web3.utils.toWei(fastMintParamsTemp.value.toString());
             let totalValue = new BN(value).add(new BN(crossApproach.chain2.origLockFee)).toString();
 
+            // console.log("1 balance accounts[7]", await getBalance(fastMintParamsTemp.origUserAccount));
+            // console.log("value accounts[7]", value);
             // user mint lock
             let userFastMintReceipt = await crossApproach.chain2.instance.userFastMint(
                 fastMintParamsTemp.uniqueID,
@@ -1132,6 +1124,8 @@ contract('Test HTLC', async (accounts) => {
                 value,
                 fastMintParamsTemp.shadowUserAccount,
                 {from: fastMintParamsTemp.origUserAccount, value: totalValue});
+
+            // console.log("2 balance accounts[7]", await getBalance(fastMintParamsTemp.origUserAccount));
 
             // console.log("userFastMint receipt", userFastMintReceipt.logs);
             assert.checkWeb3Event(userFastMintReceipt, {
@@ -1156,32 +1150,53 @@ contract('Test HTLC', async (accounts) => {
 
     it('Debt -> Shadow[1] -> Coin2 -> smgFastMint  ==> success', async () => {
         try {
-            // accounts[5] is the chain1 original address of the user.
-            // accounts[6] is the chain2 shadow address of the user.
-            let smgLockParamsTemp = Object.assign({}, smgFastParams);
-            smgLockParamsTemp.origUserAccount = accounts[5];
-            smgLockParamsTemp.shadowUserAccount = accounts[6];
-            smgLockParamsTemp.uniqueID = uniqueInfo.chain1DebtFastMint;
-            smgLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+            // accounts[7] is the chain1 original address of the user.
+            // accounts[8] is the chain2 shadow address of the user.
+            let fastMintParamsTemp = Object.assign({}, smgFastParams);
+            fastMintParamsTemp.origUserAccount = accounts[7];
+            fastMintParamsTemp.shadowUserAccount = accounts[8];
+            fastMintParamsTemp.uniqueID = uniqueInfo.chain1DebtFastMint;
+            fastMintParamsTemp.tokenPairID = coins.coin2.tokenPairID;
 
-            let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
+            let beforeMintQuotaValue = await crossApproach.chain1.parnters.quota.getSmgMintQuota(fastMintParamsTemp.tokenPairID, fastMintParamsTemp.smgID);
+            // console.log("beforeMintQuotaValue", beforeMintQuotaValue)
+
+            let value = web3.utils.toWei(fastMintParamsTemp.value.toString());
 
             let pkId = 1;
             let sk = skInfo.smg1[pkId];
-            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgFastMint, smgLockParamsTemp.uniqueID,
-                smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.shadowUserAccount);
+            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgFastMint, fastMintParamsTemp.uniqueID,
+                fastMintParamsTemp.tokenPairID, value, fastMintParamsTemp.shadowUserAccount);
 
-            // user mint lock
-            let smgMintLockReceipt = await crossApproach.chain1.instance.smgFastMint(
-                smgLockParamsTemp.uniqueID,
-                smgLockParamsTemp.smgID,
-                smgLockParamsTemp.tokenPairID,
+            // user fast mint
+            let userFastMintReceipt = await crossApproach.chain1.instance.smgFastMint(
+                fastMintParamsTemp.uniqueID,
+                fastMintParamsTemp.smgID,
+                fastMintParamsTemp.tokenPairID,
                 value,
-                smgLockParamsTemp.shadowUserAccount,
+                fastMintParamsTemp.shadowUserAccount,
                 R,
                 s,
                 {from: storemanGroups[1].account});
-            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+            // console.log("smgFastMint receipt", userFastMintReceipt.logs);
+
+            assert.checkWeb3Event(userFastMintReceipt, {
+                event: 'SmgFastMintLogger',
+                args: {
+                    uniqueID: fastMintParamsTemp.uniqueID,
+                    smgID: web3.utils.padRight(fastMintParamsTemp.smgID, 64),
+                    tokenPairID: fastMintParamsTemp.tokenPairID,
+                    value: value,
+                    userAccount: fastMintParamsTemp.shadowUserAccount,
+                }
+            });
+
+            let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getSmgMintQuota(fastMintParamsTemp.tokenPairID, fastMintParamsTemp.smgID);
+            // console.log("afterMintQuotaValue", afterMintQuotaValue)
+            // console.log("value", value);
+            let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
+            // console.log("difference", difference);
+            assert.equal(value === difference, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1483,7 +1498,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Chain[2] -> Asset -> srcDebtRedeem  ==> success', async () => {
+    it('Chain[2] -> Asset -> destDebtRedeem  ==> success', async () => {
         try {
 
             let destDebtRedeemReceipt = await crossApproach.chain2.instance.destDebtRedeem(xInfo.chain2NoDebtRedeem.x, {from: storemanGroups[2].account});
@@ -1505,169 +1520,228 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    // // chain2 BurnBridge
-    // it('Debt -> Shadow[2] -> Token1 -> userBurnLock  ==> success', async () => {
-    //     try {
-    //         // accounts[7] is the chain1 original address of the user.
-    //         // accounts[8] is the chain2 shadow address of the user.
-    //         let userLockParamsTemp = Object.assign({}, userLockParams);
-    //         userLockParamsTemp.origUserAccount = accounts[7];
-    //         userLockParamsTemp.shadowUserAccount = accounts[8];
-    //         userLockParamsTemp.xHash = xInfo.chain1BurnTokenRedeem.hash;
+    // chain1 BurnBridge
+    it('Debt -> Shadow[1] -> Coin2 -> userBurnLock  ==> success', async () => {
+        try {
+            // accounts[7] is the chain1 original address of the user.
+            // accounts[8] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.origUserAccount = accounts[7];
+            userLockParamsTemp.shadowUserAccount = accounts[8];
+            userLockParamsTemp.xHash = xInfo.chain2BurnCoinRedeem.hash;
+            userLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+            userLockParamsTemp.smgID = storemanGroups[2].ID;
 
-    //         // let mintOracleValue = await crossApproach.chain2.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
-    //         // console.log("mintOracleValue", mintOracleValue);
+            // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
+            // console.log("mintOracleValue", mintOracleValue);
 
-    //         let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-    //         // console.log("before BurnQuotaValue", beforeBurnQuotaValue);
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getUserBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("chain1 beforeBurnQuotaValue", beforeBurnQuotaValue);
 
-    //         let value = web3.utils.toWei(userLockParamsTemp.value.toString());
-    //         // get token instance
-    //         let tokenInstance = await getRC20TokenInstance(tokens.token1.shadowTokenAccount);
-    //         let balance = await tokenInstance.balanceOf(userLockParamsTemp.shadowUserAccount);
-    //         assert.equal(value, balance.toString());
+            let value = web3.utils.toWei(userLockParamsTemp.value.toString());
+            // get token instance
+            let tokenInstance = await getRC20TokenInstance(coins.coin2.shadowTokenAccount);
+            let balance = await tokenInstance.balanceOf(userLockParamsTemp.shadowUserAccount);
+            assert.equal(value, balance.toString());
 
-    //         // approve value
-    //         await tokenInstance.approve(crossApproach.chain2.instance.address, 0, {from: userLockParamsTemp.shadowUserAccount});
-    //         await tokenInstance.approve(crossApproach.chain2.instance.address, value, {from: userLockParamsTemp.shadowUserAccount});
-    //         let allowance = await tokenInstance.allowance(userLockParamsTemp.shadowUserAccount, crossApproach.chain2.instance.address);
-    //         assert.equal(value, allowance.toString());
+            // approve value
+            await tokenInstance.approve(crossApproach.chain1.instance.address, 0, {from: userLockParamsTemp.shadowUserAccount});
+            await tokenInstance.approve(crossApproach.chain1.instance.address, value, {from: userLockParamsTemp.shadowUserAccount});
+            let allowance = await tokenInstance.allowance(userLockParamsTemp.shadowUserAccount, crossApproach.chain1.instance.address);
+            assert.equal(value, allowance.toString());
 
-    //         // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
-    //         // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
-    //         // user mint lock
-    //         let userBurnLockReceipt = await crossApproach.chain2.instance.userBurnLock(
-    //             userLockParamsTemp.xHash,
-    //             userLockParamsTemp.smgID,
-    //             userLockParamsTemp.tokenPairID,
-    //             value,
-    //             userLockParamsTemp.origUserAccount,
-    //             {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
+            // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
+            // user mint lock
+            let userBurnLockReceipt = await crossApproach.chain1.instance.userBurnLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                value,
+                userLockParamsTemp.origUserAccount,
+                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain1.shadowLockFee});
 
-    //         // console.log("userBurnLock receipt", userBurnLockReceipt.logs);
-    //         // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
-    //         // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
-    //         assert.checkWeb3Event(userBurnLockReceipt, {
-    //             event: 'UserBurnLockLogger',
-    //             args: {
-    //                 xHash: userLockParamsTemp.xHash,
-    //                 smgID: web3.utils.padRight(userLockParamsTemp.smgID, 64),
-    //                 tokenPairID: userLockParamsTemp.tokenPairID,
-    //                 value: value,
-    //                 fee: crossApproach.chain2.shadowLockFee,
-    //                 userAccount: userLockParamsTemp.origUserAccount.toLowerCase(),
-    //             }
-    //         });
+                // console.log("userBurnLock receipt", userBurnLockReceipt.logs);
+            assert.checkWeb3Event(userBurnLockReceipt, {
+                event: 'UserBurnLockLogger',
+                args: {
+                    xHash: userLockParamsTemp.xHash,
+                    smgID: web3.utils.padRight(userLockParamsTemp.smgID, 64),
+                    tokenPairID: userLockParamsTemp.tokenPairID,
+                    value: value,
+                    fee: crossApproach.chain1.shadowLockFee,
+                    userAccount: userLockParamsTemp.origUserAccount.toLowerCase(),
+                }
+            });
+            // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
+            // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
 
-    //         let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-    //         let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
-    //         assert.equal(value === difference, true);
-    //     } catch (err) {
-    //         assert.fail(err);
-    //     }
-    // });
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getUserBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // console.log("chain1 getUserBurnQuota OK");
+            // console.log("chain1 afterBurnQuotaValue", afterBurnQuotaValue);
+            // console.log("chain1 value", value);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            // console.log("chain1 difference", difference);
+            assert.equal(value === difference, true);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
 
-    // it('Asset -> Original[1] -> Token1 -> smgBurnLock  ==> success', async () => {
-    //     try {
-    //         // accounts[3] is the chain1 original address of the user.
-    //         // accounts[4] is the chain2 shadow address of the user.
-    //         let smgLockParamsTemp = Object.assign({}, smgLockParams);
-    //         smgLockParamsTemp.origUserAccount = accounts[3];
-    //         smgLockParamsTemp.shadowUserAccount = accounts[4];
-    //         smgLockParamsTemp.xHash = xInfo.chain1BurnTokenRedeem.hash;
+    it('Debt -> Original[2] -> Coin2 -> smgBurnLock  ==> success', async () => {
+        try {
+            // accounts[7] is the chain1 original address of the user.
+            // accounts[8] is the chain2 shadow address of the user.
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
+            smgLockParamsTemp.origUserAccount = accounts[7];
+            smgLockParamsTemp.shadowUserAccount = accounts[8];
+            smgLockParamsTemp.xHash = xInfo.chain2BurnCoinRedeem.hash;
+            smgLockParamsTemp.tokenPairID = coins.coin2.tokenPairID;
+            smgLockParamsTemp.smgID = storemanGroups[2].ID;
 
-    //         let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getSmgBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            // console.log("chain2 beforeBurnQuotaValue", beforeBurnQuotaValue);
 
-    //         let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
+            let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
 
-    //         let pkId = 1;
-    //         let sk = skInfo.smg1[pkId];
-    //         let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgBurnLock, smgLockParamsTemp.xHash,
-    //             smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.origUserAccount);
+            let pkId = 2;
+            let sk = skInfo.smg2[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve2, sk, typesArrayList.smgBurnLock, smgLockParamsTemp.xHash,
+                smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.origUserAccount);
 
-    //         // user mint lock
-    //         let smgBurnLockReceipt = await crossApproach.chain1.instance.smgBurnLock(
-    //             smgLockParamsTemp.xHash,
-    //             smgLockParamsTemp.smgID,
-    //             smgLockParamsTemp.tokenPairID,
-    //             value,
-    //             smgLockParamsTemp.origUserAccount,
-    //             R,
-    //             s,
-    //             {from: storemanGroups[1].account});
+            // console.log("pk1:", storemanGroups[1].gpk1);
+            // console.log("pk2:", storemanGroups[1].gpk2);
+            // user mint lock
+            let smgBurnLockReceipt = await crossApproach.chain2.instance.smgBurnLock(
+                smgLockParamsTemp.xHash,
+                smgLockParamsTemp.smgID,
+                smgLockParamsTemp.tokenPairID,
+                value,
+                smgLockParamsTemp.origUserAccount,
+                R,
+                s,
+                {from: storemanGroups[2].account});
 
-    //         // console.log("smgBurnLock receipt", smgBurnLockReceipt.logs);
-    //         assert.checkWeb3Event(smgBurnLockReceipt, {
-    //             event: 'SmgBurnLockLogger',
-    //             args: {
-    //                 xHash: smgLockParamsTemp.xHash,
-    //                 smgID: web3.utils.padRight(smgLockParamsTemp.smgID, 64),
-    //                 tokenPairID: smgLockParamsTemp.tokenPairID,
-    //                 value: value,
-    //                 userAccount: smgLockParamsTemp.origUserAccount
-    //             }
-    //         });
+            // console.log("smgBurnLock receipt", smgBurnLockReceipt);
+            // console.log("smgBurnLock receipt logs", smgBurnLockReceipt.logs);
+            assert.checkWeb3Event(smgBurnLockReceipt, {
+                event: 'SmgBurnLockLogger',
+                args: {
+                    xHash: smgLockParamsTemp.xHash,
+                    smgID: web3.utils.padRight(smgLockParamsTemp.smgID, 64),
+                    tokenPairID: smgLockParamsTemp.tokenPairID,
+                    value: value,
+                    userAccount: smgLockParamsTemp.origUserAccount
+                }
+            });
 
-    //         let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
-    //         let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
-    //         assert.equal(value === difference, true);
-    //     } catch (err) {
-    //         assert.fail(err);
-    //     }
-    // });
+            // console.log("chain2 check SmgBurnLockLogger OK");
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getSmgBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            // console.log("chain2 getSmgBurnQuota OK");
+            // console.log("chain2 afterBurnQuotaValue", afterBurnQuotaValue);
+            // console.log("chain2 value", value);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            // console.log("chain2 difference", difference);
+            assert.equal(value === difference, true);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
 
-    // it('Asset -> Original[1] -> Token1 -> userBurnRedeem  ==> success', async () => {
-    //     try {
-    //         let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+    it('Debt -> Original[2] -> Coin2 -> userBurnRedeem  ==> success', async () => {
+        try {
+            let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getSmgBurnQuota(coins.coin2.tokenPairID, storemanGroups[2].ID);
+            // console.log("chain2 beforeBurnQuotaValue", beforeBurnQuotaValue);
 
-    //         let origUserAccount = accounts[3];
-    //         let userBurnRedeemReceipt = await crossApproach.chain1.instance.userBurnRedeem(xInfo.chain1BurnTokenRedeem.x, {from: origUserAccount});
+            let origUserAccount = accounts[7];
+            let userBurnRedeemReceipt = await crossApproach.chain2.instance.userBurnRedeem(xInfo.chain2BurnCoinRedeem.x, {from: origUserAccount});
+            // let balance2 = await getBalance(origUserAccount);
 
-    //         assert.checkWeb3Event(userBurnRedeemReceipt, {
-    //             event: 'UserBurnRedeemLogger',
-    //             args: {
-    //                 x: xInfo.chain1BurnTokenRedeem.x,
-    //                 smgID: web3.utils.padRight(storemanGroups[1].ID, 64),
-    //                 tokenPairID: tokens.token1.tokenPairID
-    //             }
-    //         });
+            assert.checkWeb3Event(userBurnRedeemReceipt, {
+                event: 'UserBurnRedeemLogger',
+                args: {
+                    x: xInfo.chain2BurnCoinRedeem.x,
+                    smgID: web3.utils.padRight(storemanGroups[2].ID, 64),
+                    tokenPairID: coins.coin2.tokenPairID
+                }
+            });
 
-    //         let value = web3.utils.toWei(userLockParams.value.toString());
-    //         let tokenInstance = await getRC20TokenInstance(tokens.token1.origTokenAccount);
-    //         let balance = await tokenInstance.balanceOf(origUserAccount);
-    //         assert.equal(value, balance.toString());
+            let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getSmgBurnQuota(coins.coin2.tokenPairID, storemanGroups[2].ID);
+            // console.log("chain2 afterBurnQuotaValue", afterBurnQuotaValue);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            // console.log("chain2 difference", difference);
+            assert.equal(new BN(0).toString() === difference, true);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
 
-    //         let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
-    //         let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
-    //         assert.equal(new BN(0).toString() === difference, true);
-    //     } catch (err) {
-    //         assert.fail(err);
-    //     }
-    // });
+    it('Debt -> Shadow[1] -> Coin2 -> smgBurnRedeem  ==> success', async () => {
+        try {
+            let beforeBurnQuotaValue = await crossApproach.chain1.parnters.quota.getUserBurnQuota(coins.coin2.tokenPairID, storemanGroups[2].ID);
 
-    // it('Debt -> Shadow[2] -> Token1 -> smgBurnRedeem  ==> success', async () => {
-    //     try {
-    //         let beforeBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
+            let smgBurnRedeemReceipt = await crossApproach.chain1.instance.smgBurnRedeem(xInfo.chain2BurnCoinRedeem.x, {from: storemanGroups[2].account});
 
-    //         let smgBurnRedeemReceipt = await crossApproach.chain2.instance.smgBurnRedeem(xInfo.chain1BurnTokenRedeem.x, {from: storemanGroups[1].account});
+            assert.checkWeb3Event(smgBurnRedeemReceipt, {
+                event: 'SmgBurnRedeemLogger',
+                args: {
+                    x: xInfo.chain2BurnCoinRedeem.x,
+                    smgID: web3.utils.padRight(storemanGroups[2].ID, 64),
+                    tokenPairID: coins.coin2.tokenPairID,
+                    fee: crossApproach.chain1.shadowLockFee,
+                }
+            });
 
-    //         assert.checkWeb3Event(smgBurnRedeemReceipt, {
-    //             event: 'SmgBurnRedeemLogger',
-    //             args: {
-    //                 x: xInfo.chain1BurnTokenRedeem.x,
-    //                 smgID: web3.utils.padRight(storemanGroups[1].ID, 64),
-    //                 tokenPairID: tokens.token1.tokenPairID,
-    //                 fee: crossApproach.chain2.shadowLockFee,
-    //             }
-    //         });
+            let afterBurnQuotaValue = await crossApproach.chain1.parnters.quota.getUserBurnQuota(coins.coin2.tokenPairID, storemanGroups[2].ID);
+            let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+            assert.equal(new BN(0).toString() === difference, true);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
 
-    //         let afterBurnQuotaValue = await crossApproach.chain2.parnters.quota.getBurnQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
-    //         let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
-    //         assert.equal(new BN(0).toString() === difference, true);
-    //     } catch (err) {
-    //         assert.fail(err);
-    //     }
-    // });
+    it('Debt Cleaned -> Cross Cleaned  ==> success', async () => {
+        try {
+            let chain1Smg1AssetQuotaValue = await crossApproach.chain1.parnters.quota.getAsset(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            let chain1Smg1DebtQuotaValue = await crossApproach.chain1.parnters.quota.getDebt(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            // console.log("chain1Smg1AssetQuotaValue", chain1Smg1AssetQuotaValue);
+            // console.log("chain1Smg1DebtQuotaValue", chain1Smg1DebtQuotaValue);
+
+            let chain2Smg1AssetQuotaValue = await crossApproach.chain2.parnters.quota.getAsset(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            let chain2Smg1DebtQuotaValue = await crossApproach.chain2.parnters.quota.getDebt(coins.coin2.tokenPairID, storemanGroups[1].ID);
+            // console.log("chain2Smg1AssetQuotaValue", chain2Smg1AssetQuotaValue);
+            // console.log("chain2Smg1DebtQuotaValue", chain2Smg1DebtQuotaValue);
+
+            let chain1Smg2AssetQuotaValue = await crossApproach.chain1.parnters.quota.getAsset(coins.coin2.tokenPairID, storemanGroups[2].ID);
+            let chain1Smg2DebtQuotaValue = await crossApproach.chain1.parnters.quota.getDebt(coins.coin2.tokenPairID, storemanGroups[2].ID);
+            // console.log("chain1Smg2AssetQuotaValue", chain1Smg2AssetQuotaValue);
+            // console.log("chain1Smg2DebtQuotaValue", chain1Smg2DebtQuotaValue);
+
+            let chain2Smg2AssetQuotaValue = await crossApproach.chain2.parnters.quota.getAsset(coins.coin2.tokenPairID, storemanGroups[2].ID);
+            let chain2Smg2DebtQuotaValue = await crossApproach.chain2.parnters.quota.getDebt(coins.coin2.tokenPairID, storemanGroups[2].ID);
+            // console.log("chain2Smg2AssetQuotaValue", chain2Smg2AssetQuotaValue);
+            // console.log("chain2Smg2DebtQuotaValue", chain2Smg2DebtQuotaValue);
+
+            assert.equal(chain1Smg1AssetQuotaValue.asset.eq(chain1Smg2AssetQuotaValue.asset), true);
+            assert.equal(chain1Smg1AssetQuotaValue.asset_receivable.eq(chain1Smg2AssetQuotaValue.asset_receivable), true);
+            assert.equal(chain1Smg1AssetQuotaValue.asset_payable.eq(chain1Smg2AssetQuotaValue.asset_payable), true);
+
+            assert.equal(chain1Smg1DebtQuotaValue.debt.eq(chain1Smg2DebtQuotaValue.debt), true);
+            assert.equal(chain1Smg1DebtQuotaValue.debt_receivable.eq(chain1Smg2DebtQuotaValue.debt_receivable), true);
+            assert.equal(chain1Smg1DebtQuotaValue.debt_payable.eq(chain1Smg2DebtQuotaValue.debt_payable), true);
+
+            assert.equal(chain2Smg1AssetQuotaValue.asset.eq(chain2Smg2AssetQuotaValue.asset), true);
+            assert.equal(chain2Smg1AssetQuotaValue.asset_receivable.eq(chain2Smg2AssetQuotaValue.asset_receivable), true);
+            assert.equal(chain2Smg1AssetQuotaValue.asset_payable.eq(chain2Smg2AssetQuotaValue.asset_payable), true);
+
+            assert.equal(chain2Smg1DebtQuotaValue.debt.eq(chain2Smg2DebtQuotaValue.debt), true);
+            assert.equal(chain2Smg1DebtQuotaValue.debt_receivable.eq(chain2Smg2DebtQuotaValue.debt_receivable), true);
+            assert.equal(chain2Smg1DebtQuotaValue.debt_payable.eq(chain2Smg2DebtQuotaValue.debt_payable), true);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
 });
 
 async function testInit() {
@@ -1698,8 +1772,8 @@ async function testInit() {
             let needKeys = Object.keys(expectArgs);
             for(let key of needKeys){
                 if(expectArgs[key] != entryArgs[key]){
-                    console.log(expectArgs[key])
-                    console.log(entryArgs[key])
+                    // console.log(expectArgs[key])
+                    // console.log(entryArgs[key])
                     assert.fail("Not get the expected event args: " + key);
                     break;
                 }
