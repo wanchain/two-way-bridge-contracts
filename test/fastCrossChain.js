@@ -700,7 +700,7 @@ contract('Test Fast Cross Chain', async (accounts) => {
             userLockParamsTemp.origUserAccount = accounts[3];
             userLockParamsTemp.shadowUserAccount = accounts[4];
             userLockParamsTemp.xHash = xInfo.chain1MintTokenRedeem.hash;
-            await crossApproach.chain1.instance.userFastMint(
+            let userFastMintReceipt = await crossApproach.chain1.instance.userFastMint(
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
@@ -808,7 +808,7 @@ contract('Test Fast Cross Chain', async (accounts) => {
             // let mintOracleValue = await crossApproach.chain1.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
             // console.log("mintOracleValue", mintOracleValue);
 
-            let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
+            // let mintQuotaValue = await crossApproach.chain1.parnters.quota.getMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
             // console.log("mintQuotaValue", mintQuotaValue);
 
             let value = web3.utils.toWei(userLockParamsTemp.value.toString());
@@ -828,7 +828,7 @@ contract('Test Fast Cross Chain', async (accounts) => {
             // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
             // user Fast Mint
-            let userMintLockReceipt = await crossApproach.chain1.instance.userFastMint(
+            let userFastMintReceipt = await crossApproach.chain1.instance.userFastMint(
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
@@ -836,17 +836,17 @@ contract('Test Fast Cross Chain', async (accounts) => {
                 userLockParamsTemp.shadowUserAccount,
                 {from: userLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
             // console.log('userFastMintReceipt:', userFastMintReceipt);
-            // assert.checkWeb3Event(userMintLockReceipt, {
-            //     event: 'UserFastMintLogger',
-            //     args: {
-            //         uniqueID: userLockParamsTemp.xHash,
-            //         smgID: userLockParamsTemp.smgID,
-            //         tokenPairID: userLockParamsTemp.tokenPairID,
-            //         value: userLockParamsTemp.value,
-            //         fee: crossApproach.chain1.origLockFee,
-            //         userAccount: userLockParamsTemp.shadowUserAccount,
-            //     }
-            // });
+            assert.checkWeb3Event(userFastMintReceipt, {
+                event: 'UserFastMintLogger',
+                args: {
+                    uniqueID: userLockParamsTemp.xHash,
+                    smgID: web3.utils.padRight(userLockParamsTemp.smgID, 64),
+                    tokenPairID: userLockParamsTemp.tokenPairID,
+                    value: value,
+                    fee: crossApproach.chain1.origLockFee,
+                    userAccount: userLockParamsTemp.shadowUserAccount.toLowerCase(),
+                }
+            });
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
@@ -865,7 +865,7 @@ contract('Test Fast Cross Chain', async (accounts) => {
             smgLockParamsTemp.shadowUserAccount = accounts[4];
             smgLockParamsTemp.xHash = xInfo.chain1MintTokenRevoke.hash;
 
-            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let beforeMintQuotaValue = await crossApproach.chain2.parnters.quota.getSmgMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
             // console.log("Token1 -> before MintQuotaValue", beforeMintQuotaValue);
 
             let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
@@ -886,8 +886,18 @@ contract('Test Fast Cross Chain', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+            assert.checkWeb3Event(smgMintLockReceipt, {
+                event: 'SmgFastMintLogger',
+                args: {
+                    uniqueID: smgLockParamsTemp.xHash,
+                    smgID: web3.utils.padRight(smgLockParamsTemp.smgID, 64),
+                    tokenPairID: smgLockParamsTemp.tokenPairID,
+                    value: value,
+                    userAccount: smgLockParamsTemp.shadowUserAccount
+                }
+            });
 
-            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
+            let afterMintQuotaValue = await crossApproach.chain2.parnters.quota.getSmgMintQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
             let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
             assert.equal(value === difference, true);
         } catch (err) {
@@ -925,14 +935,27 @@ contract('Test Fast Cross Chain', async (accounts) => {
             // console.log("before shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
             // console.log("before crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
             // user mint lock
-            let userLockReceipt = await crossApproach.chain2.instance.userFastBurn(
+            let userFastBurnReceipt = await crossApproach.chain2.instance.userFastBurn(
                 userLockParamsTemp.xHash,
                 userLockParamsTemp.smgID,
                 userLockParamsTemp.tokenPairID,
                 web3.utils.toWei(userLockParamsTemp.value.toString()),
                 userLockParamsTemp.origUserAccount,
                 {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
+            
             // console.log("userBurnLock receipt", userLockReceipt.logs);
+            
+            assert.checkWeb3Event(userFastBurnReceipt, {
+                event: 'UserFastBurnLogger',
+                args: {
+                    uniqueID: userLockParamsTemp.xHash,
+                    smgID: web3.utils.padRight(userLockParamsTemp.smgID, 64),
+                    tokenPairID: userLockParamsTemp.tokenPairID,
+                    value: value,
+                    fee: crossApproach.chain2.shadowLockFee,
+                    userAccount: userLockParamsTemp.origUserAccount.toLowerCase(),
+                }
+            });
             // console.log("after shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain1.instance.address));
         } catch (err) {
@@ -967,6 +990,16 @@ contract('Test Fast Cross Chain', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+            assert.checkWeb3Event(smgMintLockReceipt, {
+                event: 'SmgFastBurnLogger',
+                args: {
+                    uniqueID: smgLockParamsTemp.xHash,
+                    smgID: web3.utils.padRight(smgLockParamsTemp.smgID, 64),
+                    tokenPairID: smgLockParamsTemp.tokenPairID,
+                    value: value,
+                    userAccount: smgLockParamsTemp.origUserAccount
+                }
+            });
         } catch (err) {
             assert.fail(err);
         }
@@ -1129,17 +1162,17 @@ contract('Test Fast Cross Chain', async (accounts) => {
                 value,
                 userLockParamsTemp.shadowUserAccount,
                 {from: userLockParamsTemp.origUserAccount, value: totalValue});
-            // assert.checkWeb3Event(userMintLockReceipt, {
-            //     event: 'UserMintLockLogger',
-            //     args: {
-            //         xHash: userLockParamsTemp.xHash,
-            //         smgID: userLockParamsTemp.smgID,
-            //         tokenPairID: userLockParamsTemp.tokenPairID,
-            //         value: userLockParamsTemp.value,
-            //         fee: crossApproach.chain1.origLockFee,
-            //         userAccount: userLockParamsTemp.shadowUserAccount,
-            //     }
-            // });
+            assert.checkWeb3Event(userMintLockReceipt, {
+                event: 'UserFastMintLogger',
+                args: {
+                    uniqueID: userLockParamsTemp.xHash,
+                    smgID: web3.utils.padRight(userLockParamsTemp.smgID, 64),
+                    tokenPairID: userLockParamsTemp.tokenPairID,
+                    value: value,
+                    fee: crossApproach.chain1.origLockFee,
+                    userAccount: userLockParamsTemp.shadowUserAccount.toLowerCase(),
+                }
+            });
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
         } catch (err) {
             assert.fail(err);
@@ -1174,6 +1207,16 @@ contract('Test Fast Cross Chain', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+            assert.checkWeb3Event(smgMintLockReceipt, {
+                event: 'SmgFastMintLogger',
+                args: {
+                    uniqueID: smgLockParamsTemp.xHash,
+                    smgID: web3.utils.padRight(smgLockParamsTemp.smgID, 64),
+                    tokenPairID: smgLockParamsTemp.tokenPairID,
+                    value: value,
+                    userAccount: smgLockParamsTemp.shadowUserAccount
+                }
+            });
         } catch (err) {
             assert.fail(err);
         }
@@ -1218,6 +1261,17 @@ contract('Test Fast Cross Chain', async (accounts) => {
                 userLockParamsTemp.origUserAccount,
                 {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain2.shadowLockFee});
             // console.log("userBurnLock receipt", userLockReceipt.logs);
+            assert.checkWeb3Event(userLockReceipt, {
+                event: 'UserFastBurnLogger',
+                args: {
+                    uniqueID: userLockParamsTemp.xHash,
+                    smgID: web3.utils.padRight(userLockParamsTemp.smgID, 64),
+                    tokenPairID: userLockParamsTemp.tokenPairID,
+                    value: value,
+                    fee: crossApproach.chain2.shadowLockFee,
+                    userAccount: userLockParamsTemp.origUserAccount.toLowerCase(),
+                }
+            });
             // console.log("after shadowUserAccount", await web3.eth.getBalance(userLockParamsTemp.shadowUserAccount));
             // console.log("after crossApproach", await web3.eth.getBalance(crossApproach.chain2.instance.address));
         } catch (err) {
@@ -1253,6 +1307,16 @@ contract('Test Fast Cross Chain', async (accounts) => {
                 s,
                 {from: storemanGroups[1].account});
             // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+            assert.checkWeb3Event(smgMintLockReceipt, {
+                event: 'SmgFastBurnLogger',
+                args: {
+                    uniqueID: smgLockParamsTemp.xHash,
+                    smgID: web3.utils.padRight(smgLockParamsTemp.smgID, 64),
+                    tokenPairID: smgLockParamsTemp.tokenPairID,
+                    value: value,
+                    userAccount: smgLockParamsTemp.origUserAccount
+                }
+            });
         } catch (err) {
             assert.fail(err);
         }
