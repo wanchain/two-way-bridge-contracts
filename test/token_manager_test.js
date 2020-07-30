@@ -270,39 +270,62 @@ contract('TokenManagerDelegate', (accounts) => {
     });
   });
 
-  describe('updateAncestorInfo', () => {
-    it('onlyOwner, onlyValidID, requires', async function() {
+  // describe('updateTokenPair', () => {
+  //   it.only('onlyOwner, onlyExistID', async function() {
+  //     const { tokenManagerDelegate } = await newTokenManager(accounts);
+
+  //     const paramUpdate = [addTokenPairParam[0], [aNewAccount, "new name", "new symbol", 8, aChainID + 100], toChainID + 1, fromAccount, fromChainID + 1, token.address, true]
+
+  //     let obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, paramUpdate, {from: admin});
+  //     assert.equal(obj.reason, "Not owner");
+
+  //     await tokenManagerDelegate.addTokenPair(...addTokenPairParam, {from: owner});
+
+  //     let param = JSON.parse(JSON.stringify(paramUpdate));
+  //     param[0] = 111;
+  //     obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, param, {from: admin});
+  //     assert.equal(obj.reason, "token not exist");
+
+  //     param = JSON.parse(JSON.stringify(paramUpdate));
+  //     obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, param, {from: admin});
+  //     assert.equal(obj.reason, "ancestorName is null");
+  //   })
+  // })
+
+  describe('updateTokenPair', () => {
+    it.only('onlyOwner, onlyExistID, requires', async function() {
       const { tokenManagerDelegate } = await newTokenManager(accounts);
 
-      const updateAncestorInfoParam = [addTokenPairParam[0], aAccount, aName, aSymbol, aChainID];
+      const paramUpdate = [addTokenPairParam[0], [aNewAccount, "new name", "new symbol", 8, aChainID + 100], toChainID + 1, fromAccount, fromChainID + 1, "0x6b175474e89094c44da98b954eedeac495271d0f", true]
 
-      let obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, updateAncestorInfoParam, {from: admin});
+      let obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, paramUpdate, {from: admin});
       assert.equal(obj.reason, "Not owner");
 
-      let param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
-      obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: owner});
-      assert.equal(obj.reason, "token deleted");
+      let param = JSON.parse(JSON.stringify(paramUpdate));
+      param[0] = 111;
+      obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, param, {from: owner});
+      assert.equal(obj.reason, "token not exist");
 
       let receipt = await tokenManagerDelegate.addToken(nameDAI, symbolDAI, decimals, {from: owner});
       param = JSON.parse(JSON.stringify(addTokenPairParam));
       param[5] = receipt.logs[0].args.tokenAddress;
       await tokenManagerDelegate.addTokenPair(...param, {from: owner});
 
-      param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
-      param[2] = "";
-      obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: owner});
+      param = JSON.parse(JSON.stringify(paramUpdate));
+      param[1][1] = "";
+      obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, param, {from: owner});
       assert.equal(obj.reason, "ancestorName is null");
 
-      param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
-      param[3] = "";
-      obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: owner});
+      param = JSON.parse(JSON.stringify(paramUpdate));
+      param[1][2] = "";
+      obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, param, {from: owner});
       assert.equal(obj.reason, "ancestorSymbol is null");
 
       await tokenManagerDelegate.removeTokenPair(addTokenPairParam[0]);
 
-      param = JSON.parse(JSON.stringify(updateAncestorInfoParam));
-      obj = await sendAndGetReason(tokenManagerDelegate.updateAncestorInfo, param, {from: owner});
-      assert.equal(obj.reason, "token deleted");
+      param = JSON.parse(JSON.stringify(paramUpdate));
+      obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, param, {from: owner});
+      assert.equal(obj.reason, null);
     });
   });
 
@@ -316,6 +339,9 @@ contract('TokenManagerDelegate', (accounts) => {
       await tokenManagerDelegate.addTokenPair(...param, {from: owner});
 
       await tokenManagerDelegate.addAdmin(admin, {from: owner});
+
+      obj = await sendAndGetReason(tokenManagerDelegate.mintToken, [111, other, 100], {from: admin});
+      assert.equal(obj.reason, "token deleted");
 
       obj = await sendAndGetReason(tokenManagerDelegate.mintToken, [addTokenPairParam[0], other, 100], {from: owner});
       assert.equal(obj.reason, "not admin");
