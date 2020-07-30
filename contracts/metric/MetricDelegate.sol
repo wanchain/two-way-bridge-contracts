@@ -84,12 +84,12 @@ contract MetricDelegate is MetricStorage, Halt {
     initialized
     onlyValidGrpId(grpId)
     returns (uint[]) {
-        require(endEpId > startEpId, "endEpId<startEpId");
+        require(endEpId >= startEpId, "endEpId<startEpId");
         uint[] memory ret;
         uint8 n = getSMCount(grpId);
         ret = new uint[](n);
         for (uint8 i = 0; i < n; i++) {
-            for (uint j = startEpId; j < endEpId; j++) {
+            for (uint j = startEpId; j <= endEpId; j++) {
                 ret[i] += metricData.mapInctCount[grpId][j][i];
             }
         }
@@ -103,12 +103,12 @@ contract MetricDelegate is MetricStorage, Halt {
     onlyValidGrpId(grpId)
     returns (uint[])
     {
-        require(endEpId > startEpId, "endEpId<startEpId");
+        require(endEpId >= startEpId, "endEpId<startEpId");
         uint[] memory ret;
         uint8 n = getSMCount(grpId);
         ret = new uint[](n);
         for (uint8 i = 0; i < n; i++) {
-            for (uint j = startEpId; j < endEpId; j++) {
+            for (uint j = startEpId; j <= endEpId; j++) {
                 ret[i] += metricData.mapSlshCount[grpId][j][i];
             }
         }
