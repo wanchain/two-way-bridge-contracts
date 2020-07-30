@@ -17,6 +17,7 @@ let deCount=1;
 let gGasLimit=9000000;
 let gGasPrice=200000000000;
 
+let epochDuring = 120;
 
 let stakerCount = memberCountDesign+whiteBackup
 let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
@@ -40,7 +41,7 @@ async function registerStart(smg){
         wks.push(wk)
         srs.push(sr)
     }
-    let tx = await smg.storemanGroupRegisterStart(id,now+10, 90, 10,utils.stringTobytes32(""), wks,srs,
+    let tx = await smg.storemanGroupRegisterStart(id,now+10, 90*epochDuring, 10,utils.stringTobytes32(""), wks,srs,
         {from: owner})
     console.log("registerStart txhash:", tx.tx)
     await utils.waitReceipt(tx.tx)
