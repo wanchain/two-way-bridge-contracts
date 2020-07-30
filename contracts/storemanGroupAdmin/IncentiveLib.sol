@@ -26,68 +26,51 @@ library IncentiveLib {
         return groupIncentive*weight/groupWeight;
     }
 
-    function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr,IMetric metric) public  {
+    function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr,IMetric metric) public {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
         StoremanType.StoremanGroup storage group = data.groups[sk.groupId];
         
-        uint fromDay = group.workTime;
-        if(sk.incentivedDay != 0) {
+        uint fromDay = StoremanUtil.getDaybyTime(group.workTime);
+        if (sk.incentivedDay != 0) {
             fromDay = sk.incentivedDay + 1;
         }
-        uint endDay = StoremanUtil.getDaybyTime(now)-1;
-        if(endDay > group.workTime+group.totalTime) {
-            endDay = group.workTime+group.totalTime;
+        uint endDay = now;
+        if (endDay > group.workTime + group.totalTime) {
+            endDay = group.workTime + group.totalTime;
         }
+        endDay= StoremanUtil.getDaybyTime(endDay);
         
         uint day;
-        for(day = fromDay; day < endDay; day++) {
-
-            if(msg.gas < 1000000 ){ // check the gas. because calculate delegator incentive need more gas left.
-                emit incentive(group.groupId, wkAddr, false);
-                return;
-            }
-            
+        for (day = fromDay; day < endDay; day++) {
             uint idx = 0;
-            for(;idx < group.selectedCount;idx++) {
-                 address addr = group.selectedNode[idx];
-                 if (addr == sk.pkAddress) {
-                     break;
-                 }
+            for (; idx < group.selectedCount;idx++) {
+                address addr = group.selectedNode[idx];
+                if (addr == sk.pkAddress) {
+                    break;
+                }
             }
-     
-            if( group.groupIncentive[day] == 0 &&
-                metric.getPrdInctMetric(group.groupId, day, day)[idx] > group.incentiveThresHold){
-                
-                group.groupIncentive[day] = getGroupIncentive(group, day,data); // TODO: change to the correct time
-                sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day),  StoremanUtil.calSkWeight(data.standaloneWeight,sk.deposit.getValueById(day)));
-                sk.incentive[0] +=  sk.incentive[day];
-                
-                while(sk.incentivedDelegator != sk.delegatorCount) {
+            if (metric.getPrdInctMetric(group.groupId, day, day)[idx] > group.incentiveThresHold) {
+                if (group.groupIncentive[day] == 0) {
+                    group.groupIncentive[day] = getGroupIncentive(group, day,data); // TODO: change to the correct time
+                    sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.standaloneWeight,sk.deposit.getValueById(day)));
+                    sk.incentive[0] += sk.incentive[day];
+                }
+
+                while (sk.incentivedDelegator != sk.delegatorCount) {
+                    if (msg.gas < 1000000 ) { // check the gas. because calculate delegator incentive need more gas left.
+                        emit incentive(group.groupId, wkAddr, false);
+                        return;
+                    }
                     address deAddr = sk.addrMap[sk.incentivedDelegator];
-                    //StoremanType.Delegator storage de = sk.delegators[deAddr];           
                     sk.delegators[deAddr].incentive[day] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), sk.delegators[deAddr].deposit.getValueById(day));
                     sk.delegators[deAddr].incentive[0] = sk.delegators[deAddr].incentive[day];
-
-
-                    // StoremanType.Delegator storage de = sk.delegators[deAddr];           
-                    // de.incentive[day] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), de.deposit.getValueById(day));
-                    // de.incentive[0] = de.incentive[day];
                     sk.incentivedDelegator++;
                 }
             }
-
-            //TODO: recoed the incentived day.
             sk.incentivedDay = day;
+            sk.incentivedDelegator = 0;
         }
-        
-        
-        sk.incentivedDelegator = 0;
-        sk.incentivedDay = 0;
-        
         emit incentive(group.groupId, wkAddr, true);
-
-            // TODO 所有的sk完成incentive, group状态进入dismissed, sk的当前group变成nextGroup.
-        
     }
 
     event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
