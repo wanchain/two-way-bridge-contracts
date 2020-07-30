@@ -45,19 +45,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
      * EVENTS
      *
      */
-
-
     event StoremanGroupRegisterStartEvent(bytes32 indexed groupId, uint workStart,uint workDuration, uint registerDuration, bytes32 indexed preGroupId);
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
-
-
-    /// @notice                           event for dissmiss storeman group
-    /// @param tokenOrigAccount           token account of original chain
-    /// @param storemanGroup              storeman group address
-    /// @param dismissTime                  the time for storeman dismiss
-    event StoremanGroupDismissedEvent(bytes tokenOrigAccount, bytes storemanGroup, uint dismissTime);
+    event StoremanGroupDismissedEvent(bytes32 indexed groupId);
     event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
-
 
     modifier onlyGpk {
         require(msg.sender == greateGpkAddr, "Sender is not allowed");
@@ -397,9 +388,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return group.threshold;
     }
 
-
     /// @notice                           function for storeman group apply unregistration through the delegate
-    /// @param groupId              storeman group groupId
+    /// @param groupId                    storeman group groupId
     function storemanGroupUnregister(bytes32 groupId)
         external
         notHalted
@@ -413,20 +403,18 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
     /// @notice                           function for storeman group apply unregistration through the delegate
-    /// @param tokenOrigAccount           token account of original chain
-    /// @param storemanGroup              storeman group PK
-    function storemanGroupDismiss(bytes tokenOrigAccount, bytes storemanGroup)
+    /// @param groupId                    storeman group groupId
+    function storemanGroupDismiss(bytes32 groupId)
         external
         notHalted
         onlyGroupLeader(groupId)
     {
-        bytes32 groupId = data.storemanGroupMap[tokenOrigAccount][storemanGroup];
-        StoremanType.StoremanGroup storage smg = data.groups[groupId];
+        StoremanType.StoremanGroup storage group = data.groups[groupId];
         bool quitable = quotaInst.isDebtClean(groupId);
         require(quitable);
-
-        smg.status = StoremanType.GroupStatus.dismissed;
-        emit StoremanGroupDismissedEvent(tokenOrigAccount, storemanGroup, now);
+        group.status = StoremanType.GroupStatus.dismissed;
+        emit StoremanGroupDismissedEvent(groupId);
+        // TODO group状态进入dismissed, sk的当前group变成nextGroup.
     }
 
     function checkGroupDismissable(bytes32 groupId) public returns(bool) {
