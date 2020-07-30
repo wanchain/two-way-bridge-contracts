@@ -88,21 +88,20 @@ module.exports = async function (deployer, network) {
     console.log("htlc address:", htlcProxy.address);
 
     // storeman group admin sc
-    await deployer.deploy(StoremanUtil);
-    await deployer.link(StoremanUtil,StoremanLib)
-    await deployer.link(StoremanUtil,IncentiveLib)
-
     await deployer.deploy(PosLib);
-    await deployer.link(PosLib,StoremanGroupDelegate)
-
+    await deployer.link(PosLib,StoremanUtil);
+    await deployer.deploy(StoremanUtil);
+    await deployer.link(StoremanUtil,StoremanLib);
+    await deployer.link(StoremanUtil,IncentiveLib);
+    await deployer.link(PosLib,StoremanGroupDelegate);
     await deployer.deploy(Deposit);
-    await deployer.link(Deposit,StoremanGroupDelegate)
+    await deployer.link(Deposit,StoremanGroupDelegate);
     await deployer.deploy(StoremanLib);
-    await deployer.link(StoremanLib,StoremanGroupDelegate)
+    await deployer.link(StoremanLib,StoremanGroupDelegate);
     await deployer.link(PosLib,IncentiveLib)
     await deployer.deploy(IncentiveLib);
-    await deployer.link(IncentiveLib,StoremanGroupDelegate)
-    await deployer.link(StoremanUtil,StoremanGroupDelegate)
+    await deployer.link(IncentiveLib,StoremanGroupDelegate);
+    await deployer.link(StoremanUtil,StoremanGroupDelegate);
 
     await deployer.deploy(StoremanGroupProxy);
     let smgProxy = await StoremanGroupProxy.deployed();
