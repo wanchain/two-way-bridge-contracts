@@ -293,7 +293,7 @@ contract('TokenManagerDelegate', (accounts) => {
   // })
 
   describe('updateTokenPair', () => {
-    it.only('onlyOwner, onlyExistID, requires', async function() {
+    it('onlyOwner, onlyExistID, requires', async function() {
       const { tokenManagerDelegate } = await newTokenManager(accounts);
 
       const paramUpdate = [addTokenPairParam[0], [aNewAccount, "new name", "new symbol", 8, aChainID + 100], toChainID + 1, fromAccount, fromChainID + 1, "0x6b175474e89094c44da98b954eedeac495271d0f", true]

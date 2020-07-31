@@ -248,9 +248,13 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         returns (uint[] id, uint[] fromChainID, bytes[] fromAccount, uint[] toChainID, address[] tokenAddress, string[] ancestorSymbol, uint8[] ancestorDecimals)
     {
         uint cnt = 0;
+        uint theId = 0;
         uint i = 0;
         for (; i < totalTokenPairs; i++ ) {
-            cnt ++;
+            theId = mapTokenPairIndex[i + 1];
+            if (mapTokenPairInfo[theId].isValid) {
+                cnt ++;
+            }
         }
 
         id = new uint[](cnt);
@@ -262,17 +266,22 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         ancestorSymbol = new string[](cnt);
         ancestorDecimals = new uint8[](cnt);
 
-        for (i = 0; i < cnt; i++) {
-            uint theId = mapTokenPairIndex[i + 1];
+        i = 0;
+        theId = 0;
+        uint j = 0;
+        for (; j < totalTokenPairs; j++) {
+            theId = mapTokenPairIndex[j + 1];
+            if (mapTokenPairInfo[theId].isValid) {
+                id[i] = theId;
+                fromChainID[i] = mapTokenPairInfo[theId].fromChainID;
+                fromAccount[i] = mapTokenPairInfo[theId].fromAccount;
+                toChainID[i] = mapTokenPairInfo[theId].toChainID;
+                tokenAddress[i] = mapTokenPairInfo[theId].tokenAddress;
 
-            id[i] = theId;
-            fromChainID[i] = mapTokenPairInfo[theId].fromChainID;
-            fromAccount[i] = mapTokenPairInfo[theId].fromAccount;
-            toChainID[i] = mapTokenPairInfo[theId].toChainID;
-            tokenAddress[i] = mapTokenPairInfo[theId].tokenAddress;
-
-            ancestorSymbol[i] = mapAncestorInfo[theId].ancestorSymbol;
-            ancestorDecimals[i] = mapAncestorInfo[theId].ancestorDecimals;
+                ancestorSymbol[i] = mapAncestorInfo[theId].ancestorSymbol;
+                ancestorDecimals[i] = mapAncestorInfo[theId].ancestorDecimals;
+                i ++;
+            }
         }
     }
 

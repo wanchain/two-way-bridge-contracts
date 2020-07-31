@@ -65,29 +65,21 @@ contract TokenManagerStorage is BasicStorage {
      ************************************************************/
 
      event AddToken(address tokenAddress, string name, string symbol, uint8 decimals);
-     event AddTokenPair(uint id, uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress);
-    //  event UpdateAncestorInfo(uint id, bytes ancestorAccount, string ancestorName, string ancestorSymbol, uint ancestorChainID);
-     event UpdateTokenPair(uint id, bytes ancestorAccount, string ancestorName, string ancestorSymbol, uint8 ancestorDecimals,
+     event AddTokenPair(uint indexed id, uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress);
+     event UpdateTokenPair(uint indexed id, bytes ancestorAccount, string ancestorName, string ancestorSymbol, uint8 ancestorDecimals,
       uint ancestorChainID,uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress, bool isValid);
-     event RemoveTokenPair(uint id);
-     event MintToken(uint id, address to, uint value);
-     event BurnToken(uint id, uint value);
+     event RemoveTokenPair(uint indexed id);
+     event MintToken(uint indexed id, address to, uint value);
+     event BurnToken(uint indexed id, uint value);
      event AddAdmin(address admin);
      event RemoveAdmin(address admin);
-     event UpdateToken(uint id, string name, string symbol);
+     event UpdateToken(uint indexed id, string name, string symbol);
 
     /************************************************************
      **
      ** VARIABLES
      **
      ************************************************************/
-
-    /// default precision
-    uint public constant DEFAULT_PRECISE = 10000;
-    /// a time period after which a storeman group could confirm unregister, unit:s
-    uint public constant MIN_WITHDRAW_WINDOW = 60 * 60 * 72;
-    /// default minimum deposit to register a storeman group
-    uint public constant MIN_DEPOSIT = 10 ether;
 
     /// total amount of TokenPair instance
     uint public totalTokenPairs = 0;

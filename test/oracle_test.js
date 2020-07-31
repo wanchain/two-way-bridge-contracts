@@ -105,15 +105,27 @@ contract('Oracle', function(accounts) {
       // check storage
       obj = await oracleDelegate.getStoremanGroupConfig(smgID);
       assert.equal(obj.status.toNumber(), 8);
+
+      receipt = await oracleDelegate.setAdmin(white);
+      // check SetAdmin event log
+      const setAdminEvent = receipt.logs[0].args;
+      assert.equal(setAdminEvent.addr, white);
+      // check storage
+      obj = await oracleDelegate.admin();
+      assert.equal(obj, white);
+
+      receipt = await oracleDelegate.updateDeposit(smgID, v + 111, { from: white });
+      const amount2 = web3.utils.toBN(await oracleDelegate.getDeposit(smgID)).toNumber();
+      assert.equal(v + 111, amount2);
     })
   });
 
   describe('updatePrice', function() {
-    it('onlyOwner', async function() {
+    it('onlyAdmin', async function() {
       const { oracleDelegate } = await newOracle(accounts);
 
       const obj = await sendAndGetReason(oracleDelegate.updatePrice, [[tokenDAI], [v]], {from: other});
-      assert.equal(obj.reason, "Not owner");
+      assert.equal(obj.reason, "not admin");
     });
     it('keys.length == prices.length', async function() {
       const { oracleDelegate } = await newOracle(accounts);
