@@ -23,10 +23,11 @@ contract OracleStorage is BasicStorage {
     * EVENTS
     *
     */
+  event SetAdmin(address addr);
   event UpdatePrice(bytes32[] keys, uint[] prices);
-  event UpdateDeposit(bytes32 smgID, uint amount);
-  event SetStoremanGroupStatus(bytes32 id, uint8 status);
-  event SetStoremanGroupConfig(bytes32 id, uint8 status, uint deposit, uint[2] chain, uint[2] curve,
+  event UpdateDeposit(bytes32 indexed smgID, uint amount);
+  event SetStoremanGroupStatus(bytes32 indexed id, uint8 status);
+  event SetStoremanGroupConfig(bytes32 indexed id, uint8 status, uint deposit, uint[2] chain, uint[2] curve,
     bytes gpk1, bytes gpk2, uint startTime, uint endTime);
 
   /************************************************************
@@ -40,4 +41,6 @@ contract OracleStorage is BasicStorage {
   mapping(bytes32 => uint) public mapStoremanGroupAmount;
   // smgId -> StoremanGroupConfig
   mapping(bytes32 => StoremanGroupConfig) public mapStoremanGroupConfig;
+
+  address public admin;
 }

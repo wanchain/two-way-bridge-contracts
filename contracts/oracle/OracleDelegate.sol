@@ -8,16 +8,32 @@ import "../components/Owned.sol";
 import "./OracleStorage.sol";
 
 contract OracleDelegate is OracleStorage, Owned {
-  /// @notice update price
-  /// @dev update price
-  /// @param keys tokenPair keys
-  /// @param prices token price
+  /**
+    *
+    * MODIFIERS
+    *
+    */
+
+  modifier onlyAdmin() {
+      require((msg.sender == admin) || (msg.sender == owner), "not admin");
+      _;
+  }
+
+  function setAdmin(
+    address addr
+  ) external onlyOwner
+  {
+    admin = addr;
+
+    emit SetAdmin(addr);
+  }
+
   function updatePrice(
     bytes32[] keys,
     uint[] prices
   )
     external
-    onlyOwner
+    onlyAdmin
   {
     require(keys.length == prices.length, "length not same");
 
@@ -44,7 +60,7 @@ contract OracleDelegate is OracleStorage, Owned {
     uint amount
   )
     external
-    onlyOwner
+    onlyAdmin
   {
     mapStoremanGroupAmount[smgID] = amount;
 
@@ -60,7 +76,7 @@ contract OracleDelegate is OracleStorage, Owned {
     uint8  status
   )
     external
-    onlyOwner
+    onlyAdmin
   {
     mapStoremanGroupConfig[id].status = status;
 
@@ -79,7 +95,7 @@ contract OracleDelegate is OracleStorage, Owned {
     uint    endTime
   )
     external
-    onlyOwner
+    onlyAdmin
   {
     mapStoremanGroupAmount[id] = deposit;
     mapStoremanGroupConfig[id].status = status;

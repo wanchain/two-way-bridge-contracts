@@ -1,4 +1,3 @@
-
 async function sendAndGetReason(objFunc, args, options) {
   let receipt = null;
   try {
