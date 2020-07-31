@@ -173,20 +173,12 @@ library HTLCBurnLib {
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
 
-        uint left;
-        if (tokenShadowAccount == address(0)) {
-            left = (msg.value).sub(params.value).sub(lockFee);
-            if (left != 0) {
-                (msg.sender).transfer(left);
-            }
-        } else {
-            left = (msg.value).sub(lockFee);
-            if (left != 0) {
-                (msg.sender).transfer(left);
-            }
-
-            require(IRC20Protocol(tokenShadowAccount).transferFrom(msg.sender, this, params.value), "Lock token failed");
+        uint left = (msg.value).sub(lockFee);
+        if (left != 0) {
+            (msg.sender).transfer(left);
         }
+
+        require(IRC20Protocol(tokenShadowAccount).transferFrom(msg.sender, this, params.value), "Lock token failed");
 
         HTLCTxLib.HTLCUserParams memory userTxParams = HTLCTxLib.HTLCUserParams({
             xHash: params.xHash,
@@ -291,11 +283,7 @@ library HTLCBurnLib {
             (userShadowAccount).transfer(lockFee);
         }
 
-        if (tokenShadowAccount == address(0)) {
-            (userShadowAccount).transfer(value);
-        } else {
-            require(IRC20Protocol(tokenShadowAccount).transfer(userShadowAccount, value), "Transfer token failed");
-        }
+        require(IRC20Protocol(tokenShadowAccount).transfer(userShadowAccount, value), "Transfer token failed");
 
         emit UserBurnRevokeLogger(params.xHash, smgID, tokenPairID, revokeFee);
     }
