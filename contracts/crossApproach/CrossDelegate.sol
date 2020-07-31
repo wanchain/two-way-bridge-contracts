@@ -102,19 +102,19 @@ contract CrossDelegate is CrossStorage, Halt {
      *
      */
 
-    /// @notice                                 get ready the storeman group info
-    /// @param smgID                            ID of storeman group
-    /// @return curveID                         ID of elliptic curve
-    /// @return PK                              PK of storeman group
-    function getSmgInfo(bytes32 smgID)
-        private
-        view
-        returns (uint curveID, bytes memory PK)
-    {
-        (,,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+    // /// @notice                                 get ready the storeman group info
+    // /// @param smgID                            ID of storeman group
+    // /// @return curveID                         ID of elliptic curve
+    // /// @return PK                              PK of storeman group
+    // function getSmgInfo(bytes32 smgID)
+    //     private
+    //     view
+    //     returns (uint curveID, bytes memory PK)
+    // {
+    //     (,,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        return (curveID, PK);
-    }
+    //     return (curveID, PK);
+    // }
 
     /// @notice                                 check the storeman group is ready or not
     /// @param smgID                            ID of storeman group
