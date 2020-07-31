@@ -226,8 +226,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     2) calculate the sk incentive all days.
     3) calculate the delegator all days one by one.
      */
-    function incentiveCandidator( address wkAddr) public  {
-        IncentiveLib.incentiveCandidator(data, wkAddr,metric);
+    function incentiveCandidator(address wkAddr) public  {
+        IncentiveLib.incentiveCandidator(data, wkAddr, metric);
     }
 
     function stakeIn(bytes32 groupId, bytes PK, bytes enodeID, uint delegateFee)

@@ -162,6 +162,7 @@ library StoremanLib {
                 group.selectedNode[k+1] = group.selectedNode[k];
             }
             group.selectedNode[j+1] = skAddr;
+            group.selectedCount++;
         }
     }
     function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r) internal {

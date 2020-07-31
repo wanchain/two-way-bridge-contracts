@@ -26,10 +26,10 @@ library IncentiveLib {
         return groupIncentive*weight/groupWeight;
     }
 
-    function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr,IMetric metric) public {
+    function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr, IMetric metric) public {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
         StoremanType.StoremanGroup storage group = data.groups[sk.groupId];
-        
+
         uint fromDay = StoremanUtil.getDaybyTime(group.workTime);
         if (sk.incentivedDay != 0) {
             fromDay = sk.incentivedDay + 1;
@@ -39,19 +39,20 @@ library IncentiveLib {
             endDay = group.workTime + group.totalTime;
         }
         endDay= StoremanUtil.getDaybyTime(endDay);
-        
+
         uint day;
         for (day = fromDay; day < endDay; day++) {
             uint idx = 0;
-            for (; idx < group.selectedCount;idx++) {
+            for (; idx < group.selectedCount; idx++) {
                 address addr = group.selectedNode[idx];
                 if (addr == sk.pkAddress) {
                     break;
                 }
             }
+            require(idx < group.selectedCount, "not selected");
             if (metric.getPrdInctMetric(group.groupId, day, day)[idx] > group.incentiveThresHold) {
                 if (group.groupIncentive[day] == 0) {
-                    group.groupIncentive[day] = getGroupIncentive(group, day,data); // TODO: change to the correct time
+                    group.groupIncentive[day] = getGroupIncentive(group, day, data); // TODO: change to the correct time
                     sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.standaloneWeight,sk.deposit.getValueById(day)));
                     sk.incentive[0] += sk.incentive[day];
                 }
