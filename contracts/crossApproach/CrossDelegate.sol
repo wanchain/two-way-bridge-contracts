@@ -102,19 +102,19 @@ contract CrossDelegate is CrossStorage, Halt {
      *
      */
 
-    /// @notice                                 get ready the storeman group info
-    /// @param smgID                            ID of storeman group
-    /// @return curveID                         ID of elliptic curve
-    /// @return PK                              PK of storeman group
-    function getSmgInfo(bytes32 smgID)
-        private
-        view
-        returns (uint curveID, bytes memory PK)
-    {
-        (,,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+    // /// @notice                                 get ready the storeman group info
+    // /// @param smgID                            ID of storeman group
+    // /// @return curveID                         ID of elliptic curve
+    // /// @return PK                              PK of storeman group
+    // function getSmgInfo(bytes32 smgID)
+    //     private
+    //     view
+    //     returns (uint curveID, bytes memory PK)
+    // {
+    //     (,,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        return (curveID, PK);
-    }
+    //     return (curveID, PK);
+    // }
 
     /// @notice                                 check the storeman group is ready or not
     /// @param smgID                            ID of storeman group
@@ -635,9 +635,9 @@ contract CrossDelegate is CrossStorage, Halt {
     function getStoremanFee(bytes32 smgID)
         external
         view
-        returns(uint)
+        returns(uint fee)
     {
-        return storageData.mapStoremanFee[smgID];
+        fee = storageData.mapStoremanFee[smgID];
     }
 
     /// @notice                             get the fee of the storeman group should get
@@ -659,9 +659,10 @@ contract CrossDelegate is CrossStorage, Halt {
     function getFees(uint origChainID, uint shadowChainID)
         external
         view
-        returns(uint, uint)
+        returns(uint lockFee, uint revokeFee)
     {
-        return (storageData.mapLockFee[origChainID][shadowChainID], storageData.mapRevokeFee[origChainID][shadowChainID]);
+        lockFee = storageData.mapLockFee[origChainID][shadowChainID];
+        revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
     }
 
     /// @notice                             get the fee of the storeman group should get
@@ -676,8 +677,8 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @notice                             get the fee of the storeman group should get
     /// @param  xHash                       hash of HTLC random number
     /// @return leftLockTime                left time of locked transaction
-    function getLeftLockedTime(bytes32 xHash) external view returns (uint) {
-        return storageData.htlcTxData.getLeftLockedTime(xHash);
+    function getLeftLockedTime(bytes32 xHash) external view returns (uint leftLockedTime) {
+        leftLockedTime = storageData.htlcTxData.getLeftLockedTime(xHash);
     }
 
     /// @notice                             update the initialized state value of this contract
@@ -706,9 +707,12 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @return smgFeeProxy                 address of the proxy to store fee for storeman group
     /// @return quota                       address of the quota
     /// @return sigVerifier                 address of the signature verifier
-    function getPartners() external view returns(address, address, address, address, address) {
-        return (address(storageData.tokenManager), address(storageData.smgAdminProxy),
-                storageData.smgFeeProxy, address(storageData.quota), address(storageData.sigVerifier));
+    function getPartners() external view returns(address tokenManager, address smgAdminProxy, address smgFeeProxy, address quota, address sigVerifier) {
+        tokenManager = address(storageData.tokenManager);
+        smgAdminProxy = address(storageData.smgAdminProxy);
+        smgFeeProxy = storageData.smgFeeProxy;
+        quota = address(storageData.quota);
+        sigVerifier = address(storageData.sigVerifier);
     }
 
     /// @notice                             get the fee of the storeman group should get
