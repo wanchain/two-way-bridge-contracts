@@ -60,7 +60,7 @@ contract StoremanGroupStorage is BasicStorage {
 
   StoremanType.StoremanData data;
 
-  constructor() {
+  constructor() public {
     data.conf.standaloneWeight = standaloneWeightDefault;
     data.conf.backupCount = backupCountDefault;
 

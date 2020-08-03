@@ -4,7 +4,7 @@ import "../interfaces/IStoremanGroup.sol";
 
 contract TestSmg {
     IStoremanGroup smg;
-    constructor(){
+    constructor() public {
         return;
     }
     function setSmgAddr(address addr) public{

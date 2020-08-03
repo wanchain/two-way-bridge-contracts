@@ -39,7 +39,7 @@ contract FakeSmg {
     // groupId=>index=>pk
     mapping(bytes32 => mapping(uint8 => bytes)) mapSmgInfo;
 
-    constructor(){
+    constructor() public {
         grpId = bytesToBytes32(fromHex(GroupIdStr), 0);
 
         for (uint i = 0; i < Pks.length; i++) {
