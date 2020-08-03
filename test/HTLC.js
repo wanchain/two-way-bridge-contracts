@@ -4303,7 +4303,7 @@ contract('Test HTLC', async (accounts) => {
         try {
             let timestamp = parseInt(Date.now() / 1000); //s
             let smgFee = await crossApproach.chain1.instance.getStoremanFee(storemanGroups[1].ID);
-            console.log("chain1 storeman 1 fee", smgFee);
+            // console.log("chain1 storeman 1 fee", smgFee);
 
             let pkId = 1;
             let sk = skInfo.smg1[pkId];
@@ -4358,7 +4358,7 @@ contract('Test HTLC', async (accounts) => {
             let timestamp = parseInt(Date.now() / 1000); //s
 
             let smgFee = await crossApproach.chain2.instance.getStoremanFee(storemanGroups[1].ID);
-            console.log("chain2 storeman 1 fee", smgFee);
+            // console.log("chain2 storeman 1 fee", smgFee);
 
             let pkId = 2;
             let sk = skInfo.smg1[pkId];
