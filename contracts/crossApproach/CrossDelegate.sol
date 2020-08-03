@@ -63,8 +63,7 @@ contract CrossDelegate is CrossStorage, Halt {
 
     /// @dev Check relevant contract addresses must be initialized before call its method
     modifier initialized {
-        require(address(storageData.tokenManager) != address(0) && address(storageData.smgAdminProxy) != address(0) && address(storageData.quota) != address(0) && address(storageData.sigVerifier) != address(0),
-                "Invalid parnters");
+        require(_initialized, "Contract is not initialized");
         _;
     }
 
@@ -153,7 +152,7 @@ contract CrossDelegate is CrossStorage, Halt {
     // /// @notice                                 check the storeman group existing or not
     // /// @param tokenOrigAccount                 account of token supported
     // /// @param storemanGroupPK                  PK of storeman group
-    // /// @return bool                           true/false
+    // /// @return bool                            true/false
     // function isSmgExist(GroupStatus status)
     //     private
     //     view
@@ -184,7 +183,6 @@ contract CrossDelegate is CrossStorage, Halt {
             value: value,
             lockedTime: _lockedTime.mul(2),
             userShadowAccount: userAccount
-            // tokenManager: storageData.tokenManager
         });
 
         HTLCMintLib.userMintLock(storageData, params);
@@ -198,7 +196,6 @@ contract CrossDelegate is CrossStorage, Halt {
     {
         HTLCMintLib.HTLCSmgMintRedeemParams memory params = HTLCMintLib.HTLCSmgMintRedeemParams({
             x: x
-            // smgFeeProxy: storageData.smgFeeProxy
         });
         HTLCMintLib.smgMintRedeem(storageData, params);
     }
@@ -212,8 +209,6 @@ contract CrossDelegate is CrossStorage, Halt {
     {
         HTLCMintLib.HTLCUserMintRevokeParams memory params = HTLCMintLib.HTLCUserMintRevokeParams({
             xHash: xHash
-            // smgFeeProxy: storageData.smgFeeProxy,
-            // tokenManager: storageData.tokenManager
         });
         HTLCMintLib.userMintRevoke(storageData, params);
     }
@@ -246,12 +241,6 @@ contract CrossDelegate is CrossStorage, Halt {
             value: value,
             lockedTime: _lockedTime,
             userShadowAccount: userAccount
-            // r: r,
-            // s: s,
-            // tokenManager: storageData.tokenManager,
-            // sigVerifier: storageData.sigVerifier,
-            // smgFeeProxy: storageData.smgFeeProxy,
-            // smgAdminProxy: storageData.smgAdminProxy
         });
         HTLCMintLib.smgMintLock(storageData, params);
     }
@@ -264,7 +253,6 @@ contract CrossDelegate is CrossStorage, Halt {
     {
         HTLCMintLib.HTLCUserMintRedeemParams memory params = HTLCMintLib.HTLCUserMintRedeemParams({
             x: x
-            // tokenManager: storageData.tokenManager
         });
         HTLCMintLib.userMintRedeem(storageData, params);
     }
@@ -303,7 +291,6 @@ contract CrossDelegate is CrossStorage, Halt {
             value: value,
             lockedTime: _lockedTime.mul(2),
             userOrigAccount: userAccount
-            // tokenManager: storageData.tokenManager
         });
         HTLCBurnLib.userBurnLock(storageData, params);
     }
@@ -316,8 +303,6 @@ contract CrossDelegate is CrossStorage, Halt {
     {
         HTLCBurnLib.HTLCSmgBurnRedeemParams memory params = HTLCBurnLib.HTLCSmgBurnRedeemParams({
             x: x
-            // smgFeeProxy: storageData.smgFeeProxy,
-            // tokenManager: storageData.tokenManager
         });
         HTLCBurnLib.smgBurnRedeem(storageData, params);
     }
@@ -331,8 +316,6 @@ contract CrossDelegate is CrossStorage, Halt {
     {
         HTLCBurnLib.HTLCUserBurnRevokeParams memory params = HTLCBurnLib.HTLCUserBurnRevokeParams({
             xHash: xHash
-            // smgFeeProxy: storageData.smgFeeProxy,
-            // tokenManager: storageData.tokenManager
         });
         HTLCBurnLib.userBurnRevoke(storageData, params);
     }
@@ -342,7 +325,7 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  smgID                           ID of storeman
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
-    /// @param  userAccount                        address of user, used to receive WRC20 token
+    /// @param  userAccount                     address of user, used to receive WRC20 token
     /// @param  r                               signature
     /// @param  s                               signature
     function smgBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
@@ -377,7 +360,6 @@ contract CrossDelegate is CrossStorage, Halt {
     {
         HTLCBurnLib.HTLCUserBurnRedeemParams memory params = HTLCBurnLib.HTLCUserBurnRedeemParams({
             x: x
-            // tokenManager: storageData.tokenManager
         });
         HTLCBurnLib.userBurnRedeem(storageData, params);
     }
@@ -415,8 +397,6 @@ contract CrossDelegate is CrossStorage, Halt {
             tokenPairID: tokenPairID,
             value: value,
             userShadowAccount: userAccount
-            // smgFeeProxy: storageData.smgFeeProxy,
-            // tokenManager: storageData.tokenManager
         });
         RapidityLib.userFastMint(storageData, params);
     }
@@ -448,7 +428,6 @@ contract CrossDelegate is CrossStorage, Halt {
             tokenPairID: tokenPairID,
             value: value,
             userShadowAccount: userAccount
-            // tokenManager: storageData.tokenManager
         });
         RapidityLib.smgFastMint(storageData, params);
     }
@@ -475,8 +454,6 @@ contract CrossDelegate is CrossStorage, Halt {
             tokenPairID: tokenPairID,
             value: value,
             userOrigAccount: userAccount
-            // smgFeeProxy: storageData.smgFeeProxy,
-            // tokenManager: storageData.tokenManager
         });
         RapidityLib.userFastBurn(storageData, params);
     }
@@ -508,7 +485,6 @@ contract CrossDelegate is CrossStorage, Halt {
             tokenPairID: tokenPairID,
             value: value,
             userOrigAccount: userAccount
-            // tokenManager: storageData.tokenManager
         });
         RapidityLib.smgFastBurn(storageData, params);
     }
@@ -687,6 +663,8 @@ contract CrossDelegate is CrossStorage, Halt {
         storageData.quota = IQuota(quota);
         storageData.smgFeeProxy = smgFeeProxy;
         storageData.sigVerifier = ISignatureVerifier(sigVerifier);
+
+        _initialized = true;
     }
 
     /// @notice                             get the initialized state value of this contract
