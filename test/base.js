@@ -87,7 +87,7 @@ async function stakeInPre(smg, id){
         let txhash = rtx.transactionHash
         //let txhash = await pu.promisefy(web3.eth.sendSignedTransaction,[serializedTx],web3.eth);
         console.log("txhash i:", i, txhash)
-        await utils.waitReceipt(txhash)
+        // await utils.waitReceipt(txhash)
         let candidate  = await smg.getStoremanInfo(sw.addr)
         //console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), sf.addr)
@@ -125,7 +125,7 @@ async function stakeInPreE(smg, id){
 async function toSelect(smg, groupId){
     let tx = await smg.select(groupId,{from: g.leader})
     console.log("group %s select tx:", groupId, tx.tx)
-    await utils.waitReceipt(tx.tx)
+    // await utils.waitReceipt(tx.tx)
     let count = await smg.getSelectedSmNumber(groupId)
     console.log("slected sm number: %d", count);  
     for (let i = 0; i<count; i++) {
