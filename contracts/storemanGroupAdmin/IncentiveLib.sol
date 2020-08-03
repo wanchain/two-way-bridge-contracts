@@ -20,7 +20,7 @@ library IncentiveLib {
 
     function getGroupIncentive(StoremanType.StoremanGroup storage group, uint time,StoremanType.StoremanData storage data) public view returns (uint) {
         uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
-        return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time, chainTypeCo);
+        return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time) * chainTypeCo/10000;
         //return 30000000;
     }
 
@@ -55,7 +55,7 @@ library IncentiveLib {
             if (metric.getPrdInctMetric(group.groupId, day, day)[idx] > group.incentiveThresHold) {
                 if (group.groupIncentive[day] == 0) {
                     group.groupIncentive[day] = getGroupIncentive(group, day, data); // TODO: change to the correct time
-                    sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.standaloneWeight,sk.deposit.getValueById(day)));
+                    sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getValueById(day)));
                     sk.incentive[0] += sk.incentive[day];
                 }
 

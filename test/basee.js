@@ -54,7 +54,7 @@ async function registerStart(smg){
         wks.push(wk)
         srs.push(sfs[i])
     }
-    let tx = await smg.storemanGroupRegisterStart(id,now+10, 90, 10,utils.stringTobytes32(""), wks,srs,
+    let tx = await smg.storemanGroupRegisterStart(id,now+10, 900, 100,utils.stringTobytes32(""), wks,srs,
         {from: owner})
     console.log("registerStart txhash:", tx.tx)
     //await utils.waitReceipt(web3, tx.tx)
@@ -80,7 +80,7 @@ async function stakeInPre(smg, id){
     for(let i=0; i<stakerCount; i++){
         let sw = utils.getAddressFromInt(i+2000)
         let tx = await smg.stakeIn(id, sw.pk, sw.pk,{from:sfs[i], value:stakingValue})
-        console.log("preE:", tx);
+        console.log("preE:", i, tx);
         let candidate  = await smg.getStoremanInfo(sw.addr)
         //console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), sfs[i].toLowerCase())

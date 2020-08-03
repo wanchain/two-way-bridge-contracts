@@ -51,7 +51,7 @@ library StoremanLib {
     function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID) external
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        require(now <= group.registerTime+group.registerDuration,"Registration closed");
+        //require(now <= group.registerTime+group.registerDuration,"Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         address pkAddr = address(keccak256(PK));
         Deposit.Records memory records = Deposit.Records(0);
@@ -64,20 +64,19 @@ library StoremanLib {
         sk.groupId = groupId;
         sk.deposit = records;
 
-        data.candidates[pkAddr] = sk;
         group.addrMap[group.memberCount] = sk.pkAddress;
         group.memberCount++;
 
         Deposit.Record memory r = Deposit.Record(StoremanUtil.getDaybyTime(now), msg.value);
-        data.candidates[pkAddr].deposit.addRecord(r);
+        sk.deposit.addRecord(r);
 
-        //check if it is white
+        // check if it is white
         if(group.whiteWk[pkAddr] != address(0x00)){
             if(group.whiteWk[pkAddr] != msg.sender){
                 revert("invalid sender");
             }
         } else {
-            realInsert(data,group, pkAddr, calSkWeight(data), group.memberCountDesign-1);
+            realInsert(data,group, pkAddr, calSkWeight(data));
         }
 
         emit stakeInEvent(group.groupId, pkAddr, msg.value);
@@ -178,7 +177,8 @@ library StoremanLib {
 
     }
 
-    function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight, uint last) internal{
+    function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
+        uint last = group.memberCountDesign-1;
         for(uint j = last; j>=group.whiteCount; j--) {
             if(weight > data.candidates[group.selectedNode[j]].delegateDeposit + StoremanUtil.calSkWeight(data.conf.standaloneWeight,data.candidates[group.selectedNode[j]].deposit.getLastValue())){
                 continue;
@@ -190,7 +190,7 @@ library StoremanLib {
                 group.selectedNode[k+1] = group.selectedNode[k];
             }
             group.selectedNode[j+1] = skAddr;
-            group.selectedCount++; // TODO deleted? why?
+            //group.selectedCount++; // TODO deleted? why?
         }
     }
     function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r) internal {
@@ -206,12 +206,12 @@ library StoremanLib {
             group.depositWeight.addRecord(r);
         } else {
             if(group.whiteWk[skPkAddr] == address(0x00)){
-                for(uint selectedIndex = group.whiteCount; selectedIndex<group.memberCountDesign; selectedIndex++){
-                    if(group.selectedNode[selectedIndex] == skPkAddr) {
-                        break;
-                    }
-                }
-                realInsert(data, group, skPkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit, selectedIndex);
+                // for(uint selectedIndex = group.whiteCount; selectedIndex<group.memberCountDesign; selectedIndex++){
+                //     if(group.selectedNode[selectedIndex] == skPkAddr) {
+                //         break;
+                //     }
+                // }
+                realInsert(data, group, skPkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
             }
         }
     }
