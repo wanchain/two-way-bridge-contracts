@@ -151,6 +151,12 @@ library HTLCBurnLib {
     /// @param tokenPairID              token pair ID of cross chain token
     event SmgBurnRevokeLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID);
 
+    /// @notice                         event of return lock/revoke fee left
+    /// @notice                         event transfer to by cross approach
+    /// @param to                       The address of the recipient
+    /// @param value                    Rapidity value
+    event TransferToLogger(address indexed to, uint value);
+
     /**
     *
     * MANIPULATIONS
@@ -281,6 +287,7 @@ library HTLCBurnLib {
 
         if (lockFee > 0) {
             (userShadowAccount).transfer(lockFee);
+            emit TransferToLogger(userShadowAccount, lockFee);
         }
 
         require(IRC20Protocol(tokenShadowAccount).transfer(userShadowAccount, value), "Transfer token failed");
@@ -331,6 +338,7 @@ library HTLCBurnLib {
 
         if (tokenScAddr == address(0)) {
             (userOrigAccount).transfer(value);
+            emit TransferToLogger(userOrigAccount, value);
         } else {
             require(IRC20Protocol(tokenScAddr).transfer(userOrigAccount, value), "Transfer token failed");
         }
