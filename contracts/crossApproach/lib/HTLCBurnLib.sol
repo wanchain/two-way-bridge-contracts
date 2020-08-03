@@ -262,12 +262,12 @@ library HTLCBurnLib {
 
         uint revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
 
+        storageData.htlcTxData.revokeUserTx(params.xHash, revokeFee);
+
         uint left = (msg.value).sub(revokeFee);
         if (left != 0) {
             (msg.sender).transfer(left);
         }
-
-        storageData.htlcTxData.revokeUserTx(params.xHash, revokeFee);
 
         storageData.quota.userBurnRevoke(tokenPairID, smgID, value);
 
