@@ -80,7 +80,7 @@ async function stakeInPre(smg, id){
     for(let i=0; i<stakerCount; i++){
         let sw = utils.getAddressFromInt(i+2000)
         let tx = await smg.stakeIn(id, sw.pk, sw.pk,{from:sfs[i], value:stakingValue})
-        console.log("preE:", i, tx);
+        console.log("preE:", i, tx.tx);
         let candidate  = await smg.getStoremanInfo(sw.addr)
         //console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), sfs[i].toLowerCase())

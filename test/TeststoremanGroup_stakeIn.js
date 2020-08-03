@@ -45,12 +45,20 @@ contract('TestSmg', async (accounts) => {
         await stakeInPre(smg, groupId)
     })
 
-    it('stakeIn', async ()=>{
-        let wk = utils.getAddressFromInt(10000)
+    it('T1', async ()=>{ // stakeIn 50000
+        let wk = utils.getAddressFromInt(10001)
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
         console.log("tx:", tx);
     })
-
-
+    it('T2', async ()=>{ // stakeIn 49999
+        let wk = utils.getAddressFromInt(10002)
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:49999});
+        console.log("tx:", tx);
+    })
+    it('T3', async ()=>{ // stakeIn 49999
+        let wk = utils.getAddressFromInt(10001)
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:49999});
+        console.log("tx:", tx);
+    })
 
 })
