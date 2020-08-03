@@ -153,6 +153,12 @@ library HTLCMintLib {
     /// @param tokenPairID              token pair ID of cross chain token
     event SmgMintRevokeLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID);
 
+    /// @notice                         event of return lock/revoke fee left
+    /// @notice                         event transfer to by cross approach
+    /// @param to                       The address of the recipient
+    /// @param value                    Rapidity value
+    event TransferToLogger(address indexed to, uint value);
+
     /**
     *
     * MANIPULATIONS
@@ -291,12 +297,14 @@ library HTLCMintLib {
 
         if (lockFee > 0) {
             (userOrigAccount).transfer(lockFee);
+            emit TransferToLogger(userOrigAccount, lockFee);
         }
 
         address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {
             (userOrigAccount).transfer(value);
+            emit TransferToLogger(userOrigAccount, value);
         } else {
             require(IRC20Protocol(tokenScAddr).transfer(userOrigAccount, value), "Transfer token failed");
         }
