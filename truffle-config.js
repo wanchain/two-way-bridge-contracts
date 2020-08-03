@@ -17,6 +17,11 @@
  * phrase from a file you've .gitignored so it doesn't accidentally become public.
  *
  */
+
+const HDWalletProvider = require("truffle-hdwallet-provider");
+const mnemonic = "skill level pulse dune pattern rival used syrup inner first balance sad"; 
+
+
 const WanProvider = require('wanchain-truffle-sdk').WanProvider;
 //`wss://apitest.wanchain.org:8443/ws/v3/57b5005c60b8c444d880afe02d0a41cf4dc269f9c186940aa169412bb245f1c0`
 const wanProvider = new WanProvider("0x5ea5559749ba066086313f051eb1c142c6d81d1bed1baf0f26e708a2a9decbec", "http://52.35.168.75:36891");
@@ -64,6 +69,10 @@ module.exports = {
     // },
 
     // Useful for deploying to a public network.
+    gn: {
+      provider: () => new HDWalletProvider(mnemonic, "http://localhost:8545",0,10),
+      network_id: "*",
+    },
     testnet: {
       provider: wanProvider,
       network_id: "*",
@@ -83,7 +92,7 @@ module.exports = {
     coverage: {
       host: "localhost",
       network_id: "*",
-      port: 7654,            // <-- If you change this, also set the port option in .solcover.js.
+      port: 8545,            // <-- If you change this, also set the port option in .solcover.js.
       gas: 10000000,          // <-- Use this high gas value
       gasPrice: 1000000000   // <-- Use this low gas price
     }
@@ -94,6 +103,7 @@ module.exports = {
 	  enableTimeouts:false,
      	timeout: 300000000
   },
+  plugins: ["solidity-coverage"],      
 
   // Configure your compilers
   compilers: {
