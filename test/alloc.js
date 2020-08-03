@@ -2,8 +2,8 @@
 const Web3 = require('web3')
 const net = require('net')
 //let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
-//let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'))
-let web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8545'))
+let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'))
+//let web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:7654'))
 
 
 const ethutil = require("ethereumjs-util");
@@ -11,7 +11,7 @@ const pu = require('promisefy-util')
 const fs=require('fs')
 const wanutil = require('wanchain-util');
 
-const sender = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959"
+const sender = "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e"
 
 async function getAddressFromInt(i){
     let b = Buffer.alloc(32)

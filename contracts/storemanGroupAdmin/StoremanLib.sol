@@ -141,7 +141,7 @@ library StoremanLib {
         }
         return false;
     }
-    
+
     function stakeClaim(StoremanType.StoremanData storage data, address skPkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
@@ -154,8 +154,8 @@ library StoremanLib {
 
         uint amount = sk.deposit.getLastValue();
         sk.deposit.clean();
-        
-        require(amount != 0);        
+
+        require(amount != 0);
         sk.sender.transfer(amount);
         // todo 加事件
         // TODO; transfer crossIncoming/21;　／／ｚｈａｎｇ
@@ -190,7 +190,7 @@ library StoremanLib {
                 group.selectedNode[k+1] = group.selectedNode[k];
             }
             group.selectedNode[j+1] = skAddr;
-            //group.selectedCount++; // TODO deleted? why?
+            group.selectedCount++; // TODO deleted? why?
         }
     }
     function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r) internal {
@@ -216,7 +216,7 @@ library StoremanLib {
         }
     }
     event delegateInEvent(address indexed wkAddr, address indexed from, uint indexed value);
-    function delegateIn(StoremanType.StoremanData storage data, address skPkAddr) 
+    function delegateIn(StoremanType.StoremanData storage data, address skPkAddr)
         external
     {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
