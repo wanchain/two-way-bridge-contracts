@@ -5,16 +5,10 @@ const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
 const Web3 = require('web3')
 
-const web3url = "http://127.0.0.1:8545"
-// const owner = "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e"
-// const leader = "0x5793e629c061e7fd642ab6a1b4d552cec0e2d606"
-// const leaderPk = "0x25fa6a4190ddc87d9f9dd986726cafb901e15c21aafd2ed729efed1200c73de89f1657726631d29733f4565a97dc00200b772b4bc2f123a01e582e7e56b80cf8"
-
-const owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959"
-const leader = "0xdC49B58d1Dc15Ff96719d743552A3d0850dD7057"
-const leaderPk = "0xb6ee04e3c64e31578dd746d1024429179d83122fb926be19bd33aaeea55afeb6b10c6ff525eec7ca9a4e9a252a4c74b222c1273d4719d96e0f2c5199c42bc84b"
-
-
+const web3url = "http://192.168.1.58:7654"
+const owner = "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e"
+const leader = "0x5793e629c061e7fd642ab6a1b4d552cec0e2d606"
+const leaderPk = "0x25fa6a4190ddc87d9f9dd986726cafb901e15c21aafd2ed729efed1200c73de89f1657726631d29733f4565a97dc00200b772b4bc2f123a01e582e7e56b80cf8"
 const WhiteCount = 4
 const whiteBackup = 3
 const memberCountDesign = 4
@@ -23,6 +17,7 @@ let deCount=1;
 let gGasLimit=9000000;
 let gGasPrice=200000000000;
 
+let epochDuring = 120;
 
 let stakerCount = memberCountDesign+whiteBackup
 let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
@@ -47,7 +42,7 @@ async function registerStart(smg){
         wks.push(wk)
         srs.push(sr)
     }
-    let tx = await smg.storemanGroupRegisterStart(id,now+10, 90, 10,utils.stringTobytes32(""), wks,srs,
+    let tx = await smg.storemanGroupRegisterStart(id, now+10, 90, epochDuring, utils.stringTobytes32(""), wks,srs,
         {from: owner})
     console.log("registerStart txhash:", tx.tx)
     //await utils.waitReceipt(web3, tx.tx)

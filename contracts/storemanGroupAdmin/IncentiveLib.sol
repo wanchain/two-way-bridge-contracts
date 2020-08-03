@@ -25,7 +25,11 @@ library IncentiveLib {
     }
 
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) public returns (uint) {
-        return groupIncentive*weight/groupWeight;
+        if (groupWeight == 0) {
+            return 0;
+        } else {
+            return groupIncentive*weight/groupWeight;
+        }
     }
 
     function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr, IMetric metric) public {
