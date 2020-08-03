@@ -135,7 +135,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.memberCountDesign = memberCountdesign;
         group.threshold = threshold;
-        group.minStakeIn = minStakeIn; 
+        group.minStakeIn = minStakeIn;
         group.delegateFee = delegateFee;
     }
 
