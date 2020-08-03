@@ -8,7 +8,11 @@ module.exports = {
         'components/Proxy.sol',
         'Migrations.sol',
         'test/TestQuotaHelper.sol',
-        'test/TestBasicStorage.sol'],
+        'test/TestBasicStorage.sol',
+        'test/TestOrigTokenCreator.sol',
+        'test/TestStoremanAdmin.sol',
+        'test/TestIOwned.sol'
+    ],
     providerOptions: {
         default_balance_ether: 100000000,
         total_accounts: 100,
