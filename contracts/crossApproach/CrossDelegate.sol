@@ -194,7 +194,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  x                               HTLC random number
     function smgMintRedeem(bytes32 x)
         external
-        initialized
         notHalted
     {
         HTLCMintLib.HTLCSmgMintRedeemParams memory params = HTLCMintLib.HTLCSmgMintRedeemParams({
@@ -209,7 +208,6 @@ contract CrossDelegate is CrossStorage, Halt {
     function userMintRevoke(bytes32 xHash)
         external
         payable
-        initialized
         notHalted
     {
         HTLCMintLib.HTLCUserMintRevokeParams memory params = HTLCMintLib.HTLCUserMintRevokeParams({
@@ -262,7 +260,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  x                               HTLC random number
     function userMintRedeem(bytes32 x)
         external
-        initialized
         notHalted
     {
         HTLCMintLib.HTLCUserMintRedeemParams memory params = HTLCMintLib.HTLCUserMintRedeemParams({
@@ -276,7 +273,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  xHash                           hash of HTLC random number
     function smgMintRevoke(bytes32 xHash)
         external
-        initialized
         notHalted
     {
         HTLCMintLib.HTLCSmgMintRevokeParams memory params = HTLCMintLib.HTLCSmgMintRevokeParams({
@@ -316,7 +312,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  x                               HTLC random number
     function smgBurnRedeem(bytes32 x)
         external
-        initialized
         notHalted
     {
         HTLCBurnLib.HTLCSmgBurnRedeemParams memory params = HTLCBurnLib.HTLCSmgBurnRedeemParams({
@@ -332,7 +327,6 @@ contract CrossDelegate is CrossStorage, Halt {
     function userBurnRevoke(bytes32 xHash)
         external
         payable
-        initialized
         notHalted
     {
         HTLCBurnLib.HTLCUserBurnRevokeParams memory params = HTLCBurnLib.HTLCUserBurnRevokeParams({
@@ -379,7 +373,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  x                               HTLC random number
     function userBurnRedeem(bytes32 x)
         external
-        initialized
         notHalted
     {
         HTLCBurnLib.HTLCUserBurnRedeemParams memory params = HTLCBurnLib.HTLCUserBurnRedeemParams({
@@ -393,7 +386,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  xHash                           hash of HTLC random number
     function smgBurnRevoke(bytes32 xHash)
         external
-        initialized
         notHalted
     {
         HTLCBurnLib.HTLCSmgBurnRevokeParams memory params = HTLCBurnLib.HTLCSmgBurnRevokeParams({
@@ -553,7 +545,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  x                               HTLC random number
     function destDebtRedeem(bytes32 x)
         external
-        initialized
         notHalted
     {
         HTLCDebtLib.HTLCDebtRedeemParams memory params = HTLCDebtLib.HTLCDebtRedeemParams({
@@ -566,7 +557,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  xHash                           hash of HTLC random number
     function srcDebtRevoke(bytes32 xHash)
         external
-        initialized
         notHalted
     {
         HTLCDebtLib.HTLCDebtRevokeParams memory params = HTLCDebtLib.HTLCDebtRevokeParams({
@@ -607,7 +597,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  x                               HTLC random number
     function srcDebtRedeem(bytes32 x)
         external
-        initialized
         notHalted
     {
         HTLCDebtLib.HTLCDebtRedeemParams memory params = HTLCDebtLib.HTLCDebtRedeemParams({
@@ -620,7 +609,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  xHash                           hash of HTLC random number
     function destDebtRevoke(bytes32 xHash)
         external
-        initialized
         notHalted
     {
         HTLCDebtLib.HTLCDebtRevokeParams memory params = HTLCDebtLib.HTLCDebtRevokeParams({
