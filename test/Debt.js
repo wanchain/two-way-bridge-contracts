@@ -280,7 +280,7 @@ let typesArrayList             = {
 
 let owner = require('../truffle.js').networks.development.from;
 
-contract('Test HTLC', async (accounts) => {
+contract('Test Debt', async (accounts) => {
     before("init...   -> success", async () => {
         try {
             await testInit();
@@ -694,7 +694,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             assert.fail(ERROR_INFO);
         } catch (err) {
@@ -723,7 +724,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             assert.fail(ERROR_INFO);
         } catch (err) {
@@ -750,7 +752,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             assert.fail(ERROR_INFO);
         } catch (err) {
@@ -778,7 +781,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             assert.fail(ERROR_INFO);
         } catch (err) {
@@ -806,7 +810,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             assert.fail(ERROR_INFO);
             } catch (err) {
@@ -834,11 +839,46 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             // console.log(srcDebtLockReceipt.logs);
             assert.checkWeb3Event(srcDebtLockReceipt, {
                 event: 'SrcDebtLockLogger',
+                args: {
+                    xHash: debtLockParamsTemp.xHash,
+                    srcSmgID: web3.utils.padRight(debtLockParamsTemp.srcSmgID, 64),
+                    destSmgID: web3.utils.padRight(debtLockParamsTemp.destSmgID, 64),
+                }
+            });
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it("Debt -> destDebtLock [revoke]  ==> success", async () => {
+        try {
+            let debtLockParamsTemp = Object.assign({}, debtLockParams);
+            debtLockParamsTemp.srcSmgID = storemanGroups[1].ID;
+            debtLockParamsTemp.destSmgID = storemanGroups[2].ID;
+            debtLockParamsTemp.xHash = xInfo.chain1DebtRevoke.hash;
+
+            let pkId = 2;
+            let sk = skInfo.smg2[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve2, sk, typesArrayList.destDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.srcSmgID);
+
+            let srcDebtLockReceipt = await crossApproach.chain2.instance.destDebtLock(
+                debtLockParamsTemp.xHash,
+                debtLockParamsTemp.srcSmgID,
+                debtLockParamsTemp.destSmgID,
+                R,
+                s,
+                {from: storemanGroups[2].account}
+            );
+
+            // console.log(srcDebtLockReceipt.logs);
+            assert.checkWeb3Event(srcDebtLockReceipt, {
+                event: 'DestDebtLockLogger',
                 args: {
                     xHash: debtLockParamsTemp.xHash,
                     srcSmgID: web3.utils.padRight(debtLockParamsTemp.srcSmgID, 64),
@@ -863,13 +903,14 @@ contract('Test HTLC', async (accounts) => {
 
             let value = web3.utils.toWei(userFastParamsTemp.value.toString());
 
-            let srcDebtLockReceipt = await crossApproach.chain1.instance.userFastMint(
+            let userFastMintReceipt = await crossApproach.chain1.instance.userFastMint(
                 userFastParamsTemp.uniqueID,
                 userFastParamsTemp.smgID,
                 userFastParamsTemp.tokenPairID,
                 value,
                 userFastParamsTemp.shadowUserAccount,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             assert.fail(ERROR_INFO);
         } catch (err) {
@@ -912,7 +953,8 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.tokenPairID,
                 value,
                 userLockParamsTemp.shadowUserAccount.toLowerCase(),
-                {from: userLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+                {from: userLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee}
+            );
 
             assert.fail(ERROR_INFO);
         } catch (err) {
@@ -920,6 +962,30 @@ contract('Test HTLC', async (accounts) => {
         } finally {
             await tokens.token1.tokenCreator.burnToken(tokens.token1.name, tokens.token1.symbol,
                 origUserAccount, value);
+        }
+    });
+
+    it('Debt -> srcDebtRedeem [revoke]  ==> Redeem timeout', async () => {
+        try {
+            let lockedTime = htlcLockedTime * 1000 + 1;
+            // let leftTime = await crossApproach.chain1.instance.getLeftLockedTime(xInfo.chain1DebtRevoke.hash);
+            // let lockedTime = leftTime * 1000 + 1;
+
+            console.log("await", lockedTime, "ms");
+            await sleep(lockedTime); // ms
+
+            // let leftTime = await crossApproach.chain1.instance.getLeftLockedTime(xInfo.chain1DebtRevoke.hash);
+            // console.log("Debt Number(leftTime)", Number(leftTime));
+            // console.log("Debt leftTime BN   ", leftTime);
+            // console.log("Debt leftTime number", leftTime.toNumber());
+            // console.log("Debt leftTime string", leftTime.toString(10));
+            // assert.equal(leftTime.toNumber() === 0, true);
+            // // assert.equal(Number(leftTime) === 0, true);
+
+            await crossApproach.chain2.instance.srcDebtRedeem(xInfo.chain1DebtRevoke.x, {from: storemanGroups[1].account});
+            assert.fail(ERROR_INFO);
+        } catch (err) {
+            assert.include(err.toString(), "Redeem timeout");
         }
     });
 
@@ -932,17 +998,14 @@ contract('Test HTLC', async (accounts) => {
             console.log("await", lockedTime, "ms");
             await sleep(lockedTime); // ms
 
-            let leftTime = await crossApproach.chain1.instance.getLeftLockedTime(xInfo.chain1DebtRevoke.hash);
-            assert.equal(Number(leftTime) === 0, true);
-
-            await crossApproach.chain1.instance.destDebtRedeem(xInfo.chain1DebtRevoke.x, {from: storemanGroups[1].account});
+            await crossApproach.chain1.instance.destDebtRedeem(xInfo.chain1DebtRevoke.x, {from: storemanGroups[2].account});
             assert.fail(ERROR_INFO);
         } catch (err) {
             assert.include(err.toString(), "Redeem timeout");
         }
     });
 
-    it('Debt -> srcDebtRevoke  ==> success', async () => {
+    it('Debt -> srcDebtRevoke [revoke]  ==> success', async () => {
         try {
             // console.log("revoke hash", xInfo.chain1DebtRevoke.hash);
             let srcDebtRevokeReceipt = await crossApproach.chain1.instance.srcDebtRevoke(xInfo.chain1DebtRevoke.hash, {from: storemanGroups[1].account});
@@ -956,6 +1019,29 @@ contract('Test HTLC', async (accounts) => {
                     destSmgID: web3.utils.padRight(storemanGroups[2].ID, 64),
                 }
             });
+            let leftTime = await crossApproach.chain1.instance.getLeftLockedTime(xInfo.chain1DebtRevoke.hash);
+            assert.equal(leftTime.toNumber() === 0, true);
+        } catch (err) {
+            assert.fail(err);
+        }
+    });
+
+    it('Debt -> destDebtRevoke  [revoke]  ==> success', async () => {
+        try {
+            // console.log("revoke hash", xInfo.chain1DebtRevoke.hash);
+            let destDebtRevokeReceipt = await crossApproach.chain2.instance.destDebtRevoke(xInfo.chain1DebtRevoke.hash, {from: storemanGroups[2].account});
+
+            // console.log("destDebtRevokeReceipt", destDebtRevokeReceipt.logs);
+            assert.checkWeb3Event(destDebtRevokeReceipt, {
+                event: 'DestDebtRevokeLogger',
+                args: {
+                    xHash: xInfo.chain1DebtRevoke.hash,
+                    srcSmgID: web3.utils.padRight(storemanGroups[1].ID, 64),
+                    destSmgID: web3.utils.padRight(storemanGroups[2].ID, 64),
+                }
+            });
+            let leftTime = await crossApproach.chain2.instance.getLeftLockedTime(xInfo.chain1DebtRevoke.hash);
+            assert.equal(leftTime.toNumber() === 0, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1002,7 +1088,8 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.tokenPairID,
                 value,
                 userLockParamsTemp.shadowUserAccount,
-                {from: userLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee});
+                {from: userLockParamsTemp.origUserAccount, value: crossApproach.chain1.origLockFee}
+            );
             // console.log("userMintLock receipt", userMintLockReceipt.logs);
             assert.checkWeb3Event(userMintLockReceipt, {
                 event: 'UserMintLockLogger',
@@ -1046,7 +1133,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             assert.fail(ERROR_INFO);
         } catch (err) {
@@ -1060,6 +1148,7 @@ contract('Test HTLC', async (accounts) => {
             console.log("await", lockedTime, "ms");
             await sleep(lockedTime); // ms
             await crossApproach.chain1.instance.smgMintRedeem(xInfo.chain1DebtMintLock.x, {from: storemanGroups[1].account});
+            assert.fail(ERROR_INFO);
         } catch (err) {
             assert.include(err.toString(), "Redeem timeout");
         }
@@ -1088,6 +1177,9 @@ contract('Test HTLC', async (accounts) => {
             let afterMintQuotaValue = await crossApproach.chain1.parnters.quota.getUserMintQuota(tokens.token1.tokenPairID, storemanGroups[1].ID);
             let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
             assert.equal(value === difference, true);
+
+            let leftTime = await crossApproach.chain1.instance.getLeftLockedTime(xInfo.chain1DebtMintLock.hash);
+            assert.equal(leftTime.toNumber() === 0, true);
         } catch (err) {
             assert.fail(err);
         }
@@ -1123,7 +1215,8 @@ contract('Test HTLC', async (accounts) => {
                 fastMintParamsTemp.tokenPairID,
                 value,
                 fastMintParamsTemp.shadowUserAccount,
-                {from: fastMintParamsTemp.origUserAccount, value: totalValue});
+                {from: fastMintParamsTemp.origUserAccount, value: totalValue}
+            );
 
             // console.log("2 balance accounts[7]", await getBalance(fastMintParamsTemp.origUserAccount));
 
@@ -1177,7 +1270,8 @@ contract('Test HTLC', async (accounts) => {
                 fastMintParamsTemp.shadowUserAccount,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
             // console.log("smgFastMint receipt", userFastMintReceipt.logs);
 
             assert.checkWeb3Event(userFastMintReceipt, {
@@ -1223,7 +1317,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             // console.log(srcDebtLockReceipt.logs);
             assert.checkWeb3Event(srcDebtLockReceipt, {
@@ -1259,7 +1354,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             assert.fail(ERROR_INFO);
         } catch (err) {
@@ -1287,7 +1383,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[2].account});
+                {from: storemanGroups[2].account}
+            );
 
             // console.log(srcDebtLockReceipt.logs);
             assert.checkWeb3Event(srcDebtLockReceipt, {
@@ -1320,7 +1417,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[2].account});
+                {from: storemanGroups[2].account}
+            );
 
             assert.fail(ERROR_INFO);
         } catch (err) {
@@ -1333,7 +1431,7 @@ contract('Test HTLC', async (accounts) => {
 
             let srcDebtRedeemReceipt = await crossApproach.chain2.instance.srcDebtRedeem(xInfo.chain1NoDebtRedeem.x, {from: storemanGroups[1].account});
 
-            // console.log(destDebtRedeemReceipt.logs);
+            // console.log(srcDebtRedeemReceipt.logs);
             assert.checkWeb3Event(srcDebtRedeemReceipt, {
                 event: 'SrcDebtRedeemLogger',
                 args: {
@@ -1402,7 +1500,7 @@ contract('Test HTLC', async (accounts) => {
 
     it('Chain[1] -> Asset -> srcDebtRevoke  ==> Revoke the redeemed Debt, Status is not locked', async () => {
         try {
-            let destDebtRedeemReceipt = await crossApproach.chain1.instance.destDebtRedeem(xInfo.chain1NoDebtRedeem.hash, {from: storemanGroups[1].account});
+            let destDebtRedeemReceipt = await crossApproach.chain1.instance.destDebtRedeem(xInfo.chain1NoDebtRedeem.hash, {from: storemanGroups[2].account});
             assert.fail(ERROR_INFO);
         } catch (err) {
             assert.include(err.toString(), "Status is not locked");
@@ -1427,7 +1525,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[1].account});
+                {from: storemanGroups[1].account}
+            );
 
             // console.log(srcDebtLockReceipt.logs);
             assert.checkWeb3Event(srcDebtLockReceipt, {
@@ -1460,7 +1559,8 @@ contract('Test HTLC', async (accounts) => {
                 debtLockParamsTemp.destSmgID,
                 R,
                 s,
-                {from: storemanGroups[2].account});
+                {from: storemanGroups[2].account}
+            );
 
             // console.log(srcDebtLockReceipt.logs);
             assert.checkWeb3Event(srcDebtLockReceipt, {
@@ -1559,7 +1659,8 @@ contract('Test HTLC', async (accounts) => {
                 userLockParamsTemp.tokenPairID,
                 value,
                 userLockParamsTemp.origUserAccount,
-                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain1.shadowLockFee});
+                {from: userLockParamsTemp.shadowUserAccount, value: crossApproach.chain1.shadowLockFee}
+            );
 
                 // console.log("userBurnLock receipt", userBurnLockReceipt.logs);
             assert.checkWeb3Event(userBurnLockReceipt, {
@@ -1620,7 +1721,8 @@ contract('Test HTLC', async (accounts) => {
                 smgLockParamsTemp.origUserAccount,
                 R,
                 s,
-                {from: storemanGroups[2].account});
+                {from: storemanGroups[2].account}
+            );
 
             // console.log("smgBurnLock receipt", smgBurnLockReceipt);
             // console.log("smgBurnLock receipt logs", smgBurnLockReceipt.logs);
