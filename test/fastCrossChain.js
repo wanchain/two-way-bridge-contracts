@@ -669,7 +669,7 @@ contract('Test Fast Cross Chain', async (accounts) => {
     });
 
     ///------fast cross chain----------
-    it("Original[1] -> userFastMint  ==> Invalid parnters", async () => {
+    it("Original[1] -> userFastMint  ==> Contract is not initialized", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -685,7 +685,7 @@ contract('Test Fast Cross Chain', async (accounts) => {
                 userLockParamsTemp.shadowUserAccount, {from: userLockParamsTemp.origUserAccount});
         } catch (err) {
             //assert.fail(err);
-            assert.include(err.toString(), "Invalid parnters");
+            assert.include(err.toString(), "Contract is not initialized");
         }
     });
 
@@ -1005,7 +1005,7 @@ contract('Test Fast Cross Chain', async (accounts) => {
         }
     });
 
-    it("Shadow[2] -> userFastBurn  ==> Invalid parnters", async () => {
+    it("Shadow[2] -> userFastBurn  ==> Contract is not initialized", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -1021,7 +1021,7 @@ contract('Test Fast Cross Chain', async (accounts) => {
                 userLockParamsTemp.origUserAccount, {from: userLockParamsTemp.shadowUserAccount});
         } catch (err) {
             //assert.fail(err);
-            assert.include(err.toString(), "Invalid parnters");
+            assert.include(err.toString(), "Contract is not initialized");
         }
     });
 
