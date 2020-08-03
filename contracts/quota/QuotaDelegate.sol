@@ -80,7 +80,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         if (checkQuota) {
             uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
             require(
-                mintQuota.sub(quota.asset_receivable.add(quota._asset)) >= value,
+                mintQuota >= value,
                 "Quota is not enough"
             );
         }
@@ -111,7 +111,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         if (checkQuota) {
             uint mintQuota = getSmgMintQuota(tokenId, storemanGroupId);
             require(
-                mintQuota.sub(quota.debt_receivable.add(quota._debt)) >= value,
+                mintQuota >= value,
                 "Quota is not enough"
             );
         }
@@ -196,7 +196,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         if (checkQuota) {
             uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
             require(
-                mintQuota.sub(quota.asset_receivable.add(quota._asset)) >= value,
+                mintQuota >= value,
                 "Quota is not enough"
             );
         }
@@ -225,7 +225,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         if (checkQuota) {
             uint mintQuota = getSmgMintQuota(tokenId, storemanGroupId);
             require(
-                mintQuota.sub(quota.debt_receivable.add(quota._debt)) >= value,
+                mintQuota >= value,
                 "Quota is not enough"
             );
         }
@@ -678,7 +678,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
             uint tokenValue = q.debt_receivable.add(q._debt).mul(getPrice(symbol)).mul(1 ether).div(10**decimals); /// change Decimals to 18 digits
             totalTokenUsedValue = totalTokenUsedValue.add(tokenValue);
         }
-        
+
         uint depositValue = 0;
         if (keccak256(rawSymbol) == keccak256("WAN")) {
             depositValue = getFiatDeposit(storemanGroupId);
