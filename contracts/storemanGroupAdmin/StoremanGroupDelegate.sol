@@ -47,7 +47,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
      */
     event StoremanGroupRegisterStartEvent(bytes32 indexed groupId, uint workStart,uint workDuration, uint registerDuration, bytes32 indexed preGroupId);
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
-    event StoremanGroupDismissedEvent(bytes32 indexed groupId);
+    event StoremanGroupDismissedEvent(bytes32 indexed groupId, uint dismissTime);
     event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
 
     modifier onlyGpk {
@@ -71,9 +71,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         external
         onlyOwner
     {
-        //require(tmAddr != address(0), "Invalid tokenManager address");
         require(metricAddr != address(0), "Invalid htlc address");
-        //tokenManager = ITokenManager(tmAddr);
         metric = IMetric(metricAddr);
         greateGpkAddr = gpkAddr;
         quotaInst = IQuota(quotaAddr);
@@ -81,74 +79,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
 
 
-    function setBackupCount(uint backup)
-        public onlyOwner
-    {
-        backupCount = backup;
-    }
 
-    function setstandaloneWeight(uint weight)
-        public onlyOwner
-    {
-        data.standaloneWeight = weight;
-    }
-    function getBackupCount() public view returns (uint) {
-        return backupCount;
-    }
-    function getstandaloneWeight() public view returns (uint) {
-        return data.standaloneWeight;
-    }
-    function inheritNode(StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal
-    {
-
-        StoremanType.StoremanGroup storage oldGroup;
-        if(preGroupId != bytes32(0x00)) {
-            oldGroup = data.groups[preGroupId];
-            oldAddr.length = 0;
-        }
-        if(wkAddrs.length == 0){ // If there are no new white nodes, use the old.
-            group.whiteCount = oldGroup.whiteCount;
-            group.whiteCountAll = oldGroup.whiteCountAll;
-            for(uint k = 0; k<oldGroup.whiteCountAll; k++){
-                group.whiteMap[k] = oldGroup.whiteMap[k];
-                group.whiteWk[group.whiteMap[k]] = oldGroup.whiteWk[oldGroup.whiteMap[k]];
-                if(k < group.whiteCount){
-                    group.selectedNode[k] = group.whiteMap[k];
-                }
-                oldAddr.push(group.whiteMap[k]);
-            }
-            group.selectedCount = oldGroup.selectedCount;
-        } else {   // If there are new white nodes, use the new.
-            group.whiteCount = wkAddrs.length - backupCount;
-            group.whiteCountAll = wkAddrs.length;
-            for(uint i = 0; i < wkAddrs.length; i++){
-                group.whiteMap[i] = wkAddrs[i];
-                group.whiteWk[wkAddrs[i]] = senders[i];
-                if(i < group.whiteCount) {
-                    group.selectedNode[i] = wkAddrs[i];
-                }
-            }
-            group.selectedCount = group.whiteCount;
-        }
-        // TODO; 如果没有白名单, 用旧的.
-        // 如果有, 完整替换.
-        // 3个替换4个也可以.
-        // TODO handle the old group member. set the group deposit.
-        if(preGroupId != bytes32(0x00)) {
-            oldGroup = data.groups[preGroupId];
-            oldAddr.length = 0;
-            for(uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
-                address skAddr = oldGroup.selectedNode[m];
-                StoremanType.Candidate sk = data.candidates[skAddr];
-                if(sk.groupId == preGroupId && sk.quited == false) {
-                    group.selectedNode[group.selectedCount] = sk.pkAddress;
-                    group.selectedCount++;
-                    oldAddr.push(sk.pkAddress);
-                }
-            }
-            emit storemanTransferEvent(group.groupId, preGroupId, oldAddr);
-        }
-    }
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param groupId                    the building storeman group index.
     /// @param wkAddrs                    white list work address.
@@ -163,7 +94,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         onlyOwner
     {
         require(wkAddrs.length == senders.length, "Invalid white list length");
-        require(wkAddrs.length >= backupCount, "Insufficient white list");
+        require(wkAddrs.length >= data.conf.backupCount, "Insufficient white list");
 
         Deposit.Records memory deposit =  Deposit.Records(0);
         Deposit.Records memory depositWeight =  Deposit.Records(0);
@@ -178,12 +109,12 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.totalTime = workDuration;
         group.memberCountDesign = memberCountDefault;
         group.threshold = thresholdDefault;
-        group.whiteCount = wkAddrs.length - backupCount;
+        group.whiteCount = wkAddrs.length - data.conf.backupCount;
         group.whiteCountAll = wkAddrs.length;
         group.registerTime = now;
         group.registerDuration = registerDuration;
         emit StoremanGroupRegisterStartEvent(groupId, workStart, workDuration, registerDuration, preGroupId);
-        return inheritNode(group, preGroupId, wkAddrs, senders);
+        return StoremanLib.inheritNode(data,group, preGroupId, wkAddrs, senders);
     }
     function updateGroupChain(bytes32 groupId,  uint chain1, uint chain2, uint curve1, uint curve2)
         external
@@ -197,20 +128,17 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.curve2 = curve2;
         group.status = StoremanType.GroupStatus.curveSeted;
     }
-    function updateGroupConfig(bytes32 groupId, uint memberCountdesign, uint threshold, uint minStakeIn)
+    function updateGroupConfig(bytes32 groupId, uint memberCountdesign, uint threshold, uint minStakeIn, uint delegateFee)
         external
         onlyOwner
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.memberCountDesign = memberCountdesign;
         group.threshold = threshold;
-        group.minStakeIn = minStakeIn; // TODO: set min stakeIn value
+        group.minStakeIn = minStakeIn; 
+        group.delegateFee = delegateFee;
     }
 
-    // function getStaker(bytes32 groupId, address pkAddr) public view returns (bytes PK,uint delegateFee,uint delegatorCount) {
-    //     StoremanType.Candidate storage sk = groups[groupId].candidates[pkAddr];
-    //     return (sk.PK, sk.delegateFee, sk.delegatorCount);
-    // }
     function getGroupIdbyAddress(address pkAddr) public view returns (bytes32, bytes32) {
         StoremanType.Candidate storage sk = data.candidates[pkAddr];
         return (sk.groupId, sk.nextGroupId);
@@ -226,16 +154,16 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     2) calculate the sk incentive all days.
     3) calculate the delegator all days one by one.
      */
-    function incentiveCandidator(address wkAddr) public  {
-        IncentiveLib.incentiveCandidator(data, wkAddr, metric);
+    function incentiveCandidator( address wkAddr) public  {
+        IncentiveLib.incentiveCandidator(data, wkAddr,metric);
     }
 
-    function stakeIn(bytes32 groupId, bytes PK, bytes enodeID, uint delegateFee)
+    function stakeIn(bytes32 groupId, bytes PK, bytes enodeID)
         external
         notHalted
         payable
     {
-        return StoremanLib.stakeIn(data,groupId, PK, enodeID, delegateFee);
+        return StoremanLib.stakeIn(data,groupId, PK, enodeID);
     }
 
     function stakeAppend(address skPkAddr)
@@ -266,24 +194,34 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
     }
 
+    function partIn(address skPkAddr)
+        external
+        notHalted
+        payable
+    {
+        return StoremanLib.partIn(data,skPkAddr);
+    }
+    function partOut(address skPkAddr) external {
+        return StoremanLib.partOut(data,skPkAddr);
+
+    }
+    function partClaim(address skPkAddr) external {
+        return StoremanLib.partClaim(data,skPkAddr);
+
+    }
     function delegateClaim(address skPkAddr) external {
 
         return StoremanLib.delegateClaim(data, skPkAddr);
     }
 
     function getSelectedSmNumber(bytes32 groupId) public view returns(uint) {
-        StoremanType.StoremanGroup storage group = data.groups[groupId];
-        if(group.status == StoremanType.GroupStatus.initial || group.status == StoremanType.GroupStatus.failed){
-            return 0;
-        }
-        return group.memberCountDesign;
+        return StoremanUtil.getSelectedSmNumber(data, groupId);
     }
 
     //event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
     function select(bytes32 groupId)
         external
         notHalted
-        onlyGroupLeader(groupId)
     {
         return IncentiveLib.toSelect(data, groupId);
     }
@@ -301,28 +239,15 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.status = status;
     }
 
-    // function getSmInfo(bytes32 groupId, address wkAddress) public view  returns(address sender,bytes PK, address pkAddress,
-    //     bool quited, uint  delegateFee,uint  deposit, uint delegateDeposit,
-    //     uint incentive, uint delegatorCount
-    //     ){
-    //         StoremanType.StoremanGroup storage group = data.groups[groupId];
-    //         StoremanType.Candidate storage sk = data.candidates[wkAddress];
-
-    //         return (sk.sender,   sk.PK, sk.pkAddress, sk.quited,
-    //             sk.delegateFee, sk.deposit.getLastValue(), sk.delegateDeposit,
-    //             sk.incentive,  sk.delegatorCount
-    //         );
-    // }
-
 
     function getStoremanInfo(address wkAddress)public view  returns(address sender,bytes PK, address pkAddress,
-        bool quited, uint  delegateFee,uint  deposit, uint delegateDeposit,
+        bool quited, uint  deposit, uint delegateDeposit,
         uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId
         ){
             StoremanType.Candidate storage sk = data.candidates[wkAddress];
 
             return (sk.sender,   sk.PK, sk.pkAddress, sk.quited,
-                sk.delegateFee, sk.deposit.getLastValue(), sk.delegateDeposit,
+                sk.deposit.getLastValue(), sk.delegateDeposit,
                 sk.incentive[0],  sk.delegatorCount, sk.groupId, sk.nextGroupId
             );
     }
@@ -343,44 +268,24 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function getSmDelegatorInfo(address wkAddr, address deAddr) public view returns (address sender, uint deposit, uint incentive) {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
         StoremanType.Delegator storage de = sk.delegators[deAddr];
-        return (de.sender, de.deposit.getLastValue(),  de.incentive[0]); // TODO
+        return (de.sender, de.deposit.getLastValue(),  de.incentive[0]); 
     }
-    // TODO: delete this one?
-    function getSmDelegatorInfoRecord(bytes32 groupId, address wkAddr, address deAddr, uint index) public view returns (uint, uint) {
-        StoremanType.StoremanGroup storage group = data.groups[groupId];
-        StoremanType.Candidate storage sk = data.candidates[wkAddr];
-        StoremanType.Delegator storage de = sk.delegators[deAddr];
-        return (de.deposit.records[index].id, de.deposit.records[index].value);
-    }
+
     function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2)
         public onlyGpk {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.gpk1 = gpk1;
         group.gpk2 = gpk2;
         group.status = StoremanType.GroupStatus.ready;
-        //storemanGroupRegister(group.chain,groupId, gpk1, group.txFeeRatio);
-        //emit storemanGroupRegisterEvent(groupId, group.chain, gpk1, gpk2);
     }
 
     function setInvalidSm(bytes32 groupId, uint[] slashType,  address[] badAddrs)
         external
         notHalted
         onlyGpk
-        returns(bool isContinue){
-        StoremanType.StoremanGroup storage group = data.groups[groupId];
-        for(uint k=0; k<group.memberCount; k++){
-            if(group.tickedCount + group.whiteCount >=group.whiteCountAll){
-                return false;
-            }
-            for(uint i = 0; i<badAddrs.length; i++){
-                if(group.selectedNode[k] == badAddrs[i]){
-                    group.selectedNode[k] = group.whiteMap[group.tickedCount+ group.whiteCount];
-                    group.tickedCount += 1;
-                    break;
-                }
-            }
-        }
-        return true;
+        returns(bool isContinue)
+    {
+        return StoremanLib.setInvalidSm(data, groupId, slashType, badAddrs);
     }
 
     function getThresholdByGrpId(bytes32 groupId) external view returns (uint){
@@ -388,22 +293,19 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return group.threshold;
     }
 
+
     /// @notice                           function for storeman group apply unregistration through the delegate
-    /// @param groupId                    storeman group groupId
+    /// @param groupId              storeman group groupId
     function storemanGroupUnregister(bytes32 groupId)
         external
         notHalted
         onlyGroupLeader(groupId)
     {
-        StoremanType.StoremanGroup storage smg = data.groups[groupId];
-        //require(msg.sender == smg.delegate, "Sender must be delegate");
-
-        smg.status = StoremanType.GroupStatus.unregistered;
-        emit StoremanGroupUnregisterEvent(groupId);
+        return StoremanLib.storemanGroupUnregister(data, groupId);
     }
 
     /// @notice                           function for storeman group apply unregistration through the delegate
-    /// @param groupId                    storeman group groupId
+    /// @param groupId                    storeman groupId
     function storemanGroupDismiss(bytes32 groupId)
         external
         notHalted
@@ -412,9 +314,17 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         bool quitable = quotaInst.isDebtClean(groupId);
         require(quitable);
+
         group.status = StoremanType.GroupStatus.dismissed;
-        emit StoremanGroupDismissedEvent(groupId);
+        emit StoremanGroupDismissedEvent(groupId, now);
         // TODO group状态进入dismissed, sk的当前group变成nextGroup.
+        StoremanType.Candidate storage sk;
+        for(uint i=0; i<group.memberCount; i++){
+            sk = data.candidates[group.selectedNode[i]];
+            sk.groupId = sk.nextGroupId;
+            sk.nextGroupId = bytes32(0x00);
+        }
+
     }
 
     function checkGroupDismissable(bytes32 groupId) public returns(bool) {
@@ -467,23 +377,22 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage group = data.groups[smgID];
         group.crossIncoming += msg.value; // 提取时，　选中的人均分．
     }
-    function setCoefficient(uint _crossChainCo) public {
-        if (_crossChainCo != 0) {
-            data.crossChainCo = _crossChainCo;
-        }
 
-        // if (_chainTypeCo != 0) {
-        //      data.chainTypeCo = _chainTypeCo; // TODO: change to map[smallChainId][bigChainId]
-        // }
-    }
-    function setChainTypeCo(uint chain1, uint chain2, uint co) public {
+    function setChainTypeCo(uint chain1, uint chain2, uint co) public  onlyOwner {
         if(chain1 < chain2) {
             data.chainTypeCo[chain1][chain2] = co;
         } else {
             data.chainTypeCo[chain2][chain1] = co;
         }
     }
-    function getChainTypeCo(uint chain1, uint chain2) public view returns(uint co){
-        return IncentiveLib.getChainTypeCo(data, chain1, chain2);
+
+    function getStoremanConf() public view returns(uint backupCount, uint standaloneWeight, uint DelegationMulti) {
+        return (data.conf.backupCount, data.conf.standaloneWeight, data.conf.DelegationMulti);
+    }
+    function updateStoremanConf(uint backupCount, uint standaloneWeight, uint DelegationMulti) public onlyOwner {
+        data.conf.backupCount = backupCount;
+        data.conf.standaloneWeight = standaloneWeight;
+        data.conf.DelegationMulti = DelegationMulti;
+
     }
 }

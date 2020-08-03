@@ -18,6 +18,13 @@ library StoremanType {
         Deposit.Records deposit;
         mapping(uint=>uint) incentive;
     }
+    struct Partner {
+        address sender; // the delegator wallet address
+        address staker;
+        bool  quited;
+        uint index; // for delete from candidate;
+        Deposit.Records deposit;
+    }
     struct Candidate {
         address sender;
         bytes enodeID;
@@ -26,9 +33,10 @@ library StoremanType {
         bool  quited;
         //bool  claimed;// 不需要??? 提取后deposit归零.
         bool  selected;
-        uint  delegateFee;
         uint  delegatorCount;
         uint  delegateDeposit; // only used when selecting. need not records.
+        uint  partnerCount;
+        uint  partnerDeposit;
 
         uint  incentivedDelegator; // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
         uint  incentivedDay;
@@ -39,6 +47,8 @@ library StoremanType {
         mapping(uint=>uint) incentive;       // without delegation.. set to 0 after incentive.        
         mapping(uint=>address) addrMap;
         mapping(address=>Delegator) delegators;
+        mapping(address=>Partner) partners;
+        
     }
 
     // struct GroupConfig {
@@ -72,7 +82,8 @@ library StoremanType {
         uint crossIncoming;
         bytes gpk1;
         bytes gpk2;
-		uint  incentiveThresHold;
+        uint  incentiveThresHold;
+        uint delegateFee;
         mapping(uint=>uint) tickedType;
         mapping(uint=>address) tickedNode;
         mapping(uint=>address) addrMap;
@@ -81,13 +92,17 @@ library StoremanType {
         mapping(address=>address) whiteWk;   // the white list specified when start group. 储存白名单对应的钱包地址.
         mapping(uint=>uint) groupIncentive; // by day.
     }
-  
-    struct StoremanData {
-        uint crossChainCo;//need to mul 1000
-        //uint chainTypeCo; //need to mul 1000
-        uint contribution;
-        uint standaloneWeight;
+    struct StoremanGlobalConf {
+        uint standaloneWeight; // defult 1500; need mul 1000
+        uint DelegationMulti;  // 10
+        uint backupCount;  // 3
 
+    }
+    struct StoremanData {
+        uint contribution;
+        StoremanGlobalConf conf;
+        address[] oldAddr;
+        
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;
         mapping(bytes => mapping(bytes => bytes32))  storemanGroupMap;
         mapping(address=>StoremanType.Candidate) candidates;

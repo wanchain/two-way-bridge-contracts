@@ -17,7 +17,7 @@ const Tx = wanUtil.wanchainTx;
 let gGasLimit=9000000;
 let gGasPrice=200000000000;
 
-const { registerStart, web3url } = require('./base.js')
+const { registerStart, web3url } = require('./basee.js')
 
 /*************************************
 staker: 1000 ~ 1000+100

@@ -44,48 +44,48 @@ const curveMap = new Map([
 module.exports = async function (deployer, network) {
     if (network === 'nodeploy') return;
 
-    // token manager sc
-    await deployer.deploy(TokenManagerProxy);
-    let tmProxy = await TokenManagerProxy.deployed();
-    await deployer.deploy(TokenManagerDelegate);
-    let tmDelegate = await TokenManagerDelegate.deployed();
-    await tmProxy.upgradeTo(tmDelegate.address);
-    console.log("tm address:", tmProxy.address);
+    // // token manager sc
+    // await deployer.deploy(TokenManagerProxy);
+    // let tmProxy = await TokenManagerProxy.deployed();
+    // await deployer.deploy(TokenManagerDelegate);
+    // let tmDelegate = await TokenManagerDelegate.deployed();
+    // await tmProxy.upgradeTo(tmDelegate.address);
+    // console.log("tm address:", tmProxy.address);
 
-    // htlc sc
-    await deployer.deploy(Secp256k1);
-    await deployer.link(Secp256k1, SchnorrVerifier);
+    // // htlc sc
+    // await deployer.deploy(Secp256k1);
+    // await deployer.link(Secp256k1, SchnorrVerifier);
 
-    await deployer.deploy(SchnorrVerifier);
-    await deployer.deploy(QuotaLib);
-    await deployer.deploy(HTLCLib);
+    // await deployer.deploy(SchnorrVerifier);
+    // await deployer.deploy(QuotaLib);
+    // await deployer.deploy(HTLCLib);
 
-    await deployer.link(SchnorrVerifier, HTLCDebtLib);
-    await deployer.link(QuotaLib, HTLCDebtLib);
-    await deployer.link(HTLCLib, HTLCDebtLib);
-    await deployer.deploy(HTLCDebtLib);
+    // await deployer.link(SchnorrVerifier, HTLCDebtLib);
+    // await deployer.link(QuotaLib, HTLCDebtLib);
+    // await deployer.link(HTLCLib, HTLCDebtLib);
+    // await deployer.deploy(HTLCDebtLib);
 
-    await deployer.link(SchnorrVerifier, HTLCSmgLib);
-    await deployer.link(QuotaLib, HTLCSmgLib);
-    await deployer.link(HTLCLib, HTLCSmgLib);
-    await deployer.deploy(HTLCSmgLib);
+    // await deployer.link(SchnorrVerifier, HTLCSmgLib);
+    // await deployer.link(QuotaLib, HTLCSmgLib);
+    // await deployer.link(HTLCLib, HTLCSmgLib);
+    // await deployer.deploy(HTLCSmgLib);
 
-    await deployer.link(QuotaLib, HTLCUserLib);
-    await deployer.link(HTLCLib, HTLCUserLib);
-    await deployer.deploy(HTLCUserLib);
+    // await deployer.link(QuotaLib, HTLCUserLib);
+    // await deployer.link(HTLCLib, HTLCUserLib);
+    // await deployer.deploy(HTLCUserLib);
 
-    await deployer.link(SchnorrVerifier, HTLCDelegate);
-    await deployer.link(QuotaLib, HTLCDelegate);
-    await deployer.link(HTLCLib, HTLCDelegate);
-    await deployer.link(HTLCDebtLib, HTLCDelegate);
-    await deployer.link(HTLCSmgLib, HTLCDelegate);
-    await deployer.link(HTLCUserLib, HTLCDelegate);
-    await deployer.deploy(HTLCProxy);
-    let htlcProxy = await HTLCProxy.deployed();
-    await deployer.deploy(HTLCDelegate);
-    let htlcDelegate = await HTLCDelegate.deployed();
-    await htlcProxy.upgradeTo(htlcDelegate.address);
-    console.log("htlc address:", htlcProxy.address);
+    // await deployer.link(SchnorrVerifier, HTLCDelegate);
+    // await deployer.link(QuotaLib, HTLCDelegate);
+    // await deployer.link(HTLCLib, HTLCDelegate);
+    // await deployer.link(HTLCDebtLib, HTLCDelegate);
+    // await deployer.link(HTLCSmgLib, HTLCDelegate);
+    // await deployer.link(HTLCUserLib, HTLCDelegate);
+    // await deployer.deploy(HTLCProxy);
+    // let htlcProxy = await HTLCProxy.deployed();
+    // await deployer.deploy(HTLCDelegate);
+    // let htlcDelegate = await HTLCDelegate.deployed();
+    // await htlcProxy.upgradeTo(htlcDelegate.address);
+    // console.log("htlc address:", htlcProxy.address);
 
     // storeman group admin sc
     await deployer.deploy(PosLib);
@@ -114,13 +114,13 @@ module.exports = async function (deployer, network) {
     let tsmg = await TestSmg.deployed();
     await tsmg.setSmgAddr(smgProxy.address)
 
-    // token manager dependence
-    let tm = await TokenManagerDelegate.at(tmProxy.address);
-    await tm.setHtlcAddr(htlcProxy.address);
+    // // token manager dependence
+    // let tm = await TokenManagerDelegate.at(tmProxy.address);
+    // await tm.setHtlcAddr(htlcProxy.address);
 
-    // htlc dependence
-    let htlc = await HTLCDelegate.at(htlcProxy.address);
-    await htlc.setEconomics(tmProxy.address, smgProxy.address, 0);
+    // // htlc dependence
+    // let htlc = await HTLCDelegate.at(htlcProxy.address);
+    // await htlc.setEconomics(tmProxy.address, smgProxy.address, 0);
 
     // storm group admin dependence
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
@@ -183,5 +183,5 @@ module.exports = async function (deployer, network) {
     let bn256 = await Bn256Curve.deployed();
     await gpk.setCurve(curveMap.get('bn256'), bn256.address);
 
-    await smg.setDependence(htlcProxy.address, gpkProxy.address, fakeQuotaInst.address);
+    await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
 }

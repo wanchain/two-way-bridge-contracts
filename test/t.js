@@ -16,11 +16,11 @@ function getAddressFromInt(i){
       }
 
 function f3() {
+        let pri = "949077a1ad13215b0436b748f6afb07b837aebbe1038bc1e48ebdac49782f8b0"
 
-
-
-        getAddressFromInt(200000)
-        getAddressFromInt(200001)
+        let priv = Buffer.from(pri, 'hex');
+        let pkb = ethutil.privateToPublic(priv)
+        console.log("pk:", pkb.toString('hex'))
 
 
 }

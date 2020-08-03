@@ -41,17 +41,16 @@ contract StoremanGroupStorage is BasicStorage {
   /// HTLC instance address
   IMetric public metric;
   IQuota public quotaInst;
-  address[] oldAddr;
 
 
 
-  uint backupCount = 3;
-  uint minStake = 10000;
+  uint backupCountDefault = 3;
+  uint minStake = 50000;
   address[] public badAddrs;
   uint[] public badTypes;
   uint memberCountDefault=4;
   uint thresholdDefault = 3;
-  uint standaloneWeightDefault = 150;
+  uint standaloneWeightDefault = 1500;
 
   address  public  greateGpkAddr;
   // StoremanType.GroupConfig  configDefault = StoremanType.GroupConfig({
@@ -62,7 +61,9 @@ contract StoremanGroupStorage is BasicStorage {
   StoremanType.StoremanData data;
 
   constructor() {
-    data.standaloneWeight = standaloneWeightDefault;
+    data.conf.standaloneWeight = standaloneWeightDefault;
+    data.conf.backupCount = backupCountDefault;
+
   }
 
 }

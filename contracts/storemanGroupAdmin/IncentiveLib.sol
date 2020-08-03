@@ -17,8 +17,10 @@ library IncentiveLib {
         }
         return co;
     }
-    function getGroupIncentive(StoremanType.StoremanGroup storage group, uint time,StoremanType.StoremanData storage data) public view returns (uint)  {
-        return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time);
+
+    function getGroupIncentive(StoremanType.StoremanGroup storage group, uint time,StoremanType.StoremanData storage data) public view returns (uint) {
+        uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
+        return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time, chainTypeCo);
         //return 30000000;
     }
 
@@ -94,7 +96,7 @@ library IncentiveLib {
             members[i] = group.selectedNode[i];
             StoremanType.Candidate storage sk = data.candidates[group.selectedNode[i]];
             groupDeposit += (sk.deposit.getLastValue()+sk.delegateDeposit);
-            groupDepositWeight += (StoremanUtil.calSkWeight(data.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
+            groupDepositWeight += (StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
         }
         Deposit.Record memory deposit = Deposit.Record(day, groupDeposit);
         Deposit.Record memory depositWeight = Deposit.Record(day, groupDepositWeight);

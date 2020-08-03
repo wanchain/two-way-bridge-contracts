@@ -3,12 +3,11 @@ const utils = require("./utils");
 const Web3 = require('web3')
 const net = require('net')
 const ethutil = require("ethereumjs-util");
-const TestSmg = artifacts.require('TestSmg')
-const TokenManagerProxy = artifacts.require('TokenManagerProxy');
-const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
+const pu = require('promisefy-util')
+
+
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const pu = require('promisefy-util')
 const assert = require('chai').assert;
 
 const wanUtil = require('wanchain-util');
@@ -16,13 +15,22 @@ const Tx = wanUtil.wanchainTx;
 
 
 
-const { registerStart,stakeInPre, web3url,g, toSelect, } = require('./basee.js')
+const { registerStart,stakeInPre, web3url,g, toSelect, } = require('./basee.js');
 
-contract('StoremanGroupDelegate', async (accounts) => {
- 
+/*************************************
+staker: 1000 ~ 1000+100
+delegator: stakerId*100 ~ stakerID*100+1000
+ ****************************************/
+
+
+
+
+contract('TestSmg', async (accounts) => {
+
     let  smg
     let groupId
     let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
+    let wk = utils.getAddressFromInt(10000)
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
@@ -31,16 +39,25 @@ contract('StoremanGroupDelegate', async (accounts) => {
     })
 
 
-    it('registerStart', async ()=>{
+    it('registerStart_1 ', async ()=>{
         groupId = await registerStart(smg);
-        console.log("groupId: ", groupId)
     })
 
     it('stakeInPre ', async ()=>{
         await stakeInPre(smg, groupId)
     })
-    
-    it('test select', async ()=>{
-        await toSelect(smg, groupId);
+
+    it('stakeIn', async ()=>{
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
+        console.log("tx:", tx);
     })
+
+    it('delegateIn', async ()=>{
+        let tx = await smg.delegateIn(wk.addr,{value:120});
+        assert.equal(tx.receipt.logs[0].event, 'delegateInEvent')
+        console.log("tx:", tx);
+    })
+
+
+
 })

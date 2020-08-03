@@ -69,14 +69,14 @@ function getAddressFromInt(i){
   return {addr, pk, priv:b}
 }
 
-async function waitReceipt(txhash) {
-  let lastBlock = await pu.promisefy(web3.eth.getBlockNumber, [], web3.eth)
+async function waitReceipt(web3, txhash) {
+  let lastBlock = web3.eth.getBlockNumber();
   let newBlock = lastBlock
   while(newBlock - lastBlock < 10) {
       await pu.sleep(1000)
-      newBlock = await pu.promisefy(web3.eth.getBlockNumber, [], web3.eth)
+      newBlock = web3.eth.getBlockNumber();
       if( newBlock != lastBlock) {
-          let rec = await pu.promisefy(web3.eth.getTransactionReceipt, [txhash], web3.eth)
+          let rec = web3.eth.getTransactionReceipt(txhash);
           if ( rec ) {
               return rec
           }
