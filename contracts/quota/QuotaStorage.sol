@@ -52,7 +52,7 @@ contract QuotaStorage is BasicStorage {
     }
 
     /// @dev the denominator of deposit rate value
-    uint public DENOMINATOR = 10000;
+    uint public constant DENOMINATOR = 10000;
 
     /// @dev mapping: tokenId => storemanPk => Quota
     mapping(uint => mapping(bytes32 => Quota)) quotaMap;
