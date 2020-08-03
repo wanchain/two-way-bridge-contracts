@@ -677,7 +677,7 @@ contract('Test Debt', async (accounts) => {
         }
     });
 
-    it("Debt -> srcDebtLock  ==> Invalid parnters", async () => {
+    it("Debt -> srcDebtLock  ==> Contract is not initialized", async () => {
         try {
             let debtLockParamsTemp = Object.assign({}, debtLockParams);
             debtLockParamsTemp.srcSmgID = storemanGroups[1].ID;
@@ -699,7 +699,7 @@ contract('Test Debt', async (accounts) => {
 
             assert.fail(ERROR_INFO);
         } catch (err) {
-            assert.include(err.toString(), "Invalid parnters");
+            assert.include(err.toString(), "Contract is not initialized");
         }
     });
 

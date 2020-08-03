@@ -675,7 +675,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Others setEconomics  ==> Parameter is invalid', async () => {
+    it('Others setPartners  ==> Parameter is invalid', async () => {
         try {
             await crossApproach.chain1.instance.setPartners(ADDRESS_0, ADDRESS_0, crossApproach.chain1.parnters.smgFeeProxy, ADDRESS_0, ADDRESS_0);
             assert.fail(ERROR_INFO)
@@ -813,7 +813,7 @@ contract('Test HTLC', async (accounts) => {
     });
 
     // chain1 MintBridge
-    it("Original[1] -> userMintLock  ==> Invalid parnters", async () => {
+    it("Original[1] -> userMintLock  ==> Contract is not initialized", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -832,7 +832,7 @@ contract('Test HTLC', async (accounts) => {
 
             assert.fail(ERROR_INFO);
         } catch (err) {
-            assert.include(err.toString(), "Invalid parnters");
+            assert.include(err.toString(), "Contract is not initialized");
         }
     });
 
@@ -1678,7 +1678,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it("Shadow[2] -> userBurnLock  ==> Invalid parnters", async () => {
+    it("Shadow[2] -> userBurnLock  ==> Contract is not initialized", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -1697,7 +1697,7 @@ contract('Test HTLC', async (accounts) => {
 
             assert.fail(ERROR_INFO);
         } catch (err) {
-            assert.include(err.toString(), "Invalid parnters");
+            assert.include(err.toString(), "Contract is not initialized");
         }
     });
 
