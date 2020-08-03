@@ -56,7 +56,7 @@ library StoremanLib {
         address pkAddr = address(keccak256(PK));
         Deposit.Records memory records = Deposit.Records(0);
         StoremanType.Candidate storage sk = data.candidates[pkAddr];
-        require(sk.sender == address(0x00), "Candidate has existed");
+        //require(sk.sender == address(0x00), "Candidate has existed");
         sk.sender = msg.sender;
         sk.enodeID = enodeID;
         sk.PK = PK;
@@ -190,7 +190,7 @@ library StoremanLib {
                 group.selectedNode[k+1] = group.selectedNode[k];
             }
             group.selectedNode[j+1] = skAddr;
-            group.selectedCount++; // TODO deleted? why?
+            group.selectedCount++;
         }
     }
     function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r) internal {
