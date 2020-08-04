@@ -200,7 +200,7 @@ library HTLCBurnLib {
         //                             params.value, lockFee, params.lockedTime, params.userOrigAccount);
         storageData.htlcTxData.addUserTx(userTxParams);
 
-        storageData.quota.userBurnLock(params.tokenPairID, params.smgID, params.value, true);
+        storageData.quota.userBurnLock(params.tokenPairID, params.smgID, params.value);
 
         emit UserBurnLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userOrigAccount);
     }
@@ -305,7 +305,7 @@ library HTLCBurnLib {
         storageData.htlcTxData.addSmgTx(params.xHash, params.smgID, params.tokenPairID,
                                         params.value, params.userOrigAccount, params.lockedTime);
 
-        storageData.quota.smgBurnLock(params.tokenPairID, params.smgID, params.value, false);
+        storageData.quota.smgBurnLock(params.tokenPairID, params.smgID, params.value);
 
         emit SmgBurnLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, params.userOrigAccount);
     }

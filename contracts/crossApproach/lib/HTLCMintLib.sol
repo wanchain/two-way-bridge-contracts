@@ -211,7 +211,7 @@ library HTLCMintLib {
         //                             params.value, lockFee, params.lockedTime, params.userShadowAccount);
         storageData.htlcTxData.addUserTx(userTxParams);
 
-        storageData.quota.userMintLock(params.tokenPairID, params.smgID, params.value, true);
+        storageData.quota.userMintLock(params.tokenPairID, params.smgID, params.value);
 
         emit UserMintLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userShadowAccount);
     }
@@ -322,7 +322,7 @@ library HTLCMintLib {
         storageData.htlcTxData.addSmgTx(params.xHash, params.smgID, params.tokenPairID,
                                         params.value, params.userShadowAccount, params.lockedTime);
 
-        storageData.quota.smgMintLock(params.tokenPairID, params.smgID, params.value, false);
+        storageData.quota.smgMintLock(params.tokenPairID, params.smgID, params.value);
 
         emit SmgMintLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, params.userShadowAccount);
     }

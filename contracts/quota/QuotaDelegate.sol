@@ -68,22 +68,18 @@ contract QuotaDelegate is QuotaStorage, Halt {
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     /// @param value                            amount of exchange token
-    /// @param checkQuota                       input whether need to check quota
     function userMintLock(
         uint tokenId,
         bytes32 storemanGroupId,
-        uint value,
-        bool checkQuota
-    ) external onlyHtlc notHalted {
+        uint value
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        /// Don't check in the other chain.
-        if (checkQuota) {
-            uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
-            require(
-                mintQuota >= value,
-                "Quota is not enough"
-            );
-        }
+        
+        uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
+        require(
+            mintQuota >= value,
+            "Quota is not enough"
+        );
 
         if (!quota._active) {
             quota._active = true;
@@ -99,23 +95,13 @@ contract QuotaDelegate is QuotaStorage, Halt {
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     /// @param value                            amount of exchange token
-    /// @param checkQuota                       input whether need to check quota
     function smgMintLock(
         uint tokenId,
         bytes32 storemanGroupId,
-        uint value,
-        bool checkQuota
-    ) external onlyHtlc notHalted {
+        uint value
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        /// Don't check in the other chain.
-        if (checkQuota) {
-            uint mintQuota = getSmgMintQuota(tokenId, storemanGroupId);
-            require(
-                mintQuota >= value,
-                "Quota is not enough"
-            );
-        }
-
+        
         if (!quota._active) {
             quota._active = true;
             storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenId;
@@ -134,7 +120,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota.asset_receivable = quota.asset_receivable.sub(value);
     }
@@ -147,7 +133,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota.debt_receivable = quota.debt_receivable.sub(value);
     }
@@ -160,7 +146,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota.debt_receivable = quota.debt_receivable.sub(value);
         quota._debt = quota._debt.add(value);
@@ -174,7 +160,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota.asset_receivable = quota.asset_receivable.sub(value);
         quota._asset = quota._asset.add(value);
@@ -184,22 +170,19 @@ contract QuotaDelegate is QuotaStorage, Halt {
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     /// @param value                            amount of exchange token
-    /// @param checkQuota                       input whether need to check quota
     function userFastMint(
         uint tokenId,
         bytes32 storemanGroupId,
-        uint value,
-        bool checkQuota
-    ) external onlyHtlc notHalted {
+        uint value
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        /// Don't check in the other chain.
-        if (checkQuota) {
-            uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
-            require(
-                mintQuota >= value,
-                "Quota is not enough"
-            );
-        }
+        
+        uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
+        require(
+            mintQuota >= value,
+            "Quota is not enough"
+        );
+        
         if (!quota._active) {
             quota._active = true;
             storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenId;
@@ -213,22 +196,13 @@ contract QuotaDelegate is QuotaStorage, Halt {
     /// @param tokenId                          tokenPairId of crosschain
     /// @param storemanGroupId                  PK of source storeman group
     /// @param value                            amount of exchange token
-    /// @param checkQuota                       input whether need to check quota
     function smgFastMint(
         uint tokenId,
         bytes32 storemanGroupId,
-        uint value,
-        bool checkQuota
-    ) external onlyHtlc notHalted {
+        uint value
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        /// Don't check in the other chain.
-        if (checkQuota) {
-            uint mintQuota = getSmgMintQuota(tokenId, storemanGroupId);
-            require(
-                mintQuota >= value,
-                "Quota is not enough"
-            );
-        }
+        
         if (!quota._active) {
             quota._active = true;
             storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenId;
@@ -245,13 +219,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function userFastBurn(
         uint tokenId,
         bytes32 storemanGroupId,
-        uint value,
-        bool checkQuota
-    ) external onlyHtlc notHalted {
+        uint value
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        if (checkQuota) {
-            require(quota._debt.sub(quota.debt_payable) >= value, "Value is invalid");
-        }
+        require(quota._debt.sub(quota.debt_payable) >= value, "Value is invalid");
         quota._debt = quota._debt.sub(value);
     }
 
@@ -262,13 +233,9 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function smgFastBurn(
         uint tokenId,
         bytes32 storemanGroupId,
-        uint value,
-        bool checkQuota
-    ) external onlyHtlc notHalted {
+        uint value
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        if (checkQuota) {
-            require(quota._asset.sub(quota.asset_payable) >= value, "Value is invalid");
-        }
         quota._asset = quota._asset.sub(value);
     }
 
@@ -279,13 +246,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function userBurnLock(
         uint tokenId,
         bytes32 storemanGroupId,
-        uint value,
-        bool checkQuota
-    ) external onlyHtlc notHalted {
+        uint value
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        if (checkQuota) {
-            require(quota._debt.sub(quota.debt_payable) >= value, "Value is invalid");
-        }
+        require(quota._debt.sub(quota.debt_payable) >= value, "Value is invalid");
         quota.debt_payable = quota.debt_payable.add(value);
     }
 
@@ -296,13 +260,9 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function smgBurnLock(
         uint tokenId,
         bytes32 storemanGroupId,
-        uint value,
-        bool checkQuota
-    ) external onlyHtlc notHalted {
+        uint value
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        if (checkQuota) {
-            require(quota._asset.sub(quota.asset_payable) >= value, "Value is invalid");
-        }
         quota.asset_payable = quota.asset_payable.add(value);
     }
 
@@ -314,7 +274,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota.debt_payable = quota.debt_payable.sub(value);
     }
@@ -327,7 +287,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota.asset_payable = quota.asset_payable.sub(value);
     }
@@ -340,7 +300,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota._asset = quota._asset.sub(value);
         quota.asset_payable = quota.asset_payable.sub(value);
@@ -354,7 +314,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         quota._debt = quota._debt.sub(value);
         quota.debt_payable = quota.debt_payable.sub(value);
@@ -366,8 +326,9 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function debtLock(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
+        // TODO gas out of range
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
             Quota storage src = quotaMap[id][srcStoremanGroupId];
@@ -399,7 +360,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function debtRedeem(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
@@ -423,7 +384,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function debtRevoke(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
@@ -444,7 +405,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function assetLock(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
@@ -477,7 +438,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function assetRedeem(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
@@ -501,7 +462,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function assetRevoke(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
-    ) external onlyHtlc notHalted {
+    ) external onlyHtlc {
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
@@ -614,6 +575,8 @@ contract QuotaDelegate is QuotaStorage, Halt {
     /// @param storemanGroupId                  PK of source storeman group
     function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {
         uint tokenCount = storemanTokenCountMap[storemanGroupId];
+        // no oracle no check;
+        // TODO if tokenCount == 0, call oracle get status;
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[storemanGroupId][i];
             Quota storage src = quotaMap[id][storemanGroupId];
