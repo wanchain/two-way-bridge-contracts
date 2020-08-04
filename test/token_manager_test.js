@@ -96,6 +96,10 @@ contract('TokenManagerDelegate', (accounts) => {
       let obj2 = await sendAndGetReason(tokenManagerDelegate.addTokenPair, param, {from: owner});
       assert.equal(obj2.reason, "token pair id in use");
 
+      param[0] = 14;
+      await tokenManagerDelegate.addTokenPair(...param, {from: owner});
+      await tokenManagerDelegate.removeTokenPair(14);
+
       receipt = await tokenManagerDelegate.addToken(nameBTC, symbolBTC, decimals, {from: owner});
       param = JSON.parse(JSON.stringify(addTokenPairParam));
       param[0] = 13;
@@ -108,7 +112,7 @@ contract('TokenManagerDelegate', (accounts) => {
       // check AddAdmin event log
       assert.equal(admin.toLowerCase(), receipt.logs[0].args.admin.toLowerCase());
 
-      const tokenPairID = parseInt(await tokenManagerDelegate.mapTokenPairIndex(1));
+      const tokenPairID = parseInt(await tokenManagerDelegate.mapTokenPairIndex(0));
       const tokenPairInfo = await tokenManagerDelegate.mapTokenPairInfo(tokenPairID);
       const token = await MappingToken.at(tokenPairInfo.tokenAddress);
       receipt = await tokenManagerDelegate.mintToken(tokenPairID, other, 100, {from: admin});
@@ -155,19 +159,6 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(ancestorInfo.symbol, aSymbol);
       assert.equal(ancestorInfo.decimals.toNumber(), aDecimals);
       assert.equal(ancestorInfo.chainId.toNumber(), aChainID);
-
-      // receipt = await tokenManagerDelegate.updateAncestorInfo(tokenPairID, aAccount, "new name", aSymbol, aChainID);
-      // // check UpdateAncestorInfo event log
-      // const updateAncestorInfoEvent = receipt.logs[0].args;
-      // assert.equal(tokenPairID, updateAncestorInfoEvent.id.toNumber());
-      // // assert.equal(web3.utils.padRight(web3.utils.bytesToHex(aAccount), 64), updateAncestorInfoEvent.ancestorAccount);
-      // assert.equal(web3.utils.bytesToHex(aAccount), updateAncestorInfoEvent.ancestorAccount);
-      // assert.equal("new name", updateAncestorInfoEvent.ancestorName);
-      // assert.equal(aSymbol, updateAncestorInfoEvent.ancestorSymbol);
-      // assert.equal(aChainID, updateAncestorInfoEvent.ancestorChainID.toNumber());
-
-      // const ancestorInfo2 = await tokenManagerDelegate.getAncestorInfo(tokenPairID);
-      // assert.equal(ancestorInfo2.name, "new name");
 
       const tokenPairs = await tokenManagerDelegate.getTokenPairs();
       assert.equal(tokenPairs.id[0].toNumber(), 11);
@@ -270,28 +261,6 @@ contract('TokenManagerDelegate', (accounts) => {
     });
   });
 
-  // describe('updateTokenPair', () => {
-  //   it.only('onlyOwner, onlyExistID', async function() {
-  //     const { tokenManagerDelegate } = await newTokenManager(accounts);
-
-  //     const paramUpdate = [addTokenPairParam[0], [aNewAccount, "new name", "new symbol", 8, aChainID + 100], toChainID + 1, fromAccount, fromChainID + 1, token.address, true]
-
-  //     let obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, paramUpdate, {from: admin});
-  //     assert.equal(obj.reason, "Not owner");
-
-  //     await tokenManagerDelegate.addTokenPair(...addTokenPairParam, {from: owner});
-
-  //     let param = JSON.parse(JSON.stringify(paramUpdate));
-  //     param[0] = 111;
-  //     obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, param, {from: admin});
-  //     assert.equal(obj.reason, "token not exist");
-
-  //     param = JSON.parse(JSON.stringify(paramUpdate));
-  //     obj = await sendAndGetReason(tokenManagerDelegate.updateTokenPair, param, {from: admin});
-  //     assert.equal(obj.reason, "ancestorName is null");
-  //   })
-  // })
-
   describe('updateTokenPair', () => {
     it('onlyOwner, onlyExistID, requires', async function() {
       const { tokenManagerDelegate } = await newTokenManager(accounts);
@@ -350,6 +319,15 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(obj.reason, "Value is null");
     });
   });
+
+  describe('updateToken', () => {
+    it('onlyExistID', async function() {
+      const { tokenManagerDelegate } = await newTokenManager(accounts);
+
+      obj = await sendAndGetReason(tokenManagerDelegate.updateToken, [222, nameDAI_NEW, symbolDAI_NEW], {from: owner});
+      assert.equal(obj.reason, "token not exist");
+    })
+  })
 
   describe('upgradeTo', () => {
     it('onlyOwner, require', async function() {
