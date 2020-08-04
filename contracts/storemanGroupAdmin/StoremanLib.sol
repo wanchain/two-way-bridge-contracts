@@ -241,6 +241,7 @@ library StoremanLib {
         updateGroup(data, sk, nextGroup, r);
         delegateInEvent(skPkAddr, msg.sender,msg.value);
     }
+    // TODO 白名单备份节点，　不允许退出．
     function inheritNode(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal
     {
 
@@ -250,17 +251,23 @@ library StoremanLib {
             data.oldAddr.length = 0;
         }
         if(wkAddrs.length == 0){ // If there are no new white nodes, use the old.
-            group.whiteCount = oldGroup.whiteCount;
-            group.whiteCountAll = oldGroup.whiteCountAll;
+            //group.whiteCount = oldGroup.whiteCount;
+            //group.whiteCountAll = oldGroup.whiteCountAll;
             for(uint k = 0; k<oldGroup.whiteCountAll; k++){
-                group.whiteMap[k] = oldGroup.whiteMap[k];
+                StoremanType.Candidate storage skw = data.candidates[group.whiteMap[k]];
                 group.whiteWk[group.whiteMap[k]] = oldGroup.whiteWk[oldGroup.whiteMap[k]];
-                if(k < group.whiteCount){
-                    group.selectedNode[k] = group.whiteMap[k];
+                if(!skw.quited) {
+                    group.whiteMap[group.whiteCountAll] = oldGroup.whiteMap[k];
+                    group.whiteCountAll++;
+                    if(k < oldGroup.whiteCount){
+                        group.selectedNode[k] = group.whiteMap[k];
+                        group.whiteCount++;
+                    }
+                    data.oldAddr.push(group.whiteMap[k]);
+                    skw.nextGroupId = group.groupId;
                 }
-                data.oldAddr.push(group.whiteMap[k]);
             }
-            group.selectedCount = oldGroup.whiteCount;
+            
         } else {   // If there are new white nodes, use the new.
             group.whiteCount = wkAddrs.length - data.conf.backupCount;
             group.whiteCountAll = wkAddrs.length;
@@ -271,11 +278,11 @@ library StoremanLib {
                     group.selectedNode[i] = wkAddrs[i];
                 }
             }
-            group.selectedCount = group.whiteCount;
         }
+        group.selectedCount = group.whiteCount;
         group.memberCount =group.selectedCount;
         // TODO; 如果没有白名单, 用旧的.
-        // 如果有, 完整替换.
+        // 如果有, 完整替换.　新白名单不能与旧的有重叠．
         // 3个替换4个也可以.
         // TODO handle the old group member. set the group deposit.
         if(preGroupId != bytes32(0x00)) {

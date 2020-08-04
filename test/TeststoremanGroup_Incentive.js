@@ -81,18 +81,25 @@ contract('TestSmg', async (accounts) => {
             let  sk = await smg.getSelectedSmInfo(groupId, i)
             while(true){
                 let tx = await smg.incentiveCandidator(sk.wkAddr)
-                console.log("===================tx", tx.receipt.logs)
+                //console.log("===================tx", tx.receipt.logs)
                 if(tx.receipt.logs[0].args.finished){
+                    for(let day = groupInfo.startTime; day <= groupInfo.endTime; day++){
+                        let skInc = await smg.getStoremanIncentive(sk.wkAddr, day)
+                        console.log("===skInc:", skInc.toString(10))
+                    }
 
                     break;
                 }
             }
+
         }
         let inc = await smg.getGlobalIncentive();
         console.log("incentive global:", inc);
         for(let day = groupInfo.startTime; day <= groupInfo.endTime; day++){
             let dayIncentive = await smg.checkGroupIncentive(groupId, day)
             console.log("dayIncentive: ", day, dayIncentive)
+            assert.equal(0x1c9c380, dayIncentive, "dayIncentive is incorrect")
+
         }
     })
 
