@@ -63,7 +63,7 @@ contract CrossDelegate is CrossStorage, Halt {
 
     /// @dev Check relevant contract addresses must be initialized before call its method
     modifier initialized {
-        require(_initialized, "Contract is not initialized");
+        require(_initialized == 0xff, "Contract is not initialized");
         _;
     }
 
@@ -664,7 +664,7 @@ contract CrossDelegate is CrossStorage, Halt {
         storageData.smgFeeProxy = smgFeeProxy;
         storageData.sigVerifier = ISignatureVerifier(sigVerifier);
 
-        _initialized = true;
+        _initialized = 0xff;
     }
 
     /// @notice                             get the initialized state value of this contract
