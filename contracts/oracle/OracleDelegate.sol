@@ -10,6 +10,18 @@ import "./OracleStorage.sol";
 contract OracleDelegate is OracleStorage, Owned {
   /**
     *
+    * EVENTS
+    *
+    */
+  event SetAdmin(address addr);
+  event UpdatePrice(bytes32[] keys, uint[] prices);
+  event UpdateDeposit(bytes32 indexed smgID, uint amount);
+  event SetStoremanGroupStatus(bytes32 indexed id, uint8 status);
+  event SetStoremanGroupConfig(bytes32 indexed id, uint8 status, uint deposit, uint[2] chain, uint[2] curve,
+    bytes gpk1, bytes gpk2, uint startTime, uint endTime);
+
+  /**
+    *
     * MODIFIERS
     *
     */
@@ -18,6 +30,12 @@ contract OracleDelegate is OracleStorage, Owned {
       require((msg.sender == admin) || (msg.sender == owner), "not admin");
       _;
   }
+
+  /**
+  *
+  * MANIPULATIONS
+  *
+  */
 
   function setAdmin(
     address addr

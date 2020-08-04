@@ -38,6 +38,23 @@ import "./IMappingToken.sol";
 
 contract TokenManagerDelegate is TokenManagerStorage, Owned {
     using SafeMath for uint;
+    /************************************************************
+     **
+     ** EVENTS
+     **
+     ************************************************************/
+
+     event AddToken(address tokenAddress, string name, string symbol, uint8 decimals);
+     event AddTokenPair(uint indexed id, uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress);
+     event UpdateTokenPair(uint indexed id, bytes ancestorAccount, string ancestorName, string ancestorSymbol, uint8 ancestorDecimals,
+      uint ancestorChainID,uint fromChainID, bytes fromAccount, uint toChainID, address tokenAddress, bool isValid);
+     event RemoveTokenPair(uint indexed id);
+     event MintToken(uint indexed id, address to, uint value);
+     event BurnToken(uint indexed id, uint value);
+     event AddAdmin(address admin);
+     event RemoveAdmin(address admin);
+     event UpdateToken(uint indexed id, string name, string symbol);
+
     /**
      *
      * MODIFIERS
@@ -109,8 +126,8 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         mapAncestorInfo[id] = AncestorInfo(aInfo.ancestorAccount, aInfo.ancestorName, aInfo.ancestorSymbol,
                                     aInfo.ancestorDecimals, aInfo.ancestorChainID);
 
-        totalTokenPairs = totalTokenPairs.add(1);
         mapTokenPairIndex[totalTokenPairs] = id;
+        totalTokenPairs = totalTokenPairs.add(1);
 
         // fire event
         emit AddTokenPair(id, fromChainID, fromAccount, toChainID, tokenAddress);
@@ -251,7 +268,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         uint theId = 0;
         uint i = 0;
         for (; i < totalTokenPairs; i++ ) {
-            theId = mapTokenPairIndex[i + 1];
+            theId = mapTokenPairIndex[i];
             if (mapTokenPairInfo[theId].isValid) {
                 cnt ++;
             }
@@ -270,7 +287,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         theId = 0;
         uint j = 0;
         for (; j < totalTokenPairs; j++) {
-            theId = mapTokenPairIndex[j + 1];
+            theId = mapTokenPairIndex[j];
             if (mapTokenPairInfo[theId].isValid) {
                 id[i] = theId;
                 fromChainID[i] = mapTokenPairInfo[theId].fromChainID;
@@ -295,7 +312,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         uint theId = 0;
         uint[] memory id_valid = new uint[](totalTokenPairs);
         for (; i < totalTokenPairs; i++ ) {
-            theId = mapTokenPairIndex[i + 1];
+            theId = mapTokenPairIndex[i];
             if (mapTokenPairInfo[theId].isValid) {
                 if ((mapTokenPairInfo[theId].fromChainID == chainID1) && (mapTokenPairInfo[theId].toChainID == chainID2) ||
                 (mapTokenPairInfo[theId].toChainID == chainID1) && (mapTokenPairInfo[theId].fromChainID == chainID2)) {
@@ -331,6 +348,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     function updateToken(uint id, string name, string symbol)
         external
         onlyOwner
+        onlyExistID(id)
     {
         address instance = mapTokenPairInfo[id].tokenAddress;
         IMappingToken(instance).update(name, symbol);
