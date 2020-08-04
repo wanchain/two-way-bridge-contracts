@@ -22,13 +22,11 @@ let epochDuring = 120;
 let stakerCount = memberCountDesign+whiteBackup
 let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
-
-
 const g = {
     leader,WhiteCount,whiteBackup,memberCountDesign,threshold,leaderPk,owner,web3url,
 }
 
-async function registerStart(smg){
+async function registerStart(smg, inheritGroupId = ''){
     await smg.updateStoremanConf(3,1500,10)
     let now = parseInt(Date.now()/1000);
     let id = utils.stringTobytes32(now.toString())
@@ -36,21 +34,26 @@ async function registerStart(smg){
     let srs= []
     // wks.push(leader)
     // srs.push(leader)
-    for(let i=0; i<WhiteCount;i++){
-        let {addr:sr} = utils.getAddressFromInt(i+1000)
-        let {addr:wk} = utils.getAddressFromInt(i+2000)
-        wks.push(wk)
-        srs.push(sr)
+    let preGroupId = inheritGroupId || utils.stringTobytes32("");
+    if (inheritGroupId) {
+        preGroupId = inheritGroupId;
+    } else {
+        preGroupId = utils.stringTobytes32("");
     }
-    let tx = await smg.storemanGroupRegisterStart(id, now+10, 90, epochDuring, utils.stringTobytes32(""), wks,srs,
-        {from: owner})
+    for(let i=0; i<WhiteCount;i++){
+      let {addr:sr} = utils.getAddressFromInt(i+1000)
+      let {addr:wk} = utils.getAddressFromInt(i+2000)
+      wks.push(wk)
+      srs.push(sr)
+    }
+    let tx = await smg.storemanGroupRegisterStart(id, now+10, 60 * 15, 60, preGroupId, wks,srs, {from: owner})
     console.log("registerStart txhash:", tx.tx)
     //await utils.waitReceipt(web3, tx.tx)
     let group = await smg.getStoremanGroupInfo(id)
     assert.equal(group.status, 1)
     assert.equal(group.groupId, id)
     assert.equal(group.deposit, 0)
-    assert.equal(group.memberCount, 1)
+    assert.isTrue(group.memberCount >= 1)
     console.log("group:", group)
     let curve1 = 0, curve2 = 1;
     await smg.updateGroupChain(id, 0, 1, curve1, curve2);
@@ -83,10 +86,10 @@ async function stakeInPre(smg, id){
         tx.sign(sf.priv)
         const serializedTx = '0x'+tx.serialize().toString('hex');
         //console.log("serializedTx:",serializedTx)
+        console.log("sm %d %s stakein", i, sw.addr)
         let rtx = await web3.eth.sendSignedTransaction(serializedTx)
         let txhash = rtx.transactionHash
         //let txhash = await pu.promisefy(web3.eth.sendSignedTransaction,[serializedTx],web3.eth);
-        console.log("txhash i:", i, txhash)
         // await utils.waitReceipt(txhash)
         let candidate  = await smg.getStoremanInfo(sw.addr)
         //console.log("candidate:", candidate)
