@@ -69,6 +69,23 @@ function getAddressFromInt(i){
   return {addr, pk, priv:b}
 }
 
+function sleep(ms) {
+  return new Promise(function (resolve) {
+      setTimeout(function () {
+          resolve();
+      }, ms);
+  })
+}
+
+async function sleepUntil(time) {
+  let cur = Date.now()
+  if(cur >= time) {
+      return
+  } else {
+    console.log(" =================================sleep until ",time-cur)
+      return sleep(time-cur)
+  }
+}
 async function waitReceipt(web3, txhash) {
   let lastBlock = web3.eth.getBlockNumber();
   let newBlock = lastBlock
@@ -99,4 +116,5 @@ module.exports = {
   stringTobytes:stringTobytes,
   getAddressFromInt:getAddressFromInt,
   waitReceipt:waitReceipt,
+  sleepUntil,
 };

@@ -39,7 +39,22 @@ contract('StoremanGroupDelegate', async (accounts) => {
     it('stakeInPre ', async ()=>{
         await stakeInPre(smg, groupId)
     })
-    
+    it('T1', async ()=>{ 
+        let wk = utils.getAddressFromInt(10001)
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:60000});
+        console.log("tx:", tx);
+
+        let sk = await smg.getSelectedSmInfo(groupId, 1);
+        assert.equal(sk.wkAddr.toLowerCase(), wk.addr, "the node should be second one")
+    })
+    it('T2', async ()=>{ 
+        let wk = utils.getAddressFromInt(10002)
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:55000});
+        console.log("tx:", tx);
+
+        let sk = await smg.getSelectedSmInfo(groupId, 2);
+        assert.equal(sk.wkAddr.toLowerCase(), wk.addr, "the node should be third one")
+    })
     it('test select', async ()=>{
         await toSelect(smg, groupId);
     })

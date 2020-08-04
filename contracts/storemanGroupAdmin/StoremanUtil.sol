@@ -9,7 +9,7 @@ library StoremanUtil {
   using SafeMath for uint;
 
   function calSkWeight(uint standaloneWeight,uint deposit) public  returns(uint) {
-    return deposit*standaloneWeight/1000;
+    return deposit*standaloneWeight/10000;
   }
 
   function getDaybyTime(uint time)  public view returns(uint) {

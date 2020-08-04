@@ -82,7 +82,7 @@ library StoremanType {
         uint crossIncoming;
         bytes gpk1;
         bytes gpk2;
-        uint  incentiveThresHold;
+        //uint  incentiveThresHold;
         uint delegateFee;
         mapping(uint=>uint) tickedType;
         mapping(uint=>address) tickedNode;
@@ -96,10 +96,12 @@ library StoremanType {
         uint standaloneWeight; // defult 1500; need mul 1000
         uint DelegationMulti;  // 10
         uint backupCount;  // 3
+        uint chainTypeCoDefault; //10000
 
     }
     struct StoremanData {
         uint contribution;
+        uint totalReward;
         StoremanGlobalConf conf;
         address[] oldAddr;
         

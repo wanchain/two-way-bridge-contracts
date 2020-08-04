@@ -3,7 +3,6 @@ const utils = require("./utils");
 const Web3 = require('web3')
 const net = require('net')
 const ethutil = require("ethereumjs-util");
-const pu = require('promisefy-util')
 
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
@@ -14,11 +13,17 @@ const Tx = wanUtil.wanchainTx;
 
 
 let gpk = '0xd32f34db1cf3d028742081db75fb32b16d3e2ed2c0ea868d8c26c529933edbd573de0a0c462ac15411e6ff7b9d2d2123c5321f1c2590852406ae831ca2e016b0';
-const { registerStart,stakeInPre, web3url,g, toSelect, } = require('./base.js')
-
+const { registerStart,registerStart2,stakeInPre, web3url,g, toSelect, } = require('./basee.js');
+const assert  = require("assert");
+/*
+奖励与时间相关．
+假定ｈｔｌｃ工作９０天，　提前１４天开放ｓｔａｋｉｎｇ．　开放１０天．　然后ｓｅｌｅｃｔ，　然后４天用于产生ｇｐｋ．
+*/
 contract('TestSmg', async (accounts) => {
     let  smg
     let groupId
+    let groupInfo
+
     let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
     before("init contracts", async() => {
@@ -30,6 +35,15 @@ contract('TestSmg', async (accounts) => {
 
     it('registerStart_1 ', async ()=>{
         groupId = await registerStart(smg);
+        let group = await smg.getStoremanGroupInfo(groupId);
+        let gt = await smg.getStoremanGroupTime(groupId);
+        Object.assign(group, gt);
+        console.log("group:", group);
+        groupInfo = group;
+        groupInfo.startTime = Number(groupInfo.startTime)
+        groupInfo.endTime = Number(groupInfo.endTime)
+        groupInfo.registerTime = Number(groupInfo.registerTime)
+        groupInfo.registerDuration = Number(groupInfo.registerDuration)
     })
 
     it('stakeInPre ', async ()=>{
@@ -44,71 +58,42 @@ contract('TestSmg', async (accounts) => {
 
 
     it('test toSelect', async ()=>{
+        await utils.sleepUntil(1000*(groupInfo.registerTime+groupInfo.registerDuration));
         await toSelect(smg, groupId);
     })
     it('setGpk', async() => {
-        await pu.sleep(2000)
+        await utils.sleepUntil(1000*(groupInfo.registerTime+groupInfo.registerDuration+2));
         let tx =  await smg.setGpk(groupId, gpk, gpk, {from: g.leader})
-       //console.log("setGpk tx:", tx)
+        console.log("setGpk tx:", tx.tx)
     })
-    it('test append', async()=>{
-        let i=g.stakerCount-1;
-        let sw = utils.getAddressFromInt(i+2000)
-        let j = deCount-1;
 
-        let de = utils.getAddressFromInt((i+1000)*10*1000 + j)
-
-        txhash = await tryAddDelegator(smg, groupId, sw.addr, de, 3000);
-        console.log("append txhash i j:", i,j, txhash)
-        await utils.waitReceipt(txhash)
-    })
 
 
     it('incentive ', async ()=>{
-        await pu.sleep(6 * 1000)
+        await utils.sleepUntil(1000*(groupInfo.startTime+3));
+        console.log("incentive until", 1000*(groupInfo.startTime+1))
+        console.log("incentive time:", Date.now())
         let count = await smg.getSelectedSmNumber(groupId)
         console.log("count :", count)
-        console.log("group:",await smg.getStoremanGroupInfo(groupId))
+        assert.equal(count, g.memberCountDesign, "memberCountDesign is not equal")
 
         for(let i=0; i<count; i++){
-            let  skAddr = await smg.getSelectedSmInfo(groupId, i)
-            console.log("skAddr:", skAddr)
+            let  sk = await smg.getSelectedSmInfo(groupId, i)
             while(true){
-                let tx = await smg.testIncentiveAll(groupId,skAddr['0'])
-                let rec = await utils.waitReceipt(tx.tx);
-                // console.log("rec:",rec.logs[0].topics[3]==1)
-                // console.log("rec:",rec.logs[0].topics)
-                // console.log("rec:",rec)
-                if(rec.logs[0].topics[3]==1){
+                let tx = await smg.incentiveCandidator(sk.wkAddr)
+                console.log("===================tx", tx.receipt.logs)
+                if(tx.receipt.logs[0].args.finished){
+
                     break;
                 }
             }
         }
-
-
-        for(let i=0; i<count; i++) {
-            let skAddr = await smg.getSelectedSmInfo(groupId, i)
-            console.log("skAddr:", i,skAddr)
-            let sk = await smg.getStoremanInfo(skAddr[0]);
-            console.log("sk, i:", i, sk)
-
-            let deCount = sk["9"] ;
-            for(let k=0; k<deCount; k++) {
-                let deAddr = await smg.getSmDelegatorAddr(groupId, skAddr[0], k)
-                let de = await smg.getSmDelegatorInfo(groupId, skAddr[0], deAddr);
-                    console.log("de:", k, de)
-
-                let rc = de["1"];
-                for(let c = 0; c<rc; c++){
-                    let r = await smg.getSmDelegatorInfoRecord(groupId, skAddr[0], deAddr, c)
-                    console.log("records", c, r["0"], r["1"])
-                }
-            }
+        let inc = await smg.getGlobalIncentive();
+        console.log("incentive global:", inc);
+        for(let day = groupInfo.startTime; day <= groupInfo.endTime; day++){
+            let dayIncentive = await smg.checkGroupIncentive(groupId, day)
+            console.log("dayIncentive: ", day, dayIncentive)
         }
-
-        let dayIncentive = await smg.checkGroupIncentive(groupId, now+1)
-        console.log("dayIncentive: ", dayIncentive)
-
     })
 
 })

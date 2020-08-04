@@ -94,7 +94,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         onlyOwner
     {
         require(wkAddrs.length == senders.length, "Invalid white list length");
-        require(wkAddrs.length >= data.conf.backupCount, "Insufficient white list");
+        if(preGroupId==bytes32(0x00) || wkAddrs.length != 0){
+            require(wkAddrs.length >= data.conf.backupCount, "Insufficient white list");
+        }
 
         Deposit.Records memory deposit =  Deposit.Records(0);
         Deposit.Records memory depositWeight =  Deposit.Records(0);
@@ -242,13 +244,13 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
     function getStoremanInfo(address wkAddress)public view  returns(address sender,bytes PK, address pkAddress,
         bool quited, uint  deposit, uint delegateDeposit,
-        uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId
+        uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId, uint incentivedDay
         ){
             StoremanType.Candidate storage sk = data.candidates[wkAddress];
 
             return (sk.sender,   sk.PK, sk.pkAddress, sk.quited,
                 sk.deposit.getLastValue(), sk.delegateDeposit,
-                sk.incentive[0],  sk.delegatorCount, sk.groupId, sk.nextGroupId
+                sk.incentive[0],  sk.delegatorCount, sk.groupId, sk.nextGroupId, sk.incentivedDay
             );
     }
     function getStoremanIncentive(address wkAddress, uint day) public view returns(uint incentive) {
@@ -272,7 +274,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
     function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2)
-        public onlyGpk {
+        public 
+        // onlyGpk  // TODO: open after test
+    {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.gpk1 = gpk1;
         group.gpk2 = gpk2;
@@ -388,6 +392,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
     function getStoremanConf() public view returns(uint backupCount, uint standaloneWeight, uint DelegationMulti) {
         return (data.conf.backupCount, data.conf.standaloneWeight, data.conf.DelegationMulti);
+    }
+    function getGlobalIncentive() public view returns(uint contribution, uint totalReward) {
+        return (data.contribution, data.totalReward);
     }
     function updateStoremanConf(uint backupCount, uint standaloneWeight, uint DelegationMulti) public onlyOwner {
         data.conf.backupCount = backupCount;

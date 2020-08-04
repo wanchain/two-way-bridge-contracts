@@ -51,12 +51,12 @@ library StoremanLib {
     function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID) external
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        //require(now <= group.registerTime+group.registerDuration,"Registration closed");
+        //require(now <= group.registerTime+group.registerDuration,"Registration closed"); // TODO open after test.
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         address pkAddr = address(keccak256(PK));
         Deposit.Records memory records = Deposit.Records(0);
         StoremanType.Candidate storage sk = data.candidates[pkAddr];
-        //require(sk.sender == address(0x00), "Candidate has existed");
+        //require(sk.sender == address(0x00), "Candidate has existed"); // TODO open after test.
         sk.sender = msg.sender;
         sk.enodeID = enodeID;
         sk.PK = PK;
@@ -260,7 +260,7 @@ library StoremanLib {
                 }
                 data.oldAddr.push(group.whiteMap[k]);
             }
-            group.selectedCount = oldGroup.selectedCount;
+            group.selectedCount = oldGroup.whiteCount;
         } else {   // If there are new white nodes, use the new.
             group.whiteCount = wkAddrs.length - data.conf.backupCount;
             group.whiteCountAll = wkAddrs.length;
@@ -273,6 +273,7 @@ library StoremanLib {
             }
             group.selectedCount = group.whiteCount;
         }
+        group.memberCount =group.selectedCount;
         // TODO; 如果没有白名单, 用旧的.
         // 如果有, 完整替换.
         // 3个替换4个也可以.
@@ -285,7 +286,9 @@ library StoremanLib {
                 StoremanType.Candidate storage sk = data.candidates[skAddr];
                 if(sk.groupId == preGroupId && sk.quited == false) {
                     group.selectedNode[group.selectedCount] = sk.pkAddress;
+                    sk.nextGroupId = group.groupId;
                     group.selectedCount++;
+                    group.memberCount++;
                     data.oldAddr.push(sk.pkAddress);
                 }
             }

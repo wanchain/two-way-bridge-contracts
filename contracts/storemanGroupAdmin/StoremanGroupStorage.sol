@@ -51,6 +51,7 @@ contract StoremanGroupStorage is BasicStorage {
   uint memberCountDefault=4;
   uint thresholdDefault = 3;
   uint standaloneWeightDefault = 1500;
+  uint chainTypeCoDefault = 10000;
 
   address  public  greateGpkAddr;
   // StoremanType.GroupConfig  configDefault = StoremanType.GroupConfig({
@@ -63,7 +64,7 @@ contract StoremanGroupStorage is BasicStorage {
   constructor() public {
     data.conf.standaloneWeight = standaloneWeightDefault;
     data.conf.backupCount = backupCountDefault;
-
+    data.conf.chainTypeCoDefault = chainTypeCoDefault;
   }
 
 }
