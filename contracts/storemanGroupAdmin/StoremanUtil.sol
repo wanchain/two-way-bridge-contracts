@@ -13,7 +13,7 @@ library StoremanUtil {
   }
 
   function getDaybyTime(uint time)  public view returns(uint) {
-    return time;    // TODO; get the day. 
+    return time/1;    // TODO; get the day. 
     //return time/60/60/24
     //return PosLib.getEpochId(time);
   }

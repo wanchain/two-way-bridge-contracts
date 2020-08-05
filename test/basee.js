@@ -49,10 +49,10 @@ let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
 
 
-const inAdvance = 6; // try to open the group in advance 14 day HTLC work time.
-const registerDuration = 3; // open staking for 10 days.
+const inAdvance = 14; // try to open the group in advance 14 day HTLC work time.
+const registerDuration = 10; // open staking for 10 days.
 const htlcDuration = 9; // work 90 day.
-const timeBase = 10; // how many seconds as 1 day.
+const timeBase = 1; // how many seconds as 1 day.
 const g = {
     leader,WhiteCount,whiteBackup,memberCountDesign,threshold,leaderPk,owner,web3url,stakerCount,sfs,
     inAdvance, registerDuration, htlcDuration,timeBase,

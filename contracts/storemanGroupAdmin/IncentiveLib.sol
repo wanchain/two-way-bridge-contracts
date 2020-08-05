@@ -6,7 +6,6 @@ import "./StoremanUtil.sol";
 
 library IncentiveLib {
     using Deposit for Deposit.Records;
-    
 
     event incentiveEvent(bytes32 indexed groupId, address indexed pkAddr, bool indexed finished, uint from, uint end);
     function getChainTypeCo(StoremanType.StoremanData storage data, uint chain1, uint chain2) public view returns(uint co){
@@ -23,9 +22,7 @@ library IncentiveLib {
 
     function getGroupIncentive(StoremanType.StoremanGroup storage group, uint time,StoremanType.StoremanData storage data) public view returns (uint) {
         uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
-        
         return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time) * chainTypeCo/10000;
-        //return 30000000;
     }
 
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) public returns (uint) {
@@ -76,8 +73,7 @@ library IncentiveLib {
                 }
             }
             require(idx < group.selectedCount, "not selected");
-            // TODO checkMetric(metric, group, day, idx)
-            if(true){
+            if(checkMetric(metric, group, day, idx)){
                 if(0 == sk.incentive[day]) {
                     sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getValueById(day)));
                     sk.incentive[0] += sk.incentive[day];
@@ -85,7 +81,7 @@ library IncentiveLib {
                 }
                 while (sk.incentivedDelegator != sk.delegatorCount) {
                     if (msg.gas < 5000000 ) { // check the gas. because calculate delegator incentive need more gas left.
-                        emit incentiveEvent(group.groupId, wkAddr, false, fromDay, endDay);
+                        emit incentiveEvent(group.groupId, wkAddr, false, fromDay, 0);
                         return;
                     }
                     address deAddr = sk.addrMap[sk.incentivedDelegator];
@@ -98,7 +94,7 @@ library IncentiveLib {
             sk.incentivedDay = day;
             sk.incentivedDelegator = 0;
         }
-        emit incentiveEvent(group.groupId, wkAddr, true, fromDay, endDay);
+        emit incentiveEvent(group.groupId, wkAddr, true, fromDay, endDay-1);
     }
 
     event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);

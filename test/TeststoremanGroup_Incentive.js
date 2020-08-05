@@ -23,7 +23,7 @@ contract('TestSmg', async (accounts) => {
     let  smg
     let groupId
     let groupInfo
-
+    const posIncentive = "0x1c9c380"
     let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
     before("init contracts", async() => {
@@ -72,20 +72,25 @@ contract('TestSmg', async (accounts) => {
     it('incentive ', async ()=>{
         await utils.sleepUntil(1000*(groupInfo.startTime+3));
         console.log("incentive until", 1000*(groupInfo.startTime+1))
-        console.log("incentive time:", Date.now())
+        let nowDay = parseInt(Date.now()/1000)
+        console.log("incentive time nowDay:", nowDay)
         let count = await smg.getSelectedSmNumber(groupId)
         console.log("count :", count)
         assert.equal(count, g.memberCountDesign, "memberCountDesign is not equal")
-
+        let fromDay, endDay
         for(let i=0; i<count; i++){
             let  sk = await smg.getSelectedSmInfo(groupId, i)
+             console.log(" node ================================", i)
             while(true){
                 let tx = await smg.incentiveCandidator(sk.wkAddr)
-                //console.log("===================tx", tx.receipt.logs)
+                console.log("===================tx", tx.receipt.logs)
                 if(tx.receipt.logs[0].args.finished){
-                    for(let day = groupInfo.startTime; day <= groupInfo.endTime; day++){
+                    fromDay = tx.receipt.logs[0].args.from
+                    endDay = tx.receipt.logs[0].args.end
+                    for(let day = fromDay; day <= endDay; day++){
                         let skInc = await smg.getStoremanIncentive(sk.wkAddr, day)
-                        console.log("===skInc:", skInc.toString(10))
+                        console.log("===skInc, day:", skInc.toString(10))
+                        assert.equal(skInc, Number(posIncentive)/g.memberCountDesign, "node incentive is wrong")
                     }
 
                     break;
@@ -95,10 +100,10 @@ contract('TestSmg', async (accounts) => {
         }
         let inc = await smg.getGlobalIncentive();
         console.log("incentive global:", inc);
-        for(let day = groupInfo.startTime; day <= groupInfo.endTime; day++){
+        for(let day = fromDay; day <= endDay; day++){
             let dayIncentive = await smg.checkGroupIncentive(groupId, day)
             console.log("dayIncentive: ", day, dayIncentive)
-            assert.equal(0x1c9c380, dayIncentive, "dayIncentive is incorrect")
+            assert.equal(posIncentive, '0x'+dayIncentive.toString(16), "dayIncentive is incorrect")
 
         }
     })
