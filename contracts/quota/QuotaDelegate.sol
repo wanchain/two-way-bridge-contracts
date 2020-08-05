@@ -36,6 +36,10 @@ import "../tokenManager/ITokenManager.sol";
 import "../crossApproach/interfaces/ISmgAdminProxy.sol";
 import "../oracle/IOracle.sol";
 
+interface IDebtOracle {
+    function isDebtClean(bytes32 storemanGroupId) external view returns (bool);
+}
+
 
 contract QuotaDelegate is QuotaStorage, Halt {
 
@@ -62,6 +66,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
         depositRate = _depositRate;
         depositTokenSymbol = _depositTokenSymbol;
         tokenManagerAddress = _tokenManagerAddress;
+    }
+
+    function setDebtOracle(address oracle) external onlyOwner {
+        debtOracleAddress = oracle;
     }
 
     /// @notice                                 lock quota in mint direction
@@ -575,8 +583,15 @@ contract QuotaDelegate is QuotaStorage, Halt {
     /// @param storemanGroupId                  PK of source storeman group
     function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {
         uint tokenCount = storemanTokenCountMap[storemanGroupId];
-        // no oracle no check;
-        // TODO if tokenCount == 0, call oracle get status;
+        if (tokenCount == 0) {
+            if (debtOracleAddress == address(0)) {
+                return true;
+            } else {
+                IDebtOracle debtOracle = IDebtOracle(debtOracleAddress);
+                return debtOracle.isDebtClean(storemanGroupId);
+            }
+        }
+
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[storemanGroupId][i];
             Quota storage src = quotaMap[id][storemanGroupId];

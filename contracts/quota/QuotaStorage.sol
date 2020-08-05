@@ -81,6 +81,9 @@ contract QuotaStorage is BasicStorage {
     /// @dev token manger contract address
     address public tokenManagerAddress;
 
+    /// @dev oracle address for check other chain's debt clean
+    address public debtOracleAddress;
+
     modifier onlyHtlc() {
         require(htlcGroupMap[msg.sender], "Not in HTLC group");
         _;

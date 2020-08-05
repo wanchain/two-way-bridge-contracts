@@ -146,4 +146,8 @@ contract TestQuotaHelper {
 
         return ("", "", "", 0, 1);
     }
+
+    function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {
+        return false;
+    }
 }

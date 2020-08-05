@@ -359,6 +359,15 @@ contract('Quota', accounts => {
     ret = await quota.methods.getSmgMintQuota(1000, web3.utils.keccak256("storeman1000")).call();
     assert.equal(Number(ret), 0, "28");
 
+    ret = await quota.methods.isDebtClean(web3.utils.keccak256("storeman1")).call();
+    assert.equal(ret, true);
+
+    const helper = SC.helper;
+    await quota.methods.setDebtOracle(helper._address).send({from: accounts[0], gas: 1e7});
+
+    ret = await quota.methods.isDebtClean(web3.utils.keccak256("storeman1")).call();
+    assert.equal(ret, false);
+
     try {
       await quota.methods.userMintLock(1, web3.utils.keccak256("storeman1"), "100000000").send({from: accounts[1], gas:1e7});
       assert(false, 'Should never get here');
