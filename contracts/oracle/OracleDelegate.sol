@@ -158,6 +158,8 @@ contract OracleDelegate is OracleStorage, Owned {
     onlyAdmin
   {
     mapDebtClean[storemanGroupId] = isClean;
+    
+    emit SetDebtClean(storemanGroupId, isClean);
   }
 
   function isDebtClean(
