@@ -1,1 +1,0 @@
-exports.wanNodeURL = 'http://192.168.1.58:18545';
