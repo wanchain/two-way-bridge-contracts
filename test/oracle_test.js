@@ -117,6 +117,20 @@ contract('Oracle', function(accounts) {
       receipt = await oracleDelegate.updateDeposit(smgID, v + 111, { from: white });
       const amount2 = web3.utils.toBN(await oracleDelegate.getDeposit(smgID)).toNumber();
       assert.equal(v + 111, amount2);
+
+      let isClean = await oracleDelegate.isDebtClean(smgID);
+      assert.equal(isClean, false);
+
+      receipt = await oracleDelegate.setDebtClean(smgID, true);
+      // check SetDebtClean event log
+      const setDebtClean = receipt.logs[0].args;
+      console.log(JSON.stringify(setDebtClean));
+      assert.equal(setDebtClean.id, web3.utils.padRight(web3.utils.bytesToHex(smgID), 64));
+      assert.equal(setDebtClean.isDebtClean, true);
+      // check storage
+      isClean = await oracleDelegate.isDebtClean(smgID);
+      assert.equal(isClean, true);
+
     })
   });
 

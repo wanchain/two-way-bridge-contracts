@@ -148,4 +148,24 @@ contract OracleDelegate is OracleStorage, Owned {
     startTime = mapStoremanGroupConfig[id].startTime;
     endTime = mapStoremanGroupConfig[id].endTime;
   }
+
+  function setDebtClean(
+    bytes32 storemanGroupId,
+    bool isClean
+  )
+    external
+    onlyAdmin
+  {
+    mapDebtClean[storemanGroupId] = isClean;
+  }
+
+  function isDebtClean(
+    bytes32 storemanGroupId
+  )
+    external
+    view
+    returns (bool)
+  {
+    return mapDebtClean[storemanGroupId];
+  }
 }
