@@ -99,7 +99,6 @@ async function stakeInPre(smg, id){
     }
 }
 
-
 async function stakeInPreE(smg, id){
     console.log("smg.contract:", smg.contract._address)
     const sfs = [
@@ -125,6 +124,38 @@ async function stakeInPreE(smg, id){
     }
 }
 
+async function stakeInOne(smg, groupId, nodeIndex, value){
+    console.log("smg.contract:", smg.contract._address)
+    let sf = utils.getAddressFromInt(nodeIndex+1000)
+    let sw = utils.getAddressFromInt(nodeIndex+2000)
+    let en = utils.getAddressFromInt(nodeIndex+3000)
+    let sdata =  smg.contract.methods.stakeIn(groupId, sw.pk,en.pk).encodeABI()
+    //console.log("sdata:",sdata)
+    let rawTx = {
+        Txtype: 0x01,
+        nonce:  await pu.promisefy(web3.eth.getTransactionCount,[sf.addr,"pending"], web3.eth),
+        gasPrice: gGasPrice,
+        gas: gGasLimit,
+        to: smg.contract._address,
+        chainId: 6,
+        value: value,
+        data: sdata,
+    }
+    //console.log("rawTx:", rawTx)
+    let tx = new Tx(rawTx)
+    tx.sign(sf.priv)
+    const serializedTx = '0x'+tx.serialize().toString('hex');
+    //console.log("serializedTx:",serializedTx)
+    console.log("sm %d %s stakein %d", nodeIndex, sw.addr, value)
+    await web3.eth.sendSignedTransaction(serializedTx)
+    let candidate  = await smg.getStoremanInfo(sw.addr)
+    //console.log("candidate:", candidate)
+    assert.equal(candidate.sender.toLowerCase(), sf.addr)
+    assert.equal(candidate.pkAddress.toLowerCase(), sw.addr)
+    assert.equal(candidate.deposit, value)
+    return sw.addr
+}
+
 async function toSelect(smg, groupId){
     let tx = await smg.select(groupId,{from: g.leader})
     console.log("group %s select tx:", groupId, tx.tx)
@@ -140,6 +171,9 @@ async function toSelect(smg, groupId){
 }
 module.exports = {
     g,
-    registerStart,stakeInPreE,
-    stakeInPre,toSelect,
+    registerStart,
+    stakeInPre,
+    stakeInPreE,
+    stakeInOne,
+    toSelect
 }
