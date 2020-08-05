@@ -863,6 +863,33 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
+    it('Original[1] -> userMintLock  ==> PK is not ready', async () => {
+        let crossProxy;
+        try {
+            await crossApproach.chain1.parnters.smgAdminProxy.setStoremanGroupStatus(storemanGroups[1].ID, storemanGroupStatus.unregistered);
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.smgID = storemanGroups[1].ID;
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.chain1MintTokenRedeem.hash;
+            await crossApproach.chain1.instance.userMintLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.shadowUserAccount,
+                {from: userLockParamsTemp.origUserAccount}
+            );
+            assert.fail(ERROR_INFO);
+        } catch (err) {
+            assert.include(err.toString(), "PK is not ready");
+        } finally {
+            await crossApproach.chain1.parnters.smgAdminProxy.setStoremanGroupStatus(storemanGroups[1].ID, storemanGroupStatus.ready);
+        }
+    });
+
     it("Original[1] -> Token1 -> userMintLock  ==> Token does not exist", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
@@ -955,7 +982,42 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Original[1] -> Token1 -> smgMintRedeem ==> Smart contract is halted', async () => {
+    it('Shadow[2] -> Token1 -> smgMintLock  ==> Contract is not initialized', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
+            smgLockParamsTemp.origUserAccount = accounts[3];
+            smgLockParamsTemp.shadowUserAccount = accounts[4];
+            smgLockParamsTemp.xHash = xInfo.chain1MintTokenRedeem.hash;
+
+            let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
+
+            let pkId = 2;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve2, sk, typesArrayList.smgMintLock, smgLockParamsTemp.xHash,
+                smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.shadowUserAccount);
+
+            // storeman mint lock
+            let smgMintLockReceipt = await crossDelegateNotInit.smgMintLock(
+                smgLockParamsTemp.xHash,
+                smgLockParamsTemp.smgID,
+                smgLockParamsTemp.tokenPairID,
+                value,
+                smgLockParamsTemp.shadowUserAccount,
+                R,
+                s,
+                {from: storemanGroups[1].account}
+            );
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+
+            assert.fail(ERROR_INFO);
+        } catch (err) {
+            assert.include(err.toString(), "Contract is not initialized");
+        }
+    });
+
+    it('Original[1] -> Token1 -> smgMintRedeem ==> Halted', async () => {
         crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
         await crossProxy.setHalt(true, {from: owner});
         try {
@@ -1105,7 +1167,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Shadow[2] -> Token1 -> smgMintRevoke ==> Smart contract is halted', async () => {
+    it('Shadow[2] -> Token1 -> smgMintRevoke ==> Halted', async () => {
         crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
         await crossProxy.setHalt(true, {from: owner});
         try {
@@ -1154,7 +1216,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Original[1] -> Token1 -> userMintRevoke ==> Smart contract is halted', async () => {
+    it('Original[1] -> Token1 -> userMintRevoke ==> Halted', async () => {
         crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
         await crossProxy.setHalt(true, {from: owner});
         try {
@@ -1348,6 +1410,20 @@ contract('Test HTLC', async (accounts) => {
             assert.fail(ERROR_INFO);
         } catch (err) {
             assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Shadow[2] -> Token1 -> userMintRedeem  ==> Halted', async () => {
+        let crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
+        await crossProxy.setHalt(true, {from: owner});
+        try {
+            let shadowUserAccount = accounts[4];
+            await crossApproach.chain2.instance.userMintRedeem(xInfo.chain1MintTokenRedeem.x, {from: shadowUserAccount});
+            assert.fail(ERROR_INFO);
+        } catch (err) {
+            assert.include(err.toString(), "Smart contract is halted");
+        } finally {
+            await crossProxy.setHalt(false, {from: owner});
         }
     });
 
@@ -1576,7 +1652,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Original[1] -> Token1 -> smgBurnRevoke ==> Smart contract is halted', async () => {
+    it('Original[1] -> Token1 -> smgBurnRevoke ==> Halted', async () => {
         crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
         await crossProxy.setHalt(true, {from: owner});
         try {
@@ -1625,8 +1701,8 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Shadow[2] -> Token1 -> userBurnRevoke ==> Smart contract is halted', async () => {
-        crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
+    it('Shadow[2] -> Token1 -> userBurnRevoke ==> Halted', async () => {
+        let crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
         await crossProxy.setHalt(true, {from: owner});
         try {
             let shadowUserAccount = accounts[4];;
@@ -1678,7 +1754,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it("Shadow[2] -> userBurnLock  ==> Contract is not initialized", async () => {
+    it("Shadow[2] -> Token1 -> userBurnLock  ==> Contract is not initialized", async () => {
         try {
             // accounts[3] is the chain1 original address of the user.
             // accounts[4] is the chain2 shadow address of the user.
@@ -1701,7 +1777,7 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Shadow[2] -> userBurnLock  ==> Halted', async () => {
+    it('Shadow[2] -> Token1 -> userBurnLock  ==> Halted', async () => {
         let crossProxy;
         try {
             crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
@@ -1726,6 +1802,33 @@ contract('Test HTLC', async (accounts) => {
             assert.include(err.toString(), "Smart contract is halted");
         } finally {
             await crossProxy.setHalt(false, {from: owner});
+        }
+    });
+
+    it('Shadow[2] -> Token1 -> userBurnLock  ==> PK is not ready', async () => {
+        try {
+            await crossApproach.chain2.parnters.smgAdminProxy.setStoremanGroupStatus(storemanGroups[1].ID, storemanGroupStatus.unregistered);
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let userLockParamsTemp = Object.assign({}, userLockParams);
+            userLockParamsTemp.smgID = storemanGroups[1].ID;
+            userLockParamsTemp.origUserAccount = accounts[3];
+            userLockParamsTemp.shadowUserAccount = accounts[4];
+            userLockParamsTemp.xHash = xInfo.chain1BurnTokenRedeem.hash;
+            await crossApproach.chain2.instance.userBurnLock(
+                userLockParamsTemp.xHash,
+                userLockParamsTemp.smgID,
+                userLockParamsTemp.tokenPairID,
+                web3.utils.toWei(userLockParamsTemp.value.toString()),
+                userLockParamsTemp.origUserAccount,
+                {from: userLockParamsTemp.shadowUserAccount}
+            );
+
+            assert.fail(ERROR_INFO);
+        } catch (err) {
+            assert.include(err.toString(), "PK is not ready");
+        } finally {
+            await crossApproach.chain2.parnters.smgAdminProxy.setStoremanGroupStatus(storemanGroups[1].ID, storemanGroupStatus.ready);
         }
     });
 
@@ -1818,7 +1921,41 @@ contract('Test HTLC', async (accounts) => {
         }
     });
 
-    it('Shadow[2] -> Token1 -> smgBurnRedeem ==> Smart contract is halted', async () => {
+    it('Original[1] -> Token1 -> smgBurnLock  ==> Contract is not initialized', async () => {
+        try {
+            // accounts[3] is the chain1 original address of the user.
+            // accounts[4] is the chain2 shadow address of the user.
+            let smgLockParamsTemp = Object.assign({}, smgLockParams);
+            smgLockParamsTemp.origUserAccount = accounts[3];
+            smgLockParamsTemp.shadowUserAccount = accounts[4];
+            smgLockParamsTemp.xHash = xInfo.chain1BurnTokenRedeem.hash;
+
+            let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
+
+            let pkId = 1;
+            let sk = skInfo.smg1[pkId];
+            let {R, s} = buildMpcSign(schnorr.curve1, sk, typesArrayList.smgBurnLock, smgLockParamsTemp.xHash,
+                smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.shadowUserAccount);
+
+            // storeman mint lock
+            let smgMintLockReceipt = await crossDelegateNotInit.smgBurnLock(
+                smgLockParamsTemp.xHash,
+                smgLockParamsTemp.smgID,
+                smgLockParamsTemp.tokenPairID,
+                value,
+                smgLockParamsTemp.shadowUserAccount,
+                R,
+                s,
+                {from: storemanGroups[1].account}
+            );
+            // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
+            assert.fail(ERROR_INFO);
+        } catch (err) {
+            assert.include(err.toString(), "Contract is not initialized");
+        }
+    });
+
+    it('Shadow[2] -> Token1 -> smgBurnRedeem ==> Halted', async () => {
         crossProxy = await CrossProxy.at(crossApproach.chain2.instance.address);
         await crossProxy.setHalt(true, {from: owner});
         try {
@@ -1969,6 +2106,20 @@ contract('Test HTLC', async (accounts) => {
             assert.fail(ERROR_INFO);
         } catch (err) {
             assert.include(err.toString(), "Status is not locked");
+        }
+    });
+
+    it('Original[1] -> Token1 -> userBurnRedeem  ==> Halted', async () => {
+        let crossProxy = await CrossProxy.at(crossApproach.chain1.instance.address);
+        await crossProxy.setHalt(true, {from: owner});
+        try {
+            let origUserAccount = accounts[3];
+            await crossApproach.chain1.instance.userBurnRedeem(xInfo.wrong.x, {from: origUserAccount});
+            assert.fail(ERROR_INFO);
+        } catch (err) {
+            assert.include(err.toString(), "Smart contract is halted");
+        } finally {
+            await crossProxy.setHalt(false, {from: owner});
         }
     });
 
