@@ -116,5 +116,5 @@ module.exports = {
   stringTobytes:stringTobytes,
   getAddressFromInt:getAddressFromInt,
   waitReceipt:waitReceipt,
-  sleepUntil,
+  sleepUntil,sleep,
 };

@@ -54,22 +54,29 @@ contract('TestSmg', async (accounts) => {
         let wk = utils.getAddressFromInt(10000)
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
         console.log("tx:", tx);
+
+        await smg.incentiveCandidator(g.leader)
     })
 
 
     it('test toSelect', async ()=>{
         await utils.sleepUntil(1000*(groupInfo.registerTime+groupInfo.registerDuration));
         await toSelect(smg, groupId);
+
+        await smg.incentiveCandidator(g.leader)
     })
     it('setGpk', async() => {
         await utils.sleepUntil(1000*(groupInfo.registerTime+groupInfo.registerDuration+2));
         let tx =  await smg.setGpk(groupId, gpk, gpk, {from: g.leader})
         console.log("setGpk tx:", tx.tx)
+        await smg.incentiveCandidator(g.leader)
+
+        await utils.sleep(9000); await smg.incentiveCandidator(g.leader)
     })
 
 
 
-    it('incentive ', async ()=>{
+    it.skip('incentive ', async ()=>{
         await utils.sleepUntil(1000*(groupInfo.startTime+3));
         console.log("incentive until", 1000*(groupInfo.startTime+1))
         let nowDay = parseInt(Date.now()/1000)
