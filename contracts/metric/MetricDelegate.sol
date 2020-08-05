@@ -78,6 +78,11 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
     ///=======================================statistic=============================================
+
+    /// @notice                         function for get incentive count of all store man during special epochs
+    /// @param grpId                    group id
+    /// @param startEpId                start epoch id
+    /// @param endEpId                  end epoch id
     function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId)
     external
     view
@@ -95,7 +100,10 @@ contract MetricDelegate is MetricStorage, Halt {
         }
         return ret;
     }
-
+    /// @notice                         function for get slash count of all store man during special epochs
+    /// @param grpId                    group id
+    /// @param startEpId                start epoch id
+    /// @param endEpId                  end epoch id
     function getPrdSlshMetric(bytes32 grpId, uint startEpId, uint endEpId)
     external
     view
@@ -114,7 +122,10 @@ contract MetricDelegate is MetricStorage, Halt {
         }
         return ret;
     }
-
+    /// @notice                         function for get success count of sign data
+    /// @param grpId                    group id
+    /// @param epId                     epoch id
+    /// @param smIndex                  index of store man
     function getSmSuccCntByEpId(bytes32 grpId, uint epId, uint8 smIndex)
     external
     view
@@ -124,7 +135,10 @@ contract MetricDelegate is MetricStorage, Halt {
     {
         return metricData.mapInctCount[grpId][epId][smIndex];
     }
-
+    /// @notice                         function for get slash count of one store man
+    /// @param grpId                    group id
+    /// @param epId                     epoch id
+    /// @param smIndex                  index of store man
     function getSlshCntByEpId(bytes32 grpId, uint epId, uint8 smIndex)
     external
     view
@@ -135,7 +149,11 @@ contract MetricDelegate is MetricStorage, Halt {
         return metricData.mapSlshCount[grpId][epId][smIndex];
     }
 
-
+    /// @notice                         function for get R stage slash proof of one store man
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param smIndex                  index of store man
+    /// @param slshReason               slash reason
     function getRSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
@@ -147,7 +165,11 @@ contract MetricDelegate is MetricStorage, Halt {
         return metricData.mapRSlsh[grpId][hashX][smIndex];
 
     }
-
+    /// @notice                         function for get S stage slash proof of one store man
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param smIndex                  index of store man
+    /// @param slshReason               slash reason
     function getSSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
     external
     view
@@ -162,6 +184,10 @@ contract MetricDelegate is MetricStorage, Halt {
     ///=======================================write incentive and slash=============================================
 
     /// todo white list can write the working record
+    /// @notice                         function for write incentive data
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param inctData                 incentive store man's bitmap
     function wrInct(bytes32 grpId, bytes32 hashX, uint inctData)
     external
     notHalted
@@ -178,7 +204,10 @@ contract MetricDelegate is MetricStorage, Halt {
             }
         }
     }
-
+    /// @notice                         function for write R stage slash
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param rnwData                  no working store man's bitmap in stage R
     function wrRNW(bytes32 grpId, bytes32 hashX, uint rnwData)
     external
     notHalted
@@ -198,7 +227,10 @@ contract MetricDelegate is MetricStorage, Halt {
             }
         }
     }
-
+    /// @notice                         function for write S stage slash
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param snwData                  no working store man's bitmap in stage S
     function wrSNW(bytes32 grpId, bytes32 hashX, uint snwData)
     external
     notHalted
@@ -218,7 +250,10 @@ contract MetricDelegate is MetricStorage, Halt {
             }
         }
     }
-
+    /// @notice                         function for write R stage slash
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param rslshData                data of slash
     function wrRSlsh(bytes32 grpId, bytes32 hashX, MetricTypes.RSlshData memory rslshData)
     public
     notHalted
@@ -234,7 +269,10 @@ contract MetricDelegate is MetricStorage, Halt {
             emit SMInvSlshLogger(msg.sender, grpId, hashX, smIndex, MetricTypes.SlshReason.R);
         }
     }
-
+    /// @notice                         function for write S stage slash
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param sslshData                data of slash
     function wrSSlsh(bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData memory sslshData)
     public
     notHalted
@@ -251,9 +289,9 @@ contract MetricDelegate is MetricStorage, Halt {
         }
     }
 
-    /// @notice                           function for set config and smg contract address
-    /// @param configAddr                 config contract address
-    /// @param smgAddr               smg contract address
+    /// @notice                         function for set config and smg contract address
+    /// @param configAddr               config contract address
+    /// @param smgAddr                  smg contract address
     function setDependence(address configAddr, address smgAddr)
     external
     onlyOwner

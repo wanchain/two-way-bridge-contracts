@@ -47,7 +47,7 @@ library MetricTypes {
     // cm
     struct PolyCMData {
         //bytes[]              polyCM;
-        bytes polyCM;   // todo shoudl all degree polyCM concat to one long bytes?
+        bytes polyCM;
         bytes polyCMR;
         bytes polyCMS;
     }
