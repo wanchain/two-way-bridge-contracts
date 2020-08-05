@@ -23,6 +23,6 @@ library StoremanUtil {
     if(group.status == StoremanType.GroupStatus.initial || group.status == StoremanType.GroupStatus.failed){
         return 0;
     }
-    return group.memberCountDesign;
+    return group.selectedCount;
   }
 }

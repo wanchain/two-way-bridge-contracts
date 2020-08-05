@@ -117,16 +117,16 @@ async function registerStart2(smg, preGroupId=utils.stringTobytes32(""),wks,srs)
     return group.groupId
 }
 
-async function sendIncentive() {
+async function sendIncentive(truffleSmg) {
 
-    let smgAdminAddr =  '0x7EDd090eFc3F064f704317461b37B66Da51E4a31';
+    let smgAdminAddr =  truffleSmg.contract._address
     const  smgAdminAbi =  require('../osmAbi.json')
     let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
     let smg = new web3.eth.Contract(smgAdminAbi,smgAdminAddr)
   
     //console.log("storeman info:", await smg.methods.getStoremanInfo("0xe1ab8145f7e55dc933d51a18c793f901a3a0b276").call())
 
-    let tx = await smg.methods.incentiveCandidator("0x5793e629c061e7fd642ab6a1b4d552cec0e2d606").send({from:sfs[0]});
+    let tx = await smg.methods.incentiveCandidator(leader).send({from:leader});
     console.log("tx:", tx);
     return tx;
 

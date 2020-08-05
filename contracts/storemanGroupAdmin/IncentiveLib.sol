@@ -20,9 +20,9 @@ library IncentiveLib {
         return co;
     }
 
-    function getGroupIncentive(StoremanType.StoremanGroup storage group, uint time,StoremanType.StoremanData storage data) public view returns (uint) {
+    function getGroupIncentive(StoremanType.StoremanGroup storage group, uint day,StoremanType.StoremanData storage data) public view returns (uint) {
         uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
-        return PosLib.getMinIncentive(Deposit.getLastValue(group.deposit),time) * chainTypeCo/10000;
+        return PosLib.getMinIncentive(group.deposit.getLastValue(),day) * chainTypeCo/10000;
     }
 
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) public returns (uint) {
@@ -62,8 +62,12 @@ library IncentiveLib {
 
         uint day;
         for (day = fromDay; day < endDay; day++) {
+            if (msg.gas < 5000000 ) { // check the gas. because calculate delegator incentive need more gas left.
+                emit incentiveEvent(group.groupId, wkAddr, false, fromDay, 0);
+                return;
+            }
             if (group.groupIncentive[day] == 0) {
-                group.groupIncentive[day] = getGroupIncentive(group, day, data); // TODO: change to the correct time
+                group.groupIncentive[day] = getGroupIncentive(group, day, data);
             }
             uint idx = 0;
             for (; idx < group.selectedCount; idx++) {
