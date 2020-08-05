@@ -39,12 +39,12 @@ async function registerStart(smg, inheritGroupId = ''){
         preGroupId = inheritGroupId;
     } else {
         preGroupId = utils.stringTobytes32("");
-    }
-    for(let i=0; i<WhiteCount;i++){
-      let {addr:sr} = utils.getAddressFromInt(i+1000)
-      let {addr:wk} = utils.getAddressFromInt(i+2000)
-      wks.push(wk)
-      srs.push(sr)
+        for (let i=0; i<WhiteCount;i++) {
+          let {addr:sr} = utils.getAddressFromInt(i+1000)
+          let {addr:wk} = utils.getAddressFromInt(i+2000)
+          wks.push(wk)
+          srs.push(sr)
+        }
     }
     let tx = await smg.storemanGroupRegisterStart(id, now+10, 60 * 15, 60, preGroupId, wks,srs, {from: owner})
     console.log("registerStart txhash:", tx.tx)

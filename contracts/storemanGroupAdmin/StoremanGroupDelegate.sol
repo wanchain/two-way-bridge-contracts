@@ -111,8 +111,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.totalTime = workDuration;
         group.memberCountDesign = memberCountDefault;
         group.threshold = thresholdDefault;
-        group.whiteCount = wkAddrs.length - data.conf.backupCount;
-        group.whiteCountAll = wkAddrs.length;
+        // group.whiteCount = wkAddrs.length - data.conf.backupCount;
+        // group.whiteCountAll = wkAddrs.length;
         group.registerTime = now;
         group.registerDuration = registerDuration;
         emit StoremanGroupRegisterStartEvent(groupId, workStart, workDuration, registerDuration, preGroupId);

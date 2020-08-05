@@ -254,20 +254,20 @@ library StoremanLib {
             //group.whiteCount = oldGroup.whiteCount;
             //group.whiteCountAll = oldGroup.whiteCountAll;
             for(uint k = 0; k<oldGroup.whiteCountAll; k++){
-                StoremanType.Candidate storage skw = data.candidates[group.whiteMap[k]];
-                group.whiteWk[group.whiteMap[k]] = oldGroup.whiteWk[oldGroup.whiteMap[k]];
+                address wa = oldGroup.whiteMap[k];
+                StoremanType.Candidate storage skw = data.candidates[wa];
+                group.whiteWk[wa] = oldGroup.whiteWk[wa];
                 if(!skw.quited) {
-                    group.whiteMap[group.whiteCountAll] = oldGroup.whiteMap[k];
+                    group.whiteMap[group.whiteCountAll] = wa;
                     group.whiteCountAll++;
                     if(k < oldGroup.whiteCount){
-                        group.selectedNode[k] = group.whiteMap[k];
+                        group.selectedNode[k] = wa;
                         group.whiteCount++;
                     }
                     data.oldAddr.push(group.whiteMap[k]);
                     skw.nextGroupId = group.groupId;
                 }
             }
-            
         } else {   // If there are new white nodes, use the new.
             group.whiteCount = wkAddrs.length - data.conf.backupCount;
             group.whiteCountAll = wkAddrs.length;
