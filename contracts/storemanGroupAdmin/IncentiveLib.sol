@@ -41,7 +41,7 @@ library IncentiveLib {
             return true;
         }
         uint nodeCount = metric.getPrdInctMetric(group.groupId, day, day)[index];
-        if(nodeCount > leadCount/2){
+        if(nodeCount >= leadCount/2){
             return true;
         }
         return false;
