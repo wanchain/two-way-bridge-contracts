@@ -42,7 +42,7 @@ async function registerStart(smg, inheritGroupId = '', wlStartIndex = 0){
         for (let i=wlStartIndex; i<WhiteCount;i++) {
           let {addr:sr} = utils.getAddressFromInt(i+1000)
           let {addr:wk} = utils.getAddressFromInt(i+2000)
-          console.log("whitelist %d: %s", i, wk.addr)
+          console.log("whitelist %d: %s", i, wk)
           wks.push(wk)
           srs.push(sr)
         }
