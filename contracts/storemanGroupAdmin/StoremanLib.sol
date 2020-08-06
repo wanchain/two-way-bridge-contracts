@@ -178,21 +178,26 @@ library StoremanLib {
     }
 
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
-        uint last = group.memberCountDesign-1;
-        for(uint j = last; j>=group.whiteCount; j--) {
-            if(weight > data.candidates[group.selectedNode[j]].delegateDeposit + StoremanUtil.calSkWeight(data.conf.standaloneWeight,data.candidates[group.selectedNode[j]].deposit.getLastValue())){
-                continue;
+        for (uint i = group.whiteCount; i < group.selectedCount; i++) {
+            StoremanType.Candidate storage cmpNode = data.candidates[group.selectedNode[i]];
+            uint cmpWeight = cmpNode.delegateDeposit + StoremanUtil.calSkWeight(data.conf.standaloneWeight, cmpNode.deposit.getLastValue());
+            if (weight > cmpWeight) {
+                break;
             }
-            break;
         }
-        if(j<last){
-            for(uint k = last-1; k>j; k--){
-                group.selectedNode[k+1] = group.selectedNode[k];
+        for (uint j = group.selectedCount - 1; j >= i; j--) {
+            if (j + 1 < group.memberCountDesign) {
+                group.selectedNode[j + 1] = group.selectedNode[j];
             }
-            group.selectedNode[j+1] = skAddr;
-            group.selectedCount++;
+        }
+        if (i < group.memberCountDesign) {
+            group.selectedNode[i] = skAddr;
+            if (group.selectedCount < group.memberCountDesign) {
+                group.selectedCount++;
+            }
         }
     }
+
     function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r) internal {
         //如果还没选择, 不需要更新group的值, 在选择的时候一起更新.
         // 如果已经选择过了, 需要更新group的值.
