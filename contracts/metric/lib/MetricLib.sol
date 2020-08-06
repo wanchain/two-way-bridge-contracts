@@ -35,6 +35,12 @@ import "../../interfaces/IStoremanGroup.sol";
 library MetricLib {
     using SafeMath for uint;
 
+    /// @notice                         function for write slash of R stage
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param rslshData                slash data of R stage
+    /// @param smCount                  total number of store man
     function writeRSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.RSlshData memory rslshData, uint8 smCount)
     internal
     returns (bool, uint8)
@@ -58,9 +64,7 @@ library MetricLib {
 
 
         if (checkRProof(metricData, grpId, hashX, smIndex)) {
-            // update the  count
             metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] += 1;
-            // emit the event
             return (true, smIndex);
         } else {
             delete metricData.mapRSlsh[grpId][hashX][smIndex];
@@ -70,7 +74,11 @@ library MetricLib {
     }
 
 
-
+    /// @notice                         check proof of R stage
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param smIndex                  index of store man
     function checkRProof(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -80,7 +88,11 @@ library MetricLib {
         return getChkResult(bSig, bContent, metricData.mapRSlsh[grpId][hashX][smIndex].becauseSndr);
         return bContent;
     }
-
+    /// @notice                         check signature of proof in R stage
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param smIndex                  index of store man
     function checkRSig(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -101,7 +113,11 @@ library MetricLib {
         s = CommonTool.bytesToBytes32(rslshData.polyDataPln.polyDataS);
         return CommonTool.checkSig(h, r, s, senderPk);
     }
-
+    /// @notice                         check content of proof in R stage
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param smIndex                  index of store man
     function checkRContent(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -151,7 +167,12 @@ library MetricLib {
             }
         }
     }
-
+    /// @notice                         function for write slash of S stage
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param sslshData                slash data of S stage
+    /// @param smCount                  total number of store man
     function writeSSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData sslshData, uint8 smCount)
     public
     returns (bool, uint8)
@@ -172,19 +193,19 @@ library MetricLib {
         metricData.mapSSlsh[grpId][hashX][smIndex] = sslshData;
 
         if (checkSProof(metricData, grpId, hashX, smIndex)) {
-            // update the  count
             metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] += 1;
-            // emit the event
-            //emit metricData.SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
             return (true, smIndex);
         } else {
-            //emit metricData.SMInvSlshLogger(msg.sender, grpId, hashX, smIndex, MetricTypes.SlshReason.S);
             delete metricData.mapSSlsh[grpId][hashX][smIndex];
             return (false, smIndex);
         }
     }
 
-
+    /// @notice                         check proof of S stage
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param smIndex                  index of store man
     function checkSProof(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -193,7 +214,11 @@ library MetricLib {
         bool bContent = checkSContent(metricData, grpId, hashX, smIndex);
         return getChkResult(bSig, bContent, metricData.mapSSlsh[grpId][hashX][smIndex].becauseSndr);
     }
-
+    /// @notice                         check signature of proof in S stage
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param smIndex                  index of store man
     function checkSSig(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -214,7 +239,11 @@ library MetricLib {
         s = CommonTool.bytesToBytes32(sslshData.polyDataPln.polyDataS);
         return CommonTool.checkSig(h, r, s, senderPk);
     }
-
+    /// @notice                         check content of proof in S stage
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param hashX                    hash of the signed data
+    /// @param smIndex                  index of store man
     function checkSContent(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -251,7 +280,10 @@ library MetricLib {
         return xLeft == xRight && yLeft == yRight;
 
     }
-
+    /// @notice                         get public key bytes by stor eman index
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param smIndex                  index of store man
     function getPkBytesByInx(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint8 smIndex)
     internal
     view
@@ -261,7 +293,8 @@ library MetricLib {
         (, smPk,) = (IStoremanGroup)(metricData.smg).getSelectedSmInfo(grpId, uint(smIndex));
         return smPk;
     }
-
+    /// @notice                         get epoch id by now time stamp
+    /// @param metricData               self parameter for lib function
     function getEpochId(MetricTypes.MetricStorageData storage metricData)
     internal
     view
@@ -269,7 +302,9 @@ library MetricLib {
     {
         return PosLib.getEpochId(now);
     }
-
+    /// @notice                         get total number of store man in special group
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
     function getSMCount(MetricTypes.MetricStorageData storage metricData, bytes32 grpId)
     public
     view
