@@ -78,7 +78,6 @@ contract MappingToken is StandardToken, Owned {
         balances[account] = balances[account].add(value);
         totalSupply = totalSupply.add(value);
 
-        // emit TokenMintedLogger(account, value, totalSupply);
         emit Transfer(address(0), account, value);
     }
 

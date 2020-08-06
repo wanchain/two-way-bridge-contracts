@@ -35,27 +35,20 @@ contract TokenManagerStorage is BasicStorage {
      **
      ************************************************************/
 
-    struct TokenInfo {
-        string  name;
-        string  symbol;
-        uint8   decimals;
-    }
-
     struct AncestorInfo {
-      bytes   ancestorAccount;
-      string  ancestorName;
-      string  ancestorSymbol;
-      uint8   ancestorDecimals;
-      uint    ancestorChainID;
+      bytes   account;
+      string  name;
+      string  symbol;
+      uint8   decimals;
+      uint    chainID;
     }
 
     struct TokenPairInfo {
+      AncestorInfo aInfo;               /// TODO:
       uint      fromChainID;            /// index in coinType.txt; e.g. eth=60, etc=61, wan=5718350
       bytes     fromAccount;            /// from address
       uint      toChainID;              ///
-      address   tokenAddress;           /// to token address
-
-      bool      isValid;               /// whether been deleted
+      bytes     toAccount;              /// to token address
     }
 
 
@@ -71,7 +64,7 @@ contract TokenManagerStorage is BasicStorage {
     mapping(address => bool) public mapAdmin;
 
     /// a map from a sequence ID to token pair
-    mapping(uint => AncestorInfo) public mapAncestorInfo;
     mapping(uint => TokenPairInfo) public mapTokenPairInfo;
+    // index -> tokenPairId
     mapping(uint => uint) public mapTokenPairIndex;
 }
