@@ -39,13 +39,15 @@ async function registerStart(smg, inheritGroupId = '', wlStartIndex = 0){
         preGroupId = inheritGroupId;
     } else {
         preGroupId = utils.stringTobytes32("");
-        for (let i=wlStartIndex; i<WhiteCount;i++) {
-          let {addr:sr} = utils.getAddressFromInt(i+1000)
-          let {addr:wk} = utils.getAddressFromInt(i+2000)
-          console.log("whitelist %d: %s", i, wk)
-          wks.push(wk)
-          srs.push(sr)
-        }
+    }
+    if ((!inheritGroupId) || wlStartIndex) {
+      for (let i=0; i<WhiteCount;i++) {
+        let {addr:sr} = utils.getAddressFromInt(i+wlStartIndex+1000)
+        let {addr:wk} = utils.getAddressFromInt(i+wlStartIndex+2000)
+        console.log("whitelist %d: %s", i, wk)
+        wks.push(wk)
+        srs.push(sr)
+      }
     }
     let tx = await smg.storemanGroupRegisterStart(id, now+10, 60 * 15, 60, preGroupId, wks,srs, {from: owner})
     console.log("registerStart txhash:", tx.tx)
@@ -65,10 +67,10 @@ async function registerStart(smg, inheritGroupId = '', wlStartIndex = 0){
 
 async function stakeInPre(smg, groupId, nodeStartIndex = 0, nodeCount = stakerCount){
     console.log("smg.contract:", smg.contract._address)
-    for(let i=nodeStartIndex; i<nodeCount; i++){
-        let sf = utils.getAddressFromInt(i+1000)
-        let sw = utils.getAddressFromInt(i+2000)
-        let en = utils.getAddressFromInt(i+3000)
+    for(let i=0; i<nodeCount; i++){
+        let sf = utils.getAddressFromInt(i+nodeStartIndex+1000)
+        let sw = utils.getAddressFromInt(i+nodeStartIndex+2000)
+        let en = utils.getAddressFromInt(i+nodeStartIndex+3000)
         let stakingValue = 2000;
         let sdata =  smg.contract.methods.stakeIn(groupId, sw.pk,en.pk).encodeABI()
         //console.log("sdata:",sdata)
