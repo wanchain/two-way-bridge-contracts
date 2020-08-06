@@ -26,7 +26,7 @@ const g = {
     leader,WhiteCount,whiteBackup,memberCountDesign,threshold,leaderPk,owner,web3url,
 }
 
-async function registerStart(smg, inheritGroupId = ''){
+async function registerStart(smg, inheritGroupId = '', wlStartIndex = 0){
     await smg.updateStoremanConf(3,1500,10)
     let now = parseInt(Date.now()/1000);
     let id = utils.stringTobytes32(now.toString())
@@ -39,9 +39,10 @@ async function registerStart(smg, inheritGroupId = ''){
         preGroupId = inheritGroupId;
     } else {
         preGroupId = utils.stringTobytes32("");
-        for (let i=0; i<WhiteCount;i++) {
+        for (let i=wlStartIndex; i<WhiteCount;i++) {
           let {addr:sr} = utils.getAddressFromInt(i+1000)
           let {addr:wk} = utils.getAddressFromInt(i+2000)
+          console.log("whitelist %d: %s", i, wk.addr)
           wks.push(wk)
           srs.push(sr)
         }
@@ -62,14 +63,14 @@ async function registerStart(smg, inheritGroupId = ''){
     return group.groupId
 }
 
-async function stakeInPre(smg, id){
+async function stakeInPre(smg, groupId, nodeStartIndex = 0, nodeCount = stakerCount){
     console.log("smg.contract:", smg.contract._address)
-    for(let i=0; i<stakerCount; i++){
+    for(let i=nodeStartIndex; i<nodeCount; i++){
         let sf = utils.getAddressFromInt(i+1000)
         let sw = utils.getAddressFromInt(i+2000)
         let en = utils.getAddressFromInt(i+3000)
         let stakingValue = 2000;
-        let sdata =  smg.contract.methods.stakeIn(id, sw.pk,en.pk).encodeABI()
+        let sdata =  smg.contract.methods.stakeIn(groupId, sw.pk,en.pk).encodeABI()
         //console.log("sdata:",sdata)
         let rawTx = {
             Txtype: 0x01,
