@@ -135,7 +135,8 @@ library StoremanLib {
         if(!isWorkingNodeInGroup(group, sk.pkAddress)){
             return true;
         } else {
-            if(sk.quited && group.status == StoremanType.GroupStatus.dismissed) {
+            if(sk.quited && group.status == StoremanType.GroupStatus.dismissed
+            && sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime) ) {
                 return true;
             }
         }

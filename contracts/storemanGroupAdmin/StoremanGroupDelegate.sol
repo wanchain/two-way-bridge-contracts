@@ -325,10 +325,13 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.Candidate storage sk;
         for(uint i=0; i<group.memberCount; i++){
             sk = data.candidates[group.selectedNode[i]];
-            sk.groupId = sk.nextGroupId;
-            sk.nextGroupId = bytes32(0x00);
+            if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime)) {
+                if(bytes32(0x00) != sk.nextGroupId) {
+                    sk.groupId = sk.nextGroupId;
+                }
+                sk.nextGroupId = bytes32(0x00);
+            }
         }
-
     }
 
     function checkGroupDismissable(bytes32 groupId) public returns(bool) {

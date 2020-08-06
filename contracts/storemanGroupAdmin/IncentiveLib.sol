@@ -96,6 +96,12 @@ library IncentiveLib {
                 }
             }
             sk.incentivedDay = day;
+            if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime) && group.status == StoremanType.GroupStatus.dismissed) {
+                if(bytes32(0x00) != sk.nextGroupId) {
+                    sk.groupId = sk.nextGroupId;
+                }
+                sk.nextGroupId = bytes32(0x00);
+            }
             sk.incentivedDelegator = 0;
         }
         emit incentiveEvent(group.groupId, wkAddr, true, fromDay, endDay-1);
