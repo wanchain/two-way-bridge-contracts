@@ -15,13 +15,13 @@ contract('open_storeman_it', async () => {
     console.log("leader sk: %O", sk);
     console.log("pre group id: %s", sk.groupId);
 
-    let groupId = await registerStart(smgSc, sk.groupId, 8);
+    let groupId = await registerStart(smgSc, sk.groupId, 7);
     console.log("new group id: %s", groupId);
 
     sk = await smgSc.getStoremanInfo(oldLeader);
     console.log("leader new sk: %O", sk);
 
-    await stakeInPre(smgSc, groupId, 8, 4);
+    await stakeInPre(smgSc, groupId, 7, 4);
 
     sk = await smgSc.getStoremanInfo(newLeader);
     console.log("new leader sk: %O", sk);

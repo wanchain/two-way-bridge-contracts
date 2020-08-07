@@ -21,7 +21,7 @@ contract('open_storeman_it', async () => {
     console.log("leader new sk: %O", sk);
     console.log("next group id: %s", sk.nextGroupId);
 
-    let newWa = await stakeInOne(smgSc, groupId, 7, 3000);
+    let newWa = await stakeInOne(smgSc, groupId, 11, 3000);
     sk = await smgSc.getStoremanInfo(newWa);
     console.log("new node sk: %O", sk);
   })
