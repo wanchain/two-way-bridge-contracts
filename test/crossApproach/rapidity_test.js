@@ -1137,11 +1137,11 @@ it('Original[2] -> Coin2 -> smgFastBurn  ==> success', async () => {
     }
 });
 
-// after("finish...   -> success", async function () {
-//     let origUserAccount = global.accounts[3];
-//     let value = web3.utils.toWei(userFastParams.value.toString());
-//     await global.chains[1].token.tokenCreator.burnToken(global.chains[1].token.name, global.chains[1].token.symbol,
-//         origUserAccount, value);
-//     await global.chains[2].token.tokenCreator.burnToken(global.chains[2].token.name, global.chains[2].token.symbol,
-//         origUserAccount, value);
-// });
+after("finish...   -> success", async function () {
+    let origUserAccount = global.accounts[3];
+    let value = web3.utils.toWei(userFastParams.value.toString());
+    await global.chains[1].token.tokenCreator.burnToken(global.chains[1].token.name, global.chains[1].token.symbol,
+        origUserAccount, value);
+    await global.chains[2].token.tokenCreator.burnToken(global.chains[2].token.name, global.chains[2].token.symbol,
+        origUserAccount, value);
+});
