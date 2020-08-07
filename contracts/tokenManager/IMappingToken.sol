@@ -29,6 +29,7 @@ import '../components/StandardToken.sol';
 
 interface IMappingToken {
     function changeOwner(address _newOwner) public;
+    function acceptOwnership() public;
     function name() external view returns (string);
     function symbol() external view returns (string);
     function decimals() external view returns (uint8);
