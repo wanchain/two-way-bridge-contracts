@@ -1,6 +1,9 @@
 {
   "scripts": {
     "test": "truffle test",
+    "debug": "truffle debug",
+    "develop": "truffle develop",
+    "console": "truffle console",
     "compile": "truffle compile",
     "coverage": "truffle run coverage",
     "migrate": "rm -rf build && truffle migrate --network testnet"
