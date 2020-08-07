@@ -252,7 +252,7 @@ contract('Test Cross Approach', (accounts) => {
                     fromChainID: global.chains[1].token.origChainID,
                     fromAccount: global.chains[1].token.origTokenAccount.toLowerCase(),//web3.utils.hexToBytes(global.chains[1].token.origTokenAccount),// web3.utils.padRight(global.chains[1].token.origTokenAccount, 64).toLowerCase(),
                     toChainID: global.chains[1].token.shadowChainID,
-                    tokenAddress: global.chains[1].token.shadowTokenAccount
+                    toAccount: global.chains[1].token.shadowTokenAccount.toLowerCase()
                 }
             });
             console.log("init 33", await getBalance(global.owner));
@@ -280,7 +280,7 @@ contract('Test Cross Approach', (accounts) => {
                     fromChainID: global.chains[2].token.origChainID,
                     fromAccount: global.chains[2].token.origTokenAccount.toLowerCase(),//web3.utils.hexToBytes(global.chains[2].token.origTokenAccount),//web3.utils.padRight(global.chains[2].token.origTokenAccount, 64).toLowerCase(),
                     toChainID: global.chains[2].token.shadowChainID,
-                    tokenAddress: global.chains[2].token.shadowTokenAccount
+                    toAccount: global.chains[2].token.shadowTokenAccount.toLowerCase()
                 }
             });
 
@@ -306,7 +306,7 @@ contract('Test Cross Approach', (accounts) => {
                     fromChainID: global.chains[1].coin.origChainID,
                     fromAccount: global.chains[1].coin.origTokenAccount.toLowerCase(),//web3.utils.hexToBytes(global.chains[1].coin.origTokenAccount),//web3.utils.padRight(global.chains[1].coin.origTokenAccount, 64).toLowerCase(),
                     toChainID: global.chains[1].coin.shadowChainID,
-                    tokenAddress: global.chains[1].coin.shadowTokenAccount
+                    toAccount: global.chains[1].coin.shadowTokenAccount.toLowerCase()
                 }
             });
             console.log("init 37", await getBalance(global.owner));
@@ -334,7 +334,7 @@ contract('Test Cross Approach', (accounts) => {
                     fromChainID: global.chains[2].coin.origChainID,
                     fromAccount: global.chains[2].coin.origTokenAccount.toLowerCase(),//web3.utils.hexToBytes(global.chains[2].coin.origTokenAccount),//web3.utils.padRight(global.chains[2].coin.origTokenAccount, 64).toLowerCase(),
                     toChainID: global.chains[2].coin.shadowChainID,
-                    tokenAddress: global.chains[2].coin.shadowTokenAccount
+                    toAccount: global.chains[2].coin.shadowTokenAccount.toLowerCase()
                 }
             });
 

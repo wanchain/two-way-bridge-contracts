@@ -30,29 +30,6 @@ before("init...   -> success", () => {
 });
 
 // chain1 MintBridge
-it("Original[1] -> userMintLock  ==> Contract is not initialized", async () => {
-    try {
-        // global.accounts[3] is the chain1 original address of the user.
-        // global.accounts[4] is the chain2 shadow address of the user.
-        let userLockParamsTemp = Object.assign({}, userLockParams);
-        userLockParamsTemp.origUserAccount = global.accounts[3];
-        userLockParamsTemp.shadowUserAccount = global.accounts[4];
-        userLockParamsTemp.xHash = xInfo.htlcException.hash;
-        await global.crossDelegateNotInit.userMintLock(
-            userLockParamsTemp.xHash,
-            userLockParamsTemp.smgID,
-            userLockParamsTemp.tokenPairID,
-            web3.utils.toWei(userLockParamsTemp.value.toString()),
-            userLockParamsTemp.shadowUserAccount,
-            {from: userLockParamsTemp.origUserAccount}
-        );
-
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Contract is not initialized");
-    }
-});
-
 it('Original[1] -> userMintLock  ==> Halted', async () => {
     let crossProxy;
     try {
@@ -195,41 +172,6 @@ it('Shadow[2] -> Token1 -> smgMintLock  ==> Halted', async () => {
         assert.include(err.toString(), "Smart contract is halted");
     } finally {
         await crossProxy.setHalt(false, {from: global.owner});
-    }
-});
-
-it('Shadow[2] -> Token1 -> smgMintLock  ==> Contract is not initialized', async () => {
-    try {
-        // global.accounts[3] is the chain1 original address of the user.
-        // global.accounts[4] is the chain2 shadow address of the user.
-        let smgLockParamsTemp = Object.assign({}, smgLockParams);
-        smgLockParamsTemp.origUserAccount = global.accounts[3];
-        smgLockParamsTemp.shadowUserAccount = global.accounts[4];
-        smgLockParamsTemp.xHash = xInfo.htlcException.hash;
-
-        let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
-
-        let pkId = 2;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.smgMintLock, smgLockParamsTemp.xHash,
-            smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.shadowUserAccount);
-
-        // storeman mint lock
-        let smgMintLockReceipt = await global.crossDelegateNotInit.smgMintLock(
-            smgLockParamsTemp.xHash,
-            smgLockParamsTemp.smgID,
-            smgLockParamsTemp.tokenPairID,
-            value,
-            smgLockParamsTemp.shadowUserAccount,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
-        // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
-
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Contract is not initialized");
     }
 });
 
@@ -985,29 +927,6 @@ it('Shadow[2] -> Token1 -> userBurnRevoke  ==> revoke twice, Status is not locke
     }
 });
 
-it("Shadow[2] -> Token1 -> userBurnLock  ==> Contract is not initialized", async () => {
-    try {
-        // global.accounts[3] is the chain1 original address of the user.
-        // global.accounts[4] is the chain2 shadow address of the user.
-        let userLockParamsTemp = Object.assign({}, userLockParams);
-        userLockParamsTemp.origUserAccount = global.accounts[3];
-        userLockParamsTemp.shadowUserAccount = global.accounts[4];
-        userLockParamsTemp.xHash = xInfo.htlcException.hash;
-        await global.crossDelegateNotInit.userBurnLock(
-            userLockParamsTemp.xHash,
-            userLockParamsTemp.smgID,
-            userLockParamsTemp.tokenPairID,
-            web3.utils.toWei(userLockParamsTemp.value.toString()),
-            userLockParamsTemp.origUserAccount,
-            {from: userLockParamsTemp.shadowUserAccount}
-        );
-
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Contract is not initialized");
-    }
-});
-
 it('Shadow[2] -> Token1 -> userBurnLock  ==> Halted', async () => {
     let crossProxy;
     try {
@@ -1149,40 +1068,6 @@ it('Original[1] -> Token1 -> smgBurnLock  ==> Halted', async () => {
         assert.include(err.toString(), "Smart contract is halted");
     } finally {
         await crossProxy.setHalt(false, {from: global.owner});
-    }
-});
-
-it('Original[1] -> Token1 -> smgBurnLock  ==> Contract is not initialized', async () => {
-    try {
-        // global.accounts[3] is the chain1 original address of the user.
-        // global.accounts[4] is the chain2 shadow address of the user.
-        let smgLockParamsTemp = Object.assign({}, smgLockParams);
-        smgLockParamsTemp.origUserAccount = global.accounts[3];
-        smgLockParamsTemp.shadowUserAccount = global.accounts[4];
-        smgLockParamsTemp.xHash = xInfo.htlcException.hash;
-
-        let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
-
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve1, sk, typesArrayList.smgBurnLock, smgLockParamsTemp.xHash,
-            smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.shadowUserAccount);
-
-        // storeman mint lock
-        let smgMintLockReceipt = await global.crossDelegateNotInit.smgBurnLock(
-            smgLockParamsTemp.xHash,
-            smgLockParamsTemp.smgID,
-            smgLockParamsTemp.tokenPairID,
-            value,
-            smgLockParamsTemp.shadowUserAccount,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
-        // console.log("smgMintLock receipt", smgMintLockReceipt.logs);
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Contract is not initialized");
     }
 });
 
@@ -3634,7 +3519,7 @@ it('Shadow[1] -> Coin2 -> smgBurnRedeem  ==> success', async () => {
 it('Chain[1] -> smgWithdrawFee  ==> The receiver address expired', async () => {
     try {
         let timestamp = parseInt(Date.now() / 1000); //s
-        let timeout = await global.chains[1].approach.instance._smgFeeReceiverTimeout();
+        let timeout = await global.chains[1].approach.instance.smgFeeReceiverTimeout();
         timestamp -= timeout;
 
         let pkId = 1;
@@ -3713,7 +3598,7 @@ it('Chain[1] -> smgWithdrawFee  ==> Fee is null', async () => {
 it('Chain[2] -> smgWithdrawFee  ==> The receiver address expired', async () => {
     try {
         let timestamp = parseInt(Date.now() / 1000); //s
-        let timeout = await global.chains[1].approach.instance._smgFeeReceiverTimeout();
+        let timeout = await global.chains[1].approach.instance.smgFeeReceiverTimeout();
         timestamp -= timeout;
 
         let pkId = 1;
