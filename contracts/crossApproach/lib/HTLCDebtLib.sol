@@ -42,21 +42,10 @@ library HTLCDebtLib {
     /// @notice struct of HTLC debt lock parameters
     struct HTLCDebtLockParams {
         bytes32 xHash;                  /// hash of HTLC random number
-        bytes32 srcSmgID;                 /// ID of source storeman group
-        bytes32 destSmgID;                /// ID of destination storeman group
+        bytes32 srcSmgID;               /// ID of source storeman group
+        bytes32 destSmgID;              /// ID of destination storeman group
         uint lockedTime;                /// HTLC lock time
-        // bytes r;                     /// R in schnorr signature
-        // bytes32 s;                   /// s in schnorr signature
     }
-    /// @notice struct of HTLC debt redeem parameters
-    struct HTLCDebtRedeemParams {
-        bytes32 x;                      /// HTLC random number
-    }
-    /// @notice struct of HTLC debt revoke parameters
-    struct HTLCDebtRevokeParams {
-        bytes32 xHash;                  /// hash of HTLC random number
-    }
-
 
     /**
      *
@@ -68,37 +57,39 @@ library HTLCDebtLib {
     /// @param xHash                hash of HTLC random number
     /// @param srcSmgID             ID of source storeman group
     /// @param destSmgID            ID of destination storeman group
-    event SrcDebtLockLogger(bytes32 indexed xHash, bytes32 indexed srcSmgID, bytes32 destSmgID);
+    event SrcDebtLockLogger(bytes32 indexed xHash, bytes32 indexed srcSmgID, bytes32 indexed destSmgID);
 
     /// @notice                     event of redeem storeman debt
-    /// @param x                    HTLC random number
+    /// @param xHash                hash of HTLC random number
     /// @param srcSmgID             ID of source storeman group
     /// @param destSmgID            ID of destination storeman group
-    event DestDebtRedeemLogger(bytes32 indexed x, bytes32 indexed srcSmgID, bytes32 destSmgID);
+    /// @param x                    HTLC random number
+    event DestDebtRedeemLogger(bytes32 indexed xHash, bytes32 indexed srcSmgID, bytes32 indexed destSmgID, bytes32 x);
 
     /// @notice                     event of revoke storeman debt
     /// @param xHash                hash of HTLC random number
     /// @param srcSmgID             ID of source storeman group
     /// @param destSmgID            ID of destination storeman group
-    event SrcDebtRevokeLogger(bytes32 indexed xHash, bytes32 indexed srcSmgID, bytes32 destSmgID);
+    event SrcDebtRevokeLogger(bytes32 indexed xHash, bytes32 indexed srcSmgID, bytes32 indexed destSmgID);
 
     /// @notice                     event of storeman debt lock
     /// @param xHash                hash of HTLC random number
     /// @param srcSmgID             ID of source storeman group
     /// @param destSmgID            ID of destination storeman group
-    event DestDebtLockLogger(bytes32 indexed xHash, bytes32 indexed srcSmgID, bytes32 destSmgID);
+    event DestDebtLockLogger(bytes32 indexed xHash, bytes32 indexed srcSmgID, bytes32 indexed destSmgID);
 
     /// @notice                     event of redeem storeman debt
-    /// @param x                    HTLC random number
+    /// @param xHash                hash of HTLC random number
     /// @param srcSmgID             ID of source storeman group
     /// @param destSmgID            ID of destination storeman group
-    event SrcDebtRedeemLogger(bytes32 indexed x, bytes32 indexed srcSmgID, bytes32 destSmgID);
+    /// @param x                    HTLC random number
+    event SrcDebtRedeemLogger(bytes32 indexed xHash, bytes32 indexed srcSmgID, bytes32 indexed destSmgID, bytes32 x);
 
     /// @notice                     event of revoke storeman debt
     /// @param xHash                hash of HTLC random number
     /// @param srcSmgID             ID of source storeman group
     /// @param destSmgID            ID of destination storeman group
-    event DestDebtRevokeLogger(bytes32 indexed xHash, bytes32 indexed srcSmgID, bytes32 destSmgID);
+    event DestDebtRevokeLogger(bytes32 indexed xHash, bytes32 indexed srcSmgID, bytes32 indexed destSmgID);
 
     /**
      *
@@ -119,40 +110,6 @@ library HTLCDebtLib {
         emit SrcDebtLockLogger(params.xHash, params.srcSmgID, params.destSmgID);
     }
 
-    /// @notice                     redeem storeman debt
-    /// @param  storageData         Cross storage data
-    /// @param  params              parameters of storeman debt redeem
-    function destDebtRedeem(CrossTypes.Data storage storageData, HTLCDebtRedeemParams memory params)
-        public
-    {
-        bytes32 xHash = storageData.htlcTxData.redeemDebtTx(params.x);
-
-        bytes32 srcSmgID;
-        bytes32 destSmgID;
-        (srcSmgID, destSmgID) = storageData.htlcTxData.getDebtTx(xHash);
-
-        storageData.quota.assetRedeem(srcSmgID, destSmgID);
-
-        emit DestDebtRedeemLogger(params.x, srcSmgID, destSmgID);
-    }
-
-    /// @notice                     revoke storeman debt
-    /// @param  storageData         Cross storage data
-    /// @param  params              parameters of storeman debt revoke
-    function srcDebtRevoke(CrossTypes.Data storage storageData, HTLCDebtRevokeParams memory params)
-        public
-    {
-        storageData.htlcTxData.revokeDebtTx(params.xHash);
-
-        bytes32 srcSmgID;
-        bytes32 destSmgID;
-        (srcSmgID, destSmgID) = storageData.htlcTxData.getDebtTx(params.xHash);
-
-        storageData.quota.assetRevoke(srcSmgID, destSmgID);
-
-        emit SrcDebtRevokeLogger(params.xHash, srcSmgID, destSmgID);
-    }
-
     /// @notice                     lock storeman debt
     /// @param  storageData         Cross storage data
     /// @param  params              parameters of storeman debt lock
@@ -168,11 +125,11 @@ library HTLCDebtLib {
 
     /// @notice                     redeem storeman debt
     /// @param  storageData         Cross storage data
-    /// @param  params              parameters of storeman debt redeem
-    function srcDebtRedeem(CrossTypes.Data storage storageData, HTLCDebtRedeemParams memory params)
-        public
+    /// @param  x                   HTLC random number
+    function srcDebtRedeem(CrossTypes.Data storage storageData, bytes32 x)
+        external
     {
-        bytes32 xHash = storageData.htlcTxData.redeemDebtTx(params.x);
+        bytes32 xHash = storageData.htlcTxData.redeemDebtTx(x);
 
         bytes32 srcSmgID;
         bytes32 destSmgID;
@@ -180,24 +137,58 @@ library HTLCDebtLib {
 
         storageData.quota.debtRedeem(srcSmgID, destSmgID);
 
-        emit SrcDebtRedeemLogger(params.x, srcSmgID, destSmgID);
+        emit SrcDebtRedeemLogger(xHash, srcSmgID, destSmgID, x);
+    }
+
+    /// @notice                     redeem storeman debt
+    /// @param  storageData         Cross storage data
+    /// @param  x                   HTLC random number
+    function destDebtRedeem(CrossTypes.Data storage storageData, bytes32 x)
+        external
+    {
+        bytes32 xHash = storageData.htlcTxData.redeemDebtTx(x);
+
+        bytes32 srcSmgID;
+        bytes32 destSmgID;
+        (srcSmgID, destSmgID) = storageData.htlcTxData.getDebtTx(xHash);
+
+        storageData.quota.assetRedeem(srcSmgID, destSmgID);
+
+        emit DestDebtRedeemLogger(xHash, srcSmgID, destSmgID, x);
     }
 
     /// @notice                     revoke storeman debt
     /// @param  storageData         Cross storage data
-    /// @param  params              parameters of storeman debt revoke
-    function destDebtRevoke(CrossTypes.Data storage storageData, HTLCDebtRevokeParams memory params)
-        public
+    /// @param  xHash               hash of HTLC random number
+    function destDebtRevoke(CrossTypes.Data storage storageData, bytes32 xHash)
+        external
     {
-        storageData.htlcTxData.revokeDebtTx(params.xHash);
+        storageData.htlcTxData.revokeDebtTx(xHash);
 
         bytes32 srcSmgID;
         bytes32 destSmgID;
-        (srcSmgID, destSmgID) = storageData.htlcTxData.getDebtTx(params.xHash);
+        (srcSmgID, destSmgID) = storageData.htlcTxData.getDebtTx(xHash);
 
         storageData.quota.debtRevoke(srcSmgID, destSmgID);
 
-        emit DestDebtRevokeLogger(params.xHash, srcSmgID, destSmgID);
+        emit DestDebtRevokeLogger(xHash, srcSmgID, destSmgID);
+    }
+
+    /// @notice                     revoke storeman debt
+    /// @param  storageData         Cross storage data
+    /// @param  xHash               hash of HTLC random number
+    function srcDebtRevoke(CrossTypes.Data storage storageData, bytes32 xHash)
+        external
+    {
+        storageData.htlcTxData.revokeDebtTx(xHash);
+
+        bytes32 srcSmgID;
+        bytes32 destSmgID;
+        (srcSmgID, destSmgID) = storageData.htlcTxData.getDebtTx(xHash);
+
+        storageData.quota.assetRevoke(srcSmgID, destSmgID);
+
+        emit SrcDebtRevokeLogger(xHash, srcSmgID, destSmgID);
     }
 
 }

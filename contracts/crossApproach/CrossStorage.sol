@@ -44,15 +44,12 @@ contract CrossStorage is BasicStorage {
     CrossTypes.Data storageData;
 
     /// @notice locked time(in seconds)
-    uint public _lockedTime = uint(3600*36);
+    uint public lockedTime = uint(3600*36);
 
-    /// @notice     Since storeman group admin receiver address may be changed, system should make sure the new address
-    /// @notice     can be used, and the old address can not be used. The solution is add timestamp.
-    /// @notice     unit: second
-    uint public _smgFeeReceiverTimeout = uint(10*60);
-
-    /// @notice if initialized or not
-    uint public _initialized = 0;
+    /// @notice Since storeman group admin receiver address may be changed, system should make sure the new address
+    /// @notice can be used, and the old address can not be used. The solution is add timestamp.
+    /// @notice unit: second
+    uint public smgFeeReceiverTimeout = uint(10*60);
 
     enum GroupStatus { none, initial, curveSeted, failed, selected, ready, unregistered, dismissed }
 

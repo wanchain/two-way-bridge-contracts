@@ -30,13 +30,15 @@ pragma solidity ^0.4.26;
  * Math operations with safety checks
  */
 
-import "../components/Halt.sol";
-import "./CrossStorage.sol";
 import "../components/Proxy.sol";
+import "../components/Halt.sol";
+import "../components/ReentrancyGuard.sol";
+import "./CrossStorage.sol";
 
-contract CrossProxy is CrossStorage, Halt, Proxy {
 
-    ///@dev                     update the address of CrossDelegate contract
+contract CrossProxy is CrossStorage, ReentrancyGuard, Halt, Proxy {
+
+    ///@dev                   update the address of CrossDelegate contract
     ///@param impl            the address of the new CrossDelegate contract
     function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");

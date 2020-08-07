@@ -34,8 +34,6 @@ import "./HTLCTxLib.sol";
 import "./RapidityTxLib.sol";
 
 library CrossTypes {
-    // using HTLCTxLib for HTLCTxLib.Data;
-    // using RapidityTxLib for RapidityTxLib.Data;
 
     /**
      *
@@ -65,9 +63,6 @@ library CrossTypes {
 
         ISignatureVerifier sigVerifier;
 
-        /// @notice transaction fee, hashX => fee
-        mapping(bytes32 => uint) mapXHashFee;
-
         /// @notice transaction fee, smgID => fee
         mapping(bytes32 => uint) mapStoremanFee;
 
@@ -85,12 +80,12 @@ library CrossTypes {
      *
      */
 
-    /// @notice       convert bytes32 to address
-    /// @param b      bytes32
-    function bytes32ToAddress(bytes32 b) internal pure returns (address) {
-        return address(uint160(bytes20(b))); // high
-        // return address(uint160(uint256(b))); // low
-    }
+    // /// @notice       convert bytes32 to address
+    // /// @param b      bytes32
+    // function bytes32ToAddress(bytes32 b) internal pure returns (address) {
+    //     return address(uint160(bytes20(b))); // high
+    //     // return address(uint160(uint256(b))); // low
+    // }
 
     /// @notice       convert bytes to address
     /// @param b      bytes
