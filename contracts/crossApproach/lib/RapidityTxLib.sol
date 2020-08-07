@@ -38,41 +38,18 @@ library RapidityTxLib {
      */
 
     /// @notice tx info status
-    /// @notice uninitialized,Minted,Burned
-    enum TxStatus {None, Minted, Burned}
+    /// @notice uninitialized,Redeemed
+    enum TxStatus {None, Redeemed}
 
     /**
      *
      * STRUCTURES
      *
      */
-
-    /// @notice HTLC(Hashed TimeLock Contract) tx info
-    struct BaseTx {
-        bytes32 smgID;              // HTLC transaction storeman ID
-        uint tokenPairID;
-        uint value;
-        TxStatus status;            // HTLC transaction status
-        address userAccount;        // HTLC transaction sender address
-    }
-
-    /// @notice user  tx info
-    struct UserTx {
-        BaseTx baseTx;
-        uint fee;
-        bytes mirrorAccount;      // Shadow address or account on mirror chain
-    }
-    /// @notice storeman  tx info
-    struct SmgTx {
-        BaseTx baseTx;
-    }
-
     struct Data {
-        /// @notice mapping of hash(x) to UserTx -- uniqueID->htlcTxData
-        mapping(bytes32 => UserTx) mapUniqueUserTxs;
+        /// @notice mapping of uniqueID to TxStatus -- uniqueID->TxStatus
+        mapping(bytes32 => TxStatus) mapTxStatus;
 
-        /// @notice mapping of hash(x) to UserTx -- uniqueID->htlcTxData
-        mapping(bytes32 => SmgTx) mapUniqueSmgTxs;
     }
 
     /**
@@ -82,50 +59,12 @@ library RapidityTxLib {
      */
 
     /// @notice                     add user transaction info
-    /// @param  uniqueID            unique random number
-    /// @param  smgID               ID of the storeman which user has selected
-    /// @param  tokenPairID         token pair ID of cross chain
-    /// @param  value               HTLC transfer value of token
-    /// @param  fee                 HTLC transfer lock fee
-    /// @param  mirrorAccount       mirrorAccount address. used for receipt coins on opposite block chain
-    /// @param  status              HTLC tx status
-    function addUserTx(Data storage self, bytes32 uniqueID, bytes32 smgID, uint tokenPairID,
-                    uint value, uint fee, bytes mirrorAccount, TxStatus status)
-        external
+    /// @param  uniqueID            Rapidity random number
+    function addRapidityTx(Data storage self, bytes32 uniqueID)
+        internal
     {
-        UserTx memory userTx = self.mapUniqueUserTxs[uniqueID];
-        require(userTx.baseTx.status == TxStatus.None, "User tx exists");
-
-        userTx.baseTx.smgID = smgID;
-        userTx.baseTx.status = status;
-        userTx.baseTx.tokenPairID = tokenPairID;
-        userTx.baseTx.value = value;
-        userTx.baseTx.userAccount = msg.sender;
-        userTx.fee = fee;
-        userTx.mirrorAccount = mirrorAccount;
-
-        self.mapUniqueUserTxs[uniqueID] = userTx;
-    }
-
-    /// @notice                     add storeman transaction info
-    /// @param  uniqueID            unique random number
-    /// @param  smgID               ID of the storeman which user has selected
-    /// @param  tokenPairID         token pair ID of cross chain
-    /// @param  value               HTLC transfer value of token
-    /// @param  userAccount         user account address on the destination chain, which is used to receive token
-    /// @param  status              HTLC tx status
-    function addSmgTx(Data storage self, bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, TxStatus status)
-        external
-    {
-        SmgTx memory smgTx = self.mapUniqueSmgTxs[uniqueID];
-        require(smgTx.baseTx.status == TxStatus.None, "Smg tx exists");
-
-        smgTx.baseTx.smgID = smgID;
-        smgTx.baseTx.status = status;
-        smgTx.baseTx.tokenPairID = tokenPairID;
-        smgTx.baseTx.value = value;
-        smgTx.baseTx.userAccount = userAccount;
-
-        self.mapUniqueSmgTxs[uniqueID] = smgTx;
+        TxStatus status = self.mapTxStatus[uniqueID];
+        require(status == TxStatus.None, "Rapidity tx exists");
+        self.mapTxStatus[uniqueID] = TxStatus.Redeemed;
     }
 }

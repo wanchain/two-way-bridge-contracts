@@ -28,13 +28,14 @@ pragma solidity ^0.4.26;
 pragma experimental ABIEncoderV2;
 
 import "../components/Halt.sol";
+import "../components/ReentrancyGuard.sol";
 import "./CrossStorage.sol";
 import "./lib/HTLCMintLib.sol";
 import "./lib/HTLCBurnLib.sol";
 import "./lib/HTLCDebtLib.sol";
 import "./lib/RapidityLib.sol";
 
-contract CrossDelegate is CrossStorage, Halt {
+contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     using SafeMath for uint;
 
     /**
@@ -55,21 +56,9 @@ contract CrossDelegate is CrossStorage, Halt {
      * MODIFIERS
      *
      */
-    /// @dev Check the sender whether is transaction group admin sc or not
-    modifier onlyExternalAccount {
-        require(tx.origin == msg.sender, "Contract sender is not allowed");
-        _;
-    }
-
-    /// @dev Check relevant contract addresses must be initialized before call its method
-    modifier initialized {
-        require(_initialized == 0xff, "Contract is not initialized");
-        _;
-    }
-
     /// @dev Check valid value
     modifier onlyMeaningfulValue(uint value) {
-        require(value > 0, "Value is null");
+        require(value != 0, "Value is null");
         _;
     }
 
@@ -101,19 +90,21 @@ contract CrossDelegate is CrossStorage, Halt {
      *
      */
 
-    // /// @notice                                 get ready the storeman group info
-    // /// @param smgID                            ID of storeman group
-    // /// @return curveID                         ID of elliptic curve
-    // /// @return PK                              PK of storeman group
-    // function getSmgInfo(bytes32 smgID)
-    //     private
-    //     view
-    //     returns (uint curveID, bytes memory PK)
-    // {
-    //     (,,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+    /// @notice                                 get the exist storeman group info
+    /// @param smgID                            ID of storeman group
+    /// @return curveID                         ID of elliptic curve
+    /// @return PK                              PK of storeman group
+    function acquireExistSmgInfo(bytes32 smgID)
+        private
+        view
+        returns (uint curveID, bytes memory PK)
+    {
+        uint origChainID;
+        (,,,origChainID,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+        require(origChainID != 0, "PK does not exist");
 
-    //     return (curveID, PK);
-    // }
+        return (curveID, PK);
+    }
 
     /// @notice                                 check the storeman group is ready or not
     /// @param smgID                            ID of storeman group
@@ -149,18 +140,6 @@ contract CrossDelegate is CrossStorage, Halt {
         require(status == uint8(GroupStatus.unregistered), "PK is not unregistered");
     }
 
-    // /// @notice                                 check the storeman group existing or not
-    // /// @param tokenOrigAccount                 account of token supported
-    // /// @param storemanGroupPK                  PK of storeman group
-    // /// @return bool                            true/false
-    // function isSmgExist(GroupStatus status)
-    //     private
-    //     view
-    //     returns (bool)
-    // {
-    //     return status == GroupStatus.ready || status == GroupStatus.unregistered;
-    // }
-
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
     /// @param  xHash                           hash of HTLC random number
     /// @param  smgID                           ID of storeman
@@ -170,9 +149,8 @@ contract CrossDelegate is CrossStorage, Halt {
     function userMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
-        initialized
         notHalted
-        onlyExternalAccount
+        nonReentrant
         onlyReadySmg(smgID)
         onlyMeaningfulValue(value)
     {
@@ -181,36 +159,11 @@ contract CrossDelegate is CrossStorage, Halt {
             smgID: smgID,
             tokenPairID: tokenPairID,
             value: value,
-            lockedTime: _lockedTime.mul(2),
+            lockedTime: lockedTime.mul(2),
             userShadowAccount: userAccount
         });
 
         HTLCMintLib.userMintLock(storageData, params);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  x                               HTLC random number
-    function smgMintRedeem(bytes32 x)
-        external
-        notHalted
-    {
-        HTLCMintLib.HTLCSmgMintRedeemParams memory params = HTLCMintLib.HTLCSmgMintRedeemParams({
-            x: x
-        });
-        HTLCMintLib.smgMintRedeem(storageData, params);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  xHash                           hash of HTLC random number
-    function userMintRevoke(bytes32 xHash)
-        external
-        payable
-        notHalted
-    {
-        HTLCMintLib.HTLCUserMintRevokeParams memory params = HTLCMintLib.HTLCUserMintRevokeParams({
-            xHash: xHash
-        });
-        HTLCMintLib.userMintRevoke(storageData, params);
     }
 
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
@@ -223,9 +176,8 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  s                               signature
     function smgMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
         external
-        initialized
         notHalted
-        // onlyMeaningfulValue(value)
+        nonReentrant
     {
         uint curveID;
         bytes memory PK;
@@ -239,7 +191,7 @@ contract CrossDelegate is CrossStorage, Halt {
             smgID: smgID,
             tokenPairID: tokenPairID,
             value: value,
-            lockedTime: _lockedTime,
+            lockedTime: lockedTime,
             userShadowAccount: userAccount
         });
         HTLCMintLib.smgMintLock(storageData, params);
@@ -250,11 +202,19 @@ contract CrossDelegate is CrossStorage, Halt {
     function userMintRedeem(bytes32 x)
         external
         notHalted
+        nonReentrant
     {
-        HTLCMintLib.HTLCUserMintRedeemParams memory params = HTLCMintLib.HTLCUserMintRedeemParams({
-            x: x
-        });
-        HTLCMintLib.userMintRedeem(storageData, params);
+        HTLCMintLib.userMintRedeem(storageData, x);
+    }
+
+    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
+    /// @param  x                               HTLC random number
+    function smgMintRedeem(bytes32 x)
+        external
+        notHalted
+        nonReentrant
+    {
+        HTLCMintLib.smgMintRedeem(storageData, x);
     }
 
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
@@ -262,11 +222,20 @@ contract CrossDelegate is CrossStorage, Halt {
     function smgMintRevoke(bytes32 xHash)
         external
         notHalted
+        nonReentrant
     {
-        HTLCMintLib.HTLCSmgMintRevokeParams memory params = HTLCMintLib.HTLCSmgMintRevokeParams({
-            xHash: xHash
-        });
-        HTLCMintLib.smgMintRevoke(storageData, params);
+        HTLCMintLib.smgMintRevoke(storageData, xHash);
+    }
+
+    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
+    /// @param  xHash                           hash of HTLC random number
+    function userMintRevoke(bytes32 xHash)
+        external
+        payable
+        notHalted
+        nonReentrant
+    {
+        HTLCMintLib.userMintRevoke(storageData, xHash);
     }
 
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
@@ -278,9 +247,8 @@ contract CrossDelegate is CrossStorage, Halt {
     function userBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
-        initialized
         notHalted
-        onlyExternalAccount
+        nonReentrant
         onlyReadySmg(smgID)
         onlyMeaningfulValue(value)
     {
@@ -289,35 +257,10 @@ contract CrossDelegate is CrossStorage, Halt {
             smgID: smgID,
             tokenPairID: tokenPairID,
             value: value,
-            lockedTime: _lockedTime.mul(2),
+            lockedTime: lockedTime.mul(2),
             userOrigAccount: userAccount
         });
         HTLCBurnLib.userBurnLock(storageData, params);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  x                               HTLC random number
-    function smgBurnRedeem(bytes32 x)
-        external
-        notHalted
-    {
-        HTLCBurnLib.HTLCSmgBurnRedeemParams memory params = HTLCBurnLib.HTLCSmgBurnRedeemParams({
-            x: x
-        });
-        HTLCBurnLib.smgBurnRedeem(storageData, params);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  xHash                           hash of HTLC random number
-    function userBurnRevoke(bytes32 xHash)
-        external
-        payable
-        notHalted
-    {
-        HTLCBurnLib.HTLCUserBurnRevokeParams memory params = HTLCBurnLib.HTLCUserBurnRevokeParams({
-            xHash: xHash
-        });
-        HTLCBurnLib.userBurnRevoke(storageData, params);
     }
 
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
@@ -330,9 +273,8 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  s                               signature
     function smgBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
         external
-        initialized
         notHalted
-        // onlyMeaningfulValue(value)
+        nonReentrant
     {
         uint curveID;
         bytes memory PK;
@@ -346,7 +288,7 @@ contract CrossDelegate is CrossStorage, Halt {
             smgID: smgID,
             tokenPairID: tokenPairID,
             value: value,
-            lockedTime: _lockedTime,
+            lockedTime: lockedTime,
             userOrigAccount: userAccount
         });
         HTLCBurnLib.smgBurnLock(storageData, params);
@@ -357,11 +299,19 @@ contract CrossDelegate is CrossStorage, Halt {
     function userBurnRedeem(bytes32 x)
         external
         notHalted
+        nonReentrant
     {
-        HTLCBurnLib.HTLCUserBurnRedeemParams memory params = HTLCBurnLib.HTLCUserBurnRedeemParams({
-            x: x
-        });
-        HTLCBurnLib.userBurnRedeem(storageData, params);
+        HTLCBurnLib.userBurnRedeem(storageData, x);
+    }
+
+    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
+    /// @param  x                               HTLC random number
+    function smgBurnRedeem(bytes32 x)
+        external
+        notHalted
+        nonReentrant
+    {
+        HTLCBurnLib.smgBurnRedeem(storageData, x);
     }
 
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
@@ -369,11 +319,20 @@ contract CrossDelegate is CrossStorage, Halt {
     function smgBurnRevoke(bytes32 xHash)
         external
         notHalted
+        nonReentrant
     {
-        HTLCBurnLib.HTLCSmgBurnRevokeParams memory params = HTLCBurnLib.HTLCSmgBurnRevokeParams({
-            xHash: xHash
-        });
-        HTLCBurnLib.smgBurnRevoke(storageData, params);
+        HTLCBurnLib.smgBurnRevoke(storageData, xHash);
+    }
+
+    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
+    /// @param  xHash                           hash of HTLC random number
+    function userBurnRevoke(bytes32 xHash)
+        external
+        payable
+        notHalted
+        nonReentrant
+    {
+        HTLCBurnLib.userBurnRevoke(storageData, xHash);
     }
 
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
@@ -385,9 +344,8 @@ contract CrossDelegate is CrossStorage, Halt {
     function userFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
-        initialized
         notHalted
-        onlyExternalAccount
+        nonReentrant
         onlyReadySmg(smgID)
         onlyMeaningfulValue(value)
     {
@@ -411,13 +369,12 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  s                               signature
     function smgFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
         external
-        initialized
         notHalted
-        // onlyMeaningfulValue(value)
+        nonReentrant
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireReadySmgInfo(smgID);
+        (curveID, PK) = acquireExistSmgInfo(smgID);
 
         bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
@@ -442,9 +399,8 @@ contract CrossDelegate is CrossStorage, Halt {
     function userFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
-        initialized
         notHalted
-        onlyExternalAccount
+        nonReentrant
         onlyReadySmg(smgID)
         onlyMeaningfulValue(value)
     {
@@ -468,13 +424,12 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  s                               signature
     function smgFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
         external
-        initialized
         notHalted
-        // onlyMeaningfulValue(value)
+        nonReentrant
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireReadySmgInfo(smgID);
+        (curveID, PK) = acquireExistSmgInfo(smgID);
 
         bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
@@ -497,7 +452,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  s                               signature
     function srcDebtLock(bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, bytes r, bytes32 s)
         external
-        initialized
         notHalted
         onlyReadySmg(destSmgID)
     {
@@ -512,33 +466,9 @@ contract CrossDelegate is CrossStorage, Halt {
             xHash: xHash,
             srcSmgID: srcSmgID,
             destSmgID: destSmgID,
-            lockedTime: _lockedTime.mul(2)
+            lockedTime: lockedTime.mul(2)
         });
         HTLCDebtLib.srcDebtLock(storageData, params);
-    }
-
-    /// @notice                                 redeem debt, destination storeman group takes over the debt of source storeman group
-    /// @param  x                               HTLC random number
-    function destDebtRedeem(bytes32 x)
-        external
-        notHalted
-    {
-        HTLCDebtLib.HTLCDebtRedeemParams memory params = HTLCDebtLib.HTLCDebtRedeemParams({
-            x: x
-        });
-        HTLCDebtLib.destDebtRedeem(storageData, params);
-    }
-
-    /// @notice                                 source storeman group revoke the debt on asset chain
-    /// @param  xHash                           hash of HTLC random number
-    function srcDebtRevoke(bytes32 xHash)
-        external
-        notHalted
-    {
-        HTLCDebtLib.HTLCDebtRevokeParams memory params = HTLCDebtLib.HTLCDebtRevokeParams({
-            xHash: xHash
-        });
-        HTLCDebtLib.srcDebtRevoke(storageData, params);
     }
 
     /// @notice                                 lock storeman debt
@@ -549,9 +479,7 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  s                               signature
     function destDebtLock(bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, bytes r, bytes32 s)
         external
-        initialized
         notHalted
-        onlyUnregisteredSmg(srcSmgID)
     {
         uint curveID;
         bytes memory PK;
@@ -564,7 +492,7 @@ contract CrossDelegate is CrossStorage, Halt {
             xHash: xHash,
             srcSmgID: srcSmgID,
             destSmgID: destSmgID,
-            lockedTime: _lockedTime
+            lockedTime: lockedTime
         });
         HTLCDebtLib.destDebtLock(storageData, params);
     }
@@ -575,10 +503,16 @@ contract CrossDelegate is CrossStorage, Halt {
         external
         notHalted
     {
-        HTLCDebtLib.HTLCDebtRedeemParams memory params = HTLCDebtLib.HTLCDebtRedeemParams({
-            x: x
-        });
-        HTLCDebtLib.srcDebtRedeem(storageData, params);
+        HTLCDebtLib.srcDebtRedeem(storageData, x);
+    }
+
+    /// @notice                                 redeem debt, destination storeman group takes over the debt of source storeman group
+    /// @param  x                               HTLC random number
+    function destDebtRedeem(bytes32 x)
+        external
+        notHalted
+    {
+        HTLCDebtLib.destDebtRedeem(storageData, x);
     }
 
     /// @notice                                 source storeman group revoke the debt on debt chain
@@ -587,10 +521,16 @@ contract CrossDelegate is CrossStorage, Halt {
         external
         notHalted
     {
-        HTLCDebtLib.HTLCDebtRevokeParams memory params = HTLCDebtLib.HTLCDebtRevokeParams({
-            xHash: xHash
-        });
-        HTLCDebtLib.destDebtRevoke(storageData, params);
+        HTLCDebtLib.destDebtRevoke(storageData, xHash);
+    }
+
+    /// @notice                                 source storeman group revoke the debt on asset chain
+    /// @param  xHash                           hash of HTLC random number
+    function srcDebtRevoke(bytes32 xHash)
+        external
+        notHalted
+    {
+        HTLCDebtLib.srcDebtRevoke(storageData, xHash);
     }
 
     /// @notice                             get the fee of the storeman group should get
@@ -618,6 +558,8 @@ contract CrossDelegate is CrossStorage, Halt {
     }
 
     /// @notice                             get the fee of the storeman group should get
+    /// @param origChainID                  Original chain ID
+    /// @param shadowChainID                Shadow Chain ID
     /// @return lockFee                     Coin the storeman group should get while storeman redeem user lock
     /// @return revokeFee                   Coin the storeman group should get while user revoke its lock
     function getFees(uint origChainID, uint shadowChainID)
@@ -630,12 +572,12 @@ contract CrossDelegate is CrossStorage, Halt {
     }
 
     /// @notice                             get the fee of the storeman group should get
-    /// @param lockedTime                   Coin the storeman group should get while storeman redeem user lock
-    function setLockedTime(uint lockedTime)
+    /// @param time                         Coin the storeman group should get while storeman redeem user lock
+    function setLockedTime(uint time)
         external
         onlyOwner
     {
-        _lockedTime = lockedTime;
+        lockedTime = time;
     }
 
     /// @notice                             get the fee of the storeman group should get
@@ -663,8 +605,6 @@ contract CrossDelegate is CrossStorage, Halt {
         storageData.quota = IQuota(quota);
         storageData.smgFeeProxy = smgFeeProxy;
         storageData.sigVerifier = ISignatureVerifier(sigVerifier);
-
-        _initialized = 0xff;
     }
 
     /// @notice                             get the initialized state value of this contract
@@ -673,7 +613,11 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @return smgFeeProxy                 address of the proxy to store fee for storeman group
     /// @return quota                       address of the quota
     /// @return sigVerifier                 address of the signature verifier
-    function getPartners() external view returns(address tokenManager, address smgAdminProxy, address smgFeeProxy, address quota, address sigVerifier) {
+    function getPartners()
+        external
+        view
+        returns(address tokenManager, address smgAdminProxy, address smgFeeProxy, address quota, address sigVerifier)
+    {
         tokenManager = address(storageData.tokenManager);
         smgAdminProxy = address(storageData.smgAdminProxy);
         smgFeeProxy = storageData.smgFeeProxy;
@@ -687,7 +631,7 @@ contract CrossDelegate is CrossStorage, Halt {
         external
         onlyOwner
     {
-        _smgFeeReceiverTimeout = timeout;
+        smgFeeReceiverTimeout = timeout;
     }
 
     /// @notice                             storeman group withdraw the fee to receiver account
@@ -697,7 +641,7 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param s                            signature
     function smgWithdrawFee(bytes32 smgID, uint timeStamp, address receiver, bytes r, bytes32 s) external {
 
-        require(now < timeStamp.add(_smgFeeReceiverTimeout), "The receiver address expired");
+        require(now < timeStamp.add(smgFeeReceiverTimeout), "The receiver address expired");
 
         uint curveID;
         bytes memory PK;
@@ -731,7 +675,6 @@ contract CrossDelegate is CrossStorage, Halt {
     /// @param  message     message to be verified
     /// @param  r           Signature info r
     /// @param  s           Signature info s
-    /// @return             true/false
     function verifySignature(uint curveID, bytes32 message, bytes PK, bytes r, bytes32 s)
         internal
         // view

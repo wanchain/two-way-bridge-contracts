@@ -50,26 +50,9 @@ library HTLCBurnLib {
         bytes32 smgID;                  /// ID of storeman group which user has selected
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
-        // uint lockFee;                /// exchange token value
         uint lockedTime;                /// HTLC lock time
         bytes userOrigAccount;        /// account of token original chain, used to receive token
-        // ITokenManager tokenManager;     /// interface of token manager
     }
-
-    /// @notice struct of HTLC user/storeman burn lock parameters
-    struct HTLCUserBurnRedeemParams {
-        bytes32 x;                      /// HTLC random number
-        // ITokenManager tokenManager;     /// interface of token manager
-    }
-
-    /// @notice struct of HTLC user burn revoke parameters
-    struct HTLCUserBurnRevokeParams {
-        bytes32 xHash;                  /// hash of HTLC random number
-        // uint revokeFee;                   /// exchange token value
-        // address smgFeeProxy;
-        // ITokenManager tokenManager;     /// interface of token manager
-    }
-
     /// @notice struct of HTLC storeman burn lock parameters
     struct HTLCSmgBurnLockParams {
         bytes32 xHash;                      /// hash of HTLC random number
@@ -78,22 +61,6 @@ library HTLCBurnLib {
         uint value;                         /// exchange token value
         uint lockedTime;                    /// HTLC lock time
         address userOrigAccount;            /// account of token original chain, used to receive token
-        // bytes r;                            /// R in schnorr signature
-        // bytes32 s;                          /// s in schnorr signature
-        // ITokenManager tokenManager;         /// interface of token manager
-        // ISignatureVerifier sigVerifier;     /// interface of signature verifier
-    }
-
-    /// @notice struct of HTLC storeman burn lock parameters
-    struct HTLCSmgBurnRedeemParams {
-        bytes32 x;                          /// HTLC random number
-        // address smgFeeProxy;
-        // ITokenManager tokenManager;         /// interface of token manager
-    }
-
-    /// @notice struct of HTLC storeman burn revoke parameters
-    struct HTLCSmgBurnRevokeParams {
-        bytes32 xHash;                  /// hash of HTLC random number
     }
 
     /**
@@ -114,15 +81,15 @@ library HTLCBurnLib {
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
-    /// @param x                        HTLC random number
+    /// @param xHash                    hash of HTLC random number
     /// @param smgID                    ID of storemanGroup
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param fee                      HTLC transaction fee
-    event SmgBurnRedeemLogger(bytes32 indexed x, bytes32 indexed smgID, uint indexed tokenPairID, uint fee);
+    /// @param x                        HTLC random number
+    event SmgBurnRedeemLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint fee, bytes32 x);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
-    /// @param xHash                    hash of HTLC random number
     /// @param smgID                    ID of storemanGroup
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param fee                      HTLC revoke fee
@@ -139,10 +106,11 @@ library HTLCBurnLib {
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
-    /// @param x                        HTLC random number
+    /// @param xHash                    hash of HTLC random number
     /// @param smgID                    ID of storemanGroup
     /// @param tokenPairID              token pair ID of cross chain token
-    event UserBurnRedeemLogger(bytes32 indexed x, bytes32 indexed smgID, uint indexed tokenPairID);
+    /// @param x                        HTLC random number
+    event UserBurnRedeemLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, bytes32 x);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -172,19 +140,11 @@ library HTLCBurnLib {
     {
         uint origChainID;
         uint shadowChainID;
-        bool isValid;
-        address tokenShadowAccount;
-        (origChainID,,shadowChainID,tokenShadowAccount,isValid) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
-        require(isValid, "Token does not exist");
+        bytes memory tokenShadowAccount;
+        (origChainID,,shadowChainID,tokenShadowAccount) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
+        require(origChainID != 0, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
-
-        uint left = (msg.value).sub(lockFee);
-        if (left != 0) {
-            (msg.sender).transfer(left);
-        }
-
-        require(IRC20Protocol(tokenShadowAccount).transferFrom(msg.sender, this, params.value), "Lock token failed");
 
         HTLCTxLib.HTLCUserParams memory userTxParams = HTLCTxLib.HTLCUserParams({
             xHash: params.xHash,
@@ -192,107 +152,22 @@ library HTLCBurnLib {
             tokenPairID: params.tokenPairID,
             value: params.value,
             lockFee: lockFee,
-            lockedTime: params.lockedTime,
-            mirrorAccount: params.userOrigAccount
+            lockedTime: params.lockedTime
         });
 
-        // storageData.htlcTxData.addUserTx(params.xHash, params.smgID, params.tokenPairID,
-        //                             params.value, lockFee, params.lockedTime, params.userOrigAccount);
         storageData.htlcTxData.addUserTx(userTxParams);
 
         storageData.quota.userBurnLock(params.tokenPairID, params.smgID, params.value);
 
-        emit UserBurnLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userOrigAccount);
-    }
-
-    /// @notice                         burnBridge, storeman redeem token on token original chain
-    /// @notice                         event invoked by user redeem
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman burn redeem token on token original chain
-    function smgBurnRedeem(CrossTypes.Data storage storageData, HTLCSmgBurnRedeemParams memory params)
-        public
-    {
-        bytes32 xHash = storageData.htlcTxData.redeemUserTx(params.x);
-
-        bytes32 smgID;
-        uint tokenPairID;
-        uint lockFee;
-        uint value;
-        (smgID, tokenPairID, value, lockFee,,) = storageData.htlcTxData.getUserTx(xHash);
-
-        // GroupStatus status;
-        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
-
-        storageData.quota.smgBurnRedeem(tokenPairID, smgID, value);
-
-        storageData.tokenManager.burnToken(tokenPairID, value);
-
-        if (lockFee > 0) {
-            if (storageData.smgFeeProxy == address(0)) {
-                storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(lockFee);
-            } else {
-                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(smgID);
-            }
-        }
-
-        emit SmgBurnRedeemLogger(params.x, smgID, tokenPairID, lockFee);
-    }
-
-    /// @notice                         burnBridge, user burn revoke token on token original chain
-    /// @notice                         event invoked by user revoke
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for user burn revoke token on token original chain
-    function userBurnRevoke(CrossTypes.Data storage storageData, HTLCUserBurnRevokeParams memory params)
-        public
-    {
-        bytes32 smgID;
-        uint tokenPairID;
-        uint lockFee;
-        uint value;
-        address userShadowAccount;
-        (smgID, tokenPairID, value, lockFee, userShadowAccount,) = storageData.htlcTxData.getUserTx(params.xHash);
-
-        // GroupStatus status;
-        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
-
-        uint origChainID;
-        uint shadowChainID;
-        address tokenShadowAccount;
-        // (origChainID,,shadowChainID,tokenShadowAccount,isValid) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
-        // require(isValid, "Token does not exist");
-        (origChainID,,shadowChainID,tokenShadowAccount,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
-
-        uint revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
-
-        storageData.htlcTxData.revokeUserTx(params.xHash, revokeFee);
-
-        uint left = (msg.value).sub(revokeFee);
+        uint left = (msg.value).sub(lockFee);
         if (left != 0) {
             (msg.sender).transfer(left);
         }
 
-        storageData.quota.userBurnRevoke(tokenPairID, smgID, value);
+        address tokenScAddr = CrossTypes.bytesToAddress(tokenShadowAccount);
+        require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
 
-        if (revokeFee > 0) {
-            if (storageData.smgFeeProxy == address(0)) {
-                storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(revokeFee);
-            } else {
-                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(revokeFee)(smgID);
-            }
-        }
-
-        if (lockFee > 0) {
-            (userShadowAccount).transfer(lockFee);
-            emit TransferToLogger(userShadowAccount, lockFee);
-        }
-
-        require(IRC20Protocol(tokenShadowAccount).transfer(userShadowAccount, value), "Transfer token failed");
-
-        emit UserBurnRevokeLogger(params.xHash, smgID, tokenPairID, revokeFee);
+        emit UserBurnLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userOrigAccount);
     }
 
     /// @notice                         burnBridge, storeman burn lock token on token shadow chain
@@ -313,11 +188,11 @@ library HTLCBurnLib {
     /// @notice                         burnBridge, storeman burn redeem token on token shadow chain
     /// @notice                         event invoked by user redeem
     /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman burn redeem token on token shadow chain
-    function userBurnRedeem(CrossTypes.Data storage storageData, HTLCUserBurnRedeemParams memory params)
-        public
+    /// @param x                        HTLC random number
+    function userBurnRedeem(CrossTypes.Data storage storageData, bytes32 x)
+        external
     {
-        bytes32 xHash = storageData.htlcTxData.redeemSmgTx(params.x);
+        bytes32 xHash = storageData.htlcTxData.redeemSmgTx(x);
 
         bytes32 smgID;
         uint tokenPairID;
@@ -325,15 +200,11 @@ library HTLCBurnLib {
         address userOrigAccount;
         (smgID, tokenPairID, value, userOrigAccount) = storageData.htlcTxData.getSmgTx(xHash);
 
-        // GroupStatus status;
-        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
-
         storageData.quota.userBurnRedeem(tokenPairID, smgID, value);
 
         bytes memory tokenOrigAccount;
-        (,tokenOrigAccount,,,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
+        (,tokenOrigAccount,,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
+
         address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {
@@ -343,31 +214,105 @@ library HTLCBurnLib {
             require(IRC20Protocol(tokenScAddr).transfer(userOrigAccount, value), "Transfer token failed");
         }
 
-        emit UserBurnRedeemLogger(params.x, smgID, tokenPairID);
+        emit UserBurnRedeemLogger(xHash, smgID, tokenPairID, x);
+    }
+
+    /// @notice                         burnBridge, storeman redeem token on token original chain
+    /// @notice                         event invoked by user redeem
+    /// @param storageData              Cross storage data
+    /// @param x                        HTLC random number
+    function smgBurnRedeem(CrossTypes.Data storage storageData, bytes32 x)
+        external
+    {
+        bytes32 xHash = storageData.htlcTxData.redeemUserTx(x);
+
+        bytes32 smgID;
+        uint tokenPairID;
+        uint lockFee;
+        uint value;
+        (smgID, tokenPairID, value, lockFee,) = storageData.htlcTxData.getUserTx(xHash);
+
+        storageData.quota.smgBurnRedeem(tokenPairID, smgID, value);
+
+        storageData.tokenManager.burnToken(tokenPairID, value);
+
+        if (lockFee > 0) {
+            if (storageData.smgFeeProxy == address(0)) {
+                storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(lockFee);
+            } else {
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(smgID);
+            }
+        }
+
+        emit SmgBurnRedeemLogger(xHash, smgID, tokenPairID, lockFee, x);
     }
 
     /// @notice                         burnBridge, storeman burn revoke token on token shadow chain
     /// @notice                         event invoked by user revoke
     /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman burn revoke token on token shadow chain
-    function smgBurnRevoke(CrossTypes.Data storage storageData, HTLCSmgBurnRevokeParams memory params)
-        public
+    /// @param xHash                    hash of HTLC random number
+    function smgBurnRevoke(CrossTypes.Data storage storageData, bytes32 xHash)
+        external
     {
-        storageData.htlcTxData.revokeSmgTx(params.xHash);
+        storageData.htlcTxData.revokeSmgTx(xHash);
 
         bytes32 smgID;
         uint tokenPairID;
         uint value;
-        (smgID, tokenPairID, value,) = storageData.htlcTxData.getSmgTx(params.xHash);
-
-        // GroupStatus status;
-        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
+        (smgID, tokenPairID, value,) = storageData.htlcTxData.getSmgTx(xHash);
 
         storageData.quota.smgBurnRevoke(tokenPairID, smgID, value);
 
-        emit SmgBurnRevokeLogger(params.xHash, smgID, tokenPairID);
+        emit SmgBurnRevokeLogger(xHash, smgID, tokenPairID);
+    }
+
+    /// @notice                         burnBridge, user burn revoke token on token original chain
+    /// @notice                         event invoked by user revoke
+    /// @param storageData              Cross storage data
+    /// @param xHash                    hash of HTLC random number
+    function userBurnRevoke(CrossTypes.Data storage storageData, bytes32 xHash)
+        external
+    {
+        bytes32 smgID;
+        uint tokenPairID;
+        uint lockFee;
+        uint value;
+        address userShadowAccount;
+        (smgID, tokenPairID, value, lockFee, userShadowAccount) = storageData.htlcTxData.getUserTx(xHash);
+
+        uint origChainID;
+        uint shadowChainID;
+        bytes memory tokenShadowAccount;
+        (origChainID,,shadowChainID,tokenShadowAccount) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
+
+        uint revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
+
+        storageData.htlcTxData.revokeUserTx(xHash);
+
+        storageData.quota.userBurnRevoke(tokenPairID, smgID, value);
+
+        if (revokeFee > 0) {
+            if (storageData.smgFeeProxy == address(0)) {
+                storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(revokeFee);
+            } else {
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(revokeFee)(smgID);
+            }
+        }
+
+        if (lockFee > 0) {
+            (userShadowAccount).transfer(lockFee);
+            emit TransferToLogger(userShadowAccount, lockFee);
+        }
+
+        uint left = (msg.value).sub(revokeFee);
+        if (left != 0) {
+            (msg.sender).transfer(left);
+        }
+
+        address tokenScAddr = CrossTypes.bytesToAddress(tokenShadowAccount);
+        require(IRC20Protocol(tokenScAddr).transfer(userShadowAccount, value), "Transfer token failed");
+
+        emit UserBurnRevokeLogger(xHash, smgID, tokenPairID, revokeFee);
     }
 
 }

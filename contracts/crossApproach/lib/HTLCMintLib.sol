@@ -47,55 +47,24 @@ library HTLCMintLib {
     */
 
 
-    /// @notice struct of HTLC user mint lock parameters
+    /// @notice struct of HTLC mint lock parameters
     struct HTLCUserMintLockParams {
         bytes32 xHash;                  /// hash of HTLC random number
         bytes32 smgID;                  /// ID of storeman group which user has selected
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
-        // uint lockFee;                /// exchange token value
         uint lockedTime;                /// HTLC lock time
-        bytes userShadowAccount;      /// account of shadow chain, used to receive token
-        // ITokenManager tokenManager;     /// interface of token manager
+        bytes userShadowAccount;        /// account of shadow chain, used to receive token
     }
 
-    /// @notice struct of HTLC user/storeman mint lock parameters
-    struct HTLCUserMintRedeemParams {
-        bytes32 x;                      /// HTLC random number
-        // ITokenManager tokenManager;     /// interface of token manager
-    }
-
-    /// @notice struct of HTLC user mint revoke parameters
-    struct HTLCUserMintRevokeParams {
-        bytes32 xHash;                  /// hash of HTLC random number
-        // uint revokeFee;                   /// exchange token value
-        // address smgFeeProxy;
-        // ITokenManager tokenManager;     /// interface of token manager
-    }
-
-    /// @notice struct of HTLC storeman mint lock parameters
+    /// @notice struct of HTLC mint lock parameters
     struct HTLCSmgMintLockParams {
-        bytes32 xHash;                      /// hash of HTLC random number
-        bytes32 smgID;                      /// ID of storeman group which user has selected
-        uint tokenPairID;                   /// token pair id on cross chain
-        uint value;                         /// exchange token value
-        uint lockedTime;                /// HTLC lock time
-        address userShadowAccount;          /// account of shadow chain, used to receive token
-        // bytes r;                            /// R in schnorr signature
-        // bytes32 s;                          /// s in schnorr signature
-        // ITokenManager tokenManager;         /// interface of token manager
-        // ISignatureVerifier sigVerifier;     /// interface of signature verifier
-    }
-
-    /// @notice struct of HTLC storeman mint lock parameters
-    struct HTLCSmgMintRedeemParams {
-        bytes32 x;                      /// HTLC random number
-        // address smgFeeProxy;
-    }
-
-    /// @notice struct of HTLC storeman mint revoke parameters
-    struct HTLCSmgMintRevokeParams {
         bytes32 xHash;                  /// hash of HTLC random number
+        bytes32 smgID;                  /// ID of storeman group which user has selected
+        uint tokenPairID;               /// token pair id on cross chain
+        uint value;                     /// exchange token value
+        uint lockedTime;                /// HTLC lock time
+        address userShadowAccount;        /// account of shadow chain, used to receive token
     }
 
     /**
@@ -116,11 +85,12 @@ library HTLCMintLib {
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
-    /// @param x                        HTLC random number
+    /// @param xHash                    hash of HTLC random number
     /// @param smgID                    ID of storemanGroup
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param fee                      HTLC transaction fee
-    event SmgMintRedeemLogger(bytes32 indexed x, bytes32 indexed smgID, uint indexed tokenPairID, uint fee);
+    /// @param x                        HTLC random number
+    event SmgMintRedeemLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, uint fee, bytes32 x);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -141,10 +111,11 @@ library HTLCMintLib {
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
-    /// @param x                        HTLC random number
+    /// @param xHash                    hash of HTLC random number
     /// @param smgID                    ID of storemanGroup
     /// @param tokenPairID              token pair ID of cross chain token
-    event UserMintRedeemLogger(bytes32 indexed x, bytes32 indexed smgID, uint indexed tokenPairID);
+    /// @param x                        HTLC random number
+    event UserMintRedeemLogger(bytes32 indexed xHash, bytes32 indexed smgID, uint indexed tokenPairID, bytes32 x);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -172,30 +143,11 @@ library HTLCMintLib {
     function userMintLock(CrossTypes.Data storage storageData, HTLCUserMintLockParams memory params) public {
         uint origChainID;
         uint shadowChainID;
-        bool isValid;
         bytes memory tokenOrigAccount;
-        (origChainID,tokenOrigAccount,shadowChainID,,isValid) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
-        require(isValid, "Token does not exist");
+        (origChainID,tokenOrigAccount,shadowChainID,) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
+        require(origChainID != 0, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
-        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
-
-        uint left;
-        if (tokenScAddr == address(0)) {
-            left = (msg.value).sub(params.value).sub(lockFee);
-            // left = (msg.value).sub(params.value).sub(storageData.mapLockFee[origChainID][shadowChainID]);
-            if (left != 0) {
-                (msg.sender).transfer(left);
-            }
-        } else {
-            left = (msg.value).sub(lockFee);
-            // left = (msg.value).sub(storageData.mapLockFee[origChainID][shadowChainID]);
-            if (left != 0) {
-                (msg.sender).transfer(left);
-            }
-
-            require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
-        }
 
         HTLCTxLib.HTLCUserParams memory userTxParams = HTLCTxLib.HTLCUserParams({
             xHash: params.xHash,
@@ -203,113 +155,28 @@ library HTLCMintLib {
             tokenPairID: params.tokenPairID,
             value: params.value,
             lockFee: lockFee,
-            lockedTime: params.lockedTime,
-            mirrorAccount: params.userShadowAccount
+            lockedTime: params.lockedTime
         });
 
-        // storageData.htlcTxData.addUserTx(params.xHash, params.smgID, params.tokenPairID,
-        //                             params.value, lockFee, params.lockedTime, params.userShadowAccount);
         storageData.htlcTxData.addUserTx(userTxParams);
 
         storageData.quota.userMintLock(params.tokenPairID, params.smgID, params.value);
 
-        emit UserMintLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userShadowAccount);
-    }
+        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
-    /// @notice                         mintBridge, storeman redeem token on token original chain
-    /// @notice                         event invoked by user redeem
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman mint redeem token on token original chain
-    function smgMintRedeem(CrossTypes.Data storage storageData, HTLCSmgMintRedeemParams memory params)
-        public
-    {
-        bytes32 xHash = storageData.htlcTxData.redeemUserTx(params.x);
+        uint left;
+        if (tokenScAddr == address(0)) {
+            left = (msg.value).sub(params.value).sub(lockFee);
+        } else {
+            left = (msg.value).sub(lockFee);
 
-        bytes32 smgID;
-        uint tokenPairID;
-        uint lockFee;
-        uint value;
-        (smgID, tokenPairID, value, lockFee,,) = storageData.htlcTxData.getUserTx(xHash);
-
-        // TODO
-        // GroupStatus status;
-        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
-
-        storageData.quota.smgMintRedeem(tokenPairID, smgID, value);
-        if (lockFee > 0) {
-            if (storageData.smgFeeProxy == address(0)) {
-                storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(lockFee);
-            } else {
-                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(smgID);
-            }
+            require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
         }
-
-        emit SmgMintRedeemLogger(params.x, smgID, tokenPairID, lockFee);
-    }
-
-    /// @notice                         mintBridge, user mint revoke token on token original chain
-    /// @notice                         event invoked by user revoke
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for user mint revoke token on token original chain
-    function userMintRevoke(CrossTypes.Data storage storageData, HTLCUserMintRevokeParams memory params)
-        public
-    {
-        bytes32 smgID;
-        uint tokenPairID;
-        uint lockFee;
-        uint value;
-        address userOrigAccount;
-        (smgID, tokenPairID, value, lockFee, userOrigAccount,) = storageData.htlcTxData.getUserTx(params.xHash);
-
-        // TODO
-        // GroupStatus status;
-        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
-
-        uint origChainID;
-        uint shadowChainID;
-        bytes memory tokenOrigAccount;
-        // (origChainID,tokenOrigAccount,shadowChainID,,isValid) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
-        // require(isValid, "Token does not exist");
-        (origChainID, tokenOrigAccount, shadowChainID,,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
-
-        uint revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
-
-        storageData.htlcTxData.revokeUserTx(params.xHash, revokeFee);
-
-        uint left = (msg.value).sub(revokeFee);
         if (left != 0) {
             (msg.sender).transfer(left);
         }
 
-        storageData.quota.userMintRevoke(tokenPairID, smgID, value);
-
-        if (revokeFee > 0) {
-            if (storageData.smgFeeProxy == address(0)) {
-                storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(revokeFee);
-            } else {
-                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(revokeFee)(smgID);
-            }
-        }
-
-        if (lockFee > 0) {
-            (userOrigAccount).transfer(lockFee);
-            emit TransferToLogger(userOrigAccount, lockFee);
-        }
-
-        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
-
-        if (tokenScAddr == address(0)) {
-            (userOrigAccount).transfer(value);
-            emit TransferToLogger(userOrigAccount, value);
-        } else {
-            require(IRC20Protocol(tokenScAddr).transfer(userOrigAccount, value), "Transfer token failed");
-        }
-
-        emit UserMintRevokeLogger(params.xHash, smgID, tokenPairID, revokeFee);
+        emit UserMintLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userShadowAccount);
     }
 
     /// @notice                         mintBridge, storeman mint lock token on token shadow chain
@@ -330,11 +197,11 @@ library HTLCMintLib {
     /// @notice                         mintBridge, storeman mint redeem token on token shadow chain
     /// @notice                         event invoked by user redeem
     /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman mint redeem token on token shadow chain
-    function userMintRedeem(CrossTypes.Data storage storageData, HTLCUserMintRedeemParams memory params)
-        public
+    /// @param x                        HTLC random number
+    function userMintRedeem(CrossTypes.Data storage storageData, bytes32 x)
+        external
     {
-        bytes32 xHash = storageData.htlcTxData.redeemSmgTx(params.x);
+        bytes32 xHash = storageData.htlcTxData.redeemSmgTx(x);
 
         bytes32 smgID;
         uint tokenPairID;
@@ -342,40 +209,111 @@ library HTLCMintLib {
         address userShadowAccount;
         (smgID, tokenPairID, value, userShadowAccount) = storageData.htlcTxData.getSmgTx(xHash);
 
-        // GroupStatus status;
-        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
-
         storageData.quota.userMintRedeem(tokenPairID, smgID, value);
 
         storageData.tokenManager.mintToken(tokenPairID, userShadowAccount, value);
 
-        emit UserMintRedeemLogger(params.x, smgID, tokenPairID);
+        emit UserMintRedeemLogger(xHash, smgID, tokenPairID, x);
+    }
+
+    /// @notice                         mintBridge, storeman redeem token on token original chain
+    /// @notice                         event invoked by user redeem
+    /// @param storageData              Cross storage data
+    /// @param x                        HTLC random number
+    function smgMintRedeem(CrossTypes.Data storage storageData, bytes32 x)
+        external
+    {
+        bytes32 xHash = storageData.htlcTxData.redeemUserTx(x);
+
+        bytes32 smgID;
+        uint tokenPairID;
+        uint lockFee;
+        uint value;
+        (smgID, tokenPairID, value, lockFee,) = storageData.htlcTxData.getUserTx(xHash);
+
+        storageData.quota.smgMintRedeem(tokenPairID, smgID, value);
+        if (lockFee > 0) {
+            if (storageData.smgFeeProxy == address(0)) {
+                storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(lockFee);
+            } else {
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(smgID);
+            }
+        }
+
+        emit SmgMintRedeemLogger(xHash, smgID, tokenPairID, lockFee, x);
     }
 
     /// @notice                         mintBridge, storeman mint revoke token on token shadow chain
     /// @notice                         event invoked by user revoke
     /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman mint revoke token on token shadow chain
-    function smgMintRevoke(CrossTypes.Data storage storageData, HTLCSmgMintRevokeParams memory params)
-        public
+    /// @param xHash                    hash of HTLC random number
+    function smgMintRevoke(CrossTypes.Data storage storageData, bytes32 xHash)
+        external
     {
-        storageData.htlcTxData.revokeSmgTx(params.xHash);
+        storageData.htlcTxData.revokeSmgTx(xHash);
 
         bytes32 smgID;
         uint tokenPairID;
         uint value;
-        (smgID, tokenPairID, value,) = storageData.htlcTxData.getSmgTx(params.xHash);
-
-        // GroupStatus status;
-        // (,status,,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-        // require(status == GroupStatus.ready || status == GroupStatus.unregistered, "PK doesn't exist");
+        (smgID, tokenPairID, value,) = storageData.htlcTxData.getSmgTx(xHash);
 
         storageData.quota.smgMintRevoke(tokenPairID, smgID, value);
 
-        emit SmgMintRevokeLogger(params.xHash, smgID, tokenPairID);
+        emit SmgMintRevokeLogger(xHash, smgID, tokenPairID);
+    }
+
+    /// @notice                         mintBridge, user mint revoke token on token original chain
+    /// @notice                         event invoked by user revoke
+    /// @param storageData              Cross storage data
+    /// @param xHash                    hash of HTLC random number
+    function userMintRevoke(CrossTypes.Data storage storageData, bytes32 xHash)
+        external
+    {
+        bytes32 smgID;
+        uint tokenPairID;
+        uint lockFee;
+        uint value;
+        address userOrigAccount;
+        (smgID, tokenPairID, value, lockFee, userOrigAccount) = storageData.htlcTxData.getUserTx(xHash);
+
+        uint origChainID;
+        uint shadowChainID;
+        bytes memory tokenOrigAccount;
+        (origChainID, tokenOrigAccount, shadowChainID,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
+
+        uint revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
+
+        storageData.htlcTxData.revokeUserTx(xHash);
+
+        storageData.quota.userMintRevoke(tokenPairID, smgID, value);
+
+        if (revokeFee > 0) {
+            if (storageData.smgFeeProxy == address(0)) {
+                storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(revokeFee);
+            } else {
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(revokeFee)(smgID);
+            }
+        }
+
+        if (lockFee > 0) {
+            (userOrigAccount).transfer(lockFee);
+            emit TransferToLogger(userOrigAccount, lockFee);
+        }
+
+        uint left = (msg.value).sub(revokeFee);
+        if (left != 0) {
+            (msg.sender).transfer(left);
+        }
+
+        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
+        if (tokenScAddr == address(0)) {
+            (userOrigAccount).transfer(value);
+            emit TransferToLogger(userOrigAccount, value);
+        } else {
+            require(IRC20Protocol(tokenScAddr).transfer(userOrigAccount, value), "Transfer token failed");
+        }
+
+        emit UserMintRevokeLogger(xHash, smgID, tokenPairID, revokeFee);
     }
 
 }

@@ -39,7 +39,7 @@ library HTLCTxLib {
      */
 
     /// @notice tx info status
-    /// @notice uninitialized,locked,refunded,revoked
+    /// @notice uninitialized,locked,redeemed,revoked
     enum TxStatus {None, Locked, Redeemed, Revoked}
 
     /**
@@ -56,15 +56,14 @@ library HTLCTxLib {
         uint value;                     /// exchange token value
         uint lockFee;                   /// exchange token value
         uint lockedTime;                /// HTLC lock time
-        bytes mirrorAccount;            /// account of mirrorAccount chain, used to receive token
     }
 
     /// @notice HTLC(Hashed TimeLock Contract) tx info
     struct BaseTx {
-        bytes32 smgID;              // HTLC transaction storeman ID
-        uint lockedTime;            // HTLC transaction locked time
-        uint beginLockedTime;       // HTLC transaction begin locked time
-        TxStatus status;            // HTLC transaction status
+        bytes32 smgID;                  /// HTLC transaction storeman ID
+        uint lockedTime;                /// HTLC transaction locked time
+        uint beginLockedTime;           /// HTLC transaction begin locked time
+        TxStatus status;                /// HTLC transaction status
     }
 
     /// @notice user  tx info
@@ -73,20 +72,19 @@ library HTLCTxLib {
         uint tokenPairID;
         uint value;
         uint fee;
-        address userAccount;        // HTLC transaction sender address for the security check while user's revoke
-        bytes mirrorAccount;        // address or account on mirror chain
+        address userAccount;            /// HTLC transaction sender address for the security check while user's revoke
     }
     /// @notice storeman  tx info
     struct SmgTx {
         BaseTx baseTx;
         uint tokenPairID;
         uint value;
-        address  userAccount;          // HTLC transaction user address for the security check while user's redeem
+        address  userAccount;          /// HTLC transaction user address for the security check while user's redeem
     }
     /// @notice storeman  debt tx info
     struct DebtTx {
         BaseTx baseTx;
-        bytes32 srcSmgID;        // HTLC transaction sender(source storeman) ID
+        bytes32 srcSmgID;              /// HTLC transaction sender(source storeman) ID
     }
 
     struct Data {
@@ -109,7 +107,7 @@ library HTLCTxLib {
 
     /// @notice                     add user transaction info
     /// @param params               parameters for user tx
-    function addUserTx(Data storage self, HTLCUserParams params)
+    function addUserTx(Data storage self, HTLCUserParams memory params)
         public
     {
         UserTx memory userTx = self.mapHashXUserTxs[params.xHash];
@@ -125,37 +123,9 @@ library HTLCTxLib {
         userTx.value = params.value;
         userTx.fee = params.lockFee;
         userTx.userAccount = msg.sender;
-        userTx.mirrorAccount = params.mirrorAccount;
 
         self.mapHashXUserTxs[params.xHash] = userTx;
     }
-
-    // /// @notice                     add user transaction info
-    // /// @param  xHash               hash of HTLC random number
-    // /// @param  smgID               ID of the storeman which user has selected
-    // /// @param  tokenPairID         token pair ID of cross chain
-    // /// @param  value               HTLC transfer value of token
-    // /// @param  mirrorAccount       mirror account. used for receipt coins on opposite block chain
-    // function addUserTx(Data storage self, bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, uint fee, uint lockedTime, bytes32 mirrorAccount)
-    //     external
-    // {
-    //     UserTx memory userTx = self.mapHashXUserTxs[xHash];
-    //     // UserTx storage userTx = self.mapHashXUserTxs[xHash];
-    //     // require(value != 0, "Value is invalid");
-    //     require(userTx.baseTx.status == TxStatus.None, "User tx exists");
-
-    //     userTx.baseTx.smgID = smgID;
-    //     userTx.baseTx.lockedTime = lockedTime;
-    //     userTx.baseTx.beginLockedTime = now;
-    //     userTx.baseTx.status = TxStatus.Locked;
-    //     userTx.tokenPairID = tokenPairID;
-    //     userTx.value = value;
-    //     userTx.fee = fee;
-    //     userTx.userAccount = msg.sender;
-    //     userTx.mirrorAccount = mirrorAccount;
-
-    //     self.mapHashXUserTxs[xHash] = userTx;
-    // }
 
     /// @notice                     refund coins from HTLC transaction, which is used for storeman redeem(outbound)
     /// @param x                    HTLC random number
@@ -176,18 +146,14 @@ library HTLCTxLib {
 
     /// @notice                     revoke user transaction
     /// @param  xHash               hash of HTLC random number
-    function revokeUserTx(Data storage self, bytes32 xHash, uint fee)
+    function revokeUserTx(Data storage self, bytes32 xHash)
         external
     {
-        UserTx memory userTx = self.mapHashXUserTxs[xHash];
-        // UserTx storage userTx = self.mapHashXUserTxs[xHash];
+        UserTx storage userTx = self.mapHashXUserTxs[xHash];
         require(userTx.baseTx.status == TxStatus.Locked, "Status is not locked");
         require(now >= userTx.baseTx.beginLockedTime.add(userTx.baseTx.lockedTime), "Revoke is not permitted");
 
-        userTx.fee = fee;
         userTx.baseTx.status = TxStatus.Revoked;
-
-        self.mapHashXUserTxs[xHash] = userTx;
     }
 
     /// @notice                    function for get user info
@@ -197,16 +163,13 @@ library HTLCTxLib {
     /// @return value              exchange value
     /// @return fee                exchange fee
     /// @return userAccount        HTLC transaction sender address for the security check while user's revoke
-    /// @return mirrorAccount             Shadow address or account on mirror chain
     function getUserTx(Data storage self, bytes32 xHash)
         external
         view
-        returns (bytes32, uint, uint, uint, address, bytes)
-        // returns (address, bytes, uint, uint, bytes32)
+        returns (bytes32, uint, uint, uint, address)
     {
         UserTx storage userTx = self.mapHashXUserTxs[xHash];
-        return (userTx.baseTx.smgID, userTx.tokenPairID, userTx.value, userTx.fee, userTx.userAccount, userTx.mirrorAccount);
-        // return (userTx.userAccount, userTx.mirrorAccount, userTx.value, userTx.tokenPairID, userTx.baseTx.smgID);
+        return (userTx.baseTx.smgID, userTx.tokenPairID, userTx.value, userTx.fee, userTx.userAccount);
     }
 
     /// @notice                     add storeman transaction info
@@ -245,7 +208,6 @@ library HTLCTxLib {
         SmgTx storage smgTx = self.mapHashXSmgTxs[xHash];
         require(smgTx.baseTx.status == TxStatus.Locked, "Status is not locked");
         require(now < smgTx.baseTx.beginLockedTime.add(smgTx.baseTx.lockedTime), "Redeem timeout");
-        require(smgTx.userAccount == msg.sender, "Msg sender is incorrect");
 
         smgTx.baseTx.status = TxStatus.Redeemed;
 
