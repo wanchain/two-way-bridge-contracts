@@ -186,12 +186,12 @@ library StoremanLib {
                 break;
             }
         }
-        for (uint j = group.selectedCount - 1; j >= i; j--) {
-            if (j + 1 < group.memberCountDesign) {
-                group.selectedNode[j + 1] = group.selectedNode[j];
-            }
-        }
         if (i < group.memberCountDesign) {
+            for (uint j = group.selectedCount - 1; j >= i; j--) {
+                if (j + 1 < group.memberCountDesign) {
+                    group.selectedNode[j + 1] = group.selectedNode[j];
+                }
+            }
             group.selectedNode[i] = skAddr;
             if (group.selectedCount < group.memberCountDesign) {
                 group.selectedCount++;
