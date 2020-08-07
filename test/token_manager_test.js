@@ -232,6 +232,7 @@ contract('TokenManagerDelegate', (accounts) => {
       await token.acceptOwnership({from: other});
       const newOwner = await token.owner();
       console.log(`token new owner = ${newOwner}`);
+      assert.equal(newOwner, other);
     });
   });
 
