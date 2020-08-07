@@ -64,6 +64,7 @@ contract('TokenManagerDelegate', (accounts) => {
       const { tokenManagerDelegate } = await newTokenManager(accounts);
 
       let receipt = await tokenManagerDelegate.addToken(nameDAI, symbolDAI, decimals, {from: owner});
+      let gas1 = 0;
       // check AddToken event log
       const addTokenEvent = receipt.logs[0].args;
       assert.ok(addTokenEvent.tokenAddress != "0x0000000000000000000000000000000000000000");
@@ -86,13 +87,19 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(param[4], addTokenPairEvent.toChainID.toNumber());
       assert.equal(web3.utils.bytesToHex(param[5]), addTokenPairEvent.toAccount);
 
+      gas1 = await tokenManagerDelegate.addToken.estimateGas(nameETH, symbolETH, decimals, {from: owner});
+      console.log(`addToken estimate = ${gas1}`);
       receipt = await tokenManagerDelegate.addToken(nameETH, symbolETH, decimals, {from: owner});
+      console.log(`addToken used = ${receipt.receipt.gasUsed}`);
       param = JSON.parse(JSON.stringify(addTokenPairParam));
       param[0] = 12;
       param[2] = 61;
       param[4] = 5718351;
       param[5] = web3.utils.hexToBytes(receipt.logs[0].args.tokenAddress);
-      await tokenManagerDelegate.addTokenPair(...param, {from: owner});
+      gas1 = await tokenManagerDelegate.addTokenPair.estimateGas(...param, {from: owner});
+      console.log(`addTokenPair estimate = ${gas1}`);
+      receipt = await tokenManagerDelegate.addTokenPair(...param, {from: owner});
+      console.log(`addTokenPair used = ${receipt.receipt.gasUsed}`);
       let obj2 = await sendAndGetReason(tokenManagerDelegate.addTokenPair, param, {from: owner});
       assert.equal(obj2.reason, "token exist");
 
@@ -115,7 +122,10 @@ contract('TokenManagerDelegate', (accounts) => {
       const tokenPairID = parseInt(await tokenManagerDelegate.mapTokenPairIndex(0));
       const tokenPairInfo = await tokenManagerDelegate.mapTokenPairInfo(tokenPairID);
       const token = await MappingToken.at(tokenPairInfo.toAccount);
+      gas1 = await tokenManagerDelegate.mintToken.estimateGas(tokenPairID, other, 100, {from: admin});
+      console.log(`mintToken estimate = ${gas1}`);
       receipt = await tokenManagerDelegate.mintToken(tokenPairID, other, 100, {from: admin});
+      console.log(`mintToken used = ${receipt.receipt.gasUsed}`);
       // // check MintToken event log
       // const mintTokenEvent = receipt.logs[0].args;
       // assert.equal(tokenPairID, mintTokenEvent.id.toNumber());
@@ -171,7 +181,10 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(tokenPairs2.id[1].toNumber(), 12);
       assert.equal(tokenPairs2.id.length, 2);
 
+      gas1 = await tokenManagerDelegate.removeTokenPair.estimateGas(11);
+      console.log(`removeTokenPair estimate = ${gas1}`);
       receipt = await tokenManagerDelegate.removeTokenPair(11);
+      console.log(`removeTokenPair used = ${receipt.receipt.gasUsed}`);
       // check RemoveTokenPair event log
       assert.equal(receipt.logs[0].args.id.toNumber(), 11);
 
@@ -209,6 +222,16 @@ contract('TokenManagerDelegate', (accounts) => {
       const pairs = await tokenManagerDelegate.getTokenPairs();
       assert.equal(pairs.id[0].toNumber(), 13);
       assert.equal(pairs.id.length, 1);
+
+      const oldOwner = await token.owner();
+      console.log(`tokenManagerDelegate = ${tokenManagerDelegate.address}`);
+      console.log(`tokenAddress = ${token.address}`);
+      console.log(`other = ${other}`);
+      console.log(`token owner = ${oldOwner}`);
+      await tokenManagerDelegate.changeTokenOwner(token.address, other, {from: owner});
+      await token.acceptOwnership({from: other});
+      const newOwner = await token.owner();
+      console.log(`token new owner = ${newOwner}`);
     });
   });
 
