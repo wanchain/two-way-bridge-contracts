@@ -31,32 +31,6 @@ before("init...   -> success", () => {
     }
 });
 
-it("Debt -> srcDebtLock  ==> Contract is not initialized", async () => {
-    try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.htlcException.hash;
-
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve1, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
-
-        let srcDebtLockReceipt = await global.crossDelegateNotInit.srcDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
-
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Contract is not initialized");
-    }
-});
-
 it('Debt -> srcDebtLock  ==> Halted', async () => {
     let crossProxy;
     try {
