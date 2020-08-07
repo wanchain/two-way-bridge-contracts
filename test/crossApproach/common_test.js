@@ -105,7 +105,7 @@ it('Others getFees  ==> The config value', async () => {
 
 it('Others lockedTime  ==> The config value', async () => {
     try {
-        let ret = await global.chains[1].approach.instance._lockedTime();
+        let ret = await global.chains[1].approach.instance.lockedTime();
         assert.equal(htlcLockedTime, ret);
     } catch (err) {
         assert.fail(err.toString());
