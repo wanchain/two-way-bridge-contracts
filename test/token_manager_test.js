@@ -224,15 +224,14 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(pairs.id.length, 1);
 
       const oldOwner = await token.owner();
-      console.log(`tokenManagerDelegate = ${tokenManagerDelegate.address}`);
-      console.log(`tokenAddress = ${token.address}`);
-      console.log(`other = ${other}`);
-      console.log(`token owner = ${oldOwner}`);
       await tokenManagerDelegate.changeTokenOwner(token.address, other, {from: owner});
       await token.acceptOwnership({from: other});
       const newOwner = await token.owner();
-      console.log(`token new owner = ${newOwner}`);
       assert.equal(newOwner, other);
+      await token.changeOwner(oldOwner, {from: other});
+      await tokenManagerDelegate.acceptTokenOwnership(token.address, {from: owner});
+      const newOwner2 = await token.owner();
+      assert.equal(newOwner2, tokenManagerDelegate.address);
     });
   });
 

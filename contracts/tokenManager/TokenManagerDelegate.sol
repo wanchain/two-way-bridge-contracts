@@ -243,6 +243,10 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         IMappingToken(tokenAddress).changeOwner(_newOwner);
     }
 
+    function acceptTokenOwnership(address tokenAddress) external {
+        IMappingToken(tokenAddress).acceptOwnership();
+    }
+
     function getTokenPairInfo(
         uint id
     )
