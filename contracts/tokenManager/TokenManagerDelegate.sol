@@ -119,7 +119,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         external
         onlyOwner
     {
-        address tokenAddress = new MappingToken(string(name), string(symbol), decimals);
+        address tokenAddress = new MappingToken(name, symbol, decimals);
         
         emit AddToken(tokenAddress, name, symbol, decimals);
     }
