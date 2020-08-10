@@ -22,15 +22,10 @@ contract('StoremanGroupDelegate', async (accounts) => {
     it('registerStart', async ()=>{
         groupId = await registerStart(smg);
         console.log("groupId: ", groupId)
-        let tx =  await sendIncentive(smg)
-        console.log("incen: %O", tx)
     })
 
     it('stakeInPre ', async ()=>{
         await stakeInPre(smg, groupId)
-
-        let tx =  await sendIncentive(smg)
-        console.log("incen: %O", tx)
     })
     it('test select', async ()=>{
         await toSelect(smg, groupId);
@@ -41,9 +36,6 @@ contract('StoremanGroupDelegate', async (accounts) => {
             let sk = await smg.getStoremanInfo(skAddr[0]);
             console.log("storeman %d info: %s, %s, %s", i, sk.pkAddress, sk.groupId, sk.nextGroupId);
         } 
-
-        let tx =  await sendIncentive(smg)
-        console.log("incen: %O", tx)
     })
     it('registerStart2', async ()=>{
         groupId2 = await registerStart2(smg, groupId, [], []);

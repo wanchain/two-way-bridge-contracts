@@ -13,6 +13,7 @@ library StoremanLib {
     event delegateIncentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
     event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
+    event delegateInEvent(address indexed wkAddr, address indexed from, uint indexed value);
 
     function calSkWeight(StoremanType.StoremanData storage data) internal  view returns (uint){
         return StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value);
@@ -26,6 +27,7 @@ library StoremanLib {
         emit StoremanGroupUnregisterEvent(groupId);
     }
 
+// TODO StoremanTickedEvent(bytes32 indexed groupId, address indexed wkAddr)
     function setInvalidSm(StoremanType.StoremanData storage data, bytes32 groupId, uint[] slashType,  address[] badAddrs)
         external
         returns(bool isContinue)
@@ -79,9 +81,10 @@ library StoremanLib {
             realInsert(data,group, pkAddr, calSkWeight(data));
         }
 
-        emit stakeInEvent(group.groupId, pkAddr, msg.value);
+        emit stakeInEvent(group.groupId, pkAddr, msg.value); // msg.sender . indexed.
     }
 
+    //TODO 加一个事件．　
     function stakeAppend(StoremanType.StoremanData storage data,  address skPkAddr) external  {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
@@ -181,7 +184,8 @@ library StoremanLib {
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
         for (uint i = group.whiteCount; i < group.selectedCount; i++) {
             StoremanType.Candidate storage cmpNode = data.candidates[group.selectedNode[i]];
-            uint cmpWeight = cmpNode.delegateDeposit + StoremanUtil.calSkWeight(data.conf.standaloneWeight, cmpNode.deposit.getLastValue());
+            uint cmpWeight = cmpNode.delegateDeposit + 
+                StoremanUtil.calSkWeight(data.conf.standaloneWeight, cmpNode.deposit.getLastValue()+cmpNode.partnerDeposit);
             if (weight > cmpWeight) {
                 break;
             }
@@ -212,16 +216,10 @@ library StoremanLib {
             group.depositWeight.addRecord(r);
         } else {
             if(group.whiteWk[skPkAddr] == address(0x00)){
-                // for(uint selectedIndex = group.whiteCount; selectedIndex<group.memberCountDesign; selectedIndex++){
-                //     if(group.selectedNode[selectedIndex] == skPkAddr) {
-                //         break;
-                //     }
-                // }
                 realInsert(data, group, skPkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
             }
         }
     }
-    event delegateInEvent(address indexed wkAddr, address indexed from, uint indexed value);
     function delegateIn(StoremanType.StoremanData storage data, address skPkAddr)
         external
     {
@@ -367,7 +365,7 @@ library StoremanLib {
 
 
     event partInEvent(address indexed wkAddr, address indexed from, uint indexed value);
-    function partIn(StoremanType.StoremanData storage data, address skPkAddr) // TODO only change the first group? ???????
+    function partIn(StoremanType.StoremanData storage data, address skPkAddr)
         external
     {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
@@ -390,7 +388,7 @@ library StoremanLib {
         pn.deposit.addRecord(r);
         updateGroup(data, sk, group, r);
         updateGroup(data, sk, nextGroup, r);
-	emit partInEvent(skPkAddr, msg.sender, msg.value);
+	    emit partInEvent(skPkAddr, msg.sender, msg.value);
     }
 
     function partOut(StoremanType.StoremanData storage data, address skPkAddr) external {

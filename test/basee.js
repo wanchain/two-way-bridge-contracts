@@ -9,11 +9,11 @@ let web3url, owner, leader, leaderPk, sfs;
 
 console.log("==== cli:", process.argv)
 
-let gana = false;
+let gana = true;
 if(gana){
     web3url = "http://127.0.0.1:8545"
     owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959"
-    leader = "0xdC49B58d1Dc15Ff96719d743552A3d0850dD7057"
+    leader = ("0xdC49B58d1Dc15Ff96719d743552A3d0850dD7057").toLowerCase()
     leaderPk = "0xb6ee04e3c64e31578dd746d1024429179d83122fb926be19bd33aaeea55afeb6b10c6ff525eec7ca9a4e9a252a4c74b222c1273d4719d96e0f2c5199c42bc84b"
     sfs = [
         "0xfaeB08EF75458BbC511Bca1CAf4d7f5DF08EA834", 
@@ -127,6 +127,7 @@ async function sendIncentive(truffleSmg) {
     //console.log("storeman info:", await smg.methods.getStoremanInfo("0xe1ab8145f7e55dc933d51a18c793f901a3a0b276").call())
 
     let tx = await smg.methods.incentiveCandidator(leader).send({from:leader});
+    await utils.waitReceipt(web3, tx);
     console.log("tx:", tx);
     return tx;
 
@@ -139,12 +140,12 @@ async function stakeInPre(smg, id){
         let sw, tx
         if(i==0){
             sw = utils.getAddressFromInt(i+2000)
-            tx = await smg.stakeIn(id, g.leaderPk, g.leaderPk,{from:g.leader, value:stakingValue})  
+            tx = await smg.stakeIn(id, leaderPk, leaderPk,{from:leader, value:stakingValue})  
             console.log("preE:", i, tx.tx);
-            let candidate  = await smg.getStoremanInfo(sw.addr)
-            //console.log("candidate:", candidate)
-            assert.equal(candidate.sender.toLowerCase(), g.leader.toLowerCase())
-            assert.equal(candidate.pkAddress.toLowerCase(), sw.addr.toLowerCase())
+            let candidate  = await smg.getStoremanInfo(leader)
+            console.log("candidate:", candidate)
+            assert.equal(candidate.sender.toLowerCase(), leader.toLowerCase())
+            assert.equal(candidate.pkAddress.toLowerCase(), leader.toLowerCase())
             assert.equal(candidate.deposit, stakingValue)
 
         }else{

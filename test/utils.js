@@ -87,11 +87,11 @@ async function sleepUntil(time) {
   }
 }
 async function waitReceipt(web3, txhash) {
-  let lastBlock = web3.eth.getBlockNumber();
+  let lastBlock = await web3.eth.getBlockNumber();
   let newBlock = lastBlock
   while(newBlock - lastBlock < 10) {
       await pu.sleep(1000)
-      newBlock = web3.eth.getBlockNumber();
+      newBlock = await web3.eth.getBlockNumber();
       if( newBlock != lastBlock) {
           let rec = web3.eth.getTransactionReceipt(txhash);
           if ( rec ) {
