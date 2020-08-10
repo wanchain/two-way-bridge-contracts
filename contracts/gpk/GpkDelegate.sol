@@ -28,10 +28,10 @@ pragma solidity ^0.4.24;
 
 import "../lib/SafeMath.sol";
 import "../components/Owned.sol";
-import "./CreateGpkStorage.sol";
+import "./GpkStorage.sol";
 import "./lib/GpkLib.sol";
 
-contract CreateGpkDelegate is CreateGpkStorage, Owned {
+contract GpkDelegate is GpkStorage, Owned {
     using SafeMath for uint;
 
     /**
@@ -260,7 +260,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         if (GpkLib.verifySij(d, group.addressMap[dest], src.polyCommit, round.curve)) {
           GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckInvalid, dest, msg.sender, true, smg);
         } else {
-          GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijInvalid, msg.sender, dest, true, smg);
+          GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijInvalid, msg.sender, dest, true, smg);
         }
     }
 

@@ -1,8 +1,8 @@
 const Web3 = require('web3')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const CreateGpkProxy = artifacts.require('CreateGpkProxy');
-const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
+const GpkProxy = artifacts.require('GpkProxy');
+const GpkDelegate = artifacts.require('GpkDelegate');
 const Encrypt = artifacts.require('Encrypt');
 const { registerStart, stakeInPre, toSelect } = require('./base.js')
 
@@ -17,7 +17,7 @@ let groupId = '';
 // contract
 let smgSc, gpkProxy, gpkDelegate, gpkSc;
 
-contract('CreateGpk_UNITs', async ([a1, a2]) => {
+contract('Gpk_UNITs', async ([a1, a2]) => {
   let owner = '0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e';
   let someone = (a1 == owner)? a2 : a1;
   console.log("onwer address: %s", owner);
@@ -34,10 +34,10 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
     console.log("StoremanGroup contract address: %s", smgProxy.address);
 
     // gpk
-    gpkProxy = await CreateGpkProxy.deployed();
-    gpkDelegate = await CreateGpkDelegate.deployed();
-    gpkSc = await CreateGpkDelegate.at(gpkProxy.address);
-    console.log("CreateGpk contract address: %s", gpkProxy.address);
+    gpkProxy = await GpkProxy.deployed();
+    gpkDelegate = await GpkDelegate.deployed();
+    gpkSc = await GpkDelegate.at(gpkProxy.address);
+    console.log("Gpk contract address: %s", gpkProxy.address);
 
     encryptSc = await Encrypt.deployed();
 
@@ -47,7 +47,7 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
   })
 
   // upgradeTo
-  it('[CreateGpkProxy_upgradeTo] should fail: not owner', async () => {
+  it('[GpkProxy_upgradeTo] should fail: not owner', async () => {
     let result = {};
     try {
       await gpkProxy.upgradeTo(gpkDelegate.address, {from: someone});
@@ -58,7 +58,7 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
     assert.equal(result.reason, 'Not owner');
   })
 
-  it('[CreateGpkProxy_upgradeTo] should fail: invalid implementation address', async () => {
+  it('[GpkProxy_upgradeTo] should fail: invalid implementation address', async () => {
     let result = {};
     try {
       await gpkProxy.upgradeTo(ADDRESS_0, {from: owner});
@@ -68,7 +68,7 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
     assert.equal(result.reason, 'Cannot upgrade to invalid address');
   })
 
-  it('[CreateGpkProxy_upgradeTo] should success', async () => {
+  it('[GpkProxy_upgradeTo] should success', async () => {
     let result = {};
     try {
       await gpkProxy.upgradeTo(gpkProxy.address, {from: owner}); // set self address temporarily
@@ -80,7 +80,7 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
     assert.equal(await gpkProxy.implementation(), gpkDelegate.address)
   })
 
-  it('[CreateGpkProxy_upgradeTo] should fail: duplicate upgrade', async () => {
+  it('[GpkProxy_upgradeTo] should fail: duplicate upgrade', async () => {
     let result = {};
     try {
       await gpkProxy.upgradeTo(gpkDelegate.address, {from: owner});
@@ -91,7 +91,7 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
   })
 
   // setDependence
-  it('[CreateGpkDelegate_setDependence] should fail: not owner', async () => {
+  it('[GpkDelegate_setDependence] should fail: not owner', async () => {
     let result = {};
     try {
       await gpkSc.setDependence(smgSc.address, {from: someone});
@@ -101,7 +101,7 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
     assert.equal(result.reason, 'Not owner');
   })
 
-  it('[CreateGpkDelegate_setDependence] should fail: invalid smg address', async () => {
+  it('[GpkDelegate_setDependence] should fail: invalid smg address', async () => {
     let result = {};
     try {
       await gpkSc.setDependence(ADDRESS_0, {from: owner});
@@ -111,7 +111,7 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
     assert.equal(result.reason, 'Invalid smg');
   })
   
-  it('[CreateGpkDelegate_setDependence] should success', async () => {
+  it('[GpkDelegate_setDependence] should success', async () => {
     let result = {};
     try {
       await gpkSc.setDependence(smgSc.address, {from: owner});
@@ -123,7 +123,7 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
   })
 
   // setPeriod
-  it('[CreateGpkDelegate_setPeriod] should fail: not owner', async () => {
+  it('[GpkDelegate_setPeriod] should fail: not owner', async () => {
     let result = {};
     let ployCommitPeroid = 10 * 60;
     let defaultPeroid = 5 * 60;
@@ -136,7 +136,7 @@ contract('CreateGpk_UNITs', async ([a1, a2]) => {
     assert.equal(result.reason, 'Not owner');
   })
   
-  it('[CreateGpkDelegate_setPeriod] should success', async () => {
+  it('[GpkDelegate_setPeriod] should success', async () => {
     let result = {};
     let ployCommitPeroid = 10 * 60;
     let defaultPeroid = 5 * 60;

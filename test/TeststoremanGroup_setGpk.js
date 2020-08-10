@@ -10,7 +10,7 @@ const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
-const CreateGpkProxy = artifacts.require('CreateGpkProxy');
+const GpkProxy = artifacts.require('GpkProxy');
 
 const wanUtil = require('wanchain-util');
 const Tx = wanUtil.wanchainTx;
