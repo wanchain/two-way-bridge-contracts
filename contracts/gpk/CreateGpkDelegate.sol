@@ -352,7 +352,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
     /// @param storeman                   check storeman address if not address(0)
     /// @param checkSender                whether check msg.sender
     function checkValid(GpkTypes.Group storage group, uint16 roundIndex, uint8 curveIndex, GpkTypes.GpkStatus status, address storeman, bool checkSender)
-        internal
+        private
         view
     {
         require(roundIndex == group.round, "Outdated"); // must be latest round
