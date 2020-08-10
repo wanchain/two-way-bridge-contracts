@@ -36,14 +36,14 @@ library MetricTypes {
 
     struct PolyCMData {
         bytes polyCM;
-        bytes polyCMR;
-        bytes polyCMS;
+        bytes32 polyCMR;
+        bytes32 polyCMS;
     }
 
     struct PolyDataPln {
         bytes polyData;
-        bytes polyDataR;
-        bytes polyDataS;
+        bytes32 polyDataR;
+        bytes32 polyDataS;
     }
 
     struct RSlshData {
