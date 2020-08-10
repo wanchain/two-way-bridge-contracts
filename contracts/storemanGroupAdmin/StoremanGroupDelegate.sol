@@ -1,6 +1,6 @@
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2020 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -40,11 +40,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     using SafeMath for uint;
     using Deposit for Deposit.Records;
 
-    /**
-     *
-     * EVENTS
-     *
-     */
     event StoremanGroupRegisterStartEvent(bytes32 indexed groupId, uint workStart,uint workDuration, uint registerDuration, bytes32 indexed preGroupId);
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
     event StoremanGroupDismissedEvent(bytes32 indexed groupId, uint dismissTime);
@@ -60,11 +55,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         require(msg.sender == group.selectedNode[0], "Sender is not allowed");
         _;
     }
-    /**
-    *
-    * MANIPULATIONS
-    *
-    */
+
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param metricAddr                 metricAddr contract address
     function setDependence(address metricAddr, address gpkAddr,address quotaAddr)
@@ -80,13 +71,13 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
 
 
-    /// @notice                           function for owner set token manager and htlc contract address
-    /// @param groupId                    the building storeman group index.
-    /// @param wkAddrs                    white list work address.
-    /// @param senders                    senders address of the white list enode.
-    /// @param workStart                  When the group start to work. the day ID;
-    /// @param workDuration               how many days the group will work for
-    /// @param registerDuration           how many days the duration that allow transfer staking.
+    /// @notice                           function for owner to open a storeman group.
+    /// @param groupId                    the storeman group index.
+    /// @param wkAddrs                    white list work address array.
+    /// @param senders                    senders address array of the white list enode.
+    /// @param workStart                  When the group start to work. the seconds from 1970;
+    /// @param workDuration               how many seconds the group will work for
+    /// @param registerDuration           how many seconds the duration that allow staking.
     /// @param preGroupId                 the preview group index.
     function storemanGroupRegisterStart(bytes32 groupId,
         uint workStart,uint workDuration, uint registerDuration,  bytes32 preGroupId,  address[] wkAddrs, address[] senders)
@@ -118,6 +109,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         emit StoremanGroupRegisterStartEvent(groupId, workStart, workDuration, registerDuration, preGroupId);
         return StoremanLib.inheritNode(data,group, preGroupId, wkAddrs, senders);
     }
+
+    /// @dev	                    set the group chain and curve.
+    /// @param groupId	            the group id
     function updateGroupChain(bytes32 groupId,  uint chain1, uint chain2, uint curve1, uint curve2)
         external
         onlyOwner
@@ -130,6 +124,13 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.curve2 = curve2;
         group.status = StoremanType.GroupStatus.curveSeted;
     }
+
+    /// @dev	                    update the group default parameter.
+    /// @param groupId	            the group id
+    /// @param memberCountdesign	how many member in the group.
+    /// @param threshold	        the minimum signature.
+    /// @param minStakeIn	        the minimum stake when stakeIn
+    /// @param delegateFee	        how many fee the node receive from delegation.
     function updateGroupConfig(bytes32 groupId, uint memberCountdesign, uint threshold, uint minStakeIn, uint delegateFee)
         external
         onlyOwner
@@ -141,25 +142,29 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.delegateFee = delegateFee;
     }
 
-    function getGroupIdbyAddress(address pkAddr) public view returns (bytes32, bytes32) {
-        StoremanType.Candidate storage sk = data.candidates[pkAddr];
-        return (sk.groupId, sk.nextGroupId);
-    }
+    // TODO: no one use it????
+    // function getGroupIdbyAddress(address pkAddr) public view returns (bytes32, bytes32) {
+    //     StoremanType.Candidate storage sk = data.candidates[pkAddr];
+    //     return (sk.groupId, sk.nextGroupId);
+    // }
 
 
     /*
-    The logic of incentive
+    @dev The logic of incentive
     1) get the incentive by day and groupID.
     If the incentive array by day haven't geted from low level, the tx will try to get it.
     so the one who first incentive will spend more gas.
-
-    2) calculate the sk incentive all days.
-    3) calculate the delegator all days one by one.
+    2) calculate the sk incentive every days.
+    3) calculate the delegator every days one by one.
      */
-    function incentiveCandidator( address wkAddr) public  {
+    function incentiveCandidator( address wkAddr) external   {
         IncentiveLib.incentiveCandidator(data, wkAddr,metric);
     }
 
+    /// @notice                             Staker use this interface to stake wan to SC.
+    /// @param groupId                      the storeman group index.
+    /// @param PK                           the agent keystore's public key.
+    /// @param enodeID                      the agent enodeID, use for p2p network.
     function stakeIn(bytes32 groupId, bytes PK, bytes enodeID)
         external
         notHalted
@@ -168,6 +173,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return StoremanLib.stakeIn(data,groupId, PK, enodeID);
     }
 
+    /// @notice                             Staker use this interface to append wan to SC.
+    /// @param skPkAddr                     the agent keystore's address, which publickey is specified when stakeIn.
     function stakeAppend(address skPkAddr)
         external
         notHalted
@@ -176,11 +183,15 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return StoremanLib.stakeAppend(data, skPkAddr);
     }
 
-    function stakeOut(address skPkAddr) external {
+    /// @notice                             Staker use this interface to anounce he will not continue in next group.
+    ///  the next group will open in advance of the current group end. so if a node want to quit, it should call stakeOut before the new group open. 
+    ///  If the new group has opened, the node in old group can't stake out.
+    /// @param skPkAddr                     the agent keystore's address, which publickey is specified when stakeIn.
+    function stakeOut(address skPkAddr) external notHalted {
         return StoremanLib.stakeOut(data, skPkAddr);
     }
 
-    function stakeClaim(address skPkAddr) external {
+    function stakeClaim(address skPkAddr) external notHalted {
         return StoremanLib.stakeClaim(data,skPkAddr);
     }
 
@@ -349,7 +360,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.whiteCount, smg.selectedCount,  smg.workTime, smg.workTime+smg.totalTime);
     }
 
-    function getStoremanGroupConfig(bytes32 id)
+    function getStoremanGroupConfig(bytes32 id) // TODO delegateFee
         external
         view
         returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime)

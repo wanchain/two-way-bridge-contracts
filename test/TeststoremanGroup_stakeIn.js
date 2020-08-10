@@ -1,39 +1,19 @@
-const lib = require("./lib");
 const utils = require("./utils");
-const Web3 = require('web3')
-const net = require('net')
-const ethutil = require("ethereumjs-util");
-const pu = require('promisefy-util')
-
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
-const wanUtil = require('wanchain-util');
-const Tx = wanUtil.wanchainTx;
-
-
-
-const { registerStart,stakeInPre, web3url,g, toSelect, } = require('./basee.js')
-
-/*************************************
-staker: 1000 ~ 1000+100
-delegator: stakerId*100 ~ stakerID*100+1000
- ****************************************/
-
-
-
+const { registerStart,stakeInPre, g, toSelect, } = require('./basee.js');
+const { assert } = require("chai");
 
 contract('TestSmg', async (accounts) => {
 
     let  smg
     let groupId
-    let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
         smg = await StoremanGroupDelegate.at(smgProxy.address)
-
     })
 
 
@@ -61,4 +41,32 @@ contract('TestSmg', async (accounts) => {
         console.log("tx:", tx);
     })
 
+    it('T4', async ()=>{ 
+        let wk = utils.getAddressFromInt(10004)
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:60000});
+        let sk = await smg.getSelectedSmInfo(groupId, 1);
+        console.log("tx:", tx);
+        assert.equal(sk.wkAddr.toLowerCase(), wk.addr.toLowerCase(), "stakein 60000 failed");
+    })
+    it('T5', async ()=>{ 
+        let wk = utils.getAddressFromInt(10005)
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:55000});
+        let sk = await smg.getSelectedSmInfo(groupId, 2);
+        console.log("tx:", tx);
+        assert.equal(sk.wkAddr.toLowerCase(), wk.addr.toLowerCase(), "stakein 55000 failed");
+    })
+    it('T6', async ()=>{ 
+        let wk = utils.getAddressFromInt(10006)
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:57000});
+        let sk = await smg.getSelectedSmInfo(groupId, 2);
+        console.log("tx:", tx);
+        assert.equal(sk.wkAddr.toLowerCase(), wk.addr.toLowerCase(), "stakein 57000 failed");
+    })
+    it('T7', async ()=>{ 
+        let wk = utils.getAddressFromInt(10006)
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:56000});
+        let sk = await smg.getSelectedSmInfo(groupId, 3);
+        console.log("tx:", tx);
+        assert.equal(sk.wkAddr.toLowerCase(), wk.addr.toLowerCase(), "stakein 56000 failed");
+    })
 })

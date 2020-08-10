@@ -79,9 +79,6 @@ library PosLib {
             posReturn := mload(freePtr)
         }
 
-        // TODO
-        // uint256 res = posReturn.mul(crossChainCoefficient).mul(chainTypeCoefficient).div(DIVISOR*DIVISOR);
-
         return (posReturn,success);
 
     }
@@ -115,7 +112,6 @@ library PosLib {
     //     }
 
     //     uint256 hardcapReturn = hardcap.mul(1 ether).div(DIVISOR);
-    //     return hardcapReturn;
 
     //     return hardcapReturn<=p1Return?hardcapReturn:p1Return;
     // }
