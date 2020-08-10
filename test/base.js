@@ -26,7 +26,7 @@ const g = {
     leader,WhiteCount,whiteBackup,memberCountDesign,threshold,leaderPk,owner,web3url,
 }
 
-async function registerStart(smg, inheritGroupId = ''){
+async function registerStart(smg, inheritGroupId = '', wlStartIndex = 0){
     await smg.updateStoremanConf(3,1500,10)
     let now = parseInt(Date.now()/1000);
     let id = utils.stringTobytes32(now.toString())
@@ -39,14 +39,17 @@ async function registerStart(smg, inheritGroupId = ''){
         preGroupId = inheritGroupId;
     } else {
         preGroupId = utils.stringTobytes32("");
-        for (let i=0; i<WhiteCount;i++) {
-          let {addr:sr} = utils.getAddressFromInt(i+1000)
-          let {addr:wk} = utils.getAddressFromInt(i+2000)
-          wks.push(wk)
-          srs.push(sr)
-        }
     }
-    let tx = await smg.storemanGroupRegisterStart(id, now+10, 60 * 15, 60, preGroupId, wks,srs, {from: owner})
+    if ((!inheritGroupId) || wlStartIndex) {
+      for (let i=0; i<WhiteCount;i++) {
+        let {addr:sr} = utils.getAddressFromInt(i+wlStartIndex+1000)
+        let {addr:wk} = utils.getAddressFromInt(i+wlStartIndex+2000)
+        console.log("whitelist %d: %s", i, wk)
+        wks.push(wk)
+        srs.push(sr)
+      }
+    }
+    let tx = await smg.storemanGroupRegisterStart(id, now+10, 60 * 10, 60, preGroupId, wks,srs, {from: owner})
     console.log("registerStart txhash:", tx.tx)
     //await utils.waitReceipt(web3, tx.tx)
     let group = await smg.getStoremanGroupInfo(id)
@@ -62,14 +65,14 @@ async function registerStart(smg, inheritGroupId = ''){
     return group.groupId
 }
 
-async function stakeInPre(smg, id){
+async function stakeInPre(smg, groupId, nodeStartIndex = 0, nodeCount = stakerCount){
     console.log("smg.contract:", smg.contract._address)
-    for(let i=0; i<stakerCount; i++){
-        let sf = utils.getAddressFromInt(i+1000)
-        let sw = utils.getAddressFromInt(i+2000)
-        let en = utils.getAddressFromInt(i+3000)
+    for(let i=0; i<nodeCount; i++){
+        let sf = utils.getAddressFromInt(i+nodeStartIndex+1000)
+        let sw = utils.getAddressFromInt(i+nodeStartIndex+2000)
+        let en = utils.getAddressFromInt(i+nodeStartIndex+3000)
         let stakingValue = 2000;
-        let sdata =  smg.contract.methods.stakeIn(id, sw.pk,en.pk).encodeABI()
+        let sdata =  smg.contract.methods.stakeIn(groupId, sw.pk,en.pk).encodeABI()
         //console.log("sdata:",sdata)
         let rawTx = {
             Txtype: 0x01,

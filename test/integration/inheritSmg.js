@@ -5,7 +5,7 @@ const { registerStart, stakeInPre, toSelect } = require('../base.js')
 let leader = '0x5793e629c061e7fd642ab6a1b4d552cec0e2d606';
 
 contract('open_storeman_it', async () => {
-  before("start smg", async() => {
+  before("inherit smg", async() => {
     let smgProxy = await StoremanGroupProxy.deployed();
     let smgSc = await StoremanGroupDelegate.at(smgProxy.address);
     console.log("smg contract address: %s", smgProxy.address);

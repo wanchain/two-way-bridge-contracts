@@ -160,7 +160,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         for (uint i = 0; i < group.smNumber; i++) {
             address src = group.indexMap[i];
             if (round.srcMap[src].polyCommit.length == 0) {
-                GpkLib.slash(group, curveIndex, GpkTypes.SlashType.PolyCommitTimeout, src, address(0), true, false, smg);
+                GpkLib.slash(group, curveIndex, GpkTypes.SlashType.PolyCommitTimeout, src, address(0), false, smg);
                 slashTypes[slashCount] = GpkTypes.SlashType.PolyCommitTimeout;
                 slashSms[slashCount] = src;
                 slashCount++;
@@ -235,7 +235,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         GpkTypes.Dest storage d = round.srcMap[src].destMap[msg.sender];
         require(d.encSij.length == 0, "Outdated");
         require(now.sub(round.statusTime) > group.defaultPeriod, "Not late");
-        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijTimout, src, msg.sender, true, true, smg);
+        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijTimout, src, msg.sender, true, smg);
     }
 
     /// @notice                           function for src storeman reveal sij
@@ -258,9 +258,9 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         d.ephemPrivateKey = ephemPrivateKey;
         emit RevealSijLogger(groupId, roundIndex, curveIndex, msg.sender, dest);
         if (GpkLib.verifySij(d, group.addressMap[dest], src.polyCommit, round.curve)) {
-          GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckInvalid, msg.sender, dest, false, true, smg);
+          GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckInvalid, dest, msg.sender, true, smg);
         } else {
-          GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijInvalid, msg.sender, dest, true, true, smg);
+          GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijInvalid, msg.sender, dest, true, smg);
         }
     }
 
@@ -278,7 +278,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         require(d.checkStatus == GpkTypes.CheckStatus.Init, "Checked");
         require(d.encSij.length != 0, "Not ready");
         require(now.sub(d.setTime) > group.defaultPeriod, "Not late");
-        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckTimeout, msg.sender, dest, false, true, smg);
+        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckTimeout, dest, msg.sender, true, smg);
     }
 
     /// @notice                           function for report srcPk submit sij timeout
@@ -294,7 +294,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         GpkTypes.Dest storage d = round.srcMap[src].destMap[msg.sender];
         require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Not need");
         require(now.sub(d.checkTime) > group.defaultPeriod, "Not late");
-        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijTimeout, src, msg.sender, true, true, smg);
+        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijTimeout, src, msg.sender, true, smg);
     }
 
     /// @notice                           function for terminate protocol
@@ -331,8 +331,8 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
                     sType = GpkTypes.SlashType.SijTimeout;
                     dType = GpkTypes.SlashType.Connive;
                 }
-                GpkLib.slash(group, curveIndex, sType, src, dest, true, false, smg);
-                GpkLib.slash(group, curveIndex, dType, src, dest, false, false, smg);
+                GpkLib.slash(group, curveIndex, sType, src, dest, false, smg);
+                GpkLib.slash(group, curveIndex, dType, dest, src, false, smg);
                 slashTypes[slashCount] = sType;
                 slashSms[slashCount] = src;
                 slashCount++;

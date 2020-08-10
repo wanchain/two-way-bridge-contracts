@@ -54,13 +54,12 @@ library GpkLib {
 
     /// @notice                           event for contract slash storeman
     /// @param groupId                    storeman group id
+    /// @param slashType                  the reason to slash
+    /// @param slashed                    slashed storeman
+    /// @param parter                     negotiate parter
     /// @param round                      group negotiate round
     /// @param curveIndex                 signature curve index
-    /// @param slashType                  the reason to slash
-    /// @param src                        src storeman address
-    /// @param dest                       dest storeman address
-    /// @param srcOrDest                  if true, slash src, otherwise slash dest
-    event SlashLogger(bytes32 indexed groupId, uint16 indexed round, uint8 indexed curveIndex, uint8 slashType, address src, address dest, bool srcOrDest);
+    event SlashLogger(bytes32 indexed groupId, uint8 indexed slashType, address indexed slashed, address parter, uint16 round, uint8 curveIndex);
 
     /// @notice                           event for group reset protocol
     /// @param groupId                    storeman group id
@@ -231,20 +230,20 @@ library GpkLib {
     /// @param group                      storeman group
     /// @param curveIndex                 signature curve index
     /// @param slashType                  slash reason
-    /// @param src                        src storeman address
-    /// @param dest                       dest storeman address
-    /// @param srcOrDest                  slash src or dest
+    /// @param slashed                    slashed storeman
+    /// @param parter                     negotiate parter
     /// @param toReset                    is reset immediately
-    function slash(GpkTypes.Group storage group, uint8 curveIndex,
-        GpkTypes.SlashType slashType, address src, address dest, bool srcOrDest, bool toReset, address smg)
+    /// @param smg                        the storeman group admin contract
+    function slash(GpkTypes.Group storage group, uint8 curveIndex, GpkTypes.SlashType slashType,
+        address slashed, address parter, bool toReset, address smg)
         public
     {
-        emit SlashLogger(group.groupId, group.round, curveIndex, uint8(slashType), src, dest, srcOrDest);
+        emit SlashLogger(group.groupId, uint8(slashType), slashed, parter, group.round, curveIndex);
         if (toReset) {
             uint[] memory types = new uint[](1);
             types[0] = uint(slashType);
             address[] memory sms = new address[](1);
-            sms[0] = srcOrDest? src : dest;
+            sms[0] = slashed;
             bool isContinue = IStoremanGroup(smg).setInvalidSm(group.groupId, types, sms);
             reset(group, isContinue);
         }

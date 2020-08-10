@@ -31,7 +31,7 @@ async function getAddressFromInt(i){
 }
 
 async function main() {
-    let count=9
+    let count=15
     let dlCount = 9
     for(let i=0; i<count; i++){
         await getAddressFromInt(i+1000)
