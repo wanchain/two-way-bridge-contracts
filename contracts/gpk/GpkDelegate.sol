@@ -264,11 +264,11 @@ contract GpkDelegate is GpkStorage, Owned {
         }
     }
 
-    /// @notice                           function for report dest storeman check encSij timeout
+    /// @notice                           function for report dest storeman check Sij timeout
     /// @param groupId                    storeman group id
     /// @param curveIndex                 singnature curve index
     /// @param dest                       dest storeman address
-    function checkEncSijTimeout(bytes32 groupId, uint8 curveIndex, address dest)
+    function checkSijTimeout(bytes32 groupId, uint8 curveIndex, address dest)
         external
     {
         GpkTypes.Group storage group = groupMap[groupId];
