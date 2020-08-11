@@ -178,10 +178,9 @@ module.exports = async function (deployer, network) {
 
     await deployer.deploy(Secp256k1Curve);
     let secp256k1 = await Secp256k1Curve.deployed();
-    await gpk.setCurve(curveMap.get('secp256k1'), secp256k1.address);
     await deployer.deploy(Bn256Curve);
     let bn256 = await Bn256Curve.deployed();
-    await gpk.setCurve(curveMap.get('bn256'), bn256.address);
+    await gpk.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address]);
 
     await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
 }
