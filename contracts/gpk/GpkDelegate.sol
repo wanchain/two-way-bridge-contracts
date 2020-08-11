@@ -362,7 +362,7 @@ contract GpkDelegate is GpkStorage, Owned {
         view
     {
         require(roundIndex == group.round, "Invalid round"); // must be current round
-        require(curveIndex < group.curveTypes, "Invalid curve"); // group is initialized, and curve is permitted
+        require(curveIndex <= 1, "Invalid curve"); // group is initialized, and curve is permitted
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         require(round.status == status, "Invalid status");
         if (storeman != address(0)) {

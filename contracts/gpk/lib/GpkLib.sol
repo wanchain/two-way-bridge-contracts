@@ -103,12 +103,6 @@ library GpkLib {
         require(config.curves[uint8(curve2)] != address(0), "No curve2");
         group.roundMap[group.round][0].curve = config.curves[uint8(curve1)];
         group.roundMap[group.round][1].curve = config.curves[uint8(curve2)];
-        if (curve1 == curve2) {
-            group.curveTypes = 1;
-            group.roundMap[group.round][1].status = GpkTypes.GpkStatus.Complete;
-        } else {
-            group.curveTypes = 2;
-        }
 
         // selected sm list
         group.groupId = groupId;
@@ -131,9 +125,6 @@ library GpkLib {
     {
         GpkTypes.Round storage round1 = group.roundMap[group.round][0];
         GpkTypes.Round storage round2 = group.roundMap[group.round][1];
-        if (group.curveTypes == 1) {
-            round2.gpk = round1.gpk;
-        }
         if (round1.status == round2.status) {
             IStoremanGroup(smg).setGpk(group.groupId, round1.gpk, round2.gpk);
             emit GpkCreatedLogger(group.groupId, group.round, round1.gpk, round2.gpk);
@@ -191,9 +182,6 @@ library GpkLib {
             assembly { mstore(add(gpkShare, 32), x) }
             assembly { mstore(add(gpkShare, 64), y) }
             round.srcMap[txAddress].gpkShare = gpkShare;
-            if (group.curveTypes == 1) {
-                group.roundMap[group.round][1].srcMap[txAddress].gpkShare = gpkShare;
-            }
         }
     }
 
