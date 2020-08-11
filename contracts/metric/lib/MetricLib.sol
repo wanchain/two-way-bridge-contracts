@@ -56,6 +56,7 @@ library MetricLib {
         require(rslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
         require(rslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
 
+        require(rslshData.becauseSndr, "R because sender is not true");
 
         uint8 smIndex;
         smIndex = rslshData.becauseSndr ? rslshData.sndrIndex : rslshData.rcvrIndex;
@@ -85,8 +86,7 @@ library MetricLib {
     {
         bool bSig = checkRSig(metricData, grpId, hashX, smIndex);
         bool bContent = checkRContent(metricData, grpId, hashX, smIndex);
-        return getChkResult(bSig, bContent, metricData.mapRSlsh[grpId][hashX][smIndex].becauseSndr);
-        return bContent;
+        return getChkResult(bSig, bContent);
     }
     /// @notice                         check signature of proof in R stage
     /// @param metricData               self parameter for lib function
@@ -142,26 +142,12 @@ library MetricLib {
         return xLeft == xRight && yLeft == yRight;
     }
 
-    function getChkResult(bool bSig, bool bContent, bool becauseSndr)
+    function getChkResult(bool bSig, bool bContent)
     internal
     pure
     returns (bool)
     {
-        if (!bSig || !bContent) {
-            // should be sender
-            if (becauseSndr) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            // should be receiver
-            if (becauseSndr) {
-                return false;
-            } else {
-                return true;
-            }
-        }
+        return !bSig || !bContent;
     }
     /// @notice                         function for write slash of S stage
     /// @param metricData               self parameter for lib function
@@ -183,6 +169,8 @@ library MetricLib {
         require(sslshData.polyDataPln.polyData.length != 0, "polyData is empty");
         require(sslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
         require(sslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
+
+        require(sslshData.becauseSndr, "S because sender is not true");
 
         uint8 smIndex;
         smIndex = sslshData.becauseSndr ? sslshData.sndrIndex : sslshData.rcvrIndex;
@@ -208,7 +196,7 @@ library MetricLib {
     {
         bool bSig = checkSSig(metricData, grpId, hashX, smIndex);
         bool bContent = checkSContent(metricData, grpId, hashX, smIndex);
-        return getChkResult(bSig, bContent, metricData.mapSSlsh[grpId][hashX][smIndex].becauseSndr);
+        return getChkResult(bSig, bContent);
     }
     /// @notice                         check signature of proof in S stage
     /// @param metricData               self parameter for lib function
@@ -317,5 +305,34 @@ library MetricLib {
         IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
         (leader,,) = smgTemp.getSelectedSmInfo(grpId, uint(0));
         return leader;
+    }
+
+    /// @notice                         get work address of the group
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param smIndex                  sm index
+    function getWkAddr(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint smIndex)
+    public
+    view
+    returns (address)
+    {
+        address wkAddr;
+        IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
+        (wkAddr,,) = smgTemp.getSelectedSmInfo(grpId, smIndex);
+        return wkAddr;
+    }
+
+    /// @notice                         record sm slash
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param smIndex                  sm index
+    function recordSmSlash(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint smIndex)
+    public
+    view
+    {
+        address wkAddr;
+        IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
+        wkAddr = getWkAddr(metricData, grpId, smIndex);
+        smgTemp.recordSmSlash(wkAddr);
     }
 }

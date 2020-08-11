@@ -43,4 +43,6 @@ interface IStoremanGroup {
     // comment because index 0 is always the index of leader
     //function getLeaderIndexByGrpId(bytes32 grpId) external returns (uint);
     function getSelectedSmInfo(bytes32 groupId, uint index) external returns( address txAddress, bytes pk, bytes enodeId);
+
+    function recordSmSlash(address wk) external;
 }
