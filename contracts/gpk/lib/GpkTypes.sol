@@ -64,7 +64,7 @@ library GpkTypes {
 
     struct Src {
         bytes polyCommit;
-        bytes pkShare;
+        bytes gpkShare;
         /// txAddress -> Dest
         mapping(address => Dest) destMap;
     }

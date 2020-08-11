@@ -94,7 +94,7 @@ contract FakeSmg {
     }
 
 
-    function getPkShare(bytes32 groupId, uint index) external view returns(bytes pkShare1, bytes pkShare2){
+    function getGpkShare(bytes32 groupId, uint index) external view returns(bytes gpkShare1, bytes gpkShare2){
         return (fromHex(gpkShare1Str),fromHex(gpkShare2Str));
     }
 

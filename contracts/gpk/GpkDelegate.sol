@@ -104,13 +104,17 @@ contract GpkDelegate is GpkStorage, Owned {
     }
 
     /// @notice                           function for set smg contract address
-    /// @param curveId                    curve id
-    /// @param curveAddress               curve contract address
-    function setCurve(uint8 curveId, address curveAddress)
+    /// @param curveId                    curve id array
+    /// @param curveAddress               curve contract address array
+    function setCurve(uint8[] curveId, address[] curveAddress)
         external
         onlyOwner
     {
-        config.curves[curveId] = curveAddress;
+        uint8 length = uint8(curveId.length);
+        require((length > 0) && (length == curveAddress.length), "Mismatched length");
+        for (uint8 i = 0; i < length; i++) {
+            config.curves[curveId[i]] = curveAddress[i];
+        }
     }
 
     /// @notice                           function for storeman submit poly commit
@@ -137,7 +141,7 @@ contract GpkDelegate is GpkStorage, Owned {
         round.srcMap[msg.sender].polyCommit = polyCommit;
         round.polyCommitCount++;
         GpkLib.updateGpk(round, polyCommit);
-        GpkLib.updatePkShare(group, round, polyCommit);
+        GpkLib.updateGpkShare(group, round, polyCommit);
         if (round.polyCommitCount >= group.smNumber) {
             round.status = GpkTypes.GpkStatus.Negotiate;
             round.statusTime = now;
@@ -404,15 +408,15 @@ contract GpkDelegate is GpkStorage, Owned {
         return (d.encSij, uint8(d.checkStatus), d.setTime, d.checkTime, d.sij, d.ephemPrivateKey);
     }
 
-    function getPkShare(bytes32 groupId, uint16 index)
+    function getGpkShare(bytes32 groupId, uint16 index)
         external
         view
-        returns(bytes pkShare1, bytes pkShare2)
+        returns(bytes gpkShare1, bytes gpkShare2)
     {
         GpkTypes.Group storage group = groupMap[groupId];
         address src = group.indexMap[index];
         mapping(uint8 => GpkTypes.Round) chainRoundMap = groupMap[groupId].roundMap[group.round];
-        return (chainRoundMap[0].srcMap[src].pkShare, chainRoundMap[1].srcMap[src].pkShare);
+        return (chainRoundMap[0].srcMap[src].gpkShare, chainRoundMap[1].srcMap[src].gpkShare);
     }
 
     function getGpk(bytes32 groupId)

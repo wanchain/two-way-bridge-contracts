@@ -140,7 +140,7 @@ library GpkLib {
         }
     }
 
-    /// @notice                           function for generate gpk and pkShare
+    /// @notice                           function for update gpk
     /// @param round                      round
     /// @param polyCommit                 poly commit
     function updateGpk(GpkTypes.Round storage round, bytes polyCommit)
@@ -163,11 +163,11 @@ library GpkLib {
         round.gpk = gpk;
     }
 
-    /// @notice                           function for generate gpk and pkShare
+    /// @notice                           function for update gpkShare
     /// @param group                      storeman group
     /// @param round                      round
     /// @param polyCommit                 poly commit
-    function updatePkShare(GpkTypes.Group storage group, GpkTypes.Round storage round, bytes polyCommit)
+    function updateGpkShare(GpkTypes.Group storage group, GpkTypes.Round storage round, bytes polyCommit)
         public
     {
         uint x;
@@ -179,20 +179,20 @@ library GpkLib {
             (x, y, success) = ICurve(round.curve).calPolyCommit(polyCommit, pk);
             require(success == true, "PolyCommit failed");
 
-            bytes memory pkShare = round.srcMap[txAddress].pkShare;
-            if (pkShare.length != 0) {
-                uint pkX = DataConvert.bytes2uint(pkShare, 0, 32);
-                uint pkY = DataConvert.bytes2uint(pkShare, 32, 32);
+            bytes memory gpkShare = round.srcMap[txAddress].gpkShare;
+            if (gpkShare.length != 0) {
+                uint pkX = DataConvert.bytes2uint(gpkShare, 0, 32);
+                uint pkY = DataConvert.bytes2uint(gpkShare, 32, 32);
                 (x, y, success) = ICurve(round.curve).add(x, y, pkX, pkY);
                 require(success == true, "Add failed");
             } else {
-                pkShare = new bytes(64);
+                gpkShare = new bytes(64);
             }
-            assembly { mstore(add(pkShare, 32), x) }
-            assembly { mstore(add(pkShare, 64), y) }
-            round.srcMap[txAddress].pkShare = pkShare;
+            assembly { mstore(add(gpkShare, 32), x) }
+            assembly { mstore(add(gpkShare, 64), y) }
+            round.srcMap[txAddress].gpkShare = gpkShare;
             if (group.curveTypes == 1) {
-                group.roundMap[group.round][1].srcMap[txAddress].pkShare = pkShare;
+                group.roundMap[group.round][1].srcMap[txAddress].gpkShare = gpkShare;
             }
         }
     }
