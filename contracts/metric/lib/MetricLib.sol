@@ -45,16 +45,13 @@ library MetricLib {
     internal
     returns (bool, uint8)
     {
+        require(metricData.mapRSlsh[grpId][hashX][smIndex].polyDataPln.polyData.length != 0,"Duplicate RSlsh");
+
         require(rslshData.sndrIndex <= smCount, "invalid send index");
         require(rslshData.rcvrIndex <= smCount, "invalid receiver index");
 
         require(rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
-        require(rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
-        require(rslshData.polyCMData.polyCMS.length != 0, "polyCMS is empty");
-
         require(rslshData.polyDataPln.polyData.length != 0, "polyData is empty");
-        require(rslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
-        require(rslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
 
         require(rslshData.becauseSndr, "R because sender is not true");
 
@@ -65,7 +62,7 @@ library MetricLib {
 
 
         if (checkRProof(metricData, grpId, hashX, smIndex)) {
-            metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] += 1;
+            metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] = metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex].add(uint(1));
             return (true, smIndex);
         } else {
             delete metricData.mapRSlsh[grpId][hashX][smIndex];
@@ -159,16 +156,15 @@ library MetricLib {
     public
     returns (bool, uint8)
     {
+        require(metricData.mapSSlsh[grpId][hashX][smIndex].polyDataPln.polyData.length != 0,"Duplicate SSlsh");
+
         require(sslshData.sndrIndex <= smCount, "invalid send index");
         require(sslshData.rcvrIndex <= smCount, "invalid receiver index");
 
         require(sslshData.m.length != 0, "m is empty");
         require(sslshData.rpkShare.length != 0, "rpkShare is empty");
         require(sslshData.gpkShare.length != 0, "gpkShare is empty");
-
         require(sslshData.polyDataPln.polyData.length != 0, "polyData is empty");
-        require(sslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
-        require(sslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
 
         require(sslshData.becauseSndr, "S because sender is not true");
 
@@ -177,7 +173,7 @@ library MetricLib {
         metricData.mapSSlsh[grpId][hashX][smIndex] = sslshData;
 
         if (checkSProof(metricData, grpId, hashX, smIndex)) {
-            metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] += 1;
+            metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] = metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex].add(uint(1));
             return (true, smIndex);
         } else {
             delete metricData.mapSSlsh[grpId][hashX][smIndex];
