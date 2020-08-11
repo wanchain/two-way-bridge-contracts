@@ -45,23 +45,11 @@ contract MetricDelegate is MetricStorage, Halt {
      * MODIFIERS
      *
      */
-    modifier onlyValidGrpId (bytes32 grpId) {
-        _checkGrpId(grpId);
+    modifier onlyLeader(bytes32 grpId) {
+        address leader;
+        leader = metricData.getLeader(grpId);
+        require(msg.sender == leader, "Not leader");
         _;
-    }
-
-    modifier initialized {
-        _initialized();
-        _;
-    }
-
-    function _checkGrpId(bytes32 grpId) internal view {
-        require(grpId.length > 0, "grpId null");
-    }
-
-    function _initialized() internal view {
-        require(IConfig(metricData.config) != IConfig(address(0)), "IConfig null");
-        require(IStoremanGroup(metricData.smg) != IStoremanGroup(address(0)), "Smg null");
     }
 
     /**
@@ -86,8 +74,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId)
     external
     view
-    initialized
-    onlyValidGrpId(grpId)
     returns (uint[]) {
         require(endEpId >= startEpId, "endEpId<startEpId");
         uint[] memory ret;
@@ -107,8 +93,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getPrdSlshMetric(bytes32 grpId, uint startEpId, uint endEpId)
     external
     view
-    initialized
-    onlyValidGrpId(grpId)
     returns (uint[])
     {
         require(endEpId >= startEpId, "endEpId<startEpId");
@@ -129,8 +113,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getSmSuccCntByEpId(bytes32 grpId, uint epId, uint8 smIndex)
     external
     view
-    initialized
-    onlyValidGrpId(grpId)
     returns (uint)
     {
         return metricData.mapInctCount[grpId][epId][smIndex];
@@ -142,8 +124,6 @@ contract MetricDelegate is MetricStorage, Halt {
     function getSlshCntByEpId(bytes32 grpId, uint epId, uint8 smIndex)
     external
     view
-    initialized
-    onlyValidGrpId(grpId)
     returns (uint)
     {
         return metricData.mapSlshCount[grpId][epId][smIndex];
@@ -153,15 +133,11 @@ contract MetricDelegate is MetricStorage, Halt {
     /// @param grpId                    group id
     /// @param hashX                    hash of the signed data
     /// @param smIndex                  index of store man
-    /// @param slshReason               slash reason
-    function getRSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
+    function getRSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     external
     view
-    initialized
-    onlyValidGrpId(grpId)
     returns (MetricTypes.RSlshData)
     {
-        require(slshReason == MetricTypes.SlshReason.R, "invalid slshReason");
         return metricData.mapRSlsh[grpId][hashX][smIndex];
 
     }
@@ -169,21 +145,16 @@ contract MetricDelegate is MetricStorage, Halt {
     /// @param grpId                    group id
     /// @param hashX                    hash of the signed data
     /// @param smIndex                  index of store man
-    /// @param slshReason               slash reason
-    function getSSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex, MetricTypes.SlshReason slshReason)
+    function getSSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     external
     view
-    initialized
-    onlyValidGrpId(grpId)
     returns (MetricTypes.SSlshData)
     {
-        require(slshReason == MetricTypes.SlshReason.S, "invalid slshReason");
         return metricData.mapSSlsh[grpId][hashX][smIndex];
     }
 
     ///=======================================write incentive and slash=============================================
 
-    /// todo white list can write the working record
     /// @notice                         function for write incentive data
     /// @param grpId                    group id
     /// @param hashX                    hash of the signed data
@@ -191,8 +162,7 @@ contract MetricDelegate is MetricStorage, Halt {
     function wrInct(bytes32 grpId, bytes32 hashX, uint inctData)
     external
     notHalted
-    initialized
-    onlyValidGrpId(grpId)
+    onlyLeader(grpId)
     {
         metricData.mapInct[grpId][hashX].smIndexes = inctData;
         uint8 smCount = getSMCount(grpId);
@@ -207,67 +177,17 @@ contract MetricDelegate is MetricStorage, Halt {
     /// @notice                         function for write R stage slash
     /// @param grpId                    group id
     /// @param hashX                    hash of the signed data
-    /// @param rnwData                  no working store man's bitmap in stage R
-    function wrRNW(bytes32 grpId, bytes32 hashX, uint rnwData)
-    external
-    notHalted
-    initialized
-    onlyValidGrpId(grpId)
-    {
-        metricData.mapRNW[grpId][hashX].smIndexes = rnwData;
-
-        uint8 smCount = getSMCount(grpId);
-        uint epochId = getEpochId();
-
-        for (uint8 i = 0; i < smCount; i++) {
-            if (checkHamming(rnwData, i)) {
-                metricData.mapSlshCount[grpId][epochId][i] += 1;
-
-                emit SMSlshLogger(grpId, hashX, i, MetricTypes.SlshReason.RNK);
-            }
-        }
-    }
-    /// @notice                         function for write S stage slash
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param snwData                  no working store man's bitmap in stage S
-    function wrSNW(bytes32 grpId, bytes32 hashX, uint snwData)
-    external
-    notHalted
-    initialized
-    onlyValidGrpId(grpId)
-    {
-        metricData.mapSNW[grpId][hashX].smIndexes = snwData;
-
-        uint8 smCount = getSMCount(grpId);
-        uint epochId = getEpochId();
-
-        for (uint8 i = 0; i < smCount; i++) {
-            if (checkHamming(snwData, i)) {
-                metricData.mapSlshCount[grpId][epochId][i] += 1;
-
-                emit SMSlshLogger(grpId, hashX, i, MetricTypes.SlshReason.SNK);
-            }
-        }
-    }
-    /// @notice                         function for write R stage slash
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
     /// @param rslshData                data of slash
     function wrRSlsh(bytes32 grpId, bytes32 hashX, MetricTypes.RSlshData memory rslshData)
     public
     notHalted
-    initialized
-    onlyValidGrpId(grpId)
+    onlyLeader(grpId)
     {
         bool success;
         uint8 smIndex;
         (success, smIndex) = metricData.writeRSlsh(grpId, hashX, rslshData, getSMCount(grpId));
-        if (success) {
-            emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.R);
-        } else {
-            emit SMInvSlshLogger(msg.sender, grpId, hashX, smIndex, MetricTypes.SlshReason.R);
-        }
+        require(success,'Fail to write R slsh');
+        emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
     }
     /// @notice                         function for write S stage slash
     /// @param grpId                    group id
@@ -276,17 +196,13 @@ contract MetricDelegate is MetricStorage, Halt {
     function wrSSlsh(bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData memory sslshData)
     public
     notHalted
-    initialized
-    onlyValidGrpId(grpId)
+    onlyLeader(grpId)
     {
         bool success;
         uint8 smIndex;
         (success, smIndex) = metricData.writeSSlsh(grpId, hashX, sslshData, getSMCount(grpId));
-        if (success) {
-            emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
-        } else {
-            emit SMInvSlshLogger(msg.sender, grpId, hashX, smIndex, MetricTypes.SlshReason.S);
-        }
+        require(success,'Fail to writeSSlsh');
+        emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
     }
 
     /// @notice                         function for set config and smg contract address
@@ -305,7 +221,7 @@ contract MetricDelegate is MetricStorage, Halt {
 
 
     function getSMCount(bytes32 grpId)
-    internal
+    private
     view
     returns (uint8)
     {
@@ -313,7 +229,7 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
     function getEpochId()
-    internal
+    private
     view
     returns (uint)
     {
@@ -321,7 +237,7 @@ contract MetricDelegate is MetricStorage, Halt {
     }
 
     function checkHamming(uint indexes, uint8 smIndex)
-    internal
+    private
     pure
     returns (bool)
     {
