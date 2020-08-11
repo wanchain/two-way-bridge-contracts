@@ -41,7 +41,7 @@ contract CrossStorage is BasicStorage {
      **
      ************************************************************/
 
-    CrossTypes.Data storageData;
+    CrossTypes.Data internal storageData;
 
     /// @notice locked time(in seconds)
     uint public lockedTime = uint(3600*36);
