@@ -164,6 +164,9 @@ contract MetricDelegate is MetricStorage, Halt {
     notHalted
     onlyLeader(grpId)
     {
+
+        require(metricData.mapInct[grpId][hashX].smIndexes != uint(0),'Duplicate Incentive');
+
         metricData.mapInct[grpId][hashX].smIndexes = inctData;
         uint8 smCount = getSMCount(grpId);
         uint epochId = getEpochId();
