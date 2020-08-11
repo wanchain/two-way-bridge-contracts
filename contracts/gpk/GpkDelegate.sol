@@ -126,8 +126,10 @@ contract GpkDelegate is GpkStorage, Owned {
         GpkTypes.Group storage group = groupMap[groupId];
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         if (group.smNumber == 0) {
-            // init group when the first node submit
+            // init group when the first node submit to start every round
             GpkLib.initGroup(groupId, group, config, smg);
+        }
+        if (round.statusTime == 0) {
             round.statusTime = now;
         }
         checkValid(group, roundIndex, curveIndex, GpkTypes.GpkStatus.PolyCommit, address(0), true);
@@ -355,7 +357,7 @@ contract GpkDelegate is GpkStorage, Owned {
         private
         view
     {
-        require(roundIndex == group.round, "Outdated"); // must be latest round
+        require(roundIndex == group.round, "Invalid round"); // must be current round
         require(curveIndex < group.curveTypes, "Invalid curve"); // group is initialized, and curve is permitted
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         require(round.status == status, "Invalid status");

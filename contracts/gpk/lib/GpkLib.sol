@@ -31,6 +31,7 @@ import "../../lib/DataConvert.sol";
 import "../../interfaces/IStoremanGroup.sol";
 import "./ICurve.sol";
 import "./GpkTypes.sol";
+import "../../storemanGroupAdmin/StoremanType.sol";
 
 library GpkLib {
 
@@ -93,9 +94,11 @@ library GpkLib {
         }
 
         // init signature curve
+        uint8 status;
         uint256 curve1;
         uint256 curve2;
-        (,,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
+        (,status,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
+        require(status == uint8(StoremanType.GroupStatus.selected), "Invalid status");
         require(config.curves[uint8(curve1)] != address(0), "No curve1");
         require(config.curves[uint8(curve2)] != address(0), "No curve2");
         group.roundMap[group.round][0].curve = config.curves[uint8(curve1)];
