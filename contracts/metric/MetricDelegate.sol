@@ -81,7 +81,7 @@ contract MetricDelegate is MetricStorage, Halt {
         ret = new uint[](n);
         for (uint8 i = 0; i < n; i++) {
             for (uint j = startEpId; j <= endEpId; j++) {
-                ret[i] += metricData.mapInctCount[grpId][j][i];
+                ret[i] = ret[i].add(metricData.mapInctCount[grpId][j][i]);
             }
         }
         return ret;
@@ -101,7 +101,7 @@ contract MetricDelegate is MetricStorage, Halt {
         ret = new uint[](n);
         for (uint8 i = 0; i < n; i++) {
             for (uint j = startEpId; j <= endEpId; j++) {
-                ret[i] += metricData.mapSlshCount[grpId][j][i];
+                ret[i] = ret[i].add(metricData.mapSlshCount[grpId][j][i]);
             }
         }
         return ret;
@@ -164,13 +164,16 @@ contract MetricDelegate is MetricStorage, Halt {
     notHalted
     onlyLeader(grpId)
     {
+
+        require(metricData.mapInct[grpId][hashX].smIndexes != uint(0), 'Duplicate Incentive');
+
         metricData.mapInct[grpId][hashX].smIndexes = inctData;
         uint8 smCount = getSMCount(grpId);
         uint epochId = getEpochId();
 
         for (uint8 i = 0; i < smCount; i++) {
             if (checkHamming(inctData, i)) {
-                metricData.mapInctCount[grpId][epochId][i] += 1;
+                metricData.mapInctCount[grpId][epochId][i] = metricData.mapInctCount[grpId][epochId][i].add(uint(1));
             }
         }
     }
@@ -186,9 +189,9 @@ contract MetricDelegate is MetricStorage, Halt {
         bool success;
         uint8 smIndex;
         (success, smIndex) = metricData.writeRSlsh(grpId, hashX, rslshData, getSMCount(grpId));
-        require(success,'Fail to write R slsh');
+        require(success, 'Fail to write R slsh');
 
-        metricData.recordSmSlash(grpId,smIndex);
+        metricData.recordSmSlash(grpId, smIndex);
 
         emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.R);
     }
@@ -204,9 +207,9 @@ contract MetricDelegate is MetricStorage, Halt {
         bool success;
         uint8 smIndex;
         (success, smIndex) = metricData.writeSSlsh(grpId, hashX, sslshData, getSMCount(grpId));
-        require(success,'Fail to writeSSlsh');
+        require(success, 'Fail to writeSSlsh');
 
-        metricData.recordSmSlash(grpId,smIndex);
+        metricData.recordSmSlash(grpId, smIndex);
 
         emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
     }
