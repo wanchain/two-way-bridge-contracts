@@ -187,7 +187,7 @@ contract MetricDelegate is MetricStorage, Halt {
         uint8 smIndex;
         (success, smIndex) = metricData.writeRSlsh(grpId, hashX, rslshData, getSMCount(grpId));
         require(success,'Fail to write R slsh');
-        emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
+        emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.R);
     }
     /// @notice                         function for write S stage slash
     /// @param grpId                    group id
