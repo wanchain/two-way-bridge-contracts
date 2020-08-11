@@ -74,15 +74,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         _;
     }
 
-    /// @notice                                 check the storeman group is unregistered
-    /// @param smgID                            ID of storeman group
-    modifier onlyUnregisteredSmg(bytes32 smgID) {
-        uint8 status;
-        (,status,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-        require(status == uint8(GroupStatus.unregistered), "PK is not unregistered");
-        _;
-    }
 
     // function _checkValue(uint value) private view {
     //     require(value != 0, "Value is null");
