@@ -306,4 +306,33 @@ library MetricLib {
         (leader,,) = smgTemp.getSelectedSmInfo(grpId, uint(0));
         return leader;
     }
+
+    /// @notice                         get work address of the group
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param smIndex                  sm index
+    function getWkAddr(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint smIndex)
+    public
+    view
+    returns (address)
+    {
+        address wkAddr;
+        IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
+        (wkAddr,,) = smgTemp.getSelectedSmInfo(grpId, smIndex);
+        return wkAddr;
+    }
+
+    /// @notice                         record sm slash
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param smIndex                  sm index
+    function recordSmSlash(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint smIndex)
+    public
+    view
+    {
+        address wkAddr;
+        IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
+        wkAddr = getWkAddr(metricData, grpId, smIndex);
+        smgTemp.recordSmSlash(wkAddr);
+    }
 }
