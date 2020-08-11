@@ -84,6 +84,26 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         _;
     }
 
+    // function _checkValue(uint value) private view {
+    //     require(value != 0, "Value is null");
+    // }
+
+    // function _checkReadySmg(bytes32 smgID) private view {
+    //     uint8 status;
+    //     uint startTime;
+    //     uint endTime;
+    //     (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+
+    //     require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
+    // }
+
+    // function _checkUnregisteredSmg(bytes32 smgID) private view {
+    //     uint8 status;
+    //     (,status,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+
+    //     require(status == uint8(GroupStatus.unregistered), "PK is not unregistered");
+    // }
+
     /**
      *
      * MANIPULATIONS
@@ -661,13 +681,18 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @notice       convert bytes to bytes32
     /// @param b      bytes array
     /// @param offset offset of array to begin convert
-    function bytesToBytes32(bytes b, uint offset) private pure returns (bytes32) {
-        bytes32 out;
+    // function bytesToBytes32(bytes b, uint offset) private pure returns (bytes32) {
+    //     bytes32 out;
 
-        for (uint i = 0; i < 32; i++) {
-          out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
+    //     for (uint i = 0; i < 32; i++) {
+    //       out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
+    //     }
+    //     return out;
+    // }
+    function bytesToBytes32(bytes memory b, uint offset) private pure returns (bytes32 result) {
+        assembly {
+            result := mload(add(add(b, offset), 32))
         }
-        return out;
     }
 
     /// @notice             verify signature
