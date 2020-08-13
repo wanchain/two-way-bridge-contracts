@@ -31,7 +31,7 @@ pragma experimental ABIEncoderV2;
 import "./HTLCTxLib.sol";
 import "./CrossTypes.sol";
 import "../interfaces/ITokenManager.sol";
-import "../interfaces/IRC20Protocol.sol";
+// import "../interfaces/IRC20Protocol.sol";
 import "../interfaces/ISmgFeeProxy.sol";
 
 library HTLCBurnLib {
@@ -165,7 +165,8 @@ library HTLCBurnLib {
         }
 
         address tokenScAddr = CrossTypes.bytesToAddress(tokenShadowAccount);
-        require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
+        // require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
+        require(CrossTypes.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
 
         emit UserBurnLockLogger(params.xHash, params.smgID, params.tokenPairID, params.value, lockFee, params.userOrigAccount);
     }
@@ -211,7 +212,8 @@ library HTLCBurnLib {
             (userOrigAccount).transfer(value);
             emit TransferToLogger(userOrigAccount, value);
         } else {
-            require(IRC20Protocol(tokenScAddr).transfer(userOrigAccount, value), "Transfer token failed");
+            // require(IRC20Protocol(tokenScAddr).transfer(userOrigAccount, value), "Transfer token failed");
+            require(CrossTypes.transfer(tokenScAddr, userOrigAccount, value), "Transfer token failed");
         }
 
         emit UserBurnRedeemLogger(xHash, smgID, tokenPairID, x);
@@ -310,7 +312,8 @@ library HTLCBurnLib {
         }
 
         address tokenScAddr = CrossTypes.bytesToAddress(tokenShadowAccount);
-        require(IRC20Protocol(tokenScAddr).transfer(userShadowAccount, value), "Transfer token failed");
+        // require(IRC20Protocol(tokenScAddr).transfer(userShadowAccount, value), "Transfer token failed");
+        require(CrossTypes.transfer(tokenScAddr, userShadowAccount, value), "Transfer token failed");
 
         emit UserBurnRevokeLogger(xHash, smgID, tokenPairID, revokeFee);
     }

@@ -31,7 +31,7 @@ pragma experimental ABIEncoderV2;
 import "./HTLCTxLib.sol";
 import "./CrossTypes.sol";
 import "../interfaces/ITokenManager.sol";
-import "../interfaces/IRC20Protocol.sol";
+// import "../interfaces/IRC20Protocol.sol";
 import "../interfaces/ISmgAdminProxy.sol";
 import "../interfaces/ISmgFeeProxy.sol";
 import "../interfaces/IQuota.sol";
@@ -170,7 +170,8 @@ library HTLCMintLib {
         } else {
             left = (msg.value).sub(lockFee);
 
-            require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
+            // require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
+            require(CrossTypes.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
         }
         if (left != 0) {
             (msg.sender).transfer(left);
@@ -310,7 +311,8 @@ library HTLCMintLib {
             (userOrigAccount).transfer(value);
             emit TransferToLogger(userOrigAccount, value);
         } else {
-            require(IRC20Protocol(tokenScAddr).transfer(userOrigAccount, value), "Transfer token failed");
+            // require(IRC20Protocol(tokenScAddr).transfer(userOrigAccount, value), "Transfer token failed");
+            require(CrossTypes.transfer(tokenScAddr, userOrigAccount, value), "Transfer token failed");
         }
 
         emit UserMintRevokeLogger(xHash, smgID, tokenPairID, revokeFee);
