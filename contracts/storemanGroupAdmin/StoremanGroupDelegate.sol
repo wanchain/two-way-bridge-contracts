@@ -307,7 +307,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
                     group.tickedNode[group.tickedCount] = group.selectedNode[k];
                     group.selectedNode[k] = group.whiteMap[group.tickedCount + group.whiteCount];
                     group.tickedCount += 1;
-                    if(slashType[i] == GpkTypes.SlashType.EncSijInvalid || slashType[i] == GpkTypes.SlashType.CheckInvalid) {
+                    if(slashType[i] == GpkTypes.SlashType.SijInvalid || slashType[i] == GpkTypes.SlashType.CheckInvalid) {
                         recordSmSlash(badAddrs[i]);
                     }
                     break;

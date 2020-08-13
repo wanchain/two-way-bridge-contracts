@@ -33,7 +33,7 @@ contract GpkStorage is BasicStorage {
     /// smg instance address
     address public smg;
 
-    /// curve -> contract address
+    /// gpk config
     GpkTypes.Config config;
 
     /// groupId -> Group
