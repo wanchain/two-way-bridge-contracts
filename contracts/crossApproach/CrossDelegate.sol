@@ -650,7 +650,10 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param receiver                     account of the receiver
     /// @param r                            signature
     /// @param s                            signature
-    function smgWithdrawFee(bytes32 smgID, uint timeStamp, address receiver, bytes r, bytes32 s) external {
+    function smgWithdrawFee(bytes32 smgID, uint timeStamp, address receiver, bytes r, bytes32 s)
+        external
+        nonReentrant
+    {
 
         require(now < timeStamp.add(smgFeeReceiverTimeout), "The receiver address expired");
 
@@ -692,7 +695,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  r           Signature info r
     /// @param  s           Signature info s
     function verifySignature(uint curveID, bytes32 message, bytes PK, bytes r, bytes32 s)
-        internal
+        private
         // view
     {
         bytes32 PKx = bytesToBytes32(PK, 0);
