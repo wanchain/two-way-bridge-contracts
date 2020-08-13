@@ -189,7 +189,6 @@ library RapidityLib {
         emit SmgFastMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.userShadowAccount);
     }
 
-    event UserFastBurnDebug1(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, uint inputValue, bytes userAccount);
     /// @notice                         burnBridge, user lock token on token original chain
     /// @notice                         event invoked by user burn lock
     /// @param storageData              Cross storage data
@@ -204,7 +203,6 @@ library RapidityLib {
         require(origChainID != 0, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
-        emit UserFastBurnDebug1(params.uniqueID, params.smgID, params.tokenPairID, params.value, lockFee, msg.value, params.userOrigAccount);
 
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
 
