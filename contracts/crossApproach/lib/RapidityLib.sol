@@ -237,12 +237,14 @@ library RapidityLib {
     function smgFastBurn(CrossTypes.Data storage storageData, RapiditySmgBurnParams memory params)
         public
     {
+        uint origChainID;
+        bytes memory tokenOrigAccount;
+        (origChainID,tokenOrigAccount,,) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
+        require(origChainID != 0, "Token does not exist");
+
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
 
         storageData.quota.smgFastBurn(params.tokenPairID, params.smgID, params.value);
-
-        bytes memory tokenOrigAccount;
-        (,tokenOrigAccount,,) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
 
         address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
