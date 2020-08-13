@@ -31,7 +31,7 @@ pragma experimental ABIEncoderV2;
 import "./RapidityTxLib.sol";
 import "./CrossTypes.sol";
 import "../interfaces/ITokenManager.sol";
-import "../interfaces/IRC20Protocol.sol";
+// import "../interfaces/IRC20Protocol.sol";
 import "../interfaces/ISmgFeeProxy.sol";
 
 library RapidityLib {
@@ -164,7 +164,8 @@ library RapidityLib {
         } else {
             left = (msg.value).sub(lockFee);
 
-            require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
+            // require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
+            require(CrossTypes.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
         }
         if (left != 0) {
             (msg.sender).transfer(left);
@@ -210,7 +211,8 @@ library RapidityLib {
         storageData.quota.userFastBurn(params.tokenPairID, params.smgID, params.value);
 
         address tokenScAddr = CrossTypes.bytesToAddress(tokenShadowAccount);
-        require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
+        // require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
+        require(CrossTypes.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
 
         storageData.tokenManager.burnToken(params.tokenPairID, params.value);
 
@@ -249,7 +251,8 @@ library RapidityLib {
         if (tokenScAddr == address(0)) {
             (params.userOrigAccount).transfer(params.value);
         } else {
-            require(IRC20Protocol(tokenScAddr).transfer(params.userOrigAccount, params.value), "Transfer token failed");
+            // require(IRC20Protocol(tokenScAddr).transfer(params.userOrigAccount, params.value), "Transfer token failed");
+            require(CrossTypes.transfer(tokenScAddr, params.userOrigAccount, params.value), "Transfer token failed");
         }
 
         emit SmgFastBurnLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.userOrigAccount);
