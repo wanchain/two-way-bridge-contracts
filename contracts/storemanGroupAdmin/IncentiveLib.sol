@@ -47,12 +47,12 @@ library IncentiveLib {
         return false;
     }
     function rotateSkGroup(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) internal {
-            if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime) && group.status == StoremanType.GroupStatus.dismissed) {
-                if(bytes32(0x00) != sk.nextGroupId) {
-                    sk.groupId = sk.nextGroupId;
-                }
-                sk.nextGroupId = bytes32(0x00);
-            }        
+        if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime) && group.status == StoremanType.GroupStatus.dismissed) {
+            if(bytes32(0x00) != sk.nextGroupId) {
+                sk.groupId = sk.nextGroupId;
+            }
+            sk.nextGroupId = bytes32(0x00);
+        }        
     }
     function calFromEndDay(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group)public returns(uint,uint) {
         uint fromDay = StoremanUtil.getDaybyTime(group.workTime);
@@ -81,7 +81,16 @@ library IncentiveLib {
         data.totalReward += sk.delegators[deAddr].incentive[day];
         sk.incentivedDelegator++;
     }
-    function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr, IMetric metric) public {
+
+    /*
+    @dev The logic of incentive
+    1) get the incentive by day and groupID.
+    If the incentive array by day haven't got from low level, the tx will try to get it.
+    so the one who first incentive will spend more gas.
+    2) calculate the sk incentive every days.
+    3) calculate the delegator every days one by one.
+     */    
+    function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr,  address metricAddr) public {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
         StoremanType.StoremanGroup storage group = data.groups[sk.groupId];
         uint fromDay; uint endDay;
@@ -113,7 +122,7 @@ library IncentiveLib {
                 }
             }
             require(idx < group.selectedCount, "not selected");
-            if(checkMetric(metric, group, day, idx)){
+            if(checkMetric(IMetric(metricAddr), group, day, idx)){
                 if(0 == sk.incentive[day]) {
                     incentiveNode(day, sk,group,data);
                     // sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getValueById(day)));

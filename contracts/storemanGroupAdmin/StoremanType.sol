@@ -12,8 +12,6 @@ library StoremanType {
         address sender; // the delegator wallet address
         address staker;
         bool  quited;
-        //bool  claimed;
-        //uint  deposit;
         uint index; // for delete from candidate;
         Deposit.Records deposit;
         mapping(uint=>uint) incentive;
@@ -29,14 +27,15 @@ library StoremanType {
         address sender;
         bytes enodeID;
         bytes PK;
-        address  pkAddress; // 合约计算一下.
+        address  pkAddress;
         bool  quited;
-        //bool  claimed;// 不需要??? 提取后deposit归零.
         bool  selected;
         uint  delegatorCount;
         uint  delegateDeposit; // only used when selecting. need not records.
         uint  partnerCount;
         uint  partnerDeposit;
+        uint  crossIncoming;
+        uint  slashedCount;
 
         uint  incentivedDelegator; // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
         uint  incentivedDay;
@@ -51,26 +50,19 @@ library StoremanType {
         
     }
 
-    // struct GroupConfig {
-    //     uint memberCountDesign;
-    //     uint threshold;
-    // }
-
     struct StoremanGroup {
         bytes32    groupId;
-        uint    txFeeRatio;               /// the fee ratio required by storeman group
         GroupStatus    status;
         Deposit.Records    deposit;                  //用于计算group的总收益
         Deposit.Records     depositWeight;            /// 用于在group内给各个成员分配利润.
-        uint    unregisterApplyTime;      /// the time point for storeman group applied unregistration
         uint selectedCount;
         uint memberCount;
-        uint whiteCount;    // only used, don't include backup.
+        uint whiteCount;    // only used node, don't include backup.
         uint whiteCountAll; // all
-        uint  workTime;
-        uint  totalTime;
+        uint workTime;
+        uint totalTime;
         uint registerTime;
-        uint registerDuration; // how long allow to staking.
+        uint registerDuration; // how long allow to staking. check when stakeIn tx.
         uint memberCountDesign;
         uint threshold;
         uint chain1;
@@ -82,7 +74,6 @@ library StoremanType {
         uint crossIncoming;
         bytes gpk1;
         bytes gpk2;
-        //uint  incentiveThresHold;
         uint delegateFee;
         mapping(uint=>uint) tickedType;
         mapping(uint=>address) tickedNode;
@@ -93,11 +84,11 @@ library StoremanType {
         mapping(uint=>uint) groupIncentive; // by day.
     }
     struct StoremanGlobalConf {
-        uint standaloneWeight; // defult 1500; need mul 1000
+        uint standaloneWeight; // defult 15000; need mul 10000
         uint DelegationMulti;  // 10
         uint backupCount;  // 3
         uint chainTypeCoDefault; //10000
-
+        uint maxSlashedCount;
     }
     struct StoremanData {
         uint contribution;
@@ -106,7 +97,6 @@ library StoremanType {
         address[] oldAddr;
         
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;
-        mapping(bytes => mapping(bytes => bytes32))  storemanGroupMap;
         mapping(address=>StoremanType.Candidate) candidates;
         mapping(uint=> mapping(uint => uint)) chainTypeCo;
     }

@@ -34,6 +34,7 @@ import "./StoremanLib.sol";
 import "./StoremanType.sol";
 import "./IncentiveLib.sol";
 import "../interfaces/IQuota.sol";
+import "../gpk/lib/GpkTypes.sol";
 
 
 contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
@@ -44,9 +45,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
     event StoremanGroupDismissedEvent(bytes32 indexed groupId, uint dismissTime);
     event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
+    event updateGroupChainEvent(bytes32 indexed groupId, uint256 indexed chain1, uint256 indexed chain2, uint256 curve1, uint256 curve2);
 
-    modifier onlyGpk {
-        require(msg.sender == greateGpkAddr, "Sender is not allowed");
+    modifier onlyGpkMtr {
+        require(msg.sender == createGpkAddr || msg.sender == metric, "Sender is not allowed");
         _;
     }
 
@@ -58,18 +60,17 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
     /// @notice                           function for owner set token manager and htlc contract address
     /// @param metricAddr                 metricAddr contract address
-    function setDependence(address metricAddr, address gpkAddr,address quotaAddr)
+    /// @param gpkAddr	                  gpkAddr contract address
+    /// @param quotaAddr                  quotaAddr contract address
+   function setDependence(address metricAddr, address gpkAddr,address quotaAddr)
         external
         onlyOwner
     {
-        require(metricAddr != address(0), "Invalid htlc address");
-        metric = IMetric(metricAddr);
-        greateGpkAddr = gpkAddr;
+        require(metricAddr != address(0), "Invalid metricAddr address");
+        metric = metricAddr;
+        createGpkAddr = gpkAddr;
         quotaInst = IQuota(quotaAddr);
     }
-
-
-
 
     /// @notice                           function for owner to open a storeman group.
     /// @param groupId                    the storeman group index.
@@ -102,8 +103,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.totalTime = workDuration;
         group.memberCountDesign = memberCountDefault;
         group.threshold = thresholdDefault;
-        // group.whiteCount = wkAddrs.length - data.conf.backupCount;
-        // group.whiteCountAll = wkAddrs.length;
         group.registerTime = now;
         group.registerDuration = registerDuration;
         emit StoremanGroupRegisterStartEvent(groupId, workStart, workDuration, registerDuration, preGroupId);
@@ -123,6 +122,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.curve1 = curve1;
         group.curve2 = curve2;
         group.status = StoremanType.GroupStatus.curveSeted;
+        emit updateGroupChainEvent(groupId, chain1, chain2, curve1, curve2);
     }
 
     /// @dev	                    update the group default parameter.
@@ -142,21 +142,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.delegateFee = delegateFee;
     }
 
-    // TODO: no one use it????
-    // function getGroupIdbyAddress(address pkAddr) public view returns (bytes32, bytes32) {
-    //     StoremanType.Candidate storage sk = data.candidates[pkAddr];
-    //     return (sk.groupId, sk.nextGroupId);
-    // }
-
-
-    /*
-    @dev The logic of incentive
-    1) get the incentive by day and groupID.
-    If the incentive array by day haven't geted from low level, the tx will try to get it.
-    so the one who first incentive will spend more gas.
-    2) calculate the sk incentive every days.
-    3) calculate the delegator every days one by one.
-     */
     function incentiveCandidator( address wkAddr) external   {
         IncentiveLib.incentiveCandidator(data, wkAddr,metric);
     }
@@ -170,7 +155,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         notHalted
         payable
     {
-        return StoremanLib.stakeIn(data,groupId, PK, enodeID);
+        return StoremanLib.stakeIn(data, groupId, PK, enodeID);
     }
 
     /// @notice                             Staker use this interface to append wan to SC.
@@ -190,9 +175,18 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function stakeOut(address skPkAddr) external notHalted {
         return StoremanLib.stakeOut(data, skPkAddr);
     }
+    function checkCanStakeOut(address skPkAddr) external view returns(bool) {
+        return StoremanLib.checkCanStakeOut(data, skPkAddr);
+    }
 
+    function checkCanStakeClaim(address skPkAddr) external returns(bool){
+        return StoremanLib.checkCanStakeClaim(data, skPkAddr);
+    }
     function stakeClaim(address skPkAddr) external notHalted {
         return StoremanLib.stakeClaim(data,skPkAddr);
+    }
+    function stakeIncentiveClaim(address skPkAddr) external notHalted {
+        return StoremanLib.stakeIncentiveClaim(data,skPkAddr);
     }
 
     function delegateIn(address skPkAddr)
@@ -206,7 +200,14 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return StoremanLib.delegateOut(data,skPkAddr);
 
     }
+    function delegateClaim(address skPkAddr) external {
 
+        return StoremanLib.delegateClaim(data, skPkAddr);
+    }
+    function delegateIncentiveClaim(address skPkAddr) external {
+
+        return StoremanLib.delegateIncentiveClaim(data, skPkAddr);
+    }
     function partIn(address skPkAddr)
         external
         notHalted
@@ -214,24 +215,18 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         return StoremanLib.partIn(data,skPkAddr);
     }
-    function partOut(address skPkAddr) external {
+    function partOut(address skPkAddr) external notHalted{
         return StoremanLib.partOut(data,skPkAddr);
 
     }
-    function partClaim(address skPkAddr) external {
+    function partClaim(address skPkAddr) external notHalted{
         return StoremanLib.partClaim(data,skPkAddr);
-
-    }
-    function delegateClaim(address skPkAddr) external {
-
-        return StoremanLib.delegateClaim(data, skPkAddr);
     }
 
     function getSelectedSmNumber(bytes32 groupId) public view returns(uint) {
         return StoremanUtil.getSelectedSmNumber(data, groupId);
     }
 
-    //event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
     function select(bytes32 groupId)
         external
         notHalted
@@ -252,26 +247,25 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.status = status;
     }
 
-
     function getStoremanInfo(address wkAddress)public view  returns(address sender,bytes PK, address pkAddress,
         bool quited, uint  deposit, uint delegateDeposit,
-        uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId, uint incentivedDay
+        uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId, uint incentivedDay, uint slashedCount
         ){
             StoremanType.Candidate storage sk = data.candidates[wkAddress];
 
             return (sk.sender,   sk.PK, sk.pkAddress, sk.quited,
                 sk.deposit.getLastValue(), sk.delegateDeposit,
-                sk.incentive[0],  sk.delegatorCount, sk.groupId, sk.nextGroupId, sk.incentivedDay
+                sk.incentive[0],  sk.delegatorCount, sk.groupId, sk.nextGroupId, sk.incentivedDay, sk.slashedCount
             );
     }
     function getStoremanIncentive(address wkAddress, uint day) public view returns(uint incentive) {
         StoremanType.Candidate storage sk = data.candidates[wkAddress];
-        return sk.incentive[day];  // todo day 不减去开始时间．
+        return sk.incentive[day];
     }
-    function getSmDelegatorAddr(address wkAddr, uint deIndex) public view  returns (address){
-        StoremanType.Candidate storage sk = data.candidates[wkAddr];
-        return sk.addrMap[deIndex];
-    }
+    // function getSmDelegatorAddr(address wkAddr, uint deIndex) public view  returns (address){
+    //     StoremanType.Candidate storage sk = data.candidates[wkAddr];
+    //     return sk.addrMap[deIndex];
+    // }
     function getSmDelegatorInfoIncentive(address wkAddr, address deAddr, uint day) public view returns ( uint) {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
         StoremanType.Delegator storage de = sk.delegators[deAddr];
@@ -286,7 +280,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
     function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2)
         public 
-        // onlyGpk  // TODO: open after test
+        onlyGpkMtr
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.gpk1 = gpk1;
@@ -294,14 +288,44 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.status = StoremanType.GroupStatus.ready;
     }
 
-    function setInvalidSm(bytes32 groupId, uint[] slashType,  address[] badAddrs)
+
+    function setInvalidSm(bytes32 groupId, GpkTypes.SlashType[] slashType,  address[] badAddrs)
         external
-        notHalted
-        onlyGpk
+        onlyGpkMtr        
         returns(bool isContinue)
     {
-        return StoremanLib.setInvalidSm(data, groupId, slashType, badAddrs);
+        StoremanType.StoremanGroup storage group = data.groups[groupId];
+        if(group.status != StoremanType.GroupStatus.selected) {
+            return false;
+        }
+        for(uint k = 0; k < group.selectedCount; k++){
+            if(group.tickedCount + group.whiteCount >= group.whiteCountAll){
+                return false;
+            }
+            for(uint i = 0; i<badAddrs.length; i++){
+                if(group.selectedNode[k] == badAddrs[i]){
+                    group.tickedNode[group.tickedCount] = group.selectedNode[k];
+                    group.selectedNode[k] = group.whiteMap[group.tickedCount + group.whiteCount];
+                    group.tickedCount += 1;
+                    if(slashType[i] == GpkTypes.SlashType.EncSijInvalid || slashType[i] == GpkTypes.SlashType.CheckInvalid) {
+                        recordSmSlash(badAddrs[i]);
+                    }
+                    break;
+                }
+            }
+        }
+        return true;
     }
+
+    function recordSmSlash(address wk) 
+        public
+        onlyGpkMtr
+    {
+        StoremanType.Candidate storage sk = data.candidates[wk];
+        sk.slashedCount++;
+    }
+
+
 
     function getThresholdByGrpId(bytes32 groupId) external view returns (uint){
         StoremanType.StoremanGroup storage group = data.groups[groupId];
@@ -360,14 +384,14 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.whiteCount, smg.selectedCount,  smg.workTime, smg.workTime+smg.totalTime);
     }
 
-    function getStoremanGroupConfig(bytes32 id) // TODO delegateFee
+    function getStoremanGroupConfig(bytes32 id)
         external
         view
-        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime)
+        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime, uint delegateFee)
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
         return (smg.groupId, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
-         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime);
+         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime, smg.delegateFee);
     }
     function getStoremanGroupTime(bytes32 id)
         external
@@ -394,6 +418,12 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function smgTransfer(bytes32 smgID) external payable{
         StoremanType.StoremanGroup storage group = data.groups[smgID];
         group.crossIncoming += msg.value; // 提取时，　选中的人均分．
+        uint i;
+        StoremanType.Candidate storage sk;
+        for(i=0; i<group.selectedCount; i++) {
+            sk = data.candidates[group.selectedNode[i]];
+            sk.crossIncoming += msg.value.div(group.selectedCount);
+        }
     }
 
     function setChainTypeCo(uint chain1, uint chain2, uint co) public  onlyOwner {

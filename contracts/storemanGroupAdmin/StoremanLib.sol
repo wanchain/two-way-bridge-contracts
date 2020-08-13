@@ -6,14 +6,19 @@ import "./StoremanUtil.sol";
 
 library StoremanLib {
     using Deposit for Deposit.Records;
+    using SafeMath for uint;
 
     uint constant MaxPartnerCount = 5;
-    event stakeInEvent(bytes32 indexed index,address indexed pkAddr, uint indexed value);
-    event incentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
-    event delegateIncentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
+    event stakeInEvent(bytes32 indexed index,address indexed pkAddr, address indexed from, uint  value);
+    event stakeAppendEvent(address indexed pkAddr, address indexed from, uint indexed value);
+    event stakeOutEvent(address indexed pkAddr, address indexed from);
+    event stakeClaimEvent(address indexed pkAddr, address indexed from,bytes32 indexed groupId, uint value);
+    event stakeIncentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
     event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
     event delegateInEvent(address indexed wkAddr, address indexed from, uint indexed value);
+    event delegateClaimEvent(address indexed wkAddr, address indexed from, uint256 indexed amount);
+    event delegateIncentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
 
     function calSkWeight(StoremanType.StoremanData storage data) internal  view returns (uint){
         return StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value);
@@ -22,32 +27,12 @@ library StoremanLib {
     function storemanGroupUnregister(StoremanType.StoremanData storage data,bytes32 groupId)
         external
     {
-        StoremanType.StoremanGroup storage smg = data.groups[groupId];
-        smg.status = StoremanType.GroupStatus.unregistered;
+        StoremanType.StoremanGroup storage group = data.groups[groupId];
+        require(now > group.workTime + group.totalTime, "not expired");
+        group.status = StoremanType.GroupStatus.unregistered;
         emit StoremanGroupUnregisterEvent(groupId);
     }
 
-// TODO StoremanTickedEvent(bytes32 indexed groupId, address indexed wkAddr)
-    function setInvalidSm(StoremanType.StoremanData storage data, bytes32 groupId, uint[] slashType,  address[] badAddrs)
-        external
-        returns(bool isContinue)
-    {
-        StoremanType.StoremanGroup storage group = data.groups[groupId];
-        for(uint k = 0; k < group.memberCount; k++){
-            if(group.tickedCount + group.whiteCount >= group.whiteCountAll){
-                return false;
-            }
-            for(uint i = 0; i<badAddrs.length; i++){
-                if(group.selectedNode[k] == badAddrs[i]){
-                    group.tickedNode[group.tickedCount] = group.selectedNode[k];
-                    group.selectedNode[k] = group.whiteMap[group.tickedCount + group.whiteCount];
-                    group.tickedCount += 1;
-                    break;
-                }
-            }
-        }
-        return true;
-    }
 
 
     function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID) external
@@ -59,6 +44,7 @@ library StoremanLib {
         Deposit.Records memory records = Deposit.Records(0);
         StoremanType.Candidate storage sk = data.candidates[pkAddr];
         //require(sk.sender == address(0x00), "Candidate has existed"); // TODO open after test.
+        //require(group.status >= StoremanType.GroupStatus.curveSeted,"not configured") // TODO open after test.
         sk.sender = msg.sender;
         sk.enodeID = enodeID;
         sk.PK = PK;
@@ -81,14 +67,13 @@ library StoremanLib {
             realInsert(data,group, pkAddr, calSkWeight(data));
         }
 
-        emit stakeInEvent(group.groupId, pkAddr, msg.value); // msg.sender . indexed.
+        emit stakeInEvent(group.groupId, pkAddr, msg.sender, msg.value); // msg.sender . indexed.
     }
 
-    //TODO 加一个事件．　
     function stakeAppend(StoremanType.StoremanData storage data,  address skPkAddr) external  {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
-        require(sk.sender == msg.sender, "Only the sender can use stakeAppend");
+        require(sk.sender == msg.sender, "Only the sender can stakeAppend");
 
         uint day = StoremanUtil.getDaybyTime(now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
@@ -97,22 +82,33 @@ library StoremanLib {
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
         updateGroup(data, sk, group, r);
         updateGroup(data, sk, nextGroup, r);
+        emit stakeAppendEvent(skPkAddr, msg.sender,msg.value);
     }
 
-    function stakeOut(StoremanType.StoremanData storage data,  address skPkAddr) external {
+    function checkCanStakeOut(StoremanType.StoremanData storage data,  address skPkAddr) public returns(bool){
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
+        require(sk.sender == msg.sender, "Only the sender can stakeOut");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
-
         //如果group还没选择, 不许退.
         // 如果参加了下一个group, 下一个group还没选择, 不许退.
         //否则标志为退出状态 quited==true
-        require(group.status >= StoremanType.GroupStatus.selected, "selecting time, can't quit");
-        if(nextGroup.status != StoremanType.GroupStatus.none) {
-            require(nextGroup.status >= StoremanType.GroupStatus.selected, "selecting time, can't quit");
+        if(group.status < StoremanType.GroupStatus.selected) {
+            return false;
         }
+        if(nextGroup.status != StoremanType.GroupStatus.none) {
+            if(nextGroup.status < StoremanType.GroupStatus.selected){
+                return false;
+            }
+        }
+        return true;
+    }
+    function stakeOut(StoremanType.StoremanData storage data,  address skPkAddr) external {
+        require(checkCanStakeOut(data, skPkAddr),"selecting");
+        StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         sk.quited = true;
+        emit stakeOutEvent(skPkAddr, msg.sender);
     }
 
     function isWorkingNodeInGroup(StoremanType.StoremanGroup storage group, address skPkAddr) internal  view returns (bool) {
@@ -125,7 +121,7 @@ library StoremanLib {
         return false;
     }
 
-    function checkCanClaim(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) internal returns (bool) {
+    function checkCanStakeClaimFromGroup(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) public returns (bool) {
         // 如果group还没选择, 不许提取.
         // 如果已经选择过了, 没选中, 可以提取.
         // 如果选择过了, 而且选中了, 那么必须1. 标记为quited了, 2, group状态是dismissed了.
@@ -145,27 +141,32 @@ library StoremanLib {
         }
         return false;
     }
-
-    function stakeClaim(StoremanType.StoremanData storage data, address skPkAddr) external {
+    function checkCanStakeClaim(StoremanType.StoremanData storage data, address skPkAddr) public returns(bool) {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
-        require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
+        if(sk.pkAddress != skPkAddr){ // sk doesn't exist.
+            return false;
+        }
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
-
-        // 两个group分别检查.
-        require(checkCanClaim(sk, group), "group can't claim");
-        require(checkCanClaim(sk, nextGroup), "nextGroup can't claim");
-
+        if(checkCanStakeClaimFromGroup(sk, group) && checkCanStakeClaimFromGroup(sk, nextGroup)){
+            return true;
+        } else {
+            return false;
+        }
+    }
+    function stakeClaim(StoremanType.StoremanData storage data, address skPkAddr) external {
+        StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         uint amount = sk.deposit.getLastValue();
         sk.deposit.clean();
 
-        require(amount != 0);
+        amount = amount.add(sk.crossIncoming);
+        sk.crossIncoming = 0;
         sk.sender.transfer(amount);
-        // todo 加事件
-        // TODO; transfer crossIncoming/21;　／／ｚｈａｎｇ
+        require(amount != 0);
+	    emit stakeClaimEvent(skPkAddr, msg.sender, sk.groupId, amount);
     }
 
-    function incentiveClaim(StoremanType.StoremanData storage data, address skPkAddr) external {
+    function stakeIncentiveClaim(StoremanType.StoremanData storage data, address skPkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
@@ -177,7 +178,7 @@ library StoremanLib {
         require(amount != 0);
         sk.sender.transfer(amount);
 
-        emit incentiveClaimEvent(sk.sender,skPkAddr,amount);
+        emit stakeIncentiveClaimEvent(sk.sender,skPkAddr,amount);
 
     }
 
@@ -246,7 +247,7 @@ library StoremanLib {
         delegateInEvent(skPkAddr, msg.sender,msg.value);
     }
     // TODO 白名单备份节点，　不允许退出．
-    function inheritNode(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) internal
+    function inheritNode(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) public
     {
 
         StoremanType.StoremanGroup storage oldGroup;
@@ -295,7 +296,7 @@ library StoremanLib {
             for(uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
                 address skAddr = oldGroup.selectedNode[m];
                 StoremanType.Candidate storage sk = data.candidates[skAddr];
-                if(sk.groupId == preGroupId && sk.quited == false) {
+                if(sk.groupId == preGroupId && sk.quited == false && sk.slashedCount < data.conf.maxSlashedCount) {
                     group.selectedNode[group.selectedCount] = sk.pkAddress;
                     sk.nextGroupId = group.groupId;
                     group.selectedCount++;
@@ -334,8 +335,8 @@ library StoremanLib {
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
 
         // 两个group分别检查.
-        require(checkCanClaim(sk, group), "group can't claim");
-        require(checkCanClaim(sk, nextGroup), "nextGroup can't claim");
+        require(checkCanStakeClaimFromGroup(sk, group), "group can't claim");
+        require(checkCanStakeClaimFromGroup(sk, nextGroup), "nextGroup can't claim");
 
         uint amount = dk.deposit.getLastValue();
         dk.deposit.clean();
@@ -346,7 +347,9 @@ library StoremanLib {
         delete sk.delegators[msg.sender];
 
         dk.sender.transfer(amount);
+        emit delegateClaimEvent(skPkAddr, msg.sender, amount);
     }
+    
 
     function delegateIncentiveClaim(StoremanType.StoremanData storage data, address skPkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
@@ -418,8 +421,8 @@ library StoremanLib {
         StoremanType.Partner storage pn = sk.partners[msg.sender];
 
         // 两个group分别检查.
-        require(checkCanClaim(sk, group), "group can't claim");
-        require(checkCanClaim(sk, nextGroup), "nextGroup can't claim");
+        require(checkCanStakeClaimFromGroup(sk, group), "group can't claim");
+        require(checkCanStakeClaimFromGroup(sk, nextGroup), "nextGroup can't claim");
 
         uint amount = pn.deposit.getLastValue();
         pn.deposit.clean();

@@ -13,9 +13,7 @@ library StoremanUtil {
   }
 
   function getDaybyTime(uint time)  public view returns(uint) {
-    return time/1;    // TODO; get the day. 
-    //return time/60/60/24
-    //return PosLib.getEpochId(time);
+    return PosLib.getEpochId(time);
   }
 
   function getSelectedSmNumber(StoremanType.StoremanData storage data, bytes32 groupId) public view returns(uint) {

@@ -35,16 +35,11 @@ import "../interfaces/IQuota.sol";
 
 
 contract StoremanGroupStorage is BasicStorage {
-
-  /// token manager instance address
-  ITokenManager public tokenManager;
-  /// HTLC instance address
-  IMetric public metric;
+  address public metric;
   IQuota public quotaInst;
 
-
-
   uint backupCountDefault = 3;
+  uint maxSlashedCount = 2;
   uint minStake = 50000;
   address[] public badAddrs;
   uint[] public badTypes;
@@ -53,18 +48,14 @@ contract StoremanGroupStorage is BasicStorage {
   uint standaloneWeightDefault = 1500;
   uint chainTypeCoDefault = 10000;
 
-  address  public  greateGpkAddr;
-  // StoremanType.GroupConfig  configDefault = StoremanType.GroupConfig({
-  //   memberCountDesign:memberCountDefault,
-  //   threshold:thresholdDefault
-  // });
-
+  address  public  createGpkAddr;
   StoremanType.StoremanData data;
 
   constructor() public {
     data.conf.standaloneWeight = standaloneWeightDefault;
     data.conf.backupCount = backupCountDefault;
     data.conf.chainTypeCoDefault = chainTypeCoDefault;
+    data.conf.maxSlashedCount = maxSlashedCount;
   }
 
 }
