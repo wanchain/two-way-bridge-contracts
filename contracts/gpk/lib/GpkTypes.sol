@@ -36,7 +36,6 @@ library GpkTypes {
     struct Group {
         bytes32 groupId;
         uint16 round;
-        uint8 curveTypes;
         uint32 ployCommitPeriod;
         uint32 defaultPeriod;
         uint32 negotiatePeriod;
@@ -64,7 +63,7 @@ library GpkTypes {
 
     struct Src {
         bytes polyCommit;
-        bytes pkShare;
+        bytes gpkShare;
         /// txAddress -> Dest
         mapping(address => Dest) destMap;
     }
@@ -80,5 +79,5 @@ library GpkTypes {
 
     enum CheckStatus {Init, Valid, Invalid}
 
-    enum SlashType {PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, EncSijInvalid, CheckInvalid, Connive}
+    enum SlashType {PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, SijInvalid, CheckInvalid, Connive}
 }

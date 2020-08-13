@@ -29,7 +29,7 @@ pragma solidity ^0.4.24;
 import "../components/BasicStorage.sol";
 import "./lib/GpkTypes.sol";
 
-contract CreateGpkStorage is BasicStorage {
+contract GpkStorage is BasicStorage {
     /// smg instance address
     address public smg;
 

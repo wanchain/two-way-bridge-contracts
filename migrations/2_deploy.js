@@ -28,8 +28,8 @@ const Bn256Curve = artifacts.require('Bn256Curve');
 const Encrypt = artifacts.require('Encrypt');
 const DataConvert = artifacts.require('DataConvert');
 const GpkLib = artifacts.require('GpkLib');
-const CreateGpkProxy = artifacts.require('CreateGpkProxy');
-const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
+const GpkProxy = artifacts.require('GpkProxy');
+const GpkDelegate = artifacts.require('GpkDelegate');
 const Deposit = artifacts.require('Deposit');
 const StoremanLib = artifacts.require('StoremanLib');
 const IncentiveLib = artifacts.require('IncentiveLib');
@@ -164,24 +164,23 @@ module.exports = async function (deployer, network) {
     await deployer.link(DataConvert, GpkLib);
     await deployer.deploy(GpkLib);
 
-    await deployer.link(GpkLib, CreateGpkDelegate);
-    await deployer.deploy(CreateGpkDelegate);
+    await deployer.link(GpkLib, GpkDelegate);
+    await deployer.deploy(GpkDelegate);
 
-    await deployer.deploy(CreateGpkProxy);
-    let gpkProxy = await CreateGpkProxy.deployed();
-    let gpkDelegate = await CreateGpkDelegate.deployed();
+    await deployer.deploy(GpkProxy);
+    let gpkProxy = await GpkProxy.deployed();
+    let gpkDelegate = await GpkDelegate.deployed();
     await gpkProxy.upgradeTo(gpkDelegate.address);
     console.log("gpk address:", gpkProxy.address);
 
-    let gpk = await CreateGpkDelegate.at(CreateGpkProxy.address);
+    let gpk = await GpkDelegate.at(GpkProxy.address);
     await gpk.setDependence(smgProxy.address);
 
     await deployer.deploy(Secp256k1Curve);
     let secp256k1 = await Secp256k1Curve.deployed();
-    await gpk.setCurve(curveMap.get('secp256k1'), secp256k1.address);
     await deployer.deploy(Bn256Curve);
     let bn256 = await Bn256Curve.deployed();
-    await gpk.setCurve(curveMap.get('bn256'), bn256.address);
+    await gpk.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address]);
 
     await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
 }

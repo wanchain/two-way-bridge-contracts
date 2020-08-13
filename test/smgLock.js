@@ -20,8 +20,8 @@ const TestSmg = artifacts.require('TestSmg');
 const MetricProxy     = artifacts.require('MetricProxy');
 const MetricDelegate  = artifacts.require('MetricDelegate');
 
-const CreateGpkProxy  = artifacts.require('CreateGpkProxy');
-const CreateGpkDelegate = artifacts.require('CreateGpkDelegate');
+const GpkProxy  = artifacts.require('GpkProxy');
+const GpkDelegate = artifacts.require('GpkDelegate');
 
 
 contract('TestSmg', async (accounts) => {

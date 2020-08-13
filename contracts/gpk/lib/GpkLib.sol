@@ -31,6 +31,7 @@ import "../../lib/DataConvert.sol";
 import "../../interfaces/IStoremanGroup.sol";
 import "./ICurve.sol";
 import "./GpkTypes.sol";
+import "../../storemanGroupAdmin/StoremanType.sol";
 
 library GpkLib {
 
@@ -93,19 +94,15 @@ library GpkLib {
         }
 
         // init signature curve
+        uint8 status;
         uint256 curve1;
         uint256 curve2;
-        (,,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
+        (,status,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
+        require(status == uint8(StoremanType.GroupStatus.selected), "Invalid status");
         require(config.curves[uint8(curve1)] != address(0), "No curve1");
         require(config.curves[uint8(curve2)] != address(0), "No curve2");
         group.roundMap[group.round][0].curve = config.curves[uint8(curve1)];
         group.roundMap[group.round][1].curve = config.curves[uint8(curve2)];
-        if (curve1 == curve2) {
-            group.curveTypes = 1;
-            group.roundMap[group.round][1].status = GpkTypes.GpkStatus.Complete;
-        } else {
-            group.curveTypes = 2;
-        }
 
         // selected sm list
         group.groupId = groupId;
@@ -128,16 +125,13 @@ library GpkLib {
     {
         GpkTypes.Round storage round1 = group.roundMap[group.round][0];
         GpkTypes.Round storage round2 = group.roundMap[group.round][1];
-        if (group.curveTypes == 1) {
-            round2.gpk = round1.gpk;
-        }
         if (round1.status == round2.status) {
             IStoremanGroup(smg).setGpk(group.groupId, round1.gpk, round2.gpk);
             emit GpkCreatedLogger(group.groupId, group.round, round1.gpk, round2.gpk);
         }
     }
 
-    /// @notice                           function for generate gpk and pkShare
+    /// @notice                           function for update gpk
     /// @param round                      round
     /// @param polyCommit                 poly commit
     function updateGpk(GpkTypes.Round storage round, bytes polyCommit)
@@ -160,11 +154,11 @@ library GpkLib {
         round.gpk = gpk;
     }
 
-    /// @notice                           function for generate gpk and pkShare
+    /// @notice                           function for update gpkShare
     /// @param group                      storeman group
     /// @param round                      round
     /// @param polyCommit                 poly commit
-    function updatePkShare(GpkTypes.Group storage group, GpkTypes.Round storage round, bytes polyCommit)
+    function updateGpkShare(GpkTypes.Group storage group, GpkTypes.Round storage round, bytes polyCommit)
         public
     {
         uint x;
@@ -176,21 +170,18 @@ library GpkLib {
             (x, y, success) = ICurve(round.curve).calPolyCommit(polyCommit, pk);
             require(success == true, "PolyCommit failed");
 
-            bytes memory pkShare = round.srcMap[txAddress].pkShare;
-            if (pkShare.length != 0) {
-                uint pkX = DataConvert.bytes2uint(pkShare, 0, 32);
-                uint pkY = DataConvert.bytes2uint(pkShare, 32, 32);
+            bytes memory gpkShare = round.srcMap[txAddress].gpkShare;
+            if (gpkShare.length != 0) {
+                uint pkX = DataConvert.bytes2uint(gpkShare, 0, 32);
+                uint pkY = DataConvert.bytes2uint(gpkShare, 32, 32);
                 (x, y, success) = ICurve(round.curve).add(x, y, pkX, pkY);
                 require(success == true, "Add failed");
             } else {
-                pkShare = new bytes(64);
+                gpkShare = new bytes(64);
             }
-            assembly { mstore(add(pkShare, 32), x) }
-            assembly { mstore(add(pkShare, 64), y) }
-            round.srcMap[txAddress].pkShare = pkShare;
-            if (group.curveTypes == 1) {
-                group.roundMap[group.round][1].srcMap[txAddress].pkShare = pkShare;
-            }
+            assembly { mstore(add(gpkShare, 32), x) }
+            assembly { mstore(add(gpkShare, 64), y) }
+            round.srcMap[txAddress].gpkShare = gpkShare;
         }
     }
 

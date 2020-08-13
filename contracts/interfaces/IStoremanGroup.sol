@@ -30,7 +30,7 @@ interface IStoremanGroup {
     function getSelectedSmNumber(bytes32 groupId) external returns(uint number);
     function getStoremanInfo(address wkAddress) external view  returns(address sender,bytes PK, address pkAddress,
              bool quited, uint  deposit, uint delegateDeposit,
-             uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId);
+             uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId,uint incentivedDay);
     function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2,
              uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime);
     function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2) external;
@@ -43,4 +43,6 @@ interface IStoremanGroup {
     // comment because index 0 is always the index of leader
     //function getLeaderIndexByGrpId(bytes32 grpId) external returns (uint);
     function getSelectedSmInfo(bytes32 groupId, uint index) external returns( address txAddress, bytes pk, bytes enodeId);
+
+    function recordSmSlash(address wk) external;
 }

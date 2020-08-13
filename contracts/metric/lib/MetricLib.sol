@@ -45,17 +45,15 @@ library MetricLib {
     internal
     returns (bool, uint8)
     {
+        require(metricData.mapRSlsh[grpId][hashX][smIndex].polyDataPln.polyData.length != 0,"Duplicate RSlsh");
+
         require(rslshData.sndrIndex <= smCount, "invalid send index");
         require(rslshData.rcvrIndex <= smCount, "invalid receiver index");
 
         require(rslshData.polyCMData.polyCM.length != 0, "polyCM is empty");
-        require(rslshData.polyCMData.polyCMR.length != 0, "polyCMR is empty");
-        require(rslshData.polyCMData.polyCMS.length != 0, "polyCMS is empty");
-
         require(rslshData.polyDataPln.polyData.length != 0, "polyData is empty");
-        require(rslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
-        require(rslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
 
+        require(rslshData.becauseSndr, "R because sender is not true");
 
         uint8 smIndex;
         smIndex = rslshData.becauseSndr ? rslshData.sndrIndex : rslshData.rcvrIndex;
@@ -64,7 +62,7 @@ library MetricLib {
 
 
         if (checkRProof(metricData, grpId, hashX, smIndex)) {
-            metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] += 1;
+            metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] = metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex].add(uint(1));
             return (true, smIndex);
         } else {
             delete metricData.mapRSlsh[grpId][hashX][smIndex];
@@ -85,8 +83,7 @@ library MetricLib {
     {
         bool bSig = checkRSig(metricData, grpId, hashX, smIndex);
         bool bContent = checkRContent(metricData, grpId, hashX, smIndex);
-        return getChkResult(bSig, bContent, metricData.mapRSlsh[grpId][hashX][smIndex].becauseSndr);
-        return bContent;
+        return getChkResult(bSig, bContent);
     }
     /// @notice                         check signature of proof in R stage
     /// @param metricData               self parameter for lib function
@@ -107,11 +104,7 @@ library MetricLib {
         h = sha256(rslshData.polyDataPln.polyData);
         // build senderpk
         senderPk = getPkBytesByInx(metricData, grpId, rslshData.sndrIndex);
-        // build r
-        r = CommonTool.bytesToBytes32(rslshData.polyDataPln.polyDataR);
-        // build s
-        s = CommonTool.bytesToBytes32(rslshData.polyDataPln.polyDataS);
-        return CommonTool.checkSig(h, r, s, senderPk);
+        return CommonTool.checkSig(h, rslshData.polyDataPln.polyDataR, rslshData.polyDataPln.polyDataS, senderPk);
     }
     /// @notice                         check content of proof in R stage
     /// @param metricData               self parameter for lib function
@@ -141,31 +134,17 @@ library MetricLib {
 
         // right point s[i][i]*G
         uint256 uintSij = CommonTool.bytes2uint(sij, 0);
-        (xRight, yRight, success) = CommonTool.mulG(uintSij,rslshData.curveType);
+        (xRight, yRight, success) = CommonTool.mulG(uintSij, rslshData.curveType);
         require(success, 'mulG fail');
         return xLeft == xRight && yLeft == yRight;
     }
 
-    function getChkResult(bool bSig, bool bContent, bool becauseSndr)
+    function getChkResult(bool bSig, bool bContent)
     internal
     pure
     returns (bool)
     {
-        if (!bSig || !bContent) {
-            // should be sender
-            if (becauseSndr) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            // should be receiver
-            if (becauseSndr) {
-                return false;
-            } else {
-                return true;
-            }
-        }
+        return !bSig || !bContent;
     }
     /// @notice                         function for write slash of S stage
     /// @param metricData               self parameter for lib function
@@ -177,23 +156,24 @@ library MetricLib {
     public
     returns (bool, uint8)
     {
+        require(metricData.mapSSlsh[grpId][hashX][smIndex].polyDataPln.polyData.length != 0,"Duplicate SSlsh");
+
         require(sslshData.sndrIndex <= smCount, "invalid send index");
         require(sslshData.rcvrIndex <= smCount, "invalid receiver index");
 
         require(sslshData.m.length != 0, "m is empty");
         require(sslshData.rpkShare.length != 0, "rpkShare is empty");
         require(sslshData.gpkShare.length != 0, "gpkShare is empty");
-
         require(sslshData.polyDataPln.polyData.length != 0, "polyData is empty");
-        require(sslshData.polyDataPln.polyDataR.length != 0, "polyDataR is empty");
-        require(sslshData.polyDataPln.polyDataS.length != 0, "polyDataS is empty");
+
+        require(sslshData.becauseSndr, "S because sender is not true");
 
         uint8 smIndex;
         smIndex = sslshData.becauseSndr ? sslshData.sndrIndex : sslshData.rcvrIndex;
         metricData.mapSSlsh[grpId][hashX][smIndex] = sslshData;
 
         if (checkSProof(metricData, grpId, hashX, smIndex)) {
-            metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] += 1;
+            metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] = metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex].add(uint(1));
             return (true, smIndex);
         } else {
             delete metricData.mapSSlsh[grpId][hashX][smIndex];
@@ -212,7 +192,7 @@ library MetricLib {
     {
         bool bSig = checkSSig(metricData, grpId, hashX, smIndex);
         bool bContent = checkSContent(metricData, grpId, hashX, smIndex);
-        return getChkResult(bSig, bContent, metricData.mapSSlsh[grpId][hashX][smIndex].becauseSndr);
+        return getChkResult(bSig, bContent);
     }
     /// @notice                         check signature of proof in S stage
     /// @param metricData               self parameter for lib function
@@ -233,11 +213,7 @@ library MetricLib {
         h = sha256(sslshData.polyDataPln.polyData);
         // build senderpk
         senderPk = getPkBytesByInx(metricData, grpId, sslshData.sndrIndex);
-        // build r
-        r = CommonTool.bytesToBytes32(sslshData.polyDataPln.polyDataR);
-        // build s
-        s = CommonTool.bytesToBytes32(sslshData.polyDataPln.polyDataS);
-        return CommonTool.checkSig(h, r, s, senderPk);
+        return CommonTool.checkSig(h, sslshData.polyDataPln.polyDataR, sslshData.polyDataPln.polyDataS, senderPk);
     }
     /// @notice                         check content of proof in S stage
     /// @param metricData               self parameter for lib function
@@ -260,7 +236,7 @@ library MetricLib {
 
         MetricTypes.SSlshData memory sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
         // s*G
-        (xRight, yRight, success) = CommonTool.mulG(CommonTool.bytes2uint(sslshData.polyDataPln.polyData, 0),sslshData.curveType);
+        (xRight, yRight, success) = CommonTool.mulG(CommonTool.bytes2uint(sslshData.polyDataPln.polyData, 0), sslshData.curveType);
         require(success, 'mulG fail');
 
         // rpkShare + m * gpkShare
@@ -310,7 +286,49 @@ library MetricLib {
     view
     returns (uint8)
     {
-        IStoremanGroup  smgTemp = IStoremanGroup(metricData.smg);
+        IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
         return uint8(smgTemp.getSelectedSmNumber(grpId));
+    }
+    /// @notice                         get leader address of the group
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    function getLeader(MetricTypes.MetricStorageData storage metricData, bytes32 grpId)
+    public
+    view
+    returns (address)
+    {
+        address leader;
+        IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
+        (leader,,) = smgTemp.getSelectedSmInfo(grpId, uint(0));
+        return leader;
+    }
+
+    /// @notice                         get work address of the group
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param smIndex                  sm index
+    function getWkAddr(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint smIndex)
+    public
+    view
+    returns (address)
+    {
+        address wkAddr;
+        IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
+        (wkAddr,,) = smgTemp.getSelectedSmInfo(grpId, smIndex);
+        return wkAddr;
+    }
+
+    /// @notice                         record sm slash
+    /// @param metricData               self parameter for lib function
+    /// @param grpId                    group id
+    /// @param smIndex                  sm index
+    function recordSmSlash(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint smIndex)
+    public
+    view
+    {
+        address wkAddr;
+        IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
+        wkAddr = getWkAddr(metricData, grpId, smIndex);
+        smgTemp.recordSmSlash(wkAddr);
     }
 }

@@ -28,10 +28,10 @@ pragma solidity ^0.4.24;
 
 import "../lib/SafeMath.sol";
 import "../components/Owned.sol";
-import "./CreateGpkStorage.sol";
+import "./GpkStorage.sol";
 import "./lib/GpkLib.sol";
 
-contract CreateGpkDelegate is CreateGpkStorage, Owned {
+contract GpkDelegate is GpkStorage, Owned {
     using SafeMath for uint;
 
     /**
@@ -104,13 +104,17 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
     }
 
     /// @notice                           function for set smg contract address
-    /// @param curveId                    curve id
-    /// @param curveAddress               curve contract address
-    function setCurve(uint8 curveId, address curveAddress)
+    /// @param curveId                    curve id array
+    /// @param curveAddress               curve contract address array
+    function setCurve(uint8[] curveId, address[] curveAddress)
         external
         onlyOwner
     {
-        config.curves[curveId] = curveAddress;
+        uint8 length = uint8(curveId.length);
+        require((length > 0) && (length == curveAddress.length), "Mismatched length");
+        for (uint8 i = 0; i < length; i++) {
+            config.curves[curveId[i]] = curveAddress[i];
+        }
     }
 
     /// @notice                           function for storeman submit poly commit
@@ -126,8 +130,10 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         GpkTypes.Group storage group = groupMap[groupId];
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         if (group.smNumber == 0) {
-            // init group when the first node submit
+            // init group when the first node submit to start every round
             GpkLib.initGroup(groupId, group, config, smg);
+        }
+        if (round.statusTime == 0) {
             round.statusTime = now;
         }
         checkValid(group, roundIndex, curveIndex, GpkTypes.GpkStatus.PolyCommit, address(0), true);
@@ -135,7 +141,7 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         round.srcMap[msg.sender].polyCommit = polyCommit;
         round.polyCommitCount++;
         GpkLib.updateGpk(round, polyCommit);
-        GpkLib.updatePkShare(group, round, polyCommit);
+        GpkLib.updateGpkShare(group, round, polyCommit);
         if (round.polyCommitCount >= group.smNumber) {
             round.status = GpkTypes.GpkStatus.Negotiate;
             round.statusTime = now;
@@ -260,15 +266,15 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         if (GpkLib.verifySij(d, group.addressMap[dest], src.polyCommit, round.curve)) {
           GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckInvalid, dest, msg.sender, true, smg);
         } else {
-          GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijInvalid, msg.sender, dest, true, smg);
+          GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijInvalid, msg.sender, dest, true, smg);
         }
     }
 
-    /// @notice                           function for report dest storeman check encSij timeout
+    /// @notice                           function for report dest storeman check Sij timeout
     /// @param groupId                    storeman group id
     /// @param curveIndex                 singnature curve index
     /// @param dest                       dest storeman address
-    function checkEncSijTimeout(bytes32 groupId, uint8 curveIndex, address dest)
+    function checkSijTimeout(bytes32 groupId, uint8 curveIndex, address dest)
         external
     {
         GpkTypes.Group storage group = groupMap[groupId];
@@ -352,11 +358,11 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
     /// @param storeman                   check storeman address if not address(0)
     /// @param checkSender                whether check msg.sender
     function checkValid(GpkTypes.Group storage group, uint16 roundIndex, uint8 curveIndex, GpkTypes.GpkStatus status, address storeman, bool checkSender)
-        internal
+        private
         view
     {
-        require(roundIndex == group.round, "Outdated"); // must be latest round
-        require(curveIndex < group.curveTypes, "Invalid curve"); // group is initialized, and curve is permitted
+        require(roundIndex == group.round, "Invalid round"); // must be current round
+        require(curveIndex <= 1, "Invalid curve"); // group is initialized, and curve is permitted
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         require(round.status == status, "Invalid status");
         if (storeman != address(0)) {
@@ -402,15 +408,15 @@ contract CreateGpkDelegate is CreateGpkStorage, Owned {
         return (d.encSij, uint8(d.checkStatus), d.setTime, d.checkTime, d.sij, d.ephemPrivateKey);
     }
 
-    function getPkShare(bytes32 groupId, uint16 index)
+    function getGpkShare(bytes32 groupId, uint16 index)
         external
         view
-        returns(bytes pkShare1, bytes pkShare2)
+        returns(bytes gpkShare1, bytes gpkShare2)
     {
         GpkTypes.Group storage group = groupMap[groupId];
         address src = group.indexMap[index];
         mapping(uint8 => GpkTypes.Round) chainRoundMap = groupMap[groupId].roundMap[group.round];
-        return (chainRoundMap[0].srcMap[src].pkShare, chainRoundMap[1].srcMap[src].pkShare);
+        return (chainRoundMap[0].srcMap[src].gpkShare, chainRoundMap[1].srcMap[src].gpkShare);
     }
 
     function getGpk(bytes32 groupId)

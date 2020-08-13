@@ -27,18 +27,18 @@
 pragma solidity ^0.4.24;
 
 import "../components/Owned.sol";
-import "./CreateGpkStorage.sol";
+import "./GpkStorage.sol";
 import "../components/Proxy.sol";
 
-contract CreateGpkProxy is CreateGpkStorage, Owned, Proxy {
+contract GpkProxy is GpkStorage, Owned, Proxy {
     /**
     *
     * MANIPULATIONS
     *
     */
 
-    /// @notice                           function for setting or upgrading CreateGpkDelegate address by owner
-    /// @param impl                       CreateGpkDelegate contract address
+    /// @notice                           function for setting or upgrading GpkDelegate address by owner
+    /// @param impl                       GpkDelegate contract address
     function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");
