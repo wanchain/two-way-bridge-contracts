@@ -45,7 +45,7 @@ library MetricLib {
     internal
     returns (bool, uint8)
     {
-        require(metricData.mapRSlsh[grpId][hashX][smIndex].polyDataPln.polyData.length != 0,"Duplicate RSlsh");
+        require(metricData.mapRSlsh[grpId][hashX][smIndex].polyDataPln.polyData.length == 0,"Duplicate RSlsh");
 
         require(rslshData.sndrIndex <= smCount, "invalid send index");
         require(rslshData.rcvrIndex <= smCount, "invalid receiver index");
@@ -156,7 +156,7 @@ library MetricLib {
     public
     returns (bool, uint8)
     {
-        require(metricData.mapSSlsh[grpId][hashX][smIndex].polyDataPln.polyData.length != 0,"Duplicate SSlsh");
+        require(metricData.mapSSlsh[grpId][hashX][smIndex].polyDataPln.polyData.length == 0,"Duplicate SSlsh");
 
         require(sslshData.sndrIndex <= smCount, "invalid send index");
         require(sslshData.rcvrIndex <= smCount, "invalid receiver index");
