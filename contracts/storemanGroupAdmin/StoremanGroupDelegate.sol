@@ -41,17 +41,12 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     using SafeMath for uint;
     using Deposit for Deposit.Records;
 
-    event StoremanGroupRegisterStartEvent(bytes32 indexed groupId, uint workStart,uint workDuration, uint registerDuration, bytes32 indexed preGroupId);
+    event StoremanGroupRegisterStartEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, uint workStart, uint workDuration, uint registerDuration);
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
     event StoremanGroupDismissedEvent(bytes32 indexed groupId, uint dismissTime);
     event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
     event updateGroupChainEvent(bytes32 indexed groupId, uint256 indexed chain1, uint256 indexed chain2, uint256 curve1, uint256 curve2);
     event storemanGroupContributeEvent(address indexed sender, uint indexed value);
-
-    modifier onlyGpkMtr {
-        require(msg.sender == createGpkAddr || msg.sender == metric, "Sender is not allowed");
-        _;
-    }
 
     modifier onlyGroupLeader(bytes32 groupId) {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
@@ -109,7 +104,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.threshold = thresholdDefault;
         group.registerTime = now;
         group.registerDuration = registerDuration;
-        emit StoremanGroupRegisterStartEvent(groupId, workStartSecond, workDuration, registerDuration, preGroupId);
+        emit StoremanGroupRegisterStartEvent(groupId, preGroupId, workStartSecond, workDuration, registerDuration);
         return StoremanLib.inheritNode(data,group, preGroupId, wkAddrs, senders);
     }
 
@@ -281,9 +276,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
     function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2)
-        public 
-        onlyGpkMtr
+        public
     {
+        require(msg.sender == createGpkAddr, "Sender is not allowed");
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.gpk1 = gpk1;
         group.gpk2 = gpk2;
@@ -293,9 +288,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
     function setInvalidSm(bytes32 groupId, GpkTypes.SlashType[] slashType,  address[] badAddrs)
         external
-        onlyGpkMtr        
         returns(bool isContinue)
     {
+        require(msg.sender == createGpkAddr, "Sender is not allowed");
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         if(group.status != StoremanType.GroupStatus.selected) {
             return false;
@@ -321,8 +316,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
 
     function recordSmSlash(address wk) 
         public
-        onlyGpkMtr
     {
+        require(msg.sender == metric, "Sender is not allowed");
         StoremanType.Candidate storage sk = data.candidates[wk];
         sk.slashedCount++;
     }
@@ -434,7 +429,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
             data.chainTypeCo[chain2][chain1] = co;
         }
     }
-    function getChainTypeCo(uint chain1, uint chain2) public view {
+    function getChainTypeCo(uint chain1, uint chain2) public view returns (uint co) {
         return IncentiveLib.getChainTypeCo(data, chain1, chain2);
     }
 

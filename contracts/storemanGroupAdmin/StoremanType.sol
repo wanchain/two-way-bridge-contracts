@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../lib/Deposit.sol";
+import "./Deposit.sol";
 
 library StoremanType {
     using Deposit for Deposit.Records;

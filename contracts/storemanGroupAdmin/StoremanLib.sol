@@ -260,24 +260,22 @@ library StoremanLib {
     // TODO 白名单备份节点，　不允许退出．如何退出
     function inheritNode(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) public
     {
-        StoremanType.StoremanGroup storage oldGroup;
-        if(preGroupId != bytes32(0x00)) {
-            oldGroup = data.groups[preGroupId];
-            data.oldAddr.length = 0;
-        }
+        StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
+        data.oldAddr.length = 0;
+
         if(wkAddrs.length == 0){ // If there are no new white nodes, use the old.
             for(uint k = 0; k<oldGroup.whiteCountAll; k++){
                 address wa = oldGroup.whiteMap[k];
                 StoremanType.Candidate storage skw = data.candidates[wa];
-                group.whiteWk[wa] = oldGroup.whiteWk[wa];
                 if(!skw.quited) {
+                    group.whiteWk[wa] = oldGroup.whiteWk[wa];
                     group.whiteMap[group.whiteCountAll] = wa;
                     group.whiteCountAll++;
-                    if(k < oldGroup.whiteCount){
-                        group.selectedNode[k] = wa;
+                    if (k < oldGroup.whiteCount){
+                        group.selectedNode[group.whiteCount] = wa;
                         group.whiteCount++;
                     }
-                    data.oldAddr.push(group.whiteMap[k]);
+                    data.oldAddr.push(wa);
                     skw.nextGroupId = group.groupId;
                 }
             }
@@ -298,10 +296,8 @@ library StoremanLib {
         // 如果有, 完整替换.　新白名单不能与旧的有重叠．
         // 3个替换4个也可以.
         // TODO handle the old group member. set the group deposit.
-        if(preGroupId != bytes32(0x00)) {
-            oldGroup = data.groups[preGroupId];
-            data.oldAddr.length = 0;
-            for(uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
+        if (preGroupId != bytes32(0x00)) {
+            for (uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
                 address skAddr = oldGroup.selectedNode[m];
                 StoremanType.Candidate storage sk = data.candidates[skAddr];
                 if(sk.groupId == preGroupId && sk.quited == false && sk.slashedCount < data.conf.maxSlashedCount) {
