@@ -39,7 +39,7 @@ contract GpkProxy is GpkStorage, Owned, Proxy {
 
     /// @notice                           function for setting or upgrading GpkDelegate address by owner
     /// @param impl                       GpkDelegate contract address
-    function upgradeTo(address impl) public onlyOwner {
+    function upgradeTo(address impl) external onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");
         _implementation = impl;

@@ -104,11 +104,11 @@ library GpkLib {
         group.roundMap[group.round][0].curve = config.curves[uint8(curve1)];
         group.roundMap[group.round][1].curve = config.curves[uint8(curve2)];
 
-        // selected sm list
         group.groupId = groupId;
+
+        // retrieve selected sm list
         group.smNumber = uint16(IStoremanGroup(smg).getSelectedSmNumber(groupId));
         require(group.smNumber > 0, "Invalid number");
-        // retrieve nodes
         address txAddress;
         bytes memory pk;
         for (uint i = 0; i < group.smNumber; i++) {

@@ -35,6 +35,7 @@ contract FakeSmg {
     "ccd16e96a70a5b496ff1cec869902b6a8ffa00715897937518f1c9299726f7090bc36cc23c1d028087eb0988c779663e996391f290631317fc22f84fa9bf2467"];
 
     address constant ADD_0 = 0x0000000000000000000000000000000000000000;
+    address constant ADD_LEADER= 0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e;
 
     // groupId=>index=>pk
     mapping(bytes32 => mapping(uint8 => bytes)) mapSmgInfo;
@@ -69,7 +70,7 @@ contract FakeSmg {
     }
 
     function getSelectedSmInfo(bytes32 grpId, uint index) external returns (address txAddress, bytes pk, bytes enodeId){
-        (txAddress,pk,enodeId) = (ADD_0, mapSmgInfo[grpId][uint8(index)], fromHex(EnodeIdStr));
+        (txAddress,pk,enodeId) = (ADD_LEADER, mapSmgInfo[grpId][uint8(index)], fromHex(EnodeIdStr));
     }
 
 
@@ -135,4 +136,6 @@ contract FakeSmg {
         }
         return r;
     }
+
+    function recordSmSlash(address wk) external{}
 }
