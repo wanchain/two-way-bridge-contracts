@@ -28,24 +28,30 @@ library StoremanType {
         bytes enodeID;
         bytes PK;
         address  pkAddress;
-        bool  quited;
-        bool  selected;
-        uint  delegatorCount;
-        uint  delegateDeposit; // only used when selecting. need not records.
-        uint  partnerCount;
-        uint  partnerDeposit;
-        uint  crossIncoming;
-        uint  slashedCount;
+        bool isWhite;
+        bool quited;
+        bool selected;
+        uint delegatorCount;
+        uint delegateDeposit; // only used when selecting. need not records.
+        uint partnerCount;
+        uint partnerDeposit;
+        uint crossIncoming;
+        uint slashedCount;
 
-        uint  incentivedDelegator; // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
-        uint  incentivedDay;
+        uint incentivedDelegator; // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
+        uint incentivedDay;
         bytes32  groupId;
         bytes32  nextGroupId;
         Deposit.Records  deposit;         // 自有资金记录
         
         mapping(uint=>uint) incentive;       // without delegation.. set to 0 after incentive.        
-        mapping(uint=>address) addrMap;
+
+        // delegator index => delegator addr
+        mapping(uint=>address) delegatorMap;
         mapping(address=>Delegator) delegators;
+
+        // partner index => partner address
+        mapping(uint=>address) partMap;
         mapping(address=>Partner) partners;
         
     }
@@ -77,7 +83,7 @@ library StoremanType {
         uint delegateFee;
         mapping(uint=>uint) tickedType;
         mapping(uint=>address) tickedNode;
-        mapping(uint=>address) addrMap;
+        mapping(uint=>address) skMap;
         mapping(uint=>address) selectedNode;
         mapping(uint=>address) whiteMap;
         mapping(address=>address) whiteWk;   // the white list specified when start group. 储存白名单对应的钱包地址.

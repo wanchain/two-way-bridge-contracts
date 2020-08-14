@@ -6,8 +6,10 @@ import "./StoremanUtil.sol";
 
 library IncentiveLib {
     using Deposit for Deposit.Records;
+    using SafeMath for uint;
 
     event incentiveEvent(bytes32 indexed groupId, address indexed pkAddr, bool indexed finished, uint from, uint end);
+    event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
     function getChainTypeCo(StoremanType.StoremanData storage data, uint chain1, uint chain2) public view returns(uint co){
         if(chain1 < chain2) {
             co = data.chainTypeCo[chain1][chain2];
@@ -20,19 +22,19 @@ library IncentiveLib {
         return co;
     }
 
-    function getGroupIncentive(StoremanType.StoremanGroup storage group, uint day,StoremanType.StoremanData storage data) public view returns (uint) {
+    function getGroupIncentive(StoremanType.StoremanGroup storage group, uint day,StoremanType.StoremanData storage data) private view returns (uint) {
         uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
         return PosLib.getMinIncentive(group.deposit.getLastValue(),day) * chainTypeCo/10000;
     }
 
-    function calIncentive(uint groupIncentive, uint groupWeight, uint weight) public returns (uint) {
+    function calIncentive(uint groupIncentive, uint groupWeight, uint weight) private returns (uint) {
         if (groupWeight == 0) {
             return 0;
         } else {
-            return groupIncentive*weight/groupWeight;
+            return groupIncentive.mul(weight).div(groupWeight);
         }
     }
-    function checkMetric(IMetric metric, StoremanType.StoremanGroup storage group, uint day, uint index) internal returns (bool) {
+    function checkMetric(IMetric metric, StoremanType.StoremanGroup storage group, uint day, uint index) private returns (bool) {
         if(index == 0) {
             return true; // leader is always OK.
         }
@@ -46,7 +48,7 @@ library IncentiveLib {
         }
         return false;
     }
-    function rotateSkGroup(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) internal {
+    function rotateSkGroup(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private {
         if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime) && group.status == StoremanType.GroupStatus.dismissed) {
             if(bytes32(0x00) != sk.nextGroupId) {
                 sk.groupId = sk.nextGroupId;
@@ -54,7 +56,7 @@ library IncentiveLib {
             sk.nextGroupId = bytes32(0x00);
         }        
     }
-    function calFromEndDay(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group)public returns(uint,uint) {
+    function calFromEndDay(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns(uint,uint) {
         uint fromDay = StoremanUtil.getDaybyTime(group.workTime);
         if (sk.incentivedDay != 0) {
             fromDay = sk.incentivedDay + 1;
@@ -68,17 +70,18 @@ library IncentiveLib {
     }
     function incentiveNode(uint day, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group,StoremanType.StoremanData storage data) public {
         sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getValueById(day)));
-        sk.incentive[0] += sk.incentive[day];
-        data.totalReward += sk.incentive[day];
+        sk.incentive[0] =  sk.incentive[0].add(sk.incentive[day]);
+        data.totalReward = data.totalReward.add(sk.incentive[day]);
         for(uint m=0; m<sk.partnerCount; m++){
-            sk.incentive[day] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.partners[0].deposit.getValueById(day)));
+            address partnerAddr = sk.partMap[m];
+            sk.incentive[day] = sk.incentive[day].add(calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.partners[partnerAddr].deposit.getValueById(day))));
         }
     }
     function incentiveDelegator(uint day, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group,StoremanType.StoremanData storage data) public {
-        address deAddr = sk.addrMap[sk.incentivedDelegator];
+        address deAddr = sk.delegatorMap[sk.incentivedDelegator];
         sk.delegators[deAddr].incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), sk.delegators[deAddr].deposit.getValueById(day));
-        sk.delegators[deAddr].incentive[0] += sk.delegators[deAddr].incentive[day];
-        data.totalReward += sk.delegators[deAddr].incentive[day];
+        sk.delegators[deAddr].incentive[0] = sk.delegators[deAddr].incentive[0].add(sk.delegators[deAddr].incentive[day]);
+        data.totalReward = data.totalReward.add(sk.delegators[deAddr].incentive[day]);
         sk.incentivedDelegator++;
     }
 
@@ -95,15 +98,6 @@ library IncentiveLib {
         StoremanType.StoremanGroup storage group = data.groups[sk.groupId];
         uint fromDay; uint endDay;
         (fromDay, endDay) = calFromEndDay(sk, group);
-        // uint fromDay = StoremanUtil.getDaybyTime(group.workTime);
-        // if (sk.incentivedDay != 0) {
-        //     fromDay = sk.incentivedDay + 1;
-        // }
-        // uint endDay = now;
-        // if (endDay > group.workTime + group.totalTime) {
-        //     endDay = group.workTime + group.totalTime;
-        // }
-        // endDay= StoremanUtil.getDaybyTime(endDay);
 
         uint day;
         for (day = fromDay; day < endDay; day++) {
@@ -125,40 +119,22 @@ library IncentiveLib {
             if(checkMetric(IMetric(metricAddr), group, day, idx)){
                 if(0 == sk.incentive[day]) {
                     incentiveNode(day, sk,group,data);
-                    // sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getValueById(day)));
-                    // sk.incentive[0] += sk.incentive[day];
-                    // data.totalReward += sk.incentive[day];
-                    // for(uint m=0; m<sk.partnerCount; m++){
-                    //     sk.incentive[day] += calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.partners[0].deposit.getValueById(day)));
-                    // }
                 }
                 while (sk.incentivedDelegator != sk.delegatorCount) {
-                    if (msg.gas < 5000000 ) { // check the gas. because calculate delegator incentive need more gas left.
+                    if (msg.gas < 5000000 ) {
                         emit incentiveEvent(group.groupId, wkAddr, false, fromDay, 0);
                         return;
                     }
                     incentiveDelegator(day, sk,group,data);
-                    // address deAddr = sk.addrMap[sk.incentivedDelegator];
-                    // sk.delegators[deAddr].incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), sk.delegators[deAddr].deposit.getValueById(day));
-                    // sk.delegators[deAddr].incentive[0] += sk.delegators[deAddr].incentive[day];
-                    // data.totalReward += sk.delegators[deAddr].incentive[day];
-                    // sk.incentivedDelegator++;
                 }
             }
             sk.incentivedDay = day;
             rotateSkGroup(sk, group);
-            // if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime) && group.status == StoremanType.GroupStatus.dismissed) {
-            //     if(bytes32(0x00) != sk.nextGroupId) {
-            //         sk.groupId = sk.nextGroupId;
-            //     }
-            //     sk.nextGroupId = bytes32(0x00);
-            // }
             sk.incentivedDelegator = 0;
         }
         emit incentiveEvent(group.groupId, wkAddr, true, fromDay, endDay-1);
     }
 
-    event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
     function toSelect(StoremanType.StoremanData storage data,bytes32 groupId) public {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         if(group.memberCount < group.memberCountDesign){
@@ -177,8 +153,8 @@ library IncentiveLib {
         for(uint i = 0; i<group.memberCountDesign; i++){
             members[i] = group.selectedNode[i];
             StoremanType.Candidate storage sk = data.candidates[group.selectedNode[i]];
-            groupDeposit += (sk.deposit.getLastValue()+sk.delegateDeposit);
-            groupDepositWeight += (StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
+            groupDeposit = groupDeposit.add(sk.deposit.getLastValue()+sk.delegateDeposit);
+            groupDepositWeight = groupDepositWeight.add(StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
         }
         Deposit.Record memory deposit = Deposit.Record(day, groupDeposit);
         Deposit.Record memory depositWeight = Deposit.Record(day, groupDepositWeight);

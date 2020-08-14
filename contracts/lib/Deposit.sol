@@ -1,6 +1,10 @@
 pragma solidity ^0.4.24;
 
+import "./SafeMath.sol";
+
 library Deposit {
+    using SafeMath for uint;
+
     struct Record {
         uint id;
         uint value; // the value is current total value, include the old deposit
@@ -40,10 +44,10 @@ library Deposit {
         } else {
             Record storage e = self.records[self.total-1];
             if(e.id == r.id) {
-                e.value += r.value;
+                e.value = e.value.add(r.value);
             }else{
                 Record memory n = Record(r.id, r.value);
-                n.value += self.records[self.total-1].value;
+                n.value = n.value.add(self.records[self.total-1].value);
                 self.records[self.total] = n;
                 self.total++;
             }
