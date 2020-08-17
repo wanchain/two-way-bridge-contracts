@@ -9,16 +9,16 @@ library StoremanLib {
     using SafeMath for uint;
 
     uint constant MaxPartnerCount = 5;
-    event stakeInEvent(bytes32 indexed index,address indexed pkAddr, address indexed from, uint  value);
-    event stakeAppendEvent(address indexed pkAddr, address indexed from, uint indexed value);
-    event stakeOutEvent(address indexed pkAddr, address indexed from);
-    event stakeClaimEvent(address indexed pkAddr, address indexed from,bytes32 indexed groupId, uint value);
-    event stakeIncentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
+    event stakeInEvent(bytes32 indexed index,address indexed wkAddr, address indexed from, uint  value);
+    event stakeAppendEvent(address indexed wkAddr, address indexed from, uint indexed value);
+    event stakeOutEvent(address indexed wkAddr, address indexed from);
+    event stakeClaimEvent(address indexed wkAddr, address indexed from,bytes32 indexed groupId, uint value);
+    event stakeIncentiveClaimEvent(address indexed sender,address indexed wkAddr,uint indexed amount);
     event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
     event delegateInEvent(address indexed wkAddr, address indexed from, uint indexed value);
     event delegateClaimEvent(address indexed wkAddr, address indexed from, uint256 indexed amount);
-    event delegateIncentiveClaimEvent(address indexed sender,address indexed pkAddr,uint indexed amount);
+    event delegateIncentiveClaimEvent(address indexed sender,address indexed wkAddr,uint indexed amount);
     event partInEvent(address indexed wkAddr, address indexed from, uint indexed value);
 
     function calSkWeight(StoremanType.StoremanData storage data) public  view returns (uint){
@@ -193,6 +193,7 @@ library StoremanLib {
         }
     }
 
+    // 排序时用权重的. TODO
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
         for (uint i = group.whiteCount; i < group.selectedCount; i++) {
             StoremanType.Candidate storage cmpNode = data.candidates[group.selectedNode[i]];
@@ -225,6 +226,7 @@ library StoremanLib {
         }
     }
 
+// 如果节点本来就在list里面, realInsert有问题. TODO
     function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r) internal {
         //如果还没选择, 不需要更新group的值, 在选择的时候一起更新.
         // 如果已经选择过了, 需要更新group的值.
@@ -237,7 +239,7 @@ library StoremanLib {
             group.deposit.addRecord(r);
             group.depositWeight.addRecord(r);
         } else {
-            if(group.whiteWk[skPkAddr] == address(0x00)){
+            if(group.whiteWk[skPkAddr] == address(0x00)){ //TODO: 加partner的资金
                 realInsert(data, group, skPkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
             }
         }
@@ -328,7 +330,7 @@ library StoremanLib {
 
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
         dk.quited = true;
-        sk.delegateDeposit -= dk.deposit.getLastValue();
+        sk.delegateDeposit = sk.delegateDeposit.sub(dk.deposit.getLastValue());
     }
 
     function delegateClaim(StoremanType.StoremanData storage data, address skPkAddr) external {
@@ -344,8 +346,8 @@ library StoremanLib {
         sk.delegatorMap[dk.index] = lastDkAddr;
         laskDk.index = dk.index;
 
-        delete sk.delegatorMap[sk.delegatorCount-1];
-        sk.delegatorCount--;
+        sk.delegatorCount--; // TODO , use safemath.
+        delete sk.delegatorMap[sk.delegatorCount];
         delete sk.delegators[msg.sender];
 
         dk.sender.transfer(amount);
@@ -375,10 +377,11 @@ library StoremanLib {
     {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
+        require(sk.partnerCount<5,"Too many partners");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
 
-        StoremanType.Partner storage pn = sk.partners[msg.sender];
+        StoremanType.Delegator storage pn = sk.partners[msg.sender];
         if(pn.sender == address(0x00)) {
             sk.partMap[sk.partnerCount] = msg.sender;
             pn.index = sk.partnerCount;
@@ -402,24 +405,24 @@ library StoremanLib {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
 
-        StoremanType.Partner storage pn = sk.partners[msg.sender];
+        StoremanType.Delegator storage pn = sk.partners[msg.sender];
         pn.quited = true;
         sk.partnerDeposit = sk.partnerDeposit.sub(pn.deposit.getLastValue());
     }
     function partClaim(StoremanType.StoremanData storage data, address skPkAddr) external {
         require(checkCanStakeClaim(data,skPkAddr),"Cannot claim");
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
-        StoremanType.Partner storage pn = sk.partners[msg.sender];
+        StoremanType.Delegator storage pn = sk.partners[msg.sender];
         uint amount = pn.deposit.getLastValue();
         pn.deposit.clean();
 
         address lastPnAddr = sk.partMap[sk.delegatorCount-1];
-        StoremanType.Partner storage laskPn = sk.partners[lastPnAddr];
+        StoremanType.Delegator storage laskPn = sk.partners[lastPnAddr];
         sk.partMap[pn.index] = lastPnAddr;
         laskPn.index = pn.index;
 
-        delete sk.partMap[sk.partnerCount-1];
         sk.partnerCount--;
+        delete sk.partMap[sk.partnerCount];
         delete sk.partners[msg.sender];
 
         pn.sender.transfer(amount);

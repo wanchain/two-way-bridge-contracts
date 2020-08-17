@@ -158,68 +158,68 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
     /// @notice                             Staker use this interface to append wan to SC.
-    /// @param skPkAddr                     the agent keystore's address, which publickey is specified when stakeIn.
-    function stakeAppend(address skPkAddr)
+    /// @param wkAddr                     the agent keystore's address, which publickey is specified when stakeIn.
+    function stakeAppend(address wkAddr)
         external
         notHalted
         payable
     {
-        return StoremanLib.stakeAppend(data, skPkAddr);
+        return StoremanLib.stakeAppend(data, wkAddr);
     }
 
     /// @notice                             Staker use this interface to anounce he will not continue in next group.
     ///  the next group will open in advance of the current group end. so if a node want to quit, it should call stakeOut before the new group open. 
     ///  If the new group has opened, the node in old group can't stake out.
-    /// @param skPkAddr                     the agent keystore's address, which publickey is specified when stakeIn.
-    function stakeOut(address skPkAddr) external notHalted {
-        return StoremanLib.stakeOut(data, skPkAddr);
+    /// @param wkAddr                     the agent keystore's address, which publickey is specified when stakeIn.
+    function stakeOut(address wkAddr) external notHalted {
+        return StoremanLib.stakeOut(data, wkAddr);
     }
-    function checkCanStakeOut(address skPkAddr) external view returns(bool) {
-        return StoremanLib.checkCanStakeOut(data, skPkAddr);
-    }
-
-    function checkCanStakeClaim(address skPkAddr) external returns(bool){
-        return StoremanLib.checkCanStakeClaim(data, skPkAddr);
-    }
-    function stakeClaim(address skPkAddr) external notHalted {
-        return StoremanLib.stakeClaim(data,skPkAddr);
-    }
-    function stakeIncentiveClaim(address skPkAddr) external notHalted {
-        return StoremanLib.stakeIncentiveClaim(data,skPkAddr);
+    function checkCanStakeOut(address wkAddr) external view returns(bool) {
+        return StoremanLib.checkCanStakeOut(data, wkAddr);
     }
 
-    function delegateIn(address skPkAddr)
+    function checkCanStakeClaim(address wkAddr) external returns(bool){
+        return StoremanLib.checkCanStakeClaim(data, wkAddr);
+    }
+    function stakeClaim(address wkAddr) external notHalted {
+        return StoremanLib.stakeClaim(data,wkAddr);
+    }
+    function stakeIncentiveClaim(address wkAddr) external notHalted {
+        return StoremanLib.stakeIncentiveClaim(data,wkAddr);
+    }
+
+    function delegateIn(address wkAddr)
         external
         notHalted
         payable
     {
-        return StoremanLib.delegateIn(data,skPkAddr);
+        return StoremanLib.delegateIn(data,wkAddr);
     }
-    function delegateOut(address skPkAddr) external {
-        return StoremanLib.delegateOut(data,skPkAddr);
+    function delegateOut(address wkAddr) external {
+        return StoremanLib.delegateOut(data,wkAddr);
 
     }
-    function delegateClaim(address skPkAddr) external {
+    function delegateClaim(address wkAddr) external {
 
-        return StoremanLib.delegateClaim(data, skPkAddr);
+        return StoremanLib.delegateClaim(data, wkAddr);
     }
-    function delegateIncentiveClaim(address skPkAddr) external {
+    function delegateIncentiveClaim(address wkAddr) external {
 
-        return StoremanLib.delegateIncentiveClaim(data, skPkAddr);
+        return StoremanLib.delegateIncentiveClaim(data, wkAddr);
     }
-    function partIn(address skPkAddr)
+    function partIn(address wkAddr)
         external
         notHalted
         payable
     {
-        return StoremanLib.partIn(data,skPkAddr);
+        return StoremanLib.partIn(data,wkAddr);
     }
-    function partOut(address skPkAddr) external notHalted{
-        return StoremanLib.partOut(data,skPkAddr);
+    function partOut(address wkAddr) external notHalted{
+        return StoremanLib.partOut(data,wkAddr);
 
     }
-    function partClaim(address skPkAddr) external notHalted{
-        return StoremanLib.partClaim(data,skPkAddr);
+    function partClaim(address wkAddr) external notHalted{
+        return StoremanLib.partClaim(data,wkAddr);
     }
 
     function getSelectedSmNumber(bytes32 groupId) public view returns(uint) {
@@ -247,7 +247,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
     // TODO: 改成用结构返回????
-    function getStoremanInfo(address wkAddress)public view  returns(address sender,bytes PK, address pkAddress,
+    function getStoremanInfo(address wkAddress) external view  returns(address sender,bytes PK, address wkAddr,
         bool quited, uint  deposit, uint delegateDeposit,
         uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId, uint incentivedDay, uint slashedCount
         ){
@@ -296,7 +296,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
             return false;
         }
         for(uint k = 0; k < group.selectedCount; k++){
-            if(group.tickedCount + group.whiteCount >= group.whiteCountAll){
+            if(group.tickedCount + group.whiteCount >= group.whiteCountAll){ // TODO: 这句提到for外面..
+            // 是不是直接group status改成failed. 
                 return false;
             }
             for(uint i = 0; i<badAddrs.length; i++){
@@ -349,19 +350,19 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         bool quitable = quotaInst.isDebtClean(groupId);
-        require(quitable);
+        require(quitable, "can not dismiss");
 
         group.status = StoremanType.GroupStatus.dismissed;
         emit StoremanGroupDismissedEvent(groupId, now);
-        // TODO group状态进入dismissed, sk的当前group变成nextGroup.
+        // group状态进入dismissed, 并且完成了收益结算, sk的当前group变成nextGroup.
         StoremanType.Candidate storage sk;
         for(uint i=0; i<group.memberCount; i++){
             sk = data.candidates[group.selectedNode[i]];
             if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime)) {
                 if(bytes32(0x00) != sk.nextGroupId) {
                     sk.groupId = sk.nextGroupId;
+                    sk.nextGroupId = bytes32(0x00);
                 }
-                sk.nextGroupId = bytes32(0x00);
             }
         }
     }

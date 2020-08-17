@@ -7,7 +7,7 @@ library StoremanType {
     enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
     //ready: gpk finished.
     
-
+// Delegator , Partner, 用一个.Delegator. TODO. 
     struct Delegator {
         address sender; // the delegator wallet address
         address staker;
@@ -16,13 +16,13 @@ library StoremanType {
         Deposit.Records deposit;
         mapping(uint=>uint) incentive;
     }
-    struct Partner {
-        address sender; // the delegator wallet address
-        address staker;
-        bool  quited;
-        uint index; // for delete from candidate;
-        Deposit.Records deposit;
-    }
+    // struct Partner {
+    //     address sender; // the delegator wallet address
+    //     address staker;
+    //     bool  quited;
+    //     uint index; // for delete from candidate;
+    //     Deposit.Records deposit;
+    // }
     struct Candidate {
         address sender;
         bytes enodeID;
@@ -30,7 +30,7 @@ library StoremanType {
         address  pkAddress;
         bool isWhite;
         bool quited;
-        bool selected;
+        //bool selected; // TODO, 看看还用不用.
         uint delegatorCount;
         uint delegateDeposit; // only used when selecting. need not records.
         uint partnerCount;
@@ -52,7 +52,7 @@ library StoremanType {
 
         // partner index => partner address
         mapping(uint=>address) partMap;
-        mapping(address=>Partner) partners;
+        mapping(address=>Delegator) partners;
         
     }
 
