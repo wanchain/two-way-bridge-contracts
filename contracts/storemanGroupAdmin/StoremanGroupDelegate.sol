@@ -317,7 +317,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function recordSmSlash(address wk) 
         public
     {
-        require(msg.sender == metric, "Sender is not allowed");
+        require((msg.sender == metric) || (msg.sender == createGpkAddr), "Sender is not allowed");
         StoremanType.Candidate storage sk = data.candidates[wk];
         sk.slashedCount++;
     }
