@@ -296,8 +296,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
             return false;
         }
         for(uint k = 0; k < group.selectedCount; k++){
-            if(group.tickedCount + group.whiteCount >= group.whiteCountAll){ // TODO: 这句提到for外面..
-            // 是不是直接group status改成failed. 
+            if(group.tickedCount + group.whiteCount >= group.whiteCountAll){
+                group.status == StoremanType.GroupStatus.failed;
                 return false;
             }
             for(uint i = 0; i<badAddrs.length; i++){

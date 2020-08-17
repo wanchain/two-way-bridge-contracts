@@ -168,7 +168,7 @@ library StoremanLib {
 
         amount = amount.add(sk.crossIncoming);
         sk.crossIncoming = 0;
-        //TODO slash
+        // slash the node
         if(sk.slashedCount >= data.conf.maxSlashedCount) {
             amount = 0;
         } else {
@@ -341,12 +341,12 @@ library StoremanLib {
         uint amount = dk.deposit.getLastValue();
         dk.deposit.clean();
 
-        address lastDkAddr = sk.delegatorMap[sk.delegatorCount-1];
+        address lastDkAddr = sk.delegatorMap[sk.delegatorCount.sub(1)];
          StoremanType.Delegator storage laskDk = sk.delegators[lastDkAddr];
         sk.delegatorMap[dk.index] = lastDkAddr;
         laskDk.index = dk.index;
 
-        sk.delegatorCount--; // TODO , use safemath.
+        sk.delegatorCount == sk.delegatorCount.sub(1);
         delete sk.delegatorMap[sk.delegatorCount];
         delete sk.delegators[msg.sender];
 
