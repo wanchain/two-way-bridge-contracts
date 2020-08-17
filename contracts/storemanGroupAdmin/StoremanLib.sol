@@ -196,20 +196,30 @@ library StoremanLib {
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
         for (uint i = group.whiteCount; i < group.selectedCount; i++) {
             StoremanType.Candidate storage cmpNode = data.candidates[group.selectedNode[i]];
-            uint cmpWeight = cmpNode.delegateDeposit + 
-                StoremanUtil.calSkWeight(data.conf.standaloneWeight, cmpNode.deposit.getLastValue()+cmpNode.partnerDeposit);
+            if (cmpNode.pkAddress == skAddr) { // keep self position, do not sort
+                return;
+            }
+            uint cmpWeight = cmpNode.delegateDeposit.add(StoremanUtil.calSkWeight(data.conf.standaloneWeight, cmpNode.deposit.getLastValue().add(cmpNode.partnerDeposit)));
             if (weight > cmpWeight) {
                 break;
             }
         }
         if (i < group.memberCountDesign) {
-            for (uint j = group.selectedCount - 1; j >= i; j--) {
+            address curAddr = group.selectedNode[i]; // must not be skAddr
+            for (uint j = i; j < group.selectedCount; j++) {
                 if (j + 1 < group.memberCountDesign) {
-                    group.selectedNode[j + 1] = group.selectedNode[j];
+                    address nextAddr = group.selectedNode[j + 1];
+                    group.selectedNode[j + 1] = curAddr;
+                    if (nextAddr != skAddr) {
+                        curAddr = nextAddr;
+                    } else {
+                        break;
+                    }
                 }
             }
+            // insert or move to place i
             group.selectedNode[i] = skAddr;
-            if (group.selectedCount < group.memberCountDesign) {
+            if ((group.selectedCount < group.memberCountDesign) && (j == group.selectedCount)) {
                 group.selectedCount++;
             }
         }
