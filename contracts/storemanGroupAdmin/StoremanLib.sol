@@ -21,10 +21,6 @@ library StoremanLib {
     event delegateIncentiveClaimEvent(address indexed sender,address indexed wkAddr,uint indexed amount);
     event partInEvent(address indexed wkAddr, address indexed from, uint indexed value);
 
-    function calSkWeight(StoremanType.StoremanData storage data) public  view returns (uint){
-        return StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value);
-    }
-
     function storemanGroupUnregister(StoremanType.StoremanData storage data,bytes32 groupId)
         external
     {
@@ -42,7 +38,6 @@ library StoremanLib {
         //require(now <= group.registerTime+group.registerDuration,"Registration closed"); // TODO open after test.
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         address pkAddr = address(keccak256(PK));
-        Deposit.Records memory records = Deposit.Records(0);
         StoremanType.Candidate storage sk = data.candidates[pkAddr];
         //require(sk.sender == address(0x00), "Candidate has existed"); // TODO open after test.
         //require(group.status >= StoremanType.GroupStatus.curveSeted,"not configured") // TODO open after test.
@@ -51,13 +46,11 @@ library StoremanLib {
         sk.PK = PK;
         sk.pkAddress = pkAddr;
         sk.groupId = groupId;
-        sk.deposit = records;
+        sk.deposit = Deposit.Records(0);
+        sk.deposit.addRecord(Deposit.Record(StoremanUtil.getDaybyTime(now), msg.value));
 
         group.skMap[group.memberCount] = sk.pkAddress;
         group.memberCount++;
-
-        Deposit.Record memory r = Deposit.Record(StoremanUtil.getDaybyTime(now), msg.value);
-        sk.deposit.addRecord(r);
 
         // check if it is white
         if(group.whiteWk[pkAddr] != address(0x00)){
@@ -66,7 +59,7 @@ library StoremanLib {
             }
             sk.isWhite = true;
         } else {
-            realInsert(data,group, pkAddr, calSkWeight(data));
+            realInsert(data,group, pkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value));
         }
 
         emit stakeInEvent(group.groupId, pkAddr, msg.sender, msg.value);
@@ -200,7 +193,7 @@ library StoremanLib {
             if (cmpNode.pkAddress == skAddr) { // keep self position, do not sort
                 return;
             }
-            uint cmpWeight = cmpNode.delegateDeposit.add(StoremanUtil.calSkWeight(data.conf.standaloneWeight, cmpNode.deposit.getLastValue().add(cmpNode.partnerDeposit)));
+            uint cmpWeight = StoremanUtil.calSkWeight(data.conf.standaloneWeight, cmpNode.deposit.getLastValue().add(cmpNode.partnerDeposit)).add(cmpNode.delegateDeposit);
             if (weight > cmpWeight) {
                 break;
             }
@@ -239,8 +232,8 @@ library StoremanLib {
             group.deposit.addRecord(r);
             group.depositWeight.addRecord(r);
         } else {
-            if(group.whiteWk[skPkAddr] == address(0x00)){ //TODO: 加partner的资金
-                realInsert(data, group, skPkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
+            if(group.whiteWk[skPkAddr] == address(0x00)){
+                realInsert(data, group, skPkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight, sk.deposit.getLastValue().add(sk.partnerDeposit)).add(sk.delegateDeposit));
             }
         }
     }
