@@ -23,13 +23,9 @@ library Deposit {
         }
     }
     function getValueById(Records storage self, uint id) internal view returns (uint) {
-        uint value = 0;
-        if(self.total == 0) {
-            return 0;
-        }
-        for(uint i = self.total-1; i >= 0; i--){
-            if(id >= self.records[i].id){
-                return self.records[i].value;
+        for (uint i = self.total; i > 0; i--) {
+            if (id >= self.records[i-1].id){
+                return self.records[i-1].value;
             }
         }
         return 0;
