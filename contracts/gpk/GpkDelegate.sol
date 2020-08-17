@@ -184,7 +184,7 @@ contract GpkDelegate is GpkStorage, Owned {
     function setEncSij(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address dest, bytes encSij)
         external
     {
-        require(encSij.length > 113, "Invalid encSij"); // ephemPublicKey(65) + iv(16) + mac(32), without ciphertext
+        require(encSij.length > 0, "Invalid encSij"); // ephemPublicKey(65) + iv(16) + mac(32) + without ciphertext
         GpkTypes.Group storage group = groupMap[groupId];
         checkValid(group, roundIndex, curveIndex, GpkTypes.GpkStatus.Negotiate, dest, true);
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
