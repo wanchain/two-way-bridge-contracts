@@ -7,7 +7,6 @@ library StoremanType {
     enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
     //ready: gpk finished.
     
-
     struct Delegator {
         address sender; // the delegator wallet address
         address staker;
@@ -16,13 +15,7 @@ library StoremanType {
         Deposit.Records deposit;
         mapping(uint=>uint) incentive;
     }
-    struct Partner {
-        address sender; // the delegator wallet address
-        address staker;
-        bool  quited;
-        uint index; // for delete from candidate;
-        Deposit.Records deposit;
-    }
+
     struct Candidate {
         address sender;
         bytes enodeID;
@@ -30,7 +23,6 @@ library StoremanType {
         address  pkAddress;
         bool isWhite;
         bool quited;
-        bool selected;
         uint delegatorCount;
         uint delegateDeposit; // only used when selecting. need not records.
         uint partnerCount;
@@ -52,7 +44,7 @@ library StoremanType {
 
         // partner index => partner address
         mapping(uint=>address) partMap;
-        mapping(address=>Partner) partners;
+        mapping(address=>Delegator) partners;
         
     }
 
@@ -106,4 +98,32 @@ library StoremanType {
         mapping(address=>StoremanType.Candidate) candidates;
         mapping(uint=> mapping(uint => uint)) chainTypeCo;
     }
+
+    struct StoremanGroupInfo {
+        bytes32    groupId;
+        GroupStatus    status;
+        uint    deposit;                  //用于计算group的总收益
+        uint    depositWeight;            /// 用于在group内给各个成员分配利润.
+        uint selectedCount;
+        uint memberCount;
+        uint whiteCount;    // only used node, don't include backup.
+        uint whiteCountAll; // all
+        uint startTime;
+        uint endTime;
+        uint registerTime;
+        uint registerDuration; // how long allow to staking. check when stakeIn tx.
+        uint memberCountDesign;
+        uint threshold;
+        uint chain1;
+        uint chain2;
+        uint curve1;
+        uint curve2;
+        uint tickedCount;
+        uint minStakeIn;
+        uint crossIncoming;
+        bytes gpk1;
+        bytes gpk2;
+        uint delegateFee;
+    }
+
 }
