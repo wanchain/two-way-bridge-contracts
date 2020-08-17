@@ -8,7 +8,7 @@ library IncentiveLib {
     using Deposit for Deposit.Records;
     using SafeMath for uint;
 
-    event incentiveEvent(bytes32 indexed groupId, address indexed pkAddr, bool indexed finished, uint from, uint end);
+    event incentiveEvent(bytes32 indexed groupId, address indexed wkAddr, bool indexed finished, uint from, uint end);
     event selectedEvent(bytes32 indexed groupId, uint indexed count, address[] members);
     function getChainTypeCo(StoremanType.StoremanData storage data, uint chain1, uint chain2) public view returns(uint co){
         if(chain1 < chain2) {
@@ -24,7 +24,7 @@ library IncentiveLib {
 
     function getGroupIncentive(StoremanType.StoremanGroup storage group, uint day,StoremanType.StoremanData storage data) private view returns (uint) {
         uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
-        return PosLib.getMinIncentive(group.deposit.getLastValue(),day) * chainTypeCo/10000;
+        return PosLib.getMinIncentive(group.deposit.getLastValue(),day).mul(chainTypeCo).div(10000); // use safeMath. TODO
     }
 
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) private returns (uint) {
@@ -38,11 +38,13 @@ library IncentiveLib {
         if(index == 0) {
             return true; // leader is always OK.
         }
-        uint leadCount = metric.getPrdInctMetric(group.groupId, day, day)[0];
+
+        uint[] memory counts = metric.getPrdInctMetric(group.groupId, day, day);
+        uint leadCount = counts[0];
         if(leadCount < 6) {
             return true;
         }
-        uint nodeCount = metric.getPrdInctMetric(group.groupId, day, day)[index];
+        uint nodeCount = counts[index];
         if(nodeCount >= leadCount/2){
             return true;
         }
@@ -68,12 +70,15 @@ library IncentiveLib {
         endDay= StoremanUtil.getDaybyTime(endDay);
         return (fromDay, endDay);
     }
+    // TOTO 确认一下,排序也带权重.
     function incentiveNode(uint day, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group,StoremanType.StoremanData storage data) public {
         sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getValueById(day)));
         sk.incentive[0] =  sk.incentive[0].add(sk.incentive[day]);
         data.totalReward = data.totalReward.add(sk.incentive[day]);
         for(uint m=0; m<sk.partnerCount; m++){
             address partnerAddr = sk.partMap[m];
+            // TODO data.totalReward = data.totalReward.add
+            // TODO sk.incentive[0]
             sk.incentive[day] = sk.incentive[day].add(calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.partners[partnerAddr].deposit.getValueById(day))));
         }
     }
@@ -100,7 +105,7 @@ library IncentiveLib {
         (fromDay, endDay) = calFromEndDay(sk, group);
 
         uint day;
-        for (day = fromDay; day < endDay; day++) {
+        for (day = fromDay; day < endDay; day++) {// TODO  50000-> 改成变量.
             if (msg.gas < 5000000 ) { // check the gas. because calculate delegator incentive need more gas left.
                 emit incentiveEvent(group.groupId, wkAddr, false, fromDay, 0);
                 return;
@@ -142,7 +147,7 @@ library IncentiveLib {
             return;
         }
         // first, select the sm from white list.
-        // TODO: check all white list should stakein.
+        // TODO: check all white list should stakein. 是不是可以去掉这个循环, 已经赋值过了., 
         for(uint m = 0; m<group.whiteCount;m++){
             group.selectedNode[m] = group.whiteMap[m];
         }
@@ -153,7 +158,7 @@ library IncentiveLib {
         for(uint i = 0; i<group.memberCountDesign; i++){
             members[i] = group.selectedNode[i];
             StoremanType.Candidate storage sk = data.candidates[group.selectedNode[i]];
-            groupDeposit = groupDeposit.add(sk.deposit.getLastValue()+sk.delegateDeposit);
+            groupDeposit = groupDeposit.add(sk.deposit.getLastValue()+sk.delegateDeposit); //TODO , use safeMath.
             groupDepositWeight = groupDepositWeight.add(StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
         }
         Deposit.Record memory deposit = Deposit.Record(day, groupDeposit);
