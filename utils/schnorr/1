@@ -1,0 +1,21 @@
+const schnorr = require('./tools');
+const skSmg = new Buffer("126bc7819e613cb739e7f3962027391058fe0ba5336435156b296222b92c77b1", 'hex');
+
+function test() {
+    let typesArray;
+    let parameters;
+    typesArray = ['uint256', 'string'];
+    parameters = ['2345675643', 'Hello!%'];
+    let pk = schnorr.getPKBySk(skSmg);
+
+    console.log("=====pk===hex");
+    console.log(pk);
+
+    let s = schnorr.getS(skSmg, typesArray, parameters);
+    console.log("=====s===hex");
+    console.log(s);
+
+    console.log("=====R===hex");
+    console.log(schnorr.getR());
+}
+test();

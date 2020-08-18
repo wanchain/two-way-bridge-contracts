@@ -1,0 +1,846 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<document type="BLUMIND" editor_version="3.2.902.24361" document_version="3.0.0.0">
+  <!--Create by Blumind, you can download it free from http://www.blumind.org-->
+  <information>
+    <author>Grant</author>
+    <company>
+    </company>
+    <version>3.0</version>
+    <description>
+    </description>
+  </information>
+  <attributes>
+    <item name="editor_show_sidebar">False</item>
+  </attributes>
+  <charts active_chart="0">
+    <chart name="新页面 1" type="MindMap">
+      <remark>本轮create开始的时间，取第一个节点提交多项式承诺的时间，不单独发交易设置。
+重启协议时更新。</remark>
+      <layout>LOGIC_RIGHT</layout>
+      <style>
+        <back_color>White</back_color>
+        <fore_color>Black</fore_color>
+        <line_color>LightSlateGray</line_color>
+        <border_color>SlateGray</border_color>
+        <node_back_color>LightGray</node_back_color>
+        <node_fore_color>Black</node_fore_color>
+        <select_color>RoyalBlue</select_color>
+        <hover_color>MediumSlateBlue</hover_color>
+        <link_line_color>Green</link_line_color>
+        <widget_margin>1</widget_margin>
+        <picture_thumb_size>100, 100</picture_thumb_size>
+        <layer_space>40</layer_space>
+      </style>
+      <nodes>
+        <node id="1" text="CreateGPK" x="20" y="949" width="92" height="41" text_b="12, 12, 68, 17">
+          <style>
+            <back_color>YellowGreen</back_color>
+            <fore_color>Black</fore_color>
+            <border_color>DarkBlue</border_color>
+            <padding>12</padding>
+          </style>
+          <nodes>
+            <node id="2" text="event" x="152" y="128" width="41" height="21" text_b="2, 2, 37, 17" fold_btn_b="193, 132, 13, 13">
+              <style>
+                <back_color>YellowGreen</back_color>
+                <border_color>DarkBlue</border_color>
+              </style>
+              <nodes>
+                <node id="2" text="StartCreateGpkLogger(uint indexed groupId, uint indexed sequence)" x="233" y="20" width="414" height="21" text_b="2, 2, 410, 17">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                </node>
+                <node id="8" text="SetPolyCommitLogger(uint indexed groupId, uint indexed sequence, bytes pk)" x="233" y="51" width="472" height="21" text_b="2, 2, 468, 17">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                </node>
+                <node id="6" text="SetEncSijLogger(uint indexed groupId, uint indexed sequence, bytes srcPk, bytes destPk)" x="233" y="82" width="531" height="21" text_b="2, 2, 527, 17">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                </node>
+                <node id="7" text="SetCheckStatusLogger(uint indexed groupId, uint indexed sequence, bytes srcPk, bytes destPk, bool isValid) " x="233" y="113" width="645" height="21" text_b="2, 2, 641, 17">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                </node>
+                <node id="8" text="ChallengeSijLogger(uint indexed groupId, uint indexed sequence, bytes srcPk, bytes destPk)" x="233" y="144" width="551" height="21" text_b="2, 2, 547, 17">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                </node>
+                <node id="1" text="SlashLogger(uint indexed groupId, uint indexed sequence, bytes srcPk, bytes destPk, bool srcOrDest, uint slashType)" x="233" y="175" width="695" height="21" text_b="2, 2, 691, 17">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                </node>
+                <node id="2" text="ResetLogger(uint indexed groupId, uint indexed sequence)" x="233" y="206" width="356" height="21" text_b="2, 2, 352, 17">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                </node>
+                <node id="3" text="GpkCreatedLogger(uint indexed groupId, bytes gpk)&#xD;&#xA;" x="233" y="237" width="318" height="21" text_b="2, 2, 314, 17">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                </node>
+              </nodes>
+              <lines>
+                <line target="2" begin_side="Right" end_side="Left" begin_rect="152, 128, 54, 21" end_rect="233, 20, 414, 21" />
+                <line target="8" begin_side="Right" end_side="Left" begin_rect="152, 128, 54, 21" end_rect="233, 51, 472, 21" />
+                <line target="6" begin_side="Right" end_side="Left" begin_rect="152, 128, 54, 21" end_rect="233, 82, 531, 21" />
+                <line target="7" begin_side="Right" end_side="Left" begin_rect="152, 128, 54, 21" end_rect="233, 113, 645, 21" />
+                <line target="8" begin_side="Right" end_side="Left" begin_rect="152, 128, 54, 21" end_rect="233, 144, 551, 21" />
+                <line target="1" begin_side="Right" end_side="Left" begin_rect="152, 128, 54, 21" end_rect="233, 175, 695, 21" />
+                <line target="2" begin_side="Right" end_side="Left" begin_rect="152, 128, 54, 21" end_rect="233, 206, 356, 21" />
+                <line target="3" begin_side="Right" end_side="Left" begin_rect="152, 128, 54, 21" end_rect="233, 237, 318, 21" />
+              </lines>
+            </node>
+            <node id="3" text="data" x="152" y="679" width="35" height="21" text_b="2, 2, 31, 17" fold_btn_b="187, 683, 13, 13">
+              <style>
+                <back_color>YellowGreen</back_color>
+                <border_color>DarkBlue</border_color>
+              </style>
+              <nodes>
+                <node id="1" text="groupMap&#xD;&#xA;(groupId =&gt; data)" x="227" y="672" width="116" height="36" text_b="2, 2, 112, 32" fold_btn_b="343, 684, 13, 13">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <nodes>
+                    <node id="4" text="round" x="383" y="268" width="62" height="22" text_b="2, 2, 40, 18">
+                      <style>
+                        <back_color>White</back_color>
+                        <border_color>DarkBlue</border_color>
+                      </style>
+                      <widgets>
+                        <widget type="NOTES" x="43" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                          <text>协商轮次，即本group重启协议的次数。</text>
+                        </widget>
+                      </widgets>
+                    </node>
+                    <node id="12" text="config" x="383" y="364" width="46" height="21" text_b="2, 2, 42, 17" fold_btn_b="429, 368, 13, 13">
+                      <style>
+                        <back_color>White</back_color>
+                        <border_color>DarkBlue</border_color>
+                      </style>
+                      <nodes>
+                        <node id="6" text="groupSize" x="469" y="300" width="86" height="22" text_b="2, 2, 64, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="67" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>组的大小，即选择多少个节点。</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="7" text="polyCommitPeriod" x="469" y="332" width="138" height="22" text_b="2, 2, 116, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="119" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>提交多项式承诺的超时时间，超时未提交将被判定为不干活。</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="8" text="defaultPeriod" x="469" y="364" width="106" height="22" text_b="2, 2, 84, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="87" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>&lt;P&gt;提交encSij、提交评价、被评价为invalid之后重新提交encSij，以及响应挑战揭示Sij的超时时间。&lt;/P&gt;</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="9" text="encSijMaxTimes" x="469" y="396" width="121" height="22" text_b="2, 2, 99, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="102" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>最大挑战次数，达到次数将启动挑战和裁决。</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="10" text="negotiatePeriod" x="469" y="428" width="122" height="22" text_b="2, 2, 100, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="103" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>&lt;P&gt;完成整个协议的时间，超时未完成则slash未提交数据的节点。&lt;/P&gt;</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                      </nodes>
+                      <lines>
+                        <line target="6" begin_side="Right" end_side="Left" begin_rect="383, 364, 59, 21" end_rect="469, 300, 86, 22" />
+                        <line target="7" begin_side="Right" end_side="Left" begin_rect="383, 364, 59, 21" end_rect="469, 332, 138, 22" />
+                        <line target="8" begin_side="Right" end_side="Left" begin_rect="383, 364, 59, 21" end_rect="469, 364, 106, 22" />
+                        <line target="9" begin_side="Right" end_side="Left" begin_rect="383, 364, 59, 21" end_rect="469, 396, 121, 22" />
+                        <line target="10" begin_side="Right" end_side="Left" begin_rect="383, 364, 59, 21" end_rect="469, 428, 122, 22" />
+                      </lines>
+                    </node>
+                    <node id="11" text="gpk" x="383" y="460" width="49" height="22" text_b="2, 2, 27, 18">
+                      <style>
+                        <back_color>White</back_color>
+                        <border_color>DarkBlue</border_color>
+                      </style>
+                      <widgets>
+                        <widget type="NOTES" x="30" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                          <text>group最终的gpk，当某个round协商成功，给group gpk赋值，整个协议结束。</text>
+                        </widget>
+                      </widgets>
+                    </node>
+                    <node id="7" text="roundMap&#xD;&#xA;(round =&gt; data)" x="383" y="784" width="104" height="36" text_b="2, 2, 100, 32" fold_btn_b="487, 796, 13, 13">
+                      <style>
+                        <back_color>White</back_color>
+                        <border_color>DarkBlue</border_color>
+                      </style>
+                      <nodes>
+                        <node id="1" text="smList" x="527" y="492" width="64" height="22" text_b="2, 2, 42, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="45" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>&lt;SPAN style="FONT-SIZE: 13px; FONT-FAMILY: Arial, sans-serif; WHITE-SPACE: normal; WORD-SPACING: 0px; TEXT-TRANSFORM: none; FLOAT: none; FONT-WEIGHT: 400; COLOR: rgb(51,51,51); FONT-STYLE: normal; ORPHANS: 2; WIDOWS: 2; DISPLAY: inline !important; LETTER-SPACING: normal; BACKGROUND-COLOR: rgb(255,255,255); TEXT-INDENT: 0px; font-variant-ligatures: normal; font-variant-caps: normal; -webkit-text-stroke-width: 0px; text-decoration-style: initial; text-decoration-color: initial"&gt;storeman节点列表，共groupSize个节点，节点调用setPolyCommit时构建。&lt;/SPAN&gt;</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="2" text="status" x="527" y="524" width="62" height="22" text_b="2, 2, 40, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="43" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>&lt;P&gt;0：Init（初始状态）。&lt;/P&gt;
+&lt;P&gt;1、PolyCommit（提交PolyCommit）。&lt;/P&gt;
+&lt;P&gt;2、Gpk（提交gpk）。&lt;/P&gt;
+&lt;P&gt;3：Negotiate（协商Sij）。&lt;/P&gt;
+&lt;P&gt;4、Complete（正常完成）。&lt;/P&gt;
+&lt;P&gt;5、Close（异常结束）。&lt;/P&gt;
+&lt;P&gt;状态变更时更新statusTime，用于判断下一状态的超时。&lt;/P&gt;</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="3" text="statusTime" x="527" y="556" width="91" height="22" text_b="2, 2, 69, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="72" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>&lt;P&gt;当前status开始的时间。内部触发设置，不单独发送交易。&lt;/P&gt;</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="9" text="gpkCount" x="527" y="588" width="85" height="22" text_b="2, 2, 63, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="66" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>&lt;P&gt;节点上报gpk的个数，如果所有节点都上报了，则检查是否一致。&lt;/P&gt;
+&lt;P&gt;gpkShare和gpk一起提交。&lt;/P&gt;</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="2" text="gpkMap" x="527" y="620" width="76" height="22" text_b="2, 2, 54, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="57" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>每个gpk出现的次数。</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="3" text="gpkSet" x="527" y="652" width="68" height="22" text_b="2, 2, 46, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="49" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>无重复值的gpk集合。</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="6" text="srcMap&#xD;&#xA;(srcPk =&gt; data)" x="527" y="800" width="100" height="36" text_b="2, 2, 96, 32" fold_btn_b="627, 812, 13, 13">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <nodes>
+                            <node id="14" text="ployCommit" x="667" y="684" width="81" height="21" text_b="2, 2, 77, 17">
+                              <style>
+                                <back_color>White</back_color>
+                                <border_color>DarkBlue</border_color>
+                              </style>
+                            </node>
+                            <node id="8" text="gpk" x="667" y="715" width="31" height="21" text_b="2, 2, 27, 17">
+                              <style>
+                                <back_color>White</back_color>
+                                <border_color>DarkBlue</border_color>
+                              </style>
+                            </node>
+                            <node id="1" text="pkShare" x="667" y="746" width="56" height="21" text_b="2, 2, 52, 17">
+                              <style>
+                                <back_color>White</back_color>
+                                <border_color>DarkBlue</border_color>
+                              </style>
+                            </node>
+                            <node id="11" text="destMap&#xD;&#xA;(destPk =&gt; data)" x="667" y="847" width="108" height="36" text_b="2, 2, 104, 32" fold_btn_b="775, 859, 13, 13">
+                              <style>
+                                <back_color>White</back_color>
+                                <border_color>DarkBlue</border_color>
+                              </style>
+                              <nodes>
+                                <node id="3" text="encSij" x="815" y="777" width="43" height="21" text_b="2, 2, 39, 17">
+                                  <style>
+                                    <back_color>White</back_color>
+                                    <border_color>DarkBlue</border_color>
+                                  </style>
+                                </node>
+                                <node id="1" text="setTime" x="815" y="808" width="55" height="21" text_b="2, 2, 51, 17">
+                                  <style>
+                                    <back_color>White</back_color>
+                                    <border_color>DarkBlue</border_color>
+                                  </style>
+                                </node>
+                                <node id="15" text="checkStatus" x="815" y="839" width="79" height="21" text_b="2, 2, 75, 17">
+                                  <style>
+                                    <back_color>White</back_color>
+                                    <border_color>DarkBlue</border_color>
+                                  </style>
+                                </node>
+                                <node id="5" text="checkTime" x="815" y="870" width="71" height="21" text_b="2, 2, 67, 17">
+                                  <style>
+                                    <back_color>White</back_color>
+                                    <border_color>DarkBlue</border_color>
+                                  </style>
+                                </node>
+                                <node id="2" text="retryTimes" x="815" y="901" width="71" height="21" text_b="2, 2, 67, 17">
+                                  <style>
+                                    <back_color>White</back_color>
+                                    <border_color>DarkBlue</border_color>
+                                  </style>
+                                </node>
+                                <node id="3" text="challengeTime" x="815" y="932" width="94" height="21" text_b="2, 2, 90, 17">
+                                  <style>
+                                    <back_color>White</back_color>
+                                    <border_color>DarkBlue</border_color>
+                                  </style>
+                                </node>
+                              </nodes>
+                              <lines>
+                                <line target="3" begin_side="Right" end_side="Left" begin_rect="667, 847, 121, 36" end_rect="815, 777, 43, 21" />
+                                <line target="1" begin_side="Right" end_side="Left" begin_rect="667, 847, 121, 36" end_rect="815, 808, 55, 21" />
+                                <line target="15" begin_side="Right" end_side="Left" begin_rect="667, 847, 121, 36" end_rect="815, 839, 79, 21" />
+                                <line target="5" begin_side="Right" end_side="Left" begin_rect="667, 847, 121, 36" end_rect="815, 870, 71, 21" />
+                                <line target="2" begin_side="Right" end_side="Left" begin_rect="667, 847, 121, 36" end_rect="815, 901, 71, 21" />
+                                <line target="3" begin_side="Right" end_side="Left" begin_rect="667, 847, 121, 36" end_rect="815, 932, 94, 21" />
+                              </lines>
+                            </node>
+                          </nodes>
+                          <lines>
+                            <line target="14" begin_side="Right" end_side="Left" begin_rect="527, 800, 113, 36" end_rect="667, 684, 81, 21" />
+                            <line target="8" begin_side="Right" end_side="Left" begin_rect="527, 800, 113, 36" end_rect="667, 715, 31, 21" />
+                            <line target="1" begin_side="Right" end_side="Left" begin_rect="527, 800, 113, 36" end_rect="667, 746, 56, 21" />
+                            <line target="11" begin_side="Right" end_side="Left" begin_rect="527, 800, 113, 36" end_rect="667, 847, 108, 36" />
+                          </lines>
+                        </node>
+                        <node id="6" text="slashCount" x="527" y="963" width="92" height="22" text_b="2, 2, 70, 18">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <widgets>
+                            <widget type="NOTES" x="73" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                              <text>&lt;P&gt;本轮slash次数。&lt;/P&gt;
+&lt;P&gt;没有必要在合约里单独维护，从event获取slash历史和索引。&lt;/P&gt;</text>
+                            </widget>
+                          </widgets>
+                        </node>
+                        <node id="7" text="slashMap&#xD;&#xA;(index =&gt; data)" x="527" y="1035" width="101" height="36" text_b="2, 2, 97, 32" fold_btn_b="628, 1047, 13, 13">
+                          <style>
+                            <back_color>White</back_color>
+                            <border_color>DarkBlue</border_color>
+                          </style>
+                          <nodes>
+                            <node id="5" text="slashType" x="668" y="995" width="84" height="22" text_b="2, 2, 62, 18">
+                              <style>
+                                <back_color>White</back_color>
+                                <border_color>DarkBlue</border_color>
+                              </style>
+                              <widgets>
+                                <widget type="NOTES" x="65" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                                  <text>&lt;P&gt;0：PolyCommitTimeout（未提交多项式承诺）。&lt;/P&gt;
+&lt;P&gt;1：GpkTimeout（未提交gpk或gpkShare）。&lt;/P&gt;
+&lt;P&gt;2：EncSijTimout（未提交或重新发送encSij）。&lt;/P&gt;
+&lt;P&gt;3、CheckTimeout（未评价）。&lt;/P&gt;
+&lt;P&gt;4、SijTimeout（未响应挑战提交Sij）。&lt;/P&gt;
+&lt;P&gt;5：GpkInvalid（提交错误的gpk）。&lt;/P&gt;
+&lt;P&gt;6：EncSijInvalid（提交错误的encSij）。&lt;/P&gt;
+&lt;P&gt;7、CheckInvalid（恶意评价）。&lt;/P&gt;</text>
+                                </widget>
+                              </widgets>
+                            </node>
+                            <node id="1" text="srcPk" x="668" y="1027" width="39" height="21" text_b="2, 2, 35, 17">
+                              <style>
+                                <back_color>White</back_color>
+                                <border_color>DarkBlue</border_color>
+                              </style>
+                            </node>
+                            <node id="2" text="destPk" x="668" y="1058" width="66" height="22" text_b="2, 2, 44, 18">
+                              <style>
+                                <back_color>White</back_color>
+                                <border_color>DarkBlue</border_color>
+                              </style>
+                              <widgets>
+                                <widget type="NOTES" x="47" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                                  <text>如果是因为不干活slash，destPk为空，节点pk保存到srcPk里面，每个被slash的节点生成一条记录。</text>
+                                </widget>
+                              </widgets>
+                            </node>
+                            <node id="3" text="srcOrDest" x="668" y="1090" width="85" height="22" text_b="2, 2, 63, 18">
+                              <style>
+                                <back_color>White</back_color>
+                                <border_color>DarkBlue</border_color>
+                              </style>
+                              <widgets>
+                                <widget type="NOTES" x="66" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                                  <text>&lt;P&gt;true：惩罚srcPk。&lt;/P&gt;
+&lt;P&gt;false：惩罚DestPk。&lt;/P&gt;</text>
+                                </widget>
+                              </widgets>
+                            </node>
+                          </nodes>
+                          <lines>
+                            <line target="5" begin_side="Right" end_side="Left" begin_rect="527, 1035, 114, 36" end_rect="668, 995, 84, 22" />
+                            <line target="1" begin_side="Right" end_side="Left" begin_rect="527, 1035, 114, 36" end_rect="668, 1027, 39, 21" />
+                            <line target="2" begin_side="Right" end_side="Left" begin_rect="527, 1035, 114, 36" end_rect="668, 1058, 66, 22" />
+                            <line target="3" begin_side="Right" end_side="Left" begin_rect="527, 1035, 114, 36" end_rect="668, 1090, 85, 22" />
+                          </lines>
+                        </node>
+                      </nodes>
+                      <lines>
+                        <line target="1" begin_side="Right" end_side="Left" begin_rect="383, 784, 117, 36" end_rect="527, 492, 64, 22" />
+                        <line target="2" begin_side="Right" end_side="Left" begin_rect="383, 784, 117, 36" end_rect="527, 524, 62, 22" />
+                        <line target="3" begin_side="Right" end_side="Left" begin_rect="383, 784, 117, 36" end_rect="527, 556, 91, 22" />
+                        <line target="9" begin_side="Right" end_side="Left" begin_rect="383, 784, 117, 36" end_rect="527, 588, 85, 22" />
+                        <line target="2" begin_side="Right" end_side="Left" begin_rect="383, 784, 117, 36" end_rect="527, 620, 76, 22" />
+                        <line target="3" begin_side="Right" end_side="Left" begin_rect="383, 784, 117, 36" end_rect="527, 652, 68, 22" />
+                        <line target="6" begin_side="Right" end_side="Left" begin_rect="383, 784, 117, 36" end_rect="527, 800, 100, 36" />
+                        <line target="6" begin_side="Right" end_side="Left" begin_rect="383, 784, 117, 36" end_rect="527, 963, 92, 22" />
+                        <line target="7" begin_side="Right" end_side="Left" begin_rect="383, 784, 117, 36" end_rect="527, 1035, 101, 36" />
+                      </lines>
+                    </node>
+                  </nodes>
+                  <lines>
+                    <line target="4" begin_side="Right" end_side="Left" begin_rect="227, 672, 129, 36" end_rect="383, 268, 62, 22" />
+                    <line target="12" begin_side="Right" end_side="Left" begin_rect="227, 672, 129, 36" end_rect="383, 364, 46, 21" />
+                    <line target="11" begin_side="Right" end_side="Left" begin_rect="227, 672, 129, 36" end_rect="383, 460, 49, 22" />
+                    <line target="7" begin_side="Right" end_side="Left" begin_rect="227, 672, 129, 36" end_rect="383, 784, 104, 36" />
+                  </lines>
+                </node>
+              </nodes>
+              <lines>
+                <line target="1" begin_side="Right" end_side="Left" begin_rect="152, 679, 48, 21" end_rect="227, 672, 116, 36" />
+              </lines>
+            </node>
+            <node id="19" text="function" x="152" y="1314" width="58" height="21" text_b="2, 2, 54, 17" fold_btn_b="210, 1318, 13, 13">
+              <style>
+                <back_color>YellowGreen</back_color>
+                <border_color>DarkBlue</border_color>
+              </style>
+              <nodes>
+                <node id="20" text="setPolyCommit(uint groupId, uint[] polyCommit)" x="250" y="1122" width="313" height="22" text_b="2, 2, 291, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="294" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;1、验证status为Init或PolyCommit。&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;2、调用抵押合约接口，验证sender是本组被选中的节点，并获取其pk（其它接口如未特别注明则也需要验证sender，不再重复描述）。&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;3、将节点信息保存到smList，如果是第一个节点：&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;（1）设置status为PolyCommit，设置statusTime为当前时间，发送StartCreateGpkLogger。&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;（2）从配置合约获取相关参数，保存到本地config。&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;5、判断是否已经提交过承诺，不允许重复提交。&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;6、保存ployCommit(参数结构为[x1, y1, x2, y2,...])，发送SetPolyCommitLogger。&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;7、如果所有节点都已经提交多项式承诺，则设置status为Gpk，设置statusTime为当前时间。 &lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="9" text="polyCommitTimeout(uint groupId, bytes pk)" x="250" y="1154" width="288" height="22" text_b="2, 2, 266, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="269" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;反馈pk超时未提交多项式承诺（合约不限制sender）。&lt;/P&gt;
+&lt;P&gt;1、验证status为PolyCommit，且pk确实未提交多项式承诺。&lt;/P&gt;
+&lt;P&gt;2、验证当前时间和statusTime历时已达到阈值（polyCommitPeriod）。&lt;/P&gt;
+&lt;P&gt;3、通知抵押合约slash pk（setInvalidSm），记录惩罚结果，发送SlashLogger。&lt;/P&gt;
+&lt;P&gt;4、重启协议，发送ResetLogger。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="1" text="setGpk(uint groupId, bytes gpk, bytes pkShare)" x="250" y="1186" width="305" height="22" text_b="2, 2, 283, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="286" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;1、验证status为Gpk。&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;2、验证pk未提交过。&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;3、更新gpkMap和gpkSet。&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;4、更新gpkCount，如果是最后一个节点，判断gpkList中gpk的个数：&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;（1）如果只有一个gpk，表示节点提交的gpk相同，更新status为Negotiate，statusTime为当前时间。&lt;/P&gt;
+&lt;P style="MARGIN-RIGHT: 0px" dir=ltr align=justify&gt;（2）如果有多个gpk，从gpkMap查找次数最多的gpk，通知抵押合约slash提交其它gpk的节点，记录惩罚结果，发送SlashLogger，重启协议，发送ResetLogger。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="2" text="gpkTimeout(uint groupId)" x="250" y="1218" width="181" height="22" text_b="2, 2, 159, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="162" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;反馈超时未提交gpk和gpkShare（合约不限制sender）。&lt;/P&gt;
+&lt;P&gt;1、验证status为Gpk。&lt;/P&gt;
+&lt;P&gt;2、验证当前时间和statusTime历时已达到阈值（defaultPeriod）。&lt;/P&gt;
+&lt;P&gt;3、遍历srcMap，查找gpkShare为空的节点，通知抵押合约slash，记录惩罚结果，发送SlashLogger。&lt;/P&gt;
+&lt;P&gt;4、重启协议，发送ResetLogger。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="21" text="setEncSij(uint groupId, bytes destPk, bytes encSij)" x="250" y="1250" width="319" height="22" text_b="2, 2, 297, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="300" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;应先判断status为Negotiate再调用。&lt;/P&gt;
+&lt;P&gt;1、验证status为Negotiate。&lt;/P&gt;
+&lt;P&gt;2、验证encSij参数不为空。&lt;/P&gt;
+&lt;P&gt;3、判断链上数据：&lt;/P&gt;
+&lt;P&gt;（1）如果没有发送过，则保存encSij，设置setTime为当前时间，发送SetEncSijLogger。&lt;/P&gt;
+&lt;P&gt;（2）如果已经发送过，且checkStatus为Init或Valid或Challenge，均不允许更新。&lt;/P&gt;
+&lt;P&gt;（3）如果已经发送过，且checkStatus为Invalid，则更新encSij，设置setTime为当前时间，并将checkStatus重置为Init，发送SetEncSijLogger。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="22" text="setCheckStatus(uint groupId, bytes srcPk, bool isValid) " x="250" y="1282" width="348" height="22" text_b="2, 2, 326, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="329" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;1、验证status为Negotiate。（非必须）&lt;/P&gt;
+&lt;P&gt;2、验证encSij非空。&lt;/P&gt;
+&lt;P&gt;3、验证checkStatus为Init（如果已评价或已发起挑战，则不允许修改评价）。&lt;/P&gt;
+&lt;P&gt;4、设置checkTime为当前时间，发送SetCheckStatusLogger。&lt;/P&gt;
+&lt;P&gt;5、如果isValid为true，设置checkStatus为Valid；遍历srcMap和destMap，如果所有checkStatus都为Valid，则设置status为Complete，并通知抵押合约（setGpk），发送GpkCreatedLogger。&lt;/P&gt;
+&lt;P&gt;6、如果isValid为false，设置checkStatus为Invalid，且retryTimes加1；如果retryTimes达到最大值（encSijMaxTimes），设置checkStatus为Challenge，设置challengeTime为当前时间，发送ChallengeSijLogger。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="4" text="encSijTimeout(uint groupId, bytes destPk, bytes encSij)" x="250" y="1314" width="351" height="22" text_b="2, 2, 329, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="332" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;用于destPk反馈srcPk超时未提交encSij。&lt;/P&gt;
+&lt;P&gt;1、验证status为Negotiate。&lt;/P&gt;
+&lt;P&gt;2、验证encSij参数与链上数据相同，确保挑战的是最新数据。&lt;/P&gt;
+&lt;P&gt;3、如果encSij为空，表示srcPk从未提交encSij。&lt;/P&gt;
+&lt;P&gt;（1）验证当前时间和statusTime历时已达到阈值（defaultPeriod）。&lt;/P&gt;
+&lt;P&gt;（2）通知抵押合约slash srcPk（setInvalidSm），记录惩罚结果。&lt;/P&gt;
+&lt;P&gt;（3）重启协议，发送ResetLogger。&lt;/P&gt;
+&lt;P&gt;4、如果encSij非空，表示srcPk在被评价为invalid之后未重新提交encSij。&lt;/P&gt;
+&lt;P&gt;（1）验证checkStatus为Invalid。&lt;/P&gt;
+&lt;P&gt;（2）验证当前时间和checkTime历时已达到阈值（defaultPeriod）。&lt;/P&gt;
+&lt;P&gt;（3）通知抵押合约slash srcPk（setInvalidSm），记录惩罚结果和证据。&lt;/P&gt;
+&lt;P&gt;（4）重启协议，发送ResetLogger。&lt;/P&gt;
+&lt;P&gt;&amp;nbsp;&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="12" text="challengeSij(uint groupId, bytes srcPk, bytes encSij)" x="250" y="1346" width="329" height="22" text_b="2, 2, 307, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="310" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;用于destPk主动发起挑战。&lt;/P&gt;
+&lt;P&gt;1、验证status为Negotiate。（非必须）&lt;/P&gt;
+&lt;P&gt;2、验证encSij参数不为空，且与链上数据相同，确保挑战的是最新数据。&lt;/P&gt;
+&lt;P&gt;3、验证checkStatus不为Valid或Challenge，设置checkStatus为Challenge，设置challengeTime为当前时间，发送ChallengeSijLogger。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="23" text="revealSij(uint groupId, bytes destPk, bytes Sij)" x="250" y="1378" width="296" height="22" text_b="2, 2, 274, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="277" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;用于srcPk揭示Sij，被动响应挑战或主动发起裁决。应先确认checkStatus为Invalid或Challenge再调用。&lt;/P&gt;
+&lt;P&gt;1、验证status为Negotiate。（非必须）&lt;/P&gt;
+&lt;P&gt;2、验证checkStatus为Invalid或Challenge。&lt;/P&gt;
+&lt;P&gt;3、验证Sij，根据结果通知抵押合约slash srcPk或destPk（setInvalidSm），记录惩罚结果和证据，发送SlashLogger。&lt;/P&gt;
+&lt;P&gt;4、重启协议，发送ResetLogger。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="5" text="checkEncSijTimeout(uint groupId, bytes destPk)" x="250" y="1410" width="308" height="22" text_b="2, 2, 286, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="289" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;用于srcPk反馈destPk超时未评价encSij。&lt;/P&gt;
+&lt;P&gt;1、验证status为Negotiate。（非必须）&lt;/P&gt;
+&lt;P&gt;2、验证checkStatus为Init。&lt;/P&gt;
+&lt;P&gt;3、验证encSij非空（已提交）。&lt;/P&gt;
+&lt;P&gt;4、验证当前时间和setTime历时已达到阈值（defaultPeriod）。&lt;/P&gt;
+&lt;P&gt;5、通知抵押合约slash destPk（setInvalidSm），记录惩罚结果，发送SlashLogger。&lt;/P&gt;
+&lt;P&gt;6、重启协议，发送ResetLogger。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="6" text="SijTimeout(uint groupId, bytes srcPk)" x="250" y="1442" width="245" height="22" text_b="2, 2, 223, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="226" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;用于destPk反馈srcPk超时未响应挑战。&lt;/P&gt;
+&lt;P&gt;1、验证status为Negotiate。（非必须）&lt;/P&gt;
+&lt;P&gt;2、验证checkStatus为Challenge。&lt;/P&gt;
+&lt;P&gt;3、验证当前时间和challengeTime历时已达到阈值（defaultPeriod）。&lt;/P&gt;
+&lt;P&gt;4、通知抵押合约slash srcPk（setInvalidSm），记录惩罚结果和证据，发送SlashLogger。&lt;/P&gt;
+&lt;P&gt;5、重启协议，发送ResetLogger。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="1" text="terminate(uint groupId)" x="250" y="1474" width="166" height="22" text_b="2, 2, 144, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="147" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;用于识别并slash联合作恶妨碍协议运行的节点。依赖诚实节点触发，应先判断status为Negotiate再调用。&lt;/P&gt;
+&lt;P&gt;1、验证status为Negotiate。&lt;/P&gt;
+&lt;P&gt;2、验证当前时间和statusTime历时已达到阈值（negotiatePeroid）。&lt;/P&gt;
+&lt;P&gt;3、遍历查找checkStatus不为Valid的节点，通知抵押合约slash srcPk和destPk（setInvalidSm），记录惩罚结果，发送SlashLogger。&lt;/P&gt;
+&lt;P&gt;（1）encSij为空：未提交encSij。（正常情况destPk会反馈）&lt;/P&gt;
+&lt;P&gt;（2）checkStatus为Init：未评价。（正常情况srcPk会反馈）&lt;/P&gt;
+&lt;P&gt;（3）checkStatus为Invalid：未重新发送encSij。（正常情况destPk会反馈）&lt;/P&gt;
+&lt;P&gt;（4）checkStatus为Challenge：未响应挑战。（正常情况destPk会反馈）&lt;/P&gt;
+&lt;P&gt;4、重启协议，发送ResetLogger。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+                <node id="5" text="getFunctions（略）" x="250" y="1506" width="122" height="21" text_b="2, 2, 118, 17">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                </node>
+              </nodes>
+              <lines>
+                <line target="20" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1122, 313, 22" />
+                <line target="9" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1154, 288, 22" />
+                <line target="1" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1186, 305, 22" />
+                <line target="2" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1218, 181, 22" />
+                <line target="21" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1250, 319, 22" />
+                <line target="22" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1282, 348, 22" />
+                <line target="4" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1314, 351, 22" />
+                <line target="12" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1346, 329, 22" />
+                <line target="23" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1378, 296, 22" />
+                <line target="5" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1410, 308, 22" />
+                <line target="6" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1442, 245, 22" />
+                <line target="1" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1474, 166, 22" />
+                <line target="5" begin_side="Right" end_side="Left" begin_rect="152, 1314, 71, 21" end_rect="250, 1506, 122, 21" />
+              </lines>
+            </node>
+            <node id="12" text="待定问题" x="152" y="1576" width="58" height="21" text_b="2, 2, 54, 17" fold_btn_b="210, 1580, 13, 13">
+              <style>
+                <back_color>Gold</back_color>
+                <border_color>DarkBlue</border_color>
+              </style>
+              <nodes>
+                <node id="13" text="至少需要有一个诚实节点，用于驱动协议运行（触发开始和结束）。" x="250" y="1537" width="379" height="21" text_b="2, 2, 375, 17">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                </node>
+                <node id="14" text="不论哪种原因导致slash都重启协议（理论上只要没有揭示Sij就不需要重启）。&#xD;&#xA;否则动态变更组成员处理太复杂。" x="250" y="1568" width="434" height="36" text_b="2, 2, 430, 32">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                    <text_align>Left</text_align>
+                  </style>
+                </node>
+                <node id="1" text="POC版本变更" x="250" y="1614" width="102" height="22" text_b="2, 2, 80, 18">
+                  <style>
+                    <back_color>White</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <widgets>
+                    <widget type="NOTES" x="83" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                      <text>&lt;P&gt;1、重启协议时保留所有数据，简化slash proof的处理。&lt;/P&gt;
+&lt;P&gt;2、为降低合约计算量，group增加提交Gpk阶段，由agent提交gpk和pkShare，合约只验证gpk是否一致。&lt;/P&gt;
+&lt;P&gt;3、encSij没有必要重试，评价为Invalid即启动挑战和裁决。&lt;/P&gt;
+&lt;P&gt;4、目前没有找到合约实现的加密代码，裁决也由可信任节点提交。&lt;/P&gt;</text>
+                    </widget>
+                  </widgets>
+                </node>
+              </nodes>
+              <lines>
+                <line target="13" begin_side="Right" end_side="Left" begin_rect="152, 1576, 71, 21" end_rect="250, 1537, 379, 21" />
+                <line target="14" begin_side="Right" end_side="Left" begin_rect="152, 1576, 71, 21" end_rect="250, 1568, 434, 36" />
+                <line target="1" begin_side="Right" end_side="Left" begin_rect="152, 1576, 71, 21" end_rect="250, 1614, 102, 22" />
+              </lines>
+            </node>
+            <node id="5" text="dependency" x="152" y="1772" width="81" height="21" text_b="2, 2, 77, 17" fold_btn_b="233, 1776, 13, 13">
+              <style>
+                <back_color>SkyBlue</back_color>
+                <border_color>DarkBlue</border_color>
+              </style>
+              <nodes>
+                <node id="10" text="Config" x="273" y="1692" width="48" height="21" text_b="2, 2, 44, 17" fold_btn_b="321, 1696, 13, 13">
+                  <style>
+                    <back_color>SkyBlue</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <nodes>
+                    <node id="19" text="getCreateGpkCfg" x="361" y="1692" width="111" height="21" text_b="2, 2, 107, 17" fold_btn_b="472, 1696, 13, 13">
+                      <nodes>
+                        <node id="17" text="polyCommitPeriod" x="512" y="1646" width="120" height="21" text_b="2, 2, 116, 17" />
+                        <node id="18" text="defaultPeriod" x="512" y="1677" width="88" height="21" text_b="2, 2, 84, 17" />
+                        <node id="15" text="encSijMaxTimes" x="512" y="1708" width="103" height="21" text_b="2, 2, 99, 17" />
+                        <node id="16" text="negotiatePeriod" x="512" y="1739" width="104" height="21" text_b="2, 2, 100, 17" />
+                      </nodes>
+                      <lines>
+                        <line target="17" begin_side="Right" end_side="Left" begin_rect="361, 1692, 124, 21" end_rect="512, 1646, 120, 21" />
+                        <line target="18" begin_side="Right" end_side="Left" begin_rect="361, 1692, 124, 21" end_rect="512, 1677, 88, 21" />
+                        <line target="15" begin_side="Right" end_side="Left" begin_rect="361, 1692, 124, 21" end_rect="512, 1708, 103, 21" />
+                        <line target="16" begin_side="Right" end_side="Left" begin_rect="361, 1692, 124, 21" end_rect="512, 1739, 104, 21" />
+                      </lines>
+                    </node>
+                  </nodes>
+                  <lines>
+                    <line target="19" begin_side="Right" end_side="Left" begin_rect="273, 1692, 61, 21" end_rect="361, 1692, 111, 21" />
+                  </lines>
+                </node>
+                <node id="7" text="Mortgage" x="273" y="1834" width="67" height="21" text_b="2, 2, 63, 17" fold_btn_b="340, 1838, 13, 13">
+                  <style>
+                    <back_color>SkyBlue</back_color>
+                    <border_color>DarkBlue</border_color>
+                  </style>
+                  <nodes>
+                    <node id="1" text="function getSelectedSmNumber(uint groupId) external returns(uint number)" x="380" y="1770" width="477" height="22" text_b="2, 2, 455, 18">
+                      <widgets>
+                        <widget type="NOTES" x="458" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                          <text>&lt;SPAN style='FONT-SIZE: 14px; FONT-FAMILY: "Microsoft YaHei", "Segoe UI", system-ui, Roboto, "Droid Sans", "Helvetica Neue", sans-serif, Tahoma, "Segoe UI SymbolMyanmar Text", 微软雅黑; WHITE-SPACE: pre-wrap; WORD-SPACING: 0px; TEXT-TRANSFORM: none; FLOAT: none; FONT-WEIGHT: 400; COLOR: rgb(17,31,44); FONT-STYLE: normal; TEXT-ALIGN: left; ORPHANS: 2; WIDOWS: 2; DISPLAY: inline !important; LETTER-SPACING: normal; BACKGROUND-COLOR: rgb(201,231,255); TEXT-INDENT: 0px; font-variant-ligatures: normal; font-variant-caps: normal; -webkit-text-stroke-width: 0px; text-decoration-style: initial; text-decoration-color: initial'&gt;获取被选中的节点的数量，即group的大小&lt;/SPAN&gt;</text>
+                        </widget>
+                      </widgets>
+                    </node>
+                    <node id="2" text="function getSelectedSmInfo(uint groupId, uint index) external returns(bytes pk, address txAddress, bool isTrustable)" x="380" y="1802" width="710" height="22" text_b="2, 2, 688, 18">
+                      <widgets>
+                        <widget type="NOTES" x="691" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                          <text>&lt;SPAN style='FONT-SIZE: 14px; FONT-FAMILY: "Microsoft YaHei", "Segoe UI", system-ui, Roboto, "Droid Sans", "Helvetica Neue", sans-serif, Tahoma, "Segoe UI SymbolMyanmar Text", 微软雅黑; WHITE-SPACE: pre-wrap; WORD-SPACING: 0px; TEXT-TRANSFORM: none; FLOAT: none; FONT-WEIGHT: 400; COLOR: rgb(17,31,44); FONT-STYLE: normal; TEXT-ALIGN: left; ORPHANS: 2; WIDOWS: 2; DISPLAY: inline !important; LETTER-SPACING: normal; BACKGROUND-COLOR: rgb(201,231,255); TEXT-INDENT: 0px; font-variant-ligatures: normal; font-variant-caps: normal; -webkit-text-stroke-width: 0px; text-decoration-style: initial; text-decoration-color: initial'&gt;按index获取selected的节点信息&lt;/SPAN&gt;</text>
+                        </widget>
+                      </widgets>
+                    </node>
+                    <node id="1" text="function getSmInfo(uint groupId, bytes pk) external returns(address txAddress, bool isSelected, bool isTrustable)" x="380" y="1834" width="690" height="22" text_b="2, 2, 668, 18">
+                      <widgets>
+                        <widget type="NOTES" x="671" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                          <text>&lt;SPAN style='FONT-SIZE: 14px; FONT-FAMILY: "Microsoft YaHei", "Segoe UI", system-ui, Roboto, "Droid Sans", "Helvetica Neue", sans-serif, Tahoma, "Segoe UI SymbolMyanmar Text", 微软雅黑; WHITE-SPACE: pre-wrap; WORD-SPACING: 0px; TEXT-TRANSFORM: none; FLOAT: none; FONT-WEIGHT: 400; COLOR: rgb(17,31,44); FONT-STYLE: normal; TEXT-ALIGN: left; ORPHANS: 2; WIDOWS: 2; DISPLAY: inline !important; LETTER-SPACING: normal; BACKGROUND-COLOR: rgb(201,231,255); TEXT-INDENT: 0px; font-variant-ligatures: normal; font-variant-caps: normal; -webkit-text-stroke-width: 0px; text-decoration-style: initial; text-decoration-color: initial'&gt;白名单备用节点调用此接口判断自己的角色&lt;/SPAN&gt;</text>
+                        </widget>
+                      </widgets>
+                    </node>
+                    <node id="8" text="setGpk(uint groupId, bytes gpk)" x="380" y="1866" width="215" height="22" text_b="2, 2, 193, 18">
+                      <widgets>
+                        <widget type="NOTES" x="196" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                          <text>创建gpk成功时通知抵押合约，触发注册storeman group。</text>
+                        </widget>
+                      </widgets>
+                    </node>
+                    <node id="9" text="function setInvalidSm(uint groupId, uint slashType, bytes pk) external returns(bool isContinue)" x="380" y="1898" width="583" height="22" text_b="2, 2, 561, 18">
+                      <widgets>
+                        <widget type="NOTES" x="564" y="3" width="16" height="16" align="Right" hyperlink="" display_index="0" padding="0">
+                          <text>&lt;P&gt;节点不干活或作恶时，通知抵押合约slash（每轮只slash一个节点），并替换为备用节点。&lt;/P&gt;
+&lt;P&gt;type表示具体的slash原因。&lt;/P&gt;
+&lt;P&gt;返回还有没有足够的有效节点。如果有，重启协议开始下一轮协商，如果没有，终止协议，需要人工介入处理。&lt;/P&gt;</text>
+                        </widget>
+                      </widgets>
+                    </node>
+                  </nodes>
+                  <lines>
+                    <line target="1" begin_side="Right" end_side="Left" begin_rect="273, 1834, 80, 21" end_rect="380, 1770, 477, 22" />
+                    <line target="2" begin_side="Right" end_side="Left" begin_rect="273, 1834, 80, 21" end_rect="380, 1802, 710, 22" />
+                    <line target="1" begin_side="Right" end_side="Left" begin_rect="273, 1834, 80, 21" end_rect="380, 1834, 690, 22" />
+                    <line target="8" begin_side="Right" end_side="Left" begin_rect="273, 1834, 80, 21" end_rect="380, 1866, 215, 22" />
+                    <line target="9" begin_side="Right" end_side="Left" begin_rect="273, 1834, 80, 21" end_rect="380, 1898, 583, 22" />
+                  </lines>
+                </node>
+              </nodes>
+              <lines>
+                <line target="10" begin_side="Right" end_side="Left" begin_rect="152, 1772, 94, 21" end_rect="273, 1692, 48, 21" />
+                <line target="7" begin_side="Right" end_side="Left" begin_rect="152, 1772, 94, 21" end_rect="273, 1834, 67, 21" />
+              </lines>
+            </node>
+          </nodes>
+          <lines>
+            <line target="2" begin_side="Right" end_side="Left" begin_rect="20, 949, 92, 41" end_rect="152, 128, 41, 21" />
+            <line target="3" begin_side="Right" end_side="Left" begin_rect="20, 949, 92, 41" end_rect="152, 679, 35, 21" />
+            <line target="19" begin_side="Right" end_side="Left" begin_rect="20, 949, 92, 41" end_rect="152, 1314, 58, 21" />
+            <line target="12" begin_side="Right" end_side="Left" begin_rect="20, 949, 92, 41" end_rect="152, 1576, 58, 21" />
+            <line target="5" begin_side="Right" end_side="Left" begin_rect="20, 949, 92, 41" end_rect="152, 1772, 81, 21" />
+          </lines>
+        </node>
+      </nodes>
+    </chart>
+  </charts>
+</document>
