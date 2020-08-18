@@ -27,7 +27,6 @@
 pragma solidity ^0.4.24;
 
 import "../components/BasicStorage.sol";
-import "../interfaces/ITokenManager.sol";
 import "../interfaces/IMetric.sol";
 import "./Deposit.sol";
 import "./StoremanType.sol";
