@@ -63,8 +63,4 @@ contract TokenManagerStorage is BasicStorage {
     /// only HTLC contract address can mint and burn token
     mapping(address => bool) public mapAdmin;
 
-    /// a map from a sequence ID to token pair
-    mapping(uint => TokenPairInfo) public mapTokenPairInfo;
-    // index -> tokenPairId
-    mapping(uint => uint) public mapTokenPairIndex;
 }
