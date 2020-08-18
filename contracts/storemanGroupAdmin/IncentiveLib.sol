@@ -52,11 +52,11 @@ library IncentiveLib {
     }
     function rotateSkGroup(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private {
         if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime) && group.status == StoremanType.GroupStatus.dismissed) {
-            if(bytes32(0x00) != sk.nextGroupId) {
+            if(sk.nextGroupId != bytes32(0x00)) {
                 sk.groupId = sk.nextGroupId;
+                sk.nextGroupId = bytes32(0x00);
             }
-            sk.nextGroupId = bytes32(0x00);
-        }        
+        }
     }
     function calFromEndDay(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns(uint,uint) {
         uint fromDay = StoremanUtil.getDaybyTime(group.workTime);
