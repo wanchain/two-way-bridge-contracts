@@ -145,7 +145,7 @@ async function stakeInPre(smg, id){
             let candidate  = await smg.getStoremanInfo(leader)
             console.log("candidate:", candidate)
             assert.equal(candidate.sender.toLowerCase(), leader.toLowerCase())
-            assert.equal(candidate.pkAddress.toLowerCase(), leader.toLowerCase())
+            assert.equal(candidate.wkAddr.toLowerCase(), leader.toLowerCase())
             assert.equal(candidate.deposit, stakingValue)
 
         }else{
@@ -157,7 +157,7 @@ async function stakeInPre(smg, id){
             let candidate  = await smg.getStoremanInfo(sw.addr)
             //console.log("candidate:", candidate)
             assert.equal(candidate.sender.toLowerCase(), sfs[i].toLowerCase())
-            assert.equal(candidate.pkAddress.toLowerCase(), sw.addr.toLowerCase())
+            assert.equal(candidate.wkAddr.toLowerCase(), sw.addr.toLowerCase())
             assert.equal(candidate.deposit, stakingValue)
         }
 
