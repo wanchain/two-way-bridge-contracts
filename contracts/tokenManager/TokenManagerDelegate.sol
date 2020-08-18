@@ -79,6 +79,16 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
     * MANIPULATIONS
     *
     */
+
+    function toBytes(address a) internal pure returns (bytes memory b){
+        assembly {
+            let m := mload(0x40)
+            a := and(a, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+            mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))
+            mstore(0x40, add(m, 52))
+            b := m
+        }
+    }
     
     function bytesToAddress(bytes b) internal pure returns (address addr) {
         assembly {
@@ -119,7 +129,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         external
         onlyOwner
     {
-        address tokenAddress = new MappingToken(name, symbol, decimals);
+        address tokenAddress = new MappingToken(string(name), string(symbol), decimals);
         
         emit AddToken(tokenAddress, name, symbol, decimals);
     }
@@ -237,14 +247,6 @@ contract TokenManagerDelegate is TokenManagerStorage, Owned {
         IMappingToken(tokenAddress).update(name, symbol);
 
         emit UpdateToken(tokenAddress, name, symbol);
-    }
-
-    function changeTokenOwner(address tokenAddress, address _newOwner) external onlyOwner {
-        IMappingToken(tokenAddress).changeOwner(_newOwner);
-    }
-
-    function acceptTokenOwnership(address tokenAddress) external {
-        IMappingToken(tokenAddress).acceptOwnership();
     }
 
     function getTokenPairInfo(
