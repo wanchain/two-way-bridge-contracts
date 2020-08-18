@@ -45,7 +45,7 @@ module.exports = {
     // options below to some value.
     //
     nodeploy: {
-     host: "192.168.1.58",     // Localhost (default: none)
+     host: "192.168.1.179",     // Localhost (default: none)
      port: 7654,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
      from: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
@@ -58,15 +58,6 @@ module.exports = {
       gas: 8000000,          // Gas sent with each transaction (default: ~6700000)
       gasPrice: 1000000000   // 20 gwei (in wei) (default: 100 gwei)
     },
-    // Another network with more advanced options...
-    // advanced: {
-      // port: 8777,             // Custom port
-      // network_id: 1342,       // Custom network
-      // gas: 8500000,           // Gas sent with each transaction (default: ~6700000)
-      // gasPrice: 20000000000,  // 20 gwei (in wei) (default: 100 gwei)
-      // from: <address>,        // Account to send txs from (default: accounts[0])
-      // websockets: true        // Enable EventEmitter interface for web3 (default: false)
-    // },
 
     // Useful for deploying to a public network.
     gn: {
@@ -82,22 +73,15 @@ module.exports = {
       skipDryRun: true
     },
 
-    // Useful for private networks
-    // private: {
-      // provider: () => new HDWalletProvider(mnemonic, `https://network.io`),
-      // network_id: 2111,   // This network is yours, in the cloud.
-      // production: true    // Treats this network as if it was a public net. (default: false)
-    // }
+      coverage: {
+          host: 'localhost',
+          network_id: '*',
+          port: 6545,
+          gas: 0xfffffffffff,
+          gasPrice: 0x01
+      }
 
-    coverage: {
-      host: "localhost",
-      network_id: "*",
-      port: 8545,            // <-- If you change this, also set the port option in .solcover.js.
-      gas: 10000000,          // <-- Use this high gas value
-      gasPrice: 1000000000   // <-- Use this low gas price
-    }
   },
-
   // Set default mocha options here, use special reporters etc.
   mocha: {
 	  enableTimeouts:false,
@@ -106,18 +90,20 @@ module.exports = {
   plugins: ["solidity-coverage"],      
 
   // Configure your compilers
-  compilers: {
-    solc: {
-      version: "0.4.26",
-      // version: "0.5.1",    // Fetch exact version from solc-bin (default: truffle's version)
-      // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
-      // settings: {          // See the solidity docs for advice about optimization and evmVersion
-      //  optimizer: {
-      //    enabled: false,
-      //    runs: 200
-      //  },
-      //  evmVersion: "byzantium"
-      // }
+    compilers: {
+        solc: {
+            version: '0.4.26',
+            optimizer: {
+                enabled: true,
+                runs: 1000000
+            },
+            settings: {
+                optimizer: {
+                    enabled: true,
+                    runs: 200
+                },
+                evmVersion: "byzantium"
+            }
+        }
     }
-  }
 }

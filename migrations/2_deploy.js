@@ -1,17 +1,10 @@
-const TokenManagerProxy = artifacts.require('TokenManagerProxy');
-const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const Secp256k1 = artifacts.require('Secp256k1');
 const SchnorrVerifier = artifacts.require('SchnorrVerifier');
 const QuotaLib = artifacts.require('QuotaLib');
 const PosLib = artifacts.require('PosLib');
 const StoremanUtil = artifacts.require('StoremanUtil');
 
-const HTLCLib = artifacts.require('HTLCLib');
-const HTLCDebtLib = artifacts.require('HTLCDebtLib');
-const HTLCSmgLib = artifacts.require('HTLCSmgLib');
-const HTLCUserLib = artifacts.require('HTLCUserLib');
-const HTLCProxy = artifacts.require('HTLCProxy');
-const HTLCDelegate = artifacts.require('HTLCDelegate');
+
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const TestSmg = artifacts.require('TestSmg');
@@ -36,6 +29,28 @@ const IncentiveLib = artifacts.require('IncentiveLib');
 
 const fakeQuota = artifacts.require('fakeQuota');
 
+const HTLCTxLib = artifacts.require('HTLCTxLib');
+const HTLCBurnLib = artifacts.require('HTLCBurnLib');
+const HTLCDebtLib = artifacts.require('HTLCDebtLib');
+const HTLCMintLib = artifacts.require('HTLCMintLib');
+const RapidityTxLib = artifacts.require('RapidityTxLib');
+const RapidityLib = artifacts.require('RapidityLib');
+const CrossDelegate = artifacts.require('CrossDelegate');
+const CrossProxy = artifacts.require('CrossProxy');
+
+const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
+const TokenManagerProxy = artifacts.require('TokenManagerProxy');
+
+const QuotaDelegate = artifacts.require('QuotaDelegate');
+const QuotaProxy = artifacts.require('QuotaProxy');
+
+const OracleDelegate = artifacts.require('OracleDelegate');
+const OracleProxy = artifacts.require('OracleProxy');
+
+const Bn128SchnorrVerifier = artifacts.require('Bn128SchnorrVerifier');
+const Secp256k1SchnorrVerifier = artifacts.require('Secp256k1SchnorrVerifier');
+const SignatureVerifier = artifacts.require('SignatureVerifier');
+
 const curveMap = new Map([
     ['secp256k1', 0],
     ['bn256', 1]
@@ -44,49 +59,64 @@ const curveMap = new Map([
 module.exports = async function (deployer, network) {
     if (network === 'nodeploy') return;
 
-    // // token manager sc
-    // await deployer.deploy(TokenManagerProxy);
-    // let tmProxy = await TokenManagerProxy.deployed();
-    // await deployer.deploy(TokenManagerDelegate);
-    // let tmDelegate = await TokenManagerDelegate.deployed();
-    // await tmProxy.upgradeTo(tmDelegate.address);
-    // console.log("tm address:", tmProxy.address);
+    // ***********two-way-bridge*****************
+    // token manager
+    await deployer.deploy(TokenManagerDelegate);
+    await deployer.deploy(TokenManagerProxy);
+    let tokenManagerProxy = await TokenManagerProxy.deployed();
+    let tokenManagerDelegate = await TokenManagerDelegate.deployed();
+    await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
 
-    // // htlc sc
-    // await deployer.deploy(Secp256k1);
-    // await deployer.link(Secp256k1, SchnorrVerifier);
+    // quota
+    await deployer.deploy(QuotaDelegate);
+    await deployer.deploy(QuotaProxy);
+    let quotaProxy = await QuotaProxy.deployed();
+    let quotaDelegate = await QuotaDelegate.deployed();
+    await quotaProxy.upgradeTo(quotaDelegate.address);
 
-    // await deployer.deploy(SchnorrVerifier);
-    // await deployer.deploy(QuotaLib);
-    // await deployer.deploy(HTLCLib);
+    // oracle
+    await deployer.deploy(OracleDelegate);
+    await deployer.deploy(OracleProxy);
+    let oracleProxy = await OracleProxy.deployed();
+    let oracleDelegate = await OracleDelegate.deployed();
+    await oracleProxy.upgradeTo(oracleDelegate.address);
 
-    // await deployer.link(SchnorrVerifier, HTLCDebtLib);
-    // await deployer.link(QuotaLib, HTLCDebtLib);
-    // await deployer.link(HTLCLib, HTLCDebtLib);
-    // await deployer.deploy(HTLCDebtLib);
+    // signature verifier
+    await deployer.deploy(SignatureVerifier);
+    await deployer.deploy(Bn128SchnorrVerifier);
+    await deployer.deploy(Secp256k1SchnorrVerifier);
 
-    // await deployer.link(SchnorrVerifier, HTLCSmgLib);
-    // await deployer.link(QuotaLib, HTLCSmgLib);
-    // await deployer.link(HTLCLib, HTLCSmgLib);
-    // await deployer.deploy(HTLCSmgLib);
+    // cross approach smart contracts
+    await deployer.deploy(HTLCTxLib);
 
-    // await deployer.link(QuotaLib, HTLCUserLib);
-    // await deployer.link(HTLCLib, HTLCUserLib);
-    // await deployer.deploy(HTLCUserLib);
+    await deployer.link(HTLCTxLib, HTLCDebtLib);
+    await deployer.deploy(HTLCDebtLib);
 
-    // await deployer.link(SchnorrVerifier, HTLCDelegate);
-    // await deployer.link(QuotaLib, HTLCDelegate);
-    // await deployer.link(HTLCLib, HTLCDelegate);
-    // await deployer.link(HTLCDebtLib, HTLCDelegate);
-    // await deployer.link(HTLCSmgLib, HTLCDelegate);
-    // await deployer.link(HTLCUserLib, HTLCDelegate);
-    // await deployer.deploy(HTLCProxy);
-    // let htlcProxy = await HTLCProxy.deployed();
-    // await deployer.deploy(HTLCDelegate);
-    // let htlcDelegate = await HTLCDelegate.deployed();
-    // await htlcProxy.upgradeTo(htlcDelegate.address);
-    // console.log("htlc address:", htlcProxy.address);
+    await deployer.link(HTLCTxLib, HTLCMintLib);
+    await deployer.deploy(HTLCMintLib);
 
+    await deployer.link(HTLCTxLib, HTLCBurnLib);
+    await deployer.deploy(HTLCBurnLib);
+
+    await deployer.deploy(RapidityTxLib);
+
+    await deployer.link(RapidityTxLib, RapidityLib);
+    await deployer.deploy(RapidityLib);
+
+    await deployer.link(HTLCTxLib, CrossDelegate);
+    await deployer.link(HTLCDebtLib, CrossDelegate);
+    await deployer.link(HTLCMintLib, CrossDelegate);
+    await deployer.link(HTLCBurnLib, CrossDelegate);
+    await deployer.link(RapidityLib, CrossDelegate);
+    await deployer.deploy(CrossDelegate);
+
+    await deployer.deploy(CrossProxy);
+    let crossProxy = await CrossProxy.deployed();
+    let crossDelegate = await CrossDelegate.deployed();
+    await crossProxy.upgradeTo(crossDelegate.address);
+    let crossProxyDelegate = await CrossDelegate.at(crossDelegate.address);
+
+    // ***********osm*****************
     // storeman group admin sc
     await deployer.deploy(PosLib);
     await deployer.link(PosLib,StoremanUtil);
@@ -114,19 +144,10 @@ module.exports = async function (deployer, network) {
     let tsmg = await TestSmg.deployed();
     await tsmg.setSmgAddr(smgProxy.address)
 
-    // // token manager dependence
-    // let tm = await TokenManagerDelegate.at(tmProxy.address);
-    // await tm.setHtlcAddr(htlcProxy.address);
-
-    // // htlc dependence
-    // let htlc = await HTLCDelegate.at(htlcProxy.address);
-    // await htlc.setEconomics(tmProxy.address, smgProxy.address, 0);
 
     // storm group admin dependence
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
 
-    // console.log("impold:", await smgProxy.implementation())
-    // console.log("smgDelegate.address:", smgDelegate.address)
     // await smgProxy.upgradeTo(smgDelegate.address);
     await deployer.deploy(fakeQuota);
     let fakeQuotaInst = await fakeQuota.deployed();
