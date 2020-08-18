@@ -22,9 +22,9 @@ const HDWalletProvider = require("truffle-hdwallet-provider");
 const mnemonic = "skill level pulse dune pattern rival used syrup inner first balance sad"; 
 
 
-const WanProvider = require('wanchain-truffle-sdk').WanProvider;
+//const WanProvider = require('wanchain-truffle-sdk').WanProvider;
 //`wss://apitest.wanchain.org:8443/ws/v3/57b5005c60b8c444d880afe02d0a41cf4dc269f9c186940aa169412bb245f1c0`
-const wanProvider = new WanProvider("0x5ea5559749ba066086313f051eb1c142c6d81d1bed1baf0f26e708a2a9decbec", "http://192.168.1.58:7654");
+//const wanProvider = new WanProvider("0x5ea5559749ba066086313f051eb1c142c6d81d1bed1baf0f26e708a2a9decbec", "http://192.168.1.58:7654");
 
 module.exports = {
   /**
@@ -64,14 +64,14 @@ module.exports = {
       provider: () => new HDWalletProvider(mnemonic, "http://localhost:8545",0,10),
       network_id: "*",
     },
-    testnet: {
-      provider: wanProvider,
-      network_id: "*",
-      gas: 8000000,
-      confirmations: 0,
-      timeoutBlocks: 200,
-      skipDryRun: true
-    },
+    // testnet: {
+    //   provider: wanProvider,
+    //   network_id: "*",
+    //   gas: 8000000,
+    //   confirmations: 0,
+    //   timeoutBlocks: 200,
+    //   skipDryRun: true
+    // },
 
       coverage: {
           host: 'localhost',
