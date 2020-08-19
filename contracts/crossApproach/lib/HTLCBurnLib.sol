@@ -30,9 +30,9 @@ pragma experimental ABIEncoderV2;
 
 import "./HTLCTxLib.sol";
 import "./CrossTypes.sol";
-import "../interfaces/ITokenManager.sol";
+import "../../interfaces/ITokenManager.sol";
 // import "../interfaces/IRC20Protocol.sol";
-import "../interfaces/ISmgFeeProxy.sol";
+import "../../interfaces/ISmgFeeProxy.sol";
 
 library HTLCBurnLib {
     using SafeMath for uint;

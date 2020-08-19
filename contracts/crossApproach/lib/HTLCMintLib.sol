@@ -30,11 +30,11 @@ pragma experimental ABIEncoderV2;
 
 import "./HTLCTxLib.sol";
 import "./CrossTypes.sol";
-import "../interfaces/ITokenManager.sol";
+import "../../interfaces/ITokenManager.sol";
 // import "../interfaces/IRC20Protocol.sol";
-import "../interfaces/ISmgAdminProxy.sol";
-import "../interfaces/ISmgFeeProxy.sol";
-import "../interfaces/IQuota.sol";
+import "../../interfaces/IStoremanGroup.sol";
+import "../../interfaces/ISmgFeeProxy.sol";
+import "../../interfaces/IQuota.sol";
 
 library HTLCMintLib {
     using SafeMath for uint;

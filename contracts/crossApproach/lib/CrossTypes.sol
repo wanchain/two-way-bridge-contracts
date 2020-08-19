@@ -26,11 +26,11 @@
 
 pragma solidity ^0.4.26;
 
-import "../interfaces/IRC20Protocol.sol";
-import "../interfaces/IQuota.sol";
-import "../interfaces/ISmgAdminProxy.sol";
-import "../interfaces/ITokenManager.sol";
-import "../interfaces/ISignatureVerifier.sol";
+import "../../interfaces/IRC20Protocol.sol";
+import "../../interfaces/IQuota.sol";
+import "../../interfaces/IStoremanGroup.sol";
+import "../../interfaces/ITokenManager.sol";
+import "../../interfaces/ISignatureVerifier.sol";
 import "./HTLCTxLib.sol";
 import "./RapidityTxLib.sol";
 
@@ -58,7 +58,7 @@ library CrossTypes {
         ITokenManager tokenManager;
 
         /// storemanGroup admin instance interface
-        ISmgAdminProxy smgAdminProxy;
+        IStoremanGroup smgAdminProxy;
 
         /// storemanGroup fee admin instance address
         address smgFeeProxy;
