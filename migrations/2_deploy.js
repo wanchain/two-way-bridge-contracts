@@ -1,5 +1,3 @@
-const Secp256k1 = artifacts.require('Secp256k1');
-const SchnorrVerifier = artifacts.require('SchnorrVerifier');
 const QuotaLib = artifacts.require('QuotaLib');
 const PosLib = artifacts.require('PosLib');
 const StoremanUtil = artifacts.require('StoremanUtil');

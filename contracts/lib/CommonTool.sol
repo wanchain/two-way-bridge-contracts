@@ -136,37 +136,4 @@ library CommonTool {
             result := mload(add(source, 32))
         }
     }
-
-    function hexStr2bytes(string data)
-    private
-    view
-    returns (bytes){
-        uint _ascii_0 = 48;
-        uint _ascii_A = 65;
-        uint _ascii_a = 97;
-
-        bytes memory a = bytes(data);
-        uint[] memory b = new uint[](a.length);
-
-        for (uint i = 0; i < a.length; i++) {
-            uint _a = uint(a[i]);
-
-            if (_a > 96) {
-                b[i] = _a - 97 + 10;
-            }
-            else if (_a > 66) {
-                b[i] = _a - 65 + 10;
-            }
-            else {
-                b[i] = _a - 48;
-            }
-        }
-
-        bytes memory c = new bytes(b.length / 2);
-        for (uint _i = 0; _i < b.length; _i += 2) {
-            c[_i / 2] = byte(b[_i] * 16 + b[_i + 1]);
-        }
-
-        return c;
-    }
 }
