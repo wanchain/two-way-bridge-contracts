@@ -11,6 +11,7 @@ let web3url, owner, leader, leaderPk, sfs;
 let args = optimist.argv;
 
 if(args.network == 'gn'){
+    console.log("using network gn");
     web3url = "http://127.0.0.1:8545"
     owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959"
     leader = ("0xdC49B58d1Dc15Ff96719d743552A3d0850dD7057").toLowerCase()

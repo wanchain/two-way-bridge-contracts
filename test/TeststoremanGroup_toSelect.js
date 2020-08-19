@@ -1,28 +1,18 @@
-const lib = require("./lib");
 const utils = require("./utils");
-const Web3 = require('web3')
-const net = require('net')
-const ethutil = require("ethereumjs-util");
-const TestSmg = artifacts.require('TestSmg')
-const TokenManagerProxy = artifacts.require('TokenManagerProxy');
-const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
+
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const pu = require('promisefy-util')
 const assert = require('chai').assert;
 
-const wanUtil = require('wanchain-util');
-const Tx = wanUtil.wanchainTx;
 
 
 
-const { registerStart,stakeInPre, web3url,g, toSelect, } = require('./basee.js')
+const { registerStart,stakeInPre, g, toSelect, } = require('./basee.js')
 
-contract('StoremanGroupDelegate', async (accounts) => {
+contract('StoremanGroupDelegate', async () => {
  
     let  smg
     let groupId
-    let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
 
     let wk1 = utils.getAddressFromInt(10001)

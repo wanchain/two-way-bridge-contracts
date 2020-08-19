@@ -59,15 +59,17 @@ library IncentiveLib {
         }
     }
     function calFromEndDay(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns(uint,uint) {
-        uint fromDay = StoremanUtil.getDaybyTime(group.workTime);
+        uint fromDay;
         if (sk.incentivedDay != 0) {
             fromDay = sk.incentivedDay + 1;
+        } else {
+            fromDay = StoremanUtil.getDaybyTime(group.workTime);
         }
         uint endDay = now;
         if (endDay > group.workTime + group.totalTime) {
             endDay = group.workTime + group.totalTime;
         }
-        endDay= StoremanUtil.getDaybyTime(endDay);
+        endDay = StoremanUtil.getDaybyTime(endDay);
         return (fromDay, endDay);
     }
     // TOTO 确认一下,排序也带权重.
@@ -107,7 +109,7 @@ library IncentiveLib {
         uint day;
         for (day = fromDay; day < endDay; day++) {// TODO  50000-> 改成变量.
             if (msg.gas < 5000000 ) { // check the gas. because calculate delegator incentive need more gas left.
-                emit incentiveEvent(group.groupId, wkAddr, false, fromDay, 0);
+                emit incentiveEvent(group.groupId, wkAddr, false, fromDay, day);
                 return;
             }
             if (group.groupIncentive[day] == 0) {

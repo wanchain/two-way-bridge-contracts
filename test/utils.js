@@ -1,6 +1,7 @@
 const Web3 = require('web3');
 const assert = require('assert');
 const MappingToken = artifacts.require("MappingToken");
+const ethutil = require("ethereumjs-util");
 
 // const JacksPotDelegate = artifacts.require('./JacksPotDelegate.sol');
 // const JacksPotProxy = artifacts.require('./JacksPotProxy.sol');
@@ -331,20 +332,19 @@ module.exports = {
 		waitReceipt,
 		sleepUntil,
 		sleep,		
-    getWeb3,    
-    getQuotaContracts,
-    clone,
-    getTestBasicStorage,
-    resAssert,
-    stringToBytes,
-    bytesToString,
-    getSchnorrVerifierContracts,
-    sleep,
-    getRC20TokenInstance,
-    getRC20TokenBalance,
-    getBalance,
-    toNonExponential,
-    buildMpcSign,
-    importMochaTest,
-    setGlobal
+    		getWeb3,    
+    		getQuotaContracts,
+    		clone,
+    		getTestBasicStorage,
+    		resAssert,
+    		stringToBytes,
+    		bytesToString,
+    		getSchnorrVerifierContracts,
+    		getRC20TokenInstance,
+    		getRC20TokenBalance,
+    		getBalance,
+    		toNonExponential,
+    		buildMpcSign,
+    		importMochaTest,
+    		setGlobal,
 };
