@@ -13,52 +13,6 @@ library EnhancementLib {
 
     /**
      * public function
-     * @dev get epochid according to the giving blockTime
-     *
-     * @param blockTime the block time for caculate echoid
-     * @return epochid
-     */
-    function getEpochId(uint256 blockTime) public view returns (uint256) {
-        bytes32 functionSelector = keccak256("getEpochId(uint256)");
-
-        (uint256 result, bool success) = callWith32BytesReturnsUint256(
-            0x262,
-            functionSelector,
-            bytes32(blockTime)
-        );
-
-        require(success, "ASSEMBLY_CALL getEpochId failed");
-
-        return result;
-    }
-
-    /**
-     * public function
-     * @dev get the pos return rate for storeman group at the specified time
-     * @param groupStartTime the start time for storeman group
-     * @param curTime the time for getting return rate
-     * @return result the return rate for pos at current time
-     * @return success the result for calling precompile contract,true is success,false is failed
-     */
-    function getPosAvgReturn(uint256 groupStartTime,uint256 curTime)  public view returns(uint256 result,bool success) {
-
-       bytes32 functionSelector = 0x8c114a5100000000000000000000000000000000000000000000000000000000;
-       address to = PRECOMPILE_CONTRACT_ADDR;
-
-       assembly {
-            let freePtr := mload(0x40)
-            mstore(freePtr, functionSelector)
-            mstore(add(freePtr, 4), groupStartTime)
-            mstore(add(freePtr, 36), curTime)
-
-            // call ERC20 Token contract transfer function
-            success := staticcall(gas, to, freePtr,68, freePtr, 32)
-            result := mload(freePtr)
-        }
-    }
-
-    /**
-     * public function
      * @dev add 2 point on the curve
      * @param x1 the x value for first point
      * @param y1 the y value for first point
@@ -189,45 +143,6 @@ library EnhancementLib {
 
     /**
      * public function
-     * @dev encrypt message according to specified random,iv and public key
-     * @param rbpri the specified random numbers
-     * @param iv the specified iv value
-     * @param mes the plain message for encrypt
-     * @param pub the public key for encrypt
-     * @return bytes the encrypted message
-     * @return success the result for calling precompile contract,true is success,false is failed
-     */
-    function enc(bytes32 rbpri,bytes32 iv,uint256 mes, bytes pub)   public view returns (bytes,bool success) {
-       bytes32 functionSelector = 0xa1ecea4b00000000000000000000000000000000000000000000000000000000;
-       address to = PRECOMPILE_CONTRACT_ADDR;
-       bytes memory cc = new bytes(6*32);
-       assembly {
-           let freePtr := mload(0x40)
-            mstore(freePtr, functionSelector)
-            mstore(add(freePtr, 4), rbpri)
-            mstore(add(freePtr, 36), iv)
-            mstore(add(freePtr, 68), mes)
-            mstore(add(freePtr, 100), mload(add(pub,32)))
-            mstore(add(freePtr, 132), mload(add(pub,64)))
-
-            // call ERC20 Token contract transfer function
-            success := staticcall(gas,to, freePtr,164, freePtr,1024)
-
-            let loopCnt := 0
-            loop:
-                jumpi(loopend, eq(loopCnt,6))
-                mstore(add(cc,mul(add(loopCnt,1),32)),mload(add(freePtr,mul(loopCnt,32))))
-                loopCnt := add(loopCnt, 1)
-                jump(loop)
-            loopend:
-        }
-
-        return (cc,success);
-    }
-
-
-    /**
-     * public function
      * @dev verify the signature
      * @param hash the hash value for signature
      * @param r the r value for signature
@@ -261,60 +176,6 @@ library EnhancementLib {
         } else {
             return false;
         }
-    }
-
-
-    /**
-     * public function
-     * @dev get the hard cap for storeman return rate
-     * @param time for caculation
-     * @return uint256 the hard cap for storeman return
-     * @return bool the result for calling precompile contract,true is success,false is failed
-     */
-    function getHardCap (uint256 time) public view returns(uint256,bool) {
-       bytes32 functionSelector = 0xfa7c2faf00000000000000000000000000000000000000000000000000000000;
-       address to = PRECOMPILE_CONTRACT_ADDR;
-       uint256 posReturn;
-       bool    success;
-       assembly {
-            let freePtr := mload(0x40)
-            mstore(freePtr, functionSelector)
-            mstore(add(freePtr, 4), time)
-            success := staticcall(gas, to, freePtr,36, freePtr, 32)
-            posReturn := mload(freePtr)
-        }
-
-        return (posReturn,success);
-
-    }
-
-    /**
-     * public function
-     * @dev get minimum incentive for storeman group
-     * @param smgDeposit the storeman deposit
-     * @param smgStartTime the storeman group start time
-     * @return uint256 the minimum return for storeman group
-     */
-    function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime) public view returns(uint256) {
-
-        uint256 p1;
-        bool    success;
-
-        (p1,success) = getPosAvgReturn(smgStartTime,now);
-        if(!success) {
-            return 0;
-        }
-        uint256 p1Return = smgDeposit.mul(p1).div(DIVISOR);
-
-        uint256 hardcap;
-        (hardcap,success) = getHardCap(now);
-        if(!success) {
-            return 0;
-        }
-
-        uint256 hardcapReturn = hardcap.mul(1 ether).div(DIVISOR);
-
-        return hardcapReturn<=p1Return?hardcapReturn:p1Return;
     }
 
     /**
@@ -462,51 +323,4 @@ library EnhancementLib {
         }
 
     }
-
-   /**
-     * public function
-     * @dev point on curve to multiple scalar on s256
-     * @param input check paring data
-     * @return success the result for calling precompile contract,true is success,false is failed
-     */
-    function bn256Pairing(bytes memory input) public returns (bytes32 result) {
-        // input is a serialized bytes stream of (a1, b1, a2, b2, ..., ak, bk) from (G_1 x G_2)^k
-        uint256 len = input.length;
-        require(len % 192 == 0);
-        assembly {
-            let memPtr := mload(0x40)
-            let success := call(gas, 0x08, 0, add(input, 0x20), len, memPtr, 0x20)
-            switch success
-            case 0 {
-                revert(0,0)
-            } default {
-                result := mload(memPtr)
-            }
-        }
-
-
-    }
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    function callWith32BytesReturnsUint256(
-        address to,
-        bytes32 functionSelector,
-        bytes32 param1
-    ) private view returns (uint256 result, bool success) {
-        assembly {
-            let freePtr := mload(0x40)
-
-            mstore(freePtr, functionSelector)
-            mstore(add(freePtr, 4), param1)
-
-            // call ERC20 Token contract transfer function
-            success := staticcall(gas, to, freePtr, 36, freePtr, 32)
-
-            result := mload(freePtr)
-        }
-    }
-
-
-
 }
