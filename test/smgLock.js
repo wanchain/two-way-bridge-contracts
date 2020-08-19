@@ -7,7 +7,6 @@ const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const Secp256k1 = artifacts.require('Secp256k1');
 const SchnorrVerifier = artifacts.require('SchnorrVerifier');
 const QuotaLib = artifacts.require('QuotaLib');
-const HTLCLib = artifacts.require('HTLCLib');
 const HTLCDebtLib = artifacts.require('HTLCDebtLib');
 const HTLCSmgLib = artifacts.require('HTLCSmgLib');
 const HTLCUserLib = artifacts.require('HTLCUserLib');
