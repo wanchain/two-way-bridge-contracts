@@ -4,7 +4,7 @@ const OracleDelegate = artifacts.require('OracleDelegate');
 const assert = require('assert');
 const { sendAndGetReason } = require('./helper.js');
 const { waitForDebugger } = require('inspector');
-const from = require('../truffle').networks.development.from;
+const from = require('../truffle-config').networks.development.from;
 
 const newOracle = async (accounts) => {
   const oracleProxy = await OracleProxy.new();
