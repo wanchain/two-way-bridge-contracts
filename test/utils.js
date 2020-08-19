@@ -214,8 +214,6 @@ function setGlobal(key, value) {
     global[key] = value;
 }
 
-
-const ethutil = require("ethereumjs-util");
 const pu = require('promisefy-util')
 
 function sha256(message) {
