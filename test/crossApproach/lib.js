@@ -2,7 +2,7 @@ const { assert }                = require('chai');
 
 const BN                        = web3.utils.BN;
 
-const from = require('../../truffle').networks.development.from;
+const from = require('../../truffle-config').networks.development.from;
 
 const InvalidTokenPairID          = 100;
 const htlcLockedTime              = 40; //unit: s

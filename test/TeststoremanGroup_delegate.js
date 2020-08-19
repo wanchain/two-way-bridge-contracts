@@ -1,39 +1,23 @@
-const lib = require("./lib");
 const utils = require("./utils");
-const Web3 = require('web3')
-const net = require('net')
-const ethutil = require("ethereumjs-util");
-const TestSmg = artifacts.require('TestSmg')
-const TokenManagerProxy = artifacts.require('TokenManagerProxy');
-const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
+
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const pu = require('promisefy-util')
 const assert = require('chai').assert;
 
-const wanUtil = require('wanchain-util');
-const Tx = wanUtil.wanchainTx;
-let contractAddress = undefined //    "0x4553061E7aD83d83F559487B1EB7847a9F90ad59"; //   
 
-let EOS = utils.stringTobytes("EOS")
-
-let gGasLimit=9000000;
-let gGasPrice=200000000000;
-
-   
 
 const sk = [{
     addr:"0xaa79ac2e8a9d1831cc542a519f4d81576bdf3b20", pk:"0x1e38477d09aee7bfa3900d42b327ff711f42a5e1f1a8156d17a7621edd3a55455c8280f5af89b5e8f2a2a5216114ba5cf8a454593cb10614479557d2bc2f1588",
 },{
     addr:"0x0beba6154f527596b4b8bb45326131a90c5c6140", pk:"0x28b11382ec24a15d5fa7ae77f9e9531ddc0f83a8ab2faab942db77411e17fdcf8160b0fa132933f1afa613eb19e73cef5d869e06ca58ad7787ddc5f7c11c369b",
 }]
-const { registerStart,stakeInPre, web3url,g } = require('./base.js')
+const { registerStart,stakeInPre, } = require('./base.js')
 
-contract('StoremanGroupDelegate', async (accounts) => {
+contract('StoremanGroupDelegate', async () => {
  
     let  smg
     let groupId
-    let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
