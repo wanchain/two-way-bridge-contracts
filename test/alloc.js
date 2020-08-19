@@ -2,7 +2,7 @@
 const Web3 = require('web3')
 const net = require('net')
 //let web3 = new Web3(new Web3.providers.IpcProvider('/home/lzhang/.wanchain/pluto/gwan.ipc',net))
-let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'))
+let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
 //let web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:7654'))
 
 
@@ -31,7 +31,7 @@ async function getAddressFromInt(i){
 }
 
 async function main() {
-    let count=15
+    let count=30
     let dlCount = 9
     for(let i=0; i<count; i++){
         await getAddressFromInt(i+1000)

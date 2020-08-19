@@ -1,6 +1,6 @@
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const { registerStart, stakeInPre, toSelect,g} = require('../base.js')
+const { registerStart, stakeInPre, toSelect,g} = require('../base1.js')
 
 
 async function sendIncentive(truffleSmg) {
@@ -39,7 +39,7 @@ contract('open_storeman_it', async () => {
     console.log("smg contract address: %s", smgProxy.address);
 
     let groupId = await registerStart(smgSc);
-    await stakeInPre(smgSc, groupId);
+    await stakeInPre(smgSc, groupId,8);
     // await toSelect(smgSc, groupId);
   })
 

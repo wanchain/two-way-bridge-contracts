@@ -50,8 +50,8 @@ async function registerStart(smg, inheritGroupId = '', wlStartIndex = 0){
       }
     }
     //let tx = await smg.storemanGroupRegisterStart(id, now+10, 60 * 10, 60, preGroupId, wks,srs, {from: owner})
-    let tx = await smg.storemanGroupRegisterStart(id, now+10, 7*24*3600, 60, preGroupId, wks,srs, {from: owner})
-//    let tx = await smg.storemanGroupRegisterStart(id, now+10, 7*24*3600, 6*24*3600, preGroupId, wks,srs, {from: owner})
+ //   let tx = await smg.storemanGroupRegisterStart(id, now+10, 7*24*3600, 60, preGroupId, wks,srs, {from: owner})
+    let tx = await smg.storemanGroupRegisterStart(id, now+10, 7*24*3600, 6*24*3600, preGroupId, wks,srs, {from: owner})
     console.log("registerStart txhash:", tx.tx)
     //await utils.waitReceipt(web3, tx.tx)
     let group = await smg.getStoremanGroupInfo(id)
