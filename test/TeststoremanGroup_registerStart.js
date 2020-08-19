@@ -25,8 +25,6 @@ delegator: stakerId*100 ~ stakerID*100+1000
  ****************************************/
 
 
-let EOS = utils.stringTobytes("EOS")
-
 
 contract('TestSmg', async (accounts) => {
 
