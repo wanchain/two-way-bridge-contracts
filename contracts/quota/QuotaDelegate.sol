@@ -34,7 +34,7 @@ import "../components/Halt.sol";
 import "./QuotaStorage.sol";
 import "../tokenManager/ITokenManager.sol";
 import "../interfaces/IStoremanGroup.sol";
-import "../oracle/IOracle.sol";
+import "../interfaces/IOracle.sol";
 
 interface IDebtOracle {
     function isDebtClean(bytes32 storemanGroupId) external view returns (bool);
