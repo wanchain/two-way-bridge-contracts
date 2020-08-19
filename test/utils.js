@@ -1,6 +1,7 @@
 const Web3 = require('web3');
 const assert = require('assert');
 const MappingToken = artifacts.require("MappingToken");
+const ethutil = require("ethereumjs-util");
 
 // const JacksPotDelegate = artifacts.require('./JacksPotDelegate.sol');
 // const JacksPotProxy = artifacts.require('./JacksPotProxy.sol');
@@ -212,6 +213,66 @@ function setGlobal(key, value) {
     global[key] = value;
 }
 
+
+function stringTobytes32(name){
+    let b = Buffer.alloc(32)
+    b.write(name, 32-name.length,'utf8')
+    let id = '0x'+b.toString('hex')
+    return id
+  }
+//   function stringTobytes(name){
+//     let b = Buffer.from(name,'utf8')
+//     let id = '0x'+b.toString('hex')
+//     return id
+//   }
+  function getAddressFromInt(i){
+    let b = Buffer.alloc(32)
+    b.writeUInt32BE(i,28)
+    let pkb = ethutil.privateToPublic(b)
+    //console.log("priv:", '0x'+b.toString('hex')) 
+    let addr = '0x'+ethutil.pubToAddress(pkb).toString('hex')
+    let pk = '0x'+pkb.toString('hex')
+    //console.log("got address: ",addr)
+    return {addr, pk, priv:b}
+  }
+  
+  function sleep(ms) {
+    return new Promise(function (resolve) {
+        setTimeout(function () {
+            resolve();
+        }, ms);
+    })
+  }
+  
+  async function sleepUntil(time) {
+    let cur = Date.now()
+    if(cur >= time) {
+        return
+    } else {
+      console.log(" =================================sleep until ",time-cur)
+        return sleep(time-cur)
+    }
+  }
+  async function waitReceipt(web3, txhash) {
+    let lastBlock = await web3.eth.getBlockNumber();
+    let newBlock = lastBlock
+    while(newBlock - lastBlock < 10) {
+        await sleep(1000)
+        newBlock = await web3.eth.getBlockNumber();
+        if( newBlock != lastBlock) {
+            let rec = web3.eth.getTransactionReceipt(txhash);
+            if ( rec ) {
+                return rec
+            }
+        }
+    }
+    assert(false,"no receipt goted in 10 blocks")
+    return null
+  }
+
+  
+
+
 module.exports = {
     getWeb3,
     newContract,
@@ -229,5 +290,9 @@ module.exports = {
     toNonExponential,
     buildMpcSign,
     importMochaTest,
-    setGlobal
+    setGlobal,
+    stringTobytes32:stringTobytes32,
+    getAddressFromInt:getAddressFromInt,
+    waitReceipt:waitReceipt,
+    sleepUntil,sleep,
 };
