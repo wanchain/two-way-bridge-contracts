@@ -5,12 +5,12 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 
 
-const { registerStart,stakeInPre, toSelect, } = require('./basee.js')
+const { registerStart,stakeInPre,  } = require('./basee.js')
 
 
 
 
-contract('TestSmg', async (accounts) => {
+contract('TestSmg', async () => {
 
     let  smg
     let groupId
