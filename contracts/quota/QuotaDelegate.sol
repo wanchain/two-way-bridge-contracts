@@ -33,8 +33,8 @@ pragma solidity 0.4.26;
 import "../components/Halt.sol";
 import "./QuotaStorage.sol";
 import "../tokenManager/ITokenManager.sol";
-import "../crossApproach/interfaces/ISmgAdminProxy.sol";
-import "../oracle/IOracle.sol";
+import "../interfaces/IStoremanGroup.sol";
+import "../interfaces/IOracle.sol";
 
 interface IDebtOracle {
     function isDebtClean(bytes32 storemanGroupId) external view returns (bool);
@@ -676,7 +676,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         view
         returns (uint deposit)
     {
-        ISmgAdminProxy smgAdmin = ISmgAdminProxy(depositOracleAddress);
+        IStoremanGroup smgAdmin = IStoremanGroup(depositOracleAddress);
         (,,deposit,,,,,,,,) = smgAdmin.getStoremanGroupConfig(storemanGroupId);
     }
 
