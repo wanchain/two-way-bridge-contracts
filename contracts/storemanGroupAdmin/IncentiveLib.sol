@@ -78,10 +78,11 @@ library IncentiveLib {
         sk.incentive[0] =  sk.incentive[0].add(sk.incentive[day]);
         data.totalReward = data.totalReward.add(sk.incentive[day]);
         for(uint m=0; m<sk.partnerCount; m++){
-            address partnerAddr = sk.partMap[m];
-            // TODO data.totalReward = data.totalReward.add
-            // TODO sk.incentive[0]
-            sk.incentive[day] = sk.incentive[day].add(calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.partners[partnerAddr].deposit.getValueById(day))));
+            uint partnerWeight = StoremanUtil.calSkWeight(data.conf.standaloneWeight, sk.partners[sk.partMap[m]].deposit.getValueById(day));
+            uint partnerReward = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), partnerWeight);
+            sk.incentive[day] = sk.incentive[day].add(partnerReward);
+            sk.incentive[0] = sk.incentive[0].add(partnerReward);
+            data.totalReward = data.totalReward.add(partnerReward);
         }
     }
     function incentiveDelegator(uint day, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group,StoremanType.StoremanData storage data) public {
@@ -150,9 +151,9 @@ library IncentiveLib {
         }
         // first, select the sm from white list.
         // TODO: check all white list should stakein. 是不是可以去掉这个循环, 已经赋值过了., 
-        for(uint m = 0; m<group.whiteCount;m++){
-            group.selectedNode[m] = group.whiteMap[m];
-        }
+        // for(uint m = 0; m<group.whiteCount;m++){
+        //     group.selectedNode[m] = group.whiteMap[m];
+        // }
         address[] memory members = new address[](group.memberCountDesign);
         uint groupDeposit = 0;
         uint groupDepositWeight = 0;
@@ -160,8 +161,8 @@ library IncentiveLib {
         for(uint i = 0; i<group.memberCountDesign; i++){
             members[i] = group.selectedNode[i];
             StoremanType.Candidate storage sk = data.candidates[group.selectedNode[i]];
-            groupDeposit = groupDeposit.add(sk.deposit.getLastValue()+sk.delegateDeposit); //TODO , use safeMath.
-            groupDepositWeight = groupDepositWeight.add(StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue())+sk.delegateDeposit);
+            groupDeposit = groupDeposit.add(sk.deposit.getLastValue().add(sk.partnerDeposit).add(sk.delegateDeposit));
+            groupDepositWeight = groupDepositWeight.add(StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue().add(sk.partnerDeposit)).add(sk.delegateDeposit));
         }
         Deposit.Record memory deposit = Deposit.Record(day, groupDeposit);
         Deposit.Record memory depositWeight = Deposit.Record(day, groupDepositWeight);
