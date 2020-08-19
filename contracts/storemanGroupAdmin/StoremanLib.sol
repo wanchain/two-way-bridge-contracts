@@ -40,7 +40,7 @@ library StoremanLib {
         address pkAddr = address(keccak256(PK));
         StoremanType.Candidate storage sk = data.candidates[pkAddr];
         //require(sk.sender == address(0x00), "Candidate has existed"); // TODO open after test.
-        //require(group.status >= StoremanType.GroupStatus.curveSeted,"not configured") // TODO open after test.
+        //require(group.status == StoremanType.GroupStatus.curveSeted,"not configured") // TODO open after test.
         sk.sender = msg.sender;
         sk.enodeID = enodeID;
         sk.PK = PK;
@@ -161,6 +161,7 @@ library StoremanLib {
 
         amount = amount.add(sk.crossIncoming);
         sk.crossIncoming = 0;
+        // TODO 奖励也发出去.
         // slash the node
         if(sk.slashedCount >= data.conf.maxSlashedCount) {
             amount = 0;
@@ -343,6 +344,7 @@ library StoremanLib {
         delete sk.delegatorMap[sk.delegatorCount];
         delete sk.delegators[msg.sender];
 
+        // TODO 未提取奖励也发出去. 事件也要发.
         dk.sender.transfer(amount);
         emit delegateClaimEvent(skPkAddr, msg.sender, amount);
     }
