@@ -26,8 +26,7 @@
 
 pragma solidity ^0.4.24;
 
-import "../../lib/Encrypt.sol";
-import "../../lib/DataConvert.sol";
+import "../../lib/CommonTool.sol";
 import "../../interfaces/IStoremanGroup.sol";
 import "../../interfaces/ICurve.sol";
 import "../../interfaces/IConfig.sol";
@@ -139,11 +138,11 @@ library GpkLib {
         public
     {
         bytes memory gpk = round.gpk;
-        uint x = DataConvert.bytes2uint(polyCommit, 0, 32);
-        uint y = DataConvert.bytes2uint(polyCommit, 32, 32);
+        uint x = CommonTool.bytes2uint(polyCommit, 0, 32);
+        uint y = CommonTool.bytes2uint(polyCommit, 32, 32);
         if (gpk.length != 0) {
-            uint gpkX = DataConvert.bytes2uint(gpk, 0, 32);
-            uint gpkY = DataConvert.bytes2uint(gpk, 32, 32);
+            uint gpkX = CommonTool.bytes2uint(gpk, 0, 32);
+            uint gpkY = CommonTool.bytes2uint(gpk, 32, 32);
             bool success;
             (x, y, success) = ICurve(round.curve).add(x, y, gpkX, gpkY);
             require(success == true, "Gpk failed");
@@ -173,8 +172,8 @@ library GpkLib {
 
             bytes memory gpkShare = round.srcMap[txAddress].gpkShare;
             if (gpkShare.length != 0) {
-                uint pkX = DataConvert.bytes2uint(gpkShare, 0, 32);
-                uint pkY = DataConvert.bytes2uint(gpkShare, 32, 32);
+                uint pkX = CommonTool.bytes2uint(gpkShare, 0, 32);
+                uint pkY = CommonTool.bytes2uint(gpkShare, 32, 32);
                 (x, y, success) = ICurve(round.curve).add(x, y, pkX, pkY);
                 require(success == true, "Add failed");
             } else {
@@ -207,11 +206,11 @@ library GpkLib {
             (pcX, pcY, success) = ICurve(curve).calPolyCommit(polyCommit, destPk);
             if (success && (x == pcX) && (y == pcY)) {
                 // check enc
-                uint iv = DataConvert.bytes2uint(d.encSij, 65, 16);
+                uint iv = CommonTool.bytes2uint(d.encSij, 65, 16);
                 bytes memory cipher;
-                (cipher, success) = Encrypt.enc(bytes32(d.ephemPrivateKey), bytes32(iv), d.sij, destPk);
+                (cipher, success) = CommonTool.enc(bytes32(d.ephemPrivateKey), bytes32(iv), d.sij, destPk);
                 if (success) {
-                    return DataConvert.cmpBytes(d.encSij, cipher);
+                    return CommonTool.cmpBytes(d.encSij, cipher);
                 }
             }
         }

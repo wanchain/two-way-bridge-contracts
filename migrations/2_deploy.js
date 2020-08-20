@@ -5,7 +5,6 @@ const StoremanUtil = artifacts.require('StoremanUtil');
 
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const TestSmg = artifacts.require('TestSmg');
 
 const EnhancementLib = artifacts.require('EnhancementLib');
 const CommonTool = artifacts.require('CommonTool');
@@ -146,11 +145,6 @@ module.exports = async function (deployer, network) {
     await smgProxy.upgradeTo(smgDelegate.address);
     console.log("smg address:", smgProxy.address);
 
-    await deployer.deploy(TestSmg);
-    let tsmg = await TestSmg.deployed();
-    await tsmg.setSmgAddr(smgProxy.address)
-
-
     // storm group admin dependence
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
 
@@ -158,12 +152,8 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(fakeQuota);
     let fakeQuotaInst = await fakeQuota.deployed();
 
-    //deploy CommonTool lib
     //deploy metric
-    await deployer.deploy(EnhancementLib);
-    await deployer.deploy(PosLib);
     await deployer.deploy(FakeSmg);
-    await deployer.link(EnhancementLib, CommonTool);
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, MetricLib);
     await deployer.link(PosLib, MetricLib);
@@ -183,11 +173,8 @@ module.exports = async function (deployer, network) {
     let metric = await MetricDelegate.at(metricProxy.address);
 
     // create gpk sc
-    await deployer.deploy(Encrypt);
-    await deployer.deploy(DataConvert);
 
-    await deployer.link(Encrypt, GpkLib);
-    await deployer.link(DataConvert, GpkLib);
+    await deployer.link(CommonTool, GpkLib);
     await deployer.deploy(GpkLib);
 
     await deployer.link(GpkLib, GpkDelegate);
@@ -200,8 +187,6 @@ module.exports = async function (deployer, network) {
     console.log("gpk address:", gpkProxy.address);
 
     let gpk = await GpkDelegate.at(GpkProxy.address);
-
-    await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
 
 
     // config
@@ -220,6 +205,9 @@ module.exports = async function (deployer, network) {
     let cnf = await ConfigDelegate.at(cnfProxy.address);
     await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address]);
 
+    // dependence
+    //await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
+    await smg.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address);
     await gpk.setDependence(cnfProxy.address, smgProxy.address);
     await metric.setDependence(cnfProxy.address, smgProxy.address);
 }

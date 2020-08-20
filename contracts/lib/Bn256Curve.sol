@@ -53,7 +53,7 @@ library Bn256Curve {
        address to = PRECOMPILE_CONTRACT_ADDR;
        bytes32 functionSelector = 0x77f683ba00000000000000000000000000000000000000000000000000000000;
 
-       require((polyCommit.length + pk.length)%64 == 0);
+       require((polyCommit.length + pk.length)%64 == 0, "bn error len polyCommint or pk");
 
        uint polyCommitCnt = polyCommit.length/64;
        uint total = (polyCommitCnt + 1)*2;
