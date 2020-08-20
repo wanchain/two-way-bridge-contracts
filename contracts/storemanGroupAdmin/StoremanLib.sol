@@ -368,7 +368,7 @@ library StoremanLib {
 
     function delegateIncentiveClaim(StoremanType.StoremanData storage data, address wkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
-        require(sk.pkAddress == wkAddr, "Candidate doesn't exist");
+        require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
 
         uint amount = dk.incentive[0];
