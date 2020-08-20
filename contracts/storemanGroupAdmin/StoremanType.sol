@@ -98,7 +98,26 @@ library StoremanType {
         mapping(address=>StoremanType.Candidate) candidates;
         mapping(uint=> mapping(uint => uint)) chainTypeCo;
     }
+    struct StoremanInfo {
+        address sender;
+        bytes enodeID;
+        bytes PK;
+        address  pkAddress;
+        bool isWhite;
+        bool quited;
+        uint delegatorCount;
+        uint delegateDeposit;
+        uint partnerCount;
+        uint partnerDeposit;
+        uint crossIncoming;
+        uint slashedCount;
 
+        uint incentivedDelegator;
+        uint incentivedDay;
+        bytes32  groupId;
+        bytes32  nextGroupId;
+        uint  deposit;
+    }
     struct StoremanGroupInfo {
         bytes32    groupId;
         GroupStatus    status;

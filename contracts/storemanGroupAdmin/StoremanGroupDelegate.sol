@@ -179,7 +179,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return StoremanLib.checkCanStakeOut(data, wkAddr);
     }
 
-    function checkCanStakeClaim(address wkAddr) external returns(bool){
+    function checkCanStakeClaim(address wkAddr) external view returns(bool){
         return StoremanLib.checkCanStakeClaim(data, wkAddr);
     }
     function stakeClaim(address wkAddr) external notHalted {
@@ -226,7 +226,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function getSelectedSmNumber(bytes32 groupId) public view returns(uint) {
         return StoremanUtil.getSelectedSmNumber(data, groupId);
     }
-
+    function getSelectedStoreman(bytes32 groupId) public view returns(address[]) {
+        return StoremanUtil.getSelectedStoreman(data, groupId);
+    }
     function select(bytes32 groupId)
         external
         notHalted
@@ -247,20 +249,21 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.status = status;
     }
 
-    // TODO: 改成用结构返回????
-    function getStoremanInfo(address wkAddress) external view  returns(address sender,bytes PK, address wkAddr,
-        bool quited, uint  deposit, uint delegateDeposit,
-        uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId, uint incentivedDay, uint slashedCount
-        ){
-            StoremanType.Candidate storage sk = data.candidates[wkAddress];
+    // //
+    // function getStoremanInfo(address wkAddr) external view  returns(address sender,bytes PK, address wkAddr,
+    //     bool quited, uint  deposit, uint delegateDeposit,
+    //     uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId, uint incentivedDay, uint slashedCount
+    //     ){
+    //         StoremanType.Candidate storage sk = data.candidates[wkAddr];
 
-            return (sk.sender,   sk.PK, sk.pkAddress, sk.quited,
-                sk.deposit.getLastValue(), sk.delegateDeposit,
-                sk.incentive[0],  sk.delegatorCount, sk.groupId, sk.nextGroupId, sk.incentivedDay, sk.slashedCount
-            );
-    }
-    function getStoremanIncentive(address wkAddress, uint day) public view returns(uint incentive) {
-        StoremanType.Candidate storage sk = data.candidates[wkAddress];
+    //         return (sk.sender,   sk.PK, sk.pkAddress, sk.quited,
+    //             sk.deposit.getLastValue(), sk.delegateDeposit,
+    //             sk.incentive[0],  sk.delegatorCount, sk.groupId, sk.nextGroupId, sk.incentivedDay, sk.slashedCount
+    //         );
+    // }
+
+    function getStoremanIncentive(address wkAddr, uint day) public view returns(uint incentive) {
+        StoremanType.Candidate storage sk = data.candidates[wkAddr];
         return sk.incentive[day];
     }
 
@@ -373,7 +376,28 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return dismissable;
     }
 
-    function getStoremanGroupInfo2(bytes32 id) public view returns(StoremanType.StoremanGroupInfo info){
+    function getStoremanInfo(address wkAddr) external view returns(StoremanType.StoremanInfo si){
+        StoremanType.Candidate storage sk = data.candidates[wkAddr];
+
+        si.sender = sk.sender;
+        si.enodeID = sk.enodeID;
+        si.PK = sk.PK;
+        si.pkAddress = sk.pkAddress;
+        si.isWhite = sk.isWhite;
+        si.quited = sk.quited;
+        si.delegatorCount = sk.delegatorCount;
+        si.delegateDeposit = sk.delegateDeposit;
+        si.partnerCount = sk.partnerCount;
+        si.partnerDeposit = sk.partnerDeposit;
+        si.crossIncoming = sk.crossIncoming;
+        si.slashedCount = sk.slashedCount;
+        si.incentivedDelegator = sk.incentivedDelegator;
+        si.incentivedDay = sk.incentivedDay;
+        si.groupId = sk.groupId;
+        si.nextGroupId = sk.nextGroupId;
+        si.deposit = sk.deposit.getLastValue();
+    }
+    function getStoremanGroupInfo(bytes32 id) public view returns(StoremanType.StoremanGroupInfo info){
         StoremanType.StoremanGroup storage smg = data.groups[id];
         info.groupId = smg.groupId;
         info.status = smg.status;
@@ -400,14 +424,14 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         info.gpk2 = smg.gpk2;
         info.delegateFee = smg.delegateFee;
     }
-    function getStoremanGroupInfo(bytes32 id)
-        external
-        view
-        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint whiteCount,  uint memberCount,  uint startTime, uint endTime)
-    {
-        StoremanType.StoremanGroup storage smg = data.groups[id];
-        return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.whiteCount, smg.selectedCount,  smg.workTime, smg.workTime+smg.totalTime);
-    }
+    // function getStoremanGroupInfo(bytes32 id)
+    //     external
+    //     view
+    //     returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint whiteCount,  uint memberCount,  uint startTime, uint endTime)
+    // {
+    //     StoremanType.StoremanGroup storage smg = data.groups[id];
+    //     return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.whiteCount, smg.selectedCount,  smg.workTime, smg.workTime+smg.totalTime);
+    // }
 
     function getStoremanGroupConfig(bytes32 id)
         external

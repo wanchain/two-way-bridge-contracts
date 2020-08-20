@@ -1,21 +1,14 @@
-const lib = require("./lib");
+const a  = require("./lib");
 const utils = require("./utils");
-const Web3 = require('web3')
-const net = require('net')
-const ethutil = require("ethereumjs-util");
-const pu = require('promisefy-util')
 
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
 
-const wanUtil = require('wanchain-util');
-const Tx = wanUtil.wanchainTx;
 
 
-
-const { registerStart,stakeInPre, web3url,g, toSelect, } = require('./basee.js');
+const { registerStart,stakeInPre,  } = require('./basee.js');
 
 /*************************************
 staker: 1000 ~ 1000+100
@@ -25,11 +18,10 @@ delegator: stakerId*100 ~ stakerID*100+1000
 
 
 
-contract('TestSmg', async (accounts) => {
+contract('TestSmg', async () => {
 
     let  smg
     let groupId
-    let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
     let wk = utils.getAddressFromInt(10000)
 
     before("init contracts", async() => {

@@ -9,7 +9,7 @@ library StoremanLib {
     using SafeMath for uint;
 
     uint constant MaxPartnerCount = 5;
-    event stakeInEvent(bytes32 indexed index,address indexed wkAddr, address indexed from, uint  value);
+    event stakeInEvent(bytes32 indexed groupId,address indexed wkAddr, address indexed from, uint  value);
     event stakeAppendEvent(address indexed wkAddr, address indexed from, uint indexed value);
     event stakeOutEvent(address indexed wkAddr, address indexed from);
     event stakeClaimEvent(address indexed wkAddr, address indexed from,bytes32 indexed groupId, uint value);
@@ -35,12 +35,12 @@ library StoremanLib {
     function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID) external
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        //require(now <= group.registerTime+group.registerDuration,"Registration closed"); // TODO open after test.
+        require(now <= group.registerTime+group.registerDuration,"Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         address pkAddr = address(keccak256(PK));
         StoremanType.Candidate storage sk = data.candidates[pkAddr];
-        //require(sk.sender == address(0x00), "Candidate has existed"); // TODO open after test.
-        //require(group.status == StoremanType.GroupStatus.curveSeted,"not configured") // TODO open after test.
+        require(sk.sender == address(0x00), "Candidate has existed");
+        require(group.status == StoremanType.GroupStatus.curveSeted,"not configured");
         sk.sender = msg.sender;
         sk.enodeID = enodeID;
         sk.PK = PK;
@@ -83,7 +83,6 @@ library StoremanLib {
     function checkCanStakeOut(StoremanType.StoremanData storage data,  address skPkAddr) public returns(bool){
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
-        require(sk.sender == msg.sender, "Only the sender can stakeOut");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
         //如果group还没选择, 不许退.
@@ -100,6 +99,7 @@ library StoremanLib {
         return true;
     }
     function stakeOut(StoremanType.StoremanData storage data,  address skPkAddr) external {
+        require(sk.sender == msg.sender, "Only the sender can stakeOut");
         require(checkCanStakeOut(data, skPkAddr),"selecting");
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         sk.quited = true;
@@ -272,7 +272,7 @@ library StoremanLib {
             for(uint k = 0; k<oldGroup.whiteCountAll; k++){
                 address wa = oldGroup.whiteMap[k];
                 StoremanType.Candidate storage skw = data.candidates[wa];
-                if(!skw.quited) {
+                if(!skw.quited) {  // TODO 被惩罚的节点不计入下轮.
                     group.whiteWk[wa] = oldGroup.whiteWk[wa];
                     group.whiteMap[group.whiteCountAll] = wa;
                     group.whiteCountAll++;
@@ -322,6 +322,8 @@ library StoremanLib {
         require(checkCanStakeOut(data, skPkAddr),"selecting");
 
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
+        require(sk.sender == msg.sender, "Only the sender can stakeOut");
+
         dk.quited = true;
         sk.delegateDeposit = sk.delegateDeposit.sub(dk.deposit.getLastValue());
     }

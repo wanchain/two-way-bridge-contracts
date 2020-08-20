@@ -1,5 +1,5 @@
-const QuotaLib = artifacts.require('QuotaLib');
-const PosLib = artifacts.require('PosLib');
+//const QuotaLib = artifacts.require('QuotaLib');
+let PosLib = artifacts.require('PosLib');
 const StoremanUtil = artifacts.require('StoremanUtil');
 
 
@@ -120,6 +120,10 @@ module.exports = async function (deployer, network) {
 
     // ***********osm*****************
     // storeman group admin sc
+    if(network == 'local' || network == 'coverage') {
+        PosLib = artifacts.require('test/PosLib');
+    } 
+        
     await deployer.deploy(PosLib);
     await deployer.link(PosLib,StoremanUtil);
     await deployer.deploy(StoremanUtil);
