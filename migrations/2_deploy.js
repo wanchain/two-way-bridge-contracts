@@ -49,6 +49,10 @@ const Bn128SchnorrVerifier = artifacts.require('Bn128SchnorrVerifier');
 const Secp256k1SchnorrVerifier = artifacts.require('Secp256k1SchnorrVerifier');
 const SignatureVerifier = artifacts.require('SignatureVerifier');
 
+const ConfigDelegate = artifacts.require('ConfigDelegate');
+const ConfigProxy = artifacts.require('ConfigProxy');
+
+
 const curveMap = new Map([
     ['secp256k1', 0],
     ['bn256', 1]
@@ -173,7 +177,6 @@ module.exports = async function (deployer, network) {
     console.log("metric address:", metricProxy.address);
 
     let metric = await MetricDelegate.at(metricProxy.address);
-    await metric.setDependence(smgProxy.address, smgProxy.address);
 
     // create gpk sc
     await deployer.deploy(Encrypt);
@@ -193,13 +196,26 @@ module.exports = async function (deployer, network) {
     console.log("gpk address:", gpkProxy.address);
 
     let gpk = await GpkDelegate.at(GpkProxy.address);
-    await gpk.setDependence(smgProxy.address);
+
+    await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
+
+
+    // config
 
     await deployer.deploy(Secp256k1Curve);
     let secp256k1 = await Secp256k1Curve.deployed();
     await deployer.deploy(Bn256Curve);
     let bn256 = await Bn256Curve.deployed();
-    await gpk.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address]);
 
-    await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
+    await deployer.deploy(ConfigProxy);
+    let cnfProxy = await ConfigProxy.deployed();
+    await deployer.deploy(ConfigDelegate);
+    let cnfDelegate = await ConfigDelegate.deployed();
+    await cnfProxy.upgradeTo(cnfDelegate.address);
+
+    let cnf = await ConfigDelegate.at(cnfProxy.address);
+    await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address]);
+
+    await gpk.setDependence(cnfProxy.address, smgProxy.address);
+    await metric.setDependence(cnfProxy.address, smgProxy.address);
 }

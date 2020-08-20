@@ -29,9 +29,11 @@ pragma solidity ^0.4.24;
 import "../../lib/Encrypt.sol";
 import "../../lib/DataConvert.sol";
 import "../../interfaces/IStoremanGroup.sol";
-import "./ICurve.sol";
+import "../../interfaces/ICurve.sol";
+import "../../interfaces/IConfig.sol";
 import "./GpkTypes.sol";
 import "../../storemanGroupAdmin/StoremanType.sol";
+
 
 library GpkLib {
 
@@ -83,7 +85,7 @@ library GpkLib {
     /// @param group                      storeman group
     /// @param config                     group config
     /// @param smg                        storeman group contract address
-    function initGroup(bytes32 groupId, GpkTypes.Group storage group, GpkTypes.Config storage config, address smg)
+    function initGroup(bytes32 groupId, GpkTypes.Group storage group, address config, address smg)
         public
     {
         // init period
@@ -99,10 +101,9 @@ library GpkLib {
         uint256 curve2;
         (,status,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
         require(status == uint8(StoremanType.GroupStatus.selected), "Invalid status");
-        require(config.curves[uint8(curve1)] != address(0), "No curve1");
-        require(config.curves[uint8(curve2)] != address(0), "No curve2");
-        group.roundMap[group.round][0].curve = config.curves[uint8(curve1)];
-        group.roundMap[group.round][1].curve = config.curves[uint8(curve2)];
+
+        group.roundMap[group.round][0].curve = IConfig(config).getCurve(uint8(curve1));
+        group.roundMap[group.round][1].curve = IConfig(config).getCurve(uint8(curve2));
 
         group.groupId = groupId;
 

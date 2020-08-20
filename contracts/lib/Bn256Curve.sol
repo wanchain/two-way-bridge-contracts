@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-library Secp256k1Curve {
+library Bn256Curve {
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
 
     function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2)
@@ -8,8 +8,8 @@ library Secp256k1Curve {
         view
         returns(uint256 retx, uint256 rety, bool success)
     {
-        address to = 0x42;
-        assembly {
+       address to = 0x6;
+       assembly {
             let freePtr := mload(0x40)
             mstore(add(freePtr, 0), x1)
             mstore(add(freePtr, 32), y1)
@@ -29,7 +29,7 @@ library Secp256k1Curve {
         view
         returns(uint256 x, uint256 y, bool success)
     {
-        bytes32 functionSelector = 0xbb734c4e00000000000000000000000000000000000000000000000000000000;//keccak256("mulG(uint256)");
+        bytes32 functionSelector = 0x0e5725cd00000000000000000000000000000000000000000000000000000000;
         address to = PRECOMPILE_CONTRACT_ADDR;
         assembly {
             let freePtr := mload(0x40)
@@ -51,7 +51,7 @@ library Secp256k1Curve {
         returns(uint256 sx, uint256 sy, bool success)
     {
        address to = PRECOMPILE_CONTRACT_ADDR;
-       bytes32 functionSelector = 0x66c85fc200000000000000000000000000000000000000000000000000000000;
+       bytes32 functionSelector = 0x77f683ba00000000000000000000000000000000000000000000000000000000;
 
        require((polyCommit.length + pk.length)%64 == 0);
 
@@ -80,5 +80,25 @@ library Secp256k1Curve {
             sx := mload(freePtr)
             sy := mload(add(freePtr, 32))
         }
+    }
+
+    function mulPk(uint256 scalar, uint256 xPk, uint256 yPk)
+    public
+    view
+    returns (uint256 x, uint256 y, bool success){
+        address to = 0x7;
+
+        assembly {
+            let freePtr := mload(0x40)
+            mstore(add(freePtr,0), xPk)
+            mstore(add(freePtr,32), yPk)
+            mstore(add(freePtr, 64), scalar)
+
+            success := staticcall(gas, to, freePtr,96, freePtr, 64)
+
+            x := mload(freePtr)
+            y := mload(add(freePtr,32))
+        }
+
     }
 }

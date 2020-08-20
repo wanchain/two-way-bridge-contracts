@@ -31,6 +31,7 @@ import "./MetricTypes.sol";
 import "../../lib/CommonTool.sol";
 import "../../lib/PosLib.sol";
 import "../../interfaces/IStoremanGroup.sol";
+import "../../interfaces/ICurve.sol";
 
 library MetricLib {
     using SafeMath for uint;
@@ -95,8 +96,6 @@ library MetricLib {
     returns (bool)
     {
         bytes32 h;
-        bytes32 r;
-        bytes32 s;
         bytes memory senderPk;
 
         MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
@@ -129,12 +128,15 @@ library MetricLib {
         rcvrPk = getPkBytesByInx(metricData, grpId, rslshData.rcvrIndex);
 
         // left point compute by CMG  polyCM:= 64*n
-        (xLeft, yLeft, success) = CommonTool.calPolyCommit(rslshData.polyCMData.polyCM, rcvrPk, rslshData.curveType);
+        address curveAddr;
+        curveAddr = IConfig(metricData.config).getCurve(uint8(rslshData.curveType));
+        (xLeft, yLeft, success) = ICurve(curveAddr).calPolyCommit(rslshData.polyCMData.polyCM, rcvrPk);
         require(success, 'calPolyCommit fail');
 
         // right point s[i][i]*G
         uint256 uintSij = CommonTool.bytes2uint(sij, 0);
-        (xRight, yRight, success) = CommonTool.mulG(uintSij, rslshData.curveType);
+        (xRight, yRight, success) = ICurve(curveAddr).mulG(uintSij);
+
         require(success, 'mulG fail');
         return xLeft == xRight && yLeft == yRight;
     }
@@ -204,8 +206,6 @@ library MetricLib {
     returns (bool)
     {
         bytes32 h;
-        bytes32 r;
-        bytes32 s;
         bytes memory senderPk;
 
         MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
@@ -236,21 +236,22 @@ library MetricLib {
 
         MetricTypes.SSlshData memory sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
         // s*G
-        (xRight, yRight, success) = CommonTool.mulG(CommonTool.bytes2uint(sslshData.polyDataPln.polyData, 0), sslshData.curveType);
+        address curveAddr;
+        curveAddr = IConfig(metricData.config).getCurve(uint8(sslshData.curveType));
+
+        (xRight, yRight, success) = ICurve(curveAddr).mulG(CommonTool.bytes2uint(sslshData.polyDataPln.polyData, 0));
         require(success, 'mulG fail');
 
         // rpkShare + m * gpkShare
-        (mgpkX, mgpkY, success) = CommonTool.mulPk(CommonTool.bytes2uint(sslshData.m, 0),
+        (mgpkX, mgpkY, success) = ICurve(curveAddr).mulPk(CommonTool.bytes2uint(sslshData.m, 0),
             CommonTool.bytes2uint(sslshData.gpkShare, 0),
-            CommonTool.bytes2uint(sslshData.gpkShare, 32),
-            sslshData.curveType);
+            CommonTool.bytes2uint(sslshData.gpkShare, 32));
         require(success, 'mulPk fail');
 
-        (xLeft, yLeft, success) = CommonTool.add(CommonTool.bytes2uint(sslshData.rpkShare, 0),
+        (xLeft, yLeft, success) = ICurve(curveAddr).add(CommonTool.bytes2uint(sslshData.rpkShare, 0),
             CommonTool.bytes2uint(sslshData.rpkShare, 32),
             mgpkX,
-            mgpkY,
-            sslshData.curveType);
+            mgpkY);
         require(success, 'add fail');
 
         return xLeft == xRight && yLeft == yRight;

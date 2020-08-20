@@ -26,87 +26,38 @@
 
 pragma solidity ^0.4.24;
 
-import "./EnchanceLib.sol";
-
 library CommonTool {
-
-    using SafeMath for uint;
 
     enum CurveType  {SK, BN}
 
-    uint public constant DIVISOR = 10000;
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
 
-
-
-    // add
-    function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2, CurveType curveType)
-    public
-    view
-    returns (uint256 retx, uint256 rety, bool success) {
-        if (curveType == CurveType.SK) {
-            return EnhancementLib.s256add(x1,y1,x2,y2);
-        }
-
-        if (curveType == CurveType.BN) {
-            return EnhancementLib.bn256add(x1,y1,x2,y2);
-        }
-        return EnhancementLib.s256add(x1,y1,x2,y2);
-    }
-
-    // mulG
-    function mulG(uint256 scalar, CurveType curveType)
-    public
-    view
-    returns (uint256 x, uint256 y, bool success) {
-        if (curveType == CurveType.SK) {
-            return EnhancementLib.s256MulG(scalar);
-        }
-
-        if (curveType == CurveType.BN) {
-            return EnhancementLib.bn256MulG(scalar);
-        }
-        return EnhancementLib.s256MulG(scalar);
-    }
-
-    // mulPk
-    function mulPk(uint256 scalar, uint256 xPk, uint256 yPk, CurveType curveType)
-    public
-    view
-    returns (uint256 x, uint256 y, bool success){
-
-        if (curveType == CurveType.SK) {
-            return EnhancementLib.s256ScalarMul(scalar,xPk,yPk);
-        }
-
-        if (curveType == CurveType.BN) {
-            return EnhancementLib.bn256ScalarMul(scalar,xPk,yPk);
-        }
-        return EnhancementLib.s256ScalarMul(scalar,xPk,yPk);
-    }
-
-    // calPolyCommit
-    function calPolyCommit(bytes polyCommit, bytes pk, CurveType curveType)
-    public
-    view
-    returns (uint256 sx, uint256 sy, bool success) {
-
-        if (curveType == CurveType.SK) {
-
-            return EnhancementLib.s256CalPolyCommit(polyCommit, pk);
-        }
-
-        if (curveType == CurveType.BN) {
-            return EnhancementLib.bn256CalPolyCommit(polyCommit, pk);
-        }
-        return EnhancementLib.s256CalPolyCommit(polyCommit, pk);
-    }
-
     function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes pk) public view returns(bool) {
-        return EnhancementLib.checkSig(hash,r,s,pk);
+        bytes32 functionSelector = 0x861731d500000000000000000000000000000000000000000000000000000000;
+        address to = PRECOMPILE_CONTRACT_ADDR;
+        uint256 result;
+        bool success;
+        assembly {
+            let freePtr := mload(0x40)
+
+            mstore(freePtr, functionSelector)
+            mstore(add(freePtr, 4), hash)
+            mstore(add(freePtr, 36), r)
+            mstore(add(freePtr, 68), s)
+            mstore(add(freePtr, 100), mload(add(pk,32)))
+            mstore(add(freePtr, 132), mload(add(pk,64)))
+
+            success := staticcall(gas, to, freePtr,164, freePtr, 32)
+
+            result := mload(freePtr)
+        }
+
+        if (success) {
+            return result == 1;
+        } else {
+            return false;
+        }
     }
-
-
 
     function bytes2uint(bytes source, uint offset)
     public

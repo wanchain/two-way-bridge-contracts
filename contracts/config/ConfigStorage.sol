@@ -1,6 +1,6 @@
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2020 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,7 +25,19 @@
 //
 
 pragma solidity ^0.4.24;
+pragma experimental ABIEncoderV2;
 
-interface IConfig {
-    function getCurve(uint8 curveId) external returns(address);
+import "../components/BasicStorage.sol";
+
+contract ConfigStorage is BasicStorage {
+
+
+    /************************************************************
+     **
+     ** VARIABLES
+     **
+     ************************************************************/
+
+    /// curve -> contract address
+    mapping(uint8 => address) curves;
 }

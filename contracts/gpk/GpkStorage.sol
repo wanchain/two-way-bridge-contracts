@@ -34,7 +34,7 @@ contract GpkStorage is BasicStorage {
     address public smg;
 
     /// gpk config
-    GpkTypes.Config config;
+    address public config;
 
     /// groupId -> Group
     mapping(bytes32 => GpkTypes.Group) public groupMap;
