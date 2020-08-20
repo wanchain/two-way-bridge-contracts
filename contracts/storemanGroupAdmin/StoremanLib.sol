@@ -187,7 +187,6 @@ library StoremanLib {
         }
     }
 
-    // 排序时用权重的. TODO
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
         for (uint i = group.whiteCount; i < group.selectedCount; i++) {
             StoremanType.Candidate storage cmpNode = data.candidates[group.selectedNode[i]];
@@ -336,9 +335,9 @@ library StoremanLib {
         dk.deposit.clean();
 
         address lastDkAddr = sk.delegatorMap[sk.delegatorCount.sub(1)];
-         StoremanType.Delegator storage laskDk = sk.delegators[lastDkAddr];
+        StoremanType.Delegator storage lastDk = sk.delegators[lastDkAddr];
         sk.delegatorMap[dk.index] = lastDkAddr;
-        laskDk.index = dk.index;
+        lastDk.index = dk.index;
 
         sk.delegatorCount == sk.delegatorCount.sub(1);
         delete sk.delegatorMap[sk.delegatorCount];
@@ -391,7 +390,7 @@ library StoremanLib {
         pn.deposit.addRecord(r);
         updateGroup(data, sk, group, r);
         updateGroup(data, sk, nextGroup, r);
-	    emit partInEvent(skPkAddr, msg.sender, msg.value);
+	      emit partInEvent(skPkAddr, msg.sender, msg.value);
     }
 
     function partOut(StoremanType.StoremanData storage data, address skPkAddr) external {
