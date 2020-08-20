@@ -28,11 +28,6 @@ pragma solidity ^0.4.24;
 
 library GpkTypes {
 
-    struct Config {
-        /// curve -> contract address
-        mapping(uint8 => address) curves;
-    }
-
     struct Group {
         bytes32 groupId;
         uint16 round;

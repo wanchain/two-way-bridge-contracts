@@ -80,12 +80,15 @@ contract GpkDelegate is GpkStorage, Owned {
 
     /// @notice                           function for set smg contract address
     /// @param smgAddr                    smg contract address
-    function setDependence(address smgAddr)
+    function setDependence(address confAddr, address smgAddr)
         external
         onlyOwner
     {
         require(smgAddr != address(0), "Invalid smg");
         smg = smgAddr;
+
+        require(confAddr != address(0), "Invalid conf");
+        config = confAddr;
     }
 
     /// @notice                           function for set period
@@ -103,19 +106,6 @@ contract GpkDelegate is GpkStorage, Owned {
         group.negotiatePeriod = negotiatePeriod;
     }
 
-    /// @notice                           function for set smg contract address
-    /// @param curveId                    curve id array
-    /// @param curveAddress               curve contract address array
-    function setCurve(uint8[] curveId, address[] curveAddress)
-        external
-        onlyOwner
-    {
-        uint8 length = uint8(curveId.length);
-        require((length > 0) && (length == curveAddress.length), "Mismatched length");
-        for (uint8 i = 0; i < length; i++) {
-            config.curves[curveId[i]] = curveAddress[i];
-        }
-    }
 
     /// @notice                           function for storeman submit poly commit
     /// @param groupId                    storeman group id

@@ -4,6 +4,9 @@ const MetricDelegate = artifacts.require('MetricDelegate');
 const FakeSmg = artifacts.require('FakeSmg');
 const PosLib = artifacts.require('PosLib');
 
+const ConfigProxy = artifacts.require('ConfigProxy');
+const ConfigDelegate = artifacts.require('ConfigDelegate');
+
 const MaxEpochNumber = Number(100);
 const BN = web3.utils.BN;
 const grpId = '0x0000000000000000000000000000000000000031353839393533323738313235';
@@ -23,7 +26,7 @@ contract('Test Metric', async (accounts) => {
         try {
             await testInit();
             // get the instance
-            let deploy;
+            let deploy,configProxy;
             deploy = await MetricProxy.deployed();
             metricInstProxy = await MetricDelegate.at(deploy.address);
 
@@ -31,7 +34,8 @@ contract('Test Metric', async (accounts) => {
 
             deploy = await FakeSmg.deployed();
 
-            metricInst.setDependence(deploy.address, deploy.address);
+            configProxy = await ConfigProxy.deployed();
+            metricInst.setDependence(configProxy.address, deploy.address);
 
             posLib = await PosLib.deployed();
             let epochId = await posLib.getEpochId(Math.floor(Date.now() / 1000));
@@ -50,7 +54,6 @@ contract('Test Metric', async (accounts) => {
             assert.fail(err.toString());
         }
     });
-
 
     it('get statics...   -> getPrdInctMetric', async () => {
         try {
@@ -242,7 +245,6 @@ contract('Test Metric', async (accounts) => {
         }
     });
 
-
     it('write proof...   -> wrSSlsh(bn256-S-sig-error)', async () => {
         try {
 
@@ -268,6 +270,7 @@ contract('Test Metric', async (accounts) => {
             assert.fail(err.toString());
         }
     });
+
     it('write proof...   -> wrSSlsh(bn256-S-content-error)', async () => {
         try {
 
@@ -293,7 +296,6 @@ contract('Test Metric', async (accounts) => {
             assert.fail(err.toString());
         }
     });
-
 
     it('get statics...   -> getPrdInctMetric', async () => {
         try {

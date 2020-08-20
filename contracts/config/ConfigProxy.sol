@@ -1,6 +1,6 @@
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2020 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,9 +25,24 @@
 //
 
 pragma solidity ^0.4.24;
+pragma experimental ABIEncoderV2;
 
-interface ICurve {
-    function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2) external view returns(uint256 retx, uint256 rety, bool success);
-    function mulG(uint256 scalar) external view returns(uint256 x, uint256 y, bool success);
-    function calPolyCommit(bytes polyCommit, bytes pk) external view returns(uint256 sx, uint256 sy, bool success);
+/**
+ * Math operations with safety checks
+ */
+
+import "../components/Halt.sol";
+import "./ConfigStorage.sol";
+import "../components/Proxy.sol";
+
+contract ConfigProxy is ConfigStorage, Halt, Proxy {
+
+    ///@dev                   update the address of ConfigDelegate contract
+    ///@param impl            the address of the new ConfigDelegate contract
+    function upgradeTo(address impl) public onlyOwner {
+        require(impl != address(0), "Cannot upgrade to invalid address");
+        require(impl != _implementation, "Cannot upgrade to the same implementation");
+        _implementation = impl;
+        emit Upgraded(impl);
+    }
 }
