@@ -59,25 +59,14 @@ library CommonTool {
         }
     }
 
-    function bytes2uint(bytes source, uint offset)
+    function bytes2uint(bytes source, uint16 offset, uint16 length)
     public
     pure
-    returns (uint)
+    returns(uint)
     {
         uint number = 0;
-        uint8  bytesCount = uint8(source.length);
-        uint8  loopCount = 0;
-        if(bytesCount < 32) {
-            loopCount = bytesCount;
-        }else{
-            loopCount = 32;
-        }
-//        for (uint i = 0; i < 32; i++) {
-//            number = number + uint8(source[i + offset]) * (2 ** (8 * (32 - (i + 1))));
-//        }
-
-        for (uint i = 0; i < loopCount; i++) {
-            number = number + uint8(source[i + offset]) * (2 ** (8 * (loopCount - (i + 1))));
+        for (uint i = 0; i < length; i++) {
+            number = number + uint8(source[i + offset]) * (2 ** (8 * (length - (i + 1))));
         }
         return number;
     }
@@ -86,5 +75,59 @@ library CommonTool {
         assembly {
             result := mload(add(source, 32))
         }
+    }
+
+    function cmpBytes(bytes b1, bytes b2)
+    public
+    pure
+    returns(bool)
+    {
+        uint len1 = b1.length;
+        uint len2 = b2.length; // maybe has padding
+        if (len2 >= len1) {
+            for (uint i = 0; i < len2; i++) {
+                if (i < len1) {
+                    if (b1[i] != b2[i]) {
+                        return false;
+                    }
+                } else if (b2[i] != 0x0) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function enc(bytes32 rbpri, bytes32 iv, uint256 mes, bytes pub)
+    public
+    view
+    returns(bytes, bool success)
+    {
+        bytes32 functionSelector = 0xa1ecea4b00000000000000000000000000000000000000000000000000000000;
+        address to = PRECOMPILE_CONTRACT_ADDR;
+        bytes memory cc = new bytes(6*32);
+        assembly {
+            let freePtr := mload(0x40)
+            mstore(freePtr, functionSelector)
+            mstore(add(freePtr, 4), rbpri)
+            mstore(add(freePtr, 36), iv)
+            mstore(add(freePtr, 68), mes)
+            mstore(add(freePtr, 100), mload(add(pub, 32)))
+            mstore(add(freePtr, 132), mload(add(pub, 64)))
+
+        // call ERC20 Token contract transfer function
+            success := staticcall(gas,to, freePtr, 164, freePtr, 1024)
+
+            let loopCnt := 0
+            loop:
+            jumpi(loopend, eq(loopCnt, 6))
+            mstore(add(cc,mul(add(loopCnt,1),32)),mload(add(freePtr,mul(loopCnt,32))))
+            loopCnt := add(loopCnt, 1)
+            jump(loop)
+            loopend:
+        }
+        return (cc,success);
     }
 }

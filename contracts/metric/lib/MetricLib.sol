@@ -134,7 +134,7 @@ library MetricLib {
         require(success, 'calPolyCommit fail');
 
         // right point s[i][i]*G
-        uint256 uintSij = CommonTool.bytes2uint(sij, 0);
+        uint256 uintSij = CommonTool.bytes2uint(sij, 0, uint16(sij.length));
         (xRight, yRight, success) = ICurve(curveAddr).mulG(uintSij);
 
         require(success, 'mulG fail');
@@ -239,17 +239,18 @@ library MetricLib {
         address curveAddr;
         curveAddr = IConfig(metricData.config).getCurve(uint8(sslshData.curveType));
 
-        (xRight, yRight, success) = ICurve(curveAddr).mulG(CommonTool.bytes2uint(sslshData.polyDataPln.polyData, 0));
+        uint16 ployDataLen = uint16(sslshData.polyDataPln.polyData.length);
+        (xRight, yRight, success) = ICurve(curveAddr).mulG(CommonTool.bytes2uint(sslshData.polyDataPln.polyData, 0,ployDataLen));
         require(success, 'mulG fail');
 
         // rpkShare + m * gpkShare
-        (mgpkX, mgpkY, success) = ICurve(curveAddr).mulPk(CommonTool.bytes2uint(sslshData.m, 0),
-            CommonTool.bytes2uint(sslshData.gpkShare, 0),
-            CommonTool.bytes2uint(sslshData.gpkShare, 32));
+        (mgpkX, mgpkY, success) = ICurve(curveAddr).mulPk(CommonTool.bytes2uint(sslshData.m, 0, uint16(sslshData.m.length)),
+            CommonTool.bytes2uint(sslshData.gpkShare, 0, 32),
+            CommonTool.bytes2uint(sslshData.gpkShare, 32, 32));
         require(success, 'mulPk fail');
 
-        (xLeft, yLeft, success) = ICurve(curveAddr).add(CommonTool.bytes2uint(sslshData.rpkShare, 0),
-            CommonTool.bytes2uint(sslshData.rpkShare, 32),
+        (xLeft, yLeft, success) = ICurve(curveAddr).add(CommonTool.bytes2uint(sslshData.rpkShare, 0, 32),
+            CommonTool.bytes2uint(sslshData.rpkShare, 32, 32),
             mgpkX,
             mgpkY);
         require(success, 'add fail');
