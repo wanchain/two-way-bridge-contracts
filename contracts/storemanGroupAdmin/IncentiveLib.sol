@@ -149,11 +149,6 @@ library IncentiveLib {
              group.status = StoremanType.GroupStatus.failed;
             return;
         }
-        // first, select the sm from white list.
-        // TODO: check all white list should stakein. 是不是可以去掉这个循环, 已经赋值过了., 
-        // for(uint m = 0; m<group.whiteCount;m++){
-        //     group.selectedNode[m] = group.whiteMap[m];
-        // }
         address[] memory members = new address[](group.memberCountDesign);
         uint groupDeposit = 0;
         uint groupDepositWeight = 0;
