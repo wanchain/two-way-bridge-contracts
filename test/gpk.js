@@ -28,6 +28,9 @@ contract('Gpk_UNITs', async () => {
     await web3.eth.personal.unlockAccount(owner, 'wanglu', 99999);
     await web3.eth.personal.unlockAccount(someone, 'wanglu', 99999);
 
+    // config
+    configProxy = await ConfigProxy.deployed();
+
     // smg
     let smgProxy = await StoremanGroupProxy.deployed();
     smgSc = await StoremanGroupDelegate.at(smgProxy.address);
@@ -38,9 +41,6 @@ contract('Gpk_UNITs', async () => {
     gpkDelegate = await GpkDelegate.deployed();
     gpkSc = await GpkDelegate.at(gpkProxy.address);
     console.log("Gpk contract address: %s", gpkProxy.address);
-
-    // config
-    configProxy = await ConfigProxy.deployed();
 
     groupId = await registerStart(smgSc);
     await stakeInPre(smgSc, groupId);
