@@ -175,8 +175,8 @@ library StoremanLib {
     function stakeIncentiveClaim(StoremanType.StoremanData storage data, address skPkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
-        StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
-        StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
+        // StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
+        // StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
 
         uint amount = sk.incentive[0];
         sk.incentive[0] = 0;
@@ -322,7 +322,7 @@ library StoremanLib {
         require(checkCanStakeOut(data, skPkAddr),"selecting");
 
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
-        require(sk.sender == msg.sender, "Only the sender can stakeOut");
+        require(dk.sender == msg.sender, "Only the sender can stakeOut");
 
         dk.quited = true;
         sk.delegateDeposit = sk.delegateDeposit.sub(dk.deposit.getLastValue());
@@ -354,8 +354,8 @@ library StoremanLib {
     function delegateIncentiveClaim(StoremanType.StoremanData storage data, address skPkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[skPkAddr];
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
-        StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
-        StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
+        // StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
+        // StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
 
         uint amount = dk.incentive[0];
@@ -402,6 +402,8 @@ library StoremanLib {
         require(sk.pkAddress == skPkAddr, "Candidate doesn't exist");
 
         StoremanType.Delegator storage pn = sk.partners[msg.sender];
+        require(pn.sender == msg.sender, "Only the sender can stakeOut");
+
         pn.quited = true;
         sk.partnerDeposit = sk.partnerDeposit.sub(pn.deposit.getLastValue());
     }
@@ -412,12 +414,12 @@ library StoremanLib {
         uint amount = pn.deposit.getLastValue();
         pn.deposit.clean();
 
-        address lastPnAddr = sk.partMap[sk.delegatorCount-1];
-        StoremanType.Delegator storage laskPn = sk.partners[lastPnAddr];
+        address lastPnAddr = sk.partMap[sk.partnerCount-1];
+        StoremanType.Delegator storage lastPn = sk.partners[lastPnAddr];
         sk.partMap[pn.index] = lastPnAddr;
-        laskPn.index = pn.index;
+        lastPn.index = pn.index;
 
-        sk.partnerCount--;
+        sk.partnerCount = sk.partnerCount.sub(1);
         delete sk.partMap[sk.partnerCount];
         delete sk.partners[msg.sender];
 
