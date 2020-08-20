@@ -1,30 +1,22 @@
-const lib = require("./lib");
 const utils = require("./utils");
 const Web3 = require('web3')
-const net = require('net')
-const ethutil = require("ethereumjs-util");
-
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
-const wanUtil = require('wanchain-util');
-const Tx = wanUtil.wanchainTx;
-
 
 let gpk = '0xd32f34db1cf3d028742081db75fb32b16d3e2ed2c0ea868d8c26c529933edbd573de0a0c462ac15411e6ff7b9d2d2123c5321f1c2590852406ae831ca2e016b0';
-const { registerStart,registerStart2,stakeInPre, web3url,g, toSelect, } = require('./basee.js');
+const { registerStart,stakeInPre, web3url,g, toSelect, } = require('./basee.js');
 const assert  = require("assert");
 /*
 奖励与时间相关．
 假定ｈｔｌｃ工作９０天，　提前１４天开放ｓｔａｋｉｎｇ．　开放１０天．　然后ｓｅｌｅｃｔ，　然后４天用于产生ｇｐｋ．
 */
-contract('TestSmg', async (accounts) => {
+contract('TestSmg', async () => {
     let  smg
     let groupId
     let groupInfo
     const posIncentive = "0x1c9c380"
-    let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();

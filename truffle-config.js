@@ -60,7 +60,7 @@ module.exports = {
     },
 
     // Useful for deploying to a public network.
-    gn: {
+    local: {
       provider: () => new HDWalletProvider(mnemonic, "http://localhost:8545",0,10),
       network_id: "*",
     },
@@ -76,7 +76,7 @@ module.exports = {
       coverage: {
           host: 'localhost',
           network_id: '*',
-          port: 6545,
+          port: 8545,
           gas: 0xfffffffffff,
           gasPrice: 0x01
       }
