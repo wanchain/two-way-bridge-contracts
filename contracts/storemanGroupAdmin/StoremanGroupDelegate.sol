@@ -485,7 +485,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         return IncentiveLib.getChainTypeCo(data, chain1, chain2);
     }
 
-    function getStoremanConf() public view returns(uint backupCount, uint standaloneWeight, uint DelegationMulti) {
+    function getStoremanConf() public view returns(uint backupCount, uint standaloneWeight, uint delegationMulti) {
         return (data.conf.backupCount, data.conf.standaloneWeight, data.conf.DelegationMulti);
     }
     function updateStoremanConf(uint backupCount, uint standaloneWeight, uint DelegationMulti) public onlyOwner {
