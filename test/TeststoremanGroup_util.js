@@ -2,11 +2,11 @@
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-
+const assert = require('chai').assert;
 const StoremanUtil = artifacts.require('StoremanUtil')
 
 
-const { registerStart } = require('./basee.js')
+const { registerStart, stakeInPre} = require('./basee.js')
 
 /*************************************
 staker: 1000 ~ 1000+100
@@ -25,6 +25,14 @@ contract('TestSmg', async () => {
         smgUtil = await StoremanUtil.deployed();
     })
 
+    it('registerStart', async ()=>{
+        groupId = await registerStart(smg);
+        console.log("groupId: ", groupId)
+    })
+
+    it('stakeInPre ', async ()=>{
+        await stakeInPre(smg, groupId)
+    })
 
     it('getDaybyTime ', async ()=>{
         let time = 1597891837;
@@ -35,6 +43,12 @@ contract('TestSmg', async () => {
         let d = 10000;
         let w = await smgUtil.calSkWeight(15000,d);
         console.log("weight is ", w.toString(10))
+        assert(w, 15000, "calSkWeight failed")
+    })
+
+    it('getSelectedStoreman ', async ()=>{
+        let w = await smg.getSelectedStoreman(groupId);
+        console.log("getSelectedStoreman is ", w)
     })
 
 })

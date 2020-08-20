@@ -119,7 +119,7 @@ library IncentiveLib {
             uint idx = 0;
             for (; idx < group.selectedCount; idx++) {
                 address addr = group.selectedNode[idx];
-                if (addr == sk.pkAddress) {
+                if (addr == sk.wkAddr) {
                     break;
                 }
             }

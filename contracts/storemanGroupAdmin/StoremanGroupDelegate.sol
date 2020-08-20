@@ -256,7 +256,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     //     ){
     //         StoremanType.Candidate storage sk = data.candidates[wkAddr];
 
-    //         return (sk.sender,   sk.PK, sk.pkAddress, sk.quited,
+    //         return (sk.sender,   sk.PK, sk.wkAddr, sk.quited,
     //             sk.deposit.getLastValue(), sk.delegateDeposit,
     //             sk.incentive[0],  sk.delegatorCount, sk.groupId, sk.nextGroupId, sk.incentivedDay, sk.slashedCount
     //         );
@@ -382,7 +382,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         si.sender = sk.sender;
         si.enodeID = sk.enodeID;
         si.PK = sk.PK;
-        si.pkAddress = sk.pkAddress;
+        si.wkAddr = sk.wkAddr;
         si.isWhite = sk.isWhite;
         si.quited = sk.quited;
         si.delegatorCount = sk.delegatorCount;
