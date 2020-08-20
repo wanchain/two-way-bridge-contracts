@@ -84,11 +84,11 @@ contract GpkDelegate is GpkStorage, Owned {
         external
         onlyOwner
     {
-        require(smgAddr != address(0), "Invalid smg");
-        smg = smgAddr;
-
         require(confAddr != address(0), "Invalid conf");
         config = confAddr;
+              
+        require(smgAddr != address(0), "Invalid smg");
+        smg = smgAddr;
     }
 
     /// @notice                           function for set period

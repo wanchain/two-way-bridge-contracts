@@ -1,9 +1,9 @@
 const Web3 = require('web3')
+const ConfigProxy = artifacts.require('ConfigProxy');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
-const Encrypt = artifacts.require('Encrypt');
 const { registerStart, stakeInPre, toSelect } = require('./base.js')
 
 const web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'));
@@ -15,11 +15,11 @@ const ADDRESS_0 = '0x0000000000000000000000000000000000000000';
 let groupId = '';
 
 // contract
-let smgSc, gpkProxy, gpkDelegate, gpkSc;
+let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
 
-contract('Gpk_UNITs', async ([a1, a2]) => {
+contract('Gpk_UNITs', async () => {
   let owner = '0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e';
-  let someone = (a1 == owner)? a2 : a1;
+  let someone = '0x82ef7751a5460bc10f731558f0741705ba972f4e';
   console.log("onwer address: %s", owner);
   console.log("someone address: %s", someone);
 
@@ -39,7 +39,8 @@ contract('Gpk_UNITs', async ([a1, a2]) => {
     gpkSc = await GpkDelegate.at(gpkProxy.address);
     console.log("Gpk contract address: %s", gpkProxy.address);
 
-    encryptSc = await Encrypt.deployed();
+    // config
+    configProxy = await ConfigProxy.deployed();
 
     groupId = await registerStart(smgSc);
     await stakeInPre(smgSc, groupId);
@@ -94,7 +95,7 @@ contract('Gpk_UNITs', async ([a1, a2]) => {
   it('[GpkDelegate_setDependence] should fail: not owner', async () => {
     let result = {};
     try {
-      await gpkSc.setDependence(smgSc.address, {from: someone});
+      await gpkSc.setDependence(configProxy.address, smgSc.address, {from: someone});
     } catch (e) {
       result = e;
     }
@@ -104,7 +105,7 @@ contract('Gpk_UNITs', async ([a1, a2]) => {
   it('[GpkDelegate_setDependence] should fail: invalid smg address', async () => {
     let result = {};
     try {
-      await gpkSc.setDependence(ADDRESS_0, {from: owner});
+      await gpkSc.setDependence(configProxy.address, ADDRESS_0, {from: owner});
     } catch (e) {
       result = e;
     }
@@ -114,7 +115,7 @@ contract('Gpk_UNITs', async ([a1, a2]) => {
   it('[GpkDelegate_setDependence] should success', async () => {
     let result = {};
     try {
-      await gpkSc.setDependence(smgSc.address, {from: owner});
+      await gpkSc.setDependence(configProxy.address, smgSc.address, {from: owner});
     } catch (e) {
       result = e;
     }
