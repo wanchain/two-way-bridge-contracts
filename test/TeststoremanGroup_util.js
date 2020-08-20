@@ -45,7 +45,14 @@ contract('TestSmg', async () => {
         console.log("weight is ", w.toString(10))
         assert(w, 15000, "calSkWeight failed")
     })
+    it('getSelectedSmNumber ', async ()=>{
+        let w = await smg.getSelectedSmNumber(groupId);
+        console.log("getSelectedSmNumber is ", w)
+        assert(w, 4, "getSelectedSmNumber failed")
+    })
 
+
+    
     it('getSelectedStoreman ', async ()=>{
         let w = await smg.getSelectedStoreman(groupId);
         console.log("getSelectedStoreman is ", w)

@@ -202,7 +202,7 @@ library StoremanLib {
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
         for (uint i = group.whiteCount; i < group.selectedCount; i++) {
             StoremanType.Candidate storage cmpNode = data.candidates[group.selectedNode[i]];
-            if (cmpNode.pkAddress == skAddr) { // keep self position, do not sort
+            if (cmpNode.wkAddr == skAddr) { // keep self position, do not sort
                 return;
             }
             uint cmpWeight = StoremanUtil.calSkWeight(data.conf.standaloneWeight, cmpNode.deposit.getLastValue().add(cmpNode.partnerDeposit)).add(cmpNode.delegateDeposit);
