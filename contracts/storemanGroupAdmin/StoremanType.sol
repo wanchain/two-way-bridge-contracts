@@ -20,7 +20,7 @@ library StoremanType {
         address sender;
         bytes enodeID;
         bytes PK;
-        address  pkAddress;
+        address  wkAddr;
         bool isWhite;
         bool quited;
         uint delegatorCount;
@@ -102,7 +102,7 @@ library StoremanType {
         address sender;
         bytes enodeID;
         bytes PK;
-        address  pkAddress;
+        address  wkAddr;
         bool isWhite;
         bool quited;
         uint delegatorCount;
