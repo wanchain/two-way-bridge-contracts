@@ -6,7 +6,6 @@ const StoremanUtil = artifacts.require('StoremanUtil');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 
-const EnhancementLib = artifacts.require('EnhancementLib');
 const CommonTool = artifacts.require('CommonTool');
 const MetricProxy = artifacts.require('MetricProxy');
 const MetricDelegate = artifacts.require('MetricDelegate');
@@ -15,8 +14,7 @@ const FakeSmg = artifacts.require('FakeSmg');
 
 const Secp256k1Curve = artifacts.require('Secp256k1Curve');
 const Bn256Curve = artifacts.require('Bn256Curve');
-const Encrypt = artifacts.require('Encrypt');
-const DataConvert = artifacts.require('DataConvert');
+
 const GpkLib = artifacts.require('GpkLib');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
