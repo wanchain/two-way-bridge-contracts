@@ -79,7 +79,7 @@ async function stakeInPre(smg, groupId, nodeStartIndex = 0, nodeCount = stakerCo
         let sf = utils.getAddressFromInt(i+nodeStartIndex+1000)
         let sw = utils.getAddressFromInt(i+nodeStartIndex+2000)
         let en = utils.getAddressFromInt(i+nodeStartIndex+3000)
-        let stakingValue = 2000;
+        let stakingValue = web3.toBigNumber(web3.toWin(2000))
         let sdata =  smg.contract.methods.stakeIn(groupId, sw.pk,en.pk).encodeABI()
         //console.log("sdata:",sdata)
         let rawTx = {
@@ -89,7 +89,7 @@ async function stakeInPre(smg, groupId, nodeStartIndex = 0, nodeCount = stakerCo
             gas: gGasLimit,
             to: smg.contract._address,
             chainId: 6,
-            value: 2000,
+            value: stakingValue,
             data: sdata,
         }
         //console.log("rawTx:", rawTx)
