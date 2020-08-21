@@ -1,49 +1,44 @@
+
 const utils = require("./utils");
-
-const pu = require('promisefy-util')
-
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
-
-const { registerStart,stakeInPre, g,  } = require('./basee.js')
-
-/*************************************
-staker: 1000 ~ 1000+100
-delegator: stakerId*100 ~ stakerID*100+1000
- ****************************************/
-
-
-
+const { registerStart,stakeInPre, setupNetwork, g} = require('./basee.js');
+const { assert } = require("assert");
 
 contract('TestSmg', async () => {
 
     let  smg
     let groupId
-    let id
+    let tester;
     let wk1 = utils.getAddressFromInt(10000)
-
-    let tester = g.sfs[8];
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
         smg = await StoremanGroupDelegate.at(smgProxy.address)
-
+        await setupNetwork();
+        tester = g.sfs[7];
+        console.log("g.sfs:", g.sfs)
     })
 
 
     it('registerStart_1 ', async ()=>{
         groupId = await registerStart(smg);
-        id = groupId
     })
 
     it('stakeInPre ', async ()=>{
         await stakeInPre(smg, groupId)
     })
 
+
+
+
+
+
+
     it('stakeIn', async ()=>{
-        let stakingValue = 50000
+       let stakingValue = 50000
         let tx = await smg.stakeIn(groupId, wk1.pk, wk1.pk,{value:stakingValue, from:tester});
 
         let candidate  = await smg.getStoremanInfo(wk1.addr)
@@ -55,7 +50,7 @@ contract('TestSmg', async () => {
     it('test stakeIn2', async()=>{
         let stakingValue = 1000;
         let wk = utils.getAddressFromInt(10001)
-        let tx =  await smg.stakeIn(id, wk.pk, wk.pk, {value:stakingValue, from:tester})
+        let tx =  await smg.stakeIn(groupId, wk.pk, wk.pk, {value:stakingValue, from:tester})
         
         console.log("txhash stakeIn:", tx.tx)
         let candidate  = await smg.getStoremanInfo(wk.addr)
@@ -118,13 +113,13 @@ contract('TestSmg', async () => {
   
     it.skip('test toSelect', async ()=>{
         await pu.sleep(10000)
-        let tx = await smg.toSelect(id)
+        let tx = await smg.toSelect(groupId)
         console.log("toSelect tx:", tx.tx)
         await utils.waitReceipt(tx.tx)
-        console.log("group:",await smg.getStoremanGroupInfo(id))
+        console.log("group:",await smg.getStoremanGroupInfo(groupId))
 
         
-        let count = await smg.getSelectedSmNumber(id)
+        let count = await smg.getSelectedSmNumber(groupId)
         console.log("selected count :", count)
         assert.equal(count, memberCountDesign)
     })
