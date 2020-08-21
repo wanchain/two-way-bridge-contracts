@@ -1,6 +1,3 @@
-const utils = require("./utils");
-const Web3 = require('web3')
-let web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.179:7654'))
 const ethutil = require("ethereumjs-util");
 
 
@@ -26,4 +23,4 @@ function f3() {
 }
 
 
-f3();
+getAddressFromInt(1);

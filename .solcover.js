@@ -7,13 +7,16 @@ module.exports = {
         'components/Owned.sol',
         'components/Proxy.sol',
         'Migrations.sol',
+	'PosLib.sol',
         'test/TestQuotaHelper.sol',
         'test/TestBasicStorage.sol',
         'test/TestOrigTokenCreator.sol',
         'test/TestStoremanAdmin.sol',
         'test/TestIOwned.sol'
     ],
+    mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
     providerOptions: {
+	mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
         default_balance_ether: 100000000,
         total_accounts: 100,
         hardfork: "byzantium",

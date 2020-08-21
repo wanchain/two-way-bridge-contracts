@@ -3,7 +3,7 @@ const utils = require("./utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
-const { registerStart,stakeInPre, } = require('./basee.js');
+const { registerStart,stakeInPre, setupNetwork} = require('./basee.js');
 const { assert } = require("chai");
 
 contract('TestSmg', async () => {
@@ -14,6 +14,7 @@ contract('TestSmg', async () => {
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
         smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
     })
 
 
@@ -35,7 +36,7 @@ contract('TestSmg', async () => {
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:49999});
         console.log("tx:", tx);
     })
-    it('T3', async ()=>{ // stakeIn 49999
+    it.skip('T3', async ()=>{ // stakeIn 49999
         let wk = utils.getAddressFromInt(10001)
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:49999});
         console.log("tx:", tx);
@@ -62,7 +63,7 @@ contract('TestSmg', async () => {
         console.log("tx:", tx);
         assert.equal(sk.wkAddr.toLowerCase(), wk.addr.toLowerCase(), "stakein 57000 failed");
     })
-    it('T7', async ()=>{ 
+    it.skip('T7', async ()=>{ 
         let wk = utils.getAddressFromInt(10006)
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:56000});
         let sk = await smg.getSelectedSmInfo(groupId, 3);
