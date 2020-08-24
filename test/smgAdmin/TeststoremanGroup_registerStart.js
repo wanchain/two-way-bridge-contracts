@@ -6,7 +6,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 
 
-const { registerStart,setupNetwork } = require('./basee.js')
+const { registerStart,setupNetwork } = require('../basee.js')
 
 /*************************************
 staker: 1000 ~ 1000+100
@@ -26,7 +26,7 @@ contract('TestSmg', async () => {
     })
 
 
-    it('registerStart_1 ', async ()=>{
+    it('T1 ', async ()=>{
         let groupId = await registerStart(smg);
         console.log("groupId: ", groupId)
     })

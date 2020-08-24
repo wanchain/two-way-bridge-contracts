@@ -1,4 +1,4 @@
-const utils = require("./utils");
+const utils = require("../utils");
 const Web3 = require('web3')
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')

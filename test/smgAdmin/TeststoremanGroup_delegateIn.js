@@ -1,5 +1,5 @@
-const a  = require("./lib");
-const utils = require("./utils");
+const a  = require("../lib");
+const utils = require("../utils");
 
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
@@ -8,7 +8,7 @@ const assert = require('chai').assert;
 
 
 
-const { registerStart,stakeInPre, setupNetwork } = require('./basee.js');
+const { registerStart,stakeInPre, setupNetwork } = require('../basee.js');
 
 
 
