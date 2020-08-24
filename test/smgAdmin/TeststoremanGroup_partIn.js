@@ -1,10 +1,10 @@
-const utils = require("./utils");
+const utils = require("../utils");
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 
-const { registerStart,stakeInPre, g, setupNetwork } = require('./basee.js')
+const { registerStart,stakeInPre, g, setupNetwork } = require('../basee.js')
 
 
 contract('TestSmg', async () => {

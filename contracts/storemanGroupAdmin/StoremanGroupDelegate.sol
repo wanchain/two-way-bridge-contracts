@@ -247,18 +247,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.status = status;
     }
 
-    // //
-    // function getStoremanInfo(address wkAddr) external view  returns(address sender,bytes PK, address wkAddr,
-    //     bool quited, uint  deposit, uint delegateDeposit,
-    //     uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId, uint incentivedDay, uint slashedCount
-    //     ){
-    //         StoremanType.Candidate storage sk = data.candidates[wkAddr];
-
-    //         return (sk.sender,   sk.PK, sk.wkAddr, sk.quited,
-    //             sk.deposit.getLastValue(), sk.delegateDeposit,
-    //             sk.incentive[0],  sk.delegatorCount, sk.groupId, sk.nextGroupId, sk.incentivedDay, sk.slashedCount
-    //         );
-    // }
 
     function getStoremanIncentive(address wkAddr, uint day) public view returns(uint incentive) {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
@@ -422,32 +410,24 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         info.gpk2 = smg.gpk2;
         info.delegateFee = smg.delegateFee;
     }
-    // function getStoremanGroupInfo(bytes32 id)
+
+    // function getStoremanGroupConfig(bytes32 id)
     //     external
     //     view
-    //     returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint whiteCount,  uint memberCount,  uint startTime, uint endTime)
+    //     returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime, uint delegateFee)
     // {
     //     StoremanType.StoremanGroup storage smg = data.groups[id];
-    //     return (smg.groupId, smg.status, smg.deposit.getLastValue(), smg.whiteCount, smg.selectedCount,  smg.workTime, smg.workTime+smg.totalTime);
+    //     return (smg.groupId, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
+    //      smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime, smg.delegateFee);
     // }
-
-    function getStoremanGroupConfig(bytes32 id)
-        external
-        view
-        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime, uint delegateFee)
-    {
-        StoremanType.StoremanGroup storage smg = data.groups[id];
-        return (smg.groupId, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
-         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime, smg.delegateFee);
-    }
-    function getStoremanGroupTime(bytes32 id)
-        external
-        view
-        returns(bytes32 groupId,  uint registerTime, uint registerDuration,  uint startTime, uint endTime)
-    {
-        StoremanType.StoremanGroup storage smg = data.groups[id];
-        return (smg.groupId, smg.registerTime, smg.registerDuration, smg.workTime, smg.workTime+smg.totalTime);
-    }
+    // function getStoremanGroupTime(bytes32 id)
+    //     external
+    //     view
+    //     returns(bytes32 groupId,  uint registerTime, uint registerDuration,  uint startTime, uint endTime)
+    // {
+    //     StoremanType.StoremanGroup storage smg = data.groups[id];
+    //     return (smg.groupId, smg.registerTime, smg.registerDuration, smg.workTime, smg.workTime+smg.totalTime);
+    // }
 
 
     function checkGroupIncentive(bytes32 id, uint day) public view returns ( uint) {
