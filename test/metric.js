@@ -26,16 +26,18 @@ contract('Test Metric', async (accounts) => {
         try {
             await testInit();
             // get the instance
-            let deploy,configProxy;
+            let deploy,configProxy,fakeSmg;
             deploy = await MetricProxy.deployed();
             metricInstProxy = await MetricDelegate.at(deploy.address);
 
             metricInst = await MetricDelegate.deployed();
 
-            deploy = await FakeSmg.deployed();
+            fakeSmg = await FakeSmg.deployed();
 
             configProxy = await ConfigProxy.deployed();
-            metricInst.setDependence(configProxy.address, deploy.address);
+            metricInst.setDependence(configProxy.address, fakeSmg.address);
+
+            await fakeSmg.setLeader(accounts[0]);
 
             posLib = await PosLib.deployed();
             let epochId = await posLib.getEpochId(Math.floor(Date.now() / 1000));

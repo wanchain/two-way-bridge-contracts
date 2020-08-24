@@ -1,7 +1,7 @@
 'use strict'
 
 const assert = require('assert')
-const PosLib = artifacts.require('PosLib')
+const PosLib = artifacts.require('test/PosLib')
 
 
 

@@ -39,7 +39,7 @@ contract MetricStorage is BasicStorage {
      * EVENTS
      *
      **/
-    event SMSlshLogger(bytes32 indexed grpId, bytes32 indexed hashX, uint8 indexed smIndex, MetricTypes.SlshReason slshReason);
+    event SMSlshLogger(bytes32 indexed groupId, bytes32 indexed hashX, uint8 indexed smIndex, MetricTypes.SlshReason slshReason);
 
     /************************************************************
      **

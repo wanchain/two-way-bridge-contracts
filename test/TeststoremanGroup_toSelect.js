@@ -7,7 +7,7 @@ const assert = require('chai').assert;
 
 
 
-const { registerStart,stakeInPre, g, toSelect, } = require('./basee.js')
+const { registerStart,stakeInPre, g, toSelect, setupNetwork} = require('./basee.js')
 
 contract('StoremanGroupDelegate', async () => {
  
@@ -22,7 +22,7 @@ contract('StoremanGroupDelegate', async () => {
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
         smg = await StoremanGroupDelegate.at(smgProxy.address)
-
+        await setupNetwork();
     })
 
 
