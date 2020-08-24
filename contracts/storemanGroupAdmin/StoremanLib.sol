@@ -277,10 +277,12 @@ library StoremanLib {
     function inheritNode(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) public
     {
         StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
-        data.oldAddr.length = 0;
+        address[] memory oldAddr =  new address[](oldGroup.memberCountDesign);
+        uint oldCount = 0;
+        uint k = 0;
 
         if(wkAddrs.length == 0){ // If there are no new white nodes, use the old.
-            for(uint k = 0; k<oldGroup.whiteCountAll; k++){
+            for(k = 0; k<oldGroup.whiteCountAll; k++){
                 address wa = oldGroup.whiteMap[k];
                 StoremanType.Candidate storage skw = data.candidates[wa];
                 if((!skw.quited) && skw.slashedCount==0) {  // a node was slashed, will not transfer to next.
@@ -291,39 +293,44 @@ library StoremanLib {
                         group.selectedNode[group.whiteCount] = wa;
                         group.whiteCount++;
                     }
-                    data.oldAddr.push(wa);
+                    oldAddr[oldCount] = wa;
+                    oldCount++;
                     skw.nextGroupId = group.groupId;
                 }
             }
         } else {   // If there are new white nodes, use the new.
             group.whiteCount = wkAddrs.length - data.conf.backupCount;
             group.whiteCountAll = wkAddrs.length;
-            for(uint i = 0; i < wkAddrs.length; i++){
-                group.whiteMap[i] = wkAddrs[i];
-                group.whiteWk[wkAddrs[i]] = senders[i];
-                if(i < group.whiteCount) {
-                    group.selectedNode[i] = wkAddrs[i];
+            for(k = 0; k < wkAddrs.length; k++){
+                group.whiteMap[k] = wkAddrs[k];
+                group.whiteWk[wkAddrs[k]] = senders[k];
+                if(k < group.whiteCount) {
+                    group.selectedNode[k] = wkAddrs[k];
                 }
             }
         }
         group.selectedCount = group.whiteCount;
         group.memberCount =group.selectedCount;
-        // 如果没有白名单, 用旧的.
-        // 如果有, 完整替换.　新白名单不能与旧的有重叠．
-        // 3个替换4个也可以.
+        // if there is no whitelist use the old one.
+        // if has, replace all the white list. 
         if (preGroupId != bytes32(0x00)) {
-            for (uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
-                address skAddr = oldGroup.selectedNode[m];
+            for (k = oldGroup.whiteCount; k<oldGroup.memberCountDesign; k++) {
+                address skAddr = oldGroup.selectedNode[k];
                 StoremanType.Candidate storage sk = data.candidates[skAddr];
                 if(sk.groupId == preGroupId && sk.quited == false && sk.slashedCount < data.conf.maxSlashedCount) {
                     group.selectedNode[group.selectedCount] = sk.wkAddr;
                     sk.nextGroupId = group.groupId;
                     group.selectedCount++;
                     group.memberCount++;
-                    data.oldAddr.push(sk.wkAddr);
+                    oldAddr[oldCount] = sk.wkAddr;
+                    oldCount++;
                 }
             }
-            emit storemanTransferEvent(group.groupId, preGroupId, data.oldAddr);
+            address[] memory oldArray = new address[](oldCount);
+            for(k = 0; k<oldCount; k++){
+                oldArray[k] = oldAddr[k];
+            }
+            emit storemanTransferEvent(group.groupId, preGroupId, oldArray);
         }
     }
     function delegateOut(StoremanType.StoremanData storage data, address wkAddr) external {
