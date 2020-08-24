@@ -1,5 +1,6 @@
 const ethutil = require("ethereumjs-util");
-
+const Web3 = require('web3')
+const fs = require('fs')
 
 function getAddressFromInt(i){
         let b = Buffer.alloc(32)
@@ -22,5 +23,15 @@ function f3() {
 
 }
 
+async function smg() {
+        let scAddr = "0x24D8Ae2089Cee8Bde68c59f2d957e2D881981748"
+        let wkAddr = "0xf3af99d9e7cc732968ccc04595ba6c0b72621a64"
+        let web3 = new Web3(new Web3.providers.HttpProvider("http:/192.168.1.179:7654"))
+        let abiString = fs.readFileSync('helpscript/abi.StoremanGroupDelegate.json', 'utf-8');
+        let abi = JSON.parse(abiString);
+        let smg = new web3.eth.Contract(abi, scAddr)
+        let smgInfo = await smg.methods.getStoremanInfo(wkAddr).call()
+        console.log("smgInfo:", smgInfo)
+}
 
-getAddressFromInt(1);
+smg();
