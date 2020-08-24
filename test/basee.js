@@ -25,6 +25,7 @@ async function setupNetwork() {
         leaderPk = "0xb6ee04e3c64e31578dd746d1024429179d83122fb926be19bd33aaeea55afeb6b10c6ff525eec7ca9a4e9a252a4c74b222c1273d4719d96e0f2c5199c42bc84b"
         sfs = accounts.slice(2);
         g.sfs = sfs;
+        g.leader = leader;
         g.owner = owner;
     }else{
         console.log("The accounts are: ", web3.eth.accounts);
@@ -42,6 +43,7 @@ async function setupNetwork() {
             "0xf45aedd5299d16440f67efe3fb1e1d1dcf358222",
         ]
         g.sfs = sfs;
+        g.leader = leader;
         g.owner = owner;
     }
 }

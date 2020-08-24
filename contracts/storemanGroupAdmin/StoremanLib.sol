@@ -101,9 +101,9 @@ library StoremanLib {
         return true;
     }
     function stakeOut(StoremanType.StoremanData storage data,  address wkAddr) external {
+        StoremanType.Candidate storage sk = data.candidates[wkAddr];
         require(sk.sender == msg.sender, "Only the sender can stakeOut");
         require(checkCanStakeOut(data, wkAddr),"selecting");
-        StoremanType.Candidate storage sk = data.candidates[wkAddr];
         sk.quited = true;
         emit stakeOutEvent(wkAddr, msg.sender);
     }
