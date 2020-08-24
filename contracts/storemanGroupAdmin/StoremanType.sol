@@ -92,7 +92,6 @@ library StoremanType {
         uint contribution;
         uint totalReward;
         StoremanGlobalConf conf;
-        address[] oldAddr;
         
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;
         mapping(address=>StoremanType.Candidate) candidates;
