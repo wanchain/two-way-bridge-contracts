@@ -6,7 +6,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 
 let gpk = '0xd32f34db1cf3d028742081db75fb32b16d3e2ed2c0ea868d8c26c529933edbd573de0a0c462ac15411e6ff7b9d2d2123c5321f1c2590852406ae831ca2e016b0';
-const { registerStart,stakeInPre, web3url,g, toSelect, setupNetwork} = require('./basee.js');
+const { registerStart,stakeInPre, web3url,g, toSelect, setupNetwork} = require('../basee.js');
 const assert  = require("assert");
 /*
 奖励与时间相关．
