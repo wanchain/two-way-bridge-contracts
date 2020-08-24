@@ -39,4 +39,5 @@ interface ICurve {
     view
     returns (uint256 x, uint256 y, bool success);
 
+    function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes pk) public view returns(bool);
 }

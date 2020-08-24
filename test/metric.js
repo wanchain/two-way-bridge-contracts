@@ -1,8 +1,12 @@
 const Proxy = artifacts.require('Proxy');
 const MetricProxy = artifacts.require('MetricProxy');
 const MetricDelegate = artifacts.require('MetricDelegate');
+
 const FakeSmg = artifacts.require('FakeSmg');
-const PosLib = artifacts.require('PosLib');
+const FakeSkCurve = artifacts.require('FakeSkCurve');
+
+//const PosLib = artifacts.require('PosLib');
+const PosLib = artifacts.require('test/PosLib');
 
 const ConfigProxy = artifacts.require('ConfigProxy');
 const ConfigDelegate = artifacts.require('ConfigDelegate');
@@ -15,6 +19,7 @@ let metricInstProxy;
 let metricInst;
 let posLib;
 
+const lib = require('./lib.js');
 
 
 function getXHash(){
@@ -26,15 +31,20 @@ contract('Test Metric', async (accounts) => {
         try {
             await testInit();
             // get the instance
-            let deploy,configProxy,fakeSmg;
+            let deploy,configProxy,fakeSmg,fakeSkCurve,fakeBnCurve;
             deploy = await MetricProxy.deployed();
             metricInstProxy = await MetricDelegate.at(deploy.address);
 
             metricInst = await MetricDelegate.deployed();
 
+
             fakeSmg = await FakeSmg.deployed();
+            fakeSkCurve= await FakeSkCurve.deployed();
 
             configProxy = await ConfigProxy.deployed();
+            let confDlg = await ConfigDelegate.at(configProxy.address);
+            await confDlg.setCurve([0x01],[fakeSkCurve.address]);
+
             metricInst.setDependence(configProxy.address, fakeSmg.address);
 
             await fakeSmg.setLeader(accounts[0]);
@@ -92,8 +102,139 @@ contract('Test Metric', async (accounts) => {
         }
     });
 
-    // ===========================================================R proof==============
+    // ===========================================================R proof ==============
+    // requrie error
+    // "invalid receiver index"
+    it('write proof...   -> wrRSlsh(sk256-R-invalid receiver index.)', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x01"
+                },
+                sndrIndex: 0x00,
+                rcvrIndex: 0x10,
+                becauseSndr: 0x01,
+                curveType: 0x00,
+            };
+            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
 
+        } catch (err) {
+            //assert.fail(err.toString());
+            lib.assertInclude(err.message,"invalid receiver index","No invalid receiver index")
+        }
+    });
+    // "invalid send index"
+    it('write proof...   -> wrRSlsh(sk256-R-invalid send index.)', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x01"
+                },
+                sndrIndex: 0x10,
+                rcvrIndex: 0x02,
+                becauseSndr: 0x01,
+                curveType: 0x00,
+            };
+            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+
+        } catch (err) {
+            //assert.fail(err.toString());
+            lib.assertInclude(err.message,"invalid send index","No invalid send index")
+        }
+    });
+    //"polyCM is empty"
+    it('write proof...   -> wrRSlsh(sk256-R-invalid send index.)', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x01"
+                },
+                sndrIndex: 0x00,
+                rcvrIndex: 0x02,
+                becauseSndr: 0x01,
+                curveType: 0x00,
+            };
+            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+
+        } catch (err) {
+            //assert.fail(err.toString());
+            lib.assertInclude(err.message,"polyCM is empty","No polyCM is empty")
+        }
+    });
+    //"polyData is empty"
+    it('write proof...   -> wrRSlsh(sk256-R-invalid send index.)', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x01"
+                },
+                sndrIndex: 0x00,
+                rcvrIndex: 0x02,
+                becauseSndr: 0x01,
+                curveType: 0x00,
+            };
+            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+
+        } catch (err) {
+            //assert.fail(err.toString());
+            lib.assertInclude(err.message,"polyData is empty","No polyData is empty")
+        }
+    });
+    // "R because sender is not true"
+    it('write proof...   -> wrRSlsh(sk256-R-sig-error)', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x01"
+                },
+                sndrIndex: 0x00,
+                rcvrIndex: 0x02,
+                becauseSndr: 0x00,
+                curveType: 0x00,
+            };
+            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+
+        } catch (err) {
+            //assert.fail(err.toString());
+            lib.assertInclude(err.message,"R because sender is not true","No R because sender is not true")
+        }
+    });
+    // Fail to write R slsh.  checkSig=ture checkContent=true
     it('write proof...   -> wrRSlsh(sk256-R-sig-error)', async () => {
         try {
             let rslshData = {
@@ -116,6 +257,108 @@ contract('Test Metric', async (accounts) => {
 
         } catch (err) {
             assert.fail(err.toString());
+        }
+    });
+    // success to write R slsh.  checkSig=false checkContent=true
+    it('write proof...   -> wrRSlsh(sk256-R-sig-error)', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x01"
+                },
+                sndrIndex: 0x00,
+                rcvrIndex: 0x02,
+                becauseSndr: 0x01,
+                curveType: 0x00,
+            };
+            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
+
+    // success to write R slsh.  checkSig=true checkContent=false
+    it('write proof...   -> wrRSlsh(sk256-R-sig-error)', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x01"
+                },
+                sndrIndex: 0x00,
+                rcvrIndex: 0x02,
+                becauseSndr: 0x01,
+                curveType: 0x00,
+            };
+            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
+
+    // success to write R slsh.  checkSig=false checkContent=false
+    it('write proof...   -> wrRSlsh(sk256-R-sig-error)', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x01"
+                },
+                sndrIndex: 0x00,
+                rcvrIndex: 0x02,
+                becauseSndr: 0x01,
+                curveType: 0x00,
+            };
+            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
+    // "Not leader"
+    it('write proof...   -> wrRSlsh(sk256-R-sig-error)', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x01"
+                },
+                sndrIndex: 0x00,
+                rcvrIndex: 0x02,
+                becauseSndr: 0x01,
+                curveType: 0x00,
+            };
+            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData, {from: accounts[1]});
+
+        } catch (err) {
+            lib.assertInclude(err.message,"Not leader", "should error not leader");
         }
     });
 

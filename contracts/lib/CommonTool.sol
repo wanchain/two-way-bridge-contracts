@@ -32,33 +32,6 @@ library CommonTool {
 
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
 
-    function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes pk) public view returns(bool) {
-        bytes32 functionSelector = 0x861731d500000000000000000000000000000000000000000000000000000000;
-        address to = PRECOMPILE_CONTRACT_ADDR;
-        uint256 result;
-        bool success;
-        assembly {
-            let freePtr := mload(0x40)
-
-            mstore(freePtr, functionSelector)
-            mstore(add(freePtr, 4), hash)
-            mstore(add(freePtr, 36), r)
-            mstore(add(freePtr, 68), s)
-            mstore(add(freePtr, 100), mload(add(pk,32)))
-            mstore(add(freePtr, 132), mload(add(pk,64)))
-
-            success := staticcall(gas, to, freePtr,164, freePtr, 32)
-
-            result := mload(freePtr)
-        }
-
-        if (success) {
-            return result == 1;
-        } else {
-            return false;
-        }
-    }
-
     function bytes2uint(bytes source, uint16 offset, uint16 length)
     public
     pure
