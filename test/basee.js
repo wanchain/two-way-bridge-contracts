@@ -25,6 +25,7 @@ async function setupNetwork() {
         leaderPk = "0xb6ee04e3c64e31578dd746d1024429179d83122fb926be19bd33aaeea55afeb6b10c6ff525eec7ca9a4e9a252a4c74b222c1273d4719d96e0f2c5199c42bc84b"
         sfs = accounts.slice(2);
         g.sfs = sfs;
+        g.owner = owner;
     }else{
         console.log("The accounts are: ", web3.eth.accounts);
         web3url = "http://192.168.1.58:7654"
@@ -41,7 +42,7 @@ async function setupNetwork() {
             "0xf45aedd5299d16440f67efe3fb1e1d1dcf358222",
         ]
         g.sfs = sfs;
-
+        g.owner = owner;
     }
 }
 
@@ -172,9 +173,9 @@ async function toSelect(smg, groupId){
     let count = await smg.getSelectedSmNumber(groupId)
     console.log("slected sm number: %d", count);  
     for (let i = 0; i<count; i++) {
-        let skAddr = await smg.getSelectedSmInfo(groupId, i)
+        let ski = await smg.getSelectedSmInfo(groupId, i)
         //console.log("selected node %d: %O", i, skAddr);
-        let sk = await smg.getStoremanInfo(skAddr[0]);
+        let sk = await smg.getStoremanInfo(ski.wkAddr);
         //console.log("storeman %d info: %O", i, sk);
     }    
 }
