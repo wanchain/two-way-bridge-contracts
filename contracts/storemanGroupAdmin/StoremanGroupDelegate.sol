@@ -238,7 +238,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         address addr = group.selectedNode[index];
         StoremanType.Candidate storage sk = data.candidates[addr];
-        return (addr, sk.PK,sk.enodeID);
+        return (sk.wkAddr, sk.PK, sk.enodeID);
     }
 
     // To change  group status for unexpected reason.
