@@ -14,6 +14,7 @@ const MetricProxy = artifacts.require('MetricProxy');
 const MetricDelegate = artifacts.require('MetricDelegate');
 const MetricLib = artifacts.require('MetricLib');
 const FakeSmg = artifacts.require('FakeSmg');
+const FakeSkCurve = artifacts.require('FakeSkCurve');
 
 const Secp256k1Curve = artifacts.require('Secp256k1Curve');
 const Bn256Curve = artifacts.require('Bn256Curve');
@@ -157,7 +158,10 @@ module.exports = async function (deployer, network) {
     let fakeQuotaInst = await fakeQuota.deployed();
 
     //deploy metric
-    await deployer.deploy(FakeSmg);
+    if(network != 'testnet' && network != 'mainnet') {
+        await deployer.deploy(FakeSmg);
+        await deployer.deploy(FakeSkCurve);
+    }
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, MetricLib);
     await deployer.link(PosLib, MetricLib);

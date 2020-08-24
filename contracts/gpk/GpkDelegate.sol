@@ -79,6 +79,7 @@ contract GpkDelegate is GpkStorage, Owned {
     */
 
     /// @notice                           function for set smg contract address
+    /// @param confAddr                   config contract address
     /// @param smgAddr                    smg contract address
     function setDependence(address confAddr, address smgAddr)
         external

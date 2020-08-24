@@ -103,7 +103,7 @@ library MetricLib {
         h = sha256(rslshData.polyDataPln.polyData);
         // build senderpk
         senderPk = getPkBytesByInx(metricData, grpId, rslshData.sndrIndex);
-        return CommonTool.checkSig(h, rslshData.polyDataPln.polyDataR, rslshData.polyDataPln.polyDataS, senderPk);
+        return ckSig(metricData,h, rslshData.polyDataPln.polyDataR, rslshData.polyDataPln.polyDataS, senderPk);
     }
     /// @notice                         check content of proof in R stage
     /// @param metricData               self parameter for lib function
@@ -146,7 +146,8 @@ library MetricLib {
     pure
     returns (bool)
     {
-        return !bSig || !bContent;
+        //return !bSig || !bContent;
+        return !bContent;
     }
     /// @notice                         function for write slash of S stage
     /// @param metricData               self parameter for lib function
@@ -213,8 +214,18 @@ library MetricLib {
         h = sha256(sslshData.polyDataPln.polyData);
         // build senderpk
         senderPk = getPkBytesByInx(metricData, grpId, sslshData.sndrIndex);
-        return CommonTool.checkSig(h, sslshData.polyDataPln.polyDataR, sslshData.polyDataPln.polyDataS, senderPk);
+
+        return ckSig(metricData, h, sslshData.polyDataPln.polyDataR, sslshData.polyDataPln.polyDataS, senderPk);
     }
+
+    function ckSig(MetricTypes.MetricStorageData storage metricData, bytes32 hash, bytes32 r, bytes32 s, bytes pk)
+    internal
+    returns (bool){
+        address curveAddr;
+        curveAddr = IConfig(metricData.config).getCurve(uint8(CommonTool.CurveType.SK));
+        return ICurve(curveAddr).checkSig(hash, r, s, pk);
+    }
+
     /// @notice                         check content of proof in S stage
     /// @param metricData               self parameter for lib function
     /// @param grpId                    group id
