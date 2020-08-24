@@ -79,13 +79,14 @@ contract GpkDelegate is GpkStorage, Owned {
     */
 
     /// @notice                           function for set smg contract address
+    /// @param cfgAddr                    cfg contract address
     /// @param smgAddr                    smg contract address
-    function setDependence(address confAddr, address smgAddr)
+    function setDependence(address cfgAddr, address smgAddr)
         external
         onlyOwner
     {
-        require(confAddr != address(0), "Invalid conf");
-        config = confAddr;
+        require(cfgAddr != address(0), "Invalid cfg");
+        cfg = cfgAddr;
               
         require(smgAddr != address(0), "Invalid smg");
         smg = smgAddr;
@@ -121,7 +122,7 @@ contract GpkDelegate is GpkStorage, Owned {
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         if (group.smNumber == 0) {
             // init group when the first node submit to start every round
-            GpkLib.initGroup(groupId, group, config, smg);
+            GpkLib.initGroup(groupId, group, cfg, smg);
         }
         if (round.statusTime == 0) {
             round.statusTime = now;

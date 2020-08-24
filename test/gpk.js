@@ -102,6 +102,16 @@ contract('Gpk_UNITs', async () => {
     assert.equal(result.reason, 'Not owner');
   })
 
+  it('[GpkDelegate_setDependence] should fail: invalid cfg address', async () => {
+    let result = {};
+    try {
+      await gpkSc.setDependence(ADDRESS_0, smgSc.address, {from: owner});
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid cfg');
+  })
+
   it('[GpkDelegate_setDependence] should fail: invalid smg address', async () => {
     let result = {};
     try {

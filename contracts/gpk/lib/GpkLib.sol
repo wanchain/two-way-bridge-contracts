@@ -84,7 +84,7 @@ library GpkLib {
     /// @param group                      storeman group
     /// @param config                     group config
     /// @param smg                        storeman group contract address
-    function initGroup(bytes32 groupId, GpkTypes.Group storage group, address config, address smg)
+    function initGroup(bytes32 groupId, GpkTypes.Group storage group, address cfg, address smg)
         public
     {
         // init period
@@ -101,8 +101,8 @@ library GpkLib {
         (,status,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
         require(status == uint8(StoremanType.GroupStatus.selected), "Invalid status");
 
-        group.roundMap[group.round][0].curve = IConfig(config).getCurve(uint8(curve1));
-        group.roundMap[group.round][1].curve = IConfig(config).getCurve(uint8(curve2));
+        group.roundMap[group.round][0].curve = IConfig(cfg).getCurve(uint8(curve1));
+        group.roundMap[group.round][1].curve = IConfig(cfg).getCurve(uint8(curve2));
 
         group.groupId = groupId;
 
