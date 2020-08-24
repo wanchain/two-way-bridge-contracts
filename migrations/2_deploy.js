@@ -1,5 +1,4 @@
 
-const optimist = require("optimist")
 
 //const QuotaLib = artifacts.require('QuotaLib');
 let PosLib = artifacts.require('PosLib');
@@ -119,13 +118,9 @@ module.exports = async function (deployer, network) {
 
     // ***********osm*****************
     // storeman group admin sc
-    console.log("xuuuuuuuuuuuuuuuuuuuuuuuuu:", optimist.argv.network)
     if(network == 'local' || network == 'coverage') {
-        console.log("=================================================")
         PosLib = artifacts.require('test/PosLib');
-    } else {
-        console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-    }
+    } 
         
     await deployer.deploy(PosLib);
     await deployer.link(PosLib,StoremanUtil);

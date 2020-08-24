@@ -23,17 +23,8 @@ async function setupNetwork() {
         let accounts = await web3.eth.getAccounts()
         console.log("The accounts are: ", accounts);
         leaderPk = "0xb6ee04e3c64e31578dd746d1024429179d83122fb926be19bd33aaeea55afeb6b10c6ff525eec7ca9a4e9a252a4c74b222c1273d4719d96e0f2c5199c42bc84b"
-        sfs = [
-            "0xfaeB08EF75458BbC511Bca1CAf4d7f5DF08EA834", 
-            "0x5AA169d911f99b8CefebE7E39c7276533af84BC2", 
-            "0x21965990CaA1046C93eC17f0545464Ab938eef31", 
-            "0x998E09775147E880c3A70b68c91B5b13a3b65FDe", 
-            "0xcaa937e534E1CC1e465ce434E61Ef6833C77f45B", 
-            "0xF7c464575C20602FA53faf815f5e7ccAd646f03E", 
-            "0xbf59C743A13cff1fF5280B7AfD94fB10A626aF6D", 
-            "0xe1517f2C9ad21a3826cFA791F78e8AcBDFFFA804", 
-        ]
-        g.sfs = accounts.slice(2);
+        sfs = accounts.slice(2);
+        g.sfs = sfs;
     }else{
         console.log("The accounts are: ", web3.eth.accounts);
         web3url = "http://192.168.1.58:7654"
