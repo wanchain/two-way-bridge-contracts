@@ -129,7 +129,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     /// @param threshold	        the minimum signature.
     /// @param minStakeIn	        the minimum stake when stakeIn
     /// @param delegateFee	        how many fee the node receive from delegation.
-    function updateGroupConfig(bytes32 groupId, uint memberCountdesign, uint threshold, uint minStakeIn, uint delegateFee)
+    /// @param minDelegateIn	    the minimum stake when minDelegateIn
+    function updateGroupConfig(bytes32 groupId, uint memberCountdesign, uint threshold, uint minStakeIn, uint delegateFee, uint minDelegateIn)
         external
         onlyOwner
     {
@@ -137,6 +138,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         group.memberCountDesign = memberCountdesign;
         group.threshold = threshold;
         group.minStakeIn = minStakeIn;
+        group.minDelegateIn = minDelegateIn;
         group.delegateFee = delegateFee;
     }
 
@@ -405,6 +407,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         info.curve2 = smg.curve2;
         info.tickedCount = smg.tickedCount;
         info.minStakeIn = smg.minStakeIn;
+        info.minDelegateIn = smg.minDelegateIn;
         info.crossIncoming = smg.crossIncoming;
         info.gpk1 = smg.gpk1;
         info.gpk2 = smg.gpk2;
