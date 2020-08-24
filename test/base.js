@@ -69,7 +69,7 @@ async function registerStart(smg, inheritGroupId = '', wlStartIndex = 0){
     //await smg.updateGroupChain(id, 0, 1, curve1, curve2);
     await smg.updateGroupChain(id, wanChainId, ethChainId, curve1, curve2);
     console.log("group curves: [%d, %d]", curve1, curve2);
-    await smg.updateGroupConfig(id, 4, 3, 1, 100);
+    await smg.updateGroupConfig(id, 4, 3, 1, 100,100);
     return group.groupId
 }
 

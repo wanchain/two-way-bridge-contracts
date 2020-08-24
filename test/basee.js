@@ -91,7 +91,7 @@ async function registerStart(smg){
     assert.equal(group.memberCount, 1)
     console.log("group:", group)
 
-    await smg.updateGroupConfig(id, 4, 3, 50000, 100);
+    await smg.updateGroupConfig(id, 4, 3, 50000, 100,100);
     let curve1 = 0, curve2 = 1;
     await smg.updateGroupChain(id, 0, 1, curve1, curve2);
     console.log("group curves: [%d, %d]", curve1, curve2);
@@ -117,7 +117,7 @@ async function registerStart2(smg, preGroupId=utils.stringTobytes32(""),wks=[],s
     let curve1 = 0, curve2 = 1;
     await smg.updateGroupChain(id, 0, 1, curve1, curve2);
     console.log("group curves: [%d, %d]", curve1, curve2);
-    await smg.updateGroupConfig(id, 4, 3, 1, 100);
+    await smg.updateGroupConfig(id, 4, 3, 50000, 100,100);
     return group.groupId
 }
 
