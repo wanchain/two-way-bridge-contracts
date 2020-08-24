@@ -62,6 +62,9 @@ module.exports = {
     // Useful for deploying to a public network.
     local: {
       provider: () => new HDWalletProvider(mnemonic, "http://localhost:8545",0,10),
+      port:8545,
+      mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
+      host:"127.0.0.1",
       network_id: "*",
     },
     // testnet: {
@@ -73,13 +76,14 @@ module.exports = {
     //   skipDryRun: true
     // },
 
-      coverage: {
-          host: 'localhost',
-          network_id: '*',
-          port: 8545,
-          gas: 0xfffffffffff,
-          gasPrice: 0x01
-      }
+    coverage: {
+        host: '127.0.0.1',
+        mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
+        network_id: '*',
+        port: 8545,
+        gas: 0xfffffffffff,
+        gasPrice: 0x01
+    }
 
   },
   // Set default mocha options here, use special reporters etc.

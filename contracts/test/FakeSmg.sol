@@ -37,6 +37,7 @@ contract FakeSmg {
     address constant ADD_0 = 0x0000000000000000000000000000000000000000;
     address constant ADD_LEADER= 0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e;
 
+    address public leaderAdd;
     // groupId=>index=>pk
     mapping(bytes32 => mapping(uint8 => bytes)) mapSmgInfo;
 
@@ -70,7 +71,7 @@ contract FakeSmg {
     }
 
     function getSelectedSmInfo(bytes32 grpId, uint index) external returns (address txAddress, bytes pk, bytes enodeId){
-        (txAddress,pk,enodeId) = (ADD_LEADER, mapSmgInfo[grpId][uint8(index)], fromHex(EnodeIdStr));
+        (txAddress,pk,enodeId) = (leaderAdd, mapSmgInfo[grpId][uint8(index)], fromHex(EnodeIdStr));
     }
 
 
@@ -100,6 +101,9 @@ contract FakeSmg {
     }
 
 
+    function setLeader(address leader) external{
+        leaderAdd  = leader;
+    }
 
     function bytesToBytes32(bytes b, uint offset) internal pure returns (bytes32) {
         bytes32 out;

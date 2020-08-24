@@ -24,7 +24,7 @@ library IncentiveLib {
 
     function getGroupIncentive(StoremanType.StoremanGroup storage group, uint day,StoremanType.StoremanData storage data) private view returns (uint) {
         uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
-        return PosLib.getMinIncentive(group.deposit.getLastValue(),day).mul(chainTypeCo).div(10000); // use safeMath. TODO
+        return PosLib.getMinIncentive(group.deposit.getLastValue(),day).mul(chainTypeCo).div(10000);
     }
 
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) private returns (uint) {
@@ -72,7 +72,7 @@ library IncentiveLib {
         endDay = StoremanUtil.getDaybyTime(endDay);
         return (fromDay, endDay);
     }
-    // TOTO 确认一下,排序也带权重.
+
     function incentiveNode(uint day, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group,StoremanType.StoremanData storage data) public {
         sk.incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getValueById(day)));
         sk.incentive[0] =  sk.incentive[0].add(sk.incentive[day]);
@@ -105,11 +105,12 @@ library IncentiveLib {
         StoremanType.Candidate storage sk = data.candidates[wkAddr];
         StoremanType.StoremanGroup storage group = data.groups[sk.groupId];
         uint fromDay; uint endDay;
+        uint reservedGas = 2000000;
         (fromDay, endDay) = calFromEndDay(sk, group);
 
         uint day;
-        for (day = fromDay; day < endDay; day++) {// TODO  50000-> 改成变量.
-            if (msg.gas < 5000000 ) { // check the gas. because calculate delegator incentive need more gas left.
+        for (day = fromDay; day < endDay; day++) {
+            if (msg.gas < reservedGas ) { // check the gas. because calculate delegator incentive need more gas left.
                 emit incentiveEvent(group.groupId, wkAddr, false, fromDay, day);
                 return;
             }
@@ -129,7 +130,7 @@ library IncentiveLib {
                     incentiveNode(day, sk,group,data);
                 }
                 while (sk.incentivedDelegator != sk.delegatorCount) {
-                    if (msg.gas < 5000000 ) {
+                    if (msg.gas < reservedGas ) {
                         emit incentiveEvent(group.groupId, wkAddr, false, fromDay, 0);
                         return;
                     }

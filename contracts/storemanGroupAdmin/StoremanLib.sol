@@ -274,7 +274,6 @@ library StoremanLib {
         updateGroup(data, sk, nextGroup, r);
         emit delegateInEvent(wkAddr, msg.sender,msg.value);
     }
-    // TODO 白名单备份节点，　不允许退出．如何退出
     function inheritNode(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage group,bytes32 preGroupId, address[] wkAddrs, address[] senders) public
     {
         StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
@@ -312,7 +311,6 @@ library StoremanLib {
         // 如果没有白名单, 用旧的.
         // 如果有, 完整替换.　新白名单不能与旧的有重叠．
         // 3个替换4个也可以.
-        // TODO handle the old group member. set the group deposit.
         if (preGroupId != bytes32(0x00)) {
             for (uint m = oldGroup.whiteCount; m<oldGroup.memberCountDesign; m++) {
                 address skAddr = oldGroup.selectedNode[m];

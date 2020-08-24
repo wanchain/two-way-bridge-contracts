@@ -43,9 +43,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     using Deposit for Deposit.Records;
 
     event StoremanGroupRegisterStartEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, uint workStart, uint workDuration, uint registerDuration);
-    event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
     event StoremanGroupDismissedEvent(bytes32 indexed groupId, uint dismissTime);
-    event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
     event updateGroupChainEvent(bytes32 indexed groupId, uint256 indexed chain1, uint256 indexed chain2, uint256 curve1, uint256 curve2);
     event storemanGroupContributeEvent(address indexed sender, uint indexed value);
 

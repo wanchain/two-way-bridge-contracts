@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "truffle/Assert.sol";
 import "truffle/DeployedAddresses.sol";
-import "../contracts/oracle/IOracle.sol";
+import "../contracts/interfaces/IOracle.sol";
 import "../contracts/oracle/OracleDelegate.sol";
 import "../contracts/oracle/OracleProxy.sol";
 
