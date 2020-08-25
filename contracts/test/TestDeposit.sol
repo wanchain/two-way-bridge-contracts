@@ -22,6 +22,9 @@ contract TestDeposit {
   function getTotal() public view returns (uint){
     return g.total;
   }
+  function getLastValue() public view returns(uint){
+    return g.getLastValue();
+  }
   function get(uint id) public view returns(uint value){
     uint  a = g.getValueById(id);
     return  a;

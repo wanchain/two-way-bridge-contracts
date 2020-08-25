@@ -36,6 +36,17 @@ contract('TestDeposit',async()=>{
 			let v = await td.get(2);
 			console.log("v is ", v);
 			assert.equal(v,700, "add 1 failed");
+
+			v = await td.get(1);
+			console.log("v is ", v);
+			assert.equal(v,300, "add 1 failed");
+
+			v = await td.get(200);
+			console.log("v is ", v);
+			assert.equal(v,700, "add 1 failed");
+
+			v = await td.getLastValue();
+			assert.equal(v, 700, "getLastValue failed.")
 			let total = await td.getTotal();
 			assert.equal(total, 2, "total is wrong")
 		})
@@ -50,5 +61,8 @@ contract('TestDeposit',async()=>{
 			v = await td.get(2);
 			console.log("v is ", v);
 			assert.equal(v,0, "clean failed");
+
+			v = await td.getLastValue();
+			assert.equal(v, 0, "getLastValue failed.")
 		})
 })
