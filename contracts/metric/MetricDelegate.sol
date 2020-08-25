@@ -207,7 +207,7 @@ contract MetricDelegate is MetricStorage, Halt {
         bool success;
         uint8 smIndex;
         (success, smIndex) = metricData.writeSSlsh(grpId, hashX, sslshData, getSMCount(grpId));
-        require(success, 'Fail to writeSSlsh');
+        require(success, 'Fail to write S Slsh');
 
         metricData.recordSmSlash(grpId, smIndex);
 

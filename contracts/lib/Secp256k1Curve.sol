@@ -100,6 +100,9 @@ library Secp256k1Curve {
         }
 
     }
+    function equalPt (uint256 xLeft, uint256 yLeft,uint256 xRight, uint256 yRight) public view returns(bool){
+        return xLeft == xRight && yLeft == yRight;
+    }
 
     function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes pk) public view returns(bool) {
         bytes32 functionSelector = 0x861731d500000000000000000000000000000000000000000000000000000000;

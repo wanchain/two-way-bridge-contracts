@@ -14,6 +14,7 @@ const MetricDelegate = artifacts.require('MetricDelegate');
 const MetricLib = artifacts.require('MetricLib');
 const FakeSmg = artifacts.require('FakeSmg');
 const FakeSkCurve = artifacts.require('FakeSkCurve');
+const FakeBnCurve = artifacts.require('FakeBnCurve');
 
 const Secp256k1Curve = artifacts.require('Secp256k1Curve');
 const Bn256Curve = artifacts.require('Bn256Curve');
@@ -156,6 +157,7 @@ module.exports = async function (deployer, network) {
     if(network != 'testnet' && network != 'mainnet') {
         await deployer.deploy(FakeSmg);
         await deployer.deploy(FakeSkCurve);
+        await deployer.deploy(FakeBnCurve);
     }
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, MetricLib);

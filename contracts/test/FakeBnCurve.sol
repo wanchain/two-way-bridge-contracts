@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-contract  FakeSkCurve {
+contract  FakeBnCurve {
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
     bool public checkSigResult;
     bool public addResult;
