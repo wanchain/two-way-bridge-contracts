@@ -61,10 +61,11 @@ module.exports = {
 
     // Useful for deploying to a public network.
     local: {
-      provider: () => new HDWalletProvider(mnemonic, "http://localhost:8545",0,10),
+      //provider: () => new HDWalletProvider(mnemonic, "http://localhost:8545",0,10),
       port:8545,
       mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
       host:"127.0.0.1",
+      from:"0xEf73Eaa714dC9a58B0990c40a01F4C0573599959",
       network_id: "*",
     },
     // testnet: {

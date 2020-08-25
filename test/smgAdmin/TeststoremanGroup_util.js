@@ -6,7 +6,7 @@ const assert = require('chai').assert;
 const StoremanUtil = artifacts.require('StoremanUtil')
 
 
-const { registerStart, stakeInPre, setupNetwork} = require('./basee.js')
+const { registerStart, stakeInPre, setupNetwork} = require('../basee.js')
 
 /*************************************
 staker: 1000 ~ 1000+100

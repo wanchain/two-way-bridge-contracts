@@ -1,9 +1,9 @@
-const utils = require("./utils");
+const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 
-const { registerStart,registerStart2,stakeInPre, sendIncentive,g, toSelect,setupNetwork } = require('./basee.js')
+const { registerStart,registerStart2,stakeInPre, sendIncentive,g, toSelect,setupNetwork } = require('../basee.js')
 
 contract('StoremanGroupDelegate', async () => {
  
@@ -18,7 +18,7 @@ contract('StoremanGroupDelegate', async () => {
     })
 
 
-    it('registerStart', async ()=>{
+    it('T1 registerStart', async ()=>{
         groupId = await registerStart(smg);
         console.log("groupId: ", groupId)
     })
@@ -26,7 +26,7 @@ contract('StoremanGroupDelegate', async () => {
     it('stakeInPre ', async ()=>{
         await stakeInPre(smg, groupId)
     })
-    it('test select', async ()=>{
+    it('T2 test select', async ()=>{
         await toSelect(smg, groupId);
         let count = await smg.getSelectedSmNumber(groupId)
         console.log("slected sm number: %d", count);  
@@ -36,7 +36,7 @@ contract('StoremanGroupDelegate', async () => {
             console.log("storeman %d info: %s, %s, %s", i, sk.pkAddress, sk.groupId, sk.nextGroupId);
         } 
     })
-    it('registerStart2', async ()=>{
+    it('T3 registerStart2', async ()=>{
         groupId2 = await registerStart2(smg, groupId, [], []);
         console.log("groupId2: ", groupId2)
         let sk = await smg.getSelectedSmInfo(groupId2, 1);
@@ -73,8 +73,5 @@ contract('StoremanGroupDelegate', async () => {
             console.log("storeman %d info: %s, %s, %s", i, sk.pkAddress, sk.groupId, sk.nextGroupId);
         }  
     }) 
-    it('T7 incentive', async ()=>{
-       let tx =  await sendIncentive(smg)
-       console.log("incen: %O", tx)
-    })
+
 })

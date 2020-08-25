@@ -101,9 +101,9 @@ library StoremanLib {
         return true;
     }
     function stakeOut(StoremanType.StoremanData storage data,  address wkAddr) external {
+        StoremanType.Candidate storage sk = data.candidates[wkAddr];
         require(sk.sender == msg.sender, "Only the sender can stakeOut");
         require(checkCanStakeOut(data, wkAddr),"selecting");
-        StoremanType.Candidate storage sk = data.candidates[wkAddr];
         sk.quited = true;
         emit stakeOutEvent(wkAddr, msg.sender);
     }
@@ -256,6 +256,7 @@ library StoremanLib {
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
+        require(msg.value >= group.minDelegateIn, "Too small value");
 
         require(sk.delegateDeposit.add(msg.value) <= sk.deposit.getLastValue().mul(data.conf.DelegationMulti), "Too many delegation");
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
