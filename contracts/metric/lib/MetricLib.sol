@@ -57,7 +57,9 @@ library MetricLib {
         require(rslshData.becauseSndr, "R because sender is not true");
 
         uint8 smIndex;
-        smIndex = rslshData.becauseSndr ? rslshData.sndrIndex : rslshData.rcvrIndex;
+        //smIndex = rslshData.becauseSndr ? rslshData.sndrIndex : rslshData.rcvrIndex;
+
+        smIndex = rslshData.sndrIndex;
 
         metricData.mapRSlsh[grpId][hashX][smIndex] = rslshData;
 
@@ -138,7 +140,7 @@ library MetricLib {
         (xRight, yRight, success) = ICurve(curveAddr).mulG(uintSij);
 
         require(success, 'mulG fail');
-        return xLeft == xRight && yLeft == yRight;
+        return ICurve(curveAddr).equalPt(xLeft,yLeft,xRight,yRight);
     }
 
     function getChkResult(bool bSig, bool bContent)
@@ -146,8 +148,7 @@ library MetricLib {
     pure
     returns (bool)
     {
-        //return !bSig || !bContent;
-        return !bContent;
+        return !bSig || !bContent;
     }
     /// @notice                         function for write slash of S stage
     /// @param metricData               self parameter for lib function
@@ -172,7 +173,8 @@ library MetricLib {
         require(sslshData.becauseSndr, "S because sender is not true");
 
         uint8 smIndex;
-        smIndex = sslshData.becauseSndr ? sslshData.sndrIndex : sslshData.rcvrIndex;
+        //smIndex = sslshData.becauseSndr ? sslshData.sndrIndex : sslshData.rcvrIndex;
+        smIndex =  sslshData.sndrIndex;
         metricData.mapSSlsh[grpId][hashX][smIndex] = sslshData;
 
         if (checkSProof(metricData, grpId, hashX, smIndex)) {
@@ -265,9 +267,7 @@ library MetricLib {
             mgpkX,
             mgpkY);
         require(success, 'add fail');
-
-        return xLeft == xRight && yLeft == yRight;
-
+        return ICurve(curveAddr).equalPt(xLeft,yLeft,yLeft,yRight);
     }
     /// @notice                         get public key bytes by stor eman index
     /// @param metricData               self parameter for lib function
