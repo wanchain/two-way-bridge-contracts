@@ -207,6 +207,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function delegateIncentiveClaim(address wkAddr) external {
 
         return StoremanLib.delegateIncentiveClaim(data, wkAddr);
+
     }
     function partIn(address wkAddr)
         external
@@ -414,15 +415,15 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         info.delegateFee = smg.delegateFee;
     }
 
-    // function getStoremanGroupConfig(bytes32 id)
-    //     external
-    //     view
-    //     returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime, uint delegateFee)
-    // {
-    //     StoremanType.StoremanGroup storage smg = data.groups[id];
-    //     return (smg.groupId, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
-    //      smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime, smg.delegateFee);
-    // }
+    function getStoremanGroupConfig(bytes32 id)
+        external
+        view
+        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime, uint delegateFee)
+    {
+        StoremanType.StoremanGroup storage smg = data.groups[id];
+        return (smg.groupId, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
+         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime, smg.delegateFee);
+    }
     // function getStoremanGroupTime(bytes32 id)
     //     external
     //     view
