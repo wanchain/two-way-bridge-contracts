@@ -28,8 +28,6 @@ contract('TestSmg', async () => {
     it('registerStart_1 ', async ()=>{
         groupId = await registerStart(smg);
         let group = await smg.getStoremanGroupInfo(groupId);
-        let gt = await smg.getStoremanGroupTime(groupId);
-        Object.assign(group, gt);
         console.log("group:", group);
         groupInfo = group;
         groupInfo.startTime = Number(groupInfo.startTime)
@@ -47,7 +45,7 @@ contract('TestSmg', async () => {
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
         console.log("tx:", tx);
 
-        await smg.incentiveCandidator(g.leader)
+        let incentiveCandidatorReceipt = await smg.incentiveCandidator(g.leader)
     })
 
 
