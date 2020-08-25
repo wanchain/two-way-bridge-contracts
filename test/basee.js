@@ -25,6 +25,8 @@ async function setupNetwork() {
         leaderPk = "0xb6ee04e3c64e31578dd746d1024429179d83122fb926be19bd33aaeea55afeb6b10c6ff525eec7ca9a4e9a252a4c74b222c1273d4719d96e0f2c5199c42bc84b"
         sfs = accounts.slice(2);
         g.sfs = sfs;
+        g.leader = leader;
+        g.owner = owner;
     }else{
         console.log("The accounts are: ", web3.eth.accounts);
         web3url = "http://192.168.1.58:7654"
@@ -41,7 +43,8 @@ async function setupNetwork() {
             "0xf45aedd5299d16440f67efe3fb1e1d1dcf358222",
         ]
         g.sfs = sfs;
-
+        g.leader = leader;
+        g.owner = owner;
     }
 }
 
@@ -87,14 +90,15 @@ async function registerStart(smg){
     assert.equal(group.deposit, 0)
     assert.equal(group.memberCount, 1)
     console.log("group:", group)
+
+    await smg.updateGroupConfig(id, 4, 3, 50000, 100,100);
     let curve1 = 0, curve2 = 1;
     await smg.updateGroupChain(id, 0, 1, curve1, curve2);
     console.log("group curves: [%d, %d]", curve1, curve2);
-    await smg.updateGroupConfig(id, 4, 3, 1, 100);
     return group.groupId
 }
 
-async function registerStart2(smg, preGroupId=utils.stringTobytes32(""),wks,srs){
+async function registerStart2(smg, preGroupId=utils.stringTobytes32(""),wks=[],srs=[]){
     await smg.updateStoremanConf(3,15000,10)
     let now = parseInt(Date.now()/1000);
     let id = utils.stringTobytes32(now.toString())
@@ -113,7 +117,7 @@ async function registerStart2(smg, preGroupId=utils.stringTobytes32(""),wks,srs)
     let curve1 = 0, curve2 = 1;
     await smg.updateGroupChain(id, 0, 1, curve1, curve2);
     console.log("group curves: [%d, %d]", curve1, curve2);
-    await smg.updateGroupConfig(id, 4, 3, 1, 100);
+    await smg.updateGroupConfig(id, 4, 3, 50000, 100,100);
     return group.groupId
 }
 
@@ -171,9 +175,9 @@ async function toSelect(smg, groupId){
     let count = await smg.getSelectedSmNumber(groupId)
     console.log("slected sm number: %d", count);  
     for (let i = 0; i<count; i++) {
-        let skAddr = await smg.getSelectedSmInfo(groupId, i)
+        let ski = await smg.getSelectedSmInfo(groupId, i)
         //console.log("selected node %d: %O", i, skAddr);
-        let sk = await smg.getStoremanInfo(skAddr[0]);
+        let sk = await smg.getStoremanInfo(ski.wkAddr);
         //console.log("storeman %d info: %O", i, sk);
     }    
 }

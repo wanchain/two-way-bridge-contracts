@@ -1,4 +1,4 @@
-const utils = require("./utils");
+const utils = require("../utils");
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
@@ -12,12 +12,13 @@ const sk = [{
 },{
     addr:"0x0beba6154f527596b4b8bb45326131a90c5c6140", pk:"0x28b11382ec24a15d5fa7ae77f9e9531ddc0f83a8ab2faab942db77411e17fdcf8160b0fa132933f1afa613eb19e73cef5d869e06ca58ad7787ddc5f7c11c369b",
 }]
-const { registerStart,stakeInPre, setupNetwork} = require('./base.js')
+const { registerStart,stakeInPre, setupNetwork} = require('../basee.js')
 
 contract('StoremanGroupDelegate', async () => {
  
     let  smg
     let groupId
+    let wk = utils.getAddressFromInt(10000)
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
@@ -35,19 +36,14 @@ contract('StoremanGroupDelegate', async () => {
         await stakeInPre(smg, groupId)
     })
     
-    it('test stakeIn', async()=>{
-        for(let i=0; i<sk.length; i++){
-            let stakingValue = 1 + i*100000000;
-            let deFee = 5;
-            let tx =  await smg.stakeIn(id, sk[i].pk,sk[i].pk,deFee, {value:stakingValue})
-            console.log("txhash stakeIn:", tx.tx)
-            await utils.waitReceipt(tx.tx)
-            let candidate  = await smg.getStoremanInfo(wAddr)
-            console.log("candidate:", candidate)
-            assert.equal(candidate.sender.toLowerCase(), tester)
-            assert.equal(candidate.pkAddress.toLowerCase(), wAddr)
-            assert.equal(candidate.deposit, stakingValue)
-        }
+    it('stakeIn', async ()=>{
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
+        console.log("tx:", tx);
+    })
+    it('delegateIn', async ()=>{
+        let tx = await smg.delegateIn(wk.addr,{value:120});
+        assert.equal(tx.receipt.logs[0].event, 'delegateInEvent')
+        console.log("tx:", tx);
     })
 
 
@@ -93,23 +89,12 @@ contract('StoremanGroupDelegate', async () => {
         
     })
 
-    it('[StoremanGroupDelegate_delegateOut] should fail: selecting', async () => {
-        let result = {};
-        try {
-            let txhash = await smg.delegateOut(wAddr, {from: tester})
-            console.log("delegateOut txhash:", txhash);
-        } catch (e) {
-            result = e;
-            console.log("result:", result);
-        }
-        assert.equal(result.reason, 'selecting time, can\'t quit');
-    })
+
   
     it('test toSelect', async ()=>{
         await pu.sleep(10000)
         let tx = await smg.toSelect(id,{from: tester})
         console.log("toSelect tx:", tx.tx)
-        await utils.waitReceipt(tx.tx)
         console.log("group:",await smg.getStoremanGroupInfo(id))
 
         

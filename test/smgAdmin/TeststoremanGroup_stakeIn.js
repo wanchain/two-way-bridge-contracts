@@ -1,9 +1,9 @@
-const utils = require("./utils");
+const utils = require("../utils");
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-
-const { registerStart,stakeInPre, setupNetwork} = require('./basee.js');
+const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
+const { registerStart,stakeInPre, setupNetwork} = require('../basee.js');
 const { assert } = require("chai");
 
 contract('TestSmg', async () => {
@@ -33,13 +33,15 @@ contract('TestSmg', async () => {
     })
     it('T2', async ()=>{ // stakeIn 49999
         let wk = utils.getAddressFromInt(10002)
-        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:49999});
-        console.log("tx:", tx);
+        let tx = smg.stakeIn(groupId, wk.pk, wk.pk,{value:49999});
+
+        await expectRevert(tx, "Too small value in stake");
     })
-    it.skip('T3', async ()=>{ // stakeIn 49999
+    it('T3', async ()=>{
         let wk = utils.getAddressFromInt(10001)
-        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:49999});
-        console.log("tx:", tx);
+        let tx = smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
+
+        await expectRevert(tx, "Candidate has existed");       
     })
 
     it('T4', async ()=>{ 
@@ -63,8 +65,8 @@ contract('TestSmg', async () => {
         console.log("tx:", tx);
         assert.equal(sk.wkAddr.toLowerCase(), wk.addr.toLowerCase(), "stakein 57000 failed");
     })
-    it.skip('T7', async ()=>{ 
-        let wk = utils.getAddressFromInt(10006)
+    it('T7', async ()=>{ 
+        let wk = utils.getAddressFromInt(10007)
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:56000});
         let sk = await smg.getSelectedSmInfo(groupId, 3);
         console.log("tx:", tx);

@@ -1,4 +1,4 @@
-const utils = require("./utils");
+const utils = require("../utils");
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
@@ -7,7 +7,7 @@ const assert = require('chai').assert;
 
 
 
-const { registerStart,stakeInPre, g, toSelect, setupNetwork} = require('./basee.js')
+const { registerStart,stakeInPre, g, toSelect, setupNetwork} = require('../basee.js')
 
 contract('StoremanGroupDelegate', async () => {
  
