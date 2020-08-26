@@ -81,7 +81,7 @@ module.exports = {
         host: '127.0.0.1',
         mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
         network_id: '*',
-        port: 8545,
+        port: 5545,
         gas: 0xfffffffffff,
         gasPrice: 0x01
     }
