@@ -22,6 +22,7 @@ const GpkLib = artifacts.require('GpkLib');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
 const Deposit = artifacts.require('Deposit');
+const TestDeposit = artifacts.require('TestDeposit');
 const StoremanLib = artifacts.require('StoremanLib');
 const IncentiveLib = artifacts.require('IncentiveLib');
 
@@ -131,6 +132,7 @@ module.exports = async function (deployer, network) {
     await deployer.link(StoremanUtil,IncentiveLib);
     await deployer.link(PosLib,StoremanGroupDelegate);
     await deployer.deploy(Deposit);
+    await deployer.deploy(TestDeposit);
     await deployer.link(Deposit,StoremanGroupDelegate);
     await deployer.deploy(StoremanLib);
     await deployer.link(StoremanLib,StoremanGroupDelegate);
