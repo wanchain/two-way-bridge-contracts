@@ -182,6 +182,7 @@ library MetricLib {
             return (true, smIndex);
         } else {
             delete metricData.mapSSlsh[grpId][hashX][smIndex];
+
             return (false, smIndex);
         }
     }
