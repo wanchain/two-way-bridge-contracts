@@ -34,12 +34,11 @@ library IncentiveLib {
             return groupIncentive.mul(weight).div(groupWeight);
         }
     }
-    function checkMetric(IMetric metric, StoremanType.StoremanGroup storage group, uint day, uint index) private returns (bool) {
+    function checkMetric(IMetric metric, bytes32 groupId, uint day, uint index) private returns (bool) {
         if(index == 0) {
             return true; // leader is always OK.
         }
-
-        uint[] memory counts = metric.getPrdInctMetric(group.groupId, day, day);
+        uint[] memory counts = metric.getPrdInctMetric(groupId, day, day);
         uint leadCount = counts[0];
         if(leadCount < 6) {
             return true;
@@ -102,8 +101,9 @@ library IncentiveLib {
     3) calculate the delegator every days one by one.
      */    
     function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr,  address metricAddr) public {
-        StoremanType.Candidate storage sk = data.candidates[wkAddr];
+        StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         StoremanType.StoremanGroup storage group = data.groups[sk.groupId];
+        require(group.status >= StoremanType.GroupStatus.ready, "not ready");
         uint fromDay; uint endDay;
         uint reservedGas = 2000000;
         (fromDay, endDay) = calFromEndDay(sk, group);
@@ -111,7 +111,7 @@ library IncentiveLib {
         uint day;
         for (day = fromDay; day < endDay; day++) {
             if (msg.gas < reservedGas ) { // check the gas. because calculate delegator incentive need more gas left.
-                emit incentiveEvent(group.groupId, wkAddr, false, fromDay, day);
+                emit incentiveEvent(sk.groupId, wkAddr, false, fromDay, day);
                 return;
             }
             if (group.groupIncentive[day] == 0) {
@@ -125,13 +125,13 @@ library IncentiveLib {
                 }
             }
             require(idx < group.selectedCount, "not selected");
-            if(checkMetric(IMetric(metricAddr), group, day, idx)){
+            if(checkMetric(IMetric(metricAddr), sk.groupId, day, idx)){
                 if(0 == sk.incentive[day]) {
                     incentiveNode(day, sk,group,data);
                 }
                 while (sk.incentivedDelegator != sk.delegatorCount) {
                     if (msg.gas < reservedGas ) {
-                        emit incentiveEvent(group.groupId, wkAddr, false, fromDay, 0);
+                        emit incentiveEvent(sk.groupId, wkAddr, false, fromDay, 0);
                         return;
                     }
                     incentiveDelegator(day, sk,group,data);
@@ -141,13 +141,15 @@ library IncentiveLib {
             rotateSkGroup(sk, group);
             sk.incentivedDelegator = 0;
         }
-        emit incentiveEvent(group.groupId, wkAddr, true, fromDay, endDay-1);
+        emit incentiveEvent(sk.groupId, wkAddr, true, fromDay, endDay-1);
     }
 
     function toSelect(StoremanType.StoremanData storage data,bytes32 groupId) public {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
+        require(group.status == StoremanType.GroupStatus.curveSeted,"Wrong status");
+        require(now > group.registerTime + group.registerDuration, "Wrong time");
         if(group.memberCount < group.memberCountDesign){
-             group.status = StoremanType.GroupStatus.failed;
+            group.status = StoremanType.GroupStatus.failed;
             return;
         }
         address[] memory members = new address[](group.memberCountDesign);
@@ -156,17 +158,16 @@ library IncentiveLib {
         uint day = group.workTime;
         for(uint i = 0; i<group.memberCountDesign; i++){
             members[i] = group.selectedNode[i];
-            StoremanType.Candidate storage sk = data.candidates[group.selectedNode[i]];
+            StoremanType.Candidate storage sk = data.candidates[0][group.selectedNode[i]];
             groupDeposit = groupDeposit.add(sk.deposit.getLastValue().add(sk.partnerDeposit).add(sk.delegateDeposit));
             groupDepositWeight = groupDepositWeight.add(StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue().add(sk.partnerDeposit)).add(sk.delegateDeposit));
         }
         Deposit.Record memory deposit = Deposit.Record(day, groupDeposit);
         Deposit.Record memory depositWeight = Deposit.Record(day, groupDepositWeight);
-        emit selectedEvent(group.groupId, group.memberCountDesign, members);
+        emit selectedEvent(groupId, group.memberCountDesign, members);
         group.status = StoremanType.GroupStatus.selected;
         group.deposit.addRecord(deposit);
         group.depositWeight.addRecord(depositWeight);
         return;
     }
- 
 }

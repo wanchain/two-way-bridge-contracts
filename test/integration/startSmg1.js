@@ -1,6 +1,6 @@
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const { registerStart, stakeInPre, toSelect,g} = require('../base1.js')
+const { registerStart, stakeInPre, toSelect,g} = require('../basee.js')
 
 
 async function sendIncentive(truffleSmg) {
