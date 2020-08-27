@@ -17,7 +17,6 @@ contract OracleStorage is BasicStorage {
     uint    startTime;
     uint    endTime;
     uint8   status;
-    uint    delegateFee;
     bool    isDebtClean;
   }
 

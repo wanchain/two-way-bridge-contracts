@@ -77,9 +77,9 @@ contract('Oracle', function(accounts) {
 
       const gpk1 = web3.utils.hexToBytes("0x1234");
       const gpk2 = web3.utils.hexToBytes("0x5678");
-      gas1 = await oracleDelegate.setStoremanGroupConfig.estimateGas(smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10, 11, { from: owner});
+      gas1 = await oracleDelegate.setStoremanGroupConfig.estimateGas(smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10, { from: owner});
       console.log(`setStoremanGroupConfig estimate = ${gas1}`);
-      receipt = await oracleDelegate.setStoremanGroupConfig(smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10, 11, { from: owner});
+      receipt = await oracleDelegate.setStoremanGroupConfig(smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10, { from: owner});
       console.log(`setStoremanGroupConfig used = ${receipt.receipt.gasUsed}`);
       // // check setStoremanGroupConfig event log
       // const setStoremanGroupConfigEvent = receipt.logs[0].args;
@@ -107,8 +107,6 @@ contract('Oracle', function(accounts) {
       assert.equal(obj.gpk2, "0x5678");
       assert.equal(obj.startTime.toNumber(), 9);
       assert.equal(obj.endTime.toNumber(), 10);
-      const delegateFee = web3.utils.toBN(await oracleDelegate.getDelegateFee(smgID)).toNumber();
-      assert.equal(delegateFee, 11);
 
       receipt = await oracleDelegate.setStoremanGroupStatus(smgID, 8, {from: owner});
       // // check SetStoremanGroupStatus event log
