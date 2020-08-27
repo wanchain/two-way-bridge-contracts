@@ -60,6 +60,7 @@ const curveMap = new Map([
 ])
 
 module.exports = async function (deployer, network) {
+    global.network = network;
     if (network === 'nodeploy') return;
 
     // ***********two-way-bridge*****************
