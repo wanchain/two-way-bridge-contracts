@@ -1,10 +1,11 @@
-const Web3 = require('web3')
+const Web3 = require('web3');
 const ConfigProxy = artifacts.require('ConfigProxy');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
-const { registerStart, stakeInPre, toSelect } = require('./base.js')
+const { registerStart, stakeInPre, toSelect } = require('../base.js');
+const { GpkStatus, CheckStatus, Data } = require('./Data');
 
 const web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'));
 
@@ -16,6 +17,7 @@ let groupId = '';
 
 // contract
 let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
+let data;
 
 contract('Gpk_UNITs', async () => {
   let owner = '0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e';
@@ -45,10 +47,14 @@ contract('Gpk_UNITs', async () => {
     groupId = await registerStart(smgSc);
     await stakeInPre(smgSc, groupId);
     await toSelect(smgSc, groupId);
+
+    data = new Data(smgSc, gpkSc, groupId);
+    await data.init();
+    // console.log("gpk ut data: %O", data);
   })
 
   // upgradeTo
-  it('[GpkProxy_upgradeTo] should fail: not owner', async () => {
+  it('[GpkProxy_upgradeTo] should fail: Not owner', async () => {
     let result = {};
     try {
       await gpkProxy.upgradeTo(gpkDelegate.address, {from: someone});
@@ -59,7 +65,7 @@ contract('Gpk_UNITs', async () => {
     assert.equal(result.reason, 'Not owner');
   })
 
-  it('[GpkProxy_upgradeTo] should fail: invalid implementation address', async () => {
+  it('[GpkProxy_upgradeTo] should fail: Cannot upgrade to invalid address', async () => {
     let result = {};
     try {
       await gpkProxy.upgradeTo(ADDRESS_0, {from: owner});
@@ -81,7 +87,7 @@ contract('Gpk_UNITs', async () => {
     assert.equal(await gpkProxy.implementation(), gpkDelegate.address)
   })
 
-  it('[GpkProxy_upgradeTo] should fail: duplicate upgrade', async () => {
+  it('[GpkProxy_upgradeTo] should fail: Cannot upgrade to the same implementation', async () => {
     let result = {};
     try {
       await gpkProxy.upgradeTo(gpkDelegate.address, {from: owner});
@@ -92,7 +98,7 @@ contract('Gpk_UNITs', async () => {
   })
 
   // setDependence
-  it('[GpkDelegate_setDependence] should fail: not owner', async () => {
+  it('[GpkDelegate_setDependence] should fail: Not owner', async () => {
     let result = {};
     try {
       await gpkSc.setDependence(configProxy.address, smgSc.address, {from: someone});
@@ -102,7 +108,7 @@ contract('Gpk_UNITs', async () => {
     assert.equal(result.reason, 'Not owner');
   })
 
-  it('[GpkDelegate_setDependence] should fail: invalid cfg address', async () => {
+  it('[GpkDelegate_setDependence] should fail: Invalid cfg', async () => {
     let result = {};
     try {
       await gpkSc.setDependence(ADDRESS_0, smgSc.address, {from: owner});
@@ -112,7 +118,7 @@ contract('Gpk_UNITs', async () => {
     assert.equal(result.reason, 'Invalid cfg');
   })
 
-  it('[GpkDelegate_setDependence] should fail: invalid smg address', async () => {
+  it('[GpkDelegate_setDependence] should fail: Invalid smg', async () => {
     let result = {};
     try {
       await gpkSc.setDependence(configProxy.address, ADDRESS_0, {from: owner});
@@ -134,7 +140,7 @@ contract('Gpk_UNITs', async () => {
   })
 
   // setPeriod
-  it('[GpkDelegate_setPeriod] should fail: not owner', async () => {
+  it('[GpkDelegate_setPeriod] should fail: Not owner', async () => {
     let result = {};
     let ployCommitPeroid = 10 * 60;
     let defaultPeroid = 5 * 60;
@@ -163,4 +169,119 @@ contract('Gpk_UNITs', async () => {
     assert.equal(info[6], defaultPeroid);
     assert.equal(info[7], negotiatePeroid);
   })
+
+  // setPolyCommit
+  it('[GpkDelegate_setPolyCommit] should fail: Invalid polyCommit', async () => {
+    let result = {};
+    try {
+      await gpkSc.setPolyCommit(groupId, 0, 0, '0x');
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid polyCommit');
+  })
+
+  it('[GpkDelegate_setPolyCommit] should fail: Invalid round', async () => {
+    let result = {};    
+    try {
+      await data.setPolyCommit(0, 0, 1);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid round');
+  })
+
+  it('[GpkDelegate_setPolyCommit] should fail: Invalid curve', async () => {
+    let result = {};    
+    try {
+      await data.setPolyCommit(2, 0);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid curve');
+  })
+
+  it('[GpkDelegate_setPolyCommit] should fail: Invalid sender', async () => {
+    let result = {};    
+    try {
+      await data.setPolyCommit(0, 0);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid sender');
+  })  
+
+  it('[GpkDelegate_setPolyCommit] should fail: Duplicate', async () => {
+    let result = {};    
+    try {
+      let sender = data.smList[0].address;
+      await data.setPolyCommit(0, 0, 0, {from: sender});
+      await data.setPolyCommit(0, 0, 0, {from: sender});
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Duplicate');
+  })
+
+  it('[GpkDelegate_setPolyCommit] should success', async () => {
+    let result = {};    
+    try {
+      for (let i = 1; i < 4; i++) {
+        let sender = data.smList[i].address;
+        await data.setPolyCommit(0, i, 0, {from: sender});
+      }
+      let info = gpkSc.getGroupInfo(groupId, 0);
+      assert.equal(info.curve1Status, GpkStatus.Negotiate);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, undefined);
+  })  
+
+  // setEncSij
+  it('[GpkDelegate_setEncSij] should fail: Invalid encSij', async () => {
+    let result = {};
+    try {
+      let src = data.smList[0].address;
+      await gpkSc.setEncSij(groupId, 0, 0, src, '0x');
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid encSij');
+  })
+
+  it('[GpkDelegate_setEncSij] should fail: Invalid storeman', async () => {
+    let result = {};
+    try {
+      let sender = data.smList[0].address;
+      await gpkSc.setEncSij(groupId, 0, 0, ADDRESS_0, '0x00', {from: sender});
+    } catch (e) {
+      result = e;
+      console.log("setEncSij Invalid storeman: %O", e)
+    }
+    assert.equal(result.reason, 'Invalid storeman');
+  })  
+
+  it('[GpkDelegate_setEncSij] should success', async () => {
+    let result = {};
+    try {
+      let sender = data.smList[0].address;
+      await data.setEncSij(0, 0, 0, 0, {from: sender});
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, undefined);
+  })
+
+  it('[GpkDelegate_setEncSij] should fail: Duplicate', async () => {
+    let result = {};
+    try {
+      let sender = data.smList[0].address;
+      await data.setEncSij(0, 0, 0, 0, {from: sender});
+    } catch (e) {
+      result = e;
+      console.log("setEncSij Duplicate: %O", e)
+    }
+    assert.equal(result.reason, 'Duplicate');
+  })  
 })
