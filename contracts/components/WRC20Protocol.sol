@@ -1,4 +1,5 @@
-pragma solidity 0.4.26;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 
 contract WRC20Protocol {
     /* This is a slight change to the ERC20 base standard.

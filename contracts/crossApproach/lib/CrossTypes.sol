@@ -24,7 +24,8 @@
 //
 //
 
-pragma solidity ^0.4.26;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 
 import "../../interfaces/IRC20Protocol.sol";
 import "../../interfaces/IQuota.sol";
@@ -45,33 +46,33 @@ library CrossTypes {
 
     struct Data {
 
-        /// map of the htlc transaction info
+        // map of the htlc transaction info
         HTLCTxLib.Data htlcTxData;
 
-        /// map of the rapidity transaction info
+        // map of the rapidity transaction info
         RapidityTxLib.Data rapidityTxData;
 
-        /// quota data of storeman group
+        // quota data of storeman group
         IQuota quota;
 
-        /// token manager instance interface
+        // token manager instance interface
         ITokenManager tokenManager;
 
-        /// storemanGroup admin instance interface
+        // storemanGroup admin instance interface
         IStoremanGroup smgAdminProxy;
 
-        /// storemanGroup fee admin instance address
+        // storemanGroup fee admin instance address
         address smgFeeProxy;
 
         ISignatureVerifier sigVerifier;
 
-        /// @notice transaction fee, smgID => fee
+        // @notice transaction fee, smgID => fee
         mapping(bytes32 => uint) mapStoremanFee;
 
-        /// @notice transaction fee, origChainID => shadowChainID => fee
+        // @notice transaction fee, origChainID => shadowChainID => fee
         mapping(uint => mapping(uint =>uint)) mapLockFee;
 
-        /// @notice transaction fee, origChainID => shadowChainID => fee
+        // @notice transaction fee, origChainID => shadowChainID => fee
         mapping(uint => mapping(uint =>uint)) mapRevokeFee;
 
     }

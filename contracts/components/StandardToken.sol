@@ -25,7 +25,8 @@
 //
 
 
-pragma solidity 0.4.26;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 
 import "./WRC20Protocol.sol";
 import "../lib/SafeMath.sol";
