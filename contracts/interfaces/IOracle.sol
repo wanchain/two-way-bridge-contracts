@@ -1,4 +1,5 @@
-pragma solidity 0.4.26;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 
 interface IOracle {
   function getDeposit(bytes32 smgID) external view returns (uint);

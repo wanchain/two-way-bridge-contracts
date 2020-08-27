@@ -1,4 +1,5 @@
-pragma solidity 0.4.26;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 
 interface IPriceOracle {
     function getValue(bytes symbol) public view returns (uint256 price);

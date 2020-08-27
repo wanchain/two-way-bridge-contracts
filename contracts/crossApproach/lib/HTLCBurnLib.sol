@@ -24,7 +24,8 @@
 //
 //
 
-pragma solidity ^0.4.26;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 
@@ -46,21 +47,21 @@ library HTLCBurnLib {
 
     /// @notice struct of HTLC user burn lock parameters
     struct HTLCUserBurnLockParams {
-        bytes32 xHash;                  /// hash of HTLC random number
-        bytes32 smgID;                  /// ID of storeman group which user has selected
-        uint tokenPairID;               /// token pair id on cross chain
-        uint value;                     /// exchange token value
-        uint lockedTime;                /// HTLC lock time
-        bytes userOrigAccount;        /// account of token original chain, used to receive token
+        bytes32 xHash;                  // hash of HTLC random number
+        bytes32 smgID;                  // ID of storeman group which user has selected
+        uint tokenPairID;               // token pair id on cross chain
+        uint value;                     // exchange token value
+        uint lockedTime;                // HTLC lock time
+        bytes userOrigAccount;        // account of token original chain, used to receive token
     }
     /// @notice struct of HTLC storeman burn lock parameters
     struct HTLCSmgBurnLockParams {
-        bytes32 xHash;                      /// hash of HTLC random number
-        bytes32 smgID;                      /// ID of storeman group which user has selected
-        uint tokenPairID;                   /// token pair id on cross chain
-        uint value;                         /// exchange token value
-        uint lockedTime;                    /// HTLC lock time
-        address userOrigAccount;            /// account of token original chain, used to receive token
+        bytes32 xHash;                      // hash of HTLC random number
+        bytes32 smgID;                      // ID of storeman group which user has selected
+        uint tokenPairID;                   // token pair id on cross chain
+        uint value;                         // exchange token value
+        uint lockedTime;                    // HTLC lock time
+        address userOrigAccount;            // account of token original chain, used to receive token
     }
 
     /**

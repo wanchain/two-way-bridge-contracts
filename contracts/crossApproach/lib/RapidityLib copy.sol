@@ -47,36 +47,36 @@ library RapidityLib {
 
     /// @notice struct of Rapidity storeman mint lock parameters
     struct RapidityUserMintParams {
-        bytes32 smgID;                      // ID of storeman group which user has selected
-        uint tokenPairID;                   // token pair id on cross chain
-        uint value;                         // exchange token value
-        bytes userShadowAccount;            // account of shadow chain, used to receive token
+        bytes32 smgID;                      /// ID of storeman group which user has selected
+        uint tokenPairID;                   /// token pair id on cross chain
+        uint value;                         /// exchange token value
+        bytes userShadowAccount;            /// account of shadow chain, used to receive token
     }
 
     /// @notice struct of Rapidity storeman mint lock parameters
     struct RapiditySmgMintParams {
-        bytes32 uniqueID;                   // Rapidity random number
-        bytes32 smgID;                      // ID of storeman group which user has selected
-        uint tokenPairID;                   // token pair id on cross chain
-        uint value;                         // exchange token value
-        address userShadowAccount;          // account of shadow chain, used to receive token
+        bytes32 uniqueID;                   /// Rapidity random number
+        bytes32 smgID;                      /// ID of storeman group which user has selected
+        uint tokenPairID;                   /// token pair id on cross chain
+        uint value;                         /// exchange token value
+        address userShadowAccount;          /// account of shadow chain, used to receive token
     }
 
     /// @notice struct of Rapidity user burn lock parameters
     struct RapidityUserBurnParams {
-        bytes32 smgID;                  // ID of storeman group which user has selected
-        uint tokenPairID;               // token pair id on cross chain
-        uint value;                     // exchange token value
-        bytes userOrigAccount;          // account of token original chain, used to receive token
+        bytes32 smgID;                  /// ID of storeman group which user has selected
+        uint tokenPairID;               /// token pair id on cross chain
+        uint value;                     /// exchange token value
+        bytes userOrigAccount;          /// account of token original chain, used to receive token
     }
 
     /// @notice struct of Rapidity user burn lock parameters
     struct RapiditySmgBurnParams {
-        bytes32 uniqueID;               // Rapidity random number
-        bytes32 smgID;                  // ID of storeman group which user has selected
-        uint tokenPairID;               // token pair id on cross chain
-        uint value;                     // exchange token value
-        address userOrigAccount;          // account of token original chain, used to receive token
+        bytes32 uniqueID;               /// Rapidity random number
+        bytes32 smgID;                  /// ID of storeman group which user has selected
+        uint tokenPairID;               /// token pair id on cross chain
+        uint value;                     /// exchange token value
+        address userOrigAccount;          /// account of token original chain, used to receive token
     }
 
     /**
