@@ -16,7 +16,8 @@ const MaxEpochNumber = Number(100);
 const BN = web3.utils.BN;
 const grpId = '0x0000000000000000000000000000000000000031353839393533323738313235';
 
-const addrZero = '0x0000000000000000000000000000000000000000';
+const ADDRZERO = '0x0000000000000000000000000000000000000000';
+const ADDRONE = '0x0000000000000000000000000000000000000001';
 
 let metricInstProxy;
 let metricInst;
@@ -25,10 +26,15 @@ let posLib;
 
 const lib = require('./lib.js');
 
+const TFCfg = require('../truffle-config');
+const optimist = require('optimist');
+let argv = optimist.argv;
+
 
 function getXHash() {
     return web3.utils.randomHex(32);
 };
+
 
 contract('Test Metric', async (accounts) => {
     before("init...   -> success", async () => {
@@ -52,33 +58,69 @@ contract('Test Metric', async (accounts) => {
             await confDlg.setCurve([0x00], [fakeSkCurve.address]);
             await confDlg.setCurve([0x01], [fakeBnCurve.address]);
 
-            metricInst.setDependence(configProxy.address, fakeSmg.address);
+            metricInstProxy.setDependence(configProxy.address, fakeSmg.address);
 
             await fakeSmg.setLeader(accounts[0]);
 
             posLib = await PosLib.deployed();
-            let epochId = await posLib.getEpochId(Math.floor(Date.now() / 1000));
+            //let epochId = await posLib.getEpochId(Math.floor(Date.now() / 1000));
+            let epochId = await getEpIDByNow(posLib);
             console.log("epochId " + epochId);
+
+            let leaderAdd;
+            let networkName;
+            console.log("argv", argv);
+            console.log("network", argv["network"]);
+            if (!argv["network"]) {
+                networkName = "development";
+            } else {
+                networkName = argv["network"];
+            }
+            console.log("networkname:", networkName);
+            console.log("TFCfg networks", TFCfg.networks);
+            console.log("TFCfg networks[networkname]", TFCfg.networks[networkName]);
+            console.log("TFCfg networks[networkname]", TFCfg.networks['' + networkName + '']);
+            console.log("TFCfg networks[networkname][from]", TFCfg.networks['' + networkName + ''].from);
+
+            leaderAdd = TFCfg.networks[networkName].from;
+            console.log("leaderAddr:", leaderAdd);
+            if (leaderAdd) {
+                console.log("begin set leader leaderAddr:");
+                await fakeSmg.setLeader(leaderAdd);
+            }
 
         } catch (err) {
             assert.fail(err);
         }
     });
 
-    it('write proof...   -> wrInct', async () => {
+    it('getEpochId...   -> ', async () => {
         try {
-            let incntData = new BN(0x0F);
-            await metricInst.wrInct(grpId, getXHash(), incntData);
+            let epochId = await posLib.getEpochId(Math.floor(Date.now() / 1000));
+            console.log("Test Metric: getEpochId", epochId);
         } catch (err) {
             assert.fail(err.toString());
         }
+    });
+    // ===========================================================Incentive======================================
+    // halted
+    it('write proof...   -> wrInct[halted]', async () => {
+        try {
+            let incntData = new BN(0x0F);
+            await metricInstProxy.setHalt(true);
+            await metricInstProxy.wrInct(grpId, getXHash(), incntData, {from: accounts[1]});
+        } catch (err) {
+            lib.assertInclude(err.message, "Smart contract is halted", err);
+        }
+
+        await metricInstProxy.setHalt(false);
     });
 
     // Not Leader
     it('write proof...   -> wrInct[Not leader]', async () => {
         try {
             let incntData = new BN(0x0F);
-            await metricInst.wrInct(grpId, getXHash(), incntData, {from: accounts[1]});
+            await metricInstProxy.wrInct(grpId, getXHash(), incntData, {from: accounts[1]});
         } catch (err) {
             lib.assertInclude(err.message, "Not leader", err);
         }
@@ -90,20 +132,38 @@ contract('Test Metric', async (accounts) => {
 
         try {
             let incntData = new BN(0x0F);
-            await metricInst.wrInct(grpId, getXHash(), incntData);
+            await metricInstProxy.wrInct(grpId, xHash, incntData);
         } catch (err) {
             assert.fail(err.toString());
         }
 
         try {
             let incntData = new BN(0x0F);
-            await metricInst.wrInct(grpId, xHash, incntData);
+            await metricInstProxy.wrInct(grpId, xHash, incntData);
         } catch (err) {
             lib.assertInclude(err.message, "Duplicate Incentive", err);
         }
 
     });
+    // success  all hamming
+    it('write proof...   -> wrInct[success]', async () => {
+        try {
+            let incntData = new BN(0x0F);
+            await metricInstProxy.wrInct(grpId, getXHash(), incntData);
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
 
+    // success  part hamming
+    it('write proof...   -> wrInct[success]', async () => {
+        try {
+            let incntData = new BN(0x07);
+            await metricInstProxy.wrInct(grpId, getXHash(), incntData);
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
 
     it('get statics...   -> getPrdInctMetric', async () => {
         try {
@@ -111,7 +171,7 @@ contract('Test Metric', async (accounts) => {
             let startEpID = Number(epochIdNow) - MaxEpochNumber;
             let endEpID = Number(epochIdNow) + 1;
 
-            let ret = await metricInst.getPrdInctMetric(grpId, new BN(startEpID), new BN(endEpID));
+            let ret = await metricInstProxy.getPrdInctMetric(grpId, new BN(startEpID), new BN(endEpID));
 
             for (let i = 0; i < ret.length; i++) {
                 process.stdout.write(ret[i].toString(10) + " ");
@@ -129,7 +189,7 @@ contract('Test Metric', async (accounts) => {
             let startEpID = Number(epochIdNow) - MaxEpochNumber;
             let endEpID = Number(epochIdNow) + 1;
 
-            let ret = await metricInst.getPrdSlshMetric(grpId, new BN(startEpID), new BN(endEpID));
+            let ret = await metricInstProxy.getPrdSlshMetric(grpId, new BN(startEpID), new BN(endEpID));
 
             for (let i = 0; i < ret.length; i++) {
                 process.stdout.write(ret[i].toString(10) + " ");
@@ -142,6 +202,35 @@ contract('Test Metric', async (accounts) => {
 
     // ===========================================================R proof ======================================
     // -----------------------------------------------------------sk256 --------------------------------------
+    //halted
+    it('write proof...   -> wrRSlsh[halted]', async () => {
+        try {
+            let rslshData = {
+                polyCMData: {
+                    polyCM: "0x954bb8ad1570066f3493ca925a6554eb7729ab08f15bb273ed85fbe60d0e624cb55ec9e3f34e19dde7113730bd80e14c265d4a1b831f0fe9f4f8813c04480caf5327d31d6c248cb087f9a0c2916f5b0ce1a04a4823fbc69435fbec169a3d7605f34c64346a7c2956ec128d5646c1ddc1037fc09cc95317b7e91a1a3d44bb9d823e0ce8c7f5892db6a963da03379efb4f4c4f9d3371ba421db6f2cdb37c4efbad7908362a1835a7db5180e81572a8a54a4ff0c53d59dac50515ddd1c6959d9b96",
+                    polyCMR: "0x73015869cfd7d88cfb03313dd61023f0142d51f084619025ed25abe405ff70f5",
+                    polyCMS: "0x8a9e2240cf1ece2e622aa9921198680c61fec256fefeef25b7f2ac6f8876c118"
+                },
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
+                    polyDataS: "0x01"
+                },
+                sndrIndex: 0x00,
+                rcvrIndex: 0x10,
+                becauseSndr: 0x01,
+                curveType: 0x00,
+            };
+            await metricInstProxy.setHalt(true);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
+
+        } catch (err) {
+            //assert.fail(err.toString());
+            lib.assertInclude(err.message, "Smart contract is halted", err);
+        }
+
+        await metricInstProxy.setHalt(false);
+    });
     // requrie error
     // "invalid receiver index"
     it('write proof...   -> wrRSlsh(sk256-R-[invalid receiver index].)', async () => {
@@ -162,7 +251,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             //assert.fail(err.toString());
@@ -189,7 +278,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             //assert.fail(err.toString());
@@ -216,7 +305,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             //assert.fail(err.toString());
@@ -243,7 +332,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             //assert.fail(err.toString());
@@ -270,7 +359,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x00,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             //assert.fail(err.toString());
@@ -279,17 +368,16 @@ contract('Test Metric', async (accounts) => {
     });
 
     // Duplicate RSlsh
-    it('write proof...   -> wrRSlsh(sk256-R-sig-[success to write R slsh.  checkSig=ture checkContent=true not equal])', async () => {
+    it('write proof...   -> wrRSlsh(sk256-R-sig-[success to write R slsh.  duplicate RSlsh])', async () => {
 
         let xHash = getXHash();
         let fakeSkCurve = await FakeSkCurve.deployed();
-        await fakeSkCurve.setCheckSig(true);
-
+        await fakeSkCurve.setCheckSig(false);
         await fakeSkCurve.setMulGResult(true);
         await fakeSkCurve.setCalPolyCommitResult(true);
         await fakeSkCurve.setMulPkResult(true);
         await fakeSkCurve.setAddResult(true);
-        await fakeSkCurve.setEqualPtRes(false);
+        await fakeSkCurve.setEqualPtRes(true);
 
         try {
             let rslshData = {
@@ -308,7 +396,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, xHash, rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, xHash, rslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -331,10 +419,10 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, xHash, rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, xHash, rslshData);
 
         } catch (err) {
-            lib.assertInclude(err.methods, "Duplicate RSlsh", err);
+            lib.assertInclude(err.message, "Duplicate RSlsh", err);
         }
     });
 
@@ -366,7 +454,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "Fail to write R slsh", err);
@@ -401,7 +489,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -437,7 +525,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "calPolyCommit fail", err);
@@ -472,7 +560,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "mulG fail", err);
@@ -507,15 +595,15 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "mulG fail", err);
         }
     });
 
-    // success to write R slsh.  checkSig=true checkContent=false 4
-    it('write proof...   -> wrRSlsh(sk256-R-sig-[success to write R slsh.  checkSig=true checkContent=false 4])', async () => {
+    // Fail to write R slsh.  checkSig=true checkContent=false 4
+    it('write proof...   -> wrRSlsh(sk256-R-sig-[Fail to write R slsh.  checkSig=true checkContent=false 4])', async () => {
 
         let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(true);
@@ -543,10 +631,10 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
-            lib.assertInclude(err.message, "mulG fail", err);
+            lib.assertInclude(err.message, "Fail to write R slsh", err);
         }
     });
     // false true
@@ -577,7 +665,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -613,7 +701,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -639,7 +727,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData, {from: accounts[1]});
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData, {from: accounts[1]});
 
         } catch (err) {
             lib.assertInclude(err.message, "Not leader", "should error not leader");
@@ -675,7 +763,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "Fail to write R slsh", err);
@@ -711,7 +799,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -747,7 +835,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -783,7 +871,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrRSlsh(grpId, getXHash(), rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, getXHash(), rslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -811,14 +899,14 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, xhash, rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, xhash, rslshData);
 
         } catch (err) {
             assert.fail(err.toString());
         }
 
         try {
-            let ret = await metricInst.getRSlshProof(grpId, xhash, sndrIndex);
+            let ret = await metricInstProxy.getRSlshProof(grpId, xhash, sndrIndex);
             console.log("ret of getRSlshProof", ret);
         } catch (err) {
             assert.fail(err.toString());
@@ -846,14 +934,14 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrRSlsh(grpId, xhash, rslshData);
+            let ret = await metricInstProxy.wrRSlsh(grpId, xhash, rslshData);
 
         } catch (err) {
             assert.fail(err.toString());
         }
 
         try {
-            let ret = await metricInst.getRSlshProof(grpId, getXHash(), sndrIndex);
+            let ret = await metricInstProxy.getRSlshProof(grpId, getXHash(), sndrIndex);
             console.log("ret of getRSlshProof", ret);
         } catch (err) {
             assert.fail(err.toString());
@@ -862,6 +950,36 @@ contract('Test Metric', async (accounts) => {
 
     // ===========================================================S proof====================================
     // -----------------------------------------------------------bn256 --------------------------------------
+    // halted
+    it('write proof...   -> wrSSlsh(bn256-S-sig-error)[invalid receiver index]', async () => {
+        try {
+
+            let sslshData = {
+                polyDataPln: {
+                    polyData: "0x01",
+                    polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
+                    polyDataS: "0x01",
+                },
+
+                gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
+                m: "0x2156dc03968c545ad79c31bd6dc1dac27473d6c520ad67d7fab1219540a05463",
+                rpkShare: "0x0c3076f110b2192d8e1b8a9251940a21c5bdfdaa4c05d6ae05c644169bc2e5752a5c530e6b859515085604ace122f6fe2f5c52d1276735c234b494a99f3fed51",
+
+                sndrIndex: 0x01,
+                rcvrIndex: 0x10,
+                becauseSndr: 0x01,
+                curveType: 0x01,
+            };
+            await metricInstProxy.setHalt(true);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
+
+        } catch (err) {
+            lib.assertInclude(err.message, "Smart contract is halted", err);
+        }
+
+        await metricInstProxy.setHalt(false);
+    });
+
     // requrie error
     // "invalid receiver index"
     it('write proof...   -> wrSSlsh(bn256-S-sig-error)[invalid receiver index]', async () => {
@@ -883,7 +1001,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "invalid receiver index", err);
@@ -909,7 +1027,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "invalid send index", "No invalid send index")
@@ -935,37 +1053,13 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "m is empty", err);
         }
     });
 
-    it('write proof...   -> wrSSlsh(bn256-S-sig-error)[m is empty]', async () => {
-        try {
-            let sslshData = {
-                polyDataPln: {
-                    polyData: "0x01",
-                    polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
-                },
-
-                gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
-                m: "0x2156dc03968c545ad79c31bd6dc1dac27473d6c520ad67d7fab1219540a05463",
-                rpkShare: "0x0c3076f110b2192d8e1b8a9251940a21c5bdfdaa4c05d6ae05c644169bc2e5752a5c530e6b859515085604ace122f6fe2f5c52d1276735c234b494a99f3fed51",
-
-                sndrIndex: 0x00,
-                rcvrIndex: 0x01,
-                becauseSndr: 0x01,
-                curveType: 0x01,
-            };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
-
-        } catch (err) {
-            lib.assertInclude(err.message, "invalid send index", "No invalid send index")
-        }
-    });
     // rpkShare is empty
     it('write proof...   -> wrSSlsh(bn256-S-sig-error)[rpkShare is empty]', async () => {
         try {
@@ -985,14 +1079,14 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "rpkShare is empty", err);
         }
     });
 
-// gpkShare is empty
+    //gpkShare is empty
     it('write proof...   -> wrSSlsh(bn256-S-sig-error)[gpkShare is empty]', async () => {
         try {
             let sslshData = {
@@ -1011,7 +1105,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "gpkShare is empty", err);
@@ -1036,7 +1130,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "", err);
@@ -1062,7 +1156,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x00,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "S because sender is not true", err);
@@ -1088,7 +1182,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData, {from: accounts[1]});
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData, {from: accounts[1]});
 
         } catch (err) {
             lib.assertInclude(err.message, "Not leader", err);
@@ -1096,7 +1190,7 @@ contract('Test Metric', async (accounts) => {
     });
 
     // Duplicate SSlsh
-    it('write proof...   -> wrSSlsh(bn256-S-sig-[success to write R slsh.  checkSig=ture checkContent=true not equal])', async () => {
+    it('write proof...   -> wrSSlsh(bn256-S-sig-[success to write S slsh.  Duplicate SSlsh)', async () => {
 
         let fakeBnCurve = await FakeBnCurve.deployed();
         let xHash = getXHash();
@@ -1119,7 +1213,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, xHash, sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, xHash, sslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1142,7 +1236,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, xHash, sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, xHash, sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "Duplicate SSlsh", err);
@@ -1177,7 +1271,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "Fail to write S Slsh", err);
@@ -1185,7 +1279,7 @@ contract('Test Metric', async (accounts) => {
     });
 
     // true true
-    it('write proof...   -> wrSSlsh(bn256-S-sig-[success to write R slsh.  checkSig=ture checkContent=true not equal])', async () => {
+    it('write proof...   -> wrSSlsh(bn256-S-sig-[success to write S slsh.  checkSig=ture checkContent=true not equal])', async () => {
 
         let fakeBnCurve = await FakeBnCurve.deployed();
         await fakeBnCurve.setCheckSig(true);
@@ -1193,7 +1287,7 @@ contract('Test Metric', async (accounts) => {
         await fakeBnCurve.setMulGResult(true);
         await fakeBnCurve.setMulPkResult(true);
         await fakeBnCurve.setAddResult(true);
-        await fakeBnCurve.setEqualPtRes(false);
+        await fakeBnCurve.setEqualPtRes(true);
 
         try {
             let sslshData = {
@@ -1212,10 +1306,10 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
-            lib.assertInclude(err.message, "Fail to write S slsh", err);
+            lib.assertInclude(err.message, "Fail to write S Slsh", err);
         }
     });
 
@@ -1249,7 +1343,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "mulG fail", err);
@@ -1285,7 +1379,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "mulPk fail", err);
@@ -1322,7 +1416,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             lib.assertInclude(err.message, "add fail", err);
@@ -1359,7 +1453,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1396,7 +1490,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1432,7 +1526,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1443,12 +1537,12 @@ contract('Test Metric', async (accounts) => {
     // true true
     it('write proof...   -> wrSSlsh(sk256-S-sig-error)', async () => {
         let fakeSkCurve = await FakeSkCurve.deployed();
-        await fakeSkCurve.setCheckSig(false);
+        await fakeSkCurve.setCheckSig(true);
 
         await fakeSkCurve.setMulGResult(true);
         await fakeSkCurve.setMulPkResult(true);
         await fakeSkCurve.setAddResult(true);
-        await fakeSkCurve.setEqualPtRes(false);
+        await fakeSkCurve.setEqualPtRes(true);
         try {
 
             let sslshData = {
@@ -1467,11 +1561,11 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             //assert.fail(err.toString());
-            lib.assertInclude(err.message, "Fail to write S slsh", err);
+            lib.assertInclude(err.message, "Fail to write S Slsh", err);
         }
     });
 
@@ -1502,7 +1596,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1537,7 +1631,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1572,7 +1666,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1599,7 +1693,7 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x00,
             };
-            let ret = await metricInst.wrSSlsh(grpId, getXHash(), sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, getXHash(), sslshData);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1629,17 +1723,30 @@ contract('Test Metric', async (accounts) => {
                 becauseSndr: 0x01,
                 curveType: 0x01,
             };
-            let ret = await metricInst.wrSSlsh(grpId, xHash, sslshData);
+            let ret = await metricInstProxy.wrSSlsh(grpId, xHash, sslshData);
 
         } catch (err) {
             assert.fail(err.toString());
         }
 
         try {
-            let ret = await metricInst.getSSlshProof(grpId, xHash, sndrIndex);
+            let ret = await metricInstProxy.getSSlshProof(grpId, xHash, sndrIndex);
             console.log("ret of getSSlshProof ", ret);
         } catch (err) {
             assert.fail(err.toString());
+        }
+    });
+
+    it('get statics...   -> getPrdInctMetric[endEpId<startEpId]', async () => {
+        try {
+            let epochIdNow = await getEpIDByNow(posLib);
+            let startEpID = Number(epochIdNow);
+            let endEpID = Number(epochIdNow) - 1;
+
+            let ret = await metricInstProxy.getPrdInctMetric(grpId, new BN(startEpID), new BN(endEpID));
+
+        } catch (err) {
+            lib.assertInclude(err.message, "endEpId<startEpId", err);
         }
     });
 
@@ -1649,7 +1756,7 @@ contract('Test Metric', async (accounts) => {
             let startEpID = Number(epochIdNow) - MaxEpochNumber;
             let endEpID = Number(epochIdNow) + 1;
 
-            let ret = await metricInst.getPrdInctMetric(grpId, new BN(startEpID), new BN(endEpID));
+            let ret = await metricInstProxy.getPrdInctMetric(grpId, new BN(startEpID), new BN(endEpID));
             for (let i = 0; i < ret.length; i++) {
                 process.stdout.write(ret[i].toString(10) + " ");
             }
@@ -1663,7 +1770,7 @@ contract('Test Metric', async (accounts) => {
     it('get getSmSuccCntByEpId...   -> ', async () => {
         try {
             let epochIdNow = await getEpIDByNow(posLib);
-            let ret = await metricInst.getSmSuccCntByEpId(grpId, new BN(epochIdNow), 0x00);
+            let ret = await metricInstProxy.getSmSuccCntByEpId(grpId, new BN(epochIdNow), 0x00);
             console.log("ret of getSmSuccCntByEpId ", ret);
 
         } catch (err) {
@@ -1674,11 +1781,23 @@ contract('Test Metric', async (accounts) => {
     it('get getSlshCntByEpId...   -> ', async () => {
         try {
             let epochIdNow = await getEpIDByNow(posLib);
-            let ret = await metricInst.getSlshCntByEpId(grpId, new BN(epochIdNow), 0x02);
+            let ret = await metricInstProxy.getSlshCntByEpId(grpId, new BN(epochIdNow), 0x02);
             console.log("ret of getSmSuccCntByEpId ", ret);
 
         } catch (err) {
             assert.fail(err.toString());
+        }
+    });
+
+    it('get statics...   -> getPrdSlshMetric[endEpId<startEpId]', async () => {
+        try {
+
+            let epochIdNow = await getEpIDByNow(posLib);
+            let startEpID = Number(epochIdNow);
+            let endEpID = Number(epochIdNow) - 1;
+            let ret = await metricInstProxy.getPrdSlshMetric(grpId, new BN(startEpID), new BN(endEpID));
+        } catch (err) {
+            lib.assertInclude(err.message, "endEpId<startEpId", err);
         }
     });
 
@@ -1689,7 +1808,7 @@ contract('Test Metric', async (accounts) => {
             let startEpID = Number(epochIdNow) - MaxEpochNumber;
             let endEpID = Number(epochIdNow) + 1;
 
-            let ret = await metricInst.getPrdSlshMetric(grpId, new BN(startEpID), new BN(endEpID));
+            let ret = await metricInstProxy.getPrdSlshMetric(grpId, new BN(startEpID), new BN(endEpID));
 
             for (let i = 0; i < ret.length; i++) {
                 process.stdout.write(ret[i].toString(10) + " ");
@@ -1701,34 +1820,23 @@ contract('Test Metric', async (accounts) => {
     });
 
 
-    // ===========================================================others====================================
+    // ===========================================================others====================================//
     // revert
-    it('revert...   -> getUnKnownFuc', async () => {
+
+    it('revert...   -> callUnKnownFuc', async () => {
         try {
-
-            let ret = await metricInst.getUnKnownFuc();
-
+            let fakeSc = await ConfigDelegate.at(metricInstProxy.address);
+            await fakeSc.getCurve(0);
         } catch (err) {
-            lib.assertInclude(err.message, "Not support", "Not support");
+            lib.assertInclude(err.message, "Not support", err);
         }
     });
 
     // getDependence()
-    it('getDependence...   -> getUnKnownFuc', async () => {
+    it('getDependence...   ->   ', async () => {
         try {
 
-            let ret = await metricInst.getDependence();
-            console.log("ret of getDependence ", ret);
-        } catch (err) {
-            assert.fail(err.toString());
-        }
-    });
-
-    // getDependence()
-    it('getDependence...   -> getUnKnownFuc', async () => {
-        try {
-
-            let ret = await metricInst.getDependence();
+            let ret = await metricInstProxy.getDependence();
             console.log("ret of getDependence ", ret);
         } catch (err) {
             assert.fail(err.toString());
@@ -1741,33 +1849,109 @@ contract('Test Metric', async (accounts) => {
         let oldConfigAddr, oldSmgAddr;
         try {
 
-            let ret = await metricInst.getDependence();
-            oldConfigAddr = ret["configAddr"];
-            oldSmgAddr = ret["smgAddr"];
+            let ret = await metricInstProxy.getDependence();
+            console.log("ret of metricInstProxy.getDependence:", ret);
+            oldConfigAddr = ret[0];
+            oldSmgAddr = ret[1];
 
         } catch (err) {
             assert.fail(err.toString());
         }
 
         try {
-            let ret = await metricInst.setDependence(addrZero, addrZero);
+            let ret = await metricInstProxy.setDependence(ADDRZERO, ADDRZERO);
         } catch (err) {
-            lib.assertInclude(err.message, "Invalid config address", error);
+            lib.assertInclude(err.message, "Invalid config address", err);
         }
 
         try {
-            let ret = await metricInst.setDependence(oldConfigAddr, addrZero);
-        } catch (err) {
-            lib.assertInclude(err.message, "Invalid smg address", error);
-        }
-
-        try {
-            let ret = await metricInst.setDependence(oldConfigAddr, oldSmgAddr);
+            let ret = await metricInstProxy.setDependence(oldConfigAddr, oldSmgAddr);
         } catch (err) {
             assert.fail(err.toString());
         }
     });
+
+    it('setDependence...   ->"Not owner"', async () => {
+
+        try {
+            let ret = await metricInstProxy.setDependence(ADDRZERO, ADDRZERO, {from: accounts[2]});
+        } catch (err) {
+            lib.assertInclude(err.message, "Not owner", err)
+        }
+    });
+
+    it('setDependence...   ->"Invalid smg address"', async () => {
+
+        let oldConfigAddr, oldSmgAddr;
+        try {
+
+            let ret = await metricInstProxy.getDependence();
+            console.log("ret of metricInstProxy.getDependence:", ret);
+            oldConfigAddr = ret[0];
+            oldSmgAddr = ret[1];
+
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+
+        try {
+            let ret = await metricInstProxy.setDependence(oldConfigAddr, ADDRZERO);
+        } catch (err) {
+            lib.assertInclude(err.message, "Invalid smg address", err);
+        }
+
+        try {
+            let ret = await metricInstProxy.setDependence(oldConfigAddr, oldSmgAddr);
+        } catch (err) {
+            assert.fail(err.toString());
+        }
+    });
+
+
+    // upgradeTo
+    it('upgrade...   ->[not owner]', async () => {
+        try {
+            let proxy = await MetricProxy.at(metricInstProxy.address);
+            await proxy.upgradeTo(metricInst.address, {from: accounts[2]});
+        } catch (e) {
+            lib.assertInclude(e.message, "Not owner", e)
+        }
+    });
+
+    it('upgrade...   ->[invalid implementation address]', async () => {
+        try {
+            let proxy = await MetricProxy.at(metricInstProxy.address);
+            await proxy.upgradeTo(ADDRZERO);
+        } catch (e) {
+            lib.assertInclude(e.message, "Cannot upgrade to invalid address", e)
+        }
+    });
+
+    it('upgrade...   ->[Cannot upgrade to the same implementation]', async () => {
+        let result = {};
+        try {
+            let proxy = await MetricProxy.at(metricInstProxy.address);
+            await proxy.upgradeTo(metricInst.address); // set self address temporarily
+            await proxy.upgradeTo(metricInst.address);
+        } catch (e) {
+            lib.assertInclude(e.message, "Cannot upgrade to the same implementation", e)
+        }
+    });
+
+    it('upgrade...   ->[success]', async () => {
+        let result = {};
+        try {
+            let proxy = await MetricProxy.at(metricInstProxy.address);
+            await proxy.upgradeTo(ADDRONE);
+            await proxy.upgradeTo(metricInst.address);
+        } catch (e) {
+            result = e;
+        }
+        assert.equal(result.reason, undefined);
+    })
+
 });
+
 
 async function sleep(time) {
     return new Promise(function (resolve, reject) {
@@ -1855,6 +2039,49 @@ function stringToBytes(str) {
 }
 
 async function getEpIDByNow(pos) {
-    let epochId = await pos.getEpochId(Math.floor(Date.now() / 1000));
+    //let epochId = await pos.getEpochId(Math.floor(Date.now() / 1000));
+    let epochId = Math.floor(Date.now() / 1000 / 120);
     return epochId;
+}
+
+async function getPrdSlshMetricByNow() {
+    let ret = [];
+    try {
+
+        let epochIdNow = await getEpIDByNow(posLib);
+        let startEpID = Number(epochIdNow) - MaxEpochNumber;
+        let endEpID = Number(epochIdNow) + 1;
+
+        let retMetric = await metricInstProxy.getPrdSlshMetric(grpId, new BN(startEpID), new BN(endEpID));
+
+        for (let i = 0; i < retMetric.length; i++) {
+            ret.push(Number(retMetric[i].toString(10)));
+        }
+
+    } catch (err) {
+        console.log(err);
+    }
+
+    return ret;
+}
+
+async function getPrdInctMetricByNow() {
+    let ret = [];
+    try {
+
+        let epochIdNow = await getEpIDByNow(posLib);
+        let startEpID = Number(epochIdNow) - MaxEpochNumber;
+        let endEpID = Number(epochIdNow) + 1;
+
+        let retMetric = await metricInstProxy.getPrdInctMetric(grpId, new BN(startEpID), new BN(endEpID));
+
+        for (let i = 0; i < retMetric.length; i++) {
+            ret.push(Number(retMetric[i].toString(10)));
+        }
+
+    } catch (err) {
+        console.log(err);
+    }
+
+    return ret;
 }
