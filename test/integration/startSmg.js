@@ -27,7 +27,6 @@ const config=[
   }
 ]
 
-console.log("config case: ", config[argv.case])
 contract('open_storeman_it', async () => {
   let smgSc
   before("start smg", async() => {
@@ -35,6 +34,8 @@ contract('open_storeman_it', async () => {
     smgSc = await StoremanGroupDelegate.at(smgProxy.address);
     console.log("smg contract address: %s", smgProxy.address);
 
+    if(argv.case == undefined) argv.case = 0;
+    console.log("config case: ", config[argv.case])
     let groupId = await registerStart(smgSc, config[argv.case].wlOffset, config[argv.case].option);
     await stakeInPre(smgSc, groupId);
   })
