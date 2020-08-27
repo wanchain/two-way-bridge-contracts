@@ -58,8 +58,8 @@ class Data {
       console.log("gpk ut init curve %d(%d) round", i, this.curves[i]);
       let round = new Round();
       await round.init(this.smList, this.threshold, this.curves[i]);
-      this.rounds[i] = round;      
-    } 
+      this.rounds[i] = round;
+    }
   }
 
   async setPolyCommit(curve, src, round = 0, opt = null) {
@@ -88,7 +88,7 @@ class Data {
     } else {
       await this.gpkSc.setEncSij(this.groupId, round, curve, destAddr, encSij);
     }
-  }   
+  }
 }
 
 class Round {
@@ -153,7 +153,7 @@ class Send {
     // console.log("encSij=%s", this.encSij);
     this.ephemPrivateKey = '0x' + enc.ephemPrivateKey;
     // console.log("ephemPrivateKey=%s", this.ephemPrivateKey);
-  }  
+  }
 }
 
 module.exports = {
