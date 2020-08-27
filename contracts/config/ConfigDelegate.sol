@@ -24,7 +24,8 @@
 //
 //
 
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "../components/Halt.sol";
@@ -55,8 +56,8 @@ contract ConfigDelegate is ConfigStorage, Halt , Admin{
         return curves[curveId];
     }
 
-    function() public payable {
-        revert("Not support");
-    }
+    // function() public payable {
+    //     revert("Not support");
+    // }
 
 }

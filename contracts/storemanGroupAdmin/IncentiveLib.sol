@@ -1,4 +1,5 @@
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 import "./StoremanType.sol";
 import "../interfaces/IPosLib.sol";
 import "../interfaces/IMetric.sol";

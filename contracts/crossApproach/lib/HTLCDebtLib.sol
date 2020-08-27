@@ -24,7 +24,8 @@
 //
 //
 
-pragma solidity ^0.4.26;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "./HTLCTxLib.sol";
@@ -41,10 +42,10 @@ library HTLCDebtLib {
      */
     /// @notice struct of HTLC debt lock parameters
     struct HTLCDebtLockParams {
-        bytes32 xHash;                  /// hash of HTLC random number
-        bytes32 srcSmgID;               /// ID of source storeman group
-        bytes32 destSmgID;              /// ID of destination storeman group
-        uint lockedTime;                /// HTLC lock time
+        bytes32 xHash;                  // hash of HTLC random number
+        bytes32 srcSmgID;               // ID of source storeman group
+        bytes32 destSmgID;              // ID of destination storeman group
+        uint lockedTime;                // HTLC lock time
     }
 
     /**

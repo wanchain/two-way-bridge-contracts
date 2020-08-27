@@ -24,7 +24,8 @@
 //
 //
 
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 
 import '../components/StandardToken.sol';
 import '../components/Owned.sol';

@@ -24,7 +24,8 @@
 //
 //
 
-pragma solidity ^0.4.26;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "../../lib/SafeMath.sol";
@@ -50,20 +51,20 @@ library HTLCTxLib {
 
     /// @notice struct of HTLC user mint lock parameters
     struct HTLCUserParams {
-        bytes32 xHash;                  /// hash of HTLC random number
-        bytes32 smgID;                  /// ID of storeman group which user has selected
-        uint tokenPairID;               /// token pair id on cross chain
-        uint value;                     /// exchange token value
-        uint lockFee;                   /// exchange token value
-        uint lockedTime;                /// HTLC lock time
+        bytes32 xHash;                  // hash of HTLC random number
+        bytes32 smgID;                  // ID of storeman group which user has selected
+        uint tokenPairID;               // token pair id on cross chain
+        uint value;                     // exchange token value
+        uint lockFee;                   // exchange token value
+        uint lockedTime;                // HTLC lock time
     }
 
     /// @notice HTLC(Hashed TimeLock Contract) tx info
     struct BaseTx {
-        bytes32 smgID;                  /// HTLC transaction storeman ID
-        uint lockedTime;                /// HTLC transaction locked time
-        uint beginLockedTime;           /// HTLC transaction begin locked time
-        TxStatus status;                /// HTLC transaction status
+        bytes32 smgID;                  // HTLC transaction storeman ID
+        uint lockedTime;                // HTLC transaction locked time
+        uint beginLockedTime;           // HTLC transaction begin locked time
+        TxStatus status;                // HTLC transaction status
     }
 
     /// @notice user  tx info
@@ -72,29 +73,29 @@ library HTLCTxLib {
         uint tokenPairID;
         uint value;
         uint fee;
-        address userAccount;            /// HTLC transaction sender address for the security check while user's revoke
+        address userAccount;            // HTLC transaction sender address for the security check while user's revoke
     }
     /// @notice storeman  tx info
     struct SmgTx {
         BaseTx baseTx;
         uint tokenPairID;
         uint value;
-        address  userAccount;          /// HTLC transaction user address for the security check while user's redeem
+        address  userAccount;          // HTLC transaction user address for the security check while user's redeem
     }
     /// @notice storeman  debt tx info
     struct DebtTx {
         BaseTx baseTx;
-        bytes32 srcSmgID;              /// HTLC transaction sender(source storeman) ID
+        bytes32 srcSmgID;              // HTLC transaction sender(source storeman) ID
     }
 
     struct Data {
-        /// @notice mapping of hash(x) to UserTx -- xHash->htlcUserTxData
+        // @notice mapping of hash(x) to UserTx -- xHash->htlcUserTxData
         mapping(bytes32 => UserTx) mapHashXUserTxs;
 
-        /// @notice mapping of hash(x) to SmgTx -- xHash->htlcSmgTxData
+        // @notice mapping of hash(x) to SmgTx -- xHash->htlcSmgTxData
         mapping(bytes32 => SmgTx) mapHashXSmgTxs;
 
-        /// @notice mapping of hash(x) to DebtTx -- xHash->htlcDebtTxData
+        // @notice mapping of hash(x) to DebtTx -- xHash->htlcDebtTxData
         mapping(bytes32 => DebtTx) mapHashXDebtTxs;
 
     }

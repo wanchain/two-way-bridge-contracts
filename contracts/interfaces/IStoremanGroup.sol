@@ -24,7 +24,8 @@
 //
 //
 
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.0;
 
 interface IStoremanGroup {
     function getSelectedSmNumber(bytes32 groupId) external returns(uint number);
