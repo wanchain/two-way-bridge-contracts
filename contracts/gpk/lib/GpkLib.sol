@@ -82,7 +82,7 @@ library GpkLib {
     /// @notice                           function for init period
     /// @param groupId                    storeman group id
     /// @param group                      storeman group
-    /// @param cfg                     group config
+    /// @param cfg                        group config
     /// @param smg                        storeman group contract address
     function initGroup(bytes32 groupId, GpkTypes.Group storage group, address cfg, address smg)
         public
