@@ -182,7 +182,7 @@ contract('Gpk_UNITs', async () => {
   })
 
   it('[GpkDelegate_setPolyCommit] should fail: Invalid round', async () => {
-    let result = {};    
+    let result = {};
     try {
       await data.setPolyCommit(0, 0, 1);
     } catch (e) {
@@ -192,7 +192,7 @@ contract('Gpk_UNITs', async () => {
   })
 
   it('[GpkDelegate_setPolyCommit] should fail: Invalid curve', async () => {
-    let result = {};    
+    let result = {};
     try {
       await data.setPolyCommit(2, 0);
     } catch (e) {
@@ -202,17 +202,17 @@ contract('Gpk_UNITs', async () => {
   })
 
   it('[GpkDelegate_setPolyCommit] should fail: Invalid sender', async () => {
-    let result = {};    
+    let result = {};
     try {
       await data.setPolyCommit(0, 0);
     } catch (e) {
       result = e;
     }
     assert.equal(result.reason, 'Invalid sender');
-  })  
+  })
 
   it('[GpkDelegate_setPolyCommit] should fail: Duplicate', async () => {
-    let result = {};    
+    let result = {};
     try {
       let sender = data.smList[0].address;
       await data.setPolyCommit(0, 0, 0, {from: sender});
@@ -224,7 +224,7 @@ contract('Gpk_UNITs', async () => {
   })
 
   it('[GpkDelegate_setPolyCommit] should success', async () => {
-    let result = {};    
+    let result = {};
     try {
       for (let i = 1; i < 4; i++) {
         let sender = data.smList[i].address;
@@ -236,7 +236,7 @@ contract('Gpk_UNITs', async () => {
       result = e;
     }
     assert.equal(result.reason, undefined);
-  })  
+  })
 
   // setEncSij
   it('[GpkDelegate_setEncSij] should fail: Invalid encSij', async () => {
@@ -260,7 +260,7 @@ contract('Gpk_UNITs', async () => {
       console.log("setEncSij Invalid storeman: %O", e)
     }
     assert.equal(result.reason, 'Invalid storeman');
-  })  
+  })
 
   it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};
@@ -283,5 +283,5 @@ contract('Gpk_UNITs', async () => {
       console.log("setEncSij Duplicate: %O", e)
     }
     assert.equal(result.reason, 'Duplicate');
-  })  
+  })
 })
