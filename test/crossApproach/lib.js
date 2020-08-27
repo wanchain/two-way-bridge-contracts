@@ -367,7 +367,6 @@ let smgLockParams       = {
 };
 
 let userFastParams       = {
-    uniqueID: '',
     smgID: storemanGroups[1].ID,
     tokenPairID: tokens.token1.tokenPairID,
     value: userLockParams.value,
