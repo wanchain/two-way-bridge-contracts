@@ -28,7 +28,8 @@ contract('TestSmg', async () => {
 
     it('T1 ', async ()=>{
         let groupId = await registerStart(smg);
-        console.log("groupId: ", groupId)
+        let group = await smg.getStoremanGroupInfo(groupId)
+        console.log("group: ", group)
     })
 
 

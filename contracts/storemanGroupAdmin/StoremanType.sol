@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.26;
 
 import "./Deposit.sol";
 
@@ -8,8 +8,8 @@ library StoremanType {
     //ready: gpk finished.
     
     struct Delegator {
-        address sender; // the delegator wallet address
-        address staker;
+        //address sender; // the delegator wallet address
+        //address staker;
         bool  quited;
         uint index; // for delete from candidate;
         Deposit.Records deposit;
@@ -49,7 +49,7 @@ library StoremanType {
     }
 
     struct StoremanGroup {
-        bytes32    groupId;
+        //bytes32    groupId;
         GroupStatus    status;
         Deposit.Records    deposit;                  //用于计算group的总收益
         Deposit.Records     depositWeight;            /// 用于在group内给各个成员分配利润.
@@ -95,7 +95,7 @@ library StoremanType {
         StoremanGlobalConf conf;
         
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;
-        mapping(address=>StoremanType.Candidate) candidates;
+        mapping(uint=>mapping(address=>StoremanType.Candidate)) candidates;
         mapping(uint=> mapping(uint => uint)) chainTypeCo;
     }
     struct StoremanInfo {
@@ -145,5 +145,20 @@ library StoremanType {
         bytes gpk2;
         uint delegateFee;
     }
-
+    struct StoremanGroupInput {
+        bytes32    groupId;
+        bytes32    preGroupId;
+        uint workTime;
+        uint totalTime;
+        uint registerDuration;
+        uint memberCountDesign;
+        uint threshold;
+        uint chain1;
+        uint chain2;
+        uint curve1;
+        uint curve2;
+        uint minStakeIn;
+        uint minDelegateIn;
+        uint delegateFee;
+    }
 }

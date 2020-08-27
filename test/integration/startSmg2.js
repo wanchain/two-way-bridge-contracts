@@ -1,6 +1,6 @@
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const { registerStart, stakeInPre, toSelect} = require('../base.js')
+const { registerStart, stakeInPre, toSelect} = require('../basee.js')
 
 contract('open_storeman_it', async () => {
   before("start smg2", async() => {

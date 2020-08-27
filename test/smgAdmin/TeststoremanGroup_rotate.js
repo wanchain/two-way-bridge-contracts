@@ -10,6 +10,7 @@ contract('StoremanGroupDelegate', async () => {
     let  smg
     let groupId
     let groupId2
+    let groupInfo,groupInfo2;
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
@@ -20,6 +21,7 @@ contract('StoremanGroupDelegate', async () => {
 
     it('T1 registerStart', async ()=>{
         groupId = await registerStart(smg);
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
         console.log("groupId: ", groupId)
     })
 
@@ -27,6 +29,7 @@ contract('StoremanGroupDelegate', async () => {
         await stakeInPre(smg, groupId)
     })
     it('T2 test select', async ()=>{
+        await utils.sleepUntil(1000*(Number(groupInfo.registerTime)+Number(groupInfo.registerDuration)+1));
         await toSelect(smg, groupId);
         let count = await smg.getSelectedSmNumber(groupId)
         console.log("slected sm number: %d", count);  
@@ -37,8 +40,9 @@ contract('StoremanGroupDelegate', async () => {
         } 
     })
     it('T3 registerStart2', async ()=>{
-        groupId2 = await registerStart2(smg, groupId, [], []);
+        groupId2 = await registerStart(smg, groupId);
         console.log("groupId2: ", groupId2)
+        groupInfo2 = await smg.getStoremanGroupInfo(groupId2);
         let sk = await smg.getSelectedSmInfo(groupId2, 1);
         console.log("registerStart2, 1:", sk)
     })
@@ -52,6 +56,7 @@ contract('StoremanGroupDelegate', async () => {
         //assert.equal(sk.pkAddress.toLowerCase(), wk.addr, "the node should be second one")
     })
     it('T5 select2', async ()=>{
+        await utils.sleepUntil(1000*(Number(groupInfo2.registerTime)+Number(groupInfo2.registerDuration)+1));
         await toSelect(smg, groupId2);
         let count = await smg.getSelectedSmNumber(groupId2)
         console.log("slected sm number: %d", count);  
