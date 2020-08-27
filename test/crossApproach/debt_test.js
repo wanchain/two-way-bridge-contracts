@@ -225,14 +225,12 @@ it("Debt -> userFastMint  ==> Disable rapidity cross chain while debt", async ()
         let userFastParamsTemp = Object.assign({}, userFastParams);
         userFastParamsTemp.origUserAccount = global.accounts[7];
         userFastParamsTemp.shadowUserAccount = global.accounts[8];
-        userFastParamsTemp.uniqueID = uniqueInfo.fastException;
         userFastParamsTemp.smgID = global.storemanGroups[1].ID;
         userFastParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
 
         let value = web3.utils.toWei(userFastParamsTemp.value.toString());
 
         let userFastMintReceipt = await global.chains[1].approach.instance.userFastMint(
-            userFastParamsTemp.uniqueID,
             userFastParamsTemp.smgID,
             userFastParamsTemp.tokenPairID,
             value,
@@ -521,7 +519,6 @@ it('Asset -> Original[2] -> Coin2 -> userFastMint  ==> success', async () => {
         let fastMintParamsTemp = Object.assign({}, userFastParams);
         fastMintParamsTemp.origUserAccount = global.accounts[7];
         fastMintParamsTemp.shadowUserAccount = global.accounts[8];
-        fastMintParamsTemp.uniqueID = uniqueInfo.coin2DebtFastMint;
         fastMintParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
 
         // console.log(fastMintParamsTemp);
@@ -538,7 +535,6 @@ it('Asset -> Original[2] -> Coin2 -> userFastMint  ==> success', async () => {
         // console.log("value global.accounts[7]", value);
         // user mint lock
         let userFastMintReceipt = await global.chains[2].approach.instance.userFastMint(
-            fastMintParamsTemp.uniqueID,
             fastMintParamsTemp.smgID,
             fastMintParamsTemp.tokenPairID,
             value,
@@ -552,7 +548,6 @@ it('Asset -> Original[2] -> Coin2 -> userFastMint  ==> success', async () => {
         assert.checkWeb3Event(userFastMintReceipt, {
             event: 'UserFastMintLogger',
             args: {
-                uniqueID: fastMintParamsTemp.uniqueID,
                 smgID: web3.utils.padRight(fastMintParamsTemp.smgID, 64),
                 tokenPairID: fastMintParamsTemp.tokenPairID,
                 value: value,

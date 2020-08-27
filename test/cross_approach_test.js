@@ -52,7 +52,8 @@ contract('Test Cross Approach', (accounts) => {
             setGlobal("schnorr", schnorr);
             setGlobal("storemanGroups", storemanGroups);
             // set owner
-            setGlobal("owner", from ? from : accounts[0]);
+            setGlobal("owner", from ? (accounts.includes(from) ? from : accounts[0]) : accounts[0]);
+
             console.log("init 1", await getBalance(global.owner));
 
             let crossDelegateNotInit = await CrossDelegate.new();
