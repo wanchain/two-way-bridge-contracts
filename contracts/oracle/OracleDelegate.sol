@@ -79,7 +79,8 @@ contract OracleDelegate is OracleStorage, Owned {
     bytes   gpk1,
     bytes   gpk2,
     uint    startTime,
-    uint    endTime
+    uint    endTime,
+    uint    delegateFee
   )
     external
     onlyAdmin
@@ -94,6 +95,8 @@ contract OracleDelegate is OracleStorage, Owned {
     mapStoremanGroupConfig[id].gpk2 = gpk2;
     mapStoremanGroupConfig[id].startTime = startTime;
     mapStoremanGroupConfig[id].endTime = endTime;
+    mapStoremanGroupConfig[id].delegateFee = delegateFee;
+    
   }
 
   // robot 都是true时,才调用
@@ -131,6 +134,10 @@ contract OracleDelegate is OracleStorage, Owned {
 
   function getDeposit(bytes32 smgID) external view returns (uint) {
     return mapStoremanGroupConfig[smgID].deposit;
+  }
+
+  function getDelegateFee(bytes32 smgID) external view returns (uint) {
+    return mapStoremanGroupConfig[smgID].delegateFee;
   }
 
   function getStoremanGroupConfig(
