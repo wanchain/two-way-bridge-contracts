@@ -35,12 +35,12 @@ library GpkTypes {
         uint32 ployCommitPeriod;
         uint32 defaultPeriod;
         uint32 negotiatePeriod;
-        /// round -> curveIndex -> Round
+        // round -> curveIndex -> Round
         mapping(uint16 => mapping(uint8 => Round)) roundMap;
         uint16 smNumber;
-        /// index -> txAddress
+        // index -> txAddress
         mapping(uint => address) indexMap;
-        /// txAddress -> pk
+        // txAddress -> pk
         mapping(address => bytes) addressMap;
     }
 
@@ -51,7 +51,7 @@ library GpkTypes {
         uint32 checkValidCount;
         uint statusTime;
         bytes gpk;
-        /// txAddress -> Src
+        // txAddress -> Src
         mapping(address => Src) srcMap;
     }
 
@@ -60,7 +60,7 @@ library GpkTypes {
     struct Src {
         bytes polyCommit;
         bytes gpkShare;
-        /// txAddress -> Dest
+        // txAddress -> Dest
         mapping(address => Dest) destMap;
     }
 

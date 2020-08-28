@@ -29,8 +29,8 @@ pragma solidity 0.7.0;
 
 interface IMetric {
     // index of array: smIndex
-    function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId) external returns(uint[]);
-    function getPrdSlshMetric(bytes32 grpId, uint startEpId, uint endEpId) external returns(uint[]);
+    function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId) external returns(uint[] memory);
+    function getPrdSlshMetric(bytes32 grpId, uint startEpId, uint endEpId) external returns(uint[] memory);
 
     function getSmSuccCntByEpId(bytes32 grpId, uint epId, uint8 smIndex) external returns(uint);
     function getSlshCntByEpId(bytes32 grpId, uint epId, uint8 smIndex) external returns(uint);

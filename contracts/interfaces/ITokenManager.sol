@@ -29,7 +29,7 @@ pragma solidity 0.7.0;
 
 interface ITokenManager {
     function getTokenPairInfo(uint id) external view
-      returns (uint origChainID, bytes tokenOrigAccount, uint shadowChainID, bytes tokenShadowAccount);
+      returns (uint origChainID, bytes memory tokenOrigAccount, uint shadowChainID, bytes memory tokenShadowAccount);
 
     function mintToken(uint id, address to,uint value) external;
 

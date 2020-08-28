@@ -65,7 +65,7 @@ library IncentiveLib {
         } else {
             fromDay = StoremanUtil.getDaybyTime(group.workTime);
         }
-        uint endDay = now;
+        uint endDay = block.timestamp;
         if (endDay > group.workTime + group.totalTime) {
             endDay = group.workTime + group.totalTime;
         }
@@ -148,7 +148,7 @@ library IncentiveLib {
     function toSelect(StoremanType.StoremanData storage data,bytes32 groupId) public {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(group.status == StoremanType.GroupStatus.curveSeted,"Wrong status");
-        require(now > group.registerTime + group.registerDuration, "Wrong time");
+        require(block.timestamp > group.registerTime + group.registerDuration, "Wrong time");
         if(group.memberCount < group.memberCountDesign){
             group.status = StoremanType.GroupStatus.failed;
             return;

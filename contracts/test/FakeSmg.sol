@@ -67,12 +67,12 @@ contract FakeSmg {
         return SelectedSMNumber;
     }
 
-    function getThresholdByGrpId(bytes32 grpId) external returns (uint){
+    function getThresholdByGrpId(bytes32 _grpId) external returns (uint){
         return ThresholdNumber;
     }
 
-    function getSelectedSmInfo(bytes32 grpId, uint index) external returns (address txAddress, bytes pk, bytes enodeId){
-        (txAddress,pk,enodeId) = (leaderAdd, mapSmgInfo[grpId][uint8(index)], fromHex(EnodeIdStr));
+    function getSelectedSmInfo(bytes32 _grpId, uint index) external returns (address txAddress, bytes memory pk, bytes memory enodeId){
+        (txAddress,pk,enodeId) = (leaderAdd, mapSmgInfo[_grpId][uint8(index)], fromHex(EnodeIdStr));
     }
 
 
@@ -92,12 +92,12 @@ contract FakeSmg {
 
 
     function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2,
-        uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime){
+        uint curve1, uint curve2,  bytes memory gpk1, bytes memory gpk2, uint startTime, uint endTime){
         return (bytesToBytes32(fromHex(GroupIdStr),0),0,0,0,0,0x00,0x01,fromHex(gpk1Str),fromHex(gpk2Str),0,0);
     }
 
 
-    function getGpkShare(bytes32 groupId, uint index) external view returns(bytes gpkShare1, bytes gpkShare2){
+    function getGpkShare(bytes32 groupId, uint index) external view returns(bytes memory gpkShare1, bytes memory gpkShare2){
         return (fromHex(gpkShare1Str),fromHex(gpkShare2Str));
     }
 
@@ -106,7 +106,7 @@ contract FakeSmg {
         leaderAdd  = leader;
     }
 
-    function bytesToBytes32(bytes b, uint offset) internal pure returns (bytes32) {
+    function bytesToBytes32(bytes memory b, uint offset) internal pure returns (bytes32) {
         bytes32 out;
 
         for (uint i = 0; i < 32; i++) {
@@ -130,7 +130,7 @@ contract FakeSmg {
     }
 
     // Convert an hexadecimal string to raw bytes
-    function fromHex(string s) public pure returns (bytes) {
+    function fromHex(string memory s) public pure returns (bytes memory) {
         bytes memory ss = bytes(s);
         require(ss.length % 2 == 0);
         // length must be even

@@ -2,7 +2,7 @@
 pragma solidity 0.7.0;
 
 interface IPriceOracle {
-    function getValue(bytes symbol) public view returns (uint256 price);
+    function getValue(bytes calldata symbol) public view returns (uint256 price);
 }
 
 interface IDepositOracle {
@@ -16,7 +16,7 @@ interface ITokenManager {
     function getTokenPairInfo(uint256 id)
         public
         view
-        returns (bytes ancestorSymbol);
+        returns (bytes memory ancestorSymbol);
 }
 
 contract StoremanType {
@@ -56,7 +56,7 @@ contract TestQuotaHelper {
         return priceMap[key];
     }
 
-    function setValue(string key, uint256 value) public {
+    function setValue(string calldata key, uint256 value) public {
         priceMap[stringToBytes32(key)] = value;
     }
 
@@ -71,8 +71,8 @@ contract TestQuotaHelper {
             uint256 chain2,
             uint256 curve1,
             uint256 curve2,
-            bytes gpk1,
-            bytes gpk2,
+            bytes memory gpk1,
+            bytes memory gpk2,
             uint256 startTime,
             uint256 endTime
         )
@@ -122,9 +122,9 @@ contract TestQuotaHelper {
         external
         view
         returns (
-            bytes account,
-            string name,
-            string symbol,
+            bytes memory account,
+            string memory name,
+            string memory symbol,
             uint8 decimals,
             uint256 chainId
         )

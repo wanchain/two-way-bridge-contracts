@@ -53,7 +53,7 @@ contract MappingToken is StandardToken, Owned {
     ///@param tokenName The token name to be used
     ///@param tokenSymbol The token symbol to be used
     ///@param tokenDecimal The token decimals to be used
-    constructor(string tokenName, string tokenSymbol, uint8 tokenDecimal)
+    constructor(string memory tokenName, string memory tokenSymbol, uint8 tokenDecimal)
         public
     {
         name = tokenName;
@@ -101,7 +101,7 @@ contract MappingToken is StandardToken, Owned {
     /// @dev update token name, symbol
     /// @param _name token new name
     /// @param _symbol token new symbol
-    function update(string _name, string _symbol)
+    function update(string calldata _name, string calldata _symbol)
         external
         onlyOwner
     {

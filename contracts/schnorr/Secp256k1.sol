@@ -26,7 +26,7 @@ contract Secp256k1 {
         uint256 x2,
         uint256 y2
     ) public view returns (uint256 retx, uint256 rety) {
-        address to = 0X42;
+        address to = 0x42;
         assembly {
             let freePtr := mload(0x40)
             mstore(add(freePtr, 0), x1)
@@ -34,7 +34,7 @@ contract Secp256k1 {
             mstore(add(freePtr, 64), x2)
             mstore(add(freePtr, 96), y2)
 
-            if iszero(staticcall(gas, to, freePtr, 132, freePtr, 64)) {
+            if iszero(staticcall(gas(), to, freePtr, 132, freePtr, 64)) {
                 revert(0, 0)
             }
 
@@ -55,7 +55,7 @@ contract Secp256k1 {
             mstore(add(freePtr, 32), xPk)
             mstore(add(freePtr, 64), yPk)
 
-            if iszero(staticcall(gas, to, freePtr, 96, freePtr, 64)) {
+            if iszero(staticcall(gas(), to, freePtr, 96, freePtr, 64)) {
                 revert(0,0)
             }
 

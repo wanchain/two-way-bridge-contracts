@@ -38,7 +38,7 @@ contract Bn128 {
         input[3] = y2;
 
         assembly {
-            if iszero(staticcall(gas, 0x06, input, 0x80, outValue, 0x40)) {
+            if iszero(staticcall(gas(), 0x06, input, 0x80, outValue, 0x40)) {
                 revert(0, 0)
             }
         }
@@ -59,7 +59,7 @@ contract Bn128 {
         input[2] = scalar;
 
         assembly {
-            if iszero(staticcall(gas, 0x07, input, 0x60, outValue, 0x40)) {
+            if iszero(staticcall(gas(), 0x07, input, 0x60, outValue, 0x40)) {
                 revert(0, 0)
             }
         }
