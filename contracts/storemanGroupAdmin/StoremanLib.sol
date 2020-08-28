@@ -42,7 +42,7 @@ library StoremanLib {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(block.timestamp <= group.registerTime+group.registerDuration,"Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
-        address pkAddr = address(keccak256(PK));
+        address pkAddr = address(uint160(uint256(keccak256(PK))));
         StoremanType.Candidate storage sk = data.candidates[0][pkAddr];
         require(sk.sender == address(0x00), "Candidate has existed");
         require(group.status == StoremanType.GroupStatus.curveSeted,"not configured");
@@ -51,7 +51,7 @@ library StoremanLib {
         sk.PK = PK;
         sk.wkAddr = pkAddr;
         sk.groupId = groupId;
-        sk.deposit = Deposit.Records(0);
+        sk.deposit.total = 0;
         sk.deposit.addRecord(Deposit.Record(StoremanUtil.getDaybyTime(data.posLib, block.timestamp), msg.value));
 
         group.skMap[group.memberCount] = sk.wkAddr;
@@ -185,7 +185,7 @@ library StoremanLib {
         sk.incentive[0] = 0;
 
         if(amount != 0){
-            sk.sender.transfer(amount);
+            (payable(sk.sender)).transfer(amount);
         }
     }
 
@@ -197,7 +197,7 @@ library StoremanLib {
         sk.incentive[0] = 0;
 
         if(amount != 0){
-            sk.sender.transfer(amount);
+            (payable(sk.sender)).transfer(amount);
         }
         emit stakeIncentiveClaimEvent(sk.sender,wkAddr,amount);
     }
@@ -398,9 +398,9 @@ library StoremanLib {
             sk.partMap[sk.partnerCount] = msg.sender;
             pn.index = sk.partnerCount;
             sk.partnerCount++;
-            // pn.sender = msg.sender;
-            // pn.staker = wkAddr;
-            sk.partners[msg.sender] = pn;
+            sk.partners[msg.sender].index = pn.index;
+            sk.partners[msg.sender].quited = pn.quited;
+            sk.partners[msg.sender].deposit.total = pn.deposit.total;
         }
         sk.partnerDeposit = sk.partnerDeposit.add(msg.value);
         uint day = StoremanUtil.getDaybyTime(data.posLib, block.timestamp);

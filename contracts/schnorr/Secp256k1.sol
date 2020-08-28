@@ -26,7 +26,7 @@ contract Secp256k1 {
         uint256 x2,
         uint256 y2
     ) public view returns (uint256 retx, uint256 rety) {
-        address to = 0x42;
+        address to = address(0x42);
         assembly {
             let freePtr := mload(0x40)
             mstore(add(freePtr, 0), x1)
@@ -48,7 +48,7 @@ contract Secp256k1 {
         uint256 yPk,
         uint256 scalar
     ) public view returns (uint256 x, uint256 y) {
-        address to = 0x43;
+        address to = address(0x43);
         assembly {
             let freePtr := mload(0x40)
             mstore(add(freePtr, 0), scalar)

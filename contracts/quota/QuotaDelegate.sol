@@ -632,7 +632,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
         
         uint depositValue = 0;
-        if (keccak256(rawSymbol) == keccak256("WAN")) {
+        if (keccak256(bytes(rawSymbol)) == keccak256("WAN")) {
             depositValue = getFiatDeposit(storemanGroupId);
         } else {
             depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); // 15000 = 150%
@@ -660,7 +660,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
 
         uint depositValue = 0;
-        if (keccak256(rawSymbol) == keccak256("WAN")) {
+        if (keccak256(bytes(rawSymbol)) == keccak256("WAN")) {
             depositValue = getFiatDeposit(storemanGroupId);
         } else {
             depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); // 15000 = 150%
