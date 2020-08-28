@@ -105,10 +105,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(group.status == StoremanType.GroupStatus.none, "group has existed already");
 
-        Deposit.Records memory deposit =  Deposit.Records(0);
-        Deposit.Records memory depositWeight =  Deposit.Records(0);
-        group.deposit = deposit;
-        group.depositWeight = depositWeight;
+        group.deposit.total = 0;
+        group.depositWeight.total = 0;
 
         group.registerTime = block.timestamp;
         group.status = StoremanType.GroupStatus.curveSeted;

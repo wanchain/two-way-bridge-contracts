@@ -225,8 +225,8 @@ contract MetricDelegate is MetricStorage, Halt {
         require(configAddr != address(0), "Invalid config address");
         require(smgAddr != address(0), "Invalid smg address");
 
-        metricData.config = IConfig(configAddr);
-        metricData.smg = IStoremanGroup(smgAddr);
+        metricData.config = configAddr;
+        metricData.smg = smgAddr;
     }
 
 
