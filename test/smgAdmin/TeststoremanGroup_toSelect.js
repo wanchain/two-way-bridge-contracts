@@ -7,7 +7,7 @@ const assert = require('chai').assert;
 
 
 
-const { registerStart,stakeInPre, g, toSelect, setupNetwork} = require('../basee.js')
+const { registerStart,stakeInPre, g, toSelect, setupNetwork} = require('../base.js')
 
 contract('StoremanGroupDelegate', async () => {
  

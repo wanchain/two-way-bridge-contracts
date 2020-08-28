@@ -6,7 +6,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 
 
-const { registerStart,setupNetwork } = require('../basee.js')
+const { registerStart,setupNetwork } = require('../base.js')
 
 /*************************************
 staker: 1000 ~ 1000+100
