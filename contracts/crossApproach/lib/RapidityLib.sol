@@ -147,7 +147,7 @@ library RapidityLib {
             if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[params.smgID] = storageData.mapStoremanFee[params.smgID].add(lockFee);
             } else {
-                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(params.smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer{value:lockFee}(params.smgID);
             }
         }
 
@@ -160,7 +160,7 @@ library RapidityLib {
             left = (msg.value).sub(lockFee);
 
             // require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
-            require(CrossTypes.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
+            require(CrossTypes.transferFrom(tokenScAddr, msg.sender, address(this), params.value), "Lock token failed");
         }
         if (left != 0) {
             (msg.sender).transfer(left);
@@ -203,7 +203,7 @@ library RapidityLib {
 
         address tokenScAddr = CrossTypes.bytesToAddress(tokenShadowAccount);
         // require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
-        require(CrossTypes.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
+        require(CrossTypes.transferFrom(tokenScAddr, msg.sender, address(this), params.value), "Lock token failed");
 
         storageData.tokenManager.burnToken(params.tokenPairID, params.value);
 
@@ -211,7 +211,7 @@ library RapidityLib {
             if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[params.smgID] = storageData.mapStoremanFee[params.smgID].add(lockFee);
             } else {
-                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(params.smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer{value:lockFee}(params.smgID);
             }
         }
 
@@ -242,7 +242,7 @@ library RapidityLib {
         address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 
         if (tokenScAddr == address(0)) {
-            (params.userOrigAccount).transfer(params.value);
+            (payable(params.userOrigAccount)).transfer(params.value);
         } else {
             // require(IRC20Protocol(tokenScAddr).transfer(params.userOrigAccount, params.value), "Transfer token failed");
             require(CrossTypes.transfer(tokenScAddr, params.userOrigAccount, params.value), "Transfer token failed");

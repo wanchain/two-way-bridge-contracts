@@ -17,10 +17,10 @@ pragma solidity 0.7.0;
  * to protect against it, check out our blog post
  * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].
  */
-contract ReentrancyGuard {
+abstract contract ReentrancyGuard {
     bool private _notEntered;
 
-    constructor () internal {
+    constructor () {
         // Storing an initial non-zero value makes deployment a bit more
         // expensive, but in exchange the refund on every call to nonReentrant
         // will be lower in amount. Since refunds are capped to a percetange of

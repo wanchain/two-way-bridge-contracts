@@ -34,7 +34,7 @@ library Deposit {
     function clean(Records storage self) internal {
         self.total = 0;
     }
-    function addRecord(Records storage self, Record r) internal {
+    function addRecord(Records storage self, Record memory r) internal {
         if(self.total == 0) {
             self.records[0] = r;
             self.total = 1;

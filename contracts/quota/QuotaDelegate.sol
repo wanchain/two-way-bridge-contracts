@@ -43,6 +43,7 @@ interface IDebtOracle {
 
 
 contract QuotaDelegate is QuotaStorage, Halt {
+    using SafeMath for uint;
 
     /// @notice                         config params for owner
     /// @param _priceOracleAddr         token price oracle contract address
@@ -58,7 +59,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         address _depositOracleAddr,
         address _tokenManagerAddress,
         uint _depositRate,
-        string _depositTokenSymbol
+        string calldata _depositTokenSymbol
     ) external onlyOwner {
         priceOracleAddress = _priceOracleAddr;
         htlcGroupMap[_htlcAddr] = true;
@@ -617,7 +618,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     /// get mint quota in Fiat/USD decimals: 18
-    function getUserFiatMintQuota(bytes32 storemanGroupId, string rawSymbol) private view returns (uint) {
+    function getUserFiatMintQuota(bytes32 storemanGroupId, string memory rawSymbol) private view returns (uint) {
         string memory symbol;
         uint decimals;
 
@@ -645,7 +646,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     /// get mint quota in Fiat/USD decimals: 18
-    function getSmgFiatMintQuota(bytes32 storemanGroupId, string rawSymbol) private view returns (uint) {
+    function getSmgFiatMintQuota(bytes32 storemanGroupId, string memory rawSymbol) private view returns (uint) {
         string memory symbol;
         uint decimals;
 
@@ -684,7 +685,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function getTokenAncestorInfo(uint tokenId)
         private
         view
-        returns (string ancestorSymbol, uint decimals)
+        returns (string memory ancestorSymbol, uint decimals)
     {
         ITokenManager tokenManager = ITokenManager(tokenManagerAddress);
         (,,ancestorSymbol,decimals,) = tokenManager.getAncestorInfo(tokenId);
@@ -701,7 +702,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
     }
 
-    function getPrice(string symbol) private view returns (uint price) {
+    function getPrice(string memory symbol) private view returns (uint price) {
         IOracle oracle = IOracle(priceOracleAddress);
         price = oracle.getValue(stringToBytes32(symbol));
     }

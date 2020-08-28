@@ -53,7 +53,7 @@ library StoremanType {
         //bytes32    groupId;
         GroupStatus    status;
         Deposit.Records    deposit;                  //用于计算group的总收益
-        Deposit.Records     depositWeight;            /// 用于在group内给各个成员分配利润.
+        Deposit.Records     depositWeight;            // 用于在group内给各个成员分配利润.
         uint selectedCount;
         uint memberCount;
         uint whiteCount;    // only used node, don't include backup.
@@ -123,7 +123,7 @@ library StoremanType {
         bytes32    groupId;
         GroupStatus    status;
         uint    deposit;                  //用于计算group的总收益
-        uint    depositWeight;            /// 用于在group内给各个成员分配利润.
+        uint    depositWeight;            // 用于在group内给各个成员分配利润.
         uint selectedCount;
         uint memberCount;
         uint whiteCount;    // only used node, don't include backup.

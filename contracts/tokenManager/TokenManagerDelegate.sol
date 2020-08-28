@@ -32,12 +32,12 @@ pragma experimental ABIEncoderV2;
  * Math operations with safety checks
  */
 
-import "../components/Admin.sol";
+import "../components/Owned.sol";
 import "./TokenManagerStorage.sol";
 import "./MappingToken.sol";
 import "./IMappingToken.sol";
 
-contract TokenManagerDelegate is TokenManagerStorage, Admin {
+contract TokenManagerDelegate is TokenManagerStorage, Owned {
     using SafeMath for uint;
     /************************************************************
      **
@@ -49,6 +49,8 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
      event AddTokenPair(uint indexed id, uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount);
      event UpdateTokenPair(uint indexed id, AncestorInfo aInfo, uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount);
      event RemoveTokenPair(uint indexed id);
+     event AddAdmin(address admin);
+     event RemoveAdmin(address admin);
      event UpdateToken(address tokenAddress, string name, string symbol);
 
     /**
@@ -67,13 +69,18 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         _;
     }
 
+    modifier onlyAdmin() {
+        require(mapAdmin[msg.sender], "not admin");
+        _;
+    }
+
     /**
     *
     * MANIPULATIONS
     *
     */
     
-    function bytesToAddress(bytes b) internal pure returns (address addr) {
+    function bytesToAddress(bytes memory b) internal pure returns (address addr) {
         assembly {
             addr := mload(add(b,20))
         }
@@ -105,14 +112,14 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     }
 
     function addToken(
-        string name,
-        string symbol,
+        string calldata name,
+        string calldata symbol,
         uint8 decimals
     )
         external
         onlyOwner
     {
-        address tokenAddress = new MappingToken(name, symbol, decimals);
+        address tokenAddress = (address)(new MappingToken(name, symbol, decimals));
         
         emit AddToken(tokenAddress, name, symbol, decimals);
     }
@@ -120,14 +127,14 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     function addTokenPair(
         uint    id,
 
-        AncestorInfo aInfo,
+        AncestorInfo calldata aInfo,
 
         uint    fromChainID,
-        bytes   fromAccount,
+        bytes calldata  fromAccount,
         uint    toChainID,
-        bytes   toAccount
+        bytes calldata  toAccount
     )
-        public
+        external
         onlyOwner
         onlyNotExistID(id)
     {
@@ -153,14 +160,14 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     function updateTokenPair(
         uint    id,
 
-        AncestorInfo aInfo,
+        AncestorInfo calldata aInfo,
 
         uint    fromChainID,
-        bytes   fromAccount,
+        bytes calldata  fromAccount,
         uint    toChainID,
-        bytes   toAccount
+        bytes  calldata toAccount
     )
-        public
+        external
         onlyOwner
         onlyExistID(id)
     {
@@ -200,7 +207,29 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         }
     }
 
-    function updateToken(address tokenAddress, string name, string symbol)
+    function addAdmin(
+        address admin
+    )
+        external
+        onlyOwner
+    {
+        mapAdmin[admin] = true;
+
+        emit AddAdmin(admin);
+    }
+
+    function removeAdmin(
+        address admin
+    )
+        external
+        onlyOwner
+    {
+        delete mapAdmin[admin];
+
+        emit RemoveAdmin(admin);
+    }
+
+    function updateToken(address tokenAddress, string calldata name, string calldata symbol)
         external
         onlyOwner
     {
@@ -222,7 +251,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     )
         external
         view
-        returns (uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount)
+        returns (uint fromChainID, bytes memory fromAccount, uint toChainID, bytes memory toAccount)
     {
         fromChainID = mapTokenPairInfo[id].fromChainID;
         fromAccount = mapTokenPairInfo[id].fromAccount;
@@ -230,7 +259,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         toAccount = mapTokenPairInfo[id].toAccount;
     }
 
-    function getTokenInfo(uint id) external view returns (address addr, string name, string symbol, uint8 decimals) {
+    function getTokenInfo(uint id) external view returns (address addr, string memory name, string memory symbol, uint8 decimals) {
         address instance = bytesToAddress(mapTokenPairInfo[id].toAccount);
         name = IMappingToken(instance).name();
         symbol = IMappingToken(instance).symbol();
@@ -238,7 +267,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         addr = instance;
     }
 
-    function getAncestorInfo(uint id) external view returns (bytes account, string name, string symbol, uint8 decimals, uint chainId) {
+    function getAncestorInfo(uint id) external view returns (bytes memory account, string memory name, string memory symbol, uint8 decimals, uint chainId) {
         account = mapTokenPairInfo[id].aInfo.account;
         name = mapTokenPairInfo[id].aInfo.name;
         symbol = mapTokenPairInfo[id].aInfo.symbol;
@@ -249,7 +278,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     function getTokenPairs()
         external
         view
-        returns (uint[] id, uint[] fromChainID, bytes[] fromAccount, uint[] toChainID, bytes[] toAccount, string[] ancestorSymbol, uint8[] ancestorDecimals)
+        returns (uint[] memory id, uint[] memory fromChainID, bytes[] memory fromAccount, uint[] memory toChainID, bytes[] memory toAccount, string[] memory ancestorSymbol, uint8[] memory ancestorDecimals)
     {
         uint cnt = totalTokenPairs;
         uint theId = 0;
@@ -283,7 +312,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     function getTokenPairsByChainID(uint chainID1, uint chainID2)
         external
         view
-        returns (uint[] id, uint[] fromChainID, bytes[] fromAccount, uint[] toChainID, bytes[] toAccount, string[] ancestorSymbol, uint8[] ancestorDecimals)
+        returns (uint[] memory id, uint[] memory fromChainID, bytes[] memory fromAccount, uint[] memory toChainID, bytes[] memory toAccount, string[] memory ancestorSymbol, uint8[] memory ancestorDecimals)
     {
         uint cnt = 0;
         uint i = 0;

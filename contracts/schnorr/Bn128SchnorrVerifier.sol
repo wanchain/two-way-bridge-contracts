@@ -7,6 +7,7 @@ import "./Bn128.sol";
 
 
 contract Bn128SchnorrVerifier is Bn128 {
+    using SafeMath for uint256;
     struct Point {
         uint256 x; uint256 y;
     }

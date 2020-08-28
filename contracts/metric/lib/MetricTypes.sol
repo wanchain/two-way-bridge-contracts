@@ -82,38 +82,38 @@ library MetricTypes {
 
     struct MetricStorageData {
 
-        /** Incentive data **/
-        /// groupId -> hashx -> InctData
+        /* Incentive data */
+        // groupId -> hashx -> InctData
         mapping(bytes32 => mapping(bytes32 => InctData)) mapInct;
 
-        /** R slsh data **/
+        /* R slsh data */
         // groupId -> hashx -> smIndex -> RSlshData
         mapping(bytes32 => mapping(bytes32 => mapping(uint8 => RSlshData))) mapRSlsh;
 
-        /** R No Working data **/
+        /* R No Working data */
         // groupId -> hashx -> RNWData
         mapping(bytes32 => mapping(bytes32 => RNWData)) mapRNW;
 
-        /** S slsh data **/
+        /* S slsh data */
         // groupId -> hashx -> smIndex -> SSlshData
         mapping(bytes32 => mapping(bytes32 => mapping(uint8 => SSlshData))) mapSSlsh;
 
-        /** S No Working data **/
+        /* S No Working data */
         // groupId -> hashx -> SNWData
         mapping(bytes32 => mapping(bytes32 => SNWData)) mapSNW;
 
-        /** slsh count statistics **/
-        /// grpId -> epochId -> smIndex -> slsh count
+        /* slsh count statistics */
+        // grpId -> epochId -> smIndex -> slsh count
         mapping(bytes32 => mapping(uint256 => mapping(uint8 => uint256))) mapSlshCount;
 
-        /** incentive count statistics **/
-        /// grpId -> epochId -> smIndex -> incentive count
+        /* incentive count statistics */
+        // grpId -> epochId -> smIndex -> incentive count
         mapping(bytes32 => mapping(uint256 => mapping(uint8 => uint256))) mapInctCount;
 
-        /// config instance address
+        // config instance address
         address config;
 
-        /// smg instance address
+        // smg instance address
         address smg;
     }
 

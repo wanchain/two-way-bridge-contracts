@@ -75,7 +75,7 @@ contract WanToken is StandardToken, Owned {
     ///@param tokenName The token name to be used
     ///@param tokenSymbol The token symbol to be used
     ///@param tokenDecimal The token decimals to be used
-    constructor(string tokenName, string tokenSymbol, uint8 tokenDecimal)
+    constructor(string memory tokenName, string memory tokenSymbol, uint8 tokenDecimal)
         public
     {
         name = tokenName;

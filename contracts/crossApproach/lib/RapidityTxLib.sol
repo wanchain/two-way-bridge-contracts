@@ -45,7 +45,7 @@ library RapidityTxLib {
      *
      */
     struct Data {
-        /// @notice mapping of uniqueID to TxStatus -- uniqueID->TxStatus
+        // @notice mapping of uniqueID to TxStatus -- uniqueID->TxStatus
         mapping(bytes32 => TxStatus) mapTxStatus;
 
     }
