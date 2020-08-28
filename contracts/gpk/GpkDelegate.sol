@@ -407,8 +407,8 @@ contract GpkDelegate is GpkStorage, Owned {
     {
         GpkTypes.Group storage group = groupMap[groupId];
         address src = group.indexMap[index];
-        mapping(uint8 => GpkTypes.Round) chainRoundMap = groupMap[groupId].roundMap[group.round];
-        return (chainRoundMap[0].srcMap[src].gpkShare, chainRoundMap[1].srcMap[src].gpkShare);
+        mapping(uint8 => GpkTypes.Round) roundMap = groupMap[groupId].roundMap[group.round];
+        return (roundMap[0].srcMap[src].gpkShare, roundMap[1].srcMap[src].gpkShare);
     }
 
     function getGpk(bytes32 groupId)
@@ -417,8 +417,8 @@ contract GpkDelegate is GpkStorage, Owned {
         returns(bytes gpk1, bytes gpk2)
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        mapping(uint8 => GpkTypes.Round) chainRoundMap = groupMap[groupId].roundMap[group.round];
-        return (chainRoundMap[0].gpk, chainRoundMap[1].gpk);
+        mapping(uint8 => GpkTypes.Round) roundMap = groupMap[groupId].roundMap[group.round];
+        return (roundMap[0].gpk, roundMap[1].gpk);
     }
 
     /// @notice fallback function
