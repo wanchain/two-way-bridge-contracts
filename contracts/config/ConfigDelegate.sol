@@ -38,7 +38,7 @@ contract ConfigDelegate is ConfigStorage, Halt , Admin{
     /// @notice                           function for set smg contract address
     /// @param curveId                    curve id array
     /// @param curveAddress               curve contract address array
-    function setCurve(uint8[] curveId, address[] curveAddress)
+    function setCurve(uint8[] calldata curveId, address[] calldata curveAddress)
     external
     onlyAdmin
     {

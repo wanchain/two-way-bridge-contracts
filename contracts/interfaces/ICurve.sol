@@ -33,14 +33,14 @@ interface ICurve {
 
     function mulG(uint256 scalar) external view returns(uint256 x, uint256 y, bool success);
 
-    function calPolyCommit(bytes polyCommit, bytes pk) external view returns(uint256 sx, uint256 sy, bool success);
+    function calPolyCommit(bytes calldata polyCommit, bytes calldata pk) external view returns(uint256 sx, uint256 sy, bool success);
 
     function mulPk(uint256 scalar, uint256 xPk, uint256 yPk)
-    public
+    external
     view
     returns (uint256 x, uint256 y, bool success);
 
-    function equalPt (uint256 xLeft, uint256 yLeft,uint256 xRight, uint256 yRight) public view returns(bool);
+    function equalPt (uint256 xLeft, uint256 yLeft,uint256 xRight, uint256 yRight) external view returns(bool);
 
-    function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes pk) public view returns(bool);
+    function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes calldata pk) external view returns(bool);
 }

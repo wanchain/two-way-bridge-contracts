@@ -21,7 +21,7 @@ library StoremanUtil {
     StoremanType.StoremanGroup storage group = data.groups[groupId];
     return group.selectedCount;
   }
-  function getSelectedStoreman(StoremanType.StoremanData storage data, bytes32 groupId) public view returns(address[]) {
+  function getSelectedStoreman(StoremanType.StoremanData storage data, bytes32 groupId) public view returns(address[] memory) {
     StoremanType.StoremanGroup storage group = data.groups[groupId];
     address[] memory storemans = new address[](group.selectedCount);
     for(uint8 i=0; i<group.selectedCount; i++){

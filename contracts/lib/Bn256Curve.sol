@@ -2,14 +2,14 @@
 pragma solidity 0.7.0;
 
 library Bn256Curve {
-    address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
+    address constant PRECOMPILE_CONTRACT_ADDR = address(0x268);
 
     function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2)
         public
         view
         returns(uint256 retx, uint256 rety, bool success)
     {
-       address to = 0x6;
+       address to = address(0x6);
        assembly {
             let freePtr := mload(0x40)
             mstore(add(freePtr, 0), x1)
@@ -18,7 +18,7 @@ library Bn256Curve {
             mstore(add(freePtr, 96), y2)
 
             // call ERC20 Token contract transfer function
-            success := staticcall(gas,to, freePtr,128, freePtr, 64)
+            success := staticcall(gas(),to, freePtr,128, freePtr, 64)
 
             retx := mload(freePtr)
             rety := mload(add(freePtr,32))
@@ -39,14 +39,14 @@ library Bn256Curve {
             mstore(add(freePtr, 4), scalar)
 
             // call ERC20 Token contract transfer function
-            success := staticcall(gas, to, freePtr,36, freePtr, 64)
+            success := staticcall(gas(), to, freePtr,36, freePtr, 64)
 
             x := mload(freePtr)
             y := mload(add(freePtr,32))
         }
     }
 
-    function calPolyCommit(bytes polyCommit, bytes pk)
+    function calPolyCommit(bytes memory polyCommit, bytes memory pk)
         public
         view
         returns(uint256 sx, uint256 sy, bool success)
@@ -65,18 +65,16 @@ library Bn256Curve {
             mstore(add(freePtr,4), mload(add(polyCommit,32)))
             mstore(add(freePtr,36), mload(add(polyCommit,64)))
             let loopCnt := 1
-            loop:
-                jumpi(loopend, eq(loopCnt,polyCommitCnt))
+            for { } not(eq(loopCnt, polyCommitCnt)) { } {
                 mstore(add(freePtr,add(4,mul(loopCnt,64))),         mload(add(add(add(polyCommit,32),mul(loopCnt,64)),0)))
                 mstore(add(freePtr,add(4,add(mul(loopCnt,64),32))), mload(add(add(add(add(polyCommit,32),mul(loopCnt,64)),0),32)))
                 loopCnt := add(loopCnt, 1)
-                jump(loop)
-            loopend:
+            }
 
             mstore(add(freePtr,    add(4,mul(loopCnt,64))),     mload(add(pk,32)))
             mstore(add(freePtr,add(add(4,mul(loopCnt,64)),32)), mload(add(pk,64)))
 
-            success := staticcall(gas,to, freePtr,add(mul(total,32),4), freePtr, 64)
+            success := staticcall(gas(),to, freePtr,add(mul(total,32),4), freePtr, 64)
 
             sx := mload(freePtr)
             sy := mload(add(freePtr, 32))
@@ -87,7 +85,7 @@ library Bn256Curve {
     public
     view
     returns (uint256 x, uint256 y, bool success){
-        address to = 0x7;
+        address to = address(0x7);
 
         assembly {
             let freePtr := mload(0x40)
@@ -95,7 +93,7 @@ library Bn256Curve {
             mstore(add(freePtr,32), yPk)
             mstore(add(freePtr, 64), scalar)
 
-            success := staticcall(gas, to, freePtr,96, freePtr, 64)
+            success := staticcall(gas(), to, freePtr,96, freePtr, 64)
 
             x := mload(freePtr)
             y := mload(add(freePtr,32))

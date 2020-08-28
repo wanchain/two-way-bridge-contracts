@@ -118,7 +118,7 @@ library HTLCTxLib {
 
         userTx.baseTx.smgID = params.smgID;
         userTx.baseTx.lockedTime = params.lockedTime;
-        userTx.baseTx.beginLockedTime = now;
+        userTx.baseTx.beginLockedTime = block.timestamp;
         userTx.baseTx.status = TxStatus.Locked;
         userTx.tokenPairID = params.tokenPairID;
         userTx.value = params.value;
@@ -138,7 +138,7 @@ library HTLCTxLib {
 
         UserTx storage userTx = self.mapHashXUserTxs[xHash];
         require(userTx.baseTx.status == TxStatus.Locked, "Status is not locked");
-        require(now < userTx.baseTx.beginLockedTime.add(userTx.baseTx.lockedTime), "Redeem timeout");
+        require(block.timestamp < userTx.baseTx.beginLockedTime.add(userTx.baseTx.lockedTime), "Redeem timeout");
 
         userTx.baseTx.status = TxStatus.Redeemed;
 
@@ -152,7 +152,7 @@ library HTLCTxLib {
     {
         UserTx storage userTx = self.mapHashXUserTxs[xHash];
         require(userTx.baseTx.status == TxStatus.Locked, "Status is not locked");
-        require(now >= userTx.baseTx.beginLockedTime.add(userTx.baseTx.lockedTime), "Revoke is not permitted");
+        require(block.timestamp >= userTx.baseTx.beginLockedTime.add(userTx.baseTx.lockedTime), "Revoke is not permitted");
 
         userTx.baseTx.status = TxStatus.Revoked;
     }
@@ -190,7 +190,7 @@ library HTLCTxLib {
         smgTx.baseTx.smgID = smgID;
         smgTx.baseTx.status = TxStatus.Locked;
         smgTx.baseTx.lockedTime = lockedTime;
-        smgTx.baseTx.beginLockedTime = now;
+        smgTx.baseTx.beginLockedTime = block.timestamp;
         smgTx.tokenPairID = tokenPairID;
         smgTx.value = value;
         smgTx.userAccount = userAccount;
@@ -208,7 +208,7 @@ library HTLCTxLib {
 
         SmgTx storage smgTx = self.mapHashXSmgTxs[xHash];
         require(smgTx.baseTx.status == TxStatus.Locked, "Status is not locked");
-        require(now < smgTx.baseTx.beginLockedTime.add(smgTx.baseTx.lockedTime), "Redeem timeout");
+        require(block.timestamp < smgTx.baseTx.beginLockedTime.add(smgTx.baseTx.lockedTime), "Redeem timeout");
 
         smgTx.baseTx.status = TxStatus.Redeemed;
 
@@ -222,7 +222,7 @@ library HTLCTxLib {
     {
         SmgTx storage smgTx = self.mapHashXSmgTxs[xHash];
         require(smgTx.baseTx.status == TxStatus.Locked, "Status is not locked");
-        require(now >= smgTx.baseTx.beginLockedTime.add(smgTx.baseTx.lockedTime), "Revoke is not permitted");
+        require(block.timestamp >= smgTx.baseTx.beginLockedTime.add(smgTx.baseTx.lockedTime), "Revoke is not permitted");
 
         smgTx.baseTx.status = TxStatus.Revoked;
     }
@@ -257,7 +257,7 @@ library HTLCTxLib {
         debtTx.baseTx.smgID = destSmgID;
         debtTx.baseTx.status = TxStatus.Locked;
         debtTx.baseTx.lockedTime = lockedTime;
-        debtTx.baseTx.beginLockedTime = now;
+        debtTx.baseTx.beginLockedTime = block.timestamp;
         debtTx.srcSmgID = srcSmgID;
 
         self.mapHashXDebtTxs[xHash] = debtTx;
@@ -273,7 +273,7 @@ library HTLCTxLib {
 
         DebtTx storage debtTx = self.mapHashXDebtTxs[xHash];
         require(debtTx.baseTx.status == TxStatus.Locked, "Status is not locked");
-        require(now < debtTx.baseTx.beginLockedTime.add(debtTx.baseTx.lockedTime), "Redeem timeout");
+        require(block.timestamp < debtTx.baseTx.beginLockedTime.add(debtTx.baseTx.lockedTime), "Redeem timeout");
 
         debtTx.baseTx.status = TxStatus.Redeemed;
 
@@ -287,7 +287,7 @@ library HTLCTxLib {
     {
         DebtTx storage debtTx = self.mapHashXDebtTxs[xHash];
         require(debtTx.baseTx.status == TxStatus.Locked, "Status is not locked");
-        require(now >= debtTx.baseTx.beginLockedTime.add(debtTx.baseTx.lockedTime), "Revoke is not permitted");
+        require(block.timestamp >= debtTx.baseTx.beginLockedTime.add(debtTx.baseTx.lockedTime), "Revoke is not permitted");
 
         debtTx.baseTx.status = TxStatus.Revoked;
     }
@@ -306,8 +306,8 @@ library HTLCTxLib {
     }
 
     function getLeftTime(uint endTime) private view returns (uint) {
-        if (now < endTime) {
-            return endTime.sub(now);
+        if (block.timestamp < endTime) {
+            return endTime.sub(block.timestamp);
         }
         return 0;
     }

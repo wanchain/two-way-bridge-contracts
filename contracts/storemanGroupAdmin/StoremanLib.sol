@@ -30,17 +30,17 @@ library StoremanLib {
         external
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        require(now > group.workTime + group.totalTime, "not expired");
+        require(block.timestamp > group.workTime + group.totalTime, "not expired");
         group.status = StoremanType.GroupStatus.unregistered;
         emit StoremanGroupUnregisterEvent(groupId);
     }
 
 
 
-    function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID) external
+    function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes calldata PK, bytes calldata enodeID) external
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        require(now <= group.registerTime+group.registerDuration,"Registration closed");
+        require(block.timestamp <= group.registerTime+group.registerDuration,"Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         address pkAddr = address(keccak256(PK));
         StoremanType.Candidate storage sk = data.candidates[0][pkAddr];
@@ -52,7 +52,7 @@ library StoremanLib {
         sk.wkAddr = pkAddr;
         sk.groupId = groupId;
         sk.deposit = Deposit.Records(0);
-        sk.deposit.addRecord(Deposit.Record(StoremanUtil.getDaybyTime(data.posLib, now), msg.value));
+        sk.deposit.addRecord(Deposit.Record(StoremanUtil.getDaybyTime(data.posLib, block.timestamp), msg.value));
 
         group.skMap[group.memberCount] = sk.wkAddr;
         group.memberCount++;
@@ -75,7 +75,7 @@ library StoremanLib {
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         require(sk.sender == msg.sender, "Only the sender can stakeAppend");
 
-        uint day = StoremanUtil.getDaybyTime(data.posLib, now);
+        uint day = StoremanUtil.getDaybyTime(data.posLib, block.timestamp);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         sk.deposit.addRecord(r);
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
@@ -203,7 +203,8 @@ library StoremanLib {
     }
 
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
-        for (uint i = group.whiteCount; i < group.selectedCount; i++) {
+        uint i = group.whiteCount;
+        for (; i < group.selectedCount; i++) {
             StoremanType.Candidate storage cmpNode = data.candidates[0][group.selectedNode[i]];
             if (cmpNode.wkAddr == skAddr) { // keep self position, do not sort
                 return;
@@ -215,7 +216,8 @@ library StoremanLib {
         }
         if (i < group.memberCountDesign) {
             address curAddr = group.selectedNode[i]; // must not be skAddr
-            for (uint j = i; j < group.selectedCount; j++) {
+            uint j = i;
+            for (; j < group.selectedCount; j++) {
                 if (j + 1 < group.memberCountDesign) {
                     address nextAddr = group.selectedNode[j + 1];
                     group.selectedNode[j + 1] = curAddr;
@@ -234,7 +236,7 @@ library StoremanLib {
         }
     }
 
-    function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r) internal {
+    function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record memory r) internal {
         //如果还没选择, 不需要更新group的值, 在选择的时候一起更新.
         // 如果已经选择过了, 需要更新group的值.
         if(group.status == StoremanType.GroupStatus.none){ // not exist group.
@@ -270,7 +272,7 @@ library StoremanLib {
             // dk.staker = wkAddr;
         }
         sk.delegateDeposit = sk.delegateDeposit.add(msg.value);
-        uint day = StoremanUtil.getDaybyTime(data.posLib, now);
+        uint day = StoremanUtil.getDaybyTime(data.posLib, block.timestamp);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         dk.deposit.addRecord(r);
         updateGroup(data, sk, group, r);
@@ -278,7 +280,7 @@ library StoremanLib {
         emit delegateInEvent(wkAddr, msg.sender,msg.value);
     }
     // 必须指定白名单. 允许重复. 
-    function inheritNode(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] wkAddrs, address[] senders) public
+    function inheritNode(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] calldata wkAddrs, address[] calldata senders) public
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
@@ -401,7 +403,7 @@ library StoremanLib {
             sk.partners[msg.sender] = pn;
         }
         sk.partnerDeposit = sk.partnerDeposit.add(msg.value);
-        uint day = StoremanUtil.getDaybyTime(data.posLib, now);
+        uint day = StoremanUtil.getDaybyTime(data.posLib, block.timestamp);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         pn.deposit.addRecord(r);
         updateGroup(data, sk, group, r);

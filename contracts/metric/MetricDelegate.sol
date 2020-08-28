@@ -76,7 +76,7 @@ contract MetricDelegate is MetricStorage, Halt{
     function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId)
     external
     view
-    returns (uint[]) {
+    returns (uint[] memory) {
         require(endEpId >= startEpId, "endEpId<startEpId");
         uint[] memory ret;
         uint8 n = getSMCount(grpId);
@@ -95,7 +95,7 @@ contract MetricDelegate is MetricStorage, Halt{
     function getPrdSlshMetric(bytes32 grpId, uint startEpId, uint endEpId)
     external
     view
-    returns (uint[])
+    returns (uint[] memory)
     {
         require(endEpId >= startEpId, "endEpId<startEpId");
         uint[] memory ret;
@@ -138,7 +138,7 @@ contract MetricDelegate is MetricStorage, Halt{
     function getRSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     external
     view
-    returns (MetricTypes.RSlshData)
+    returns (MetricTypes.RSlshData memory)
     {
         return metricData.mapRSlsh[grpId][hashX][smIndex];
 
@@ -150,7 +150,7 @@ contract MetricDelegate is MetricStorage, Halt{
     function getSSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     external
     view
-    returns (MetricTypes.SSlshData)
+    returns (MetricTypes.SSlshData memory)
     {
         return metricData.mapSSlsh[grpId][hashX][smIndex];
     }
@@ -246,7 +246,7 @@ contract MetricDelegate is MetricStorage, Halt{
     view
     returns (uint)
     {
-        return IPosLib(metricData.posLib).getEpochId(now);
+        return IPosLib(metricData.posLib).getEpochId(block.timestamp);
     }
 
     function checkHamming(uint indexes, uint8 smIndex)
@@ -255,10 +255,6 @@ contract MetricDelegate is MetricStorage, Halt{
     returns (bool)
     {
         return indexes & (uint(1) << smIndex) != uint(0);
-    }
-
-    function() public payable {
-        revert("Not support");
     }
 
 }

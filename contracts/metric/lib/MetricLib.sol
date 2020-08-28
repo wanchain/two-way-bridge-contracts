@@ -102,7 +102,7 @@ library MetricLib {
         bytes32 h;
         bytes memory senderPk;
 
-        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+        MetricTypes.RSlshData storage rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
         // build h
         h = sha256(rslshData.polyDataPln.polyData);
         // build senderpk
@@ -158,7 +158,7 @@ library MetricLib {
     /// @param hashX                    hash of the signed data
     /// @param sslshData                slash data of S stage
     /// @param smCount                  total number of store man
-    function writeSSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData sslshData, uint8 smCount)
+    function writeSSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData memory sslshData, uint8 smCount)
     public
     returns (bool, uint8)
     {
@@ -214,7 +214,7 @@ library MetricLib {
         bytes32 h;
         bytes memory senderPk;
 
-        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+        MetricTypes.SSlshData storage sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
         // build h
         h = sha256(sslshData.polyDataPln.polyData);
         // build senderpk
@@ -223,7 +223,7 @@ library MetricLib {
         return ckSig(metricData, h, sslshData.polyDataPln.polyDataR, sslshData.polyDataPln.polyDataS, senderPk);
     }
 
-    function ckSig(MetricTypes.MetricStorageData storage metricData, bytes32 hash, bytes32 r, bytes32 s, bytes pk)
+    function ckSig(MetricTypes.MetricStorageData storage metricData, bytes32 hash, bytes32 r, bytes32 s, bytes memory pk)
     internal
     returns (bool){
         address curveAddr;
@@ -279,20 +279,24 @@ library MetricLib {
     function getPkBytesByInx(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint8 smIndex)
     internal
     view
-    returns (bytes)
+    returns (bytes memory)
     {
         bytes memory smPk;
         (, smPk,) = (IStoremanGroup)(metricData.smg).getSelectedSmInfo(grpId, uint(smIndex));
         return smPk;
     }
-    /// @notice                         get epoch id by now time stamp
+    /// @notice                         get epoch id by block.timestamp time stamp
     /// @param metricData               self parameter for lib function
     function getEpochId(MetricTypes.MetricStorageData storage metricData)
     internal
     view
     returns (uint)
     {
+<<<<<<< HEAD
         return IPosLib(metricData.posLib).getEpochId(now);
+=======
+        return PosLib.getEpochId(block.timestamp);
+>>>>>>> sol 0.4 to 0.7
     }
     /// @notice                         get total number of store man in special group
     /// @param metricData               self parameter for lib function

@@ -172,7 +172,7 @@ library HTLCMintLib {
             left = (msg.value).sub(lockFee);
 
             // require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
-            require(CrossTypes.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
+            require(CrossTypes.transferFrom(tokenScAddr, msg.sender, address(this), params.value), "Lock token failed");
         }
         if (left != 0) {
             (msg.sender).transfer(left);
@@ -238,7 +238,7 @@ library HTLCMintLib {
             if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(lockFee);
             } else {
-                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer{value: lockFee}(smgID);
             }
         }
 
@@ -293,12 +293,12 @@ library HTLCMintLib {
             if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[smgID] = storageData.mapStoremanFee[smgID].add(revokeFee);
             } else {
-                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(revokeFee)(smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer{value: revokeFee}(smgID);
             }
         }
 
         if (lockFee > 0) {
-            (userOrigAccount).transfer(lockFee);
+            (payable(userOrigAccount)).transfer(lockFee);
             emit TransferToLogger(userOrigAccount, lockFee);
         }
 
@@ -309,7 +309,7 @@ library HTLCMintLib {
 
         address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
         if (tokenScAddr == address(0)) {
-            (userOrigAccount).transfer(value);
+            (payable(userOrigAccount)).transfer(value);
             emit TransferToLogger(userOrigAccount, value);
         } else {
             // require(IRC20Protocol(tokenScAddr).transfer(userOrigAccount, value), "Transfer token failed");

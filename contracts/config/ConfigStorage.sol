@@ -39,6 +39,6 @@ contract ConfigStorage is BasicStorage {
      **
      ************************************************************/
 
-    /// curve -> contract address
+    // curve -> contract address
     mapping(uint8 => address) curves;
 }

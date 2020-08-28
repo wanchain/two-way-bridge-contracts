@@ -36,19 +36,19 @@ contract QuotaStorage is BasicStorage {
     using SafeMath for uint;
 
     struct Quota {
-        /// amount of original token to be received, equals to amount of WAN token to be minted
+        // amount of original token to be received, equals to amount of WAN token to be minted
         uint debt_receivable;
-        /// amount of WAN token to be burnt
+        // amount of WAN token to be burnt
         uint debt_payable;
-        /// amount of original token has been exchanged to the wanchain
+        // amount of original token has been exchanged to the wanchain
         uint _debt;
-        /// amount of original token to be received, equals to amount of WAN token to be minted
+        // amount of original token to be received, equals to amount of WAN token to be minted
         uint asset_receivable;
-        /// amount of WAN token to be burnt
+        // amount of WAN token to be burnt
         uint asset_payable;
-        /// amount of original token has been exchanged to the wanchain
+        // amount of original token has been exchanged to the wanchain
         uint _asset;
-        /// data is active
+        // data is active
         bool _active;
     }
 

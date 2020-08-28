@@ -7,6 +7,8 @@ import "./Secp256k1.sol";
 
 
 contract Secp256k1SchnorrVerifier is Secp256k1 {
+    using SafeMath for uint256;
+    
     struct Point {
         uint256 x; uint256 y;
     }

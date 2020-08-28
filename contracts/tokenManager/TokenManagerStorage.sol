@@ -45,11 +45,11 @@ contract TokenManagerStorage is BasicStorage {
     }
 
     struct TokenPairInfo {
-      AncestorInfo aInfo;               /// TODO:
-      uint      fromChainID;            /// index in coinType.txt; e.g. eth=60, etc=61, wan=5718350
-      bytes     fromAccount;            /// from address
-      uint      toChainID;              ///
-      bytes     toAccount;              /// to token address
+      AncestorInfo aInfo;
+      uint      fromChainID;            // index in coinType.txt; e.g. eth=60, etc=61, wan=5718350
+      bytes     fromAccount;            // from address
+      uint      toChainID;              //
+      bytes     toAccount;              // to token address
     }
 
 

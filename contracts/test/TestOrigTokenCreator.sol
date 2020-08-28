@@ -22,42 +22,42 @@ contract TestOrigTokenCreator is BasicStorage {
         return _admin;
     }
 
-    function createToken(string tokenName, string tokenSymbol, uint8 tokenDecimal) external {
+    function createToken(string calldata tokenName, string calldata tokenSymbol, uint8 tokenDecimal) external {
         address tokenInst = new MappingToken(tokenName, tokenSymbol, tokenDecimal);
         addressData.setStorage(bytes(tokenName), bytes(tokenSymbol), tokenInst);
         uintData.setStorage(bytes(tokenName), bytes(tokenSymbol), tokenDecimal);
         // TestIOwned(tokenInst).changeOwner(msg.sender);
     }
 
-    function changeOwner(string tokenName, string tokenSymbol) external {
+    function changeOwner(string calldata tokenName, string calldata tokenSymbol) external {
         address tokenInst = addressData.getStorage(bytes(tokenName), bytes(tokenSymbol));
         TestIOwned(tokenInst).changeOwner(msg.sender);
     }
 
-    function acceptOwnership(string tokenName, string tokenSymbol) external {
+    function acceptOwnership(string calldata tokenName, string calldata tokenSymbol) external {
         address tokenInst = addressData.getStorage(bytes(tokenName), bytes(tokenSymbol));
         TestIOwned(tokenInst).acceptOwnership();
     }
 
-    function getTokenAddr(string tokenName, string tokenSymbol) external view returns (address) {
+    function getTokenAddr(string calldata tokenName, string calldata tokenSymbol) external view returns (address) {
         return addressData.getStorage(bytes(tokenName), bytes(tokenSymbol));
     }
 
-    function mintToken(string tokenName, string tokenSymbol, address to, uint value) external {
+    function mintToken(string calldata tokenName, string calldata tokenSymbol, address to, uint value) external {
         address tokenInst = addressData.getStorage(bytes(tokenName), bytes(tokenSymbol));
         IMappingToken(tokenInst).mint(to, value);
     }
 
-    function burnToken(string tokenName, string tokenSymbol, address from, uint value) external {
+    function burnToken(string calldata tokenName, string calldata tokenSymbol, address from, uint value) external {
         address tokenInst = addressData.getStorage(bytes(tokenName), bytes(tokenSymbol));
         IMappingToken(tokenInst).burn(from, value);
     }
 
-    function getTokenDecimal(string tokenName, string tokenSymbol) external view returns (uint8) {
+    function getTokenDecimal(string calldata tokenName, string calldata tokenSymbol) external view returns (uint8) {
         return uint8(uintData.getStorage(bytes(tokenName), bytes(tokenSymbol)));
     }
 
-    function destroyToken(string tokenName, string tokenSymbol) external {
+    function destroyToken(string calldata tokenName, string calldata tokenSymbol) external {
         addressData.delStorage(bytes(tokenName), bytes(tokenSymbol));
         uintData.delStorage(bytes(tokenName), bytes(tokenSymbol));
     }

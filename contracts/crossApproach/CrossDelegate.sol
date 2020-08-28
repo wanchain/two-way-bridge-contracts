@@ -35,9 +35,11 @@ import "./lib/HTLCMintLib.sol";
 import "./lib/HTLCBurnLib.sol";
 import "./lib/HTLCDebtLib.sol";
 import "./lib/RapidityLib.sol";
+import "./lib/HTLCTxLib.sol";
 
 contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     using SafeMath for uint;
+    using HTLCTxLib for HTLCTxLib.Data;
 
     /**
      *
@@ -71,7 +73,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         uint endTime;
         (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
+        require(status == uint8(GroupStatus.ready) && block.timestamp >= startTime && block.timestamp <= endTime, "PK is not ready");
         _;
     }
 
@@ -86,7 +88,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     //     uint endTime;
     //     (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-    //     require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
+    //     require(status == uint8(GroupStatus.ready) && block.timestamp >= startTime && block.timestamp <= endTime, "PK is not ready");
     // }
 
     // function _checkUnregisteredSmg(bytes32 smgID) private view {
@@ -132,7 +134,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         uint endTime;
         (,status,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
+        require(status == uint8(GroupStatus.ready) && block.timestamp >= startTime && block.timestamp <= endTime, "PK is not ready");
 
         return (curveID, PK);
     }
@@ -158,7 +160,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive WRC20 token
-    function userMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+    function userMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
         external
         payable
         notHalted
@@ -186,7 +188,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  userAccount                     address of user, used to receive WRC20 token
     /// @param  r                               signature
     /// @param  s                               signature
-    function smgMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
+    function smgMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes calldata r, bytes32 s)
         external
         notHalted
         nonReentrant
@@ -256,7 +258,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+    function userBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
         external
         payable
         notHalted
@@ -283,7 +285,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  userAccount                     address of user, used to receive WRC20 token
     /// @param  r                               signature
     /// @param  s                               signature
-    function smgBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
+    function smgBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes calldata r, bytes32 s)
         external
         notHalted
         nonReentrant
@@ -352,7 +354,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive shadow chain token
-    function userFastMint(bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+    function userFastMint(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
         external
         payable
         notHalted
@@ -377,7 +379,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  userAccount                     address of user, used to receive WRC20 token
     /// @param  r                               signature
     /// @param  s                               signature
-    function smgFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
+    function smgFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes calldata r, bytes32 s)
         external
         notHalted
         nonReentrant
@@ -405,7 +407,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userFastBurn(bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+    function userFastBurn(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
         external
         payable
         notHalted
@@ -430,7 +432,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  userAccount                     address of user, used to receive original token/coin
     /// @param  r                               signature
     /// @param  s                               signature
-    function smgFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
+    function smgFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes calldata r, bytes32 s)
         external
         notHalted
         nonReentrant
@@ -458,7 +460,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  destSmgID                       ID of dst storeman
     /// @param  r                               signature
     /// @param  s                               signature
-    function srcDebtLock(bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, bytes r, bytes32 s)
+    function srcDebtLock(bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, bytes calldata r, bytes32 s)
         external
         notHalted
         onlyReadySmg(destSmgID)
@@ -485,7 +487,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  destSmgID                       ID of dst storeman
     /// @param  r                               signature
     /// @param  s                               signature
-    function destDebtLock(bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, bytes r, bytes32 s)
+    function destDebtLock(bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, bytes calldata r, bytes32 s)
         external
         notHalted
     {
@@ -590,7 +592,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
 
     /// @notice                             get the fee of the storeman group should get
     /// @param  xHash                       hash of HTLC random number
-    /// @return leftLockTime                left time of locked transaction
+    /// @return leftLockedTime              left time of locked transaction
     function getLeftLockedTime(bytes32 xHash) external view returns (uint leftLockedTime) {
         leftLockedTime = storageData.htlcTxData.getLeftLockedTime(xHash);
     }
@@ -647,12 +649,12 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param receiver                     account of the receiver
     /// @param r                            signature
     /// @param s                            signature
-    function smgWithdrawFee(bytes32 smgID, uint timeStamp, address receiver, bytes r, bytes32 s)
+    function smgWithdrawFee(bytes32 smgID, uint timeStamp, address receiver, bytes calldata r, bytes32 s)
         external
         nonReentrant
     {
 
-        require(now < timeStamp.add(smgFeeReceiverTimeout), "The receiver address expired");
+        require(block.timestamp < timeStamp.add(smgFeeReceiverTimeout), "The receiver address expired");
 
         uint curveID;
         bytes memory PK;
@@ -664,9 +666,9 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         require(fee > 0, "Fee is null");
 
         delete storageData.mapStoremanFee[smgID];
-        receiver.transfer(fee);
+        (payable(receiver)).transfer(fee);
 
-        emit SmgWithdrawFeeLogger(smgID, now, receiver, fee);
+        emit SmgWithdrawFeeLogger(smgID, block.timestamp, receiver, fee);
     }
 
     /// @notice       convert bytes to bytes32
@@ -691,7 +693,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  message     message to be verified
     /// @param  r           Signature info r
     /// @param  s           Signature info s
-    function verifySignature(uint curveID, bytes32 message, bytes PK, bytes r, bytes32 s)
+    function verifySignature(uint curveID, bytes32 message, bytes memory PK, bytes calldata r, bytes32 s)
         private
         // view
     {
