@@ -3,7 +3,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
-const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../basee.js');
+const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, Data } = require('./Data');
 const utils = require('../utils.js');
 

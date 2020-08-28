@@ -8,7 +8,7 @@ const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 
 
 
-const { registerStart,stakeInPre, setupNetwork } = require('../basee.js');
+const { registerStart,stakeInPre, setupNetwork } = require('../base.js');
 
 
 

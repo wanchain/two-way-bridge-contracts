@@ -15,7 +15,7 @@ contract('open_storeman_it', async () => {
     console.log("leader sk: %O", sk);
     console.log("pre group id: %s", sk.groupId);
 
-    let groupId = await registerStart(smgSc, sk.groupId, 7);
+    let groupId = await registerStart(smgSc, 7, {preGroupId: sk.groupId});
     console.log("new group id: %s", groupId);
 
     sk = await smgSc.getStoremanInfo(oldLeader);

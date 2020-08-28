@@ -12,7 +12,7 @@ const sk = [{
 },{
     addr:"0x0beba6154f527596b4b8bb45326131a90c5c6140", pk:"0x28b11382ec24a15d5fa7ae77f9e9531ddc0f83a8ab2faab942db77411e17fdcf8160b0fa132933f1afa613eb19e73cef5d869e06ca58ad7787ddc5f7c11c369b",
 }]
-const { registerStart,stakeInPre, setupNetwork} = require('../basee.js')
+const { registerStart,stakeInPre, setupNetwork} = require('../base.js')
 
 contract('StoremanGroupDelegate', async () => {
  

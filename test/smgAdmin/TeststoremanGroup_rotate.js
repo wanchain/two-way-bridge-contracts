@@ -3,7 +3,7 @@ const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 
-const { registerStart,registerStart2,stakeInPre, sendIncentive,g, toSelect,setupNetwork } = require('../basee.js')
+const { registerStart,registerStart2,stakeInPre, sendIncentive,g, toSelect,setupNetwork } = require('../base.js')
 
 contract('StoremanGroupDelegate', async () => {
  

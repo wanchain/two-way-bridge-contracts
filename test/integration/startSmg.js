@@ -3,7 +3,7 @@ const utils = require("../utils");
 
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const { registerStart, stakeInPre, } = require('../basee.js')
+const { registerStart, stakeInPre, } = require('../base.js')
 const argv = require('optimist').argv
 
 console.log("argv: ", argv)

@@ -6,7 +6,7 @@ const assert = require("assert")
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
 const Web3 = require('web3')
-const { registerStart,stakeInPre, setupNetwork, g} = require('../basee.js')
+const { registerStart,stakeInPre, setupNetwork, g} = require('../base.js')
 
 
 let web3 = new Web3()
