@@ -71,7 +71,7 @@ let wanChainId=2153201998;
 let ethChainId=2147483708;
 let curve1 = 1, curve2 = 1;
 
-async function registerStart(smg, wlStartIndex = 0, option){
+async function registerStart(smg, wlStartIndex = 0, option = {}){
     //await smg.updateStoremanConf(3,15000,10)
     let now = parseInt(Date.now()/1000);
     let id = utils.stringTobytes32(now.toString())
@@ -82,9 +82,9 @@ async function registerStart(smg, wlStartIndex = 0, option){
         wks.push(wk)
         srs.push(sfs[i])
     }
-    let registerDuration = option.registerDuration ? option.registerDuration:registerDuration;
-    let gpkDuration =  option.gpkDuration ? option.gpkDuration:gpkDuration;
-    let htlcDuration =  option.htlcDuration ? option.htlcDuration:htlcDuration;
+    let registerDuration = option.registerDuration ? option.registerDuration : g.registerDuration;
+    let gpkDuration =  option.gpkDuration ? option.gpkDuration : g.gpkDuration;
+    let htlcDuration =  option.htlcDuration ? option.htlcDuration : g.htlcDuration;
     let preGroupId =  option.preGroupId ? option.preGroupId : utils.stringTobytes32("");
 
     let smgIn = {
