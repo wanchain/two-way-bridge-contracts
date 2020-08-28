@@ -26,7 +26,11 @@ contract Secp256k1 {
         uint256 x2,
         uint256 y2
     ) public view returns (uint256 retx, uint256 rety) {
+<<<<<<< HEAD
         address to = address(0x42);
+=======
+        address to = 0x42;
+>>>>>>> sol 0.4 to 0.7
         assembly {
             let freePtr := mload(0x40)
             mstore(add(freePtr, 0), x1)

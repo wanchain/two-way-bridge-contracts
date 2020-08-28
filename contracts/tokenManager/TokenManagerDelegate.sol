@@ -32,12 +32,12 @@ pragma experimental ABIEncoderV2;
  * Math operations with safety checks
  */
 
-import "../components/Admin.sol";
+import "../components/Owned.sol";
 import "./TokenManagerStorage.sol";
 import "./MappingToken.sol";
 import "./IMappingToken.sol";
 
-contract TokenManagerDelegate is TokenManagerStorage, Admin {
+contract TokenManagerDelegate is TokenManagerStorage, Owned {
     using SafeMath for uint;
     /************************************************************
      **
@@ -49,6 +49,8 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
      event AddTokenPair(uint indexed id, uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount);
      event UpdateTokenPair(uint indexed id, AncestorInfo aInfo, uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount);
      event RemoveTokenPair(uint indexed id);
+     event AddAdmin(address admin);
+     event RemoveAdmin(address admin);
      event UpdateToken(address tokenAddress, string name, string symbol);
 
     /**
@@ -64,6 +66,11 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
 
     modifier onlyExistID(uint id) {
         require(mapTokenPairInfo[id].fromChainID > 0, "token not exist");
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(mapAdmin[msg.sender], "not admin");
         _;
     }
 

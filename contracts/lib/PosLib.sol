@@ -43,20 +43,22 @@ library PosLib {
     }
 
 
-    function getPosAvgReturn(uint256 targetSecond)  public view returns(uint256 result,bool success) {
-      // bytes32 functionSelector = keccak256("getPosAvgReturn(uint256)");
-       bytes32 functionSelector = 0x94fee72400000000000000000000000000000000000000000000000000000000;
+    function getPosAvgReturn(uint256 groupStartTime,uint256 curTime)  public view returns(uint256 result,bool success) {
+      // bytes32 functionSelector = keccak256("getPosAvgReturn(uint256,uint256)");
+       bytes32 functionSelector = 0x8c114a5100000000000000000000000000000000000000000000000000000000;
        address to = PRECOMPILE_CONTRACT_ADDR;
 
        assembly {
             let freePtr := mload(0x40)
             mstore(freePtr, functionSelector)
-            mstore(add(freePtr, 4), targetSecond)
+            mstore(add(freePtr, 4), groupStartTime)
+            mstore(add(freePtr, 36), curTime)
 
             // call ERC20 Token contract transfer function
             success := staticcall(gas(), to, freePtr,36, freePtr, 32)
             result := mload(freePtr)
         }
+
     }
 
 
@@ -92,11 +94,11 @@ library PosLib {
          return (getMinIncentive(10000000 ether,block.timestamp - 86400 * 4),0);
      }
 
-    function getMinIncentive (uint256 smgDeposit,uint256 targetSecond) public view returns(uint256) {
+    function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime) public view returns(uint256) {
         uint256 p1;
         bool    success;
 
-        (p1,success) = getPosAvgReturn(targetSecond);
+        (p1,success) = getPosAvgReturn(smgStartTime,block.timestamp);
         if(!success) {
             return 0;
         }

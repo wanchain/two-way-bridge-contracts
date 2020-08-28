@@ -293,7 +293,11 @@ library MetricLib {
     returns (uint)
     {
 <<<<<<< HEAD
+<<<<<<< HEAD
         return IPosLib(metricData.posLib).getEpochId(now);
+=======
+        return PosLib.getEpochId(block.timestamp);
+>>>>>>> sol 0.4 to 0.7
 =======
         return PosLib.getEpochId(block.timestamp);
 >>>>>>> sol 0.4 to 0.7

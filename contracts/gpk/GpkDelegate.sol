@@ -28,11 +28,11 @@
 pragma solidity 0.7.0;
 
 import "../lib/SafeMath.sol";
-import "../components/Admin.sol";
+import "../components/Owned.sol";
 import "./GpkStorage.sol";
 import "./lib/GpkLib.sol";
 
-contract GpkDelegate is GpkStorage, Admin {
+contract GpkDelegate is GpkStorage, Owned {
     using SafeMath for uint;
 
     /**
@@ -100,7 +100,7 @@ contract GpkDelegate is GpkStorage, Admin {
     /// @param negotiatePeriod            negotiate period
     function setPeriod(bytes32 groupId, uint32 ployCommitPeriod, uint32 defaultPeriod, uint32 negotiatePeriod)
         external
-        onlyAdmin
+        onlyOwner
     {
         GpkTypes.Group storage group = groupMap[groupId];
         group.ployCommitPeriod = ployCommitPeriod;
@@ -390,7 +390,7 @@ contract GpkDelegate is GpkStorage, Admin {
         return round.srcMap[src].polyCommit;
     }
 
-    function getSijInfo(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src, address dest)
+    function getEncSijInfo(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src, address dest)
         external
         view
         returns(bytes memory encSij, uint8 checkStatus, uint setTime, uint checkTime, uint sij, uint ephemPrivateKey)

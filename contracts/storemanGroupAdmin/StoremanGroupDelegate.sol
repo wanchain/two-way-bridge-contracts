@@ -30,7 +30,6 @@ pragma experimental ABIEncoderV2;
 
 import "../lib/SafeMath.sol";
 import "../components/Halt.sol";
-import "../components/Admin.sol";
 import "./StoremanGroupStorage.sol";
 //import "../interfaces/IPosLib.sol";
 import "./StoremanLib.sol";
@@ -80,7 +79,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     function storemanGroupRegisterStart(StoremanType.StoremanGroupInput calldata smg,
         address[] calldata wkAddrs, address[] calldata senders)
         public
-        onlyAdmin
+        onlyOwner
     {
         bytes32 groupId = smg.groupId;
         bytes32 preGroupId = smg.preGroupId;
@@ -231,7 +230,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     }
 
     // To change  group status for unexpected reason.
-    function updateGroupStatus(bytes32 groupId, StoremanType.GroupStatus status) external  onlyAdmin {
+    function updateGroupStatus(bytes32 groupId, StoremanType.GroupStatus status) external  onlyOwner {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.status = status;
     }
@@ -408,7 +407,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
         return (id, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
-         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime);
+         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime, smg.delegateFee);
     }
     // function getStoremanGroupTime(bytes32 id)
     //     external
@@ -456,6 +455,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     function getStoremanConf() external view returns(uint backupCount, uint standaloneWeight, uint delegationMulti) {
         return (data.conf.backupCount, data.conf.standaloneWeight, data.conf.DelegationMulti);
     }
+    
     function updateStoremanConf(uint backupCount, uint standaloneWeight, uint DelegationMulti) external onlyAdmin {
         data.conf.backupCount = backupCount;
         data.conf.standaloneWeight = standaloneWeight;
