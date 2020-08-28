@@ -42,8 +42,8 @@ class Data {
     }
     this.smList = await Promise.all(ps);
     this.threshold = await this.smgSc.getThresholdByGrpId(this.groupId);
-    // console.log('gpk ut get smList: %O', this.smList);
-    // console.log('gpk ut get threshold: %d', this.threshold);
+    console.log('gpk ut get smList: %O', this.smList);
+    console.log('gpk ut get threshold: %d/%d', this.threshold, smNumber);
   }
 
   async initCurve() {
@@ -62,7 +62,7 @@ class Data {
     }
   }
 
-  async setPolyCommit(curve, src, round = 0, opt = null) {
+  async setPolyCommit(round, curve, src, sender = null) {
     let polyCommit = this.rounds[curve % 2].src[src].polyCommit;
     let order = polyCommit.length;
     let buf = Buffer.alloc(order * 64);
@@ -73,21 +73,21 @@ class Data {
       offset += 64;
     }
     let pcStr = '0x' + buf.toString('hex');
-    if (opt) {
-      await this.gpkSc.setPolyCommit(this.groupId, round, curve, pcStr, opt);
-    } else {
-      await this.gpkSc.setPolyCommit(this.groupId, round, curve, pcStr);
-    }
+    sender = sender || this.smList[src].address;
+    await this.gpkSc.setPolyCommit(this.groupId, round, curve, pcStr, {from: sender});
   }
 
-  async setEncSij(curve, src, dest, round = 0, opt = null) {
+  async setEncSij(round, curve, dest, src) {
     let destAddr = this.smList[dest].address;
     let encSij = this.rounds[curve].src[src].send[dest].encSij;
-    if (opt) {
-      await this.gpkSc.setEncSij(this.groupId, round, curve, destAddr, encSij, opt);
-    } else {
-      await this.gpkSc.setEncSij(this.groupId, round, curve, destAddr, encSij);
-    }
+    let sender = this.smList[src].address;
+    await this.gpkSc.setEncSij(this.groupId, round, curve, destAddr, encSij, {from: sender});
+  }
+
+  async setCheckStatus(round, curve, src, isValid, dest) {
+    let srcAddr = this.smList[src].address;
+    let sender = this.smList[dest].address;
+    await this.gpkSc.setCheckStatus(this.groupId, round, curve, srcAddr, isValid, {from: sender});
   }
 }
 

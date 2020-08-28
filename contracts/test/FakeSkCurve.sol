@@ -2,12 +2,12 @@ pragma solidity ^0.4.24;
 
 contract  FakeSkCurve {
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
-    bool public checkSigResult;
-    bool public addResult;
-    bool public mulGResult;
-    bool public calPolyCommitResult;
-    bool public mulPkResult;
-    bool public equalPtRes;
+    bool public checkSigResult = true;
+    bool public addResult = true;
+    bool public mulGResult = true;
+    bool public calPolyCommitResult = true;
+    bool public mulPkResult = true;
+    bool public equalPtRes = true;
 
     function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2)
     public
