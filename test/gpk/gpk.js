@@ -1,13 +1,11 @@
-const Web3 = require('web3');
 const ConfigProxy = artifacts.require('ConfigProxy');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
-const { registerStart, stakeInPre, toSelect } = require('../base.js');
+const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../basee.js');
 const { GpkStatus, CheckStatus, Data } = require('./Data');
-
-const web3 = new Web3(new Web3.providers.HttpProvider('http://192.168.1.58:7654'));
+const utils = require('../utils.js');
 
 // common
 const ADDRESS_0 = '0x0000000000000000000000000000000000000000';
@@ -20,16 +18,9 @@ let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
 let data;
 
 contract('Gpk_UNITs', async () => {
-  let owner = '0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e';
-  let someone = '0x82ef7751a5460bc10f731558f0741705ba972f4e';
-  console.log("onwer address: %s", owner);
-  console.log("someone address: %s", someone);
+  let owner, someone;
 
   before("should do all preparations", async() => {
-    // unlock account
-    await web3.eth.personal.unlockAccount(owner, 'wanglu', 99999);
-    await web3.eth.personal.unlockAccount(someone, 'wanglu', 99999);
-
     // config
     configProxy = await ConfigProxy.deployed();
 
@@ -44,8 +35,19 @@ contract('Gpk_UNITs', async () => {
     gpkSc = await GpkDelegate.at(gpkProxy.address);
     console.log("Gpk contract address: %s", gpkProxy.address);
 
+    // network
+    await setupNetwork();
+
+    owner = g.owner;
+    someone = g.leader;
+    console.log("onwer address: %s", owner);
+    console.log("someone address: %s", someone);    
+
     groupId = await registerStart(smgSc);
+    let regTime = parseInt(new Date().getTime());
+    let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
+    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 2) * 1000);
     await toSelect(smgSc, groupId);
 
     data = new Data(smgSc, gpkSc, groupId);
@@ -184,7 +186,7 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setPolyCommit] should fail: Invalid round', async () => {
     let result = {};
     try {
-      await data.setPolyCommit(0, 0, 1);
+      await data.setPolyCommit(1, 0, 0);
     } catch (e) {
       result = e;
     }
@@ -194,7 +196,7 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setPolyCommit] should fail: Invalid curve', async () => {
     let result = {};
     try {
-      await data.setPolyCommit(2, 0);
+      await data.setPolyCommit(0, 2, 0);
     } catch (e) {
       result = e;
     }
@@ -204,9 +206,10 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setPolyCommit] should fail: Invalid sender', async () => {
     let result = {};
     try {
-      await data.setPolyCommit(0, 0);
+      await data.setPolyCommit(0, 0, 0, owner);
     } catch (e) {
       result = e;
+      console.log("setPolyCommit Invalid sender: %O", e)
     }
     assert.equal(result.reason, 'Invalid sender');
   })
@@ -215,8 +218,8 @@ contract('Gpk_UNITs', async () => {
     let result = {};
     try {
       let sender = data.smList[0].address;
-      await data.setPolyCommit(0, 0, 0, {from: sender});
-      await data.setPolyCommit(0, 0, 0, {from: sender});
+      await data.setPolyCommit(0, 0, 0);
+      await data.setPolyCommit(0, 0, 0);
     } catch (e) {
       result = e;
     }
@@ -227,13 +230,14 @@ contract('Gpk_UNITs', async () => {
     let result = {};
     try {
       for (let i = 1; i < 4; i++) {
-        let sender = data.smList[i].address;
-        await data.setPolyCommit(0, i, 0, {from: sender});
+        await data.setPolyCommit(0, 0, i);
       }
-      let info = gpkSc.getGroupInfo(groupId, 0);
+      let info = await gpkSc.getGroupInfo(groupId, 0);
+      console.log("getGroupInfo: %O", info);
       assert.equal(info.curve1Status, GpkStatus.Negotiate);
     } catch (e) {
       result = e;
+      console.log("setPolyCommit should success: %O", e);
     }
     assert.equal(result.reason, undefined);
   })
@@ -257,7 +261,6 @@ contract('Gpk_UNITs', async () => {
       await gpkSc.setEncSij(groupId, 0, 0, ADDRESS_0, '0x00', {from: sender});
     } catch (e) {
       result = e;
-      console.log("setEncSij Invalid storeman: %O", e)
     }
     assert.equal(result.reason, 'Invalid storeman');
   })
@@ -265,8 +268,7 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};
     try {
-      let sender = data.smList[0].address;
-      await data.setEncSij(0, 0, 0, 0, {from: sender});
+      await data.setEncSij(0, 0, 0, 0);
     } catch (e) {
       result = e;
     }
@@ -276,12 +278,20 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setEncSij] should fail: Duplicate', async () => {
     let result = {};
     try {
-      let sender = data.smList[0].address;
-      await data.setEncSij(0, 0, 0, 0, {from: sender});
+      await data.setEncSij(0, 0, 0, 0);
     } catch (e) {
       result = e;
-      console.log("setEncSij Duplicate: %O", e)
     }
     assert.equal(result.reason, 'Duplicate');
+  })
+
+  it('[GpkDelegate_setCheckStatus] should success', async () => {
+    let result = {};
+    try {
+      await data.setCheckStatus(0, 0, 0, true, 0);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, undefined);
   })
 })
