@@ -72,6 +72,10 @@ async function setupNetwork() {
     }
 }
 
+function initTestValue(key, value) {
+    g[key] = value;
+}
+
 async function registerStart(smg, wlStartIndex = 0, option = {}){
     //await smg.updateStoremanConf(3,15000,10)
     let now = parseInt(Date.now()/1000);
@@ -137,8 +141,8 @@ async function stakeInPre(smg, groupId, nodeStartIndex = 0, nodeCount = stakerCo
             assert.equal(candidate.wkAddr.toLowerCase(), g.leader.toLowerCase())
             assert.equal(candidate.deposit, stakingValue)
 
-        }else{
-            sw = utils.getAddressFromInt(i+2000)
+        } else {
+            sw = utils.getAddressFromInt(i+nodeStartIndex+2000)
             console.log("send============================:", sfs[i])
             tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:sfs[i], value:stakingValue})     
             
