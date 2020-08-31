@@ -112,6 +112,10 @@ async function setupNetwork() {
     }
 }
 
+function initTestValue(key, value) {
+    g[key] = value;
+}
+
 async function registerStart(smg, wlStartIndex = 0, option = {}){
     //await smg.updateStoremanConf(3,15000,10)
     let now = parseInt(Date.now()/1000);
