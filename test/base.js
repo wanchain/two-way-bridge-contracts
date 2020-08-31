@@ -8,6 +8,21 @@ let web3url, owner, leader, leaderPk,timeBase, sfs;
 let args = optimist.argv;
 let web3 = new Web3(new Web3.providers.HttpProvider(web3url))
 
+const WhiteCount = 4
+const whiteBackup = 3
+const memberCountDesign = 4
+const threshold  = 3
+const stakerCount = memberCountDesign+whiteBackup
+const registerDuration = 5; // open staking for 10 days.
+const gpkDuration = 3;
+const htlcDuration = 9; // work 90 day.
+const wanChainId = 2153201998;
+const ethChainId = 2147483708;
+const curve1 = 1, curve2 = 1;
+const g = {
+    leader,WhiteCount,whiteBackup,memberCountDesign,threshold,leaderPk,owner,web3url,stakerCount,
+    gpkDuration, registerDuration, htlcDuration,timeBase,wanChainId,ethChainId,curve1,curve2
+}
 
 async function setupNetwork() {
     if(args.network == 'local' || args.network == 'coverage'){
@@ -24,7 +39,7 @@ async function setupNetwork() {
         g.sfs = sfs;
         g.leader = leader;
         g.owner = owner;
-    }else{
+    } else {
         web3url = "http://192.168.1.58:7654"
         timeBase = 4;
         g.timeBase = timeBase;
@@ -45,31 +60,6 @@ async function setupNetwork() {
         g.owner = owner;
     }
 }
-
-
-
-
-const WhiteCount = 4
-const whiteBackup = 3
-const memberCountDesign = 4
-const threshold  = 3
-
-
-let stakerCount = memberCountDesign+whiteBackup
-
-
-
-const registerDuration = 5; // open staking for 10 days.
-const gpkDuration = 3;
-const htlcDuration = 9; // work 90 day.
-const g = {
-    leader,WhiteCount,whiteBackup,memberCountDesign,threshold,leaderPk,owner,web3url,stakerCount,
-    gpkDuration, registerDuration, htlcDuration,timeBase,
-}
-
-let wanChainId=2153201998;
-let ethChainId=2147483708;
-let curve1 = 1, curve2 = 1;
 
 async function registerStart(smg, wlStartIndex = 0, option = {}){
     //await smg.updateStoremanConf(3,15000,10)
