@@ -37,14 +37,73 @@ contract('TestSmg', async () => {
 
 		it('T1 contribute', async ()=>{
 			let tx = await smg.contribute({value:contValue, from: g.owner})
-			expectEvent(tx, 'storemanGroupContributeEvent', {sender: web3.utils.toChecksumAddress(g.owner), value: contValue})
+			expectEvent(tx, 'storemanGroupContributeEvent', {sender: web3.utils.toChecksumAddress(g.owner), value: new BN(contValue)})
 		})
     it('T2 getGlobalIncentive', async ()=>{
 				let tx = await smg.getGlobalIncentive();
-				assert(contValue, tx, "getGlobalIncentive failed");
+				assert(contValue, Number(tx), "getGlobalIncentive failed");
         console.log("tx:", tx);
     })
 
+    it('T3 getGlobalIncentive', async ()=>{
+      let tx = await smg.getStoremanConf();
+      console.log("tx:", tx);
+    })
 
+    it('T4 ChainTypeCo', async ()=>{
+      let ret;
+      await smg.setChainTypeCo(1, 2, 100);
+      ret = await smg.getChainTypeCo(1,2);
+      assert(Number(ret), 100, "setChainTypeCo failed")
 
+      await smg.setChainTypeCo(4, 3, 200);
+      ret = await smg.getChainTypeCo(4,3);
+      assert(Number(ret), 200, "setChainTypeCo failed")
+
+      await smg.setChainTypeCo(3, 4, 300);
+      ret = await smg.getChainTypeCo(3,4);
+      assert(Number(ret), 300, "setChainTypeCo failed")
+      ret = await smg.getChainTypeCo(4,3);
+      assert(Number(ret), 300, "setChainTypeCo failed")
+
+      await smg.setChainTypeCo(3, 3, 200);
+      ret = await smg.getChainTypeCo(3,3);
+      assert(Number(ret), 200, "setChainTypeCo failed")
+
+    })
+
+    it('T5 smgTransfer', async ()=>{
+      const value = 4000;
+      let ret = await smg.smgTransfer(groupId, {value:value});
+      console.log("tx:", ret);
+
+      let sks = await smg.getSelectedStoreman(groupId);
+      assert.equal(sks.length, g.memberCountDesign, "memberCountDesign failed")
+
+      for(let i=0; i<sks.length; i++){
+        sk = await smg.getStoremanInfo(sks[i])
+        assert.equal(sk.crossIncoming, value/g.memberCountDesign, "cross Incoming failed")
+      }
+    })
+
+    it('T6 getThresholdByGrpId', async ()=>{
+      let tx = await smg.getThresholdByGrpId(groupId);
+      console.log("tx:", tx);
+      assert(tx, g.threshold, "getThresholdByGrpId failed")
+    })
+
+    it('T7 recordSmSlash', async ()=>{
+      await smg.setDependence(g.owner, g.owner, g.owner);
+      let tx = await smg.recordSmSlash(g.leader);
+      console.log("tx:", tx);
+      let sk = await smg.getStoremanInfo(g.leader);
+      assert(sk.slashedCount, 1, "recordSmSlash failed")
+
+      tx = await smg.recordSmSlash(g.leader);
+      console.log("tx:", tx);
+      sk = await smg.getStoremanInfo(g.leader);
+      console.log("sk:", sk);
+      assert(sk.slashedCount, 1, "recordSmSlash failed")
+    })
+    
 })
