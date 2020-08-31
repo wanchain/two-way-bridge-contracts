@@ -32,14 +32,15 @@ pragma experimental ABIEncoderV2;
  */
 
 import "../components/Halt.sol";
+import "../components/Admin.sol";
 import "./MetricStorage.sol";
 import "../components/Proxy.sol";
 
-contract MetricProxy is MetricStorage, Halt, Proxy {
+contract MetricProxy is MetricStorage, Halt, Admin, Proxy {
 
     ///@dev                   update the address of MetricDelegate contract
     ///@param impl            the address of the new MetricDelegate contract
-    function upgradeTo(address impl) public onlyOwner {
+    function upgradeTo(address impl) public onlyAdmin {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");
         _implementation = impl;

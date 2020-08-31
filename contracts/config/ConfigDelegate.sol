@@ -28,17 +28,18 @@ pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "../components/Halt.sol";
+import "../components/Admin.sol";
 import "./ConfigStorage.sol";
 
 
-contract ConfigDelegate is ConfigStorage, Halt {
+contract ConfigDelegate is ConfigStorage, Halt , Admin{
 
     /// @notice                           function for set smg contract address
     /// @param curveId                    curve id array
     /// @param curveAddress               curve contract address array
     function setCurve(uint8[] curveId, address[] curveAddress)
     external
-    onlyOwner
+    onlyAdmin
     {
         uint8 length = uint8(curveId.length);
         require((length > 0) && (length == curveAddress.length), "Mismatched length");
