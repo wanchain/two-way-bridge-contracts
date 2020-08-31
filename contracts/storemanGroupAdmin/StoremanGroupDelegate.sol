@@ -29,6 +29,7 @@ pragma experimental ABIEncoderV2;
 
 import "../lib/SafeMath.sol";
 import "../components/Halt.sol";
+import "../components/Admin.sol";
 import "./StoremanGroupStorage.sol";
 import "../lib/PosLib.sol";
 import "./StoremanLib.sol";
@@ -38,7 +39,7 @@ import "../interfaces/IQuota.sol";
 import "../gpk/lib/GpkTypes.sol";
 
 
-contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
+contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
     using SafeMath for uint;
     using Deposit for Deposit.Records;
 
@@ -77,7 +78,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function storemanGroupRegisterStart(StoremanType.StoremanGroupInput smg,
         address[] wkAddrs, address[] senders)
         public
-        onlyOwner
+        onlyAdmin
     {
         bytes32 groupId = smg.groupId;
         bytes32 preGroupId = smg.preGroupId;
@@ -229,7 +230,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     }
 
     // To change  group status for unexpected reason.
-    function updateGroupStatus(bytes32 groupId, StoremanType.GroupStatus status) external  onlyOwner {
+    function updateGroupStatus(bytes32 groupId, StoremanType.GroupStatus status) external  onlyAdmin {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.status = status;
     }
@@ -440,7 +441,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
         }
     }
 
-    function setChainTypeCo(uint chain1, uint chain2, uint co) public  onlyOwner {
+    function setChainTypeCo(uint chain1, uint chain2, uint co) public  onlyAdmin {
         if(chain1 < chain2) {
             data.chainTypeCo[chain1][chain2] = co;
         } else {
@@ -454,7 +455,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt {
     function getStoremanConf() public view returns(uint backupCount, uint standaloneWeight, uint delegationMulti) {
         return (data.conf.backupCount, data.conf.standaloneWeight, data.conf.DelegationMulti);
     }
-    function updateStoremanConf(uint backupCount, uint standaloneWeight, uint DelegationMulti) public onlyOwner {
+    function updateStoremanConf(uint backupCount, uint standaloneWeight, uint DelegationMulti) public onlyAdmin {
         data.conf.backupCount = backupCount;
         data.conf.standaloneWeight = standaloneWeight;
         data.conf.DelegationMulti = DelegationMulti;
