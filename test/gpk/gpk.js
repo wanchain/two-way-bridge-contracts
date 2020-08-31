@@ -157,19 +157,19 @@ contract('Gpk_UNITs', async () => {
   
   it('[GpkDelegate_setPeriod] should success', async () => {
     let result = {};
-    let ployCommitPeroid = 10 * 60;
-    let defaultPeroid = 5 * 60;
-    let negotiatePeroid = 15 * 60;
+    let ployCommitPeriod = 10 * 60;
+    let defaultPeriod = 5 * 60;
+    let negotiatePeriod = 15 * 60;
     try {
-      await gpkSc.setPeriod(groupId, ployCommitPeroid, defaultPeroid, negotiatePeroid, {from: owner});
+      await gpkSc.setPeriod(groupId, ployCommitPeriod, defaultPeriod, negotiatePeriod, {from: owner});
     } catch (e) {
       result = e;
     }
     assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, -1);
-    assert.equal(info[5], ployCommitPeroid);
-    assert.equal(info[6], defaultPeroid);
-    assert.equal(info[7], negotiatePeroid);
+    assert.equal(info.ployCommitPeriod, ployCommitPeriod);
+    assert.equal(info.defaultPeriod, defaultPeriod);
+    assert.equal(info.negotiatePeriod, negotiatePeriod);
   })
 
   // setPolyCommit
@@ -232,14 +232,12 @@ contract('Gpk_UNITs', async () => {
       for (let i = 1; i < 4; i++) {
         await data.setPolyCommit(0, 0, i);
       }
-      let info = await gpkSc.getGroupInfo(groupId, 0);
-      console.log("getGroupInfo: %O", info);
-      assert.equal(info.curve1Status, GpkStatus.Negotiate);
     } catch (e) {
       result = e;
-      console.log("setPolyCommit should success: %O", e);
     }
     assert.equal(result.reason, undefined);
+    let info = await gpkSc.getGroupInfo(groupId, 0);
+    assert.equal(info.curve1Status, GpkStatus.Negotiate);
   })
 
   // setEncSij
@@ -273,6 +271,9 @@ contract('Gpk_UNITs', async () => {
       result = e;
     }
     assert.equal(result.reason, undefined);
+    let sender = data.smList[0].address;
+    let info = await gpkSc.getSijInfo(groupId, 0, 0, sender, sender);
+    assert.equal(info.encSij, data.round[0].src[0].send[0].encSij);    
   })
 
   it('[GpkDelegate_setEncSij] should fail: Duplicate', async () => {
@@ -293,5 +294,8 @@ contract('Gpk_UNITs', async () => {
       result = e;
     }
     assert.equal(result.reason, undefined);
+    let sender = data.smList[0].address;
+    let info = await gpkSc.getSijInfo(groupId, 0, 0, sender, sender);
+    assert.equal(info.checkStatus, CheckStatus.Valid);
   })
 })
