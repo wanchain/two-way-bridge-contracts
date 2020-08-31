@@ -102,9 +102,9 @@ module.exports = async function (deployer, network) {
     await deployer.link(HTLCTxLib, HTLCBurnLib);
     await deployer.deploy(HTLCBurnLib);
 
-    await deployer.deploy(RapidityTxLib);
+    // await deployer.deploy(RapidityTxLib);
 
-    await deployer.link(RapidityTxLib, RapidityLib);
+    // await deployer.link(RapidityTxLib, RapidityLib);
     await deployer.deploy(RapidityLib);
 
     await deployer.link(HTLCTxLib, CrossDelegate);
