@@ -11,7 +11,7 @@ library PosLib {
         return blockTime/120;
     }
 
-    function getMinIncentive (uint256 smgDeposit,uint256 smgStartTime) public view returns(uint256) {
+    function getMinIncentive (uint256 smgDeposit,uint256 targetSecond) public view returns(uint256) {
         return 30000000;
     }
 }
