@@ -19,16 +19,25 @@ const htlcDuration = 9; // work 90 day.
 const wanChainId = 2153201998;
 const ethChainId = 2147483708;
 const curve1 = 1, curve2 = 1;
+const storemanGroupStatus  = {
+    none                      : 0,
+    initial                   : 1,
+    curveSeted                : 2,
+    failed                    : 3,
+    selected                  : 4,
+    ready                     : 5,
+    unregistered              : 6,
+    dismissed                 : 7
+};
+
 const g = {
     leader,WhiteCount,whiteBackup,memberCountDesign,threshold,leaderPk,owner,web3url,stakerCount,
-    gpkDuration, registerDuration, htlcDuration,timeBase,wanChainId,ethChainId,curve1,curve2
+    gpkDuration,registerDuration,htlcDuration,timeBase,wanChainId,ethChainId,curve1,curve2,storemanGroupStatus
 }
 
 async function setupNetwork() {
     if(args.network == 'local' || args.network == 'coverage'){
         console.log("using network local");
-        timeBase = 1;
-        g.timeBase = timeBase;
         web3url = "http://127.0.0.1:8545"
         owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959"
         leader = ("0xdC49B58d1Dc15Ff96719d743552A3d0850dD7057").toLowerCase()
@@ -36,13 +45,12 @@ async function setupNetwork() {
         let accounts = await web3.eth.getAccounts()
         leaderPk = "0xb6ee04e3c64e31578dd746d1024429179d83122fb926be19bd33aaeea55afeb6b10c6ff525eec7ca9a4e9a252a4c74b222c1273d4719d96e0f2c5199c42bc84b"
         sfs = accounts.slice(2);
+        g.timeBase = 1;
         g.sfs = sfs;
         g.leader = leader;
         g.owner = owner;
     } else {
         web3url = "http://192.168.1.58:7654"
-        timeBase = 4;
-        g.timeBase = timeBase;
         owner = "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e"
         leader = "0x5793e629c061e7fd642ab6a1b4d552cec0e2d606"
         leaderPk = "0x25fa6a4190ddc87d9f9dd986726cafb901e15c21aafd2ed729efed1200c73de89f1657726631d29733f4565a97dc00200b772b4bc2f123a01e582e7e56b80cf8"
@@ -55,6 +63,7 @@ async function setupNetwork() {
             "0x23dcbe0323605a7a00ce554babcff197baf99b10",
             "0xf45aedd5299d16440f67efe3fb1e1d1dcf358222",
         ]
+        g.timeBase = 4;
         g.sfs = sfs;
         g.leader = leader;
         g.owner = owner;
@@ -75,14 +84,16 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
     let registerDuration = option.registerDuration ? option.registerDuration : g.registerDuration;
     let gpkDuration =  option.gpkDuration ? option.gpkDuration : g.gpkDuration;
     let htlcDuration =  option.htlcDuration ? option.htlcDuration : g.htlcDuration;
+    let memberCountDesign = option.memberCountDesign ? option.memberCountDesign : g.memberCountDesign;
+    let threshold = option.threshold ? option.threshold : g.threshold;
     let preGroupId =  option.preGroupId ? option.preGroupId : utils.stringTobytes32("");
 
     let smgIn = {
         groupId: id,
         preGroupId: preGroupId,
-        workTime:now+(registerDuration+gpkDuration)*timeBase,
-        totalTime:htlcDuration*timeBase,
-        registerDuration: registerDuration*timeBase,
+        workTime:now+(registerDuration+gpkDuration)*g.timeBase,
+        totalTime:htlcDuration*g.timeBase,
+        registerDuration: registerDuration*g.timeBase,
         memberCountDesign:memberCountDesign,
         threshold:threshold,
         chain1:ethChainId,
