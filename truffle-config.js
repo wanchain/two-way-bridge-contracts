@@ -49,12 +49,14 @@ module.exports = {
      port: 7654,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
      from: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
+     admin: "0x5793e629c061e7fd642ab6a1b4d552cec0e2d606",
     },
     development: {
       host: "192.168.1.179",     // Localhost (default: none)
       port: 7654,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
       from: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
+      admin: "0x5793e629c061e7fd642ab6a1b4d552cec0e2d606",
       gas: 8000000,          // Gas sent with each transaction (default: ~6700000)
       gasPrice: 1000000000   // 20 gwei (in wei) (default: 100 gwei)
     },
@@ -66,6 +68,7 @@ module.exports = {
       mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
       host:"127.0.0.1",
       from:"0xEf73Eaa714dC9a58B0990c40a01F4C0573599959",
+      admin: "0xdF0A667F00cCfc7c49219e81b458819587068141",
       network_id: "*",
     },
     // testnet: {
@@ -80,6 +83,7 @@ module.exports = {
     coverage: {
         host: '127.0.0.1',
         mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
+        admin: "0xdF0A667F00cCfc7c49219e81b458819587068141",
         network_id: '*',
         port: 5545,
         gas: 0xfffffffffff,
