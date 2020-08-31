@@ -28,6 +28,8 @@ pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "../components/Halt.sol";
+import "../components/Admin.sol";
+
 import "./MetricStorage.sol";
 import "./lib/MetricTypes.sol";
 import "../interfaces/IStoremanGroup.sol";
@@ -36,7 +38,7 @@ import "../lib/CommonTool.sol";
 import "./lib/MetricLib.sol";
 import "../lib/PosLib.sol";
 
-contract MetricDelegate is MetricStorage, Halt {
+contract MetricDelegate is MetricStorage, Halt,Admin{
     using SafeMath for uint;
     using MetricLib for MetricTypes.MetricStorageData;
 
@@ -219,7 +221,7 @@ contract MetricDelegate is MetricStorage, Halt {
     /// @param smgAddr                  smg contract address
     function setDependence(address configAddr, address smgAddr)
     external
-    onlyOwner
+    onlyAdmin
     {
         require(configAddr != address(0), "Invalid config address");
         require(smgAddr != address(0), "Invalid smg address");

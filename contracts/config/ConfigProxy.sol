@@ -32,14 +32,15 @@ pragma experimental ABIEncoderV2;
  */
 
 import "../components/Halt.sol";
+import "../components/Admin.sol";
 import "./ConfigStorage.sol";
 import "../components/Proxy.sol";
 
-contract ConfigProxy is ConfigStorage, Halt, Proxy {
+contract ConfigProxy is ConfigStorage, Halt, Admin, Proxy {
 
     ///@dev                   update the address of ConfigDelegate contract
     ///@param impl            the address of the new ConfigDelegate contract
-    function upgradeTo(address impl) public onlyOwner {
+    function upgradeTo(address impl) public onlyAdmin {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");
         _implementation = impl;
