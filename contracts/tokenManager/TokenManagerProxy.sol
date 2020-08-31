@@ -30,11 +30,11 @@ pragma solidity 0.4.26;
  * Math operations with safety checks
  */
 
-import "../components/Owned.sol";
+import "../components/Admin.sol";
 import "./TokenManagerStorage.sol";
 import "../components/Proxy.sol";
 
-contract TokenManagerProxy is TokenManagerStorage, Owned, Proxy {
+contract TokenManagerProxy is TokenManagerStorage, Admin, Proxy {
     /**
     *
     * MANIPULATIONS
