@@ -18,6 +18,10 @@ const timeBase = 1;
 const wanChainId = 2153201998;
 const ethChainId = 2147483708;
 const curve1 = 1, curve2 = 1;
+const minStakeIn = 50000;
+const minDelegateIn = 100;
+const delegateFee = 1200;
+
 const storemanGroupStatus  = {
     none                      : 0,
     initial                   : 1,
@@ -31,7 +35,8 @@ const storemanGroupStatus  = {
 
 const g = {
     leader,owner,WhiteCount,whiteBackup,memberCountDesign,threshold,leaderPk,web3url,stakerCount,
-    gpkDuration,registerDuration,htlcDuration,timeBase,wanChainId,ethChainId,curve1,curve2,storemanGroupStatus
+    gpkDuration,registerDuration,htlcDuration,timeBase,wanChainId,ethChainId,curve1,curve2,storemanGroupStatus,
+    minStakeIn,minDelegateIn,delegateFee
 }
 
 async function setupNetwork() {
@@ -97,15 +102,15 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
         chain2:wanChainId,
         curve1:curve1,
         curve2:curve2,
-        minStakeIn:50000,
-        minDelegateIn:100,
-        delegateFee:1200,
+        minStakeIn:minStakeIn,
+        minDelegateIn:minDelegateIn,
+        delegateFee:delegateFee,
     }
 
     let tx = await smg.storemanGroupRegisterStart(smgIn, wks,srs, {from: g.owner})
     console.log("registerStart txhash:", tx.tx)
     let group = await smg.getStoremanGroupInfo(groupId)
-    assert.equal(group.status, 2)
+    assert.equal(group.status, storemanGroupStatus.curveSeted)
     assert.equal(group.groupId, groupId)
     if(!preGroupId) {
         assert.equal(group.deposit, 0)
@@ -119,7 +124,7 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
 
 async function stakeInPre(smg, groupId, nodeStartIndex = 0, nodeCount = stakerCount){
     console.log("smg.contract:", smg.contract._address)
-    let stakingValue = 50000
+    let stakingValue = g.minStakeIn;
     for(let i=0; i<nodeCount; i++){
         let sw, tx
         if(i==0){
