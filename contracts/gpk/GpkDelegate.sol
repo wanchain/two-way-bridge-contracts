@@ -389,7 +389,7 @@ contract GpkDelegate is GpkStorage, Owned {
         return round.srcMap[src].polyCommit;
     }
 
-    function getEncSijInfo(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src, address dest)
+    function getSijInfo(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src, address dest)
         external
         view
         returns(bytes encSij, uint8 checkStatus, uint setTime, uint checkTime, uint sij, uint ephemPrivateKey)

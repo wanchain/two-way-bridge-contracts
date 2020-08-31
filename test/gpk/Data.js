@@ -15,8 +15,8 @@ class Data {
     this.groupId = groupId;
     this.smList = [];
     this.threshold = 0;
-    this.curves = [];
-    this.rounds = [];
+    this.curve = [];
+    this.round = [];
   }
 
   async init() {
@@ -48,22 +48,22 @@ class Data {
 
   async initCurve() {
     let info = await this.smgSc.getStoremanGroupConfig(this.groupId);
-    this.curves[0] = parseInt(info.curve1);
-    this.curves[1] = parseInt(info.curve2);
-    // console.log('gpk ut get curves: %O', this.curves);
+    this.curve[0] = parseInt(info.curve1);
+    this.curve[1] = parseInt(info.curve2);
+    // console.log('gpk ut get curves: %O', this.curve);
   }
 
   async initRounds() {
     for (let i = 0; i < 2; i++) {
-      console.log("gpk ut init curve %d(%d) round", i, this.curves[i]);
+      console.log("gpk ut init curve %d(%d) round", i, this.curve[i]);
       let round = new Round();
-      await round.init(this.smList, this.threshold, this.curves[i]);
-      this.rounds[i] = round;
+      await round.init(this.smList, this.threshold, this.curve[i]);
+      this.round[i] = round;
     }
   }
 
   async setPolyCommit(round, curve, src, sender = null) {
-    let polyCommit = this.rounds[curve % 2].src[src].polyCommit;
+    let polyCommit = this.round[curve % 2].src[src].polyCommit;
     let order = polyCommit.length;
     let buf = Buffer.alloc(order * 64);
     let offset = 0;
@@ -79,7 +79,7 @@ class Data {
 
   async setEncSij(round, curve, dest, src) {
     let destAddr = this.smList[dest].address;
-    let encSij = this.rounds[curve].src[src].send[dest].encSij;
+    let encSij = this.round[curve].src[src].send[dest].encSij;
     let sender = this.smList[src].address;
     await this.gpkSc.setEncSij(this.groupId, round, curve, destAddr, encSij, {from: sender});
   }
