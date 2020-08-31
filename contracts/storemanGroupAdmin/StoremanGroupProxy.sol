@@ -27,10 +27,11 @@
 pragma solidity ^0.4.24;
 
 import "../components/Halt.sol";
+import "../components/Admin.sol";
 import "./StoremanGroupStorage.sol";
 import "../components/Proxy.sol";
 
-contract StoremanGroupProxy is StoremanGroupStorage, Halt, Proxy {
+contract StoremanGroupProxy is StoremanGroupStorage, Halt, Admin, Proxy {
     /**
     *
     * MANIPULATIONS

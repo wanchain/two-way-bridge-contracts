@@ -27,11 +27,11 @@
 pragma solidity ^0.4.24;
 
 import "../lib/SafeMath.sol";
-import "../components/Owned.sol";
+import "../components/Admin.sol";
 import "./GpkStorage.sol";
 import "./lib/GpkLib.sol";
 
-contract GpkDelegate is GpkStorage, Owned {
+contract GpkDelegate is GpkStorage, Admin {
     using SafeMath for uint;
 
     /**
