@@ -39,6 +39,8 @@ contract('TestSmg', async () => {
     })
 
     it('T1 delegateIn', async ()=>{
+        let sk = await smg.getStoremanInfo(wk.addr);
+        console.log("sk:", sk);
         let tx = await smg.delegateIn(wk.addr,{value:120});
         assert.equal(tx.receipt.logs[0].event, 'delegateInEvent')
         console.log("tx:", tx);
