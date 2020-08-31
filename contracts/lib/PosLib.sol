@@ -65,9 +65,9 @@ library PosLib {
 
 
     function getHardCap (uint256 time) public view returns(uint256,bool) {
-       bytes32 functionSelector = 0xfa7c2faf00000000000000000000000000000000000000000000000000000000;
+       bytes32 functionSelector = 0x8b19e7b700000000000000000000000000000000000000000000000000000000;
        address to = PRECOMPILE_CONTRACT_ADDR;
-       uint256 posReturn;
+       uint256 posReturn=0;
        bool    success;
        assembly {
             let freePtr := mload(0x40)
@@ -102,7 +102,7 @@ library PosLib {
         uint256 p1Return = smgDeposit.mul(p1).div(DIVISOR);
 
         uint256 hardcap;
-        (hardcap,success) = getHardCap(now);
+        (hardcap,success) = getHardCap(targetSecond);
         if(!success) {
             return 0;
         }
