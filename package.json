@@ -18,6 +18,7 @@
     "ethereumjs-util": "^5.2.0",
     "iwan-sdk": "^1.2.0",
     "js-sha256": "^0.9.0",
+    "keccak256": "^1.0.0",
     "keythereum": "^1.0.4",
     "optimist": "^0.6.1",
     "promisefy-util": "^1.2.0",

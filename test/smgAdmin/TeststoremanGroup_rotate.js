@@ -40,7 +40,7 @@ contract('StoremanGroupDelegate', async () => {
         } 
     })
     it('T3 registerStart2', async ()=>{
-        groupId2 = await registerStart(smg, groupId);
+        groupId2 = await registerStart(smg, 0, {preGroupId:groupId});
         console.log("groupId2: ", groupId2)
         groupInfo2 = await smg.getStoremanGroupInfo(groupId2);
         let sk = await smg.getSelectedSmInfo(groupId2, 1);
