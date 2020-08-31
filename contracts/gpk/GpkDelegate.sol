@@ -99,7 +99,7 @@ contract GpkDelegate is GpkStorage, Admin {
     /// @param negotiatePeriod            negotiate period
     function setPeriod(bytes32 groupId, uint32 ployCommitPeriod, uint32 defaultPeriod, uint32 negotiatePeriod)
         external
-        onlyOwner
+        onlyAdmin
     {
         GpkTypes.Group storage group = groupMap[groupId];
         group.ployCommitPeriod = ployCommitPeriod;
