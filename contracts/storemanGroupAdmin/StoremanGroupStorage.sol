@@ -46,6 +46,7 @@ contract StoremanGroupStorage is BasicStorage {
   uint thresholdDefault = 3;
   uint standaloneWeightDefault = 1500;
   uint chainTypeCoDefault = 10000;
+  uint DelegationMultiDefault = 10;
 
   address  public  createGpkAddr;
   StoremanType.StoremanData data;
@@ -55,5 +56,6 @@ contract StoremanGroupStorage is BasicStorage {
     data.conf.backupCount = backupCountDefault;
     data.conf.chainTypeCoDefault = chainTypeCoDefault;
     data.conf.maxSlashedCount = maxSlashedCount;
+    data.conf.DelegationMulti = DelegationMultiDefault;
   }
 }
