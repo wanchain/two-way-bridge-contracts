@@ -201,6 +201,7 @@ module.exports = async function (deployer, network) {
     let cnfDelegate = await ConfigDelegate.deployed();
     await cnfProxy.upgradeTo(cnfDelegate.address);
     let cnf = await ConfigDelegate.at(cnfProxy.address);
+    await cnf.addAdmin(config.networks[network].admin);
 
     let secp256k1, bn256;
     if (network == 'local' || network == 'coverage') {
@@ -214,7 +215,7 @@ module.exports = async function (deployer, network) {
       await deployer.deploy(Bn256Curve);
       bn256 = await Bn256Curve.deployed();
     }
-    await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address]);
+    await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address], {from: config.networks[network].admin});
 
     // dependence
     //await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
