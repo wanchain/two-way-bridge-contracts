@@ -216,7 +216,7 @@ module.exports = async function (deployer, network) {
     // dependence
     //await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
     await smg.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address);
-    if(network != 'testnet' && network != 'mainnet') {
+    if(network == 'local' || network == 'coverage') {
         await smg.addAdmin("0xdF0A667F00cCfc7c49219e81b458819587068141");
     } else {
         await smg.addAdmin("0x5793e629c061e7fd642ab6a1b4d552cec0e2d606");
