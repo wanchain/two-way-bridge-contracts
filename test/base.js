@@ -150,7 +150,7 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
         delegateFee:delegateFee,
     }
     console.log("wks, ws:", wks, ws)
-    let tx = await smg.storemanGroupRegisterStart(smgIn, ws,srs, {from: g.owner})
+    let tx = await smg.storemanGroupRegisterStart(smgIn, ws,srs, {from: g.leader})
     console.log("registerStart txhash:", tx.tx)
     let group = await smg.getStoremanGroupInfo(groupId)
     assert.equal(group.status, storemanGroupStatus.curveSeted)
