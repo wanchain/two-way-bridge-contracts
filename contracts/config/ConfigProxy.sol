@@ -40,7 +40,7 @@ contract ConfigProxy is ConfigStorage, Halt, Admin, Proxy {
 
     ///@dev                   update the address of ConfigDelegate contract
     ///@param impl            the address of the new ConfigDelegate contract
-    function upgradeTo(address impl) public onlyAdmin {
+    function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");
         _implementation = impl;

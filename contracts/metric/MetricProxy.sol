@@ -36,11 +36,11 @@ import "../components/Admin.sol";
 import "./MetricStorage.sol";
 import "../components/Proxy.sol";
 
-contract MetricProxy is MetricStorage, Halt, Admin, Proxy {
+contract MetricProxy is MetricStorage, Halt, Proxy {
 
     ///@dev                   update the address of MetricDelegate contract
     ///@param impl            the address of the new MetricDelegate contract
-    function upgradeTo(address impl) public onlyAdmin {
+    function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");
         _implementation = impl;
