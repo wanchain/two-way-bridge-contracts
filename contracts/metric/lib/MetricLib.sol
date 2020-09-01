@@ -29,9 +29,10 @@ pragma experimental ABIEncoderV2;
 
 import "./MetricTypes.sol";
 import "../../lib/CommonTool.sol";
-import "../../lib/PosLib.sol";
+import "../../interfaces/IPosLib.sol";
 import "../../interfaces/IStoremanGroup.sol";
 import "../../interfaces/ICurve.sol";
+import "../../lib/SafeMath.sol";
 
 library MetricLib {
     using SafeMath for uint;
@@ -290,7 +291,7 @@ library MetricLib {
     view
     returns (uint)
     {
-        return PosLib.getEpochId(now);
+        return IPosLib(metricData.posLib).getEpochId(now);
     }
     /// @notice                         get total number of store man in special group
     /// @param metricData               self parameter for lib function

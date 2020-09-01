@@ -12,18 +12,20 @@ const sk = [{
 },{
     addr:"0x0beba6154f527596b4b8bb45326131a90c5c6140", pk:"0x28b11382ec24a15d5fa7ae77f9e9531ddc0f83a8ab2faab942db77411e17fdcf8160b0fa132933f1afa613eb19e73cef5d869e06ca58ad7787ddc5f7c11c369b",
 }]
-const { registerStart,stakeInPre, setupNetwork} = require('../base.js')
+const { registerStart,stakeInPre, setupNetwork,g} = require('../base.js')
 
 contract('StoremanGroupDelegate', async () => {
- 
     let  smg
     let groupId
     let wk = utils.getAddressFromInt(10000)
+    let wk2 = utils.getAddressFromInt(10001)
+    let tester
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
         smg = await StoremanGroupDelegate.at(smgProxy.address)
         await setupNetwork();
+        tester =  g.sfs[7];
     })
 
 
@@ -37,7 +39,11 @@ contract('StoremanGroupDelegate', async () => {
     })
     
     it('stakeIn', async ()=>{
-        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
+        let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000, from:tester});
+        console.log("tx:", tx);
+    })
+    it('stakeIn', async ()=>{
+        let tx = await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:50000, from:tester});
         console.log("tx:", tx);
     })
     it('delegateIn', async ()=>{
@@ -51,56 +57,48 @@ contract('StoremanGroupDelegate', async () => {
         let payCount=1;
         let delegateValue = 100
         for(k=0; k<payCount; k++) {
-            tx = await smg.delegateIn(wAddr, {from:tester, value:delegateValue});
-            await utils.waitReceipt(tx.tx)
+            tx = await smg.delegateIn(wk.addr, {from:tester, value:delegateValue});
         }
-        let candidate  = await smg.getStoremanInfo(wAddr)
-        assert.equal(candidate.delegatorCount, 1)
+        let candidate  = await smg.getStoremanInfo(wk.addr)
+        assert.equal(candidate.delegatorCount, 2)
         console.log("after delegateIn,  candidate:",candidate)
 
-        let nde = await smg.getSmDelegatorInfo(wAddr, tester);
+        let nde = await smg.getSmDelegatorInfo(wk.addr, tester);
         assert.equal(nde.incentive, 0)
-        assert.equal(nde.deposit, delegateValue*payCount)
+        assert.equal(nde.deposit.toNumber(), delegateValue*payCount)
         console.log("nde: ", nde)
-
-        let de2 = await smg.getSmDelegatorAddr(wAddr, 0);
-        console.log("de2:", de2);
-        
+       
     })
 
     it('test delegateIn2', async()=>{
         let payCount=2;
         let delegateValue = 100
         for(k=0; k<payCount; k++) {
-            tx = await smg.delegateIn(wAddr2, {from:tester, value:delegateValue});
-            await utils.waitReceipt(tx.tx)
+            tx = await smg.delegateIn(wk2.addr, {from:tester, value:delegateValue});
         }
-        let candidate  = await smg.getStoremanInfo(wAddr2)
+        let candidate  = await smg.getStoremanInfo(wk2.addr)
         assert.equal(candidate.delegatorCount, 1)
         console.log("after delegateIn,  candidate:",candidate)
 
-        let nde = await smg.getSmDelegatorInfo(wAddr2, tester);
+        let nde = await smg.getSmDelegatorInfo(wk2.addr, tester);
         assert.equal(nde.incentive, 0)
-        assert.equal(nde.deposit, delegateValue*payCount)
+        assert.equal(nde.deposit.toNumber(), delegateValue*payCount)
         console.log("nde: ", nde)
 
-        let de2 = await smg.getSmDelegatorAddr(wAddr2, 0);
-        console.log("de2:", de2);
-        
     })
 
 
   
     it('test toSelect', async ()=>{
         await pu.sleep(10000)
-        let tx = await smg.toSelect(id,{from: tester})
+        let tx = await smg.select(groupId,{from: tester})
         console.log("toSelect tx:", tx.tx)
-        console.log("group:",await smg.getStoremanGroupInfo(id))
+        console.log("group:",await smg.getStoremanGroupInfo(groupId))
 
         
-        let count = await smg.getSelectedSmNumber(id)
+        let count = await smg.getSelectedSmNumber(groupId)
         console.log("selected count :", count)
-        assert.equal(count, memberCountDesign)
+        assert.equal(count, g.memberCountDesign, "select failed")
     })
     it('[StoremanGroupDelegate_delegateOut] should success', async () => {
         let result = {};
@@ -112,26 +110,27 @@ contract('StoremanGroupDelegate', async () => {
             console.log("result:", result);
         }
         assert.equal(result.reason, undefined);
-        let candidate  = await smg.getStoremanInfo(wAddr)
+        let candidate  = await smg.getStoremanInfo(wk.addr)
         console.log("candidate:", candidate)
-        assert.equal(candidate.sender.toLowerCase(), tester)
-        assert.equal(candidate.pkAddress.toLowerCase(), wAddr)
+        assert.equal(candidate.sender.toLowerCase(), tester.toLowerCase())
+        assert.equal(candidate.wkAddr.toLowerCase(), wk.addr)
     })
     it('[StoremanGroupDelegate_delegateClaim] should fail: not dismissed', async () => {
         let result = {};
         try {
-            let txhash = await smg.delegateClaim(wAddr, {from: tester})
+            let txhash = await smg.delegateClaim(wk2.addr, {from: tester})
             console.log("stakeOut txhash:", txhash);
         } catch (e) {
             result = e;
             console.log("result:", result);
         }
-        assert.equal(result.reason, 'group can\'t claim');
+        assert.equal(result.reason, 'Cannot claim');
     })
     it('[StoremanGroupDelegate_stakeClaim] should success:', async () => {
         let result = {};
         try {
-            let txhash = await smg.delegateClaim(wAddr2, {from: tester})
+            await smg.updateGroupStatus(g.storemanGroupStatus.dismissed)
+            let txhash = await smg.delegateClaim(wk.addr, {from: tester})
             console.log("stakeOut txhash:", txhash);
         } catch (e) {
             result = e;

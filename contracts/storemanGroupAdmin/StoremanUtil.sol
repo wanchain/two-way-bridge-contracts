@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "../lib/SafeMath.sol";
 import "./StoremanType.sol";
-import "../lib/PosLib.sol";
+import "../interfaces/IPosLib.sol";
 
 
 library StoremanUtil {
@@ -12,8 +12,8 @@ library StoremanUtil {
     return deposit*standaloneWeight/10000;
   }
 
-  function getDaybyTime(uint time)  public view returns(uint) {
-    return PosLib.getEpochId(time);
+  function getDaybyTime(address posLib, uint time)  public view returns(uint) {
+    return IPosLib(posLib).getEpochId(time);
   }
 
   function getSelectedSmNumber(StoremanType.StoremanData storage data, bytes32 groupId) public view returns(uint) {
