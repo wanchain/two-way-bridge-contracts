@@ -92,6 +92,8 @@ library StoremanType {
     struct StoremanData {
         uint contribution;
         uint totalReward;
+        address posLib;
+
         StoremanGlobalConf conf;
         
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;

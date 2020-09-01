@@ -31,7 +31,7 @@ import "../lib/SafeMath.sol";
 import "../components/Halt.sol";
 import "../components/Admin.sol";
 import "./StoremanGroupStorage.sol";
-import "../lib/PosLib.sol";
+//import "../interfaces/IPosLib.sol";
 import "./StoremanLib.sol";
 import "./StoremanType.sol";
 import "./IncentiveLib.sol";
@@ -58,7 +58,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
     /// @param metricAddr                 metricAddr contract address
     /// @param gpkAddr	                  gpkAddr contract address
     /// @param quotaAddr                  quotaAddr contract address
-   function setDependence(address metricAddr, address gpkAddr,address quotaAddr)
+   function setDependence(address metricAddr, address gpkAddr,address quotaAddr, address posAddr)
         external
         onlyOwner
     {
@@ -67,6 +67,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
         require(quotaAddr != address(0), "Invalid quotaAddr address");
 
         metric = metricAddr;
+        data.posLib = posAddr;
         createGpkAddr = gpkAddr;
         quotaInst = IQuota(quotaAddr);
     }
@@ -209,10 +210,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
         return StoremanLib.partClaim(data,wkAddr);
     }
 
-    function getSelectedSmNumber(bytes32 groupId) public view returns(uint) {
+    function getSelectedSmNumber(bytes32 groupId) external view returns(uint) {
         return StoremanUtil.getSelectedSmNumber(data, groupId);
     }
-    function getSelectedStoreman(bytes32 groupId) public view returns(address[]) {
+    function getSelectedStoreman(bytes32 groupId) external view returns(address[]) {
         return StoremanUtil.getSelectedStoreman(data, groupId);
     }
     function select(bytes32 groupId)
@@ -222,7 +223,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
         return IncentiveLib.toSelect(data, groupId);
     }
 
-    function getSelectedSmInfo(bytes32 groupId, uint index) public view   returns(address wkAddr, bytes PK, bytes enodeId){
+    function getSelectedSmInfo(bytes32 groupId, uint index) external view   returns(address wkAddr, bytes PK, bytes enodeId){
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         address addr = group.selectedNode[index];
         StoremanType.Candidate storage sk = data.candidates[0][addr];
@@ -236,25 +237,25 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
     }
 
 
-    function getStoremanIncentive(address wkAddr, uint day) public view returns(uint incentive) {
+    function getStoremanIncentive(address wkAddr, uint day) external view returns(uint incentive) {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         return sk.incentive[day];
     }
 
-    function getSmDelegatorInfoIncentive(address wkAddr, address deAddr, uint day) public view returns ( uint) {
+    function getSmDelegatorInfoIncentive(address wkAddr, address deAddr, uint day) external view returns ( uint) {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         StoremanType.Delegator storage de = sk.delegators[deAddr];
         return (de.incentive[day]);
     }
 
-    function getSmDelegatorInfo(address wkAddr, address deAddr) public view returns (address sender, uint deposit, uint incentive) {
+    function getSmDelegatorInfo(address wkAddr, address deAddr) external view returns (address sender, uint deposit, uint incentive, bool quited) {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         StoremanType.Delegator storage de = sk.delegators[deAddr];
-        return (deAddr, de.deposit.getLastValue(),  de.incentive[0]);
+        return (deAddr, de.deposit.getLastValue(),  de.incentive[0], de.quited);
     }
 
     function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2)
-        public
+        external
     {
         require(msg.sender == createGpkAddr, "Sender is not allowed");
         StoremanType.StoremanGroup storage group = data.groups[groupId];
@@ -265,7 +266,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
 
 
     function setInvalidSm(bytes32 groupId, GpkTypes.SlashType[] slashType,  address[] badAddrs)
-        public
+        external
         returns(bool isContinue)
     {
         require(msg.sender == createGpkAddr, "Sender is not allowed");
@@ -336,7 +337,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
         StoremanType.Candidate storage sk;
         for(uint i=0; i<group.memberCount; i++){
             sk = data.candidates[0][group.selectedNode[i]];
-            if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime)) {
+            if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(data.posLib, group.workTime+group.totalTime)) {
                 if(bytes32(0x00) != sk.nextGroupId) {
                     sk.groupId = sk.nextGroupId;
                     sk.nextGroupId = bytes32(0x00);
@@ -345,7 +346,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
         }
     }
 
-    function checkGroupDismissable(bytes32 groupId) public returns(bool) {
+    function checkGroupDismissable(bytes32 groupId) external returns(bool) {
         bool dismissable = quotaInst.isDebtClean(groupId);
         return dismissable;
     }
@@ -371,7 +372,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
         si.nextGroupId = sk.nextGroupId;
         si.deposit = sk.deposit.getLastValue();
     }
-    function getStoremanGroupInfo(bytes32 id) public view returns(StoremanType.StoremanGroupInfo info){
+    function getStoremanGroupInfo(bytes32 id) external view returns(StoremanType.StoremanGroupInfo info){
         StoremanType.StoremanGroup storage smg = data.groups[id];
         info.groupId = id;
         info.status = smg.status;
@@ -419,12 +420,12 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
     // }
 
 
-    function checkGroupIncentive(bytes32 id, uint day) public view returns ( uint) {
+    function checkGroupIncentive(bytes32 id, uint day) external view returns ( uint) {
         StoremanType.StoremanGroup storage group = data.groups[id];
         return group.groupIncentive[day];
     }
 
-    function contribute() public payable {
+    function contribute() external payable {
         emit storemanGroupContributeEvent(msg.sender, msg.value);
         data.contribution = data.contribution.add(msg.value);
         return;
@@ -441,26 +442,26 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
         }
     }
 
-    function setChainTypeCo(uint chain1, uint chain2, uint co) public  onlyAdmin {
+    function setChainTypeCo(uint chain1, uint chain2, uint co) external  onlyAdmin {
         if(chain1 < chain2) {
             data.chainTypeCo[chain1][chain2] = co;
         } else {
             data.chainTypeCo[chain2][chain1] = co;
         }
     }
-    function getChainTypeCo(uint chain1, uint chain2) public view returns (uint co) {
+    function getChainTypeCo(uint chain1, uint chain2) external view returns (uint co) {
         return IncentiveLib.getChainTypeCo(data, chain1, chain2);
     }
 
-    function getStoremanConf() public view returns(uint backupCount, uint standaloneWeight, uint delegationMulti) {
+    function getStoremanConf() external view returns(uint backupCount, uint standaloneWeight, uint delegationMulti) {
         return (data.conf.backupCount, data.conf.standaloneWeight, data.conf.DelegationMulti);
     }
-    function updateStoremanConf(uint backupCount, uint standaloneWeight, uint DelegationMulti) public onlyAdmin {
+    function updateStoremanConf(uint backupCount, uint standaloneWeight, uint DelegationMulti) external onlyAdmin {
         data.conf.backupCount = backupCount;
         data.conf.standaloneWeight = standaloneWeight;
         data.conf.DelegationMulti = DelegationMulti;
     }
-    function getGlobalIncentive() public view returns(uint contribution, uint totalReward) {
+    function getGlobalIncentive() external view returns(uint contribution, uint totalReward) {
         return (data.contribution, data.totalReward);
     }
 }
