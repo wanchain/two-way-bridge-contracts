@@ -47,7 +47,7 @@ contract('TestSmg', async () => {
         let sk0 = await smg.getSelectedSmInfo(groupId, 0);
         assert.equal(sk0.wkAddr.toLowerCase(), g.leader, "leader is wrong");
         let sk1 = await smg.getSelectedSmInfo(groupId, 1);
-        assert.equal(sk1.wkAddr, wk.addr, "First One is wrong");
+        assert.equal(sk1.wkAddr.toLowerCase(), wk.addr, "First One is wrong");
         for(let i=2; i<count; i++){
             let sk = await smg.getSelectedSmInfo(groupId, i);
             assert.notEqual(sk.wkAddr.toLowerCase(), wk.addr,"select wrong")
