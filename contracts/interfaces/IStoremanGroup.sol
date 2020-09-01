@@ -28,7 +28,7 @@
 pragma solidity 0.7.0;
 
 interface IStoremanGroup {
-    function getSelectedSmNumber(bytes32 groupId) external returns(uint number);
+    function getSelectedSmNumber(bytes32 groupId) external view returns(uint number);
     function getStoremanInfo(address wkAddress) external view  returns(address sender,bytes memory PK, address pkAddress,
              bool quited, uint  deposit, uint delegateDeposit,
              uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId,uint incentivedDay);
@@ -39,11 +39,11 @@ interface IStoremanGroup {
 
     // comment because it is same as getSelectedSmNumber
     //function getTotalNumberByGrpId(bytes32 grpId) external returns (uint);
-    function getThresholdByGrpId(bytes32 grpId) external returns (uint);
-    function getWorkingGrps() external returns (bytes32[] memory grpIds);
+    function getThresholdByGrpId(bytes32 grpId) external view returns (uint);
+    function getWorkingGrps() external view returns (bytes32[] memory grpIds);
     // comment because index 0 is always the index of leader
     //function getLeaderIndexByGrpId(bytes32 grpId) external returns (uint);
-    function getSelectedSmInfo(bytes32 groupId, uint index) external returns( address txAddress, bytes memory pk, bytes memory enodeId);
+    function getSelectedSmInfo(bytes32 groupId, uint index) external view returns( address txAddress, bytes memory pk, bytes memory enodeId);
 
     function recordSmSlash(address wk) external;
 }

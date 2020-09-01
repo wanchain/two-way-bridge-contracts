@@ -2,19 +2,19 @@
 pragma solidity 0.7.0;
 
 interface IPriceOracle {
-    function getValue(bytes calldata symbol) public view returns (uint256 price);
+    function getValue(bytes calldata symbol) external view returns (uint256 price);
 }
 
 interface IDepositOracle {
     function getDepositAmount(bytes32 storemanGroupId)
-        public
+        external
         view
         returns (uint256 deposit);
 }
 
 interface ITokenManager {
     function getTokenPairInfo(uint256 id)
-        public
+        external
         view
         returns (bytes memory ancestorSymbol);
 }

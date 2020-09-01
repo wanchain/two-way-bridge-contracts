@@ -85,7 +85,7 @@ library StoremanLib {
         emit stakeAppendEvent(wkAddr, msg.sender,msg.value);
     }
 
-    function checkCanStakeOut(StoremanType.StoremanData storage data,  address wkAddr) public returns(bool){
+    function checkCanStakeOut(StoremanType.StoremanData storage data,  address wkAddr) public view returns(bool){
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
@@ -121,7 +121,7 @@ library StoremanLib {
         return false;
     }
 
-    function checkCanStakeClaimFromGroup(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns (bool) {
+    function checkCanStakeClaimFromGroup(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private view returns (bool) {
         // 如果group还没选择, 不许提取.
         // group组建失败, 可以提取.
         // 如果已经选择过了, 没选中, 可以提取.
@@ -145,7 +145,7 @@ library StoremanLib {
         }
         return false;
     }
-    function checkCanStakeClaim(StoremanType.StoremanData storage data, address wkAddr) public returns(bool) {
+    function checkCanStakeClaim(StoremanType.StoremanData storage data, address wkAddr) public view returns(bool) {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         if(sk.wkAddr != wkAddr){ // sk doesn't exist.
             return false;
