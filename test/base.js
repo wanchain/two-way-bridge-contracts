@@ -1,9 +1,10 @@
 const utils = require("./utils");
 const assert = require('chai').assert;
-const Web3 = require('web3')
-const optimist = require("optimist")
+const Web3 = require('web3');
+const optimist = require("optimist");
+const config = require("../truffle-config");
 
-let web3url, owner, leader, leaderPk, web3;
+let web3url, owner, leader, admin, leaderPk, web3;
 
 const args = optimist.argv;
 const whiteCountAll = 4;
@@ -37,12 +38,13 @@ const storemanGroupStatus  = {
 };
 
 const g = {
-    leader,owner,whiteCount,whiteBackup,whiteCountAll,memberCountDesign,threshold,leaderPk,web3url,stakerCount,
+    leader,owner,admin,whiteCount,whiteBackup,whiteCountAll,memberCountDesign,threshold,leaderPk,web3url,stakerCount,
     gpkDuration,registerDuration,htlcDuration,timeBase,wanChainId,ethChainId,curve1,curve2,storemanGroupStatus,
     minStakeIn,minDelegateIn,delegateFee,whiteAddrOffset,otherAddrOffset
 }
 
 async function setupNetwork() {
+    g.admin = config.networks[network].admin;
     if (args.network == 'local' || args.network == 'coverage') {
         console.log("using network local");
         g.web3url = "http://127.0.0.1:8545";
@@ -117,7 +119,7 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
     let now = parseInt(Date.now()/1000);
     let ws = []
     let srs= []
-    for(let i=0; i<WhiteCount;i++){
+    for(let i=0; i<whiteCountAll;i++){
         ws.push(g.wks[i+wlStartIndex])
         srs.push(g.sfs[i % g.sfs.length])
     }
@@ -145,8 +147,8 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
         minDelegateIn:minDelegateIn,
         delegateFee:delegateFee,
     }
-    console.log("wks, ws:", g.wks, ws)
-    let tx = await smg.storemanGroupRegisterStart(smgIn, ws,srs, {from: g.leader})
+    console.log("wks: %O, ws: %O", g.wks, ws)
+    let tx = await smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
     console.log("registerStart txhash:", tx.tx)
     let group = await smg.getStoremanGroupInfo(groupId)
     assert.equal(group.status, storemanGroupStatus.curveSeted)

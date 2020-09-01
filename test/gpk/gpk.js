@@ -18,7 +18,7 @@ let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
 let data;
 
 contract('Gpk_UNITs', async () => {
-  let owner, someone;
+  let owner, admin;
 
   before("should do all preparations", async() => {
     // config
@@ -39,9 +39,9 @@ contract('Gpk_UNITs', async () => {
     await setupNetwork();
 
     owner = g.owner;
-    someone = g.leader;
+    admin = g.admin;
     console.log("onwer address: %s", owner);
-    console.log("someone address: %s", someone);    
+    console.log("admin address: %s", admin);
 
     groupId = await registerStart(smgSc);
     let regTime = parseInt(new Date().getTime());
@@ -59,7 +59,7 @@ contract('Gpk_UNITs', async () => {
   it('[GpkProxy_upgradeTo] should fail: Not owner', async () => {
     let result = {};
     try {
-      await gpkProxy.upgradeTo(gpkDelegate.address, {from: someone});
+      await gpkProxy.upgradeTo(gpkDelegate.address, {from: admin});
     } catch (e) {
       result = e;
       console.log(e);
@@ -103,7 +103,7 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setDependence] should fail: Not owner', async () => {
     let result = {};
     try {
-      await gpkSc.setDependence(configProxy.address, smgSc.address, {from: someone});
+      await gpkSc.setDependence(configProxy.address, smgSc.address, {from: admin});
     } catch (e) {
       result = e;
     }
@@ -142,17 +142,18 @@ contract('Gpk_UNITs', async () => {
   })
 
   // setPeriod
-  it('[GpkDelegate_setPeriod] should fail: Not owner', async () => {
+  it('[GpkDelegate_setPeriod] should fail: not admin', async () => {
     let result = {};
     let ployCommitPeroid = 10 * 60;
     let defaultPeroid = 5 * 60;
     let negotiatePeroid = 15 * 60;
     try {
-      await gpkSc.setPeriod(groupId, ployCommitPeroid, defaultPeroid, negotiatePeroid, {from: someone});
+      await gpkSc.setPeriod(groupId, ployCommitPeroid, defaultPeroid, negotiatePeroid, {from: owner});
     } catch (e) {
       result = e;
+      console.log("setPeriod not admin: %O", e)
     }
-    assert.equal(result.reason, 'Not owner');
+    assert.equal(result.reason, 'not admin');
   })
   
   it('[GpkDelegate_setPeriod] should success', async () => {
@@ -161,7 +162,7 @@ contract('Gpk_UNITs', async () => {
     let defaultPeriod = 5 * 60;
     let negotiatePeriod = 15 * 60;
     try {
-      await gpkSc.setPeriod(groupId, ployCommitPeriod, defaultPeriod, negotiatePeriod, {from: owner});
+      await gpkSc.setPeriod(groupId, ployCommitPeriod, defaultPeriod, negotiatePeriod, {from: admin});
     } catch (e) {
       result = e;
     }
@@ -229,7 +230,7 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setPolyCommit] should success', async () => {
     let result = {};
     try {
-      for (let i = 1; i < 4; i++) {
+      for (let i = 1; i < data.smList.length; i++) {
         await data.setPolyCommit(0, 0, i);
       }
     } catch (e) {
@@ -297,5 +298,47 @@ contract('Gpk_UNITs', async () => {
     let sender = data.smList[0].address;
     let info = await gpkSc.getSijInfo(groupId, 0, 0, sender, sender);
     assert.equal(info.checkStatus, CheckStatus.Valid);
+  })
+
+  it('[GpkDelegate_setEncSij_curve_1] should success', async () => {
+    let result = {};
+    try {
+      for (let s = 0; s < data.smList.length; s++) {
+        let d = s > 0? 0 : 1;
+        for (; d < data.smList.length; d++) {
+          await data.setEncSij(0, 0, d, s);
+          await data.setCheckStatus(0, 0, s, true, d);
+        }
+      }
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, undefined);
+    let info = await gpkSc.getGroupInfo(groupId, 0);
+    assert.equal(info.curve1Status, GpkStatus.Complete);
+  })
+
+  it('[GpkDelegate_curve_2] should success', async () => {
+    let result = {};
+    try {
+      // polyCommit
+      for (let i = 0; i < data.smList.length; i++) {
+        await data.setPolyCommit(0, 1, i);
+      }
+      let info = await gpkSc.getGroupInfo(groupId, 0);
+      assert.equal(info.curve2Status, GpkStatus.Negotiate);
+      // sij
+      for (let s = 0; s < data.smList.length; s++) {
+        for (let d = 0; d < data.smList.length; d++) {
+          await data.setEncSij(0, 1, d, s);
+          await data.setCheckStatus(0, 1, s, true, d);
+        }
+      }
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, undefined);
+    let info = await gpkSc.getGroupInfo(groupId, 0);
+    assert.equal(info.curve2Status, GpkStatus.Complete);
   })
 })
