@@ -5,7 +5,7 @@ const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 const { registerStart,stakeInPre, setupNetwork, g} = require('../base.js');
-const { assert } = require("assert");
+const  assert  = require("assert");
 
 contract('TestSmg', async () => {
 
@@ -38,17 +38,19 @@ contract('TestSmg', async () => {
 
 
     it('stakeIn', async ()=>{
-       let stakingValue = 50000
+        let stakingValue = 50000
         let tx = await smg.stakeIn(groupId, wk1.pk, wk1.pk,{value:stakingValue, from:tester});
 
         let candidate  = await smg.getStoremanInfo(wk1.addr)
         console.log("candidate:", candidate)
-        assert.equal(candidate.sender.toLowerCase(), tester.toLowerCase())
-        assert.equal(candidate.pkAddress.toLowerCase(), wk1.addr.toLowerCase())
-        assert.equal(candidate.deposit, stakingValue)
+        console.log("candidate.sender, tester:", candidate.sender, tester)
+
+        assert.equal(candidate.sender.toLowerCase(), tester.toLowerCase(),"staking")
+        assert.equal(candidate.wkAddr.toLowerCase(), wk1.addr.toLowerCase(),"staking")
+        assert.equal(candidate.deposit, stakingValue,"staking")
     })
     it('test stakeIn2', async()=>{
-        let stakingValue = 1000;
+        let stakingValue = 60000;
         let wk = utils.getAddressFromInt(10001)
         let tx =  await smg.stakeIn(groupId, wk.pk, wk.pk, {value:stakingValue, from:tester})
         
@@ -56,7 +58,7 @@ contract('TestSmg', async () => {
         let candidate  = await smg.getStoremanInfo(wk.addr)
         console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), tester.toLowerCase())
-        assert.equal(candidate.pkAddress.toLowerCase(), wk.addr.toLowerCase())
+        assert.equal(candidate.wkAddr.toLowerCase(), wk.addr.toLowerCase())
         assert.equal(candidate.deposit, stakingValue)
     })
     it('test stakeAppend', async()=>{
@@ -68,7 +70,7 @@ contract('TestSmg', async () => {
         let candidate  = await smg.getStoremanInfo(wk1.addr)
         console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), tester.toLowerCase())
-        assert.equal(candidate.pkAddress.toLowerCase(), wk1.addr)
+        assert.equal(candidate.wkAddr.toLowerCase(), wk1.addr)
         assert.equal(candidate.deposit, Number(candidateOld.deposit)+Number(appendValue))
     })
 
@@ -139,7 +141,7 @@ contract('TestSmg', async () => {
         let candidate  = await smg.getStoremanInfo(sw.addr)
         console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), sf.addr)
-        assert.equal(candidate.pkAddress.toLowerCase(), sw.addr)
+        assert.equal(candidate.wkAddr.toLowerCase(), sw.addr)
         assert.equal(candidate.quited, true)
     })
     it.skip('[StoremanGroupDelegate_stakeClaim] should fail: not dismissed', async () => {

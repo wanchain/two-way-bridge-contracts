@@ -220,7 +220,7 @@ module.exports = async function (deployer, network) {
 
     // dependence
     //await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
-    await smg.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address);
+    await smg.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address,posLib.address);
 
     await gpk.setDependence(cnfProxy.address, smgProxy.address);
     await metric.setDependence(cnfProxy.address, smgProxy.address, posLib.address);
