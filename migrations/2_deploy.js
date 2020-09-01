@@ -54,6 +54,8 @@ const SignatureVerifier = artifacts.require('SignatureVerifier');
 const ConfigDelegate = artifacts.require('ConfigDelegate');
 const ConfigProxy = artifacts.require('ConfigProxy');
 
+const config = require("../truffle-config");
+
 
 const curveMap = new Map([
     ['secp256k1', 0],
@@ -152,17 +154,13 @@ module.exports = async function (deployer, network) {
 
     // storm group admin dependence
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
+    await smg.addAdmin(config.networks[network].admin);
 
     // await smgProxy.upgradeTo(smgDelegate.address);
     await deployer.deploy(fakeQuota);
     let fakeQuotaInst = await fakeQuota.deployed();
 
     //deploy metric
-    if(network != 'testnet' && network != 'mainnet') {
-        await deployer.deploy(FakeSmg);
-        await deployer.deploy(FakeSkCurve);
-        await deployer.deploy(FakeBnCurve);
-    }
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, MetricLib);
     //await deployer.link(PosLib, MetricLib);
@@ -194,34 +192,35 @@ module.exports = async function (deployer, network) {
     let gpkDelegate = await GpkDelegate.deployed();
     await gpkProxy.upgradeTo(gpkDelegate.address);
     console.log("gpk address:", gpkProxy.address);
-
     let gpk = await GpkDelegate.at(GpkProxy.address);
-
+    await gpk.addAdmin(config.networks[network].admin);
 
     // config
-
-    await deployer.deploy(Secp256k1Curve);
-    let secp256k1 = await Secp256k1Curve.deployed();
-    await deployer.deploy(Bn256Curve);
-    let bn256 = await Bn256Curve.deployed();
-
     await deployer.deploy(ConfigProxy);
     let cnfProxy = await ConfigProxy.deployed();
     await deployer.deploy(ConfigDelegate);
     let cnfDelegate = await ConfigDelegate.deployed();
     await cnfProxy.upgradeTo(cnfDelegate.address);
-
     let cnf = await ConfigDelegate.at(cnfProxy.address);
-    await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address]);
+    await cnf.addAdmin(config.networks[network].admin);
+
+    let secp256k1, bn256;
+    if (network == 'local' || network == 'coverage') {
+      await deployer.deploy(FakeSkCurve);
+      secp256k1 = await FakeSkCurve.deployed();
+      await deployer.deploy(FakeBnCurve);
+      bn256 = await FakeBnCurve.deployed();
+    } else {
+      await deployer.deploy(Secp256k1Curve);
+      secp256k1 = await Secp256k1Curve.deployed();
+      await deployer.deploy(Bn256Curve);
+      bn256 = await Bn256Curve.deployed();
+    }
+    await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address], {from: config.networks[network].admin});
 
     // dependence
     //await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
     await smg.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address);
-    if(network == 'local' || network == 'coverage') {
-        await smg.addAdmin("0xdF0A667F00cCfc7c49219e81b458819587068141");
-    } else {
-        await smg.addAdmin("0x5793e629c061e7fd642ab6a1b4d552cec0e2d606");
-    }
 
     await gpk.setDependence(cnfProxy.address, smgProxy.address);
     await metric.setDependence(cnfProxy.address, smgProxy.address, posLib.address);
