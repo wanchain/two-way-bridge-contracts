@@ -15,6 +15,7 @@ const MetricLib = artifacts.require('MetricLib');
 const FakeSmg = artifacts.require('FakeSmg');
 const FakeSkCurve = artifacts.require('FakeSkCurve');
 const FakeBnCurve = artifacts.require('FakeBnCurve');
+const FakePosLib = artifacts.require('FakePosLib');
 
 const Secp256k1Curve = artifacts.require('Secp256k1Curve');
 const Bn256Curve = artifacts.require('Bn256Curve');
@@ -123,21 +124,21 @@ module.exports = async function (deployer, network) {
     // ***********osm*****************
     // storeman group admin sc
     if(network == 'local' || network == 'coverage') {
-        PosLib = artifacts.require('test/PosLib');
+        await deployer.deploy(FakePosLib);
     } 
         
-    await deployer.deploy(PosLib);
-    await deployer.link(PosLib,StoremanUtil);
+    let posLib = await deployer.deploy(PosLib);
+    //await deployer.link(PosLib,StoremanUtil);
     await deployer.deploy(StoremanUtil);
     await deployer.link(StoremanUtil,StoremanLib);
     await deployer.link(StoremanUtil,IncentiveLib);
-    await deployer.link(PosLib,StoremanGroupDelegate);
+    //await deployer.link(PosLib,StoremanGroupDelegate);
     await deployer.deploy(Deposit);
     await deployer.deploy(TestDeposit);
     await deployer.link(Deposit,StoremanGroupDelegate);
     await deployer.deploy(StoremanLib);
     await deployer.link(StoremanLib,StoremanGroupDelegate);
-    await deployer.link(PosLib,IncentiveLib)
+    //await deployer.link(PosLib,IncentiveLib)
     await deployer.deploy(IncentiveLib);
     await deployer.link(IncentiveLib,StoremanGroupDelegate);
     await deployer.link(StoremanUtil,StoremanGroupDelegate);
@@ -164,12 +165,12 @@ module.exports = async function (deployer, network) {
     }
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, MetricLib);
-    await deployer.link(PosLib, MetricLib);
+    //await deployer.link(PosLib, MetricLib);
     await deployer.deploy(MetricLib);
 
     await deployer.link(CommonTool, MetricDelegate);
     await deployer.link(MetricLib, MetricDelegate);
-    await deployer.link(PosLib, MetricDelegate);
+    //await deployer.link(PosLib, MetricDelegate);
 
     await deployer.deploy(MetricProxy);
     let metricProxy = await MetricProxy.deployed();
@@ -223,5 +224,5 @@ module.exports = async function (deployer, network) {
     }
 
     await gpk.setDependence(cnfProxy.address, smgProxy.address);
-    await metric.setDependence(cnfProxy.address, smgProxy.address);
+    await metric.setDependence(cnfProxy.address, smgProxy.address, posLib.address);
 }
