@@ -50,7 +50,7 @@ library StoremanLib {
         sk.wkAddr = pkAddr;
         sk.groupId = groupId;
         sk.deposit = Deposit.Records(0);
-        sk.deposit.addRecord(Deposit.Record(StoremanUtil.getDaybyTime(now), msg.value));
+        sk.deposit.addRecord(Deposit.Record(StoremanUtil.getDaybyTime(data.posLib, now), msg.value));
 
         group.skMap[group.memberCount] = sk.wkAddr;
         group.memberCount++;
@@ -73,7 +73,7 @@ library StoremanLib {
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         require(sk.sender == msg.sender, "Only the sender can stakeAppend");
 
-        uint day = StoremanUtil.getDaybyTime(now);
+        uint day = StoremanUtil.getDaybyTime(data.posLib, now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         sk.deposit.addRecord(r);
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
@@ -119,7 +119,7 @@ library StoremanLib {
         return false;
     }
 
-    function checkCanStakeClaimFromGroup(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns (bool) {
+    function checkCanStakeClaimFromGroup(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns (bool) {
         // 如果group还没选择, 不许提取.
         // group组建失败, 可以提取.
         // 如果已经选择过了, 没选中, 可以提取.
@@ -137,7 +137,7 @@ library StoremanLib {
             return true;
         } else {
             if(sk.quited && group.status == StoremanType.GroupStatus.dismissed
-            && sk.incentivedDay+1 >= StoremanUtil.getDaybyTime(group.workTime+group.totalTime) ) {
+            && sk.incentivedDay+1 >= StoremanUtil.getDaybyTime(posLib, group.workTime+group.totalTime) ) {
                 return true;
             }
         }
@@ -150,7 +150,7 @@ library StoremanLib {
         }
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
-        if(checkCanStakeClaimFromGroup(sk, group) && checkCanStakeClaimFromGroup(sk, nextGroup)){
+        if(checkCanStakeClaimFromGroup(data.posLib, sk, group) && checkCanStakeClaimFromGroup(data.posLib, sk, nextGroup)){
             return true;
         } else {
             return false;
@@ -268,7 +268,7 @@ library StoremanLib {
             // dk.staker = wkAddr;
         }
         sk.delegateDeposit = sk.delegateDeposit.add(msg.value);
-        uint day = StoremanUtil.getDaybyTime(now);
+        uint day = StoremanUtil.getDaybyTime(data.posLib, now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         dk.deposit.addRecord(r);
         updateGroup(data, sk, group, r);
@@ -398,7 +398,7 @@ library StoremanLib {
             sk.partners[msg.sender] = pn;
         }
         sk.partnerDeposit = sk.partnerDeposit.add(msg.value);
-        uint day = StoremanUtil.getDaybyTime(now);
+        uint day = StoremanUtil.getDaybyTime(data.posLib, now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         pn.deposit.addRecord(r);
         updateGroup(data, sk, group, r);
