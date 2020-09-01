@@ -36,7 +36,7 @@ contract FakeSmg {
     "ccd16e96a70a5b496ff1cec869902b6a8ffa00715897937518f1c9299726f7090bc36cc23c1d028087eb0988c779663e996391f290631317fc22f84fa9bf2467"];
 
     address constant ADD_0 = 0x0000000000000000000000000000000000000000;
-    address constant ADD_LEADER= 0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e;
+    address constant ADD_LEADER= 0x2d0E7c0813A51d3bd1d08246Af2A8a7A57d8922E;
 
     address public leaderAdd;
     // groupId=>index=>pk
@@ -63,15 +63,15 @@ contract FakeSmg {
     *
     */
 
-    function getSelectedSmNumber(bytes32 groupId) external returns (uint number){
+    function getSelectedSmNumber(bytes32 groupId) external view returns (uint number){
         return SelectedSMNumber;
     }
 
-    function getThresholdByGrpId(bytes32 _grpId) external returns (uint){
+    function getThresholdByGrpId(bytes32 _grpId) external view returns (uint){
         return ThresholdNumber;
     }
 
-    function getSelectedSmInfo(bytes32 _grpId, uint index) external returns (address txAddress, bytes memory pk, bytes memory enodeId){
+    function getSelectedSmInfo(bytes32 _grpId, uint index) external view returns (address txAddress, bytes memory pk, bytes memory enodeId){
         (txAddress,pk,enodeId) = (leaderAdd, mapSmgInfo[_grpId][uint8(index)], fromHex(EnodeIdStr));
     }
 
@@ -117,14 +117,14 @@ contract FakeSmg {
 
     // Convert an hexadecimal character to their value
     function fromHexChar(uint c) public pure returns (uint) {
-        if (byte(c) >= byte('0') && byte(c) <= byte('9')) {
-            return c - uint(byte('0'));
+        if (byte(uint8(c)) >= byte('0') && byte(uint8(c)) <= byte('9')) {
+            return c - uint(uint8(byte('0')));
         }
-        if (byte(c) >= byte('a') && byte(c) <= byte('f')) {
-            return 10 + c - uint(byte('a'));
+        if (byte(uint8(c)) >= byte('a') && byte(uint8(c)) <= byte('f')) {
+            return 10 + c - uint(uint8(byte('a')));
         }
-        if (byte(c) >= byte('A') && byte(c) <= byte('F')) {
-            return 10 + c - uint(byte('A'));
+        if (byte(uint8(c)) >= byte('A') && byte(uint8(c)) <= byte('F')) {
+            return 10 + c - uint(uint8(byte('A')));
         }
         return uint(0);
     }
@@ -136,8 +136,8 @@ contract FakeSmg {
         // length must be even
         bytes memory r = new bytes(ss.length / 2);
         for (uint i = 0; i < ss.length / 2; ++i) {
-            r[i] = byte(fromHexChar(uint(ss[2 * i])) * 16 +
-                fromHexChar(uint(ss[2 * i + 1])));
+            r[i] = byte(uint8(fromHexChar(uint(uint8(ss[2 * i]))) * 16 +
+                fromHexChar(uint(uint8(ss[2 * i + 1])))));
         }
         return r;
     }

@@ -26,6 +26,7 @@
 
 // SPDX-License-Identifier: MIT
 pragma solidity 0.7.0;
+pragma experimental ABIEncoderV2;
 
 import "../components/BasicStorage.sol";
 
@@ -59,11 +60,11 @@ contract TokenManagerStorage is BasicStorage {
      **
      ************************************************************/
 
-    /// total amount of TokenPair instance
+    // total amount of TokenPair instance
     uint public totalTokenPairs = 0;
 
-    /// a map from a sequence ID to token pair
-    mapping(uint => TokenPairInfo) public mapTokenPairInfo;
+    // a map from a sequence ID to token pair
+    mapping(uint => TokenPairInfo) mapTokenPairInfo;
     // index -> tokenPairId
     mapping(uint => uint) public mapTokenPairIndex;
 }

@@ -697,13 +697,13 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         private
         // view
     {
-        bytes32 PKx = bytesToBytes32(PK, 0);
-        bytes32 PKy = bytesToBytes32(PK, 32);
+        // bytes32 PKx = bytesToBytes32(PK, 0);
+        // bytes32 PKy = bytesToBytes32(PK, 32);
 
-        bytes32 Rx = bytesToBytes32(r, 0);
-        bytes32 Ry = bytesToBytes32(r, 32);
+        // bytes32 Rx = bytesToBytes32(r, 0);
+        // bytes32 Ry = bytesToBytes32(r, 32);
 
-        require(storageData.sigVerifier.verify(curveID, s, PKx, PKy, Rx, Ry, message), "Signature verification failed");
+        require(storageData.sigVerifier.verify(curveID, s, bytesToBytes32(PK, 0), bytesToBytes32(PK, 32), bytesToBytes32(r, 0), bytesToBytes32(r, 32), message), "Signature verification failed");
     }
 
     // /// @notice                              get the detailed quota info. of this storeman group

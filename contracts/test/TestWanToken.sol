@@ -6,9 +6,11 @@ import "../components/BasicStorage.sol";
 import "./TestIOwned.sol";
 
 contract TestWanToken is BasicStorage {
+    using BasicStorageLib for BasicStorageLib.AddressData;
+    using BasicStorageLib for BasicStorageLib.UintData;
 
     function createToken(string calldata tokenName, string calldata tokenSymbol, uint8 tokenDecimal) external {
-        address tokenInst = new WanToken(tokenName, tokenSymbol, tokenDecimal);
+        address tokenInst = address(new WanToken(tokenName, tokenSymbol, tokenDecimal));
         addressData.setStorage(bytes(tokenName), bytes(tokenSymbol), tokenInst);
         uintData.setStorage(bytes(tokenName), bytes(tokenSymbol), tokenDecimal);
         // TestIOwned(tokenInst).changeOwner(msg.sender);

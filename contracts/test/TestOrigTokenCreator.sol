@@ -7,6 +7,8 @@ import "../components/BasicStorage.sol";
 import "./TestIOwned.sol";
 
 contract TestOrigTokenCreator is BasicStorage {
+    using BasicStorageLib for BasicStorageLib.AddressData;
+    using BasicStorageLib for BasicStorageLib.UintData;
     address _admin;
 
     modifier onlyAdmin {
@@ -23,7 +25,7 @@ contract TestOrigTokenCreator is BasicStorage {
     }
 
     function createToken(string calldata tokenName, string calldata tokenSymbol, uint8 tokenDecimal) external {
-        address tokenInst = new MappingToken(tokenName, tokenSymbol, tokenDecimal);
+        address tokenInst = address(new MappingToken(tokenName, tokenSymbol, tokenDecimal));
         addressData.setStorage(bytes(tokenName), bytes(tokenSymbol), tokenInst);
         uintData.setStorage(bytes(tokenName), bytes(tokenSymbol), tokenDecimal);
         // TestIOwned(tokenInst).changeOwner(msg.sender);

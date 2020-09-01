@@ -111,7 +111,7 @@ library IncentiveLib {
 
         uint day;
         for (day = fromDay; day < endDay; day++) {
-            if (msg.gas < reservedGas ) { // check the gas. because calculate delegator incentive need more gas left.
+            if (gasleft() < reservedGas ) { // check the gas. because calculate delegator incentive need more gas left.
                 emit incentiveEvent(sk.groupId, wkAddr, false, fromDay, day);
                 return;
             }
@@ -131,7 +131,7 @@ library IncentiveLib {
                     incentiveNode(day, sk,group,data);
                 }
                 while (sk.incentivedDelegator != sk.delegatorCount) {
-                    if (msg.gas < reservedGas ) {
+                    if (gasleft() < reservedGas ) {
                         emit incentiveEvent(sk.groupId, wkAddr, false, fromDay, 0);
                         return;
                     }
