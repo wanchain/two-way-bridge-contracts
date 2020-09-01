@@ -5,6 +5,7 @@ const MetricDelegate = artifacts.require('MetricDelegate');
 const FakeSmg = artifacts.require('FakeSmg');
 const FakeSkCurve = artifacts.require('FakeSkCurve');
 const FakeBnCurve = artifacts.require('FakeBnCurve');
+const FakePosLib = artifacts.require('FakePosLib');
 
 //const PosLib = artifacts.require('PosLib');
 const PosLib = artifacts.require('test/PosLib');
@@ -41,7 +42,7 @@ contract('Test Metric', async (accounts) => {
         try {
             await testInit();
             // get the instance
-            let deploy, configProxy, fakeSmg, fakeSkCurve, fakeBnCurve;
+            let deploy, configProxy, fakeSmg, fakeSkCurve, fakeBnCurve, fakePosLib;
             deploy = await MetricProxy.deployed();
             metricInstProxy = await MetricDelegate.at(deploy.address);
 
@@ -51,14 +52,14 @@ contract('Test Metric', async (accounts) => {
             fakeSmg = await FakeSmg.deployed();
             fakeSkCurve = await FakeSkCurve.deployed();
             fakeBnCurve = await FakeBnCurve.deployed();
-
+            fakePosLib = await FakePosLib.deployed();
 
             configProxy = await ConfigProxy.deployed();
             let confDlg = await ConfigDelegate.at(configProxy.address);
             await confDlg.setCurve([0x00], [fakeSkCurve.address]);
             await confDlg.setCurve([0x01], [fakeBnCurve.address]);
 
-            metricInstProxy.setDependence(configProxy.address, fakeSmg.address);
+            metricInstProxy.setDependence(configProxy.address, fakeSmg.address,fakePosLib.address);
 
             await fakeSmg.setLeader(accounts[0]);
 
@@ -1846,26 +1847,27 @@ contract('Test Metric', async (accounts) => {
     // setDependence()
     it('setDependence...   ->"Invalid config address"', async () => {
 
-        let oldConfigAddr, oldSmgAddr;
+        let oldConfigAddr, oldSmgAddr,oldPosAddr;
         try {
 
             let ret = await metricInstProxy.getDependence();
             console.log("ret of metricInstProxy.getDependence:", ret);
             oldConfigAddr = ret[0];
             oldSmgAddr = ret[1];
+            oldPosAddr = ret[2];
 
         } catch (err) {
             assert.fail(err.toString());
         }
 
         try {
-            let ret = await metricInstProxy.setDependence(ADDRZERO, ADDRZERO);
+            let ret = await metricInstProxy.setDependence(ADDRZERO, ADDRZERO,ADDRZERO);
         } catch (err) {
             lib.assertInclude(err.message, "Invalid config address", err);
         }
 
         try {
-            let ret = await metricInstProxy.setDependence(oldConfigAddr, oldSmgAddr);
+            let ret = await metricInstProxy.setDependence(oldConfigAddr, oldSmgAddr,oldPosAddr);
         } catch (err) {
             assert.fail(err.toString());
         }
@@ -1874,7 +1876,7 @@ contract('Test Metric', async (accounts) => {
     it('setDependence...   ->"Not owner"', async () => {
 
         try {
-            let ret = await metricInstProxy.setDependence(ADDRZERO, ADDRZERO, {from: accounts[2]});
+            let ret = await metricInstProxy.setDependence(ADDRZERO, ADDRZERO, ADDRZERO,{from: accounts[2]});
         } catch (err) {
             lib.assertInclude(err.message, "Not owner", err)
         }
@@ -1895,13 +1897,19 @@ contract('Test Metric', async (accounts) => {
         }
 
         try {
-            let ret = await metricInstProxy.setDependence(oldConfigAddr, ADDRZERO);
+            let ret = await metricInstProxy.setDependence(oldConfigAddr, ADDRZERO, ADDRZERO);
         } catch (err) {
             lib.assertInclude(err.message, "Invalid smg address", err);
         }
 
         try {
-            let ret = await metricInstProxy.setDependence(oldConfigAddr, oldSmgAddr);
+            let ret = await metricInstProxy.setDependence(oldConfigAddr, oldSmgAddr, ADDRZERO);
+        } catch (err) {
+            lib.assertInclude(err.message, "Invalid posLib address", err);
+        }
+
+        try {
+            let ret = await metricInstProxy.setDependence(oldConfigAddr, oldSmgAddr, oldPosAddr);
         } catch (err) {
             assert.fail(err.toString());
         }
