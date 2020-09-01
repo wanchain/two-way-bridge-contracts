@@ -61,7 +61,7 @@ library GpkLib {
     /// @param parter                     negotiate parter
     /// @param round                      group negotiate round
     /// @param curveIndex                 signature curve index
-    event SlashLogger(bytes32 indexed groupId, uint8 indexed slashType, address indexed slashed, address parter, uint16 round, uint8 curveIndex);
+    event SlashLogger(bytes32 indexed groupId, uint8 indexed slashType, address indexed slashed, address partner, uint16 round, uint8 curveIndex);
 
     /// @notice                           event for group reset protocol
     /// @param groupId                    storeman group id
