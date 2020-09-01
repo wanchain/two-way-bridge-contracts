@@ -121,7 +121,7 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(admin.toLowerCase(), receipt.logs[0].args.admin.toLowerCase());
 
       const tokenPairID = parseInt(await tokenManagerDelegate.mapTokenPairIndex(0));
-      const tokenPairInfo = await tokenManagerDelegate.mapTokenPairInfo(tokenPairID);
+      const tokenPairInfo = await tokenManagerDelegate.getTokenPairInfo(tokenPairID);
       const token = await MappingToken.at(tokenPairInfo.toAccount);
       gas1 = await tokenManagerDelegate.mintToken.estimateGas(tokenPairID, other, 100, {from: admin});
       console.log(`mintToken estimate = ${gas1}`);
