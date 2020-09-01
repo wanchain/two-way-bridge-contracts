@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 import "./StoremanType.sol";
-import "../lib/PosLib.sol";
+import "../interfaces/IPosLib.sol";
 import "../interfaces/IMetric.sol";
 import "./StoremanUtil.sol";
 
@@ -22,9 +22,9 @@ library IncentiveLib {
         return co;
     }
 
-    function getGroupIncentive(StoremanType.StoremanGroup storage group, uint day,StoremanType.StoremanData storage data) private view returns (uint) {
+    function getGroupIncentive(address posLib, StoremanType.StoremanGroup storage group, uint day,StoremanType.StoremanData storage data) private view returns (uint) {
         uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
-        return PosLib.getMinIncentive(group.deposit.getLastValue(),day).mul(chainTypeCo).div(10000);
+        return IPosLib(posLib).getMinIncentive(group.deposit.getLastValue(),day).mul(chainTypeCo).div(10000);
     }
 
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) private returns (uint) {
@@ -49,26 +49,26 @@ library IncentiveLib {
         }
         return false;
     }
-    function rotateSkGroup(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private {
-        if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(group.workTime+group.totalTime) && group.status == StoremanType.GroupStatus.dismissed) {
+    function rotateSkGroup(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private {
+        if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(posLib, group.workTime+group.totalTime) && group.status == StoremanType.GroupStatus.dismissed) {
             if(sk.nextGroupId != bytes32(0x00)) {
                 sk.groupId = sk.nextGroupId;
                 sk.nextGroupId = bytes32(0x00);
             }
         }
     }
-    function calFromEndDay(StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns(uint,uint) {
+    function calFromEndDay(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns(uint,uint) {
         uint fromDay;
         if (sk.incentivedDay != 0) {
             fromDay = sk.incentivedDay + 1;
         } else {
-            fromDay = StoremanUtil.getDaybyTime(group.workTime);
+            fromDay = StoremanUtil.getDaybyTime(posLib, group.workTime);
         }
         uint endDay = now;
         if (endDay > group.workTime + group.totalTime) {
             endDay = group.workTime + group.totalTime;
         }
-        endDay = StoremanUtil.getDaybyTime(endDay);
+        endDay = StoremanUtil.getDaybyTime(posLib, endDay);
         return (fromDay, endDay);
     }
 
@@ -106,7 +106,7 @@ library IncentiveLib {
         require(group.status >= StoremanType.GroupStatus.ready, "not ready");
         uint fromDay; uint endDay;
         uint reservedGas = 2000000;
-        (fromDay, endDay) = calFromEndDay(sk, group);
+        (fromDay, endDay) = calFromEndDay(data.posLib, sk, group);
 
         uint day;
         for (day = fromDay; day < endDay; day++) {
@@ -115,7 +115,7 @@ library IncentiveLib {
                 return;
             }
             if (group.groupIncentive[day] == 0) {
-                group.groupIncentive[day] = getGroupIncentive(group, day, data);
+                group.groupIncentive[day] = getGroupIncentive(data.posLib, group, day, data);
             }
             uint idx = 0;
             for (; idx < group.selectedCount; idx++) {
@@ -138,7 +138,7 @@ library IncentiveLib {
                 }
             }
             sk.incentivedDay = day;
-            rotateSkGroup(sk, group);
+            rotateSkGroup(data.posLib, sk, group);
             sk.incentivedDelegator = 0;
         }
         emit incentiveEvent(sk.groupId, wkAddr, true, fromDay, endDay-1);

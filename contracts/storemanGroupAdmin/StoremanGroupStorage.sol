@@ -35,6 +35,7 @@ import "../interfaces/IQuota.sol";
 
 contract StoremanGroupStorage is BasicStorage {
   address public metric;
+  //address public posLib;
   IQuota public quotaInst;
 
   uint backupCountDefault = 3;
