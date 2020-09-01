@@ -35,7 +35,7 @@ import "../interfaces/IStoremanGroup.sol";
 import "../lib/SafeMath.sol";
 import "../lib/CommonTool.sol";
 import "./lib/MetricLib.sol";
-import "../lib/PosLib.sol";
+import "../interfaces/IPosLib.sol";
 
 contract MetricDelegate is MetricStorage, Halt{
     using SafeMath for uint;
@@ -218,15 +218,17 @@ contract MetricDelegate is MetricStorage, Halt{
     /// @notice                         function for set config and smg contract address
     /// @param configAddr               config contract address
     /// @param smgAddr                  smg contract address
-    function setDependence(address configAddr, address smgAddr)
+    function setDependence(address configAddr, address smgAddr, address posAddr)
     external
     onlyOwner
     {
         require(configAddr != address(0), "Invalid config address");
         require(smgAddr != address(0), "Invalid smg address");
+        require(posAddr != address(0), "Invalid posLib address");
 
         metricData.config = IConfig(configAddr);
         metricData.smg = IStoremanGroup(smgAddr);
+        metricData.posLib = IPosLib(posAddr);
     }
 
 
@@ -243,7 +245,7 @@ contract MetricDelegate is MetricStorage, Halt{
     view
     returns (uint)
     {
-        return PosLib.getEpochId(now);
+        return IPosLib(metricData.posLib).getEpochId(now);
     }
 
     function checkHamming(uint indexes, uint8 smIndex)
