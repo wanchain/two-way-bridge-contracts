@@ -1,8 +1,10 @@
 const { assert }                = require('chai');
+const optimist                  = require("optimist");
 
 const BN                        = web3.utils.BN;
 
-const from = require('../../truffle-config').networks.development.from;
+const args = optimist.argv;
+const from = require('../../truffle-config').networks[args.network].from;
 
 const InvalidTokenPairID          = 100;
 const htlcLockedTime              = 40; //unit: s
