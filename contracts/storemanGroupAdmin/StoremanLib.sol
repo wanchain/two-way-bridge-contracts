@@ -41,32 +41,35 @@ library StoremanLib {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(now <= group.registerTime+group.registerDuration,"Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
-        address pkAddr = address(keccak256(PK));
-        StoremanType.Candidate storage sk = data.candidates[0][pkAddr];
+        address wkAddr = address(keccak256(PK));
+        StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.sender == address(0x00), "Candidate has existed");
         require(group.status == StoremanType.GroupStatus.curveSeted,"not configured");
         sk.sender = msg.sender;
         sk.enodeID = enodeID;
         sk.PK = PK;
-        sk.wkAddr = pkAddr;
+        sk.wkAddr = wkAddr;
         sk.groupId = groupId;
         sk.deposit = Deposit.Records(0);
         sk.deposit.addRecord(Deposit.Record(StoremanUtil.getDaybyTime(data.posLib, now), msg.value));
 
-        group.skMap[group.memberCount] = sk.wkAddr;
-        group.memberCount++;
+        // only not whitelist address need add memberCount;
+        if(!isWorkingNodeInGroup(group, wkAddr)) {
+            group.skMap[group.memberCount] = sk.wkAddr;
+            group.memberCount++;
+        }
 
         // check if it is white
-        if(group.whiteWk[pkAddr] != address(0x00)){
-            if(group.whiteWk[pkAddr] != msg.sender){
+        if(group.whiteWk[wkAddr] != address(0x00)){
+            if(group.whiteWk[wkAddr] != msg.sender){
                 revert("invalid sender");
             }
             sk.isWhite = true;
         } else {
-            realInsert(data,group, pkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value));
+            realInsert(data,group, wkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value));
         }
 
-        emit stakeInEvent(groupId, pkAddr, msg.sender, msg.value);
+        emit stakeInEvent(groupId, wkAddr, msg.sender, msg.value);
     }
 
     function stakeAppend(StoremanType.StoremanData storage data,  address wkAddr) external  {
@@ -111,7 +114,7 @@ library StoremanLib {
     }
 
     function isWorkingNodeInGroup(StoremanType.StoremanGroup storage group, address wkAddr) private  view returns (bool) {
-        uint count = group.memberCountDesign;
+        uint count = group.selectedCount;
         for(uint8 i = 0; i < count; i++) {
             if(wkAddr == group.selectedNode[i]) {
                 return true;
@@ -300,7 +303,7 @@ library StoremanLib {
                 }
             }
         }
-        group.selectedCount = oldCount;
+        group.selectedCount = group.whiteCount;
         group.memberCount =group.selectedCount;
 
         if (preGroupId != bytes32(0x00)) {
