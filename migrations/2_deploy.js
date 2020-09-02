@@ -65,6 +65,8 @@ const curveMap = new Map([
 module.exports = async function (deployer, network) {
     global.network = network;
     if (network === 'nodeploy') return;
+    if (network === 'localTest') return;
+
 
     // ***********two-way-bridge*****************
     // token manager
