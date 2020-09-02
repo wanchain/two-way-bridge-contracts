@@ -71,6 +71,7 @@ library StoremanType {
         uint tickedCount;
         uint minStakeIn;
         uint minDelegateIn;
+        uint minPartIn;
         uint crossIncoming;
         bytes gpk1;
         bytes gpk2;
@@ -143,6 +144,7 @@ library StoremanType {
         uint tickedCount;
         uint minStakeIn;
         uint minDelegateIn;
+        uint minPartIn;
         uint crossIncoming;
         bytes gpk1;
         bytes gpk2;
@@ -162,6 +164,7 @@ library StoremanType {
         uint curve2;
         uint minStakeIn;
         uint minDelegateIn;
+        uint minPartIn;
         uint delegateFee;
     }
 }

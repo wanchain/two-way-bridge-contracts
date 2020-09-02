@@ -170,7 +170,7 @@ library StoremanLib {
         if(sk.slashedCount >= data.conf.maxSlashedCount) {
             amount = 0;
         } else {
-            amount = amount.mul(data.conf.maxSlashedCount - sk.slashedCount).div(data.conf.maxSlashedCount);
+            amount = amount.mul(data.conf.maxSlashedCount.sub(sk.slashedCount)).div(data.conf.maxSlashedCount);
         }
 	    emit stakeClaimEvent(wkAddr, msg.sender, sk.groupId, amount);
 
@@ -303,11 +303,10 @@ library StoremanLib {
                 }
             }
         }
-        group.selectedCount = group.whiteCount;
+        group.selectedCount = oldCount;
         group.memberCount =group.selectedCount;
 
         if (preGroupId != bytes32(0x00)) {
-            require(oldGroup.status >= StoremanType.GroupStatus.ready,"invalid preGroup");
             for (k = oldGroup.whiteCount; k<oldGroup.memberCountDesign && group.memberCount<group.memberCountDesign; k++) {
                 address wkAddr = oldGroup.selectedNode[k];
                 StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
@@ -339,7 +338,6 @@ library StoremanLib {
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
         require(dk.deposit.getLastValue() != 0, "no deposit");
         dk.quited = true;
-        sk.delegateDeposit = sk.delegateDeposit.sub(dk.deposit.getLastValue());
         emit delegateOutEvent(wkAddr, msg.sender);
     }
 
@@ -352,6 +350,7 @@ library StoremanLib {
         require(amount != 0,"not exist");
         dk.deposit.clean();
         emit delegateClaimEvent(wkAddr, msg.sender, amount);
+        sk.delegateDeposit = sk.delegateDeposit.sub(dk.deposit.getLastValue());
 
         address lastDkAddr = sk.delegatorMap[sk.delegatorCount.sub(1)];
         StoremanType.Delegator storage lastDk = sk.delegators[lastDkAddr];
@@ -391,6 +390,7 @@ library StoremanLib {
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         require(sk.partnerCount<5,"Too many partners");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
+        require(msg.value >= group.minPartIn, "Too small value");
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
 
         StoremanType.Delegator storage pn = sk.partners[msg.sender];
@@ -398,6 +398,8 @@ library StoremanLib {
             sk.partMap[sk.partnerCount] = msg.sender;
             pn.index = sk.partnerCount;
             sk.partnerCount++;
+            // pn.sender = msg.sender;
+            // pn.staker = wkAddr;
             sk.partners[msg.sender].index = pn.index;
             sk.partners[msg.sender].quited = pn.quited;
             sk.partners[msg.sender].deposit.total = pn.deposit.total;
@@ -421,7 +423,6 @@ library StoremanLib {
         require(pn.deposit.getLastValue() != 0, "not exist");
 
         pn.quited = true;
-        sk.partnerDeposit = sk.partnerDeposit.sub(pn.deposit.getLastValue());
         emit partOutEvent(wkAddr, msg.sender);
     }
     function partClaim(StoremanType.StoremanData storage data, address wkAddr) external {
@@ -431,6 +432,7 @@ library StoremanLib {
         uint amount = pn.deposit.getLastValue();
         require(amount != 0, "not exist");
         pn.deposit.clean();
+        sk.partnerDeposit = sk.partnerDeposit.sub(pn.deposit.getLastValue());
 
         address lastPnAddr = sk.partMap[sk.partnerCount-1];
         StoremanType.Delegator storage lastPn = sk.partners[lastPnAddr];

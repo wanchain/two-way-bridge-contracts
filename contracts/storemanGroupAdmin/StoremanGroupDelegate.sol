@@ -29,8 +29,8 @@ pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "../lib/SafeMath.sol";
-import "../components/Admin.sol";
 import "../components/Halt.sol";
+import "../components/Admin.sol";
 import "./StoremanGroupStorage.sol";
 //import "../interfaces/IPosLib.sol";
 import "./StoremanLib.sol";
@@ -80,17 +80,17 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     function storemanGroupRegisterStart(StoremanType.StoremanGroupInput calldata smg,
         address[] calldata wkAddrs, address[] calldata senders)
         public
-        onlyOwner
+        onlyAdmin
     {
         bytes32 groupId = smg.groupId;
         bytes32 preGroupId = smg.preGroupId;
         require(wkAddrs.length == senders.length, "Invalid white list length");
         require(wkAddrs.length >= data.conf.backupCount, "Insufficient white list");
-        require(wkAddrs.length <= smg.memberCountDesign+data.conf.backupCount);
+        require(wkAddrs.length <= smg.memberCountDesign+data.conf.backupCount, "Too many whitelist node");
         // check preGroupId 是否存在.
         if(preGroupId != bytes32(0x00)){
             StoremanType.StoremanGroup storage preGroup = data.groups[preGroupId];
-            require(preGroup.status != StoremanType.GroupStatus.none, "preGroup doesn't exist");
+            require(preGroup.status >= StoremanType.GroupStatus.ready,"invalid preGroup");
         }
 
         initGroup(groupId, smg);
@@ -120,6 +120,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         group.threshold = smg.threshold;
         group.minStakeIn = smg.minStakeIn;
         group.minDelegateIn = smg.minDelegateIn;
+        group.minPartIn = smg.minPartIn;
         group.delegateFee = smg.delegateFee;
         group.chain1 = smg.chain1;
         group.chain2 = smg.chain2;
@@ -230,7 +231,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     }
 
     // To change  group status for unexpected reason.
-    function updateGroupStatus(bytes32 groupId, StoremanType.GroupStatus status) external  onlyOwner {
+    function updateGroupStatus(bytes32 groupId, StoremanType.GroupStatus status) external  onlyAdmin {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.status = status;
     }
@@ -263,7 +264,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         group.status = StoremanType.GroupStatus.ready;
     }
 
-    function setInvalidSm(bytes32 groupId, GpkTypes.SlashType[] memory slashType,  address[] memory badAddrs)
+    function setInvalidSm(bytes32 groupId, uint[] calldata indexs, GpkTypes.SlashType[] calldata slashTypes)
         external
         returns(bool isContinue)
     {
@@ -272,22 +273,17 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         if(group.status != StoremanType.GroupStatus.selected) {
             return false;
         }
-        for(uint k = 0; k < group.selectedCount; k++){
-            if(group.tickedCount + group.whiteCount >= group.whiteCountAll){
+        for (uint i = 0; i < indexs.length; i++) {
+            if (group.tickedCount + group.whiteCount >= group.whiteCountAll) {
                 group.status == StoremanType.GroupStatus.failed;
                 return false;
             }
-            for(uint i = 0; i<badAddrs.length; i++){
-                if(group.selectedNode[k] == badAddrs[i]){
-                    group.tickedNode[group.tickedCount] = group.selectedNode[k];
-                    group.selectedNode[k] = group.whiteMap[group.tickedCount + group.whiteCount];
-                    group.tickedCount += 1;
-                    if(slashType[i] == GpkTypes.SlashType.SijInvalid || slashType[i] == GpkTypes.SlashType.CheckInvalid) {
-                        recordSmSlash(badAddrs[i]);
-                    }
-                    break;
-                }
+            group.tickedNode[group.tickedCount] = group.selectedNode[indexs[i]];
+            group.selectedNode[indexs[i]] = group.whiteMap[group.whiteCount + group.tickedCount];
+            if (slashTypes[i] == GpkTypes.SlashType.SijInvalid || slashTypes[i] == GpkTypes.SlashType.CheckInvalid) {
+                recordSmSlash(group.tickedNode[group.tickedCount]);
             }
+            group.tickedCount++;
         }
         return true;
     }
@@ -394,6 +390,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         info.tickedCount = smg.tickedCount;
         info.minStakeIn = smg.minStakeIn;
         info.minDelegateIn = smg.minDelegateIn;
+        info.minPartIn = smg.minPartIn;
         info.crossIncoming = smg.crossIncoming;
         info.gpk1 = smg.gpk1;
         info.gpk2 = smg.gpk2;
@@ -407,7 +404,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
         return (id, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
-         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime, smg.delegateFee);
+         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime);
     }
     // function getStoremanGroupTime(bytes32 id)
     //     external

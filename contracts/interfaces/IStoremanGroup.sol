@@ -29,20 +29,10 @@ pragma solidity 0.7.0;
 
 interface IStoremanGroup {
     function getSelectedSmNumber(bytes32 groupId) external view returns(uint number);
-    function getStoremanInfo(address wkAddress) external view  returns(address sender,bytes memory PK, address pkAddress,
-             bool quited, uint  deposit, uint delegateDeposit,
-             uint incentive, uint delegatorCount, bytes32 groupId, bytes32 nextGroupId,uint incentivedDay);
-    function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2,
-             uint curve1, uint curve2,  bytes memory gpk1, bytes memory gpk2, uint startTime, uint endTime);
+    function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes memory gpk1, bytes memory gpk2, uint startTime, uint endTime);
     function setGpk(bytes32 groupId, bytes calldata gpk1, bytes calldata gpk2) external;
-    function setInvalidSm(bytes32 groupId, uint[] calldata slashType, address[] calldata txAddress) external returns(bool isContinue);
-
-    // comment because it is same as getSelectedSmNumber
-    //function getTotalNumberByGrpId(bytes32 grpId) external returns (uint);
-    function getThresholdByGrpId(bytes32 grpId) external view returns (uint);
-    function getWorkingGrps() external view returns (bytes32[] memory grpIds);
-    // comment because index 0 is always the index of leader
-    //function getLeaderIndexByGrpId(bytes32 grpId) external returns (uint);
-    function getSelectedSmInfo(bytes32 groupId, uint index) external view returns( address txAddress, bytes memory pk, bytes memory enodeId);
+    function setInvalidSm(bytes32 groupId, uint[] calldata indexs, uint8[] calldata slashTypes) external returns(bool isContinue);
+    function getThresholdByGrpId(bytes32 groupId) external view returns (uint);
+    function getSelectedSmInfo(bytes32 groupId, uint index) external view returns( address wkAddr, bytes memory PK, bytes memory enodeId);
     function recordSmSlash(address wk) external;
 }
