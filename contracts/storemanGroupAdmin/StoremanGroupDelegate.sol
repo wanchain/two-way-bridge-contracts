@@ -29,6 +29,7 @@ pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "../lib/SafeMath.sol";
+import "../components/Admin.sol";
 import "../components/Halt.sol";
 import "./StoremanGroupStorage.sol";
 //import "../interfaces/IPosLib.sol";
@@ -407,7 +408,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
         return (id, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
-         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime, smg.delegateFee);
+         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime);
     }
     // function getStoremanGroupTime(bytes32 id)
     //     external

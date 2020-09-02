@@ -116,7 +116,7 @@ library MetricTypes {
         // smg instance address
         address smg;
 
-        /// posLib address
+        // posLib address
         address posLib;
     }
 

@@ -227,9 +227,9 @@ contract MetricDelegate is MetricStorage, Halt{
         require(smgAddr != address(0), "Invalid smg address");
         require(posAddr != address(0), "Invalid posLib address");
 
-        metricData.config = IConfig(configAddr);
-        metricData.smg = IStoremanGroup(smgAddr);
-        metricData.posLib = IPosLib(posAddr);
+        metricData.config = address(IConfig(configAddr));
+        metricData.smg = address(IStoremanGroup(smgAddr));
+        metricData.posLib = address(IPosLib(posAddr));
     }
 
 
