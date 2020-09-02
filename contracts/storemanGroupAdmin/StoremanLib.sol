@@ -23,6 +23,7 @@ library StoremanLib {
     event delegateClaimEvent(address indexed wkAddr, address indexed from, uint256 indexed amount);
     event delegateIncentiveClaimEvent(address indexed sender,address indexed wkAddr,uint indexed amount);
     event partInEvent(address indexed wkAddr, address indexed from, uint indexed value);
+    event partOutEvent(address indexed wkAddr, address indexed from);
 
     function storemanGroupUnregister(StoremanType.StoremanData storage data,bytes32 groupId)
         external
@@ -280,7 +281,7 @@ library StoremanLib {
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
-        address[] memory oldAddr =  new address[](oldGroup.memberCountDesign);
+        address[] memory oldAddr =  new address[](group.memberCountDesign+data.conf.backupCount);
         uint oldCount = 0;
         uint k = 0;
 
@@ -303,7 +304,8 @@ library StoremanLib {
         group.memberCount =group.selectedCount;
 
         if (preGroupId != bytes32(0x00)) {
-            for (k = oldGroup.whiteCount; k<oldGroup.memberCountDesign; k++) {
+            require(oldGroup.status >= StoremanType.GroupStatus.ready,"invalid preGroup");
+            for (k = oldGroup.whiteCount; k<oldGroup.memberCountDesign && group.memberCount<group.memberCountDesign; k++) {
                 address wkAddr = oldGroup.selectedNode[k];
                 StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
                 if(sk.groupId == preGroupId && !sk.quited && sk.slashedCount == 0 && !sk.isWhite) {
@@ -417,6 +419,7 @@ library StoremanLib {
 
         pn.quited = true;
         sk.partnerDeposit = sk.partnerDeposit.sub(pn.deposit.getLastValue());
+        emit partOutEvent(wkAddr, msg.sender);
     }
     function partClaim(StoremanType.StoremanData storage data, address wkAddr) external {
         require(checkCanStakeClaim(data,wkAddr),"Cannot claim");

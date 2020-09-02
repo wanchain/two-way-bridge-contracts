@@ -40,6 +40,7 @@ contract('StoremanGroupDelegate', async () => {
         } 
     })
     it('T3 registerStart2', async ()=>{
+        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.leader});
         groupId2 = await registerStart(smg, 0, {preGroupId:groupId});
         console.log("groupId2: ", groupId2)
         groupInfo2 = await smg.getStoremanGroupInfo(groupId2);
