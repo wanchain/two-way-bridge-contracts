@@ -121,6 +121,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         group.threshold = smg.threshold;
         group.minStakeIn = smg.minStakeIn;
         group.minDelegateIn = smg.minDelegateIn;
+        group.minPartIn = smg.minPartIn;
         group.delegateFee = smg.delegateFee;
         group.chain1 = smg.chain1;
         group.chain2 = smg.chain2;
@@ -390,6 +391,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         info.tickedCount = smg.tickedCount;
         info.minStakeIn = smg.minStakeIn;
         info.minDelegateIn = smg.minDelegateIn;
+        info.minPartIn = smg.minPartIn;
         info.crossIncoming = smg.crossIncoming;
         info.gpk1 = smg.gpk1;
         info.gpk2 = smg.gpk2;
