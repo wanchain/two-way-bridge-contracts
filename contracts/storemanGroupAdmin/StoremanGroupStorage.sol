@@ -35,24 +35,20 @@ import "../interfaces/IQuota.sol";
 
 contract StoremanGroupStorage is BasicStorage {
   address public metric;
-  //address public posLib;
   IQuota public quotaInst;
-
-  uint backupCountDefault = 3;
-  uint maxSlashedCount = 2;
-  uint minStake = 50000;
-  address[] public badAddrs;
-  uint[] public badTypes;
-  uint memberCountDefault=4;
-  uint thresholdDefault = 3;
-  uint standaloneWeightDefault = 1500;
-  uint chainTypeCoDefault = 10000;
-  uint DelegationMultiDefault = 10;
-
   address  public  createGpkAddr;
+
   StoremanType.StoremanData data;
 
   constructor() public {
+
+    uint backupCountDefault = 3;
+    uint maxSlashedCount = 2;
+    uint standaloneWeightDefault = 15000;
+    uint chainTypeCoDefault = 10000;
+    uint DelegationMultiDefault = 10;
+
+
     data.conf.standaloneWeight = standaloneWeightDefault;
     data.conf.backupCount = backupCountDefault;
     data.conf.chainTypeCoDefault = chainTypeCoDefault;

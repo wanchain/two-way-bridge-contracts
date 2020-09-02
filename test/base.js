@@ -22,6 +22,7 @@ const ethChainId = 2147483708;
 const curve1 = 1, curve2 = 1;
 const minStakeIn = 50000;
 const minDelegateIn = 100;
+const minPartIn = 10000;
 const delegateFee = 1200;
 const whiteAddrOffset = 2000;
 const otherAddrOffset = whiteAddrOffset * 20;
@@ -40,7 +41,7 @@ const storemanGroupStatus  = {
 const g = {
     leader,owner,admin,whiteCount,whiteBackup,whiteCountAll,memberCountDesign,threshold,leaderPk,web3url,stakerCount,
     gpkDuration,registerDuration,htlcDuration,timeBase,wanChainId,ethChainId,curve1,curve2,storemanGroupStatus,
-    minStakeIn,minDelegateIn,delegateFee,whiteAddrOffset,otherAddrOffset
+    minStakeIn,minDelegateIn,minPartIn,delegateFee,whiteAddrOffset,otherAddrOffset
 }
 
 async function setupNetwork() {
@@ -145,6 +146,7 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
         curve2:curve2,
         minStakeIn:minStakeIn,
         minDelegateIn:minDelegateIn,
+        minPartIn:minPartIn,
         delegateFee:delegateFee,
     }
     console.log("wks: %O, ws: %O", g.wks, ws)

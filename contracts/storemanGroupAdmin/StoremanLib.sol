@@ -169,7 +169,7 @@ library StoremanLib {
         if(sk.slashedCount >= data.conf.maxSlashedCount) {
             amount = 0;
         } else {
-            amount = amount.mul(data.conf.maxSlashedCount - sk.slashedCount).div(data.conf.maxSlashedCount);
+            amount = amount.mul(data.conf.maxSlashedCount.sub(sk.slashedCount)).div(data.conf.maxSlashedCount);
         }
 	    emit stakeClaimEvent(wkAddr, msg.sender, sk.groupId, amount);
 
@@ -336,7 +336,6 @@ library StoremanLib {
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
         require(dk.deposit.getLastValue() != 0, "no deposit");
         dk.quited = true;
-        sk.delegateDeposit = sk.delegateDeposit.sub(dk.deposit.getLastValue());
         emit delegateOutEvent(wkAddr, msg.sender);
     }
 
@@ -349,6 +348,7 @@ library StoremanLib {
         require(amount != 0,"not exist");
         dk.deposit.clean();
         emit delegateClaimEvent(wkAddr, msg.sender, amount);
+        sk.delegateDeposit = sk.delegateDeposit.sub(dk.deposit.getLastValue());
 
         address lastDkAddr = sk.delegatorMap[sk.delegatorCount.sub(1)];
         StoremanType.Delegator storage lastDk = sk.delegators[lastDkAddr];
@@ -387,6 +387,7 @@ library StoremanLib {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         require(sk.partnerCount<5,"Too many partners");
+        require(msg.value >= group.minPartIn, "Too small value");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
 
@@ -418,7 +419,6 @@ library StoremanLib {
         require(pn.deposit.getLastValue() != 0, "not exist");
 
         pn.quited = true;
-        sk.partnerDeposit = sk.partnerDeposit.sub(pn.deposit.getLastValue());
         emit partOutEvent(wkAddr, msg.sender);
     }
     function partClaim(StoremanType.StoremanData storage data, address wkAddr) external {
@@ -428,6 +428,7 @@ library StoremanLib {
         uint amount = pn.deposit.getLastValue();
         require(amount != 0, "not exist");
         pn.deposit.clean();
+        sk.partnerDeposit = sk.partnerDeposit.sub(pn.deposit.getLastValue());
 
         address lastPnAddr = sk.partMap[sk.partnerCount-1];
         StoremanType.Delegator storage lastPn = sk.partners[lastPnAddr];
