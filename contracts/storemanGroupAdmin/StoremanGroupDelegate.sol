@@ -85,11 +85,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         bytes32 preGroupId = smg.preGroupId;
         require(wkAddrs.length == senders.length, "Invalid white list length");
         require(wkAddrs.length >= data.conf.backupCount, "Insufficient white list");
-        require(wkAddrs.length <= smg.memberCountDesign+data.conf.backupCount);
+        require(wkAddrs.length <= smg.memberCountDesign+data.conf.backupCount, "Too many whitelist node");
         // check preGroupId 是否存在.
         if(preGroupId != bytes32(0x00)){
             StoremanType.StoremanGroup storage preGroup = data.groups[preGroupId];
-            require(preGroup.status != StoremanType.GroupStatus.none, "preGroup doesn't exist");
+            require(oldGroup.status >= StoremanType.GroupStatus.ready,"invalid preGroup");
         }
 
         initGroup(groupId, smg);

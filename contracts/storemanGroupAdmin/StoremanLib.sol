@@ -300,11 +300,10 @@ library StoremanLib {
                 }
             }
         }
-        group.selectedCount = group.whiteCount;
+        group.selectedCount = oldCount;
         group.memberCount =group.selectedCount;
 
         if (preGroupId != bytes32(0x00)) {
-            require(oldGroup.status >= StoremanType.GroupStatus.ready,"invalid preGroup");
             for (k = oldGroup.whiteCount; k<oldGroup.memberCountDesign && group.memberCount<group.memberCountDesign; k++) {
                 address wkAddr = oldGroup.selectedNode[k];
                 StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
