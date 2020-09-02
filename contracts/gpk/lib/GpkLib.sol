@@ -58,7 +58,7 @@ library GpkLib {
     /// @param groupId                    storeman group id
     /// @param slashType                  the reason to slash
     /// @param slashed                    slashed storeman
-    /// @param parter                     negotiate parter
+    /// @param partner                    negotiate parter
     /// @param round                      group negotiate round
     /// @param curveIndex                 signature curve index
     event SlashLogger(bytes32 indexed groupId, uint8 indexed slashType, address indexed slashed, address partner, uint16 round, uint8 curveIndex);
