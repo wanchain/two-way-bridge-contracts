@@ -223,7 +223,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return IncentiveLib.toSelect(data, groupId);
     }
 
-    function getSelectedSmInfo(bytes32 groupId, uint index) external view   returns(address wkAddr, bytes PK, bytes enodeId){
+    function getSelectedSmInfo(bytes32 groupId, uint index) external view returns(address wkAddr, bytes PK, bytes enodeId) {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         address addr = group.selectedNode[index];
         StoremanType.Candidate storage sk = data.candidates[0][addr];
@@ -265,31 +265,26 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     }
 
 
-    function setInvalidSm(bytes32 groupId, GpkTypes.SlashType[] slashType,  address[] badAddrs)
+    function setInvalidSm(bytes32 groupId, uint[] indexs, GpkTypes.SlashType[] slashTypes)
         external
         returns(bool isContinue)
     {
         require(msg.sender == createGpkAddr, "Sender is not allowed");
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        if(group.status != StoremanType.GroupStatus.selected) {
+        if (group.status != StoremanType.GroupStatus.selected) {
             return false;
         }
-        for(uint k = 0; k < group.selectedCount; k++){
-            if(group.tickedCount + group.whiteCount >= group.whiteCountAll){
+        for (uint i = 0; i < indexs.length; i++) {
+            if (group.tickedCount + group.whiteCount >= group.whiteCountAll) {
                 group.status == StoremanType.GroupStatus.failed;
                 return false;
             }
-            for(uint i = 0; i<badAddrs.length; i++){
-                if(group.selectedNode[k] == badAddrs[i]){
-                    group.tickedNode[group.tickedCount] = group.selectedNode[k];
-                    group.selectedNode[k] = group.whiteMap[group.tickedCount + group.whiteCount];
-                    group.tickedCount += 1;
-                    if(slashType[i] == GpkTypes.SlashType.SijInvalid || slashType[i] == GpkTypes.SlashType.CheckInvalid) {
-                        recordSmSlash(badAddrs[i]);
-                    }
-                    break;
-                }
+            group.tickedNode[group.tickedCount] = group.selectedNode[indexs[i]];
+            group.selectedNode[indexs[i]] = group.whiteMap[group.whiteCount + group.tickedCount];
+            if (slashTypes[i] == GpkTypes.SlashType.SijInvalid || slashTypes[i] == GpkTypes.SlashType.CheckInvalid) {
+                recordSmSlash(group.tickedNode[group.tickedCount]);
             }
+            group.tickedCount++;
         }
         return true;
     }
