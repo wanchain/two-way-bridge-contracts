@@ -212,7 +212,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     function getSelectedSmNumber(bytes32 groupId) external view returns(uint) {
         return StoremanUtil.getSelectedSmNumber(data, groupId);
     }
-    
     function getSelectedStoreman(bytes32 groupId) external view returns(address[] memory) {
         return StoremanUtil.getSelectedStoreman(data, groupId);
     }
@@ -408,7 +407,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
         return (id, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
-         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime);
+         smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime, smg.delegateFee);
     }
     // function getStoremanGroupTime(bytes32 id)
     //     external
