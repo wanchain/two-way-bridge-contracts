@@ -105,5 +105,8 @@ contract('TestSmg', async () => {
       console.log("sk:", sk);
       assert(sk.slashedCount, 1, "recordSmSlash failed")
     })
+
+
+    
     
 })
