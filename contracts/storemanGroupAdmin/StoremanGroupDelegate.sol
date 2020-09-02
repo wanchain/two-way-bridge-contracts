@@ -85,11 +85,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         bytes32 preGroupId = smg.preGroupId;
         require(wkAddrs.length == senders.length, "Invalid white list length");
         require(wkAddrs.length >= data.conf.backupCount, "Insufficient white list");
-        require(wkAddrs.length <= smg.memberCountDesign+data.conf.backupCount);
+        require(wkAddrs.length <= smg.memberCountDesign+data.conf.backupCount, "Too many whitelist node");
         // check preGroupId 是否存在.
         if(preGroupId != bytes32(0x00)){
             StoremanType.StoremanGroup storage preGroup = data.groups[preGroupId];
-            require(preGroup.status != StoremanType.GroupStatus.none, "preGroup doesn't exist");
+            require(preGroup.status >= StoremanType.GroupStatus.ready,"invalid preGroup");
         }
 
         initGroup(groupId, smg);
@@ -121,6 +121,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         group.threshold = smg.threshold;
         group.minStakeIn = smg.minStakeIn;
         group.minDelegateIn = smg.minDelegateIn;
+        group.minPartIn = smg.minPartIn;
         group.delegateFee = smg.delegateFee;
         group.chain1 = smg.chain1;
         group.chain2 = smg.chain2;
@@ -390,6 +391,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         info.tickedCount = smg.tickedCount;
         info.minStakeIn = smg.minStakeIn;
         info.minDelegateIn = smg.minDelegateIn;
+        info.minPartIn = smg.minPartIn;
         info.crossIncoming = smg.crossIncoming;
         info.gpk1 = smg.gpk1;
         info.gpk2 = smg.gpk2;
