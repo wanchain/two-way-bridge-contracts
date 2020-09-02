@@ -352,19 +352,26 @@ contract('Quota', accounts => {
     ret = await quota.methods.userFastBurn(1, web3.utils.keccak256("storeman1"), 1).send({from: accounts[1], gas:1e7});
     ret = await quota.methods.smgFastBurn(1, web3.utils.keccak256("storeman1"), 1).send({from: accounts[1], gas:1e7});
 
+    ret = await quota.methods.getFastMinCount(1).call();
+    console.log('getFastMinCount', ret);
 
-    await quota.methods.setFastCrossMinValue(1000000000).send({from: accounts[0], gas:1e7});
+    await quota.methods.setFastCrossMinValue(web3.utils.toWei('10')).send({from: accounts[0], gas:1e7});
+
+    ret = await quota.methods.getFastMinCount(1).call();
+    console.log('getFastMinCount', ret);
     
     try {
       ret = await quota.methods.userFastMint(1, web3.utils.keccak256("storeman1"), 1).send({from: accounts[1], gas:1e7});
       assert(false, 'Should never get here');
     } catch (e) {
-      console.log(e);
       assert.ok(e.message.match(/revert/));
     }
 
-    ret = await quota.methods.userFastMint(1, web3.utils.keccak256("storeman1"), 1).send({from: accounts[1], gas:1e7});
-    ret = await quota.methods.smgFastMint(1, web3.utils.keccak256("storeman1"), 1).send({from: accounts[1], gas:1e7});
+    await quota.methods.setFastCrossMinValue(0).send({from: accounts[0], gas:1e7});
+
+    ret = await quota.methods.userFastMint(1, web3.utils.keccak256("storeman1"), 10).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.smgFastMint(1, web3.utils.keccak256("storeman1"), 10).send({from: accounts[1], gas:1e7});
+    await quota.methods.setFastCrossMinValue(web3.utils.toWei('10')).send({from: accounts[0], gas:1e7});
 
     try {
       ret = await quota.methods.userFastBurn(1, web3.utils.keccak256("storeman1"), 1).send({from: accounts[1], gas:1e7});

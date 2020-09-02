@@ -614,6 +614,19 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return true;
     }
 
+    /// @dev get minimize token count for fast cross chain
+    function getFastMinCount(uint tokenId) public view returns (uint, string, uint, uint, uint) {
+        if (fastCrossMinValue == 0) {
+            return (0, "", 0, 0, 0);
+        }
+        string memory symbol;
+        uint decimals;
+        (symbol, decimals) = getTokenAncestorInfo(tokenId);
+        uint price = getPrice(symbol);
+        uint count = fastCrossMinValue.mul(10**decimals).div(price);
+        return (fastCrossMinValue, symbol, decimals, price, count);
+    }
+
     // ----------- Private Functions ---------------
 
     function checkFastMinValue(uint tokenId, uint value) private view returns (bool) {
@@ -624,9 +637,11 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint decimals;
         (symbol, decimals) = getTokenAncestorInfo(tokenId);
         uint price = getPrice(symbol);
-        uint count = fastCrossMinValue.div(price).mul(10**decimals).div(1 ether);
+        uint count = fastCrossMinValue.mul(10**decimals).div(price);
         return value >= count;
     }
+
+
 
     /// @notice                                 get storeman group's deposit value in USD
     /// @param storemanGroupId                  storeman group ID
