@@ -113,8 +113,9 @@ library GpkLib {
         bytes memory pk;
         for (uint i = 0; i < group.smNumber; i++) {
             (txAddress, pk,) = IStoremanGroup(smg).getSelectedSmInfo(groupId, i);
-            group.indexMap[i] = txAddress;
-            group.addressMap[txAddress] = pk;
+            group.addrMap[i] = txAddress;
+            group.indexMap[txAddress] = i;
+            group.pkMap[txAddress] = pk;
         }
     }
 
@@ -165,8 +166,8 @@ library GpkLib {
         uint y;
         bool success;
         for (uint i = 0; i < group.smNumber; i++) {
-            address txAddress = group.indexMap[i];
-            bytes memory pk = group.addressMap[txAddress];
+            address txAddress = group.addrMap[i];
+            bytes memory pk = group.pkMap[txAddress];
             (x, y, success) = ICurve(round.curve).calPolyCommit(polyCommit, pk);
             require(success == true, "PolyCommit failed");
 
@@ -229,34 +230,48 @@ library GpkLib {
         address slashed, address parter, bool toReset, address smg)
         public
     {
+        GpkTypes.Src storage src = group.roundMap[group.round][curveIndex].srcMap[slashed];
+        if (src.slashType == GpkTypes.SlashType.None) {
+            group.roundMap[group.round][curveIndex].slashCount++;
+        }
+        if ((slashType == GpkTypes.SlashType.SijInvalid)
+         || (slashType == GpkTypes.SlashType.CheckInvalid)
+         || (src.slashType == GpkTypes.SlashType.None) 
+         || (src.slashType == GpkTypes.SlashType.Connive)) {
+            src.slashType = slashType;
+        }
         emit SlashLogger(group.groupId, uint8(slashType), slashed, parter, group.round, curveIndex);
         if (toReset) {
-            uint[] memory types = new uint[](1);
-            types[0] = uint(slashType);
-            address[] memory sms = new address[](1);
-            sms[0] = slashed;
-            bool isContinue = IStoremanGroup(smg).setInvalidSm(group.groupId, types, sms);
+            uint[] memory ids = new uint[](1);
+            ids[0] = group.indexMap[slashed];
+            uint8[] memory types = new uint8[](1);
+            types[0] = uint8(slashType);
+            bool isContinue = IStoremanGroup(smg).setInvalidSm(group.groupId, ids, types);
             reset(group, isContinue);
         }
     }
 
     /// @notice                           function for slash
     /// @param group                      storeman group
-    /// @param slashNumber                slash number of storemans
-    /// @param slashTypes                 slash types
-    /// @param slashSms                   slash storeman address
-    function slashMulti(GpkTypes.Group storage group, uint slashNumber,
-        GpkTypes.SlashType[] slashTypes, address[] slashSms, address smg)
+    /// @param curveIndex                 singnature curve index
+    /// @param smg                        smg contract address
+    function slashMulti(GpkTypes.Group storage group, uint8 curveIndex, address smg)
         public
     {
-        require(slashNumber > 0, "Not slash");
-        uint[] memory types = new uint[](slashNumber);
-        address[] memory sms = new address[](slashNumber);
-        for (uint i = 0; i < slashNumber; i++) {
-          types[i] = uint(slashTypes[i]);
-          sms[i] = slashSms[i];
+        GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
+        require(round.slashCount > 0, "No slash");
+        uint[] memory ids = new uint[](round.slashCount);
+        uint8[] memory types = new uint8[](round.slashCount);
+        uint slashCount = 0;
+        for (uint i = 0; (i < group.smNumber) && (slashCount < round.slashCount); i++) {
+            GpkTypes.Src storage src = round.srcMap[group.addrMap[i]];
+            if (src.slashType != GpkTypes.SlashType.None) {
+                ids[slashCount] = i;
+                types[slashCount] = uint8(src.slashType);
+                slashCount++;
+            }
         }
-        bool isContinue = IStoremanGroup(smg).setInvalidSm(group.groupId, types, sms);
+        bool isContinue = IStoremanGroup(smg).setInvalidSm(group.groupId, ids, types);
         reset(group, isContinue);
     }
 
@@ -275,8 +290,9 @@ library GpkLib {
 
         // clear data
         for (uint i = 0; i < group.smNumber; i++) {
-            delete group.addressMap[group.indexMap[i]];
-            delete group.indexMap[i];
+            delete group.pkMap[group.addrMap[i]];
+            delete group.indexMap[group.addrMap[i]];
+            delete group.addrMap[i];
         }
         group.smNumber = 0;
 
