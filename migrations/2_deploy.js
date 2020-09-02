@@ -16,6 +16,7 @@ const FakeSmg = artifacts.require('FakeSmg');
 const FakeSkCurve = artifacts.require('FakeSkCurve');
 const FakeBnCurve = artifacts.require('FakeBnCurve');
 const FakePosLib = artifacts.require('FakePosLib');
+const FakeCommonTool = artifacts.require('FakeCommonTool');
 
 const Secp256k1Curve = artifacts.require('Secp256k1Curve');
 const Bn256Curve = artifacts.require('Bn256Curve');
@@ -56,11 +57,17 @@ const ConfigProxy = artifacts.require('ConfigProxy');
 
 const config = require("../truffle-config");
 
-
 const curveMap = new Map([
     ['secp256k1', 0],
     ['bn256', 1]
 ])
+
+function replaceLib(contract, lib, newLib) {
+  let placeholder = '__' + lib + Array(40 - lib.length - 2).fill('_').join("");
+  let newPlaceholder = '__' + newLib + Array(40 - newLib.length - 2).fill('_').join("");
+  let reg = new RegExp(placeholder, 'g');
+  contract._json.bytecode = contract._json.bytecode.replace(reg, newPlaceholder);
+}
 
 module.exports = async function (deployer, network) {
     global.network = network;
@@ -180,8 +187,13 @@ module.exports = async function (deployer, network) {
     let metric = await MetricDelegate.at(metricProxy.address);
 
     // create gpk sc
-
-    await deployer.link(CommonTool, GpkLib);
+    if (network == 'local' || network == 'coverage') {
+      await deployer.deploy(FakeCommonTool);
+      replaceLib(GpkLib, 'CommonTool', 'FakeCommonTool');
+      await deployer.link(FakeCommonTool, GpkLib);
+    } else {
+      await deployer.link(CommonTool, GpkLib);
+    }
     await deployer.deploy(GpkLib);
 
     await deployer.link(GpkLib, GpkDelegate);
