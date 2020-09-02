@@ -89,7 +89,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         // check preGroupId 是否存在.
         if(preGroupId != bytes32(0x00)){
             StoremanType.StoremanGroup storage preGroup = data.groups[preGroupId];
-            require(oldGroup.status >= StoremanType.GroupStatus.ready,"invalid preGroup");
+            require(preGroup.status >= StoremanType.GroupStatus.ready,"invalid preGroup");
         }
 
         initGroup(groupId, smg);
