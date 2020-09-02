@@ -37,9 +37,9 @@ import "./StoremanType.sol";
 import "./IncentiveLib.sol";
 import "../interfaces/IQuota.sol";
 import "../gpk/lib/GpkTypes.sol";
+import "../components/ReentrancyGuard.sol";
 
-
-contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
+contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGuard {
     using SafeMath for uint;
     using Deposit for Deposit.Records;
 
@@ -168,10 +168,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
     function checkCanStakeClaim(address wkAddr) external view returns(bool){
         return StoremanLib.checkCanStakeClaim(data, wkAddr);
     }
-    function stakeClaim(address wkAddr) external notHalted {
+    function stakeClaim(address wkAddr) external notHalted nonReentrant {
         return StoremanLib.stakeClaim(data,wkAddr);
     }
-    function stakeIncentiveClaim(address wkAddr) external notHalted {
+    function stakeIncentiveClaim(address wkAddr) external notHalted nonReentrant{
         return StoremanLib.stakeIncentiveClaim(data,wkAddr);
     }
 
@@ -186,11 +186,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
         return StoremanLib.delegateOut(data,wkAddr);
 
     }
-    function delegateClaim(address wkAddr) external {
+    function delegateClaim(address wkAddr) external notHalted nonReentrant{
 
         return StoremanLib.delegateClaim(data, wkAddr);
     }
-    function delegateIncentiveClaim(address wkAddr) external {
+    function delegateIncentiveClaim(address wkAddr) external notHalted nonReentrant{
 
         return StoremanLib.delegateIncentiveClaim(data, wkAddr);
 
@@ -206,7 +206,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin {
         return StoremanLib.partOut(data,wkAddr);
 
     }
-    function partClaim(address wkAddr) external notHalted{
+    function partClaim(address wkAddr) external notHalted nonReentrant{
         return StoremanLib.partClaim(data,wkAddr);
     }
 
