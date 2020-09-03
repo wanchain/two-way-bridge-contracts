@@ -8,6 +8,10 @@ const CheckStatus = {
   Init: 0, Valid: 1, Invalid: 2
 }
 
+const SlashType = {
+  None: 0, PolyCommitTimeout: 1, EncSijTimout: 2, CheckTimeout: 3, SijTimeout: 4, SijInvalid: 5, CheckInvalid: 6, Connive: 7
+}
+
 class Data {
   constructor(smgSc, gpkSc, groupId) {
     this.smgSc = smgSc;
@@ -159,5 +163,6 @@ class Send {
 module.exports = {
   GpkStatus,
   CheckStatus,
+  SlashType,
   Data
 };

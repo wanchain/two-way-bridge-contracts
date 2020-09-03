@@ -62,9 +62,9 @@ contract MetricDelegate is MetricStorage, Halt{
     function getDependence()
     external
     view
-    returns (address, address)
+    returns (address, address,address)
     {
-        return (metricData.config, metricData.smg);
+        return (metricData.config, metricData.smg, metricData.posLib);
     }
 
     ///=======================================statistic=============================================

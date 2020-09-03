@@ -19,18 +19,18 @@ interface ITokenManager {
         returns (bytes memory ancestorSymbol);
 }
 
-contract StoremanType {
-    enum GroupStatus {
-        none,
-        initial,
-        curveSeted,
-        failed,
-        selected,
-        ready,
-        unregistered,
-        dismissed
-    }
-}
+// contract StoremanType {
+//     enum GroupStatus {
+//         none,
+//         initial,
+//         curveSeted,
+//         failed,
+//         selected,
+//         ready,
+//         unregistered,
+//         dismissed
+//     }
+// }
 
 contract TestQuotaHelper {
     mapping(bytes32 => uint256) priceMap;

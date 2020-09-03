@@ -300,6 +300,26 @@ contract('Gpk_UNITs', async () => {
     assert.equal(info.checkStatus, CheckStatus.Valid);
   })
 
+  it('[GpkDelegate_setCheckStatus] should fail: Duplicate', async () => {
+    let result = {};
+    try {
+      await data.setCheckStatus(0, 0, 0, true, 0);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Duplicate');
+  })
+
+  it('[GpkDelegate_setCheckStatus] should fail: Not ready', async () => {
+    let result = {};
+    try {
+      await data.setCheckStatus(0, 0, 0, true, 1);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Not ready');
+  })  
+
   it('[GpkDelegate_setEncSij_curve_1] should success', async () => {
     let result = {};
     try {

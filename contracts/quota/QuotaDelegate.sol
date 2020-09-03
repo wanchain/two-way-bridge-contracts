@@ -33,7 +33,7 @@ pragma solidity 0.7.0;
 
 import "../components/Halt.sol";
 import "./QuotaStorage.sol";
-import "../tokenManager/ITokenManager.sol";
+import "../interfaces/ITokenManager.sol";
 import "../interfaces/IStoremanGroup.sol";
 import "../interfaces/IOracle.sol";
 
@@ -72,6 +72,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
 
     function setDebtOracle(address oracle) external onlyOwner {
         debtOracleAddress = oracle;
+    }
+
+    function setFastCrossMinValue(uint value) external onlyOwner {
+        fastCrossMinValue = value;
     }
 
     /// @notice                                 lock quota in mint direction
@@ -231,6 +235,8 @@ contract QuotaDelegate is QuotaStorage, Halt {
         bytes32 storemanGroupId,
         uint value
     ) external onlyHtlc {
+        require(checkFastMinValue(tokenId, value), "Less than minimize value");
+
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         require(quota._debt.sub(quota.debt_payable) >= value, "Value is invalid");
         quota._debt = quota._debt.sub(value);
@@ -608,7 +614,34 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return true;
     }
 
+    /// @dev get minimize token count for fast cross chain
+    function getFastMinCount(uint tokenId) public view returns (uint, string memory, uint, uint, uint) {
+        if (fastCrossMinValue == 0) {
+            return (0, "", 0, 0, 0);
+        }
+        string memory symbol;
+        uint decimals;
+        (symbol, decimals) = getTokenAncestorInfo(tokenId);
+        uint price = getPrice(symbol);
+        uint count = fastCrossMinValue.mul(10**decimals).div(price);
+        return (fastCrossMinValue, symbol, decimals, price, count);
+    }
+
     // ----------- Private Functions ---------------
+
+    function checkFastMinValue(uint tokenId, uint value) private view returns (bool) {
+        if (fastCrossMinValue == 0) {
+            return true;
+        }
+        string memory symbol;
+        uint decimals;
+        (symbol, decimals) = getTokenAncestorInfo(tokenId);
+        uint price = getPrice(symbol);
+        uint count = fastCrossMinValue.mul(10**decimals).div(price);
+        return value >= count;
+    }
+
+
 
     /// @notice                                 get storeman group's deposit value in USD
     /// @param storemanGroupId                  storeman group ID

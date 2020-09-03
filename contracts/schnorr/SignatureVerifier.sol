@@ -2,7 +2,7 @@
 pragma solidity 0.7.0;
 
 import "../components/Halt.sol";
-import "./ISignatureVerifier.sol";
+import "../interfaces/ISignatureVerifier.sol";
 
 contract SignatureVerifier is Halt {
 

@@ -38,3 +38,15 @@ interface ISignatureVerifier {
         bytes32 message
     ) external returns (bool);
 }
+
+/// @dev for multi curves contract call.
+interface IBaseSignVerifier {
+    function verify(
+        bytes32 signature,
+        bytes32 groupKeyX,
+        bytes32 groupKeyY,
+        bytes32 randomPointX,
+        bytes32 randomPointY,
+        bytes32 message
+    ) external returns (bool);
+}

@@ -85,6 +85,9 @@ contract QuotaStorage is BasicStorage {
     /// @dev oracle address for check other chain's debt clean
     address public debtOracleAddress;
 
+    /// @dev limit the minimize value of fast cross chain
+    uint public fastCrossMinValue;
+
     modifier onlyHtlc() {
         require(htlcGroupMap[msg.sender], "Not in HTLC group");
         _;
