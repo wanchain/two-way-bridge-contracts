@@ -66,27 +66,27 @@ contract('Test Metric', async (accounts) => {
             posLib = await PosLib.deployed();
             //let epochId = await posLib.getEpochId(Math.floor(Date.now() / 1000));
             let epochId = await getEpIDByNow(posLib);
-            console.log("epochId " + epochId);
+            //console.log("epochId " + epochId);
 
             let leaderAdd;
             let networkName;
-            console.log("argv", argv);
-            console.log("network", argv["network"]);
+            //console.log("argv", argv);
+            //console.log("network", argv["network"]);
             if (!argv["network"]) {
                 networkName = "development";
             } else {
                 networkName = argv["network"];
             }
-            console.log("networkname:", networkName);
-            console.log("TFCfg networks", TFCfg.networks);
-            console.log("TFCfg networks[networkname]", TFCfg.networks[networkName]);
-            console.log("TFCfg networks[networkname]", TFCfg.networks['' + networkName + '']);
-            console.log("TFCfg networks[networkname][from]", TFCfg.networks['' + networkName + ''].from);
+            //console.log("networkname:", networkName);
+            //console.log("TFCfg networks", TFCfg.networks);
+            //console.log("TFCfg networks[networkname]", TFCfg.networks[networkName]);
+            //console.log("TFCfg networks[networkname]", TFCfg.networks['' + networkName + '']);
+            //console.log("TFCfg networks[networkname][from]", TFCfg.networks['' + networkName + ''].from);
 
             leaderAdd = TFCfg.networks[networkName].from;
-            console.log("leaderAddr:", leaderAdd);
+            //console.log("leaderAddr:", leaderAdd);
             if (leaderAdd) {
-                console.log("begin set leader leaderAddr:");
+                //console.log("begin set leader leaderAddr:");
                 await fakeSmg.setLeader(leaderAdd);
             }
 
@@ -98,7 +98,7 @@ contract('Test Metric', async (accounts) => {
     it('getEpochId...   -> ', async () => {
         try {
             let epochId = await posLib.getEpochId(Math.floor(Date.now() / 1000));
-            console.log("Test Metric: getEpochId", epochId);
+            //console.log("Test Metric: getEpochId", epochId);
         } catch (err) {
             assert.fail(err.toString());
         }
@@ -908,7 +908,7 @@ contract('Test Metric', async (accounts) => {
 
         try {
             let ret = await metricInstProxy.getRSlshProof(grpId, xhash, sndrIndex);
-            console.log("ret of getRSlshProof", ret);
+            //console.log("ret of getRSlshProof", ret);
         } catch (err) {
             assert.fail(err.toString());
         }
@@ -943,7 +943,7 @@ contract('Test Metric', async (accounts) => {
 
         try {
             let ret = await metricInstProxy.getRSlshProof(grpId, getXHash(), sndrIndex);
-            console.log("ret of getRSlshProof", ret);
+            //console.log("ret of getRSlshProof", ret);
         } catch (err) {
             assert.fail(err.toString());
         }
@@ -1732,7 +1732,7 @@ contract('Test Metric', async (accounts) => {
 
         try {
             let ret = await metricInstProxy.getSSlshProof(grpId, xHash, sndrIndex);
-            console.log("ret of getSSlshProof ", ret);
+            //console.log("ret of getSSlshProof ", ret);
         } catch (err) {
             assert.fail(err.toString());
         }
@@ -1772,7 +1772,7 @@ contract('Test Metric', async (accounts) => {
         try {
             let epochIdNow = await getEpIDByNow(posLib);
             let ret = await metricInstProxy.getSmSuccCntByEpId(grpId, new BN(epochIdNow), 0x00);
-            console.log("ret of getSmSuccCntByEpId ", ret);
+            //console.log("ret of getSmSuccCntByEpId ", ret);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1783,7 +1783,7 @@ contract('Test Metric', async (accounts) => {
         try {
             let epochIdNow = await getEpIDByNow(posLib);
             let ret = await metricInstProxy.getSlshCntByEpId(grpId, new BN(epochIdNow), 0x02);
-            console.log("ret of getSmSuccCntByEpId ", ret);
+            //console.log("ret of getSmSuccCntByEpId ", ret);
 
         } catch (err) {
             assert.fail(err.toString());
@@ -1838,7 +1838,7 @@ contract('Test Metric', async (accounts) => {
         try {
 
             let ret = await metricInstProxy.getDependence();
-            console.log("ret of getDependence ", ret);
+            //console.log("ret of getDependence ", ret);
         } catch (err) {
             assert.fail(err.toString());
         }
@@ -1851,7 +1851,7 @@ contract('Test Metric', async (accounts) => {
         try {
 
             let ret = await metricInstProxy.getDependence();
-            console.log("ret of metricInstProxy.getDependence:", ret);
+            //console.log("ret of metricInstProxy.getDependence:", ret);
             oldConfigAddr = ret[0];
             oldSmgAddr = ret[1];
             oldPosAddr = ret[2];
@@ -1888,7 +1888,7 @@ contract('Test Metric', async (accounts) => {
         try {
 
             let ret = await metricInstProxy.getDependence();
-            console.log("ret of metricInstProxy.getDependence:", ret);
+            //console.log("ret of metricInstProxy.getDependence:", ret);
             oldConfigAddr = ret[0];
             oldSmgAddr = ret[1];
             oldPosAddr = ret[2];
