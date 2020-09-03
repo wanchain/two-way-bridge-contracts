@@ -63,7 +63,7 @@ contract MetricDelegate is MetricStorage, Halt{
     view
     returns (address, address)
     {
-        return (metricData.config, metricData.smg);
+        return (metricData.config, metricData.smg, metricData.posLib);
     }
 
     ///=======================================statistic=============================================
