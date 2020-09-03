@@ -19,7 +19,7 @@ const htlcDuration = 9; // work 90 day.
 const timeBase = 1;
 const wanChainId = 2153201998;
 const ethChainId = 2147483708;
-const curve1 = 1, curve2 = 1;
+const curve1 = 0, curve2 = 1;
 const minStakeIn = 50000;
 const minDelegateIn = 100;
 const minPartIn = 10000;
