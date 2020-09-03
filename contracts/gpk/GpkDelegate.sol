@@ -247,7 +247,7 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         GpkTypes.Src storage src = round.srcMap[msg.sender];
         GpkTypes.Dest storage d = src.destMap[dest];
-        require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Checked Valid");
+        require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Not Need");
         d.sij = sij;
         d.ephemPrivateKey = ephemPrivateKey;
         emit RevealSijLogger(groupId, roundIndex, curveIndex, msg.sender, dest);
