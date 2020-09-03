@@ -94,7 +94,7 @@ contract('Gpk_UNITs', async () => {
       result = e;
     }
     assert.equal(result.reason, 'Add failed');
-  })  
+  })
 
   it('[GpkDelegate_setPolyCommit] should success', async () => {
     let result = {};
@@ -110,6 +110,16 @@ contract('Gpk_UNITs', async () => {
     assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Negotiate);
+  })
+
+  it('[GpkDelegate_setPolyCommit] should fail: Invalid status', async () => {
+    let result = {};
+    try {
+      await data.setPolyCommit(0, 0, 0);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid status');
   })
 
   // encSijTimeout

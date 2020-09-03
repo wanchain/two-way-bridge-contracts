@@ -93,6 +93,16 @@ contract('Gpk_UNITs', async () => {
     assert.equal(result.reason, 'Not late');
   })
 
+  it('[GpkDelegate_encSijTimeout] should fail: Outdated', async () => {
+    let result = {};
+    try {
+      await gpkSc.encSijTimeout(groupId, 0, data.smList[0].address, {from: data.smList[0].address});
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Outdated');
+  })
+
   it('[GpkDelegate_checkSijTimeout] should fail: Checked', async () => {
     let result = {};
     try {

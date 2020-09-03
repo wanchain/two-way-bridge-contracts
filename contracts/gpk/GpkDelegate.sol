@@ -247,7 +247,7 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         GpkTypes.Src storage src = round.srcMap[msg.sender];
         GpkTypes.Dest storage d = src.destMap[dest];
-        require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Not Need");
+        require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Not need");
         d.sij = sij;
         d.ephemPrivateKey = ephemPrivateKey;
         emit RevealSijLogger(groupId, roundIndex, curveIndex, msg.sender, dest);
@@ -314,7 +314,7 @@ contract GpkDelegate is GpkStorage, Admin {
                     } else if (d.checkStatus == GpkTypes.CheckStatus.Init) {
                         GpkLib.slash(group, curveIndex, GpkTypes.SlashType.Connive, src, dest, false, smg);
                         GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckTimeout, dest, src, false, smg);
-                    } else if (d.checkStatus == GpkTypes.CheckStatus.Invalid) {
+                    } else { // GpkTypes.CheckStatus.Invalid
                         GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijTimeout, src, dest, false, smg);
                         GpkLib.slash(group, curveIndex, GpkTypes.SlashType.Connive, dest, src, false, smg);
                     }
