@@ -1884,13 +1884,14 @@ contract('Test Metric', async (accounts) => {
 
     it('setDependence...   ->"Invalid smg address"', async () => {
 
-        let oldConfigAddr, oldSmgAddr;
+        let oldConfigAddr, oldSmgAddr,oldPosAddr;
         try {
 
             let ret = await metricInstProxy.getDependence();
             console.log("ret of metricInstProxy.getDependence:", ret);
             oldConfigAddr = ret[0];
             oldSmgAddr = ret[1];
+            oldPosAddr = ret[2];
 
         } catch (err) {
             assert.fail(err.toString());
