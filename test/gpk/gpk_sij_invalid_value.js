@@ -50,8 +50,6 @@ contract('Gpk_UNITs', async () => {
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
     // console.log("gpk ut data: %O", data);
-
-    await gpkSc.setPeriod(groupId, 10, 10, 10, {from: g.admin});
   })
 
   // setPolyCommit
@@ -73,8 +71,6 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};
     try {
-      let encSij = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-      data.round[0].src[0].send[1].encSij = '0x' + Buffer.from(encSij, 'ascii').toString('hex');
       await data.setEncSij(0, 0, 1, 0);
       await data.setCheckStatus(0, 0, 0, false, 1);
     } catch (e) {
@@ -97,12 +93,10 @@ contract('Gpk_UNITs', async () => {
       result = await gpkSc.revealSij(groupId, 0, 0, dest, data.round[0].src[0].send[1].sij, data.round[0].src[0].send[1].ephemPrivateKey, {from: src});
     } catch (e) {
       result = e;
-      console.log(e);
     }
     assert.equal(result.reason, undefined);
     let event = result.logs[1].args;
-    console.log(event);
-    assert.equal(event.slashed.toLowerCase(), dest.toLowerCase());
-    assert.equal(event.slashType.toString(), SlashType.CheckInvalid);
-  })  
+    assert.equal(event.slashed.toLowerCase(), src.toLowerCase());
+    assert.equal(event.slashType.toString(), SlashType.SijInvalid);
+  })
 })

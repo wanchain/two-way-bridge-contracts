@@ -46,7 +46,6 @@ contract('Gpk_UNITs', async () => {
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
     await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 2) * 1000);
-    await toSelect(smgSc, groupId);
 
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
@@ -56,9 +55,20 @@ contract('Gpk_UNITs', async () => {
   })
 
   // polyCommitTimeout
+  it('[GpkDelegate_polyCommitTimeout] should fail: Invalid status', async () => {
+    let result = {};
+    try {
+      await data.setPolyCommit(0, 0, 0);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid status');
+  })
+
   it('[GpkDelegate_polyCommitTimeout] should fail: Not late', async () => {
     let result = {};
     try {
+      await toSelect(smgSc, groupId);
       await data.setPolyCommit(0, 0, 0);
       await gpkSc.polyCommitTimeout(groupId, 0);
     } catch (e) {

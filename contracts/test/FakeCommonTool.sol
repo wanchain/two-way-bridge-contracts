@@ -32,7 +32,6 @@ library FakeCommonTool {
 
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
 
-    bool constant encResult = true;
     bytes constant encValue = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
     function bytes2uint(bytes source, uint16 offset, uint16 length)
@@ -81,6 +80,6 @@ library FakeCommonTool {
     view
     returns(bytes, bool success)
     {
-        return (encValue, encResult);
+        return (encValue, mes != 0);
     }
 }

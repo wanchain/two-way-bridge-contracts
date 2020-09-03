@@ -68,7 +68,7 @@ function replaceLib(contract, lib, newLib) {
   let placeholder = '__' + lib + Array(40 - lib.length - 2).fill('_').join("");
   let newPlaceholder = '__' + newLib + Array(40 - newLib.length - 2).fill('_').join("");
   let reg = new RegExp(placeholder, 'g');
-  contract._json.bytecode = contract._json.bytecode.replace(reg, newPlaceholder);
+  contract.bytecode = contract.bytecode.replace(reg, newPlaceholder);
 }
 
 module.exports = async function (deployer, network) {

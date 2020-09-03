@@ -108,7 +108,6 @@ library GpkLib {
 
         // retrieve selected sm list
         group.smNumber = uint16(IStoremanGroup(smg).getSelectedSmNumber(groupId));
-        require(group.smNumber > 0, "Invalid number");
         address txAddress;
         bytes memory pk;
         for (uint i = 0; i < group.smNumber; i++) {
@@ -259,7 +258,6 @@ library GpkLib {
         public
     {
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        require(round.slashCount > 0, "No slash");
         uint[] memory ids = new uint[](round.slashCount);
         uint8[] memory types = new uint8[](round.slashCount);
         uint slashCount = 0;
