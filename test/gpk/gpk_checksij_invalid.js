@@ -73,6 +73,8 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};
     try {
+      let encSij = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+      data.round[0].src[0].send[1].encSij = '0x' + Buffer.from(encSij, 'ascii').toString('hex');
       await data.setEncSij(0, 0, 1, 0);
       await data.setCheckStatus(0, 0, 0, false, 1);
     } catch (e) {
@@ -82,6 +84,7 @@ contract('Gpk_UNITs', async () => {
     let src = data.smList[0].address;
     let dest = data.smList[1].address;
     let info = await gpkSc.getSijInfo(groupId, 0, 0, src, dest);
+    console.log("info.encSij: %s", info.encSij)
     assert.equal(info.encSij, data.round[0].src[0].send[1].encSij);
     assert.equal(info.checkStatus, CheckStatus.Invalid);
   })
@@ -95,10 +98,12 @@ contract('Gpk_UNITs', async () => {
       result = await gpkSc.revealSij(groupId, 0, 0, dest, data.round[0].src[0].send[1].sij, data.round[0].src[0].send[1].ephemPrivateKey, {from: src});
     } catch (e) {
       result = e;
+      console.log(e);
     }
     assert.equal(result.reason, undefined);
     let event = result.logs[1].args;
-    assert.equal(event.slashed.toLowerCase(), src.toLowerCase());
-    assert.equal(event.slashType.toString(), SlashType.SijInvalid);
+    console.log(event);
+    assert.equal(event.slashed.toLowerCase(), dest.toLowerCase());
+    assert.equal(event.slashType.toString(), SlashType.CheckInvalid);
   })  
 })
