@@ -371,12 +371,6 @@ contract('Gpk_UNITs', async () => {
     assert.equal(info.curve2Status, GpkStatus.Complete);
   })
 
-  // getPolyCommit
-  // it('[GpkDelegate_getPolyCommit] should success', async () => {
-  //   let result = await gpkSc.getPolyCommit
-  //   assert.equal(result.reason, 'Not ready');
-  // })
-
   it('[GpkDelegate_payable] should fail: Not support', async () => {
     let result = null;
     try {
