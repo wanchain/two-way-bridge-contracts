@@ -64,11 +64,11 @@ const coinSymbol = "WAN";
 const htlcLockedTime = 60*60; //unit: s
 const quotaDepositRate = 15000;
 
-function replaceLib(contract, lib, newLib) {
-  let placeholder = '__' + lib + Array(40 - lib.length - 2).fill('_').join("");
-  let newPlaceholder = '__' + newLib + Array(40 - newLib.length - 2).fill('_').join("");
-  let reg = new RegExp(placeholder, 'g');
-  contract.bytecode = contract.bytecode.replace(reg, newPlaceholder);
+function replaceLib(contract, from, to) {
+  let placeholder = '__' + from.contractName + Array(40 - from.contractName.length - 2).fill('_').join("");
+  let newPlaceholder = '__' + to.contractName + Array(40 - to.contractName.length - 2).fill('_').join("");
+  let re = new RegExp(placeholder, 'g');
+  contract.bytecode = contract.bytecode.replace(re, newPlaceholder);
 }
 
 module.exports = async function (deployer, network) {
@@ -196,7 +196,7 @@ module.exports = async function (deployer, network) {
     // create gpk sc
     if (network == 'local' || network == 'coverage') {
       await deployer.deploy(FakeCommonTool);
-      replaceLib(GpkLib, 'CommonTool', 'FakeCommonTool');
+      replaceLib(GpkLib, CommonTool, FakeCommonTool);
       await deployer.link(FakeCommonTool, GpkLib);
     } else {
       await deployer.link(CommonTool, GpkLib);
