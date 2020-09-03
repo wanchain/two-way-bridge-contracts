@@ -99,7 +99,7 @@ library GpkLib {
         uint256 curve1;
         uint256 curve2;
         (,status,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
-        require(status == uint8(StoremanType.GroupStatus.selected), "Invalid status");
+        require(status == uint8(StoremanType.GroupStatus.selected), "Invalid stage");
 
         group.roundMap[group.round][0].curve = IConfig(cfg).getCurve(uint8(curve1));
         group.roundMap[group.round][1].curve = IConfig(cfg).getCurve(uint8(curve2));

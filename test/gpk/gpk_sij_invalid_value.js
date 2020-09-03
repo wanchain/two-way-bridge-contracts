@@ -67,6 +67,19 @@ contract('Gpk_UNITs', async () => {
     assert.equal(info.curve1Status, GpkStatus.Negotiate);
   })
 
+  // revealSij
+  it('[GpkDelegate_revealSij] should fail: Not need', async () => {
+    let result = {};
+    let src = data.smList[0].address;
+    let dest = data.smList[1].address;
+    try {
+      result = await gpkSc.revealSij(groupId, 0, 0, dest, data.round[0].src[0].send[0].sij, data.round[0].src[0].send[0].ephemPrivateKey, {from: src});
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Not need');
+  })
+
   // setEncSij
   it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};

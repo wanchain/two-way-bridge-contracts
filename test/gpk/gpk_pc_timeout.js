@@ -55,14 +55,14 @@ contract('Gpk_UNITs', async () => {
   })
 
   // polyCommitTimeout
-  it('[GpkDelegate_polyCommitTimeout] should fail: Invalid status', async () => {
+  it('[GpkDelegate_setPolyCommit] should fail: Invalid stage', async () => {
     let result = {};
     try {
       await data.setPolyCommit(0, 0, 0);
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Invalid status');
+    assert.equal(result.reason, 'Invalid stage');
   })
 
   it('[GpkDelegate_polyCommitTimeout] should fail: Not late', async () => {

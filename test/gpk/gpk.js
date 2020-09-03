@@ -357,6 +357,12 @@ contract('Gpk_UNITs', async () => {
           await data.setCheckStatus(0, 1, s, true, d);
         }
       }
+      info = await gpkSc.getGpkShare(groupId, 0);
+      assert.notEqual(info.gpkShare1, '');
+      assert.notEqual(info.gpkShare2, '');
+      info = await gpkSc.getGpk(groupId);
+      assert.notEqual(info.gpk1, '');
+      assert.notEqual(info.gpk2, '');
     } catch (e) {
       result = e;
     }
