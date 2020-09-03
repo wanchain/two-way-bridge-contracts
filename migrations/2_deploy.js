@@ -170,6 +170,9 @@ module.exports = async function (deployer, network) {
     let fakeQuotaInst = await fakeQuota.deployed();
 
     //deploy metric
+    if(network == 'local' || network == 'coverage') {
+        await deployer.deploy(FakeSmg);
+    }
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, MetricLib);
     //await deployer.link(PosLib, MetricLib);
@@ -233,7 +236,6 @@ module.exports = async function (deployer, network) {
     await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address], {from: config.networks[network].admin});
 
     // dependence
-    //await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
     await smg.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address,posLib.address);
 
     await gpk.setDependence(cnfProxy.address, smgProxy.address);

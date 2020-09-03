@@ -56,8 +56,8 @@ contract('Test Metric', async (accounts) => {
 
             configProxy = await ConfigProxy.deployed();
             let confDlg = await ConfigDelegate.at(configProxy.address);
-            await confDlg.setCurve([0x00], [fakeSkCurve.address]);
-            await confDlg.setCurve([0x01], [fakeBnCurve.address]);
+            // await confDlg.setCurve([0x00], [fakeSkCurve.address]);
+            // await confDlg.setCurve([0x01], [fakeBnCurve.address]);
 
             metricInstProxy.setDependence(configProxy.address, fakeSmg.address,fakePosLib.address);
 
