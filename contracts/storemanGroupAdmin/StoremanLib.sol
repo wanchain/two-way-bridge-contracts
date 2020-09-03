@@ -389,9 +389,9 @@ library StoremanLib {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         require(sk.partnerCount<5,"Too many partners");
-        require(msg.value >= group.minPartIn, "Too small value");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
+        require(msg.value >= group.minPartIn, "Too small value");
 
         StoremanType.Delegator storage pn = sk.partners[msg.sender];
         if(pn.deposit.getLastValue() == 0) {
