@@ -3,6 +3,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
+const FakeSkCurve = artifacts.require('FakeSkCurve');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, SlashType, Data } = require('./Data');
 const utils = require('../utils.js');
@@ -11,7 +12,7 @@ const utils = require('../utils.js');
 let groupId = '';
 
 // contract
-let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
+let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy, skCurve;
 let data;
 
 contract('Gpk_UNITs', async () => {
@@ -32,6 +33,9 @@ contract('Gpk_UNITs', async () => {
     gpkSc = await GpkDelegate.at(gpkProxy.address);
     console.log("Gpk contract address: %s", gpkProxy.address);
 
+    // curve
+    skCurve = await FakeSkCurve.deployed();
+
     // network
     await setupNetwork();
 
@@ -50,8 +54,6 @@ contract('Gpk_UNITs', async () => {
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
     // console.log("gpk ut data: %O", data);
-
-    await gpkSc.setPeriod(groupId, 10, 10, 10, {from: g.admin});
   })
 
   // setPolyCommit
@@ -73,8 +75,6 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};
     try {
-      let encSij = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-      data.round[0].src[0].send[1].encSij = '0x' + Buffer.from(encSij, 'ascii').toString('hex');
       await data.setEncSij(0, 0, 1, 0);
       await data.setCheckStatus(0, 0, 0, false, 1);
     } catch (e) {
@@ -94,15 +94,14 @@ contract('Gpk_UNITs', async () => {
     let src = data.smList[0].address;
     let dest = data.smList[1].address;
     try {
+      await skCurve.setMulGResult(false);
       result = await gpkSc.revealSij(groupId, 0, 0, dest, data.round[0].src[0].send[1].sij, data.round[0].src[0].send[1].ephemPrivateKey, {from: src});
     } catch (e) {
       result = e;
-      console.log(e);
     }
     assert.equal(result.reason, undefined);
     let event = result.logs[1].args;
-    console.log(event);
-    assert.equal(event.slashed.toLowerCase(), dest.toLowerCase());
-    assert.equal(event.slashType.toString(), SlashType.CheckInvalid);
-  })  
+    assert.equal(event.slashed.toLowerCase(), src.toLowerCase());
+    assert.equal(event.slashType.toString(), SlashType.SijInvalid);
+  })
 })

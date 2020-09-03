@@ -219,10 +219,13 @@ contract('Gpk_UNITs', async () => {
     let result = {};
     try {
       let sender = data.smList[0].address;
-      await data.setPolyCommit(0, 0, 0);
+      let pc = await data.setPolyCommit(0, 0, 0);
+      let info = await gpkSc.getPolyCommit(groupId, 0, 0, sender);
+      assert.equal(info, pc);
       await data.setPolyCommit(0, 0, 0);
     } catch (e) {
       result = e;
+      console.log(e);
     }
     assert.equal(result.reason, 'Duplicate');
   })
@@ -361,4 +364,21 @@ contract('Gpk_UNITs', async () => {
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve2Status, GpkStatus.Complete);
   })
+
+  // getPolyCommit
+  // it('[GpkDelegate_getPolyCommit] should success', async () => {
+  //   let result = await gpkSc.getPolyCommit
+  //   assert.equal(result.reason, 'Not ready');
+  // })
+
+  it('[GpkDelegate_payable] should fail: Not support', async () => {
+    let result = null;
+    try {
+      let fakeSC = await StoremanGroupDelegate.at(gpkProxy.address);
+      await fakeSC.getStoremanGroupConfig(groupId);
+    } catch (e) {
+      result = e;
+    }
+    assert.notEqual(result, null)
+  })  
 })

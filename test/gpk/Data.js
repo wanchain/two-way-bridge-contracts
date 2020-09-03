@@ -79,6 +79,7 @@ class Data {
     let pcStr = '0x' + buf.toString('hex');
     sender = sender || this.smList[src].address;
     await this.gpkSc.setPolyCommit(this.groupId, round, curve, pcStr, {from: sender});
+    return pcStr;
   }
 
   async setEncSij(round, curve, dest, src) {

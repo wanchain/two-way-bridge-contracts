@@ -8,13 +8,20 @@ contract  FakeBnCurve {
     bool public calPolyCommitResult = true;
     bool public mulPkResult = true;
     bool public equalPtRes = true;
+    bool public addZeroFail = false;
 
     function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2)
     public
     view
     returns(uint256 retx, uint256 rety, bool success)
     {
-        return (0,0,addResult);
+        bool result = addResult;
+        if (result == true) {
+          if ((addZeroFail == true) && (x1 == 0) && (y1 == 0)) {
+            result = false;
+          }
+        }
+        return (0,0,result);
     }
 
     function mulG(uint256 scalar)
@@ -67,6 +74,10 @@ contract  FakeBnCurve {
 
     function setEqualPtRes (bool res) public {
         equalPtRes = res;
+    }
+
+    function setAddZeroFail (bool fail) public {
+        addZeroFail = fail;
     }
 
     function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes pk) public view returns(bool) {
