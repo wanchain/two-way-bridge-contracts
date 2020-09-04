@@ -29,11 +29,6 @@ const IncentiveLib = artifacts.require('IncentiveLib');
 
 const fakeQuota = artifacts.require('fakeQuota');
 
-const HTLCTxLib = artifacts.require('HTLCTxLib');
-const HTLCBurnLib = artifacts.require('HTLCBurnLib');
-const HTLCDebtLib = artifacts.require('HTLCDebtLib');
-const HTLCMintLib = artifacts.require('HTLCMintLib');
-const RapidityTxLib = artifacts.require('RapidityTxLib');
 const RapidityLib = artifacts.require('RapidityLib');
 const CrossDelegate = artifacts.require('CrossDelegate');
 const CrossProxy = artifacts.require('CrossProxy');
@@ -93,27 +88,7 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(Bn128SchnorrVerifier);
     await deployer.deploy(Secp256k1SchnorrVerifier);
 
-    // cross approach smart contracts
-    await deployer.deploy(HTLCTxLib);
-
-    await deployer.link(HTLCTxLib, HTLCDebtLib);
-    await deployer.deploy(HTLCDebtLib);
-
-    await deployer.link(HTLCTxLib, HTLCMintLib);
-    await deployer.deploy(HTLCMintLib);
-
-    await deployer.link(HTLCTxLib, HTLCBurnLib);
-    await deployer.deploy(HTLCBurnLib);
-
-    // await deployer.deploy(RapidityTxLib);
-
-    // await deployer.link(RapidityTxLib, RapidityLib);
     await deployer.deploy(RapidityLib);
-
-    await deployer.link(HTLCTxLib, CrossDelegate);
-    await deployer.link(HTLCDebtLib, CrossDelegate);
-    await deployer.link(HTLCMintLib, CrossDelegate);
-    await deployer.link(HTLCBurnLib, CrossDelegate);
     await deployer.link(RapidityLib, CrossDelegate);
     await deployer.deploy(CrossDelegate);
 
