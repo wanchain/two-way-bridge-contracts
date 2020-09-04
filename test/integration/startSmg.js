@@ -3,7 +3,7 @@ const utils = require("../utils");
 
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const { registerStart, stakeInPre, } = require('../base.js')
+const { setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js')
 const argv = require('optimist').argv
 
 console.log("argv: ", argv)
@@ -28,16 +28,20 @@ const config=[
 ]
 
 contract('open_storeman_it', async () => {
-  let smgSc
   before("start smg", async() => {
     let smgProxy = await StoremanGroupProxy.deployed();
-    smgSc = await StoremanGroupDelegate.at(smgProxy.address);
+    let smgSc = await StoremanGroupDelegate.at(smgProxy.address);
     console.log("smg contract address: %s", smgProxy.address);
 
     if(argv.case == undefined) argv.case = 0;
     console.log("config case: ", config[argv.case])
+
+    setupNetwork();
     let groupId = await registerStart(smgSc, config[argv.case].wlOffset, config[argv.case].option);
     await stakeInPre(smgSc, groupId);
+    // await toSelect(smgSc, groupId);
   })
 
+  it('it_stub', async () => {
+  })
 })
