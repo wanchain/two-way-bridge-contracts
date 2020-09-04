@@ -31,7 +31,7 @@ import "../../interfaces/IQuota.sol";
 import "../../interfaces/IStoremanGroup.sol";
 import "../../interfaces/ITokenManager.sol";
 import "../../interfaces/ISignatureVerifier.sol";
-import "./HTLCTxLib.sol";
+import "../../lib/SafeMath.sol";
 import "./RapidityTxLib.sol";
 
 library CrossTypes {
@@ -44,9 +44,6 @@ library CrossTypes {
      */
 
     struct Data {
-
-        /// map of the htlc transaction info
-        HTLCTxLib.Data htlcTxData;
 
         /// map of the rapidity transaction info
         RapidityTxLib.Data rapidityTxData;

@@ -24,28 +24,9 @@
 //
 //
 
-pragma solidity ^0.4.26;
+pragma solidity ^0.4.24;
 
-import "../components/BasicStorage.sol";
-import "./lib/CrossTypes.sol";
-import "./lib/RapidityTxLib.sol";
-
-contract CrossStorage is BasicStorage {
-    using RapidityTxLib for RapidityTxLib.Data;
-
-    /************************************************************
-     **
-     ** VARIABLES
-     **
-     ************************************************************/
-
-    CrossTypes.Data internal storageData;
-
-    /// @notice Since storeman group admin receiver address may be changed, system should make sure the new address
-    /// @notice can be used, and the old address can not be used. The solution is add timestamp.
-    /// @notice unit: second
-    uint public smgFeeReceiverTimeout = uint(10*60);
-
-    enum GroupStatus { none, initial, curveSeted, failed, selected, ready, unregistered, dismissed }
-
+interface IWanToken {
+    function mint(address, uint) external;
+    function burn(address, uint) external;
 }

@@ -1,11 +1,12 @@
 const { assert }                = require('chai');
+const optimist                  = require("optimist");
 
 const BN                        = web3.utils.BN;
 
-const from = require('../../truffle-config').networks.development.from;
+const args = optimist.argv;
+const from = require('../../truffle-config').networks[args.network].from;
 
 const InvalidTokenPairID          = 100;
-const htlcLockedTime              = 40; //unit: s
 const quotaDepositRate            = 15000;
 
 const ADDRESS_0                   = "0x0000000000000000000000000000000000000000";
@@ -497,7 +498,6 @@ module.exports = {
     uniqueInfo,
 
     InvalidTokenPairID,
-    htlcLockedTime,
     quotaDepositRate,
 
     schnorr: schnorr,

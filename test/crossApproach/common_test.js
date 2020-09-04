@@ -5,8 +5,6 @@ const {
     ERROR_INFO,
     ADDRESS_0,
     ADDRESS_CROSS_PROXY_IMPL,
-    xInfo,
-    htlcLockedTime,
     assert,
 }                               = require('./lib');
 
@@ -67,15 +65,6 @@ it('Others setWithdrawFeeTimeout  ==> Success', async () => {
     }
 });
 
-it('Others getLeftLockedTime  ==> invalid xHash', async () => {
-    try {
-        await global.chains[1].approach.instance.getLeftLockedTime(xInfo.htlcException.hash);
-        assert.fail(ERROR_INFO)
-    } catch (err) {
-        assert.include(err.toString(), "invalid xHash");
-    }
-});
-
 it('Others getFees  ==> The config value', async () => {
     try {
         let ret = await global.chains[1].approach.instance.getFees(global.chains[1].ID, global.chains[2].ID);
@@ -98,15 +87,6 @@ it('Others getFees  ==> The config value', async () => {
         assert.equal(global.chains[2].approach.shadowRevokeFee, ret[1]);
         // console.log("chain1 shadow fees", ret[0], ret[1]);
 
-    } catch (err) {
-        assert.fail(err.toString());
-    }
-});
-
-it('Others lockedTime  ==> The config value', async () => {
-    try {
-        let ret = await global.chains[1].approach.instance.lockedTime();
-        assert.equal(htlcLockedTime, ret);
     } catch (err) {
         assert.fail(err.toString());
     }

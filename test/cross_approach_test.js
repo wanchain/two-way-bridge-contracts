@@ -24,7 +24,6 @@ const {
     defaultCurve,
     ADDRESS_0,
     skInfo,
-    htlcLockedTime,
     quotaDepositRate,
     schnorr,
     from,
@@ -112,7 +111,6 @@ contract('Test Cross Approach', (accounts) => {
             let crossDelegate = await CrossDelegate.deployed();
             global.chains[1].approach.instance = await CrossDelegate.at(crossProxy.address);
             console.log("init 10", await getBalance(global.owner));
-            await global.chains[1].approach.instance.setLockedTime(htlcLockedTime) //second
             console.log("init 11", await getBalance(global.owner));
             await global.chains[1].approach.instance.setPartners(tokenManager.address, smgAdminProxy.address, smgAdminProxy.address, quota1.address, sigVerifier.address);
             console.log("init 12", await getBalance(global.owner));
@@ -182,7 +180,6 @@ contract('Test Cross Approach', (accounts) => {
             console.log("init 20", await getBalance(global.owner));
             global.chains[2].approach.instance = await CrossDelegate.at(chain2CrossProxy.address);
             console.log("init 21", await getBalance(global.owner));
-            await global.chains[2].approach.instance.setLockedTime(htlcLockedTime) //second
             console.log("init 22", await getBalance(global.owner));
             await global.chains[2].approach.instance.setPartners(tokenManager.address, oracle.address, ADDRESS_0, quota2.address, sigVerifier.address);
             console.log("init 23", await getBalance(global.owner));
@@ -436,10 +433,6 @@ contract('Test Cross Approach', (accounts) => {
     importMochaTest("Test Common", './crossApproach/common_test');
 
     importMochaTest("Test Rapidity", './crossApproach/rapidity_test');
-
-    importMochaTest("Test HTLC", './crossApproach/htlc_test');
-
-    importMochaTest("Test Debt", './crossApproach/debt_test');
 
     after("finish...   -> success", function () {
         global.accounts = null;
