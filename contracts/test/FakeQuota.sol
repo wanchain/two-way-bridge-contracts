@@ -22,28 +22,12 @@
 //   \ V  V / (_| | | | | (__| | | | (_| | | | | | (_| |  __/\ V /
 //    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
 //
-//
+//  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
-pragma solidity 0.4.26;
+pragma solidity ^0.4.24;
 
-/**
- * Math operations with safety checks
- */
-
-import "../components/Halt.sol";
-import "./QuotaStorage.sol";
-import "../components/Proxy.sol";
-
-contract QuotaProxy is QuotaStorage, Halt, Proxy {
-    ///@dev                     update the address of HTLCDelegate contract
-    ///@param impl            the address of the new HTLCDelegate contract
-    function upgradeTo(address impl) public onlyOwner {
-        require(impl != address(0), "Cannot upgrade to invalid address");
-        require(
-            impl != _implementation,
-            "Cannot upgrade to the same implementation"
-        );
-        _implementation = impl;
-        emit Upgraded(impl);
-    }
+contract FakeQuota {
+     function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {
+        return true;
+     }
 }

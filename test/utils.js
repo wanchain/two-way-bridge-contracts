@@ -1,18 +1,12 @@
 const Web3 = require('web3');
 const assert = require('assert');
-const MappingToken = artifacts.require("MappingToken");
+//const MappingToken = artifacts.require("MappingToken");
 const ethutil = require("ethereumjs-util");
 
 // const JacksPotDelegate = artifacts.require('./JacksPotDelegate.sol');
 // const JacksPotProxy = artifacts.require('./JacksPotProxy.sol');
 // const TestHelper = artifacts.require('./test/TestHelper.sol');
 const TestBasicStorage = artifacts.require('./test/TestBasicStorage.sol');
-const QuotaDelegate = artifacts.require('./quota/QuotaDelegate.sol');
-const QuotaProxy = artifacts.require('./quota/QuotaProxy.sol');
-const TestQuotaHelper = artifacts.require('./test/TestQuotaHelper.sol');
-const Bn128SchnorrVerifier = artifacts.require('./schnorr/Bn128SchnorrVerifier.sol');
-const Secp256k1SchnorrVerifier = artifacts.require('./schnorr/Secp256k1SchnorrVerifier.sol');
-const SignatureVerifier = artifacts.require('./schnorr/SignatureVerifier.sol');
 
 const BigNumber = require('bignumber.js');
 
@@ -86,67 +80,6 @@ const getContractAt = (contract, address) => {
     return instance;
 };
 
-const getSchnorrVerifierContracts = async (accounts) => {
-    const bn128 = await newContract(Bn128SchnorrVerifier);
-    const secp256 = await newContract(Secp256k1SchnorrVerifier);
-    const verifier = await newContract(SignatureVerifier);
-    // console.log('bn128', bn128._address);
-    // console.log('secp256', secp256._address);
-    // console.log('verifier', verifier._address);
-
-    await verifier.methods.register(0, secp256._address).send({from: accounts[0], gas: 1e7});
-    await verifier.methods.register(1, bn128._address).send({from: accounts[0], gas: 1e7});
-
-    return {
-        bn128,
-        secp256,
-        verifier
-    };
-}
-
-const getQuotaContracts = async (accounts) => {
-    const quotaDelegate = await newContract(QuotaDelegate);
-    
-    const quotaProxy = await newContract(QuotaProxy);
-
-    const helper = await newContract(TestQuotaHelper);
-
-    await quotaProxy.methods.upgradeTo(quotaDelegate._address).send({ from: accounts[0], gas: 10000000 });
-
-    try {
-        await quotaProxy.methods.upgradeTo(quotaDelegate._address).send({ from: accounts[0], gas: 10000000 });
-        assert(false, 'Should never get here');
-    } catch (e) {
-        assert.ok(e.message.match(/revert/));
-    }
-
-    try {
-        await quotaProxy.methods.upgradeTo("0x0000000000000000000000000000000000000000").send({ from: accounts[0], gas: 10000000 });
-        assert(false, 'Should never get here');
-    } catch (e) {
-        assert.ok(e.message.match(/revert/));
-    }
-
-
-    // const quota = await getContractAt(QuotaDelegate, quotaProxy._address);
-    const quota = await getContractAt(QuotaDelegate, quotaDelegate._address);
-    let ret = await quota.methods.config(
-        helper._address,
-        accounts[1],
-        accounts[2],
-        helper._address,
-        helper._address,
-        15000,
-        "WAN",
-    ).send({ from: accounts[0], gas: 10000000 });
-    return {
-        quota,
-        quotaDelegate,
-        quotaProxy,
-        helper
-    };
-};
-
 
 const clone = x => JSON.parse(JSON.stringify(x));
 
@@ -173,17 +106,6 @@ async function sleep(time) {
             resolve();
         }, time);
     });
-};
-
-async function getRC20TokenInstance(tokenAccount) {
-    return await MappingToken.at(tokenAccount);
-};
-
-async function getRC20TokenBalance(tokenAccount, userAccount) {
-    let tokenInstance = await getRC20TokenInstance(tokenAccount);
-    let balance = await tokenInstance.balanceOf(userAccount);
-    console.log("typeof(balance)", balance);
-    return balance.toString();
 };
 
 async function getBalance(userAccount) {
@@ -330,19 +252,15 @@ module.exports = {
 		waitReceipt,
 		sleepUntil,
 		sleep,		
-    		getWeb3,    
-    		getQuotaContracts,
-    		clone,
-    		getTestBasicStorage,
-    		resAssert,
-    		stringToBytes,
-    		bytesToString,
-    		getSchnorrVerifierContracts,
-    		getRC20TokenInstance,
-    		getRC20TokenBalance,
-    		getBalance,
-    		toNonExponential,
-    		buildMpcSign,
-    		importMochaTest,
-    		setGlobal,
+        getWeb3,
+        clone,
+        getTestBasicStorage,
+        resAssert,
+        stringToBytes,
+        bytesToString,
+        getBalance,
+        toNonExponential,
+        buildMpcSign,
+        importMochaTest,
+        setGlobal,
 };

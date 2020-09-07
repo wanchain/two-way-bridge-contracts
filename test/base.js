@@ -45,7 +45,10 @@ const g = {
 }
 
 async function setupNetwork() {
-    g.admin = config.networks[network].admin;
+    console.log("setupNetwork","args",args);
+    let nw = args.network;
+    //g.admin = config.networks[network].admin;
+    g.admin = config.networks[nw].admin;
     if (args.network == 'local' || args.network == 'coverage') {
         console.log("using network local");
         g.web3url = "http://127.0.0.1:8545";

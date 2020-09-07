@@ -44,13 +44,6 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
     //
-    nodeploy: {
-     host: "192.168.1.179",     // Localhost (default: none)
-     port: 7654,            // Standard Ethereum port (default: none)
-     network_id: "*",       // Any network (default: none)
-     from: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
-     admin: "0x5793e629c061e7fd642ab6a1b4d552cec0e2d606",
-    },
     development: {
       host: "192.168.1.179",     // Localhost (default: none)
       port: 7654,            // Standard Ethereum port (default: none)
@@ -77,25 +70,6 @@ module.exports = {
       admin: "0xdF0A667F00cCfc7c49219e81b458819587068141",
       network_id: "*",
     },
-
-      testnet: {
-          host: "192.168.1.2",     // Localhost (default: none)
-          port: 8545,            // Standard Ethereum port (default: none)
-          network_id: "*",       // Any network (default: none)
-          from: "0x9da26fc2e1d6ad9fdd46138906b0104ae68a65d8",
-          admin: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
-          gas: 1e7,          // Gas sent with each transaction (default: ~6700000)
-          gasPrice: 1e9,   // 20 gwei (in wei) (default: 100 gwei)
-          skipDryRun:true
-      },
-    // testnet: {
-    //   provider: wanProvider,
-    //   network_id: "*",
-    //   gas: 8000000,
-    //   confirmations: 0,
-    //   timeoutBlocks: 200,
-    //   skipDryRun: true
-    // },
 
     coverage: {
         host: '127.0.0.1',

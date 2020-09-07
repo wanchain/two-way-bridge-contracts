@@ -103,7 +103,7 @@ contract('StoremanGroupDelegate', async () => {
     it('[StoremanGroupDelegate_delegateOut] should success', async () => {
         let result = {};
         try {
-            let txhash = await smg.delegateOut(wAddr, {from: tester})
+            let txhash = await smg.delegateOut(wk.addr, {from: tester})
             console.log("stakeOut txhash:", txhash);
         } catch (e) {
             result = e;
@@ -129,7 +129,7 @@ contract('StoremanGroupDelegate', async () => {
     it('[StoremanGroupDelegate_stakeClaim] should success:', async () => {
         let result = {};
         try {
-            await smg.updateGroupStatus(g.storemanGroupStatus.dismissed)
+            await smg.updateGroupStatus(groupId, g.storemanGroupStatus.dismissed)
             let txhash = await smg.delegateClaim(wk.addr, {from: tester})
             console.log("stakeOut txhash:", txhash);
         } catch (e) {

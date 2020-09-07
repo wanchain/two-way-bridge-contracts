@@ -28,56 +28,5 @@ pragma solidity ^0.4.24;
 
 library GpkTypes {
 
-    struct Group {
-        bytes32 groupId;
-        uint16 round;
-        uint32 ployCommitPeriod;
-        uint32 defaultPeriod;
-        uint32 negotiatePeriod;
-        /// round -> curveIndex -> Round
-        mapping(uint16 => mapping(uint8 => Round)) roundMap;
-        uint16 smNumber;
-        /// index -> txAddress
-        mapping(uint => address) addrMap;
-        /// txAddress -> slectedIndex
-        mapping(address => uint) indexMap;
-        /// txAddress -> pk
-        mapping(address => bytes) pkMap;
-    }
-
-    struct Round {
-        address curve;
-        GpkStatus status;
-        uint16 polyCommitCount;
-        uint32 checkValidCount;
-        uint16 slashCount;
-        uint statusTime;
-        bytes gpk;
-        /// txAddress -> Src
-        mapping(address => Src) srcMap;
-    }
-
-    enum GpkStatus {PolyCommit, Negotiate, Complete, Close}
-
-    struct Src {
-        bytes polyCommit;
-        bytes gpkShare;
-        /// txAddress -> Dest
-        mapping(address => Dest) destMap;
-        uint16 checkValidCount;
-        SlashType slashType;
-    }
-
-    struct Dest {
-        CheckStatus checkStatus;
-        uint setTime;
-        uint checkTime;
-        uint sij;
-        uint ephemPrivateKey;
-        bytes encSij;
-    }
-
-    enum CheckStatus {Init, Valid, Invalid}
-
     enum SlashType {None, PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, SijInvalid, CheckInvalid, Connive}
 }
