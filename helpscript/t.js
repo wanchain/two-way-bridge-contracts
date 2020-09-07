@@ -43,7 +43,7 @@ async function smg() {
         console.log("smgInfo:", smgInfo)
 }
 
-function main(){
+function pub(){
         let functionSelector = keccak256("getPosAvgReturn(uint256)").toString('hex');
         console.log("functionSelector: ", functionSelector)
         let ps = [
@@ -55,5 +55,173 @@ function main(){
                 pks.push(pk)
         }
         console.log("pks:", pks)
+}
+
+
+
+async function main() {
+        let web3 = new Web3(new Web3.providers.HttpProvider("http://192.168.1.2:8545"))
+        let posAddr = "0x7C30d46bCdf02334334094026e993505Dc1EBc59"
+        let posAbi = [
+                {
+                  "constant": true,
+                  "inputs": [],
+                  "name": "DIVISOR",
+                  "outputs": [
+                    {
+                      "name": "",
+                      "type": "uint256"
+                    }
+                  ],
+                  "payable": false,
+                  "stateMutability": "view",
+                  "type": "function"
+                },
+                {
+                  "constant": true,
+                  "inputs": [
+                    {
+                      "name": "blockTime",
+                      "type": "uint256"
+                    }
+                  ],
+                  "name": "getEpochId",
+                  "outputs": [
+                    {
+                      "name": "",
+                      "type": "uint256"
+                    }
+                  ],
+                  "payable": false,
+                  "stateMutability": "view",
+                  "type": "function"
+                },
+                {
+                  "constant": true,
+                  "inputs": [
+                    {
+                      "name": "targetSecond",
+                      "type": "uint256"
+                    }
+                  ],
+                  "name": "getPosAvgReturn",
+                  "outputs": [
+                    {
+                      "name": "result",
+                      "type": "uint256"
+                    },
+                    {
+                      "name": "success",
+                      "type": "bool"
+                    }
+                  ],
+                  "payable": false,
+                  "stateMutability": "view",
+                  "type": "function"
+                },
+                {
+                  "constant": true,
+                  "inputs": [],
+                  "name": "testGetHardCap",
+                  "outputs": [
+                    {
+                      "name": "",
+                      "type": "uint256"
+                    },
+                    {
+                      "name": "",
+                      "type": "bool"
+                    }
+                  ],
+                  "payable": false,
+                  "stateMutability": "view",
+                  "type": "function"
+                },
+                {
+                  "constant": true,
+                  "inputs": [
+                    {
+                      "name": "time",
+                      "type": "uint256"
+                    }
+                  ],
+                  "name": "getHardCap",
+                  "outputs": [
+                    {
+                      "name": "",
+                      "type": "uint256"
+                    },
+                    {
+                      "name": "",
+                      "type": "bool"
+                    }
+                  ],
+                  "payable": false,
+                  "stateMutability": "view",
+                  "type": "function"
+                },
+                {
+                  "constant": true,
+                  "inputs": [],
+                  "name": "getMinIncentive1",
+                  "outputs": [
+                    {
+                      "name": "",
+                      "type": "uint256"
+                    },
+                    {
+                      "name": "",
+                      "type": "uint256"
+                    }
+                  ],
+                  "payable": false,
+                  "stateMutability": "view",
+                  "type": "function"
+                },
+                {
+                  "constant": true,
+                  "inputs": [],
+                  "name": "getMinIncentive2",
+                  "outputs": [
+                    {
+                      "name": "",
+                      "type": "uint256"
+                    },
+                    {
+                      "name": "",
+                      "type": "uint256"
+                    }
+                  ],
+                  "payable": false,
+                  "stateMutability": "view",
+                  "type": "function"
+                },
+                {
+                  "constant": true,
+                  "inputs": [
+                    {
+                      "name": "smgDeposit",
+                      "type": "uint256"
+                    },
+                    {
+                      "name": "targetSecond",
+                      "type": "uint256"
+                    }
+                  ],
+                  "name": "getMinIncentive",
+                  "outputs": [
+                    {
+                      "name": "",
+                      "type": "uint256"
+                    }
+                  ],
+                  "payable": false,
+                  "stateMutability": "view",
+                  "type": "function"
+                }
+              ];
+        let posIns = new  web3.eth.Contract(posAbi, posAddr);
+        let e = await posIns.methods.getEpochId(Math.round(Date.now()/1000)).call()
+        console.log("epochId:", e)
 }
 main();

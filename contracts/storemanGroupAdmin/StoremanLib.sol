@@ -21,9 +21,10 @@ library StoremanLib {
     event delegateInEvent(address indexed wkAddr, address indexed from, uint indexed value);
     event delegateOutEvent(address indexed wkAddr, address indexed from);
     event delegateClaimEvent(address indexed wkAddr, address indexed from, uint256 indexed amount);
-    event delegateIncentiveClaimEvent(address indexed sender,address indexed wkAddr,uint indexed amount);
+    event delegateIncentiveClaimEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
     event partInEvent(address indexed wkAddr, address indexed from, uint indexed value);
     event partOutEvent(address indexed wkAddr, address indexed from);
+    event partClaimEvent(address indexed wkAddr, address indexed from, uint256 indexed amount);
 
     function storemanGroupUnregister(StoremanType.StoremanData storage data,bytes32 groupId)
         external
@@ -39,12 +40,12 @@ library StoremanLib {
     function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID) external
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
+        require(group.status == StoremanType.GroupStatus.curveSeted,"invalid group");
         require(now <= group.registerTime+group.registerDuration,"Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         address wkAddr = address(keccak256(PK));
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.sender == address(0x00), "Candidate has existed");
-        require(group.status == StoremanType.GroupStatus.curveSeted,"not configured");
         sk.sender = msg.sender;
         sk.enodeID = enodeID;
         sk.PK = PK;
@@ -440,7 +441,7 @@ library StoremanLib {
         sk.partnerCount = sk.partnerCount.sub(1);
         delete sk.partMap[sk.partnerCount];
         delete sk.partners[msg.sender];
-
+        emit partClaimEvent(wkAddr, msg.sender, amount);
         msg.sender.transfer(amount);
     }
 }

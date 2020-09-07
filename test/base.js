@@ -3,6 +3,7 @@ const assert = require('chai').assert;
 const Web3 = require('web3');
 const optimist = require("optimist");
 const config = require("../truffle-config");
+const timeMachine = require('ganache-time-traveler');
 
 let web3url, owner, leader, admin, leaderPk, web3;
 
@@ -45,7 +46,7 @@ const g = {
 }
 
 async function setupNetwork() {
-    g.admin = config.networks[network].admin;
+    g.admin = config.networks[args.network].admin;
     if (args.network == 'local' || args.network == 'coverage') {
         console.log("using network local");
         g.web3url = "http://127.0.0.1:8545";
@@ -53,6 +54,7 @@ async function setupNetwork() {
         g.leader = ("0xdF0A667F00cCfc7c49219e81b458819587068141").toLowerCase();
 
         web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
+        g.web3 = web3;
         let accounts = await web3.eth.getAccounts();
         g.leaderPk = "0x6bd7c410f7c760cca63a3dfabeeeed08f371b080f1c0d37e5cfda1c7f48d8234af06766ff7aa007a574449bce2c54469a675228876094f2c97438027f5070cbd";
         g.sfs = accounts.slice(1,10);
@@ -108,6 +110,7 @@ async function setupNetwork() {
         ]
         g.timeBase = 4;
         web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
+        g.web3 = web3;
     }
 }
 
@@ -226,9 +229,33 @@ async function toSelect(smg, groupId){
         //console.log("storeman %d info: %O", i, sk);
     }    
 }
+
+async function timeAfter(second,cb) {
+    let snapshot = await timeMachine.takeSnapshot();
+    let snapshotId = snapshot['result'];
+    
+
+    await timeMachine.advanceBlockAndSetTime(second)
+    await cb();
+
+    await timeMachine.revertToSnapshot(snapshotId);
+}
+async function timeSet(second) {
+    if (args.network == 'local' || args.network == 'coverage')  {
+        console.log("advanceBlockAndSetTime: ", second)
+        await timeMachine.advanceBlockAndSetTime(second)
+    } else {
+        console.log("sleepUntil: ", second)
+        await utils.sleepUntil(second*1000)
+    }
+}
+async function timeSetSelect(groupInfo) {
+    await timeSet(1+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration));
+}
+
 module.exports = {
     g,setupNetwork,
     registerStart,stakeInOne,
-    stakeInPre,toSelect,
+    stakeInPre,toSelect,timeAfter,timeSet,timeSetSelect,timeSetSelect,
     initTestValue
 }

@@ -136,11 +136,11 @@ module.exports = async function (deployer, network) {
 
     // ***********osm*****************
     // storeman group admin sc
+    let posLib = await deployer.deploy(PosLib);
     if(network == 'local' || network == 'coverage') {
-        await deployer.deploy(FakePosLib);
+      posLib = await deployer.deploy(FakePosLib);
     } 
         
-    let posLib = await deployer.deploy(PosLib);
     //await deployer.link(PosLib,StoremanUtil);
     await deployer.deploy(StoremanUtil);
     await deployer.link(StoremanUtil,StoremanLib);
