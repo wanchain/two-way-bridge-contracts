@@ -46,7 +46,8 @@ const g = {
 }
 
 async function setupNetwork() {
-    g.admin = config.networks[args.network].admin;
+    let network = args.network;
+    g.admin = config.networks[network].admin;
     console.log("setupNetwork using network %s", args.network);
     if (args.network == 'local' || args.network == 'coverage') {
         g.web3url = "http://" + config.networks[network].host + ":" + config.networks[network].port;
