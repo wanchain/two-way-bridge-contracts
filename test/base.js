@@ -47,8 +47,8 @@ const g = {
 
 async function setupNetwork() {
     g.admin = config.networks[args.network].admin;
+    console.log("setupNetwork using network %s", args.network);
     if (args.network == 'local' || args.network == 'coverage') {
-        console.log("using network %s", args.network);
         g.web3url = "http://" + config.networks[network].host + ":" + config.networks[network].port;
         g.owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959";
         g.leader = ("0xdF0A667F00cCfc7c49219e81b458819587068141").toLowerCase();
