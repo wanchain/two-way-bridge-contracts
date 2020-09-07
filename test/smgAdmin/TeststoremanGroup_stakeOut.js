@@ -11,7 +11,7 @@ const { registerStart,stakeInPre, setupNetwork, g} = require('../base.js')
 
 let web3 = new Web3()
 
-contract('TestSmg', async () => {
+contract('StoremanGroupDelegate stakeOut', async () => {
 
     let  smg
     let groupId

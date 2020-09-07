@@ -115,6 +115,18 @@ contract('TestSmg', async () => {
       tx = smg.setDependence(g.admin,g.admin, "0x0000000000000000000000000000000000000000",g.admin, {from:g.owner});
       expectRevert(tx, "Invalid quotaAddr address");
     })
+
+    it('T8 setGpk', async ()=>{
+      let tx = smg.setGpk(groupId, g.leaderPk, g.leaderPk, {from:g.sfs[3]});
+      await expectRevert(tx, "Sender is not allowed")
+    })
+    it('T8 checkGroupDismissable', async ()=>{
+      let f = await smg.checkGroupDismissable(groupId);
+      console.log("tx checkGroupDismissable:", f)
+    })
+
+
+    
     it('T7 recordSmSlash', async ()=>{
       await smg.setDependence(g.owner, g.owner, g.owner,g.leader);
       let tx = await smg.recordSmSlash(g.leader);
@@ -127,9 +139,5 @@ contract('TestSmg', async () => {
       sk = await smg.getStoremanInfo(g.leader);
       console.log("sk:", sk);
       assert(sk.slashedCount, 1, "recordSmSlash failed")
-    })
-    it('T8 setGpk', async ()=>{
-      let tx = smg.setGpk(groupId, g.leaderPk, g.leaderPk, {from:g.sfs[3]});
-      await expectRevert(tx, "Sender is not allowed")
     })
 })

@@ -6,7 +6,7 @@ const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 const { registerStart,stakeInPre, setupNetwork,g,  timeSetSelect} = require('../base.js');
 const { assert } = require("chai");
 
-contract('TestSmg', async () => {
+contract('StoremanGroupDelegate stakeIn', async () => {
 
     let  smg
     let groupId, groupInfo
@@ -85,5 +85,5 @@ contract('TestSmg', async () => {
         await expectRevert(tx, "Registration closed")
     })
 
-    
+
 })

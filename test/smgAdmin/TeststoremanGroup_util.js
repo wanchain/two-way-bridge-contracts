@@ -16,7 +16,7 @@ delegator: stakerId*100 ~ stakerID*100+1000
 
 
 
-contract('TestSmg', async () => {
+contract('StoremanGroupDelegate util', async () => {
 
     let  smg
     let smgUtil

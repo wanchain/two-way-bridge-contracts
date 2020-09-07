@@ -12,7 +12,7 @@ const { registerStart,stakeInPre, setupNetwork, g,timeSet,timeSetSelect } = requ
 
 
 
-contract('TestSmg', async () => {
+contract('StoremanGroupDelegate partIn', async () => {
 
     let  smg
     let groupId,groupInfo
@@ -90,9 +90,10 @@ contract('TestSmg', async () => {
         assert.equal(sk.partnerCount, sk2.partnerCount)
         assert.equal(sk2.partnerDeposit, 5*partValue)
     })
-    it('T8 partClaim', async ()=>{
+    it.skip('T8 partClaim', async ()=>{
         await smg.updateGroupStatus(groupId,g.storemanGroupStatus.dismissed,{from:g.admin})
         let tx = await smg.partClaim(wk.addr, {from:g.sfs[4]});
+        console.log("xxxxxxxxxxxxxxxxxxx:", tx)
         expectEvent(tx, "partClaimEvent",{wkAddr:wk.addr, from:web3.utils.toChecksumAddress(g.sfs[4]), amount:new BN(partValue)});       
     })
 })

@@ -12,7 +12,7 @@ const { registerStart,stakeInPre, setupNetwork, g, timeSet } = require('../base.
 
 
 
-contract('TestSmg', async () => {
+contract('StoremanGroupDelegate delegateIn', async () => {
 
     let  smg
     let groupId, groupInfo
@@ -41,7 +41,7 @@ contract('TestSmg', async () => {
         console.log("tx:", tx);
     })
 
-    it('T1 delegateIn', async ()=>{
+    it('T1 delegateIn normal', async ()=>{
         let sk = await smg.getStoremanInfo(wk.addr);
         console.log("sk:", sk);
         let tx = await smg.delegateIn(wk.addr,{value:delegateValue, from:tester});
@@ -49,7 +49,7 @@ contract('TestSmg', async () => {
         console.log("tx:", tx);
     })
 
-    it('T2 delegateIn', async ()=>{
+    it('T2 delegateIn: small value', async ()=>{
         let tx =  smg.delegateIn(wk.addr,{value:10});
         await expectRevert(tx, "Too small value");       
     })
@@ -57,6 +57,6 @@ contract('TestSmg', async () => {
     it('delegateIncentiveClaim', async ()=>{
         await timeSet(parseInt(groupInfo.startTime)+parseInt(g.timeBase))
         let tx = await smg.delegateIncentiveClaim(wk.addr,{from:tester});
-        expectEvent(tx, "delegateIncentiveClaimEvent", {wkAddr: web3.utils.toChecksumAddress(wk.addr), sender: web3.utils.toChecksumAddress(tester), amount:new BN(delegateValue)})      
+        expectEvent(tx, "delegateIncentiveClaimEvent", {wkAddr: web3.utils.toChecksumAddress(wk.addr), sender: web3.utils.toChecksumAddress(tester)})      
     })
 })

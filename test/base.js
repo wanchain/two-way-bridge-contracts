@@ -127,7 +127,7 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
         ws.push(g.wks[i+wlStartIndex])
         srs.push(g.sfs[i % g.sfs.length])
     }
-    let groupId = option.groupId ? option.groupId : utils.stringTobytes32(now.toString());
+    let groupId = option.groupId ? option.groupId : utils.stringTobytes32(Date.now().toString());
     let registerDuration = option.registerDuration ? option.registerDuration : g.registerDuration;
     let gpkDuration =  option.gpkDuration ? option.gpkDuration : g.gpkDuration;
     let htlcDuration =  option.htlcDuration ? option.htlcDuration : g.htlcDuration;

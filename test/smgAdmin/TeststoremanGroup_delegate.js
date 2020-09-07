@@ -14,7 +14,7 @@ const sk = [{
 const { registerStart,stakeInPre, setupNetwork,g,   timeSetSelect,timeSet} = require('../base.js')
 const { expectRevert, expectEvent , BN} = require('@openzeppelin/test-helpers');
 
-contract('StoremanGroupDelegate', async () => {
+contract('StoremanGroupDelegate delegate', async () => {
     let  smg
     let groupId
     let wk = utils.getAddressFromInt(10000)
