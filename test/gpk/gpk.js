@@ -8,7 +8,7 @@ const { GpkStatus, CheckStatus, Data } = require('./Data');
 const utils = require('../utils.js');
 const optimist = require("optimist");
 
-let network = optimist.argv.network;
+const network = optimist.argv.network;
 
 // common
 const ADDRESS_0 = '0x0000000000000000000000000000000000000000';

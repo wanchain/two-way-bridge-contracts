@@ -8,7 +8,7 @@ const { GpkStatus, CheckStatus, SlashType, Data } = require('./Data');
 const utils = require('../utils.js');
 const optimist = require("optimist");
 
-let network = optimist.argv.network;
+const network = optimist.argv.network;
 
 // group
 let groupId = '';
