@@ -2,6 +2,7 @@
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
+const FakePosLib = artifacts.require('FakePosLib')
 const assert = require('chai').assert;
 const StoremanUtil = artifacts.require('StoremanUtil')
 
@@ -19,10 +20,12 @@ contract('TestSmg', async () => {
 
     let  smg
     let smgUtil
+    let pos
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
         smg = await StoremanGroupDelegate.at(smgProxy.address)
         smgUtil = await StoremanUtil.deployed();
+        pos = await FakePosLib.deployed();
         await setupNetwork();
     })
 
@@ -37,8 +40,8 @@ contract('TestSmg', async () => {
 
     it('getDaybyTime ', async ()=>{
         let time = 1597891837;
-        let day = await smgUtil.getDaybyTime(time);
-        console.log("day is ", day.toString(10))
+        let day = await smgUtil.getDaybyTime(pos.address, time);
+        console.log("day is ", day)
     })
     it('calSkWeight ', async ()=>{
         let d = 10000;
