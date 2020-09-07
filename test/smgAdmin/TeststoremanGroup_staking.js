@@ -7,7 +7,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const { registerStart,stakeInPre, setupNetwork, g} = require('../base.js');
 const  assert  = require("assert");
 
-contract('TestSmg', async () => {
+contract('StoremanGroupDelegate staking', async () => {
 
     let  smg
     let groupId
@@ -114,7 +114,7 @@ contract('TestSmg', async () => {
     })
   
     it.skip('test toSelect', async ()=>{
-        await pu.sleep(10000)
+        await timeSetSelect(groupInfo);
         let tx = await smg.toSelect(groupId)
         console.log("toSelect tx:", tx.tx)
         await utils.waitReceipt(tx.tx)

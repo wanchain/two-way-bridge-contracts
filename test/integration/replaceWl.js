@@ -1,6 +1,6 @@
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const { registerStart, stakeInPre } = require('../base.js')
+const { setupNetwork,registerStart, stakeInPre } = require('../base.js')
 
 let oldLeader = '0x5793e629c061e7fd642ab6a1b4d552cec0e2d606';
 let newLeader = '0x63ee75865b30f13b614a144023c133bd683e8134';
@@ -10,6 +10,8 @@ contract('open_storeman_it', async () => {
     let smgProxy = await StoremanGroupProxy.deployed();
     let smgSc = await StoremanGroupDelegate.at(smgProxy.address);
     console.log("smg contract address: %s", smgProxy.address);
+
+    await setupNetwork();
 
     let sk = await smgSc.getStoremanInfo(oldLeader);
     console.log("leader sk: %O", sk);

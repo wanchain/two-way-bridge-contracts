@@ -3,6 +3,9 @@ const assert = require('chai').assert;
 const Web3 = require('web3');
 const optimist = require("optimist");
 const config = require("../truffle-config");
+const timeMachine = require('ganache-time-traveler');
+
+const pu = require('promisefy-util');
 
 let web3url, owner, leader, admin, leaderPk, web3;
 
@@ -44,18 +47,20 @@ const g = {
     minStakeIn,minDelegateIn,minPartIn,delegateFee,whiteAddrOffset,otherAddrOffset
 }
 
+const wanUtil = require('wanchain-util');
+const Tx = wanUtil.wanchainTx;
+
 async function setupNetwork() {
-    console.log("setupNetwork","args",args);
-    let nw = args.network;
-    //g.admin = config.networks[network].admin;
-    g.admin = config.networks[nw].admin;
+    let network = args.network
+    g.admin = config.networks[network].admin;
+    console.log("setupNetwork using network %s", args.network);
     if (args.network == 'local' || args.network == 'coverage') {
-        console.log("using network local");
-        g.web3url = "http://127.0.0.1:8545";
+        g.web3url = "http://" + config.networks[network].host + ":" + config.networks[network].port;
         g.owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959";
         g.leader = ("0xdF0A667F00cCfc7c49219e81b458819587068141").toLowerCase();
 
         web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
+        g.web3 = web3;
         let accounts = await web3.eth.getAccounts();
         g.leaderPk = "0x6bd7c410f7c760cca63a3dfabeeeed08f371b080f1c0d37e5cfda1c7f48d8234af06766ff7aa007a574449bce2c54469a675228876094f2c97438027f5070cbd";
         g.sfs = accounts.slice(1,10);
@@ -111,6 +116,7 @@ async function setupNetwork() {
         ]
         g.timeBase = 4;
         web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
+        g.web3 = web3;
     }
 }
 
@@ -123,11 +129,19 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
     let now = parseInt(Date.now()/1000);
     let ws = []
     let srs= []
+    console.log("registerStart g.wks",g.wks);
+    console.log("registerStart g.sfs",g.sfs);
+    console.log("===================registerStart wlStartIndex",wlStartIndex);
+
     for(let i=0; i<whiteCountAll;i++){
-        ws.push(g.wks[i+wlStartIndex])
-        srs.push(g.sfs[i % g.sfs.length])
+        if(g.wks[i+wlStartIndex] !== undefined){
+            ws.push(g.wks[i+wlStartIndex])
+            srs.push(g.sfs[i % g.sfs.length])
+        }
     }
-    let groupId = option.groupId ? option.groupId : utils.stringTobytes32(now.toString());
+    console.log("ws",ws);
+    console.log("srs",srs);
+    let groupId = option.groupId ? option.groupId : utils.stringTobytes32(Date.now().toString());
     let registerDuration = option.registerDuration ? option.registerDuration : g.registerDuration;
     let gpkDuration =  option.gpkDuration ? option.gpkDuration : g.gpkDuration;
     let htlcDuration =  option.htlcDuration ? option.htlcDuration : g.htlcDuration;
@@ -175,18 +189,25 @@ async function stakeInPre(smg, groupId, nodeStartIndex = 0, nodeCount = stakerCo
         let sw, tx
         sw = {addr:g.wks[i+nodeStartIndex], pk:g.pks[i+nodeStartIndex]}
         console.log("send============================:", g.sfs[i % g.sfs.length])
-        tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[i % g.sfs.length], value:stakingValue})
 
-        console.log("preE:", i, tx.tx);
-        let candidate  = await smg.getStoremanInfo(sw.addr)
-        //console.log("candidate:", candidate)
-        assert.equal(candidate.sender.toLowerCase(), g.sfs[i % g.sfs.length].toLowerCase())
-        assert.equal(candidate.wkAddr.toLowerCase(), sw.addr.toLowerCase())
-        assert.equal(candidate.deposit, stakingValue)
+        if (sw.pk != undefined){
+            tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[i % g.sfs.length], value:stakingValue})
+            console.log("preE:", i, tx.tx);
+        }
+
+        if (sw.addr != undefined){
+            let candidate  = await smg.getStoremanInfo(sw.addr)
+            //console.log("candidate:", candidate)
+            assert.equal(candidate.sender.toLowerCase(), g.sfs[i % g.sfs.length].toLowerCase())
+            assert.equal(candidate.wkAddr.toLowerCase(), sw.addr.toLowerCase())
+            assert.equal(candidate.deposit, stakingValue)
+        }
     }
 }
 
 async function stakeInOne(smg, groupId, nodeIndex, value){
+    let gGasPrice = 1e9;
+    let gGasLimit = 1e6;
     console.log("smg.contract:", smg.contract._address)
     let sf = utils.getAddressFromInt(nodeIndex+1000)
     let sw = utils.getAddressFromInt(nodeIndex+g.whiteAddrOffset)
@@ -229,9 +250,33 @@ async function toSelect(smg, groupId){
         //console.log("storeman %d info: %O", i, sk);
     }    
 }
+
+async function timeAfter(second,cb) {
+    let snapshot = await timeMachine.takeSnapshot();
+    let snapshotId = snapshot['result'];
+    
+
+    await timeMachine.advanceBlockAndSetTime(second)
+    await cb();
+
+    await timeMachine.revertToSnapshot(snapshotId);
+}
+async function timeSet(second) {
+    if (args.network == 'local' || args.network == 'coverage')  {
+        console.log("advanceBlockAndSetTime: ", second)
+        await timeMachine.advanceBlockAndSetTime(second)
+    } else {
+        console.log("sleepUntil: ", second)
+        await utils.sleepUntil(second*1000)
+    }
+}
+async function timeSetSelect(groupInfo) {
+    await timeSet(1+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration));
+}
+
 module.exports = {
     g,setupNetwork,
     registerStart,stakeInOne,
-    stakeInPre,toSelect,
+    stakeInPre,toSelect,timeAfter,timeSet,timeSetSelect,timeSetSelect,
     initTestValue
 }

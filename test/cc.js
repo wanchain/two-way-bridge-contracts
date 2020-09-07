@@ -3,7 +3,7 @@ const Web3 = require('web3')
 const net = require('net')
 const ethutil = require("ethereumjs-util");
 const pu = require('promisefy-util')
-const PosLib = artifacts.require('PosLib');
+const FakePosLib = artifacts.require('FakePosLib');
 
 
 // async function tryPoslib(poslib, deposit, epochId)  {
@@ -31,9 +31,11 @@ async function trygetMinIncentive(poslib, deposit, epochId){
     console.log("getMinIncentive:", tx)
 }
 async function test() {
-    let poslibAddr = await PosLib.deployed();
 
-    let poslib = await PosLib.at("0x35a45e751104FFCD476247081101b321A13F8f91"); //poslibAddr.address
+    // let poslibAddr = await FakePosLib.deployed();
+    //
+    // let poslib = await FakePosLib.at(poslibAddr.address);
+    let poslib = await FakePosLib.deployed();
     let now = parseInt(Date.now()/1000);
 
     await trygetMinIncentive(poslib, 1000000, now- 3 * 3600*24)

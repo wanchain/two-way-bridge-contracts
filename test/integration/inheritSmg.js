@@ -1,6 +1,6 @@
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const { registerStart, stakeInPre, toSelect } = require('../base.js')
+const { registerStart, setupNetwork,stakeInPre, toSelect } = require('../base.js')
 
 let leader = '0x5793e629c061e7fd642ab6a1b4d552cec0e2d606';
 
@@ -13,6 +13,8 @@ contract('open_storeman_it', async () => {
     let sk = await smgSc.getStoremanInfo(leader);
     console.log("leader sk: %O", sk);
     console.log("pre group id: %s", sk.groupId);
+
+    await setupNetwork();
 
     let groupId = await registerStart(smgSc, 0, {preGroupId: sk.groupId});
     console.log("new group id: %s", groupId);

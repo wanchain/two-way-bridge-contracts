@@ -2,7 +2,6 @@ const utils = require("../utils");
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const pu = require('promisefy-util')
 const assert = require('chai').assert;
 
 
@@ -12,14 +11,16 @@ const sk = [{
 },{
     addr:"0x0beba6154f527596b4b8bb45326131a90c5c6140", pk:"0x28b11382ec24a15d5fa7ae77f9e9531ddc0f83a8ab2faab942db77411e17fdcf8160b0fa132933f1afa613eb19e73cef5d869e06ca58ad7787ddc5f7c11c369b",
 }]
-const { registerStart,stakeInPre, setupNetwork,g} = require('../base.js')
+const { registerStart,stakeInPre, setupNetwork,g,   timeSetSelect,timeSet} = require('../base.js')
+const { expectRevert, expectEvent , BN} = require('@openzeppelin/test-helpers');
 
-contract('StoremanGroupDelegate', async () => {
+contract('StoremanGroupDelegate delegate', async () => {
     let  smg
     let groupId
     let wk = utils.getAddressFromInt(10000)
     let wk2 = utils.getAddressFromInt(10001)
     let tester
+    let groupInfo
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
@@ -32,6 +33,7 @@ contract('StoremanGroupDelegate', async () => {
     it('registerStart', async ()=>{
         groupId = await registerStart(smg);
         console.log("groupId: ", groupId)
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
     })
 
     it('stakeInPre ', async ()=>{
@@ -90,7 +92,7 @@ contract('StoremanGroupDelegate', async () => {
 
   
     it('test toSelect', async ()=>{
-        await pu.sleep(10000)
+        await timeSetSelect(groupInfo);
         let tx = await smg.select(groupId,{from: tester})
         console.log("toSelect tx:", tx.tx)
         console.log("group:",await smg.getStoremanGroupInfo(groupId))
@@ -115,21 +117,15 @@ contract('StoremanGroupDelegate', async () => {
         assert.equal(candidate.sender.toLowerCase(), tester.toLowerCase())
         assert.equal(candidate.wkAddr.toLowerCase(), wk.addr)
     })
-    it('[StoremanGroupDelegate_delegateClaim] should fail: not dismissed', async () => {
-        let result = {};
-        try {
-            let txhash = await smg.delegateClaim(wk2.addr, {from: tester})
-            console.log("stakeOut txhash:", txhash);
-        } catch (e) {
-            result = e;
-            console.log("result:", result);
-        }
-        assert.equal(result.reason, 'Cannot claim');
+    it('[StoremanGroupDelegate_delegateClaim] should fail:', async () => {
+        let tx = smg.delegateClaim(wk2.addr, {from: tester})
+        await expectRevert(tx, 'Cannot claim')
+
     })
-    it('[StoremanGroupDelegate_stakeClaim] should success:', async () => {
+    it.skip('[StoremanGroupDelegate_stakeClaim] should success:', async () => {
         let result = {};
         try {
-            await smg.updateGroupStatus(groupId, g.storemanGroupStatus.dismissed)
+            await smg.updateGroupStatus(groupId, g.storemanGroupStatus.dismissed, {from:g.admin})
             let txhash = await smg.delegateClaim(wk.addr, {from: tester})
             console.log("stakeOut txhash:", txhash);
         } catch (e) {

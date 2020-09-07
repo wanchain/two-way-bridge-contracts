@@ -8,7 +8,7 @@ contract('open_storeman_it', async () => {
     let smgSc = await StoremanGroupDelegate.at(smgProxy.address);
     console.log("smg contract address: %s", smgProxy.address);
 
-    setupNetwork();
+    await setupNetwork();
     let groupId = await registerStart(smgSc, 7);
     await stakeInPre(smgSc, groupId, 7);
     // await toSelect(smgSc, groupId);
