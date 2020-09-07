@@ -7,12 +7,13 @@ const assert = require('chai').assert;
 
 
 
-const { registerStart,stakeInPre, g, toSelect, setupNetwork} = require('../base.js')
+const { registerStart,stakeInPre, g, toSelect, setupNetwork,timeSetSelect} = require('../base.js')
 
 contract('StoremanGroupDelegate', async () => {
  
     let  smg
     let groupId
+    let groupInfo;
 
 
     let wk1 = utils.getAddressFromInt(10001)
@@ -29,6 +30,7 @@ contract('StoremanGroupDelegate', async () => {
     it('registerStart', async ()=>{
         groupId = await registerStart(smg);
         console.log("groupId: ", groupId)
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
     })
 
     it('stakeInPre ', async ()=>{
@@ -57,16 +59,17 @@ contract('StoremanGroupDelegate', async () => {
         assert.equal(sk.wkAddr.toLowerCase(), wk3.addr, "the node should be second one")
     })
     it('test select', async ()=>{
+        await timeSetSelect(groupInfo);
         await toSelect(smg, groupId);
-	let count = await smg.getSelectedSmNumber(groupId);
-	assert.equal(count, g.memberCountDesign, "selected count is wrong")
-	let sn = new Array(count);
-	for(let i=0; i<count; i++) {
-	    sn[i] = await smg.getSelectedSmInfo(groupId, i)
-	}
-	assert.equal(sn[0].wkAddr.toLowerCase(),g.leader,"the first one is wrong")
-	assert.equal(sn[1].wkAddr.toLowerCase(),wk1.addr,"the second one is wrong")
-	assert.equal(sn[2].wkAddr.toLowerCase(),wk3.addr,"the third one is wrong")
-	assert.equal(sn[3].wkAddr.toLowerCase(),wk2.addr,"the fourth one is wrong")
+        let count = await smg.getSelectedSmNumber(groupId);
+        assert.equal(count, g.memberCountDesign, "selected count is wrong")
+        let sn = new Array(count);
+        for(let i=0; i<count; i++) {
+            sn[i] = await smg.getSelectedSmInfo(groupId, i)
+        }
+        assert.equal(sn[0].wkAddr.toLowerCase(),g.leader,"the first one is wrong")
+        assert.equal(sn[1].wkAddr.toLowerCase(),wk1.addr,"the second one is wrong")
+        assert.equal(sn[2].wkAddr.toLowerCase(),wk3.addr,"the third one is wrong")
+        assert.equal(sn[3].wkAddr.toLowerCase(),wk2.addr,"the fourth one is wrong")
     })
 })
