@@ -196,6 +196,8 @@ contract QuotaDelegate is QuotaStorage, Halt {
             mintQuota >= value,
             "Quota is not enough"
         );
+
+        require(checkFastMinValue(tokenId, value), "Less than minimize value");
         
         if (!quota._active) {
             quota._active = true;

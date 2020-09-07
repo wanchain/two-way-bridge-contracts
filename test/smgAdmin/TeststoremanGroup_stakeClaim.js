@@ -11,10 +11,11 @@ const { registerStart,stakeInPre, setupNetwork, g} = require('../base.js')
 
 let web3 = new Web3()
 
-contract('StoremanGroupDelegate stakeOut', async () => {
+contract('StoremanGroupDelegate stakeClaim', async () => {
 
     let  smg
-    let groupId
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10001)
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
@@ -25,6 +26,8 @@ contract('StoremanGroupDelegate stakeOut', async () => {
 
     it('registerStart_1 ', async ()=>{
         groupId = await registerStart(smg);
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+
     })
 
     it('stakeInPre ', async ()=>{
@@ -32,26 +35,27 @@ contract('StoremanGroupDelegate stakeOut', async () => {
     })
 
     it('stakeIn', async ()=>{ 
-        let wk = utils.getAddressFromInt(10001)
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
         console.log("tx:", tx);
     })
-    it('T1', async ()=>{ // stakeAppend 10000
-        let wk = utils.getAddressFromInt(10001)
-        let f = await smg.checkCanStakeOut(wk.addr);
-        assert.equal(f, false,"cann't stakeout before selecting")
+    it('T1 checkCanStakeClaim', async ()=>{ // stakeAppend 10000
+        let f = await smg.checkCanStakeClaim(wk.addr);
+        assert.equal(f, false,"checkCanStakeClaim")
         console.log("f:",f);
     })
-    it('T2', async ()=>{ // stakeAppend 10000
-        let wk = utils.getAddressFromInt(10001)
-        let sk = await smg.getStoremanInfo(wk.addr);
-        console.log("sk:", sk);
-        let tx = smg.stakeOut(wk.addr, {from:g.leader});
-        await expectRevert(tx, "Only the sender can stakeOut")
+    it('T1 stakeClaim', async ()=>{ // stakeAppend 10000
+        let tx =  smg.stakeClaim(wk.addr);
+        await expectRevert(tx, "Cannot claim")
     })
-    it('T3', async ()=>{ // stakeAppend 10000
-        let wk = utils.getAddressFromInt(10001)
-        let tx = smg.stakeOut(wk.addr);
-        await expectRevert(tx, "selecting")
+
+    it('T1 stakeIncentiveClaim', async ()=>{ // stakeAppend 10000
+        let f = await smg.stakeIncentiveClaim(wk.addr);
+        console.log("f:",f);
     })
+    it.skip('T1 getStoremanIncentive', async ()=>{ // stakeAppend 10000
+        let f = await smg.getStoremanIncentive(wk.addr, Number(groupInfo.startTime));
+        console.log("f:",f);
+    })
+
+
 })

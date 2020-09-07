@@ -14,17 +14,18 @@ library StoremanLib {
     event stakeAppendEvent(address indexed wkAddr, address indexed from, uint indexed value);
     event stakeOutEvent(address indexed wkAddr, address indexed from);
     event stakeClaimEvent(address indexed wkAddr, address indexed from,bytes32 indexed groupId, uint value);
-    event stakeIncentiveClaimEvent(address indexed sender,address indexed wkAddr,uint indexed amount);
-    event stakeIncentiveCrossFeeEvent(address indexed sender,address indexed wkAddr,uint indexed amount);
+    event stakeIncentiveClaimEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
+    event stakeIncentiveCrossFeeEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
 
     event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
     event delegateInEvent(address indexed wkAddr, address indexed from, uint indexed value);
     event delegateOutEvent(address indexed wkAddr, address indexed from);
     event delegateClaimEvent(address indexed wkAddr, address indexed from, uint256 indexed amount);
-    event delegateIncentiveClaimEvent(address indexed sender,address indexed wkAddr,uint indexed amount);
+    event delegateIncentiveClaimEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
     event partInEvent(address indexed wkAddr, address indexed from, uint indexed value);
     event partOutEvent(address indexed wkAddr, address indexed from);
+    event partClaimEvent(address indexed wkAddr, address indexed from, uint256 indexed amount);
 
     function storemanGroupUnregister(StoremanType.StoremanData storage data,bytes32 groupId)
         external
@@ -40,12 +41,12 @@ library StoremanLib {
     function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes calldata PK, bytes calldata enodeID) external
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
+        require(group.status == StoremanType.GroupStatus.curveSeted,"invalid group");
         require(block.timestamp <= group.registerTime+group.registerDuration,"Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         address wkAddr = address(uint160(uint256(keccak256(PK))));
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.sender == address(0x00), "Candidate has existed");
-        require(group.status == StoremanType.GroupStatus.curveSeted,"not configured");
         sk.sender = msg.sender;
         sk.enodeID = enodeID;
         sk.PK = PK;
@@ -178,12 +179,12 @@ library StoremanLib {
 	    emit stakeClaimEvent(wkAddr, msg.sender, sk.groupId, amount);
 
         // the cross chain fee
-        emit stakeIncentiveCrossFeeEvent(msg.sender, wkAddr, sk.crossIncoming);
+        emit stakeIncentiveCrossFeeEvent(wkAddr, msg.sender, sk.crossIncoming);
         amount = amount.add(sk.crossIncoming);
         sk.crossIncoming = 0;
 
         // the incentive
-        emit stakeIncentiveClaimEvent(sk.sender,wkAddr,sk.incentive[0]);
+        emit stakeIncentiveClaimEvent(wkAddr,sk.sender,sk.incentive[0]);
         amount = amount.add(sk.incentive[0]);
         sk.incentive[0] = 0;
 
@@ -202,7 +203,7 @@ library StoremanLib {
         if(amount != 0){
             (payable(sk.sender)).transfer(amount);
         }
-        emit stakeIncentiveClaimEvent(sk.sender,wkAddr,amount);
+        emit stakeIncentiveClaimEvent(wkAddr,sk.sender,amount);
     }
 
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
@@ -360,7 +361,7 @@ library StoremanLib {
         sk.delegatorMap[dk.index] = lastDkAddr;
         lastDk.index = dk.index;
 
-        emit delegateIncentiveClaimEvent(msg.sender,wkAddr,dk.incentive[0]);
+        emit delegateIncentiveClaimEvent(wkAddr,msg.sender,dk.incentive[0]);
         amount = amount.add(dk.incentive[0]);
         dk.incentive[0] = 0;
         msg.sender.transfer(amount);
@@ -382,7 +383,7 @@ library StoremanLib {
         if(amount!=0){
             msg.sender.transfer(amount);
         }
-        emit delegateIncentiveClaimEvent(msg.sender,wkAddr,amount);
+        emit delegateIncentiveClaimEvent(wkAddr,msg.sender,amount);
     }
 
 
@@ -445,7 +446,7 @@ library StoremanLib {
         sk.partnerCount = sk.partnerCount.sub(1);
         delete sk.partMap[sk.partnerCount];
         delete sk.partners[msg.sender];
-
+        emit partClaimEvent(wkAddr, msg.sender, amount);
         msg.sender.transfer(amount);
     }
 }

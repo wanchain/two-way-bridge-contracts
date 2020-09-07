@@ -14,3 +14,5 @@ allFiredEvents
 .idea
 .vscode
 package-lock.json
+.coverage_artifacts/
+.coverage_contracts/

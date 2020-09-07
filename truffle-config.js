@@ -61,6 +61,12 @@ module.exports = {
       gasPrice: 1000000000   // 20 gwei (in wei) (default: 100 gwei)
     },
 
+    localTest: {
+      host: '127.0.0.1',
+      port: 7545,
+      network_id: "*",
+    },
+
     // Useful for deploying to a public network.
     local: {
       //provider: () => new HDWalletProvider(mnemonic, "http://localhost:8545",0,10),
@@ -99,6 +105,15 @@ module.exports = {
         port: 5545,
         gas: 0xfffffffffff,
         gasPrice: 0x01
+    },
+    wan179: {
+        host: '192.168.1.179',
+        admin: "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
+        from: "0x9da26fc2e1d6ad9fdd46138906b0104ae68a65d8",
+        network_id: '*',
+        port: 18545,
+        gas: 10000000,
+        gasPrice: 180000000000
     }
 
   },

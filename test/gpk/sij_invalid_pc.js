@@ -3,16 +3,16 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
+const FakeSkCurve = artifacts.require('FakeSkCurve');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
-const { GpkStatus, CheckStatus, Data } = require('./Data');
+const { GpkStatus, CheckStatus, SlashType, Data } = require('./Data');
 const utils = require('../utils.js');
-const { sleep } = require('promisefy-util');
 
 // group
 let groupId = '';
 
 // contract
-let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
+let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy, skCurve;
 let data;
 
 contract('Gpk_UNITs', async () => {
@@ -33,6 +33,9 @@ contract('Gpk_UNITs', async () => {
     gpkSc = await GpkDelegate.at(gpkProxy.address);
     console.log("Gpk contract address: %s", gpkProxy.address);
 
+    // curve
+    skCurve = await FakeSkCurve.deployed();
+
     // network
     await setupNetwork();
 
@@ -51,8 +54,6 @@ contract('Gpk_UNITs', async () => {
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
     // console.log("gpk ut data: %O", data);
-
-    await gpkSc.setPeriod(groupId, 10, 10, 10, {from: g.admin});
   })
 
   // setPolyCommit
@@ -70,52 +71,37 @@ contract('Gpk_UNITs', async () => {
     assert.equal(info.curve1Status, GpkStatus.Negotiate);
   })
 
-  // checkSijTimeout
-  it('[GpkDelegate_checkSijTimeout] should fail: Not ready', async () => {
+  // setEncSij
+  it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};
     try {
-      await gpkSc.checkSijTimeout(groupId, 0, data.smList[0].address, {from: data.smList[0].address});
-    } catch (e) {
-      result = e;
-    }
-    assert.equal(result.reason, 'Not ready');
-  })
-
-  it('[GpkDelegate_checkSijTimeout] should fail: Not late', async () => {
-    let result = {};
-    try {
-      await data.setEncSij(0, 0, 0, 0);
       await data.setEncSij(0, 0, 1, 0);
-      await gpkSc.checkSijTimeout(groupId, 0, data.smList[0].address, {from: data.smList[0].address});
+      await data.setCheckStatus(0, 0, 0, false, 1);
     } catch (e) {
       result = e;
-    }
-    assert.equal(result.reason, 'Not late');
-  })
-
-  it('[GpkDelegate_checkSijTimeout] should fail: Checked', async () => {
-    let result = {};
-    try {
-      await data.setCheckStatus(0, 0, 0, true, 0);
-      await gpkSc.checkSijTimeout(groupId, 0, data.smList[0].address, {from: data.smList[0].address});
-    } catch (e) {
-      result = e;
-    }
-    assert.equal(result.reason, 'Checked');
-  })
-
-  it('[GpkDelegate_checkSijTimeout] should success', async () => {
-    let result = {};
-    try {
-      await sleep(15 * 1000);
-      await gpkSc.checkSijTimeout(groupId, 0, data.smList[1].address, {from: data.smList[0].address});
-    } catch (e) {
-      result = e;
-      console.log("polyCommitTimeout should success: %O", e);
     }
     assert.equal(result.reason, undefined);
-    let info = await gpkSc.getGroupInfo(groupId, 0);
-    assert.equal(info.curve1Status, GpkStatus.Close);
-    assert.equal(info.curve2Status, GpkStatus.Close);
+    let src = data.smList[0].address;
+    let dest = data.smList[1].address;
+    let info = await gpkSc.getSijInfo(groupId, 0, 0, src, dest);
+    assert.equal(info.encSij, data.round[0].src[0].send[1].encSij);
+    assert.equal(info.checkStatus, CheckStatus.Invalid);
+  })
+
+  // revealSij
+  it('[GpkDelegate_revealSij] should success', async () => {
+    let result = {};
+    let src = data.smList[0].address;
+    let dest = data.smList[1].address;
+    try {
+      await skCurve.setCalPolyCommitResult(false);
+      result = await gpkSc.revealSij(groupId, 0, 0, dest, data.round[0].src[0].send[1].sij, data.round[0].src[0].send[1].ephemPrivateKey, {from: src});
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, undefined);
+    let event = result.logs[1].args;
+    assert.equal(event.slashed.toLowerCase(), src.toLowerCase());
+    assert.equal(event.slashType.toString(), SlashType.SijInvalid);
   })
 })

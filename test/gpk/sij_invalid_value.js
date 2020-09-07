@@ -50,8 +50,6 @@ contract('Gpk_UNITs', async () => {
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
     // console.log("gpk ut data: %O", data);
-
-    await gpkSc.setPeriod(groupId, 10, 10, 10, {from: g.admin});
   })
 
   // setPolyCommit
@@ -69,34 +67,49 @@ contract('Gpk_UNITs', async () => {
     assert.equal(info.curve1Status, GpkStatus.Negotiate);
   })
 
+  // revealSij
+  it('[GpkDelegate_revealSij] should fail: Not need', async () => {
+    let result = {};
+    let src = data.smList[0].address;
+    let dest = data.smList[1].address;
+    try {
+      result = await gpkSc.revealSij(groupId, 0, 0, dest, data.round[0].src[0].send[0].sij, data.round[0].src[0].send[0].ephemPrivateKey, {from: src});
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Not need');
+  })
+
   // setEncSij
   it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};
     try {
-      await data.setEncSij(0, 0, 0, 0);
-      await data.setCheckStatus(0, 0, 0, false, 0);
+      await data.setEncSij(0, 0, 1, 0);
+      await data.setCheckStatus(0, 0, 0, false, 1);
     } catch (e) {
       result = e;
     }
     assert.equal(result.reason, undefined);
-    let sender = data.smList[0].address;
-    let info = await gpkSc.getSijInfo(groupId, 0, 0, sender, sender);
-    assert.equal(info.encSij, data.round[0].src[0].send[0].encSij);
+    let src = data.smList[0].address;
+    let dest = data.smList[1].address;
+    let info = await gpkSc.getSijInfo(groupId, 0, 0, src, dest);
+    assert.equal(info.encSij, data.round[0].src[0].send[1].encSij);
     assert.equal(info.checkStatus, CheckStatus.Invalid);
   })
 
   // revealSij
   it('[GpkDelegate_revealSij] should success', async () => {
     let result = {};
-    let sender = data.smList[0].address;
+    let src = data.smList[0].address;
+    let dest = data.smList[1].address;
     try {
-      result = await gpkSc.revealSij(groupId, 0, 0, sender, data.round[0].src[0].send[0].sij, data.round[0].src[0].send[0].ephemPrivateKey, {from: sender});
+      result = await gpkSc.revealSij(groupId, 0, 0, dest, data.round[0].src[0].send[1].sij, data.round[0].src[0].send[1].ephemPrivateKey, {from: src});
     } catch (e) {
       result = e;
     }
     assert.equal(result.reason, undefined);
     let event = result.logs[1].args;
-    assert.equal(event.slashed.toLowerCase(), sender.toLowerCase());
+    assert.equal(event.slashed.toLowerCase(), src.toLowerCase());
     assert.equal(event.slashType.toString(), SlashType.SijInvalid);
-  })  
+  })
 })

@@ -219,10 +219,13 @@ contract('Gpk_UNITs', async () => {
     let result = {};
     try {
       let sender = data.smList[0].address;
-      await data.setPolyCommit(0, 0, 0);
+      let pc = await data.setPolyCommit(0, 0, 0);
+      let info = await gpkSc.getPolyCommit(groupId, 0, 0, sender);
+      assert.equal(info, pc);
       await data.setPolyCommit(0, 0, 0);
     } catch (e) {
       result = e;
+      console.log(e);
     }
     assert.equal(result.reason, 'Duplicate');
   })
@@ -354,6 +357,12 @@ contract('Gpk_UNITs', async () => {
           await data.setCheckStatus(0, 1, s, true, d);
         }
       }
+      info = await gpkSc.getGpkShare(groupId, 0);
+      assert.notEqual(info.gpkShare1, '');
+      assert.notEqual(info.gpkShare2, '');
+      info = await gpkSc.getGpk(groupId);
+      assert.notEqual(info.gpk1, '');
+      assert.notEqual(info.gpk2, '');
     } catch (e) {
       result = e;
     }
@@ -361,4 +370,15 @@ contract('Gpk_UNITs', async () => {
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve2Status, GpkStatus.Complete);
   })
+
+  it('[GpkDelegate_payable] should fail: Not support', async () => {
+    let result = null;
+    try {
+      let fakeSC = await StoremanGroupDelegate.at(gpkProxy.address);
+      await fakeSC.getStoremanGroupConfig(groupId);
+    } catch (e) {
+      result = e;
+    }
+    assert.notEqual(result, null)
+  })  
 })
