@@ -64,7 +64,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Negotiate);
   })
@@ -80,7 +79,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let src = data.smList[0].address;
     let dest = data.smList[1].address;
     let info = await gpkSc.getSijInfo(groupId, 0, 0, src, dest);
@@ -97,9 +95,7 @@ contract('Gpk_UNITs', async () => {
       result = await gpkSc.revealSij(groupId, 0, 0, dest, data.round[0].src[0].send[1].sij, data.round[0].src[0].send[1].ephemPrivateKey, {from: src});
     } catch (e) {
       result = e;
-      console.log(e);
     }
-    assert.equal(result.reason, undefined);
     let event = result.logs[1].args;
     console.log(event);
     assert.equal(event.slashed.toLowerCase(), dest.toLowerCase());
