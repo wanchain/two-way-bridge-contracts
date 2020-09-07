@@ -9,7 +9,7 @@ const assert = require('chai').assert;
 
 const { registerStart,stakeInPre, g, toSelect, setupNetwork,timeSetSelect} = require('../base.js')
 
-contract('StoremanGroupDelegate', async () => {
+contract('StoremanGroupDelegate select', async () => {
  
     let  smg
     let groupId

@@ -6,7 +6,7 @@ const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 
 const { registerStart,registerStart2,stakeInPre, sendIncentive,g, toSelect,setupNetwork, timeSetSelect } = require('../base.js')
 
-contract('StoremanGroupDelegate', async () => {
+contract('StoremanGroupDelegate_rotate', async () => {
  
     let  smg
     let groupId
@@ -23,7 +23,7 @@ contract('StoremanGroupDelegate', async () => {
     it('T1 registerStart', async ()=>{
         groupId = await registerStart(smg, 0, {htlcDuration: 90});
         groupInfo = await smg.getStoremanGroupInfo(groupId);
-        console.log("groupId: ", groupId)
+        console.log("rotate groupId: ", groupId)
     })
 
     it('stakeInPre ', async ()=>{
@@ -41,6 +41,7 @@ contract('StoremanGroupDelegate', async () => {
         } 
     })
     it('T3 registerStart2', async ()=>{
+        await utils.sleep(1000)
         await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.leader});
         groupId2 = await registerStart(smg, 0, {preGroupId:groupId});
         console.log("groupId2: ", groupId2)

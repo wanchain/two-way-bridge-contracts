@@ -9,7 +9,7 @@ const assert  = require('assert')
 
 
 
-const { setupNetwork, g } = require('../base.js')
+const { setupNetwork, registerStart,g } = require('../base.js')
 
 /*************************************
 staker: 1000 ~ 1000+100
@@ -18,7 +18,7 @@ delegator: stakerId*100 ~ stakerID*100+1000
 
 
 
-contract('TestSmg', async () => {
+contract('StoremanGroupDelegate_registerStart', async () => {
 
     let  smg
     const whiteCountAll = 4;
@@ -51,7 +51,7 @@ contract('TestSmg', async () => {
 
     it('T1 ', async ()=>{
         let option = {}
-        let now = parseInt(Date.now()/1000);
+        let now = parseInt(Date.now());
         let ws = []
         let srs= []
         for(let i=0; i<whiteCountAll;i++){
@@ -85,12 +85,12 @@ contract('TestSmg', async () => {
             delegateFee:delegateFee,
         }
         let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
-        expectRevert(tx, "Invalid white list length")
+        await expectRevert(tx, "Invalid white list length")
     })
 
     it('T2 ', async ()=>{
         let option = {}
-        let now = parseInt(Date.now()/1000);
+        let now = parseInt(Date.now());
         let ws = []
         let srs= []
         for(let i=0; i<2;i++){
@@ -123,12 +123,12 @@ contract('TestSmg', async () => {
             delegateFee:delegateFee,
         }
         let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
-        expectRevert(tx, "Insufficient white list.")
+        await expectRevert(tx, "Insufficient white list.")
     })
 
     it('T3 ', async ()=>{
         let option = {}
-        let now = parseInt(Date.now()/1000);
+        let now = parseInt(Date.now());
         let ws = []
         let srs= []
         for(let i=0; i<8;i++){
@@ -161,13 +161,13 @@ contract('TestSmg', async () => {
             delegateFee:delegateFee,
         }
         let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
-        expectRevert(tx, "Too many whitelist node")
+        await expectRevert(tx, "Too many whitelist node")
     })
 
     it('T4 ', async ()=>{
         let option = {}
         let wlStartIndex =0
-        let now = parseInt(Date.now()/1000);
+        let now = parseInt(Date.now());
         let ws = []
         let srs= []
         for(let i=0; i<whiteCountAll;i++){
@@ -200,23 +200,22 @@ contract('TestSmg', async () => {
             delegateFee:delegateFee,
         }
         let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
-        expectRevert(tx, "invalid preGroup")
+        await expectRevert(tx, "invalid preGroup")
     })
 
-    it('T4 ', async ()=>{
+    it('T5 ', async ()=>{
 
         let oldgroupId = await registerStart(smg, 0, {htlcDuration: 90});
-
+        console.log("oldgroupId:", oldgroupId)
         let option = {}
         let wlStartIndex =0
-        let now = parseInt(Date.now()/1000);
+        let now = parseInt(Date.now());
         let ws = []
         let srs= []
         for(let i=0; i<whiteCountAll;i++){
             ws.push(g.wks[i+wlStartIndex])
             srs.push(g.sfs[i % g.sfs.length])
         }
-        let groupId = oldgroupId;
         let registerDuration = option.registerDuration ? option.registerDuration : g.registerDuration;
         let gpkDuration =  option.gpkDuration ? option.gpkDuration : g.gpkDuration;
         let htlcDuration =  option.htlcDuration ? option.htlcDuration : g.htlcDuration;
@@ -225,7 +224,7 @@ contract('TestSmg', async () => {
         let preGroupId =  option.preGroupId ? option.preGroupId : utils.stringTobytes32("");
     
         let smgIn = {
-            groupId: groupId,
+            groupId: oldgroupId,
             preGroupId: preGroupId,
             workTime:now+(registerDuration+gpkDuration)*g.timeBase,
             totalTime:htlcDuration*g.timeBase,
@@ -242,6 +241,8 @@ contract('TestSmg', async () => {
             delegateFee:delegateFee,
         }
         let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
-        expectRevert(tx, "group has existed already")
+        await expectRevert(tx, "group has existed already")
+        let groupInfo = await smg.getStoremanGroupInfo(oldgroupId)
+        console.log("groupInfo:", groupInfo)
     })
 })

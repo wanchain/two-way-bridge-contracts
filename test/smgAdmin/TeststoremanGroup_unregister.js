@@ -7,7 +7,7 @@ const { registerStart,registerStart2,stakeInPre, sendIncentive,g, toSelect,setup
 
 
 
-contract('StoremanGroupDelegate', async () => {
+contract('StoremanGroupDelegate unregister', async () => {
  
     let  smg
     let groupId
@@ -23,7 +23,7 @@ contract('StoremanGroupDelegate', async () => {
 
 
     it('registerStart', async ()=>{
-        groupId = await registerStart(smg, 0, {htlcDuration: 900});
+        groupId = await registerStart(smg, 0, {htlcDuration: 90});
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         console.log("groupId: ", groupId)
     })
@@ -41,9 +41,11 @@ contract('StoremanGroupDelegate', async () => {
         await expectRevert(tx, "not expired")
     })
     it('T9 storemanGroupUnregister after endTime', async ()=>{
-        await timeSet(Number(groupInfo.endTime)+1);
+        await timeSet(parseInt(groupInfo.endTime)+2);
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+        console.log("before grupInfo:", groupInfo)
         let tx = await smg.storemanGroupUnregister(groupId, {from:g.leader});
-        console.log("tx:", tx) 
+        console.log("tx:", tx.logs[0]) 
         expectEvent(tx, 'StoremanGroupUnregisterEvent', {groupId:groupId})
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         console.log("after grupInfo:", groupInfo)

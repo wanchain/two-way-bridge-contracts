@@ -7,7 +7,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const { registerStart,stakeInPre, setupNetwork, g} = require('../base.js');
 const  assert  = require("assert");
 
-contract('TestSmg', async () => {
+contract('StoremanGroupDelegate staking', async () => {
 
     let  smg
     let groupId
