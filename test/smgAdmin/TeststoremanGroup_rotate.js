@@ -1,9 +1,10 @@
 const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
+const assert  = require('assert')
+const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 
-
-const { registerStart,registerStart2,stakeInPre, sendIncentive,g, toSelect,setupNetwork } = require('../base.js')
+const { registerStart,registerStart2,stakeInPre, sendIncentive,g, toSelect,setupNetwork, timeSetSelect } = require('../base.js')
 
 contract('StoremanGroupDelegate', async () => {
  
@@ -29,7 +30,7 @@ contract('StoremanGroupDelegate', async () => {
         await stakeInPre(smg, groupId)
     })
     it('T2 test select', async ()=>{
-        await utils.sleepUntil(1000*(Number(groupInfo.registerTime)+Number(groupInfo.registerDuration)+1));
+        await timeSetSelect(groupInfo)
         await toSelect(smg, groupId);
         let count = await smg.getSelectedSmNumber(groupId)
         console.log("slected sm number: %d", count);  
@@ -56,8 +57,11 @@ contract('StoremanGroupDelegate', async () => {
         console.log("sk:=======", sk)
         //assert.equal(sk.pkAddress.toLowerCase(), wk.addr, "the node should be second one")
     })
+
+
+
     it('T5 select2', async ()=>{
-        await utils.sleepUntil(1000*(Number(groupInfo2.registerTime)+Number(groupInfo2.registerDuration)+1));
+        await timeSetSelect(groupInfo2)
         await toSelect(smg, groupId2);
         let count = await smg.getSelectedSmNumber(groupId2)
         console.log("slected sm number: %d", count);  
