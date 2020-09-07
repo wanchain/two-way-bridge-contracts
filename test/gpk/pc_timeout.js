@@ -86,7 +86,6 @@ contract('Gpk_UNITs', async () => {
       result = e;
       console.log("polyCommitTimeout should success: %O", e);
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Close);
     assert.equal(info.curve2Status, GpkStatus.Close);

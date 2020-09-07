@@ -66,7 +66,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Negotiate);
   })
@@ -80,7 +79,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let src = data.smList[0].address;
     let dest = data.smList[1].address;
     let info = await gpkSc.getSijInfo(groupId, 0, 0, src, dest);
@@ -99,7 +97,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let event = result.logs[1].args;
     assert.equal(event.slashed.toLowerCase(), src.toLowerCase());
     assert.equal(event.slashType.toString(), SlashType.SijInvalid);
