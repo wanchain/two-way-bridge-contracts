@@ -6,6 +6,9 @@ const GpkDelegate = artifacts.require('GpkDelegate');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, SlashType, Data } = require('./Data');
 const utils = require('../utils.js');
+const optimist = require("optimist");
+
+let network = optimist.argv.network;
 
 // group
 let groupId = '';
@@ -72,8 +75,10 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};
     try {
-      let encSij = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-      data.round[0].src[0].send[1].encSij = '0x' + Buffer.from(encSij, 'ascii').toString('hex');
+      if (['local', 'coverage'].includes(network)) {
+        let encSij = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+        data.round[0].src[0].send[1].encSij = '0x' + Buffer.from(encSij, 'ascii').toString('hex');
+      }
       await data.setEncSij(0, 0, 1, 0);
       await data.setCheckStatus(0, 0, 0, false, 1);
     } catch (e) {
