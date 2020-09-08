@@ -8,7 +8,7 @@ const { GpkStatus, CheckStatus, SlashType, Data } = require('./Data');
 const utils = require('../utils.js');
 const optimist = require("optimist");
 
-const network = optimist.argv.network;
+const fakeSc = ['local', 'coverage'].includes(optimist.argv.network);
 
 // group
 let groupId = '';
@@ -75,7 +75,7 @@ contract('Gpk_UNITs', async () => {
   it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};
     try {
-      if (['local', 'coverage'].includes(network)) {
+      if (fakeSc) {
         let encSij = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
         data.round[0].src[0].send[1].encSij = '0x' + Buffer.from(encSij, 'ascii').toString('hex');
       }
