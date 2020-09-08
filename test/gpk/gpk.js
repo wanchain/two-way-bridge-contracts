@@ -20,7 +20,7 @@ let groupId = '';
 let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
 let data;
 
-contract('Gpk_UNITs', async() => {
+contract('Gpk_UT_gpk', async() => {
   let owner, admin;
 
   before("should do all preparations", async() => {
@@ -50,7 +50,7 @@ contract('Gpk_UNITs', async() => {
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
-    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 2) * 1000);
+    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
     data = new Data(smgSc, gpkSc, groupId);

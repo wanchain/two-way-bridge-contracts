@@ -48,9 +48,9 @@ const g = {
 async function setupNetwork() {
     let network = args.network;
     g.admin = config.networks[network].admin;
-    console.log("setupNetwork using network %s", args.network);
-    if (args.network == 'local' || args.network == 'coverage') {
-        g.web3url = "http://" + config.networks[network].host + ":" + config.networks[network].port;
+    g.web3url = "http://" + config.networks[network].host + ":" + config.networks[network].port;
+    console.log("setup network %s", network);
+    if (network == 'local' || network == 'coverage') {
         g.owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959";
         g.leader = ("0xdF0A667F00cCfc7c49219e81b458819587068141").toLowerCase();
 
@@ -75,7 +75,6 @@ async function setupNetwork() {
         '0xc2ebfd865b83f87d94ed89559029cf1c08b4a965ae13084b4bcae2743b928d17892e0003b6e25513d1f0354a07cf1fb4a3b7a3cd1ea480946e92db9ecbe3ade2',
         '0xb05235fda9b61f4d35f4f1278bcf42df2fe9e0c6c0bb8674269c879cc8431f99613e851772c51549a66169640492986793f633576b7b2240b53bddf05e393443' ]
     } else {
-        g.web3url = "http://192.168.1.58:7654";
         g.owner = "0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e";
         g.leader = "0x5793e629c061e7fd642ab6a1b4d552cec0e2d606";
         g.leaderPk = "0x25fa6a4190ddc87d9f9dd986726cafb901e15c21aafd2ed729efed1200c73de89f1657726631d29733f4565a97dc00200b772b4bc2f123a01e582e7e56b80cf8";
@@ -170,20 +169,24 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
 
 
 async function stakeInPre(smg, groupId, nodeStartIndex = 0, nodeCount = stakerCount){
-    console.log("smg.contract:", smg.contract._address)
-    for(let i=0; i<nodeCount; i++){
-        let stakingValue = g.minStakeIn + i;
-        let sw, tx
-        sw = {addr:g.wks[i+nodeStartIndex], pk:g.pks[i+nodeStartIndex]}
-        console.log("send============================:", g.sfs[i % g.sfs.length])
-        tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[i % g.sfs.length], value:stakingValue})
+    console.log("smg.contract:", smg.contract._address);
+    try {
+      for(let i=0; i<nodeCount; i++){
+          let stakingValue = g.minStakeIn + i;
+          let sw, tx
+          sw = {addr:g.wks[i+nodeStartIndex], pk:g.pks[i+nodeStartIndex]}
+          console.log("send============================:", g.sfs[i % g.sfs.length])
+          tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[i % g.sfs.length], value:stakingValue})
 
-        console.log("preE:", i, tx.tx);
-        let candidate  = await smg.getStoremanInfo(sw.addr)
-        //console.log("candidate:", candidate)
-        assert.equal(candidate.sender.toLowerCase(), g.sfs[i % g.sfs.length].toLowerCase())
-        assert.equal(candidate.wkAddr.toLowerCase(), sw.addr.toLowerCase())
-        assert.equal(candidate.deposit, stakingValue)
+          console.log("preE:", i, tx.tx);
+          let candidate  = await smg.getStoremanInfo(sw.addr)
+          //console.log("candidate:", candidate)
+          assert.equal(candidate.sender.toLowerCase(), g.sfs[i % g.sfs.length].toLowerCase())
+          assert.equal(candidate.wkAddr.toLowerCase(), sw.addr.toLowerCase())
+          assert.equal(candidate.deposit, stakingValue)
+      }
+    } catch (e) {
+      console.log("stakeInPre err: %O", e);
     }
 }
 
