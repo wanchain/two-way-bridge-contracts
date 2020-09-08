@@ -8,7 +8,7 @@ const { GpkStatus, CheckStatus, Data } = require('./Data');
 const utils = require('../utils.js');
 const optimist = require("optimist");
 
-const network = optimist.argv.network;
+const fakeSc = ['local', 'coverage'].includes(optimist.argv.network);
 
 // common
 const ADDRESS_0 = '0x0000000000000000000000000000000000000000';
@@ -333,7 +333,7 @@ contract('Gpk_UNITs', async() => {
     }
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Complete);
-    if (!['local', 'coverage'].includes(network)) {
+    if (!fakeSc) {
       data.genGpk(0);
       let gpk = await gpkSc.getGpk(groupId);
       assert.equal(gpk.gpk1, data.round[0].gpk);
@@ -367,7 +367,7 @@ contract('Gpk_UNITs', async() => {
     }
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve2Status, GpkStatus.Complete);
-    if (!['local', 'coverage'].includes(network)) {
+    if (!fakeSc) {
       data.genGpk(1);
       let gpk = await gpkSc.getGpk(groupId);
       assert.equal(gpk.gpk2, data.round[1].gpk);

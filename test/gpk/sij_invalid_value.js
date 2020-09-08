@@ -6,6 +6,9 @@ const GpkDelegate = artifacts.require('GpkDelegate');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, SlashType, Data } = require('./Data');
 const utils = require('../utils.js');
+const optimist = require("optimist");
+
+const fakeSc = ['local', 'coverage'].includes(optimist.argv.network);
 
 // group
 let groupId = '';
@@ -101,6 +104,9 @@ contract('Gpk_UNITs', async () => {
     let src = data.smList[0].address;
     let dest = data.smList[1].address;
     try {
+      if (!fakeSc) {
+        data.round[0].src[0].send[1].sij = data.round[0].src[0].send[1].sij.substr(0, data.round[0].src[0].send[1].sij.length - 2);
+      }
       result = await gpkSc.revealSij(groupId, 0, 0, dest, data.round[0].src[0].send[1].sij, data.round[0].src[0].send[1].ephemPrivateKey, {from: src});
     } catch (e) {
       result = e;
