@@ -3,7 +3,7 @@ const assert = require('chai').assert;
 const Web3 = require('web3');
 const optimist = require("optimist");
 const config = require("../truffle-config");
-const timeMachine = require('ganache-time-traveler');
+//const timeMachine = require('ganache-time-traveler');
 
 let web3url, owner, leader, admin, leaderPk, web3;
 
@@ -16,7 +16,7 @@ const threshold  = 3
 const stakerCount = memberCountDesign + whiteBackup
 const registerDuration = 5; // open staking for 10 days.
 const gpkDuration = 3;
-const htlcDuration = 9; // work 90 day.
+const htlcDuration = 1; // work 90 day.
 const timeBase = 1;
 const wanChainId = 2153201998;
 const ethChainId = 2147483708;
@@ -62,7 +62,7 @@ async function setupNetwork() {
         g.timeBase = 1;
 
         g.wks = accounts.slice(30,40);
-        console.log("wks:", g.wks)
+        //console.log("wks:", g.wks)
         g.pks = [ '0x6bd7c410f7c760cca63a3dfabeeeed08f371b080f1c0d37e5cfda1c7f48d8234af06766ff7aa007a574449bce2c54469a675228876094f2c97438027f5070cbd',
         '0x7ca2927d8343de9ae70638249beca7e42b86a71036081c36552c2f0a55d44cf11b3ba9c2d2fb47ae4f0d533e66f1e9e2dbc2d1788400f7dfb1b5ebc562bc9d56',
         '0xb5c60f28d5750cdfe82d99973896a14413873f23fe8481378ac4f6f4541b87d144a2512ba4e6328098a8799836ac0b0a7f44c9a9468b559c56186231c64bb695',
@@ -169,24 +169,20 @@ async function registerStart(smg, wlStartIndex = 0, option = {}){
 
 
 async function stakeInPre(smg, groupId, nodeStartIndex = 0, nodeCount = stakerCount){
-    console.log("smg.contract:", smg.contract._address);
-    try {
-      for(let i=0; i<nodeCount; i++){
-          let stakingValue = g.minStakeIn + i;
-          let sw, tx
-          sw = {addr:g.wks[i+nodeStartIndex], pk:g.pks[i+nodeStartIndex]}
-          console.log("send============================:", g.sfs[i % g.sfs.length])
-          tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[i % g.sfs.length], value:stakingValue})
+    console.log("smg.contract:", smg.contract._address)
+    for(let i=0; i<nodeCount; i++){
+        let stakingValue = g.minStakeIn + i;
+        let sw, tx
+        sw = {addr:g.wks[i+nodeStartIndex], pk:g.pks[i+nodeStartIndex]}
+        console.log("send============================:", g.sfs[i % g.sfs.length])
+        tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[i % g.sfs.length], value:stakingValue})
 
-          console.log("preE:", i, tx.tx);
-          let candidate  = await smg.getStoremanInfo(sw.addr)
-          //console.log("candidate:", candidate)
-          assert.equal(candidate.sender.toLowerCase(), g.sfs[i % g.sfs.length].toLowerCase())
-          assert.equal(candidate.wkAddr.toLowerCase(), sw.addr.toLowerCase())
-          assert.equal(candidate.deposit, stakingValue)
-      }
-    } catch (e) {
-      console.log("stakeInPre err: %O", e);
+        //console.log("preE:", i, tx.tx);
+        let candidate  = await smg.getStoremanInfo(sw.addr)
+        //console.log("candidate:", candidate)
+        assert.equal(candidate.sender.toLowerCase(), g.sfs[i % g.sfs.length].toLowerCase())
+        assert.equal(candidate.wkAddr.toLowerCase(), sw.addr.toLowerCase())
+        assert.equal(candidate.deposit, stakingValue)
     }
 }
 
@@ -233,33 +229,133 @@ async function toSelect(smg, groupId){
         //console.log("storeman %d info: %O", i, sk);
     }    
 }
+async function toStakeIn(smg, groupId, wk, value=50000, from=g.admin){
+    let tx = await smg.stakeIn(groupId,wk.pk, wk.pk, {from: from, value:value})
+    //await timeMachine.advanceBlock();
+    let block = await g.web3.eth.getBlock(tx.receipt.blockNumber);
+    console.log("toStakeIn sk %s at %d:", wk.addr, block.timestamp)  
+    return block.timestamp
+}
 
-async function timeAfter(second,cb) {
-    let snapshot = await timeMachine.takeSnapshot();
-    let snapshotId = snapshot['result'];
+// async function endIncentive(smg, groupId,wkAddr, cb) {
+//     let snapshot = await timeMachine.takeSnapshot();
+//     let snapshotId = snapshot['result'];
+    
+//     await _endIncentive(smg, groupId, wkAddr);
+//     await cb();
+//     await timeMachine.revertToSnapshot(snapshotId);
+// }
+// async function _endIncentive(smg, groupId,wkAddr) {  // only be the last case
+//     let groupInfo = await smg.getStoremanGroupInfo(groupId)
+//     if(groupInfo.status < g.storemanGroupStatus.selected){
+//         let second = 1+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
+//         await timeSet(second)
+//         await toSelect(smg, groupId);
+//     }
+//     await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
+//     await timeSet(parseInt(groupInfo.endTime)+1)
+//     await smg.contribute({from: g.owner, value: web3.utils.toWei('1000')})
+//     while(true){
+//         let tx = await smg.incentiveCandidator(wkAddr, {from:g.leader})
+//         let incLog = tx.logs[0].args;
+//         console.log("incLog:", incLog)
+//         if(incLog.finished) break;
+//     }
+//     Info = await smg.getStoremanInfo(wkAddr)
+//     console.log("Info after endIncentive:", Info)
+
+//     let ins = await smg.getStoremanIncentive(wkAddr, 0);
+//     console.log("incentive day %d, amount %d:", 0, ins)
+
+//     groupInfo = await smg.getStoremanGroupInfo(groupId)
+//     console.log("groupInfo after endIncentive:", groupInfo)
+
+//     for(let i=parseInt(groupInfo.startTime)/g.timeBase; i<parseInt(groupInfo.endTime)/g.timeBase; i++){
+//         let a = await smg.checkGroupIncentive(groupId, i)
+//         console.log("group %s day %d incentive %s.", groupId, i, a.toString(10))
+//     }
+
+//     for(let i=parseInt(groupInfo.startTime)/g.timeBase; i<parseInt(groupInfo.endTime)/g.timeBase; i++){
+//         let a = await smg.getStoremanIncentive(wkAddr, i)
+//         console.log("sk %s day %d incentive %s.", wkAddr, i, a.toString(10))
+//     }
+  
+// }
+
+// async function timeAfter(second,cb) {
+//     let snapshot = await timeMachine.takeSnapshot();
+//     let snapshotId = snapshot['result'];
     
 
-    await timeMachine.advanceBlockAndSetTime(second)
-    await cb();
+//     await timeMachine.advanceBlockAndSetTime(second)
+//     await cb();
 
-    await timeMachine.revertToSnapshot(snapshotId);
+//     await timeMachine.revertToSnapshot(snapshotId);
+// }
+// async function timeSet(second) {
+//     if (args.network == 'local' || args.network == 'coverage')  {
+//         console.log("advanceBlockAndSetTime: ", second)
+//         await timeMachine.advanceBlockAndSetTime(second)
+//     } else {
+//         console.log("sleepUntil: ", second)
+//         await utils.sleepUntil(second*1000)
+//     }
+// }
+async function timeWaitSelect(groupInfo) {
+    let second = 1+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
+    await utils.sleepUntil(second*1000)
 }
-async function timeSet(second) {
-    if (args.network == 'local' || args.network == 'coverage')  {
-        console.log("advanceBlockAndSetTime: ", second)
-        await timeMachine.advanceBlockAndSetTime(second)
-    } else {
-        console.log("sleepUntil: ", second)
-        await utils.sleepUntil(second*1000)
+async function timeWaitEnd(groupInfo) {
+    console.log("timeWaitEnd groupInfo.endTime: ", parseInt(groupInfo.endTime))
+    let second = 1+parseInt(groupInfo.endTime)
+    await utils.sleepUntil(second*1000)
+}
+
+async function timeWaitIncentive(smg, groupId, wkAddr) {
+    let groupInfo = await smg.getStoremanGroupInfo(groupId)
+    if(groupInfo.status < g.storemanGroupStatus.selected){
+        await timeWaitSelect(groupInfo)
+        await toSelect(smg, groupId);
     }
+    await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
+    let second = 1+parseInt(groupInfo.endTime)
+    await utils.sleepUntil(second*1000)
+    await smg.contribute({from: g.owner, value: web3.utils.toWei('1000')})
+    while(true){
+        let tx = await smg.incentiveCandidator(wkAddr, {from:g.leader})
+        let incLog = tx.logs[0].args;
+        console.log("incLog:", incLog)
+        if(incLog.finished) break;
+    }
+    Info = await smg.getStoremanInfo(wkAddr)
+    console.log("Info after endIncentive:", Info)
+
+    let ins = await smg.getStoremanIncentive(wkAddr, 0);
+    console.log("incentive day %d, amount %d:", 0, ins)
+
+    groupInfo = await smg.getStoremanGroupInfo(groupId)
+    console.log("groupInfo after endIncentive:", groupInfo)
+
+    for(let i=parseInt(groupInfo.startTime)/g.timeBase; i<parseInt(groupInfo.endTime)/g.timeBase; i++){
+        let a = await smg.checkGroupIncentive(groupId, i)
+        console.log("group %s day %d incentive %s.", groupId, i, a.toString(10))
+    }
+
+    for(let i=parseInt(groupInfo.startTime)/g.timeBase; i<parseInt(groupInfo.endTime)/g.timeBase; i++){
+        let a = await smg.getStoremanIncentive(wkAddr, i)
+        console.log("sk %s day %d incentive %s.", wkAddr, i, a.toString(10))
+    }
+
+
+
+
+
 }
-async function timeSetSelect(groupInfo) {
-    await timeSet(1+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration));
-}
+
 
 module.exports = {
     g,setupNetwork,
-    registerStart,stakeInOne,
-    stakeInPre,toSelect,timeAfter,timeSet,timeSetSelect,timeSetSelect,
+    registerStart,stakeInOne,toStakeIn,timeWaitIncentive,
+    stakeInPre,toSelect,timeWaitSelect,timeWaitEnd,
     initTestValue
 }

@@ -90,6 +90,7 @@ module.exports = async function (deployer, network) {
     // quota
     await deployer.deploy(QuotaDelegate);
     await deployer.deploy(QuotaProxy);
+    await deployer.deploy(fakeQuota);
     let quotaProxy = await QuotaProxy.deployed();
     let quotaDelegate = await QuotaDelegate.deployed();
     await quotaProxy.upgradeTo(quotaDelegate.address);
@@ -139,6 +140,7 @@ module.exports = async function (deployer, network) {
     let posLib = await deployer.deploy(PosLib);
     if(network == 'local' || network == 'coverage') {
       posLib = await deployer.deploy(FakePosLib);
+      quotaProxy = await fakeQuota.deployed()
     } 
         
     //await deployer.link(PosLib,StoremanUtil);
@@ -166,10 +168,6 @@ module.exports = async function (deployer, network) {
     // storm group admin dependence
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
     await smg.addAdmin(config.networks[network].admin);
-
-    // await smgProxy.upgradeTo(smgDelegate.address);
-    await deployer.deploy(fakeQuota);
-    let fakeQuotaInst = await fakeQuota.deployed();
 
     //deploy metric
     if(network == 'local' || network == 'coverage') {

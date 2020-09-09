@@ -89,7 +89,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         // check preGroupId 是否存在.
         if(preGroupId != bytes32(0x00)){
             StoremanType.StoremanGroup storage preGroup = data.groups[preGroupId];
-            require(preGroup.status >= StoremanType.GroupStatus.ready,"invalid preGroup");
+            require(preGroup.status >= StoremanType.GroupStatus.ready || preGroup.status == StoremanType.GroupStatus.failed,"invalid preGroup");
         }
 
         initGroup(groupId, smg);
@@ -277,7 +277,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         }
         for (uint i = 0; i < indexs.length; i++) {
             if (group.tickedCount + group.whiteCount >= group.whiteCountAll) {
-                group.status == StoremanType.GroupStatus.failed;
+                group.status = StoremanType.GroupStatus.failed;
                 return false;
             }
             group.tickedNode[group.tickedCount] = group.selectedNode[indexs[i]];
@@ -342,7 +342,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         }
     }
 
-    function checkGroupDismissable(bytes32 groupId) external returns(bool) {
+    function checkGroupDismissable(bytes32 groupId) external view returns(bool) {
         bool dismissable = quotaInst.isDebtClean(groupId);
         return dismissable;
     }

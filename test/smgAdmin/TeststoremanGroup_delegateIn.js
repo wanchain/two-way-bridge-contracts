@@ -8,7 +8,7 @@ const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
 
 
-const { registerStart,stakeInPre, setupNetwork, g, timeSet } = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork, g, timeWaitIncentive } = require('../base.js');
 
 
 
@@ -55,8 +55,10 @@ contract('StoremanGroupDelegate delegateIn', async () => {
     })
 
     it('delegateIncentiveClaim', async ()=>{
-        await timeSet(parseInt(groupInfo.startTime)+parseInt(g.timeBase))
+        
+        await timeWaitIncentive(smg, groupId, wk.addr);
         let tx = await smg.delegateIncentiveClaim(wk.addr,{from:tester});
-        expectEvent(tx, "delegateIncentiveClaimEvent", {wkAddr: web3.utils.toChecksumAddress(wk.addr), sender: web3.utils.toChecksumAddress(tester)})      
+        expectEvent(tx, "delegateIncentiveClaimEvent", {wkAddr: web3.utils.toChecksumAddress(wk.addr), sender: web3.utils.toChecksumAddress(tester)})   
+        
     })
 })

@@ -7,7 +7,7 @@ const assert = require('chai').assert;
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 const Web3 = require('web3')
 
-const { registerStart,stakeInPre, setupNetwork,toSelect, g, timeSetSelect,timeSet } = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork,toSelect, g, timeWaitSelect,timeWaitIncentive, toStakeIn } = require('../base.js');
 
 
 
@@ -15,8 +15,6 @@ contract('TestSmg', async () => {
 
     let  smg
 		let groupId, groupInfo
-		let contValue = 123456;
-		let web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
     let wk = utils.getAddressFromInt(10000)
 
     before("init contracts", async() => {
@@ -40,17 +38,15 @@ contract('TestSmg', async () => {
       console.log("tx:", tx);
   })
     it('prpare', async ()=>{
-      await timeSetSelect(groupInfo);
+      await timeWaitSelect(groupInfo);
       await toSelect(smg, groupId);
       await smg.updateGroupStatus(groupId,g.storemanGroupStatus.ready,{from:g.admin})
-      await timeSet(parseInt(groupInfo.startTime)+3*g.timeBase)
     })
 
-    it('incentive ', async ()=>{
-        let tx = await smg.incentiveCandidator(wk.addr)
-        console.log("incentiveCandidator:", tx.logs[0].args)
-    })
+
     it('check incentive ', async ()=>{
+      await timeWaitIncentive(smg, groupId, wk.addr);
+
       let I1 = await smg.checkGroupIncentive(groupId, parseInt(groupInfo.startTime));
       console.log("I1:", I1)
       let I2 = await smg.checkGroupIncentive(groupId, parseInt(groupInfo.startTime)+1);
