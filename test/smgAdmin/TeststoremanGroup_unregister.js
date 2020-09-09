@@ -3,7 +3,7 @@ const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert  = require('assert')
 const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
-const { registerStart,registerStart2,stakeInPre, sendIncentive,g, toSelect,setupNetwork, timeSet } = require('../base.js')
+const { registerStart,stakeInPre, g, toSelect,setupNetwork, timeWaitEnd } = require('../base.js')
 
 
 
@@ -12,7 +12,7 @@ contract('StoremanGroupDelegate unregister', async () => {
     let  smg
     let groupId
     let groupId2
-    let groupInfo,groupInfo2;
+    let groupInfo;
     
 
     before("init contracts", async() => {
@@ -23,9 +23,12 @@ contract('StoremanGroupDelegate unregister', async () => {
 
 
     it('registerStart', async ()=>{
-        groupId = await registerStart(smg, 0, {htlcDuration: 90});
+        groupId = await registerStart(smg);
         groupInfo = await smg.getStoremanGroupInfo(groupId);
-        console.log("groupId: ", groupId)
+
+        console.log(" XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX unregister groupInfo: ", groupInfo)
+
+
     })
 
     it('stakeInPre ', async ()=>{
@@ -37,11 +40,17 @@ contract('StoremanGroupDelegate unregister', async () => {
         await expectRevert(tx, 'Sender is not allowed')
     })
     it('T8 storemanGroupUnregister before endTime', async ()=>{
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+        console.log("groupId: ", groupId)
+
+        let block = await web3.eth.getBlock('latest')
+        let now = block.timestamp
+        console.log("now : ", now)
         let tx = smg.storemanGroupUnregister(groupId, {from:g.leader});
         await expectRevert(tx, "not expired")
     })
     it('T9 storemanGroupUnregister after endTime', async ()=>{
-        await timeSet(parseInt(groupInfo.endTime)+2);
+        await timeWaitEnd(groupInfo)
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         console.log("before grupInfo:", groupInfo)
         let tx = await smg.storemanGroupUnregister(groupId, {from:g.leader});
@@ -49,9 +58,7 @@ contract('StoremanGroupDelegate unregister', async () => {
         expectEvent(tx, 'StoremanGroupUnregisterEvent', {groupId:groupId})
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         console.log("after grupInfo:", groupInfo)
-        assert.equal(groupInfo.status, g.storemanGroupStatus.unregistered, 'storemanGroupUnregister failed')
-        
-
+        assert.equal(groupInfo.status, g.storemanGroupStatus.unregistered, 'storemanGroupUnregister failed')    
     })
     
 

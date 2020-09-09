@@ -11,7 +11,7 @@ library FakePosLib {
         return blockTime;
     }
 
-    function getMinIncentive (uint256 smgDeposit,uint256 targetSecond) public view returns(uint256) {
+    function getMinIncentive (uint256 smgDeposit,uint256 targetSecond, uint256 totalDeposit) public view returns(uint256) {
         return 30000000;
     }
 }

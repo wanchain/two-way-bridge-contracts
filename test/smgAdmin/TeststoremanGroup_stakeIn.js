@@ -3,7 +3,7 @@ const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
-const { registerStart,stakeInPre, setupNetwork,g,  timeSetSelect} = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork,g,  timeWaitSelect} = require('../base.js');
 const { assert } = require("chai");
 
 contract('StoremanGroupDelegate stakeIn', async () => {
@@ -79,7 +79,7 @@ contract('StoremanGroupDelegate stakeIn', async () => {
         await expectRevert(tx, "invalid group")
     })
     it('T9 stakeIn after register duration', async ()=>{ 
-        await timeSetSelect(groupInfo);
+        await timeWaitSelect(groupInfo);
         let wk = utils.getAddressFromInt(10009)
         let tx =  smg.stakeIn(groupId, wk.pk, wk.pk,{value:60000});
         await expectRevert(tx, "Registration closed")

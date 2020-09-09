@@ -4,10 +4,11 @@ const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
 
+const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
 
 
-const { registerStart,stakeInPre, g, toSelect, setupNetwork,timeSetSelect} = require('../base.js')
+const { registerStart,stakeInPre, g, toSelect, setupNetwork,timeWaitSelect} = require('../base.js')
 
 contract('StoremanGroupDelegate select', async () => {
  
@@ -58,8 +59,17 @@ contract('StoremanGroupDelegate select', async () => {
         let sk = await smg.getSelectedSmInfo(groupId, 2);
         assert.equal(sk.wkAddr.toLowerCase(), wk3.addr, "the node should be second one")
     })
+    it('T7 setInvalidSm', async ()=>{
+        await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+        let tx =  smg.setInvalidSm(groupId, [2],["0x02"], {from:g.owner});
+        await expectRevert(tx, "Sender is not allowed");
+  
+        tx = await smg.setInvalidSm(groupId, [2],[5], {from:g.admin});
+        console.log(" setInvalidSm tx:", tx)
+    })
+
     it('test select', async ()=>{
-        await timeSetSelect(groupInfo);
+        await timeWaitSelect(groupInfo);
         await toSelect(smg, groupId);
         let count = await smg.getSelectedSmNumber(groupId);
         assert.equal(count, g.memberCountDesign, "selected count is wrong")
@@ -72,4 +82,41 @@ contract('StoremanGroupDelegate select', async () => {
         assert.equal(sn[2].wkAddr.toLowerCase(),wk3.addr,"the third one is wrong")
         assert.equal(sn[3].wkAddr.toLowerCase(),wk2.addr,"the fourth one is wrong")
     })
+
+    it('T7 setInvalidSm', async ()=>{
+        await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+        let tx =  smg.setInvalidSm(groupId, [2],["0x02"], {from:g.owner});
+        await expectRevert(tx, "Sender is not allowed");
+        
+        tx =  smg.setInvalidSm(groupId, [2],[2], {from:g.admin});
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+        assert.equal(groupInfo.tickedCount, 1)
+
+        tx =  smg.setInvalidSm(groupId, [2],[5], {from:g.admin});
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+        assert.equal(groupInfo.tickedCount, 2)
+
+        tx =  smg.setInvalidSm(groupId, [2],[5], {from:g.admin});
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+        assert.equal(groupInfo.tickedCount, 3)
+        assert.equal(groupInfo.status, g.storemanGroupStatus.selected)
+        
+        tx =  smg.setInvalidSm(groupId, [2],[5], {from:g.admin});
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+        assert.equal(groupInfo.tickedCount, 3)
+        assert.equal(groupInfo.status, g.storemanGroupStatus.failed)
+        await smg.recordSmSlash(wk1.addr,{from:g.admin})
+        await smg.recordSmSlash(wk1.addr,{from:g.admin})
+    })
+
+    it('checkCanStakeClaim', async ()=>{
+        let f = await smg.checkCanStakeClaim(wk1.addr);
+        console.log("checkCanStakeClaim:", f)
+        assert.equal(f, true,"checkCanStakeClaim")
+
+        let tx = await smg.stakeClaim(wk1.addr);
+        expectEvent(tx, 'stakeIncentiveClaimEvent')
+        console.log("tx stakeClaim:", tx.logs[0].args)
+    })
+
 })
