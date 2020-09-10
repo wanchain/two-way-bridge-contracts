@@ -11,7 +11,7 @@ contract('Secp256k1Curve', accounts => {
     web3 = getWeb3();
   });
 
-  it("add", async () => {
+  it.skip("add", async () => {
     const x1 = "0x69088a1c79a78b5e66859a5e6594d70c8f12a1ff882d84a05ffdbbcff5a4abcb";
     const y1 = "0x5d4c67c05b0a693fb72b47abf7e0d6381fc722ca45c8bb076e6cb4f9f0912906";
     const x2 = "0xfb4a50e7008341df6390ad3dcd758b1498959bf18369edc335435367088910c6";
@@ -24,7 +24,7 @@ contract('Secp256k1Curve', accounts => {
     assert.equal(web3.utils.toHex(ret.rety), y3, "2");
   });
 
-  it("mulG", async () => {
+  it.skip("mulG", async () => {
     let x = crypto.randomBytes(32);
     let ret = await secp256k1Curve.methods.mulG('0x' + x.toString('hex')).call();
     console.log('mulG', ret);
