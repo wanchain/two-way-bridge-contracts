@@ -3,8 +3,8 @@ const optimist                  = require("optimist");
 
 const BN                        = web3.utils.BN;
 
-const args = optimist.argv;
-const from = require('../../truffle-config').networks[args.network].from;
+let currNetwork = optimist.argv.network || "development";
+const from = require('../../truffle-config').networks[currNetwork].from;
 
 const InvalidTokenPairID          = 100;
 const htlcLockedTime              = 40; //unit: s
@@ -211,7 +211,7 @@ let coins                = {
         origChainID           : defaultChainID.chain1,
         shadowChainID         : defaultChainID.chain2,
         origTokenAccount      : ADDRESS_0,
-        shadowTokenAccount    : "", 
+        shadowTokenAccount    : "",
         decimals              : 18,
         name                  : 'WAN',
         symbol                : 'WAN',
