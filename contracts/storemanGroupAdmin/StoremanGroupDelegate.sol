@@ -282,7 +282,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
             }
             group.tickedNode[group.tickedCount] = group.selectedNode[indexs[i]];
             group.selectedNode[indexs[i]] = group.whiteMap[group.whiteCount + group.tickedCount];
-            if (slashTypes[i] == GpkTypes.SlashType.SijInvalid || slashTypes[i] == GpkTypes.SlashType.CheckInvalid) {
+            if (slashTypes[i] == GpkTypes.SlashType.SijInvalid || slashTypes[i] == GpkTypes.SlashType.CheckInvalid || slashTypes[i] == GpkTypes.SlashType.SijTimeout) {
                 recordSmSlash(group.tickedNode[group.tickedCount]);
             }
             group.tickedCount++;
