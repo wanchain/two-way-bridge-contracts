@@ -268,7 +268,7 @@ library StoremanLib {
         if(dk.deposit.getLastValue() == 0) {
             sk.delegatorMap[sk.delegatorCount] = msg.sender;
             dk.index = sk.delegatorCount;
-            sk.delegatorCount++;
+            sk.delegatorCount = sk.delegatorCount.add(1);
             // dk.sender = msg.sender;
             // dk.staker = wkAddr;
         }
@@ -361,11 +361,11 @@ library StoremanLib {
         emit delegateIncentiveClaimEvent(wkAddr,msg.sender,dk.incentive[0]);
         amount = amount.add(dk.incentive[0]);
         dk.incentive[0] = 0;
-        msg.sender.transfer(amount);
 
         sk.delegatorCount == sk.delegatorCount.sub(1);
         delete sk.delegatorMap[sk.delegatorCount];
         delete sk.delegators[msg.sender];       
+        msg.sender.transfer(amount);
     }
     
 
@@ -417,7 +417,7 @@ library StoremanLib {
 
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         StoremanType.Delegator storage pn = sk.partners[msg.sender];
-        require(pn.deposit.getLastValue() != 0, "not exist");
+        require(pn.deposit.getLastValue() != 0, "Partner doesn't exist");
 
         pn.quited = true;
         emit partOutEvent(wkAddr, msg.sender);
@@ -431,7 +431,7 @@ library StoremanLib {
         pn.deposit.clean();
         sk.partnerDeposit = sk.partnerDeposit.sub(pn.deposit.getLastValue());
 
-        address lastPnAddr = sk.partMap[sk.partnerCount-1];
+        address lastPnAddr = sk.partMap[sk.partnerCount.sub(1)];
         StoremanType.Delegator storage lastPn = sk.partners[lastPnAddr];
         sk.partMap[pn.index] = lastPnAddr;
         lastPn.index = pn.index;
