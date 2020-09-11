@@ -1,4 +1,3 @@
-const ConfigProxy = artifacts.require('ConfigProxy');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
@@ -8,21 +7,21 @@ const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../bas
 const { GpkStatus, CheckStatus, Data } = require('./Data');
 const utils = require('../utils.js');
 const { sleep } = require('promisefy-util');
+const optimist = require("optimist");
+
+const fakeSc = ['local', 'coverage'].includes(optimist.argv.network);
 
 // group
 let groupId = '';
 
 // contract
-let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy, skCurve;
+let smgSc, gpkProxy, gpkDelegate, gpkSc, skCurve;
 let data;
 
-contract('Gpk_UNITs', async () => {
+contract('Gpk_UT_encsij_timeout', async () => {
   let owner, admin;
 
   before("should do all preparations", async() => {
-    // config
-    configProxy = await ConfigProxy.deployed();
-
     // smg
     let smgProxy = await StoremanGroupProxy.deployed();
     smgSc = await StoremanGroupDelegate.at(smgProxy.address);
@@ -35,7 +34,9 @@ contract('Gpk_UNITs', async () => {
     console.log("Gpk contract address: %s", gpkProxy.address);
 
     // curve
-    skCurve = await FakeSkCurve.deployed();
+    if (fakeSc) {
+      skCurve = await FakeSkCurve.deployed();
+    }
 
     // network
     await setupNetwork();
@@ -49,7 +50,7 @@ contract('Gpk_UNITs', async () => {
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
-    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 2) * 1000);
+    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
     data = new Data(smgSc, gpkSc, groupId);
@@ -61,53 +62,60 @@ contract('Gpk_UNITs', async () => {
 
   // setPolyCommit
   it('[GpkDelegate_setPolyCommit] should fail: Gpk failed', async () => {
-    let result = {};
-    try {
-      await skCurve.setAddResult(false);
-      await data.setPolyCommit(0, 0, 0);
-      await data.setPolyCommit(0, 0, 1);
-    } catch (e) {
-      result = e;
+    await data.setPolyCommit(0, 0, 0);
+    if (fakeSc) {
+      let result = {};
+      try {
+        await skCurve.setAddResult(false);
+        await data.setPolyCommit(0, 0, 1);
+      } catch (e) {
+        result = e;
+      }
+      assert.equal(result.reason, 'Gpk failed');
     }
-    assert.equal(result.reason, 'Gpk failed');
   })
 
   it('[GpkDelegate_setPolyCommit] should fail: PolyCommit failed', async () => {
-    let result = {};
-    try {
-      await skCurve.setAddResult(true);
-      await skCurve.setCalPolyCommitResult(false);
-      await data.setPolyCommit(0, 0, 1);
-    } catch (e) {
-      result = e;
+    if (fakeSc) {
+      let result = {};
+      try {
+        await skCurve.setAddResult(true);
+        await skCurve.setCalPolyCommitResult(false);
+        await data.setPolyCommit(0, 0, 1);
+      } catch (e) {
+        result = e;
+      }
+      assert.equal(result.reason, 'PolyCommit failed');
     }
-    assert.equal(result.reason, 'PolyCommit failed');
   })
 
   it('[GpkDelegate_setPolyCommit] should fail: Add failed', async () => {
-    let result = {};
-    try {
-      await skCurve.setCalPolyCommitResult(true);
-      await skCurve.setAddZeroFail(true);
-      await data.setPolyCommit(0, 0, 1);
-    } catch (e) {
-      result = e;
+    if (fakeSc) {
+      let result = {};
+      try {
+        await skCurve.setCalPolyCommitResult(true);
+        await skCurve.setAddZeroFail(true);
+        await data.setPolyCommit(0, 0, 1);
+      } catch (e) {
+        result = e;
+      }
+      assert.equal(result.reason, 'Add failed');
     }
-    assert.equal(result.reason, 'Add failed');
   })
 
   it('[GpkDelegate_setPolyCommit] should success', async () => {
     let result = {};
     try {
-      await skCurve.setAddZeroFail(false);
-      await skCurve.setCalPolyCommitResult(true);
+      if (fakeSc) {
+        await skCurve.setAddZeroFail(false);
+        await skCurve.setCalPolyCommitResult(true);
+      }
       for (let i = 1; i < data.smList.length; i++) {
         await data.setPolyCommit(0, 0, i);
       }
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Negotiate);
   })
@@ -142,7 +150,6 @@ contract('Gpk_UNITs', async () => {
       result = e;
       console.log("polyCommitTimeout should success: %O", e);
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Close);
     assert.equal(info.curve2Status, GpkStatus.Close);

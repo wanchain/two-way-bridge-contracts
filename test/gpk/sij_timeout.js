@@ -1,4 +1,3 @@
-const ConfigProxy = artifacts.require('ConfigProxy');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
@@ -12,16 +11,13 @@ const { sleep } = require('promisefy-util');
 let groupId = '';
 
 // contract
-let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
+let smgSc, gpkProxy, gpkDelegate, gpkSc;
 let data;
 
-contract('Gpk_UNITs', async () => {
+contract('Gpk_UT_sij_timeout', async () => {
   let owner, admin;
 
   before("should do all preparations", async() => {
-    // config
-    configProxy = await ConfigProxy.deployed();
-
     // smg
     let smgProxy = await StoremanGroupProxy.deployed();
     smgSc = await StoremanGroupDelegate.at(smgProxy.address);
@@ -45,7 +41,7 @@ contract('Gpk_UNITs', async () => {
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
-    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 2) * 1000);
+    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
     data = new Data(smgSc, gpkSc, groupId);
@@ -65,7 +61,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Negotiate);
   })
@@ -102,7 +97,6 @@ contract('Gpk_UNITs', async () => {
       result = e;
       console.log("polyCommitTimeout should success: %O", e);
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Close);
     assert.equal(info.curve2Status, GpkStatus.Close);

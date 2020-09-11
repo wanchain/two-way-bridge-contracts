@@ -3,6 +3,7 @@ const utils = require("../utils");
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
+const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
 const { registerStart,stakeInPre, setupNetwork, g} = require('../base.js');
 const  assert  = require("assert");
@@ -10,9 +11,12 @@ const  assert  = require("assert");
 contract('StoremanGroupDelegate staking', async () => {
 
     let  smg
-    let groupId
+    let groupId, groupId2
     let tester;
     let wk1 = utils.getAddressFromInt(10000)
+    let wk3 = utils.getAddressFromInt(10003)
+    let wk4 = utils.getAddressFromInt(10004)
+    let stakingValue = 50000
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
@@ -38,7 +42,6 @@ contract('StoremanGroupDelegate staking', async () => {
 
 
     it('stakeIn', async ()=>{
-        let stakingValue = 50000
         let tx = await smg.stakeIn(groupId, wk1.pk, wk1.pk,{value:stakingValue, from:tester});
 
         let candidate  = await smg.getStoremanInfo(wk1.addr)
@@ -74,98 +77,54 @@ contract('StoremanGroupDelegate staking', async () => {
         assert.equal(candidate.deposit, Number(candidateOld.deposit)+Number(appendValue))
     })
 
-    it.skip('test delegateIn', async()=>{
-        let ski = g.stakerCount-1;
-        let depositValue = 3000;
-        let deCount = 1;
-        for(let j=0; j<deCount; j++){
-            let de = utils.getAddressFromInt((ski+1000)*10*1000 + j)
-            let sw = utils.getAddressFromInt(ski+2000)
-            console.log("sw.addr:===============:", sw.addr)
-            let payCount=1;
-            await smg.delegateIn(sw.addr, {from:de.addr});
-            let candidate  = await smg.getStoremanInfo(sw.addr)
-            console.log("after delegateIn,  candidate:",candidate)
-            assert.equal(candidate.delegatorCount, deCount)
+    it('stakeOut ', async ()=>{
+        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready,{from:g.admin});
+        groupId2 = await registerStart(smg,0,{preGroupId: groupId});
+        let f = await smg.checkCanStakeOut(wk1.addr)
+        console.log("stakeOut1 f:", f)
+        assert.equal(f, false, "registering group cannot stakeOut")
 
-            let nde = await smg.getSmDelegatorInfo(sw.addr, de.addr);
-            assert.equal(nde.incentive, 0)
-            assert.equal(nde.deposit, depositValue*payCount)
-            console.log("nde: ", nde)
+        await smg.stakeIn(groupId2, wk3.pk, wk3.pk, {value:stakingValue*2, from:tester})
+        await smg.stakeIn(groupId2, wk4.pk, wk4.pk, {value:stakingValue, from:tester})
+        let selectedNode = await smg.getSelectedStoreman(groupId2);
+        console.log("group2 selected node:",selectedNode );
+        console.log("wk3.addr:", wk3.addr);
 
-            let de2 = await smg.getSmDelegatorAddr(sw.addr, 0);
-            console.log("de2:", de2);
-        }
+        await smg.updateGroupStatus(groupId2, g.storemanGroupStatus.ready,{from:g.admin});
+        f = await smg.checkCanStakeOut(wk1.addr)
+        console.log("stakeOut3 f:", f)
+        assert.equal(f, true, "ready group can stakeOut")
+
+        tx = await smg.stakeOut(wk1.addr,{from:tester} )
+        expectEvent(tx, 'stakeOutEvent', {wkAddr: web3.utils.toChecksumAddress(wk1.addr), from:web3.utils.toChecksumAddress(tester)})
+    })
+    it('[StoremanGroupDelegate_stakeClaim] should fail: not dismissed', async () => {
+        let f = await smg.checkCanStakeClaim(wk1.addr, {from: tester})
+        assert.equal(f, false, 'not dismissed group cannot claim')
+        let tx = smg.stakeClaim(wk1.addr, {from: tester})
+        await expectRevert(tx, "Cannot claim")
     })
 
-    it.skip('[StoremanGroupDelegate_stakeOut] should fail: selecting', async () => {
-        let i=g.stakerCount-1;
-        let sf = utils.getAddressFromInt(i+1000)
-        let sw = utils.getAddressFromInt(i+2000)
-        let result = {};
-        try {
-            let txhash = await smg.stakeOut(sw.addr, {from: tester})
-            console.log("stakeOut txhash:", txhash);
-        } catch (e) {
-            result = e;
-            console.log("result:", result);
-        }
-        assert.equal(result.reason, 'selecting time, can\'t quit');
+    it('checkCanStakeClaim, not exist sk', async () => {
+        let f = await smg.checkCanStakeClaim(tester, {from: tester})
+        console.log("checkCanStakeClaim:", f)
+        assert.equal(f, false,"none exist node, should return false");
     })
-  
-    it.skip('test toSelect', async ()=>{
-        await timeSetSelect(groupInfo);
-        let tx = await smg.toSelect(groupId)
-        console.log("toSelect tx:", tx.tx)
-        await utils.waitReceipt(tx.tx)
-        console.log("group:",await smg.getStoremanGroupInfo(groupId))
+    
+    it('checkCanStakeClaim, normal', async () => {
+        let f = await smg.checkCanStakeClaim(wk3.addr, {from: tester})
+        console.log("checkCanStakeClaim 2 :", f)
+        assert.equal(f, false,"working node, should return false");
 
-        
-        let count = await smg.getSelectedSmNumber(groupId)
-        console.log("selected count :", count)
-        assert.equal(count, memberCountDesign)
-    })
-    it.skip('[StoremanGroupDelegate_stakeOut] should success', async () => {
-        let i=g.stakerCount-1;
-        let sf = utils.getAddressFromInt(i+1000)
-        let sw = utils.getAddressFromInt(i+2000)
-        let result = {};
-        try {
-            let txhash = await smg.stakeOut(sw.addr, {from: tester})
-            console.log("stakeOut txhash:", txhash);
-        } catch (e) {
-            result = e;
-            console.log("result:", result);
-        }
-        assert.equal(result.reason, undefined);
-        let candidate  = await smg.getStoremanInfo(sw.addr)
-        console.log("candidate:", candidate)
-        assert.equal(candidate.sender.toLowerCase(), sf.addr)
-        assert.equal(candidate.wkAddr.toLowerCase(), sw.addr)
-        assert.equal(candidate.quited, true)
-    })
-    it.skip('[StoremanGroupDelegate_stakeClaim] should fail: not dismissed', async () => {
-        let result = {};
-        try {
-            let txhash = await smg.stakeClaim(wAddr, {from: tester})
-            console.log("stakeOut txhash:", txhash);
-        } catch (e) {
-            result = e;
-            console.log("result:", result);
-        }
-        assert.equal(result.reason, 'group can\'t claim');
-    })
-    it.skip('[StoremanGroupDelegate_stakeClaim] should success:', async () => {
-        console.log("xxxx end")
-        let result = {};
-        try {
-            let txhash = await smg.stakeClaim(wAddr2, {from: tester})
-            console.log("stakeOut txhash:", txhash);
-        } catch (e) {
-            result = e;
-            console.log("result:", result);
-        }
-        assert.equal(result.reason, undefined);
+        f = await smg.checkCanStakeClaim(wk4.addr, {from: tester})
+        console.log("checkCanStakeClaim 4 :", f)
+        assert.equal(f, true,"not selected node, should return true");
+
+
+        tx = await smg.stakeClaim(wk4.addr, {from:tester})
+        console.log("xxx:", tx.logs[0])
+        expectEvent(tx, 'stakeClaimEvent', {wkAddr: web3.utils.toChecksumAddress(wk4.addr), from:web3.utils.toChecksumAddress(tester),
+            groupId: groupId2, value:new BN(stakingValue)})
     })
 
 })

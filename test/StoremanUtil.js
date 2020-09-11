@@ -14,7 +14,7 @@ contract('StoremanUtil', async (accounts) => {
     })
 
 
-    it('T1 getDaybyTime ', async ()=>{
+    it.skip('T1 getDaybyTime ', async ()=>{
         let v = await smgUtil.getDaybyTime(60*60*24)
         console.log("v:", v);
         assert.equal(v, 60*60*24, "getDaybyTime failed")

@@ -1829,7 +1829,7 @@ contract('Test Metric', async (accounts) => {
             let fakeSc = await ConfigDelegate.at(metricInstProxy.address);
             await fakeSc.getCurve(0);
         } catch (err) {
-            lib.assertInclude(err.message, "revert", err);
+            lib.assertInclude(err.message, "Not support", err);
         }
     });
 

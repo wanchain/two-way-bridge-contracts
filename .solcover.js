@@ -12,7 +12,8 @@ module.exports = {
         'test/TestBasicStorage.sol',
         'test/TestOrigTokenCreator.sol',
         'test/TestStoremanAdmin.sol',
-        'test/TestIOwned.sol'
+        'test/TestIOwned.sol',
+        'test/fakeQuota.sol',
     ],
     mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
     providerOptions: {

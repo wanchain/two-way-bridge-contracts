@@ -6,6 +6,9 @@ const GpkDelegate = artifacts.require('GpkDelegate');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, Data } = require('./Data');
 const utils = require('../utils.js');
+const optimist = require("optimist");
+
+const fakeSc = ['local', 'coverage'].includes(optimist.argv.network);
 
 // common
 const ADDRESS_0 = '0x0000000000000000000000000000000000000000';
@@ -17,7 +20,7 @@ let groupId = '';
 let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
 let data;
 
-contract('Gpk_UNITs', async () => {
+contract('Gpk_UT_gpk', async() => {
   let owner, admin;
 
   before("should do all preparations", async() => {
@@ -47,7 +50,7 @@ contract('Gpk_UNITs', async () => {
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
-    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 2) * 1000);
+    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
     data = new Data(smgSc, gpkSc, groupId);
@@ -62,7 +65,6 @@ contract('Gpk_UNITs', async () => {
       await gpkProxy.upgradeTo(gpkDelegate.address, {from: admin});
     } catch (e) {
       result = e;
-      console.log(e);
     }
     assert.equal(result.reason, 'Not owner');
   })
@@ -85,7 +87,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     assert.equal(await gpkProxy.implementation(), gpkDelegate.address)
   })
 
@@ -137,7 +138,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     assert.equal(await gpkSc.smg.call(), smgSc.address);
   })
 
@@ -166,7 +166,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, -1);
     assert.equal(info.ployCommitPeriod, ployCommitPeriod);
     assert.equal(info.defaultPeriod, defaultPeriod);
@@ -219,13 +218,12 @@ contract('Gpk_UNITs', async () => {
     let result = {};
     try {
       let sender = data.smList[0].address;
-      let pc = await data.setPolyCommit(0, 0, 0);
+      await data.setPolyCommit(0, 0, 0);
       let info = await gpkSc.getPolyCommit(groupId, 0, 0, sender);
-      assert.equal(info, pc);
+      assert.equal(info, data.round[0].src[0].pcStr);
       await data.setPolyCommit(0, 0, 0);
     } catch (e) {
       result = e;
-      console.log(e);
     }
     assert.equal(result.reason, 'Duplicate');
   })
@@ -239,7 +237,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Negotiate);
   })
@@ -274,7 +271,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let sender = data.smList[0].address;
     let info = await gpkSc.getSijInfo(groupId, 0, 0, sender, sender);
     assert.equal(info.encSij, data.round[0].src[0].send[0].encSij);    
@@ -297,7 +293,6 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let sender = data.smList[0].address;
     let info = await gpkSc.getSijInfo(groupId, 0, 0, sender, sender);
     assert.equal(info.checkStatus, CheckStatus.Valid);
@@ -336,9 +331,13 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Complete);
+    if (!fakeSc) {
+      data.genGpk(0);
+      let gpk = await gpkSc.getGpk(groupId);
+      assert.equal(gpk.gpk1, data.round[0].gpk);
+    }
   })
 
   it('[GpkDelegate_curve_2] should success', async () => {
@@ -366,9 +365,13 @@ contract('Gpk_UNITs', async () => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, undefined);
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve2Status, GpkStatus.Complete);
+    if (!fakeSc) {
+      data.genGpk(1);
+      let gpk = await gpkSc.getGpk(groupId);
+      assert.equal(gpk.gpk2, data.round[1].gpk);
+    }
   })
 
   it('[GpkDelegate_payable] should fail: Not support', async () => {

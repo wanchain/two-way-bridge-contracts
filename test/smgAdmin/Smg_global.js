@@ -14,7 +14,7 @@ const { registerStart,stakeInPre, setupNetwork, g } = require('../base.js');
 contract('TestSmg', async () => {
 
     let  smg
-		let groupId
+		let groupId, groupInfo
 		let contValue = 123456;
 		let web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
     let wk = utils.getAddressFromInt(10000)
@@ -28,6 +28,7 @@ contract('TestSmg', async () => {
 
     it('registerStart_1 ', async ()=>{
         groupId = await registerStart(smg);
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
     })
 
     it('stakeInPre ', async ()=>{
@@ -108,12 +109,12 @@ contract('TestSmg', async () => {
     })
     it('T10 setDependence', async ()=>{
       let tx = smg.setDependence( "0x0000000000000000000000000000000000000000",g.admin, g.admin, g.admin,{from:g.owner});
-      expectRevert(tx, "Invalid metricAddr address");
+      await expectRevert(tx, "Invalid metricAddr address");
 
       tx = smg.setDependence(g.admin, "0x0000000000000000000000000000000000000000",g.admin, g.admin,{from:g.owner});
-      expectRevert(tx, "Invalid gpkAddr address");
+      await expectRevert(tx, "Invalid gpkAddr address");
       tx = smg.setDependence(g.admin,g.admin, "0x0000000000000000000000000000000000000000",g.admin, {from:g.owner});
-      expectRevert(tx, "Invalid quotaAddr address");
+      await expectRevert(tx, "Invalid quotaAddr address");
     })
 
     it('T8 setGpk', async ()=>{
@@ -124,8 +125,11 @@ contract('TestSmg', async () => {
       let f = await smg.checkGroupDismissable(groupId);
       console.log("tx checkGroupDismissable:", f)
     })
-
-
+    it('T8 getStoremanGroupConfig', async ()=>{
+      let f = await smg.getStoremanGroupConfig(groupId);
+      console.log("tx getStoremanGroupConfig:", f)
+    })
+    
     
     it('T7 recordSmSlash', async ()=>{
       await smg.setDependence(g.owner, g.owner, g.owner,g.leader);
@@ -140,4 +144,14 @@ contract('TestSmg', async () => {
       console.log("sk:", sk);
       assert(sk.slashedCount, 1, "recordSmSlash failed")
     })
+
+    it('T7 setGpk', async ()=>{
+      await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+      await smg.setGpk(groupId, g.leader, g.leader, {from:g.admin});
+      groupInfo = await smg.getStoremanGroupInfo(groupId);
+      assert.equal(groupInfo.status, g.storemanGroupStatus.ready,"setGpk")
+
+    })
+    
+
 })
