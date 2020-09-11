@@ -90,7 +90,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         // check preGroupId 是否存在.
         if(preGroupId != bytes32(0x00)){
             StoremanType.StoremanGroup storage preGroup = data.groups[preGroupId];
-            require(preGroup.status >= StoremanType.GroupStatus.ready,"invalid preGroup");
+            require(preGroup.status >= StoremanType.GroupStatus.ready || preGroup.status == StoremanType.GroupStatus.failed, "invalid preGroup");
         }
 
         initGroup(groupId, smg);
@@ -223,7 +223,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return IncentiveLib.toSelect(data, groupId);
     }
 
-    function getSelectedSmInfo(bytes32 groupId, uint index) external view   returns(address wkAddr, bytes memory PK, bytes memory enodeId){
+    function getSelectedSmInfo(bytes32 groupId, uint index) external view returns(address wkAddr, bytes memory PK, bytes memory enodeId){
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         address addr = group.selectedNode[index];
         StoremanType.Candidate storage sk = data.candidates[0][addr];
@@ -270,17 +270,17 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     {
         require(msg.sender == createGpkAddr, "Sender is not allowed");
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        if(group.status != StoremanType.GroupStatus.selected) {
+        if (group.status != StoremanType.GroupStatus.selected) {
             return false;
         }
         for (uint i = 0; i < indexs.length; i++) {
             if (group.tickedCount + group.whiteCount >= group.whiteCountAll) {
-                group.status == StoremanType.GroupStatus.failed;
+                group.status = StoremanType.GroupStatus.failed;
                 return false;
             }
             group.tickedNode[group.tickedCount] = group.selectedNode[indexs[i]];
             group.selectedNode[indexs[i]] = group.whiteMap[group.whiteCount + group.tickedCount];
-            if (slashTypes[i] == GpkTypes.SlashType.SijInvalid || slashTypes[i] == GpkTypes.SlashType.CheckInvalid) {
+            if (slashTypes[i] == GpkTypes.SlashType.SijInvalid || slashTypes[i] == GpkTypes.SlashType.CheckInvalid || slashTypes[i] == GpkTypes.SlashType.SijTimeout) {
                 recordSmSlash(group.tickedNode[group.tickedCount]);
             }
             group.tickedCount++;
@@ -340,7 +340,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         }
     }
 
-    function checkGroupDismissable(bytes32 groupId) external returns(bool) {
+    function checkGroupDismissable(bytes32 groupId) external view returns(bool) {
         bool dismissable = quotaInst.isDebtClean(groupId);
         return dismissable;
     }

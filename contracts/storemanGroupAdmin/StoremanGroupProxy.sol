@@ -33,7 +33,7 @@ import "./StoremanGroupStorage.sol";
 import "../components/Proxy.sol";
 import "../components/ReentrancyGuard.sol";
 
-contract StoremanGroupProxy is StoremanGroupStorage, Halt, Admin, Proxy,ReentrancyGuard {
+contract StoremanGroupProxy is StoremanGroupStorage, Halt, Admin, ReentrancyGuard,Proxy {
     /**
     *
     * MANIPULATIONS

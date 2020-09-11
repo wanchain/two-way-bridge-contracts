@@ -8,11 +8,11 @@ library FakePosLib {
     uint public constant DIVISOR = 10000;
     address constant PRECOMPILE_CONTRACT_ADDR = address(0x268);
 
-    function getEpochId(uint256 blockTime) public pure returns (uint256) {
-        return blockTime/120;
+    function getEpochId(uint256 blockTime) public view returns (uint256) {
+        return blockTime;
     }
 
-    function getMinIncentive (uint256 smgDeposit,uint256 targetSecond) public pure returns(uint256) {
+    function getMinIncentive (uint256 smgDeposit,uint256 targetSecond, uint256 totalDeposit) public view returns(uint256) {
         return 30000000;
     }
 }

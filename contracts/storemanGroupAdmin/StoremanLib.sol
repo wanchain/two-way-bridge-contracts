@@ -42,7 +42,7 @@ library StoremanLib {
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(group.status == StoremanType.GroupStatus.curveSeted,"invalid group");
-        require(block.timestamp <= group.registerTime+group.registerDuration,"Registration closed");
+        require(block.timestamp <= group.registerTime + group.registerDuration, "Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         address wkAddr = address(uint160(uint256(keccak256(PK))));
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
