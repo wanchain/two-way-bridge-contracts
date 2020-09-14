@@ -101,7 +101,7 @@ contract('StoremanGroupDelegate partIn', async () => {
     it('T6 partout: partner does not exist', async ()=>{
         await smg.updateGroupStatus(groupId,g.storemanGroupStatus.ready,{from:g.admin})
         let tx =  smg.partOut(wk.addr, {from:g.sfs[6]});
-        await expectRevert(tx, "not exist");       
+        await expectRevert(tx, "Partner doesn't exist");       
     })
     it('T7 normal partOut', async ()=>{
         await timeWaitSelect(groupInfo);
