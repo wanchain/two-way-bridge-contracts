@@ -2,13 +2,19 @@ const utils = require("../utils");
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
+const FakeMetric = artifacts.require('FakeMetric');
+const FakePosLib = artifacts.require('FakePosLib');
+const fakeQuota = artifacts.require('fakeQuota');
+const GpkProxy = artifacts.require('GpkProxy');
+
+const { expectRevert, expectEvent , BN} = require('@openzeppelin/test-helpers');
 
 const {
     registerStart,
     stakeWhiteList,
     g,
-    toSelect,
-    setupNetwork,
+    toSelect,toDelegateIn,toPartIn,
+    setupNetwork,stakeInPre,timeWaitSelect, timeWaitIncentive,
     initTestValue
 } = require('../base.js');
 
@@ -20,8 +26,8 @@ const ERROR_GROUP_ID_2 = web3.utils.padRight(web3.utils.fromAscii("Invalid Group
 const ERROR_GROUP_ID_3 = web3.utils.padRight(web3.utils.fromAscii("Invalid Group 3"), 64);
 
 const delegatorCounts = 100;
-const memberCountDesign = 21;
-const threshold = 17;
+const memberCountDesign = 4;
+const threshold = 3;
 // let leftStakeCount = memberCountDesign + g.whiteCountAll;
 let leftStakeCount = memberCountDesign;
 
@@ -29,7 +35,7 @@ let leftStakeCount = memberCountDesign;
 奖励与时间相关．
 假定ｈｔｌｃ工作９０天，　提前１４天开放ｓｔａｋｉｎｇ．　开放１０天．　然后ｓｅｌｅｃｔ，　然后４天用于产生ｇｐｋ．
 */
-contract('Test Storeman Group Incentive', async (accounts) => {
+contract.skip('Test Storeman Group Incentive', async (accounts) => {
     let smgInstance;
     let groupId;
     let posIncentive;
@@ -81,11 +87,8 @@ contract('Test Storeman Group Incentive', async (accounts) => {
     });
 
     it('select storeman while register storeman group stage, should fail', async () => {
-        let currGroupId = await registerStart(smgInstance, whiteStakeAddrOffset, {
+        let currGroupId = await registerStart(smgInstance, 0, {
             groupId: ERROR_GROUP_ID_1,
-            memberCountDesign: memberCountDesign,
-            registerDuration: g.registerDuration * 10,
-            threshold: threshold
         });
         console.log("get group id", currGroupId);
         console.log("pad group id", ERROR_GROUP_ID_1);
@@ -112,9 +115,6 @@ contract('Test Storeman Group Incentive', async (accounts) => {
     it('select storeman without stakeIn, should fail', async () => {
         let currGroupId = await registerStart(smgInstance, whiteStakeAddrOffset, {
             groupId: ERROR_GROUP_ID_2,
-            memberCountDesign: memberCountDesign,
-            registerDuration: g.registerDuration,
-            threshold: threshold
         });
         assert.equal(currGroupId, ERROR_GROUP_ID_2, "check group ID failed");
 
@@ -135,9 +135,6 @@ contract('Test Storeman Group Incentive', async (accounts) => {
 
     it('register storeman group success', async () => {
         groupId = await registerStart(smgInstance, whiteStakeAddrOffset, {
-            memberCountDesign: memberCountDesign,
-            registerDuration: g.registerDuration * 10,
-            threshold: threshold
         });
         let group = await smgInstance.getStoremanGroupInfo(groupId);
         console.log("group:", group);
@@ -320,7 +317,7 @@ contract('Test Storeman Group Incentive', async (accounts) => {
     //     // }
     // });
 
-    it('incentiveCandidator by wkAddr not selected, should fail', async () => {
+    it.skip('incentiveCandidator by wkAddr not selected, should fail', async () => {
         try {
             await smgInstance.incentiveCandidator(wks.loser.addr)
             assert.fail(ERROR_INFO);
@@ -329,7 +326,7 @@ contract('Test Storeman Group Incentive', async (accounts) => {
         }
     });
 
-    it('[one-delegator] incentiveCandidator by storeman sucess', async () => {
+    it.skip('[one-delegator] incentiveCandidator by storeman sucess', async () => {
         let group = await smgInstance.getStoremanGroupInfo(groupId);
         await utils.sleepUntil(1000 * Number(group.endTime));
 
@@ -357,7 +354,7 @@ contract('Test Storeman Group Incentive', async (accounts) => {
         }
     });
 
-    it('[multi-delegator] incentive candidator sucess', async () => {
+    it.skip('[multi-delegator] incentive candidator sucess', async () => {
         let group = await smgInstance.getStoremanGroupInfo(groupId);
         let tx = await smgInstance.incentiveCandidator(wks.many.addr)
         console.log("===================tx", tx.receipt.logs)
@@ -381,7 +378,7 @@ contract('Test Storeman Group Incentive', async (accounts) => {
         // }
     });
 
-    it('total incentive candidator sucess', async () => {
+    it.skip('total incentive candidator sucess', async () => {
         let nowDay = parseInt(Date.now()/1000)
         console.log("incentive time nowDay:", nowDay)
         let count = await smgInstance.getSelectedSmNumber(groupId);
@@ -421,3 +418,236 @@ contract('Test Storeman Group Incentive', async (accounts) => {
     });
 
 });
+
+
+contract('incentive not selected', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+    let wk2 = utils.getAddressFromInt(10002)
+    let wk3 = utils.getAddressFromInt(10003)
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        groupId = await registerStart(smg, 0, {htlcDuration:10});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+    })
+
+
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:80000});
+        await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:70000});
+        await smg.stakeIn(groupId, wk3.pk, wk3.pk,{value:50000});
+        await toDelegateIn(smg, wk.addr, index=30000,count=517)
+        await toPartIn(smg, wk.addr)
+        let info = await smg.getStoremanInfo(wk.addr);
+        console.log("sk info:", info)
+    })  
+
+
+    it('prpare', async ()=>{
+      await timeWaitSelect(groupInfo);
+      await toSelect(smg, groupId);
+      await smg.updateGroupStatus(groupId,g.storemanGroupStatus.ready,{from:g.admin})
+    })
+    it('stakeIn 2', async ()=>{
+        let groupInfo = await smg.getStoremanGroupInfo(groupId)
+        if(groupInfo.status < g.storemanGroupStatus.selected){
+            await timeWaitSelect(groupInfo)
+            await toSelect(smg, groupId);
+        }
+        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
+
+        let second = 1+parseInt(groupInfo.endTime)
+        await utils.sleepUntil(second*1000)
+
+        let tx = smg.incentiveCandidator(wk3.addr);
+        await expectRevert(tx, "not selected")
+    })
+
+    it('check incentive ', async ()=>{
+      await timeWaitIncentive(smg, groupId, wk2.addr);
+      await timeWaitIncentive(smg, groupId, wk.addr);
+      await timeWaitIncentive(smg, groupId, g.leader);
+    })
+    
+})
+
+
+
+contract('incentive metric', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+    let wk2 = utils.getAddressFromInt(10002)
+    let wk3 = utils.getAddressFromInt(10003)
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        groupId = await registerStart(smg, 0, {htlcDuration:10});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+    })
+
+
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+        await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:100000});
+        await smg.stakeIn(groupId, wk3.pk, wk3.pk,{value:100000});
+
+    })  
+
+
+    it('prpare', async ()=>{
+      await timeWaitSelect(groupInfo);
+      await toSelect(smg, groupId);
+      await smg.updateGroupStatus(groupId,g.storemanGroupStatus.ready,{from:g.admin})
+    })
+    it('stakeIn', async ()=>{
+        let metric = await FakeMetric.deployed();
+        let gpkProxy = await GpkProxy.deployed();
+        let pos = await FakePosLib.deployed();
+        let quota = await fakeQuota.deployed();
+        await smg.setDependence(metric.address, gpkProxy.address, quota.address,pos.address);
+        let second = parseInt(groupInfo.endTime)
+        await utils.sleepUntil(second*1000)
+        let tx = await smg.incentiveCandidator(wk.addr);
+
+        await metric.setC0(8)
+        await metric.setC1(8)
+        tx = await smg.incentiveCandidator(wk2.addr);
+
+        await metric.setC0(8)
+        await metric.setC1(2)
+        tx = await smg.incentiveCandidator(wk3.addr);   
+    })
+
+
+    
+})
+
+
+
+
+contract('incentive not ready', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        groupId = await registerStart(smg, 0, {htlcDuration:10});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+
+    })
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+
+        let tx =  smg.incentiveCandidator(wk.addr);
+        expectRevert(tx, "not ready")
+    }) 
+
+
+
+})
+
+
+contract('incentive rotate', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        groupId = await registerStart(smg, 0, {htlcDuration:10});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+
+    })
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+    }) 
+
+    it('stakeIn 2', async ()=>{
+        let groupInfo = await smg.getStoremanGroupInfo(groupId)
+        if(groupInfo.status < g.storemanGroupStatus.selected){
+            await timeWaitSelect(groupInfo)
+            await toSelect(smg, groupId);
+        }
+        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
+
+        let second = 1+parseInt(groupInfo.endTime)
+        await utils.sleepUntil(second*1000)
+        await registerStart(smg, 0, {preGroupId:groupId});
+        await smg.storemanGroupDismiss(groupId, {from:g.admin});
+
+        let tx = await smg.incentiveCandidator(wk.addr);
+        expectEvent(tx, "incentiveEvent")
+    })
+
+
+
+})
+
+
+contract('incentive rotate2', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        groupId = await registerStart(smg, 0, {htlcDuration:10});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+
+    })
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+    }) 
+
+    it('stakeIn 2', async ()=>{
+        let groupInfo = await smg.getStoremanGroupInfo(groupId)
+        if(groupInfo.status < g.storemanGroupStatus.selected){
+            await timeWaitSelect(groupInfo)
+            await toSelect(smg, groupId);
+        }
+        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
+
+        let second = 1+parseInt(groupInfo.endTime)
+        await utils.sleepUntil(second*1000)
+        await registerStart(smg);
+        await smg.storemanGroupDismiss(groupId, {from:g.admin});
+
+        let tx = await smg.incentiveCandidator(wk.addr);
+        expectEvent(tx, "incentiveEvent")
+    })
+
+
+
+})

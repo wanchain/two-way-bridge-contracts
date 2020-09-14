@@ -16,6 +16,8 @@ const FakeSmg = artifacts.require('FakeSmg');
 const FakeSkCurve = artifacts.require('FakeSkCurve');
 const FakeBnCurve = artifacts.require('FakeBnCurve');
 const FakePosLib = artifacts.require('FakePosLib');
+const FakeMetric = artifacts.require('FakeMetric');
+
 const FakeCommonTool = artifacts.require('FakeCommonTool');
 
 const Secp256k1Curve = artifacts.require('Secp256k1Curve');
@@ -138,6 +140,7 @@ module.exports = async function (deployer, network) {
     // ***********osm*****************
     // storeman group admin sc
     let posLib = await deployer.deploy(PosLib);
+    await deployer.deploy(FakeMetric);
     if(network == 'local' || network == 'coverage') {
       posLib = await deployer.deploy(FakePosLib);
       quotaProxy = await fakeQuota.deployed()

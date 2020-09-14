@@ -120,6 +120,7 @@ library StoremanType {
         bytes32  groupId;
         bytes32  nextGroupId;
         uint  deposit;
+        uint incentive;
     }
     struct StoremanGroupInfo {
         bytes32    groupId;

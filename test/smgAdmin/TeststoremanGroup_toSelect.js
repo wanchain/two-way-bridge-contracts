@@ -120,3 +120,54 @@ contract('StoremanGroupDelegate select', async () => {
     })
 
 })
+
+
+
+
+contract('StoremanGroupDelegate select', async () => {
+ 
+    let  smg
+    let groupId
+    let groupInfo;
+
+
+    let wk1 = utils.getAddressFromInt(10001)
+    let wk2 = utils.getAddressFromInt(10002)
+    let wk3 = utils.getAddressFromInt(10003)
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+    })
+
+
+    it('registerStart', async ()=>{
+        groupId = await registerStart(smg);
+        console.log("groupId: ", groupId)
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+    })
+
+    it('stakeInPre ', async ()=>{
+        await stakeInPre(smg, groupId,0,nodeCount=3)
+    })
+    it('test select', async ()=>{
+        let tx =  smg.select(utils.stringTobytes32("none"),{from: g.leader})
+        await expectRevert(tx, "Wrong status")
+    })
+    it('test select', async ()=>{
+        let tx =  smg.select(groupId,{from: g.leader})
+        await expectRevert(tx, "Wrong time")
+    })
+    it('test select', async ()=>{
+        await timeWaitSelect(groupInfo);
+        let tx = await toSelect(smg, groupId);
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+        console.log("groupInfo:", groupInfo)
+        assert.equal(groupInfo.status, g.storemanGroupStatus.failed, "select failed when insufficient")
+    })
+
+
+
+
+})

@@ -107,7 +107,7 @@ library PosLib {
             return 0;
         }
 
-        uint256 hardcapReturn = hardcap.mul(1 ether).div(DIVISOR);
+        uint256 hardcapReturn = hardcap.mul(1 ether).div(DIVISOR).mul(smgDeposit).div(totalDeposit);
 
         return hardcapReturn<=p1Return?hardcapReturn:p1Return;
     }
