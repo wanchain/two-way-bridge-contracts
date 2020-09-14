@@ -655,7 +655,7 @@ contract('incentive rotate2', async () => {
 
 
 
-contract.only('incentive incentive value check', async () => {
+contract('incentive incentive value check', async () => {
 
     let  smg
     let groupId, groupInfo
