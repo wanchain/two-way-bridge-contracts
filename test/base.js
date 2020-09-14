@@ -158,7 +158,7 @@ async function registerStart(smg, wlStartIndex = g.whiteAddrStartIdx, option = {
         minPartIn:minPartIn,
         delegateFee:delegateFee,
     }
-    console.log("wks: %O, ws: %O, srs: %O", g.wks, ws, srs)
+    //console.log("wks: %O, ws: %O, srs: %O", g.wks, ws, srs)
     let tx = await smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
     console.log("registerStart txhash:", tx.tx)
     let group = await smg.getStoremanGroupInfo(groupId)
