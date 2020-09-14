@@ -4,6 +4,9 @@ const Web3 = require('web3');
 const optimist = require("optimist");
 const config = require("../truffle-config");
 //const timeMachine = require('ganache-time-traveler');
+const wanutil = require('wanchain-util');
+const Tx = wanutil.wanchainTx
+const EthTx = require('ethereumjs-tx').Transaction
 
 let web3url, owner, leader, admin, leaderPk, web3;
 
@@ -28,6 +31,8 @@ const delegateFee = 1200;
 const whiteAddrStartIdx = 0;
 const whiteAddrOffset = 2000;
 const otherAddrOffset = whiteAddrOffset * 20;
+const gGasPrice = 1000000000
+const gGasLimit = 10000000
 
 const storemanGroupStatus  = {
     none                      : 0,
@@ -164,17 +169,17 @@ async function registerStart(smg, wlStartIndex = g.whiteAddrStartIdx, option = {
         assert.equal(group.memberCount, 1)
     }
 
-    console.log("group:", group)
+    //console.log("group:", group)
     return group.groupId
 }
 
 async function stakeInPre(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx, nodeCount = g.stakerCount){
     console.log("smg.contract:", smg.contract._address);
     for(let i=0; i<nodeCount; i++){
-        let stakingValue = g.minStakeIn + i;
+        let stakingValue = g.minStakeIn ;
         let sw, tx;
         sw = {addr:g.wks[i+nodeStartIndex], pk:g.pks[i+nodeStartIndex]};
-        console.log("send============================:", g.sfs[i % g.sfs.length]);
+        //console.log("send============================:", g.sfs[i % g.sfs.length]);
         tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[i % g.sfs.length], value:stakingValue});
 
         //console.log("preE:", i, tx.tx);
@@ -194,7 +199,7 @@ async function stakeWhiteList(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx
         let sw, tx;
         console.log("stakeWhiteList", i, nodeStartIndex, g.wks[i+nodeStartIndex]);
         sw = {addr:g.wks[i+nodeStartIndex], pk:g.pks[i+nodeStartIndex]};
-        console.log("send============================ws: %O, srs: %O:", sw.addr, g.sfs[i % g.sfs.length]);
+        //console.log("send============================ws: %O, srs: %O:", sw.addr, g.sfs[i % g.sfs.length]);
         tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[i % g.sfs.length], value:stakingValue});
 
         console.log("preE:", i, tx.tx);
@@ -238,6 +243,29 @@ async function stakeInOne(smg, groupId, nodeIndex, value){
     assert.equal(candidate.deposit, value)
     return sw.addr
 }
+async function sendTransaction(sf, value, sdata, to){
+
+    let rawTx = {
+        nonce:  await web3.eth.getTransactionCount(sf.addr,"pending"),
+        gasPrice: gGasPrice,
+        gas: gGasLimit,
+        to: to,
+        chainId: 3,
+        value: value,
+        data: sdata,
+    }
+    let tx = new EthTx(rawTx)
+    let pri = sf.priv
+    
+    if(typeof(pri) == 'string'){
+        pri = Buffer.from(sf.priv.slice(2), 'hex')
+    }
+    tx.sign(pri)
+    const serializedTx = '0x'+tx.serialize().toString('hex');
+
+    let receipt = await web3.eth.sendSignedTransaction(serializedTx)
+    return receipt
+}
 
 async function toSelect(smg, groupId){
     let tx = await smg.select(groupId,{from: g.leader})
@@ -258,6 +286,26 @@ async function toStakeIn(smg, groupId, wk, value=50000, from=g.admin){
     console.log("toStakeIn sk %s at %d:", wk.addr, block.timestamp)  
     return block.timestamp
 }
+
+async function toDelegateIn(smg, wkAddr, index=30000,count=11, value=100){
+    for(let i=index; i<index+count;i++){
+        let d = utils.getAddressFromInt(i)
+        let sdata =  smg.contract.methods.delegateIn(wkAddr).encodeABI()
+        
+        await web3.eth.sendTransaction({from:g.owner, to:d.addr, value:web3.utils.toWei('1')})
+        await sendTransaction(d, value, sdata,smg.contract._address);
+    }
+}
+async function toPartIn(smg, wkAddr, index=40000,count=3, value=10000){
+    for(let i=index; i<index+count;i++){
+        let d = utils.getAddressFromInt(i)
+        let sdata =  smg.contract.methods.partIn(wkAddr).encodeABI()
+        
+        await web3.eth.sendTransaction({from:g.owner, to:d.addr, value:web3.utils.toWei('1')})
+        await sendTransaction(d, value, sdata,smg.contract._address);
+    }
+}
+
 
 // async function endIncentive(smg, groupId,wkAddr, cb) {
 //     let snapshot = await timeMachine.takeSnapshot();
@@ -344,9 +392,9 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
     await utils.sleepUntil(second*1000)
     await smg.contribute({from: g.owner, value: web3.utils.toWei('1000')})
     while(true){
-        let tx = await smg.incentiveCandidator(wkAddr, {from:g.leader})
+        let tx = await smg.incentiveCandidator(wkAddr, {from:g.leader, gas:"0x6691b7"})
         let incLog = tx.logs[0].args;
-        console.log("incLog:", incLog)
+        console.log("====================================================incLog:", incLog, tx)
         if(incLog.finished) break;
     }
     Info = await smg.getStoremanInfo(wkAddr)
@@ -356,7 +404,7 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
     console.log("incentive day %d, amount %d:", 0, ins)
 
     groupInfo = await smg.getStoremanGroupInfo(groupId)
-    console.log("groupInfo after endIncentive:", groupInfo)
+    //console.log("groupInfo after endIncentive:", groupInfo)
 
     for(let i=parseInt(groupInfo.startTime)/g.timeBase; i<parseInt(groupInfo.endTime)/g.timeBase; i++){
         let a = await smg.checkGroupIncentive(groupId, i)
@@ -377,7 +425,7 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
 
 module.exports = {
     g,setupNetwork,
-    registerStart,stakeInOne,toStakeIn,timeWaitIncentive,
+    registerStart,stakeInOne,toStakeIn,timeWaitIncentive,toDelegateIn,toPartIn,
     stakeInPre,stakeWhiteList,toSelect,timeWaitSelect,timeWaitEnd,
     initTestValue
 }

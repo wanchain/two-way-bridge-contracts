@@ -75,7 +75,8 @@ module.exports = {
       host:"127.0.0.1",
       from:"0xEf73Eaa714dC9a58B0990c40a01F4C0573599959",
       admin: "0xdF0A667F00cCfc7c49219e81b458819587068141",
-      network_id: "*",
+      network_id: "3",
+      skipDryRun:true,
     },
 
       testnet: {
@@ -103,8 +104,9 @@ module.exports = {
         admin: "0xdF0A667F00cCfc7c49219e81b458819587068141",
         network_id: '*',
         port: 5545,
-        gas: 0xfffffffffff,
-        gasPrice: 0x01
+        gas: '0x6691b7',          // Gas sent with each transaction (default: ~6700000)
+        gasPrice: 1,   // 20 gwei (in wei) (default: 100 gwei)
+        skipDryRun:true,
     }
 
   },

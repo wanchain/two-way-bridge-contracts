@@ -365,6 +365,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         si.incentivedDelegator = sk.incentivedDelegator;
         si.incentivedDay = sk.incentivedDay;
         si.groupId = sk.groupId;
+        si.incentive = sk.incentive[0];
         si.nextGroupId = sk.nextGroupId;
         si.deposit = sk.deposit.getLastValue();
     }
