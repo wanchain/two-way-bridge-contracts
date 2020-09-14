@@ -299,7 +299,10 @@ library StoremanLib {
                 group.selectedNode[k] = wkAddrs[k];
                 StoremanType.Candidate storage skw = data.candidates[0][wkAddrs[k]];
                 if(skw.wkAddr != address(0x00)){ // this node has exist
-                    require(skw.groupId == preGroupId && !skw.quited, "Invalid whitelist");
+                    if(preGroupId != bytes32(0x00)) {
+                        require(skw.groupId == preGroupId, "Invalid whitelist");
+                    }
+                    require(!skw.quited, "Invalid node");
                     oldAddr[oldCount] = wkAddrs[k];
                     oldCount++;
                     skw.nextGroupId = groupId;
