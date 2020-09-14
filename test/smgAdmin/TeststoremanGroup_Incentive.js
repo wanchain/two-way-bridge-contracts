@@ -651,3 +651,68 @@ contract('incentive rotate2', async () => {
 
 
 })
+
+
+
+
+contract.only('incentive incentive value check', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+    let wk2 = utils.getAddressFromInt(10002)
+    let wk3 = utils.getAddressFromInt(10003)
+    let de1 = utils.getAddressFromInt(30000)
+    let part1 = utils.getAddressFromInt(40000)
+
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        groupId = await registerStart(smg, 0, {htlcDuration:10});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+    })
+
+
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+        await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:100000});
+        await smg.stakeIn(groupId, wk3.pk, wk3.pk,{value:250000});
+        await toDelegateIn(smg, wk.addr, index=30000,count=5, value=15000)
+        await toPartIn(smg, wk.addr,index=40000,count=5)
+
+        let info = await smg.getStoremanInfo(wk.addr);
+        console.log("sk info:", info)
+    })  
+
+    it('check incentive ', async ()=>{
+        let endIncentive;
+        await timeWaitIncentive(smg, groupId, wk3.addr);
+        endIncentive = await smg.getStoremanIncentive(wk3.addr, parseInt(groupInfo.endTime-1))
+        assert.equal(endIncentive, 12500000)
+
+        await timeWaitIncentive(smg, groupId, wk2.addr);
+        endIncentive = await smg.getStoremanIncentive(wk2.addr, parseInt(groupInfo.endTime-1))
+        assert.equal(endIncentive, 5000000)
+
+        await timeWaitIncentive(smg, groupId, wk.addr);
+        endIncentive = await smg.getStoremanIncentive(wk.addr, parseInt(groupInfo.endTime-1))
+        console.log("sk info:", await smg.getStoremanInfo(wk.addr))
+        assert.equal(endIncentive, 7500000)
+
+        await timeWaitIncentive(smg, groupId, g.leader);
+        endIncentive = await smg.getStoremanIncentive(g.leader, parseInt(groupInfo.endTime-1))
+        assert.equal(endIncentive, 2500000)
+
+        endIncentive = await smg.getSmDelegatorInfoIncentive(wk.addr, de1.addr, parseInt(groupInfo.endTime-1))
+        assert.equal(endIncentive, 500000)
+        endIncentive = await smg.getSmDelegatorInfoIncentive(wk.addr, part1.addr, parseInt(groupInfo.endTime-1))
+        assert.equal(endIncentive, 0)
+    })
+    
+})
+
+
