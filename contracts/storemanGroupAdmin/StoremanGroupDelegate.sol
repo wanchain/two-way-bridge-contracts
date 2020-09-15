@@ -254,6 +254,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         StoremanType.Delegator storage de = sk.delegators[deAddr];
         return (deAddr, de.deposit.getLastValue(),  de.incentive[0], de.quited);
     }
+    function getSmPartnerInfo(address wkAddr, address pnAddr) external view returns (address sender, uint deposit, bool quited) {
+        StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
+        StoremanType.Delegator storage pn = sk.partners[pnAddr];
+        return (pnAddr, pn.deposit.getLastValue(), pn.quited);
+    }
 
     function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2)
         external

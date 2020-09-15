@@ -559,7 +559,7 @@ contract('incentive not ready', async () => {
         await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
 
         let tx =  smg.incentiveCandidator(wk.addr);
-        expectRevert(tx, "not ready")
+        await expectRevert(tx, "not ready")
     }) 
 
 
@@ -686,6 +686,12 @@ contract('incentive incentive value check', async () => {
 
         let info = await smg.getStoremanInfo(wk.addr);
         console.log("sk info:", info)
+
+        info = await smg.getSmPartnerInfo(wk.addr, part1.addr)
+        console.log("partner info:", info)
+
+        info = await smg.getSmDelegatorInfo(wk.addr, de1.addr)
+        console.log("delegator info:", info)
     })  
 
     it('check incentive ', async ()=>{

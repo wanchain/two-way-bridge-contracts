@@ -31,6 +31,7 @@ library StoremanLib {
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(now > group.workTime + group.totalTime, "not expired");
+        require(group.status == StoremanType.GroupStatus.ready,"Invalid status");
         group.status = StoremanType.GroupStatus.unregistered;
         emit StoremanGroupUnregisterEvent(groupId);
     }
