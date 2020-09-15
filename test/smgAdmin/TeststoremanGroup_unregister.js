@@ -53,12 +53,16 @@ contract('StoremanGroupDelegate unregister', async () => {
         await timeWaitEnd(groupInfo)
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         console.log("before grupInfo:", groupInfo)
+        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin});
         let tx = await smg.storemanGroupUnregister(groupId, {from:g.leader});
         console.log("tx:", tx.logs[0]) 
         expectEvent(tx, 'StoremanGroupUnregisterEvent', {groupId:groupId})
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         console.log("after grupInfo:", groupInfo)
         assert.equal(groupInfo.status, g.storemanGroupStatus.unregistered, 'storemanGroupUnregister failed')    
+
+        tx =  smg.storemanGroupUnregister(groupId, {from:g.leader});
+        await expectRevert(tx, "Invalid status");
     })
     
 
