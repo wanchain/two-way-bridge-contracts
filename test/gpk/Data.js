@@ -8,6 +8,10 @@ const CheckStatus = {
   Init: 0, Valid: 1, Invalid: 2
 }
 
+const SlashType = {
+  None: 0, PolyCommitTimeout: 1, EncSijTimout: 2, CheckTimeout: 3, SijTimeout: 4, SijInvalid: 5, CheckInvalid: 6, Connive: 7
+}
+
 class Data {
   constructor(smgSc, gpkSc, groupId) {
     this.smgSc = smgSc;
@@ -15,14 +19,12 @@ class Data {
     this.groupId = groupId;
     this.smList = [];
     this.threshold = 0;
-    this.curve = [];
     this.round = [];
   }
 
   async init() {
     await this.getSmList();
     await this.initCurve();
-    await this.initRounds();
   }
 
   async getSmList() {
@@ -48,18 +50,13 @@ class Data {
 
   async initCurve() {
     let info = await this.smgSc.getStoremanGroupConfig(this.groupId);
-    this.curve[0] = parseInt(info.curve1);
-    this.curve[1] = parseInt(info.curve2);
-    // console.log('gpk ut get curves: %O', this.curve);
-  }
-
-  async initRounds() {
-    for (let i = 0; i < 2; i++) {
-      console.log("gpk ut init curve %d(%d) round", i, this.curve[i]);
-      let round = new Round();
-      await round.init(this.smList, this.threshold, this.curve[i]);
-      this.round[i] = round;
-    }
+    console.log('gpk ut get curves: %O', info);
+    let round = new Round(parseInt(info.curve1));
+    await round.init(this.smList, this.threshold);
+    this.round[0] = round;
+    round = new Round(parseInt(info.curve2));
+    await round.init(this.smList, this.threshold);
+    this.round[1] = round;
   }
 
   async setPolyCommit(round, curve, src, sender = null) {
@@ -75,6 +72,7 @@ class Data {
     let pcStr = '0x' + buf.toString('hex');
     sender = sender || this.smList[src].address;
     await this.gpkSc.setPolyCommit(this.groupId, round, curve, pcStr, {from: sender});
+    this.round[curve % 2].src[src].pcStr = pcStr;
   }
 
   async setEncSij(round, curve, dest, src) {
@@ -89,18 +87,34 @@ class Data {
     let sender = this.smList[dest].address;
     await this.gpkSc.setCheckStatus(this.groupId, round, curve, srcAddr, isValid, {from: sender});
   }
+
+  genGpk(curve) {
+    let gpk = null;
+    for (let i = 0; i < this.smList.length; i++) {
+      let siG = encrypt.recoverSiG(curve, this.round[curve].src[i].pcStr);
+      if (!gpk) {
+        gpk = siG;
+      } else {
+        gpk = gpk.add(siG);
+      }
+    }
+    this.round[curve].gpk = '0x' + gpk.getEncoded(false).toString('hex').substr(2);
+    // console.log("gpk ut gen curve %d gpk: %s", curve, this.round[curve].gpk);
+  }
 }
 
 class Round {
-  constructor() {
+  constructor(curve) {
+    this.curve = curve;
     this.src = [];
+    this.gpk = null;
   }
 
-  async init(smList, threshold, curve) {
+  async init(smList, threshold) {
     for (let i = 0; i < smList.length; i++) {
       // console.log("gpk ut init src %d", i);
       let src = new Src();
-      await src.init(smList, threshold, curve);
+      await src.init(smList, threshold, this.curve);
       this.src[i] = src;
     }
   }
@@ -111,9 +125,9 @@ class Src {
     // self data
     this.poly = []; // defalt 17 order, hex string with 0x
     this.polyCommit = []; // poly * G, hex string with 0x
+    this.pcStr = ''; // string of polyCommit array
     this.skShare = ''; // hex string with 0x
     this.pkShare = ''; // hex string with 0x
-    this.gpk = ''; // hex string with 0x
     // send data
     this.send = [];
   }
@@ -159,5 +173,6 @@ class Send {
 module.exports = {
   GpkStatus,
   CheckStatus,
+  SlashType,
   Data
 };

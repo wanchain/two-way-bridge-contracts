@@ -16,6 +16,9 @@ const FakeSmg = artifacts.require('FakeSmg');
 const FakeSkCurve = artifacts.require('FakeSkCurve');
 const FakeBnCurve = artifacts.require('FakeBnCurve');
 const FakePosLib = artifacts.require('FakePosLib');
+const FakeMetric = artifacts.require('FakeMetric');
+
+const FakeCommonTool = artifacts.require('FakeCommonTool');
 
 const Secp256k1Curve = artifacts.require('Secp256k1Curve');
 const Bn256Curve = artifacts.require('Bn256Curve');
@@ -51,15 +54,27 @@ const ConfigProxy = artifacts.require('ConfigProxy');
 
 const config = require("../truffle-config");
 
-
 const curveMap = new Map([
     ['secp256k1', 0],
     ['bn256', 1]
 ])
+const coinSymbol = "WAN";
+const htlcLockedTime = 60*60; //unit: s
+const quotaDepositRate = 15000;
+
+function replaceLib(contract, from, to) {
+  let placeholder = '__' + from.contractName + Array(40 - from.contractName.length - 2).fill('_').join("");
+  let newPlaceholder = '__' + to.contractName + Array(40 - to.contractName.length - 2).fill('_').join("");
+  let re = new RegExp(placeholder, 'g');
+  contract.bytecode = contract.bytecode.replace(re, newPlaceholder);
+}
 
 module.exports = async function (deployer, network) {
     global.network = network;
     if (network === 'nodeploy') return;
+    if (network === 'localTest') return;
+
+    const isMainnet = network.startsWith("mainnet");
 
     // ***********two-way-bridge*****************
     // token manager
@@ -68,13 +83,16 @@ module.exports = async function (deployer, network) {
     let tokenManagerProxy = await TokenManagerProxy.deployed();
     let tokenManagerDelegate = await TokenManagerDelegate.deployed();
     await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
+    let tokenManager = await TokenManagerDelegate.at(tokenManagerProxy.address);
 
     // quota
     await deployer.deploy(QuotaDelegate);
     await deployer.deploy(QuotaProxy);
+    await deployer.deploy(fakeQuota);
     let quotaProxy = await QuotaProxy.deployed();
     let quotaDelegate = await QuotaDelegate.deployed();
     await quotaProxy.upgradeTo(quotaDelegate.address);
+    let quota = await QuotaDelegate.at(quotaProxy.address);
 
     // oracle
     await deployer.deploy(OracleDelegate);
@@ -96,15 +114,17 @@ module.exports = async function (deployer, network) {
     let crossProxy = await CrossProxy.deployed();
     let crossDelegate = await CrossDelegate.deployed();
     await crossProxy.upgradeTo(crossDelegate.address);
-    let crossProxyDelegate = await CrossDelegate.at(crossDelegate.address);
+    let crossApproach = await CrossDelegate.at(crossProxy.address);
 
     // ***********osm*****************
     // storeman group admin sc
+    let posLib = await deployer.deploy(PosLib);
+    await deployer.deploy(FakeMetric);
     if(network == 'local' || network == 'coverage') {
-        await deployer.deploy(FakePosLib);
+      posLib = await deployer.deploy(FakePosLib);
+      quotaProxy = await fakeQuota.deployed()
     } 
         
-    let posLib = await deployer.deploy(PosLib);
     //await deployer.link(PosLib,StoremanUtil);
     await deployer.deploy(StoremanUtil);
     await deployer.link(StoremanUtil,StoremanLib);
@@ -131,11 +151,10 @@ module.exports = async function (deployer, network) {
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
     await smg.addAdmin(config.networks[network].admin);
 
-    // await smgProxy.upgradeTo(smgDelegate.address);
-    await deployer.deploy(fakeQuota);
-    let fakeQuotaInst = await fakeQuota.deployed();
-
     //deploy metric
+    if(network == 'local' || network == 'coverage') {
+        await deployer.deploy(FakeSmg);
+    }
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, MetricLib);
     //await deployer.link(PosLib, MetricLib);
@@ -155,8 +174,13 @@ module.exports = async function (deployer, network) {
     let metric = await MetricDelegate.at(metricProxy.address);
 
     // create gpk sc
-
-    await deployer.link(CommonTool, GpkLib);
+    if (network == 'local' || network == 'coverage') {
+      await deployer.deploy(FakeCommonTool);
+      replaceLib(GpkLib, CommonTool, FakeCommonTool);
+      await deployer.link(FakeCommonTool, GpkLib);
+    } else {
+      await deployer.link(CommonTool, GpkLib);
+    }
     await deployer.deploy(GpkLib);
 
     await deployer.link(GpkLib, GpkDelegate);
@@ -194,9 +218,39 @@ module.exports = async function (deployer, network) {
     await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address], {from: config.networks[network].admin});
 
     // dependence
-    //await smg.setDependence(metricProxy.address, gpkProxy.address, fakeQuotaInst.address);
     await smg.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address,posLib.address);
 
     await gpk.setDependence(cnfProxy.address, smgProxy.address);
     await metric.setDependence(cnfProxy.address, smgProxy.address, posLib.address);
+
+    // config SignatureVerifier
+    let signatureVerifier = await SignatureVerifier.deployed();
+    let bn128 = await Bn128SchnorrVerifier.deployed();
+    let secp256K1 = await Secp256k1SchnorrVerifier.deployed();
+    signatureVerifier.register(curveMap.get('bn256'), bn128.address);
+    signatureVerifier.register(curveMap.get('secp256k1'), secp256K1.address);
+
+    // config crossApproach
+    if (!isMainnet) {
+      await crossApproach.setLockedTime(htlcLockedTime)
+    }
+    await crossApproach.setPartners(
+      tokenManager.address, // tokenManager
+      smg.address, // smgAdminProxy
+      smg.address, // smgFeeProxy
+      quota.address, // quota
+      signatureVerifier.address // sigVerifier
+    );
+    // config tokenManager admin
+    await tokenManager.addAdmin(crossApproach.address);
+    // config quota
+    await quota.config(
+      oracleProxy.address,
+      crossApproach.address,
+      crossApproach.address,
+      smg.address,
+      tokenManager.address,
+      quotaDepositRate,
+      coinSymbol
+  );
 }

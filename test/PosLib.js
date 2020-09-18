@@ -14,7 +14,7 @@ contract('PosLib', async (accounts) => {
     })
 
 
-    it('T1 getEpochId ', async ()=>{
+    it.skip('T1 getEpochId ', async ()=>{
         let seconds = 240
         let v = await pos.getEpochId(seconds)
         console.log("v:", v);

@@ -24,7 +24,8 @@ library IncentiveLib {
 
     function getGroupIncentive(address posLib, StoremanType.StoremanGroup storage group, uint day,StoremanType.StoremanData storage data) private view returns (uint) {
         uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
-        return IPosLib(posLib).getMinIncentive(group.deposit.getLastValue(),day).mul(chainTypeCo).div(10000);
+        uint totalDeposit = address(this).balance.sub(data.contribution).add(data.totalReward);
+        return IPosLib(posLib).getMinIncentive(group.deposit.getLastValue(),day, totalDeposit).mul(chainTypeCo).div(10000);
     }
 
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) private returns (uint) {

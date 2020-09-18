@@ -24,35 +24,24 @@
 //
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
-pragma solidity ^0.4.26;
-
-import "../components/BasicStorage.sol";
-import "../interfaces/IMetric.sol";
-import "./Deposit.sol";
-import "./StoremanType.sol";
-import "../interfaces/IQuota.sol";
+pragma solidity ^0.4.24;
 
 
-contract StoremanGroupStorage is BasicStorage {
-  address public metric;
-  IQuota public quotaInst;
-  address  public  createGpkAddr;
-
-  StoremanType.StoremanData data;
-
-  constructor() public {
-
-    uint backupCountDefault = 3;
-    uint maxSlashedCount = 2;
-    uint standaloneWeightDefault = 15000;
-    uint chainTypeCoDefault = 10000;
-    uint DelegationMultiDefault = 10;
-
-
-    data.conf.standaloneWeight = standaloneWeightDefault;
-    data.conf.backupCount = backupCountDefault;
-    data.conf.chainTypeCoDefault = chainTypeCoDefault;
-    data.conf.maxSlashedCount = maxSlashedCount;
-    data.conf.DelegationMulti = DelegationMultiDefault;
-  }
+contract FakeMetric {
+    uint[4] c;
+    function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId) external returns(uint[]){
+      uint[] memory c2 = new uint[](4);
+      for(uint i=0; i<c.length; i++){
+        c2[i] = c[i];
+      }
+      return c2;
+    }
+    function setC0(uint _c) public {
+      c[0] = _c;
+    }
+    function setC1(uint _c) public {
+      c[1] = _c;
+      c[2] = _c;
+      c[3] = _c;
+    }
 }

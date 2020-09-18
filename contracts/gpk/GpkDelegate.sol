@@ -152,18 +152,14 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
         require(now.sub(round.statusTime) > group.ployCommitPeriod, "Not late"); // round.statusTime should have be assigned
         uint slashCount = 0;
-        GpkTypes.SlashType[] memory slashTypes = new GpkTypes.SlashType[](group.smNumber);
-        address[] memory slashSms = new address[](group.smNumber);
-        for (uint i = 0; i < group.smNumber; i++) {
-            address src = group.indexMap[i];
+        for (uint i = 0; (i < group.smNumber) && (slashCount + round.polyCommitCount < group.smNumber); i++) {
+            address src = group.addrMap[i];
             if (round.srcMap[src].polyCommit.length == 0) {
                 GpkLib.slash(group, curveIndex, GpkTypes.SlashType.PolyCommitTimeout, src, address(0), false, smg);
-                slashTypes[slashCount] = GpkTypes.SlashType.PolyCommitTimeout;
-                slashSms[slashCount] = src;
                 slashCount++;
             }
         }
-        GpkLib.slashMulti(group, slashCount, slashTypes, slashSms, smg);
+        GpkLib.slashMulti(group, curveIndex, smg);
     }
 
     /// @notice                           function for src storeman submit encSij
@@ -208,6 +204,7 @@ contract GpkDelegate is GpkStorage, Admin {
 
         if (isValid) {
             d.checkStatus = GpkTypes.CheckStatus.Valid;
+            s.checkValidCount++;
             round.checkValidCount++;
             if (round.checkValidCount >= group.smNumber ** 2) {
                 round.status = GpkTypes.GpkStatus.Complete;
@@ -250,11 +247,11 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         GpkTypes.Src storage src = round.srcMap[msg.sender];
         GpkTypes.Dest storage d = src.destMap[dest];
-        require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Checked Valid");
+        require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Not need");
         d.sij = sij;
         d.ephemPrivateKey = ephemPrivateKey;
         emit RevealSijLogger(groupId, roundIndex, curveIndex, msg.sender, dest);
-        if (GpkLib.verifySij(d, group.addressMap[dest], src.polyCommit, round.curve)) {
+        if (GpkLib.verifySij(d, group.pkMap[dest], src.polyCommit, round.curve)) {
           GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckInvalid, dest, msg.sender, true, smg);
         } else {
           GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijInvalid, msg.sender, dest, true, smg);
@@ -303,42 +300,29 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Group storage group = groupMap[groupId];
         checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.Negotiate, false, false, address(0));
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        uint slashCount = 0;
-        GpkTypes.SlashType[] memory slashTypes = new GpkTypes.SlashType[](group.smNumber * 2);
-        address[] memory slashSms = new address[](group.smNumber * 2);
         require(now.sub(round.statusTime) > group.negotiatePeriod, "Not late");
-
         for (uint i = 0; i < group.smNumber; i++) {
-            address src = group.indexMap[i];
-            for (uint j = 0; j < group.smNumber; j++) {
-                address dest = group.indexMap[j];
+            address src = group.addrMap[i];
+            uint slashPair = uint(group.smNumber).sub(uint(round.srcMap[src].checkValidCount));
+            for (uint j = 0; (j < group.smNumber) && (slashPair > 0); j++) {
+                address dest = group.addrMap[j];
                 GpkTypes.Dest storage d = round.srcMap[src].destMap[dest];
-                if (d.checkStatus == GpkTypes.CheckStatus.Valid) {
-                    continue;
+                if (d.checkStatus != GpkTypes.CheckStatus.Valid) {
+                    if (d.encSij.length == 0) {
+                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijTimout, src, dest, false, smg);
+                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.Connive, dest, src, false, smg);
+                    } else if (d.checkStatus == GpkTypes.CheckStatus.Init) {
+                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.Connive, src, dest, false, smg);
+                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckTimeout, dest, src, false, smg);
+                    } else { // GpkTypes.CheckStatus.Invalid
+                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijTimeout, src, dest, false, smg);
+                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.Connive, dest, src, false, smg);
+                    }
+                    slashPair--;
                 }
-                GpkTypes.SlashType sType;
-                GpkTypes.SlashType dType;
-                if (d.encSij.length == 0) {
-                    sType = GpkTypes.SlashType.EncSijTimout;
-                    dType = GpkTypes.SlashType.Connive;
-                } else if (d.checkStatus == GpkTypes.CheckStatus.Init) {
-                    sType = GpkTypes.SlashType.Connive;
-                    dType = GpkTypes.SlashType.CheckTimeout;
-                } else if (d.checkStatus == GpkTypes.CheckStatus.Invalid) {
-                    sType = GpkTypes.SlashType.SijTimeout;
-                    dType = GpkTypes.SlashType.Connive;
-                }
-                GpkLib.slash(group, curveIndex, sType, src, dest, false, smg);
-                GpkLib.slash(group, curveIndex, dType, dest, src, false, smg);
-                slashTypes[slashCount] = sType;
-                slashSms[slashCount] = src;
-                slashCount++;
-                slashTypes[slashCount] = dType;
-                slashSms[slashCount] = dest;
-                slashCount++;
             }
         }
-        GpkLib.slashMulti(group, slashCount, slashTypes, slashSms, smg);
+        GpkLib.slashMulti(group, curveIndex, smg);
     }
 
     /// @notice                           function for check paras
@@ -358,10 +342,10 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         require(round.status == status, "Invalid status");
         if (checkStoreman) {
-            require(group.addressMap[storeman].length > 0, "Invalid storeman");
+            require(group.pkMap[storeman].length > 0, "Invalid storeman");
         }
         if (checkSender) {
-            require(group.addressMap[msg.sender].length > 0, "Invalid sender");
+            require(group.pkMap[msg.sender].length > 0, "Invalid sender");
         }
     }
 
@@ -406,7 +390,7 @@ contract GpkDelegate is GpkStorage, Admin {
         returns(bytes gpkShare1, bytes gpkShare2)
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        address src = group.indexMap[index];
+        address src = group.addrMap[index];
         mapping(uint8 => GpkTypes.Round) roundMap = groupMap[groupId].roundMap[group.round];
         return (roundMap[0].srcMap[src].gpkShare, roundMap[1].srcMap[src].gpkShare);
     }

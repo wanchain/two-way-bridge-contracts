@@ -70,6 +70,7 @@ library StoremanType {
         uint tickedCount;
         uint minStakeIn;
         uint minDelegateIn;
+        uint minPartIn;
         uint crossIncoming;
         bytes gpk1;
         bytes gpk2;
@@ -119,6 +120,7 @@ library StoremanType {
         bytes32  groupId;
         bytes32  nextGroupId;
         uint  deposit;
+        uint incentive;
     }
     struct StoremanGroupInfo {
         bytes32    groupId;
@@ -142,6 +144,7 @@ library StoremanType {
         uint tickedCount;
         uint minStakeIn;
         uint minDelegateIn;
+        uint minPartIn;
         uint crossIncoming;
         bytes gpk1;
         bytes gpk2;
@@ -161,6 +164,7 @@ library StoremanType {
         uint curve2;
         uint minStakeIn;
         uint minDelegateIn;
+        uint minPartIn;
         uint delegateFee;
     }
 }

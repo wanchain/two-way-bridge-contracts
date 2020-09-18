@@ -38,9 +38,11 @@ library GpkTypes {
         mapping(uint16 => mapping(uint8 => Round)) roundMap;
         uint16 smNumber;
         /// index -> txAddress
-        mapping(uint => address) indexMap;
+        mapping(uint => address) addrMap;
+        /// txAddress -> slectedIndex
+        mapping(address => uint) indexMap;
         /// txAddress -> pk
-        mapping(address => bytes) addressMap;
+        mapping(address => bytes) pkMap;
     }
 
     struct Round {
@@ -48,6 +50,7 @@ library GpkTypes {
         GpkStatus status;
         uint16 polyCommitCount;
         uint32 checkValidCount;
+        uint16 slashCount;
         uint statusTime;
         bytes gpk;
         /// txAddress -> Src
@@ -61,6 +64,8 @@ library GpkTypes {
         bytes gpkShare;
         /// txAddress -> Dest
         mapping(address => Dest) destMap;
+        uint16 checkValidCount;
+        SlashType slashType;
     }
 
     struct Dest {
@@ -74,5 +79,5 @@ library GpkTypes {
 
     enum CheckStatus {Init, Valid, Invalid}
 
-    enum SlashType {PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, SijInvalid, CheckInvalid, Connive}
+    enum SlashType {None, PolyCommitTimeout, EncSijTimout, CheckTimeout, SijTimeout, SijInvalid, CheckInvalid, Connive}
 }

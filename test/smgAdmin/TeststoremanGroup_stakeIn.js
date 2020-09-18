@@ -3,29 +3,29 @@ const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
-const { registerStart,stakeInPre, setupNetwork} = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork,g,  timeWaitSelect} = require('../base.js');
 const { assert } = require("chai");
 
-contract('TestSmg', async () => {
+contract('StoremanGroupDelegate stakeIn', async () => {
 
     let  smg
-    let groupId
+    let groupId, groupInfo
 
     before("init contracts", async() => {
         let smgProxy = await StoremanGroupProxy.deployed();
         smg = await StoremanGroupDelegate.at(smgProxy.address)
         await setupNetwork();
-    })
-
-
-    it('registerStart_1 ', async ()=>{
         groupId = await registerStart(smg);
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+        
     })
 
-    it('stakeInPre ', async ()=>{
+    it('stakeInPre', async ()=>{ // stakeIn 50000
+        let sw = {addr:g.wks[1], pk:g.pks[1]}
+        let tx = smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[2], value:50000})
+        await expectRevert(tx, "invalid sender");
         await stakeInPre(smg, groupId)
     })
-
     it('T1', async ()=>{ // stakeIn 50000
         let wk = utils.getAddressFromInt(10001)
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
@@ -72,4 +72,18 @@ contract('TestSmg', async () => {
         console.log("tx:", tx);
         assert.equal(sk.wkAddr.toLowerCase(), wk.addr.toLowerCase(), "stakein 56000 failed");
     })
+    it('T8', async ()=>{ 
+        let ugroup = utils.stringTobytes32("none")
+        let wk = utils.getAddressFromInt(10004)
+        let tx =  smg.stakeIn(ugroup, wk.pk, wk.pk,{value:60000});
+        await expectRevert(tx, "invalid group")
+    })
+    it('T9 stakeIn after register duration', async ()=>{ 
+        await timeWaitSelect(groupInfo);
+        let wk = utils.getAddressFromInt(10009)
+        let tx =  smg.stakeIn(groupId, wk.pk, wk.pk,{value:60000});
+        await expectRevert(tx, "Registration closed")
+    })
+
+
 })
