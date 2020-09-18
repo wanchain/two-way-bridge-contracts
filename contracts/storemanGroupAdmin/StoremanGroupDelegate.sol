@@ -1,28 +1,3 @@
-/*
-
-  Copyright 2020 Wanchain Foundation.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-*/
-
-//                            _           _           _
-//  __      ____ _ _ __   ___| |__   __ _(_)_ __   __| | _____   __
-//  \ \ /\ / / _` | '_ \ / __| '_ \ / _` | | '_ \@/ _` |/ _ \ \ / /
-//   \ V  V / (_| | | | | (__| | | | (_| | | | | | (_| |  __/\ V /
-//    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
-//
-//  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
 pragma solidity ^0.4.26;
 pragma experimental ABIEncoderV2;
@@ -31,7 +6,7 @@ import "../lib/SafeMath.sol";
 import "../components/Halt.sol";
 import "../components/Admin.sol";
 import "./StoremanGroupStorage.sol";
-//import "../interfaces/IPosLib.sol";
+
 import "./StoremanLib.sol";
 import "./StoremanType.sol";
 import "./IncentiveLib.sol";
@@ -78,7 +53,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         require(wkAddrs.length == senders.length, "Invalid white list length");
         require(wkAddrs.length >= data.conf.backupCount, "Insufficient white list");
         require(wkAddrs.length <= smg.memberCountDesign+data.conf.backupCount, "Too many whitelist node");
-        // check preGroupId 是否存在.
+
         if(preGroupId != bytes32(0x00)){
             StoremanType.StoremanGroup storage preGroup = data.groups[preGroupId];
             require(preGroup.status >= StoremanType.GroupStatus.ready || preGroup.status == StoremanType.GroupStatus.failed,"invalid preGroup");
@@ -211,14 +186,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         StoremanType.Candidate storage sk = data.candidates[0][addr];
         return (sk.wkAddr, sk.PK, sk.enodeID);
     }
-
-    // To change  group status for unexpected reason.
     function updateGroupStatus(bytes32 groupId, StoremanType.GroupStatus status) external  onlyAdmin {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.status = status;
     }
-
-
     function getStoremanIncentive(address wkAddr, uint day) external view returns(uint incentive) {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         return sk.incentive[day];
@@ -250,8 +221,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         group.gpk2 = gpk2;
         group.status = StoremanType.GroupStatus.ready;
     }
-
-
     function setInvalidSm(bytes32 groupId, uint[] indexs, GpkTypes.SlashType[] slashTypes)
         external
         returns(bool isContinue)
@@ -283,9 +252,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         StoremanType.Candidate storage sk = data.candidates[0][wk];
         sk.slashedCount++;
     }
-
-
-
     function getThresholdByGrpId(bytes32 groupId) external view returns (uint){
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         return group.threshold;
@@ -310,7 +276,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
 
         group.status = StoremanType.GroupStatus.dismissed;
         emit StoremanGroupDismissedEvent(groupId, now);
-        // group状态进入dismissed, 并且完成了收益结算, sk的当前group变成nextGroup.
+
         StoremanType.Candidate storage sk;
         for(uint i=0; i<group.memberCount; i++){
             sk = data.candidates[0][group.selectedNode[i]];
@@ -389,15 +355,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return (id, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
          smg.gpk1, smg.gpk2, smg.workTime, smg.workTime+smg.totalTime);
     }
-    // function getStoremanGroupTime(bytes32 id)
-    //     external
-    //     view
-    //     returns(bytes32 groupId,  uint registerTime, uint registerDuration,  uint startTime, uint endTime)
-    // {
-    //     StoremanType.StoremanGroup storage smg = data.groups[id];
-    //     return (smg.groupId, smg.registerTime, smg.registerDuration, smg.workTime, smg.workTime+smg.totalTime);
-    // }
-
 
     function checkGroupIncentive(bytes32 id, uint day) external view returns ( uint) {
         StoremanType.StoremanGroup storage group = data.groups[id];

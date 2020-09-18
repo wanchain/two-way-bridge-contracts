@@ -25,7 +25,7 @@ contract TestOrigTokenCreator is BasicStorage {
         address tokenInst = new MappingToken(tokenName, tokenSymbol, tokenDecimal);
         addressData.setStorage(bytes(tokenName), bytes(tokenSymbol), tokenInst);
         uintData.setStorage(bytes(tokenName), bytes(tokenSymbol), tokenDecimal);
-        // TestIOwned(tokenInst).changeOwner(msg.sender);
+
     }
 
     function changeOwner(string tokenName, string tokenSymbol) external {

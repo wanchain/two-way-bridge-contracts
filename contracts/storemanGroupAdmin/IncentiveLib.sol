@@ -37,7 +37,7 @@ library IncentiveLib {
     }
     function checkMetric(IMetric metric, bytes32 groupId, uint day, uint index) private returns (bool) {
         if(index == 0) {
-            return true; // leader is always OK.
+            return true; 
         }
         uint[] memory counts = metric.getPrdInctMetric(groupId, day, day);
         uint leadCount = counts[0];
@@ -92,15 +92,6 @@ library IncentiveLib {
         data.totalReward = data.totalReward.add(sk.delegators[deAddr].incentive[day]);
         sk.incentivedDelegator++;
     }
-
-    /*
-    @dev The logic of incentive
-    1) get the incentive by day and groupID.
-    If the incentive array by day haven't got from low level, the tx will try to get it.
-    so the one who first incentive will spend more gas.
-    2) calculate the sk incentive every days.
-    3) calculate the delegator every days one by one.
-     */    
     function incentiveCandidator(StoremanType.StoremanData storage data, address wkAddr,  address metricAddr) public {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         StoremanType.StoremanGroup storage group = data.groups[sk.groupId];
@@ -111,7 +102,7 @@ library IncentiveLib {
 
         uint day;
         for (day = fromDay; day < endDay; day++) {
-            if (msg.gas < reservedGas ) { // check the gas. because calculate delegator incentive need more gas left.
+            if (msg.gas < reservedGas ) { 
                 emit incentiveEvent(sk.groupId, wkAddr, false, fromDay, day);
                 return;
             }

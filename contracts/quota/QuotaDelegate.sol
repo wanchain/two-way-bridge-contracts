@@ -1,35 +1,5 @@
-/*
-
-  Copyright 2019 Wanchain Foundation.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-*/
-
-//                            _           _           _
-//  __      ____ _ _ __   ___| |__   __ _(_)_ __   __| | _____   __
-//  \ \ /\ / / _` | '_ \ / __| '_ \ / _` | | '_ \@/ _` |/ _ \ \ / /
-//   \ V  V / (_| | | | | (__| | | | (_| | | | | | (_| |  __/\ V /
-//    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
-//
-//
 
 pragma solidity 0.4.26;
-
-/**
- * Math operations with safety checks
- */
-
 import "../components/Halt.sol";
 import "./QuotaStorage.sol";
 import "../tokenManager/ITokenManager.sol";
@@ -39,8 +9,6 @@ import "../interfaces/IOracle.sol";
 interface IDebtOracle {
     function isDebtClean(bytes32 storemanGroupId) external view returns (bool);
 }
-
-
 contract QuotaDelegate is QuotaStorage, Halt {
 
     function config(
@@ -75,7 +43,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint value
     ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        
+
         uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
         require(
             mintQuota >= value,
@@ -98,7 +66,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint value
     ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        
+
         if (!quota._active) {
             quota._active = true;
             storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenId;
@@ -153,7 +121,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint value
     ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        
+
         uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
         require(
             mintQuota >= value,
@@ -161,7 +129,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         );
 
         require(checkFastMinValue(tokenId, value), "Less than minimize value");
-        
+
         if (!quota._active) {
             quota._active = true;
             storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenId;
@@ -177,7 +145,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint value
     ) external onlyHtlc {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
-        
+
         if (!quota._active) {
             quota._active = true;
             storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenId;
@@ -270,7 +238,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         bytes32 dstStoremanGroupId
     ) external onlyHtlc {
         uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
-        // TODO gas out of range
+
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[srcStoremanGroupId][i];
             Quota storage src = quotaMap[id][srcStoremanGroupId];
@@ -329,7 +297,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
                 continue;
             }
             Quota storage dst = quotaMap[id][dstStoremanGroupId];
-            
+
             dst.debt_receivable = dst.debt_receivable.sub(src.debt_payable);
             src.debt_payable = 0;
         }
@@ -398,7 +366,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
                 continue;
             }
             Quota storage dst = quotaMap[id][dstStoremanGroupId];
-            
+
             dst.asset_receivable = dst.asset_receivable.sub(src.asset_payable);
             src.asset_payable = 0;
         }
@@ -516,9 +484,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint count = fastCrossMinValue.mul(10**decimals).div(price);
         return (fastCrossMinValue, symbol, decimals, price, count);
     }
-
-    // ----------- Private Functions ---------------
-
     function checkFastMinValue(uint tokenId, uint value) private view returns (bool) {
         if (fastCrossMinValue == 0) {
             return true;
@@ -545,22 +510,22 @@ contract QuotaDelegate is QuotaStorage, Halt {
             uint id = storemanTokensMap[storemanGroupId][i];
             (symbol, decimals) = getTokenAncestorInfo(id);
             Quota storage q = quotaMap[id][storemanGroupId];
-            uint tokenValue = q.asset_receivable.add(q._asset).mul(getPrice(symbol)).mul(1 ether).div(10**decimals); /// change Decimals to 18 digits
+            uint tokenValue = q.asset_receivable.add(q._asset).mul(getPrice(symbol)).mul(1 ether).div(10**decimals); 
             totalTokenUsedValue = totalTokenUsedValue.add(tokenValue);
         }
-        
+
         uint depositValue = 0;
         if (keccak256(rawSymbol) == keccak256("WAN")) {
             depositValue = getFiatDeposit(storemanGroupId);
         } else {
-            depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); // 15000 = 150%
+            depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); 
         }
 
         if (depositValue <= totalTokenUsedValue) {
             return 0;
         }
 
-        return depositValue.sub(totalTokenUsedValue); /// decimals: 18
+        return depositValue.sub(totalTokenUsedValue); 
     }
 
     function getSmgFiatMintQuota(bytes32 storemanGroupId, string rawSymbol) private view returns (uint) {
@@ -572,7 +537,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
             uint id = storemanTokensMap[storemanGroupId][i];
             (symbol, decimals) = getTokenAncestorInfo(id);
             Quota storage q = quotaMap[id][storemanGroupId];
-            uint tokenValue = q.debt_receivable.add(q._debt).mul(getPrice(symbol)).mul(1 ether).div(10**decimals); /// change Decimals to 18 digits
+            uint tokenValue = q.debt_receivable.add(q._debt).mul(getPrice(symbol)).mul(1 ether).div(10**decimals); 
             totalTokenUsedValue = totalTokenUsedValue.add(tokenValue);
         }
 
@@ -580,14 +545,14 @@ contract QuotaDelegate is QuotaStorage, Halt {
         if (keccak256(rawSymbol) == keccak256("WAN")) {
             depositValue = getFiatDeposit(storemanGroupId);
         } else {
-            depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); // 15000 = 150%
+            depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); 
         }
 
         if (depositValue <= totalTokenUsedValue) {
             return 0;
         }
 
-        return depositValue.sub(totalTokenUsedValue); /// decimals: 18
+        return depositValue.sub(totalTokenUsedValue); 
     }
 
     function getDepositAmount(bytes32 storemanGroupId)

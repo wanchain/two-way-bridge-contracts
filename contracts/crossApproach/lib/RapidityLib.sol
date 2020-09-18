@@ -1,28 +1,3 @@
-/*
-
-  Copyright 2019 Wanchain Foundation.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-*/
-
-//                            _           _           _
-//  __      ____ _ _ __   ___| |__   __ _(_)_ __   __| | _____   __
-//  \ \ /\ / / _` | '_ \ / __| '_ \ / _` | | '_ \@/ _` |/ _ \ \ / /
-//   \ V  V / (_| | | | | (__| | | | (_| | | | | | (_| |  __/\ V /
-//    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
-//
-//
 
 pragma solidity ^0.4.26;
 pragma experimental ABIEncoderV2;
@@ -36,49 +11,35 @@ import "../../lib/SafeMath.sol";
 library RapidityLib {
     using SafeMath for uint;
     using RapidityTxLib for RapidityTxLib.Data;
-
-    /**
-    *
-    * STRUCTURES
-    *
-    */
-
     struct RapidityUserMintParams {
-        bytes32 smgID;                      /// ID of storeman group which user has selected
-        uint tokenPairID;                   /// token pair id on cross chain
-        uint value;                         /// exchange token value
-        bytes userShadowAccount;            /// account of shadow chain, used to receive token
+        bytes32 smgID;                      
+        uint tokenPairID;                   
+        uint value;                         
+        bytes userShadowAccount;            
     }
 
     struct RapiditySmgMintParams {
-        bytes32 uniqueID;                   /// Rapidity random number
-        bytes32 smgID;                      /// ID of storeman group which user has selected
-        uint tokenPairID;                   /// token pair id on cross chain
-        uint value;                         /// exchange token value
-        address userShadowAccount;          /// account of shadow chain, used to receive token
+        bytes32 uniqueID;                   
+        bytes32 smgID;                      
+        uint tokenPairID;                   
+        uint value;                         
+        address userShadowAccount;          
     }
 
     struct RapidityUserBurnParams {
-        bytes32 smgID;                  /// ID of storeman group which user has selected
-        uint tokenPairID;               /// token pair id on cross chain
-        uint value;                     /// exchange token value
-        bytes userOrigAccount;          /// account of token original chain, used to receive token
+        bytes32 smgID;                  
+        uint tokenPairID;               
+        uint value;                     
+        bytes userOrigAccount;          
     }
 
     struct RapiditySmgBurnParams {
-        bytes32 uniqueID;               /// Rapidity random number
-        bytes32 smgID;                  /// ID of storeman group which user has selected
-        uint tokenPairID;               /// token pair id on cross chain
-        uint value;                     /// exchange token value
-        address userOrigAccount;          /// account of token original chain, used to receive token
+        bytes32 uniqueID;               
+        bytes32 smgID;                  
+        uint tokenPairID;               
+        uint value;                     
+        address userOrigAccount;          
     }
-
-    /**
-     *
-     * EVENTS
-     *
-     **/
-
     event UserFastMintLogger(bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
 
     event SmgFastMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address userAccount);
@@ -86,13 +47,6 @@ library RapidityLib {
     event UserFastBurnLogger(bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
 
     event SmgFastBurnLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address userAccount);
-
-    /**
-    *
-    * MANIPULATIONS
-    *
-    */
-
     function userFastMint(CrossTypes.Data storage storageData, RapidityUserMintParams memory params)
         public
     {

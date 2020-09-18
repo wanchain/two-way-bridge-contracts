@@ -1,39 +1,16 @@
 pragma solidity 0.4.26;
-
-/**
- * Math operations with safety checks
- */
-
 import "../components/Owned.sol";
 import "./OracleStorage.sol";
 
 contract OracleDelegate is OracleStorage, Owned {
-  /**
-    *
-    * EVENTS
-    *
-    */
+
   event SetAdmin(address addr);
   event UpdatePrice(bytes32[] keys, uint[] prices);
   event SetDebtClean(bytes32 indexed id, bool isDebtClean);
-
-  /**
-    *
-    * MODIFIERS
-    *
-    */
-
   modifier onlyAdmin() {
       require((msg.sender == admin) || (msg.sender == owner), "not admin");
       _;
   }
-
-  /**
-  *
-  * MANIPULATIONS
-  *
-  */
-
   function updatePrice(
     bytes32[] keys,
     uint[] prices
@@ -95,8 +72,6 @@ contract OracleDelegate is OracleStorage, Owned {
     mapStoremanGroupConfig[id].startTime = startTime;
     mapStoremanGroupConfig[id].endTime = endTime;
   }
-
-  // robot 都是true时,才调用
   function setDebtClean(
     bytes32 storemanGroupId,
     bool isClean

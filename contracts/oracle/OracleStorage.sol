@@ -3,11 +3,7 @@ pragma solidity 0.4.26;
 import "../components/BasicStorage.sol";
 
 contract OracleStorage is BasicStorage {
-  /************************************************************
-    **
-    ** STRUCTURE DEFINATIONS
-    **
-    ************************************************************/
+
   struct StoremanGroupConfig {
     uint    deposit;
     uint[2] chain;
@@ -19,13 +15,6 @@ contract OracleStorage is BasicStorage {
     uint8   status;
     bool    isDebtClean;
   }
-
-  /************************************************************
-    **
-    ** VARIABLES
-    **
-    ************************************************************/
-
   mapping(bytes32 => uint) public mapPrices;
 
   mapping(bytes32 => StoremanGroupConfig) public mapStoremanGroupConfig;

@@ -50,8 +50,6 @@ contract  FakeBnCurve {
     function equalPt (uint256 xLeft, uint256 yLeft,uint256 xRight, uint256 yRight) public view returns(bool){
         return equalPtRes;
     }
-
-    // set
     function setCheckSig (bool checkSigRes) public {
         checkSigResult = checkSigRes;
     }

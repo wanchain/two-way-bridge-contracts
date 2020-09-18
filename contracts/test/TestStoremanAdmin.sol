@@ -25,18 +25,6 @@ contract TestStoremanAdmin {
     mapping(uint => ChainData) mapChainPair;
     uint totalChainPairID;
 
-    // constructor() {
-    //     ChainData memory chainData = SmgData({
-    //         chain1: 1,
-    //         chain2: 2,
-    //         curve1: 1,
-    //         curve2: 2,
-    //         active: true
-    //     });
-    //     mapChainPair[totalChainPairID] = chainData;
-    //     totalChainPairID += 1;
-    // }
-
     function addChainInfo(uint chain1, uint chain2, uint curve1, uint curve2) public {
         ChainData memory chainData = ChainData({
             chain1: chain1,

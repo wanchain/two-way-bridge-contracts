@@ -1,7 +1,5 @@
 pragma solidity ^0.4.26;
 import "../lib/SafeMath.sol";
-
-
 library FakePosLib {
     using SafeMath for uint;
     uint public constant DIVISOR = 10000;

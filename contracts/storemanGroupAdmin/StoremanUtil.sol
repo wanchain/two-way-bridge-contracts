@@ -3,8 +3,6 @@ pragma solidity ^0.4.24;
 import "../lib/SafeMath.sol";
 import "./StoremanType.sol";
 import "../interfaces/IPosLib.sol";
-
-
 library StoremanUtil {
   using SafeMath for uint;
 
@@ -28,5 +26,5 @@ library StoremanUtil {
     }
     return storemans;
   }
-  
+
 }

@@ -1,28 +1,3 @@
-/*
-
-  Copyright 2019 Wanchain Foundation.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-*/
-
-//                            _           _           _
-//  __      ____ _ _ __   ___| |__   __ _(_)_ __   __| | _____   __
-//  \ \ /\ / / _` | '_ \ / __| '_ \ / _` | | '_ \@/ _` |/ _ \ \ / /
-//   \ V  V / (_| | | | | (__| | | | (_| | | | | | (_| |  __/\ V /
-//    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
-//
-//
 
 pragma solidity ^0.4.26;
 pragma experimental ABIEncoderV2;
@@ -34,21 +9,7 @@ import "./lib/RapidityLib.sol";
 
 contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     using SafeMath for uint;
-
-    /**
-     *
-     * EVENTS
-     *
-     **/
-
     event SmgWithdrawFeeLogger(bytes32 indexed smgID, uint timeStamp, address indexed receiver, uint fee);
-
-    /**
-     *
-     * MODIFIERS
-     *
-     */
-
     modifier onlyMeaningfulValue(uint value) {
         require(value != 0, "Value is null");
         _;
@@ -63,13 +24,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
         _;
     }
-
-    /**
-     *
-     * MANIPULATIONS
-     *
-     */
-
     function acquireExistSmgInfo(bytes32 smgID)
         private
         view
@@ -274,7 +228,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
 
     function verifySignature(uint curveID, bytes32 message, bytes PK, bytes r, bytes32 s)
         private
-        // view
+
     {
         bytes32 PKx = bytesToBytes32(PK, 0);
         bytes32 PKy = bytesToBytes32(PK, 32);

@@ -5,13 +5,9 @@ import "./Deposit.sol";
 library StoremanType {
     using Deposit for Deposit.Records;
     enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
-    //ready: gpk finished.
-    
     struct Delegator {
-        //address sender; // the delegator wallet address
-        //address staker;
         bool  quited;
-        uint index; // for delete from candidate;
+        uint index; 
         Deposit.Records deposit;
         mapping(uint=>uint) incentive;
     }
@@ -24,43 +20,39 @@ library StoremanType {
         bool isWhite;
         bool quited;
         uint delegatorCount;
-        uint delegateDeposit; // only used when selecting. need not records.
+        uint delegateDeposit; 
         uint partnerCount;
         uint partnerDeposit;
         uint crossIncoming;
         uint slashedCount;
 
-        uint incentivedDelegator; // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
+        uint incentivedDelegator; 
         uint incentivedDay;
         bytes32  groupId;
         bytes32  nextGroupId;
-        Deposit.Records  deposit;         // 自有资金记录
-        
-        mapping(uint=>uint) incentive;       // without delegation.. set to 0 after incentive.        
+        Deposit.Records  deposit;         
 
-        // delegator index => delegator addr
+        mapping(uint=>uint) incentive;       
         mapping(uint=>address) delegatorMap;
         mapping(address=>Delegator) delegators;
-
-        // partner index => partner address
         mapping(uint=>address) partMap;
         mapping(address=>Delegator) partners;
-        
+
     }
 
     struct StoremanGroup {
-        //bytes32    groupId;
+
         GroupStatus    status;
-        Deposit.Records    deposit;                  //用于计算group的总收益
-        Deposit.Records     depositWeight;            /// 用于在group内给各个成员分配利润.
+        Deposit.Records    deposit;                  
+        Deposit.Records     depositWeight;            
         uint selectedCount;
         uint memberCount;
-        uint whiteCount;    // only used node, don't include backup.
-        uint whiteCountAll; // all
+        uint whiteCount;    
+        uint whiteCountAll; 
         uint workTime;
         uint totalTime;
         uint registerTime;
-        uint registerDuration; // how long allow to staking. check when stakeIn tx.
+        uint registerDuration; 
         uint memberCountDesign;
         uint threshold;
         uint chain1;
@@ -80,14 +72,14 @@ library StoremanType {
         mapping(uint=>address) skMap;
         mapping(uint=>address) selectedNode;
         mapping(uint=>address) whiteMap;
-        mapping(address=>address) whiteWk;   // the white list specified when start group. 储存白名单对应的钱包地址.
-        mapping(uint=>uint) groupIncentive; // by day.
+        mapping(address=>address) whiteWk;   
+        mapping(uint=>uint) groupIncentive; 
     }
     struct StoremanGlobalConf {
-        uint standaloneWeight; // defult 15000; need mul 10000
-        uint DelegationMulti;  // 10
-        uint backupCount;  // 3
-        uint chainTypeCoDefault; //10000
+        uint standaloneWeight; 
+        uint DelegationMulti;  
+        uint backupCount;  
+        uint chainTypeCoDefault; 
         uint maxSlashedCount;
     }
     struct StoremanData {
@@ -96,7 +88,7 @@ library StoremanType {
         address posLib;
 
         StoremanGlobalConf conf;
-        
+
         mapping(bytes32 => StoremanType.StoremanGroup)  groups;
         mapping(uint=>mapping(address=>StoremanType.Candidate)) candidates;
         mapping(uint=> mapping(uint => uint)) chainTypeCo;
@@ -125,16 +117,16 @@ library StoremanType {
     struct StoremanGroupInfo {
         bytes32    groupId;
         GroupStatus    status;
-        uint    deposit;                  //用于计算group的总收益
-        uint    depositWeight;            /// 用于在group内给各个成员分配利润.
+        uint    deposit;                  
+        uint    depositWeight;            
         uint selectedCount;
         uint memberCount;
-        uint whiteCount;    // only used node, don't include backup.
-        uint whiteCountAll; // all
+        uint whiteCount;    
+        uint whiteCountAll; 
         uint startTime;
         uint endTime;
         uint registerTime;
-        uint registerDuration; // how long allow to staking. check when stakeIn tx.
+        uint registerDuration; 
         uint memberCountDesign;
         uint threshold;
         uint chain1;

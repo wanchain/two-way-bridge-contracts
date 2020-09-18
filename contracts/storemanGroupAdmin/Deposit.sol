@@ -7,7 +7,7 @@ library Deposit {
 
     struct Record {
         uint id;
-        uint value; // the value is current total value, include the old deposit
+        uint value; 
     }
 
     struct Records {

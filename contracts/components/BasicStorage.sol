@@ -3,11 +3,7 @@ pragma solidity ^0.4.24;
 import "../lib/BasicStorageLib.sol";
 
 contract BasicStorage {
-    /************************************************************
-     **
-     ** VARIABLES
-     **
-     ************************************************************/
+
 
     using BasicStorageLib for BasicStorageLib.UintData;
     using BasicStorageLib for BasicStorageLib.BoolData;

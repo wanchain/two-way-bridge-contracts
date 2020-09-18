@@ -7,8 +7,6 @@ library PosLib {
     using SafeMath for uint;
     uint public constant DIVISOR = 10000;
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
-
-
     function getEpochId(uint256 blockTime) public view returns (uint256) {
         bytes32 functionSelector = keccak256("getEpochId(uint256)");
 
@@ -33,17 +31,13 @@ library PosLib {
 
             mstore(freePtr, functionSelector)
             mstore(add(freePtr, 4), param1)
-
-            // call ERC20 Token contract transfer function
             success := staticcall(gas, to, freePtr, 36, freePtr, 32)
 
             result := mload(freePtr)
         }
     }
-
-
     function getPosAvgReturn(uint256 targetSecond)  public view returns(uint256 result,bool success) {
-      // bytes32 functionSelector = keccak256("getPosAvgReturn(uint256)");
+
        bytes32 functionSelector = 0x94fee72400000000000000000000000000000000000000000000000000000000;
        address to = PRECOMPILE_CONTRACT_ADDR;
 
@@ -51,19 +45,13 @@ library PosLib {
             let freePtr := mload(0x40)
             mstore(freePtr, functionSelector)
             mstore(add(freePtr, 4), targetSecond)
-
-            // call ERC20 Token contract transfer function
             success := staticcall(gas, to, freePtr,36, freePtr, 32)
             result := mload(freePtr)
         }
     }
-
-
     function testGetHardCap ()  public view returns(uint256,bool) {
         return getHardCap(now - 3600 * 24);
     }
-
-
     function getHardCap (uint256 time) public view returns(uint256,bool) {
        bytes32 functionSelector = 0x8b19e7b700000000000000000000000000000000000000000000000000000000;
        address to = PRECOMPILE_CONTRACT_ADDR;
@@ -80,17 +68,6 @@ library PosLib {
         return (posReturn,success);
 
     }
-
-
-    //  function getMinIncentive1 ()  public view returns(uint256,uint256) {
-    //      return (getMinIncentive(100000 ether,now - 86400 * 4),0);
-    //  }
-
-
-    //  function getMinIncentive2 ()  public view returns(uint256,uint256) {
-    //      return (getMinIncentive(10000000 ether,now - 86400 * 4),0);
-    //  }
-
     function getMinIncentive (uint256 smgDeposit,uint256 day, uint256 totalDeposit) public view returns(uint256) {
         uint256 p1;
         bool    success;
@@ -111,6 +88,4 @@ library PosLib {
 
         return hardcapReturn<=p1Return?hardcapReturn:p1Return;
     }
-
-
 }

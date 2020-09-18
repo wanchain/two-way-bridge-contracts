@@ -1,36 +1,6 @@
-/*
-
-  Copyright 2019 Wanchain Foundation.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-*/
-
-//                            _           _           _
-//  __      ____ _ _ __   ___| |__   __ _(_)_ __   __| | _____   __
-//  \ \ /\ / / _` | '_ \ / __| '_ \ / _` | | '_ \@/ _` |/ _ \ \ / /
-//   \ V  V / (_| | | | | (__| | | | (_| | | | | | (_| |  __/\ V /
-//    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
-//
-//
 
 pragma solidity 0.4.26;
 pragma experimental ABIEncoderV2;
-
-/**
- * Math operations with safety checks
- */
-
 import "../components/Admin.sol";
 import "./TokenManagerStorage.sol";
 import "./MappingToken.sol";
@@ -38,24 +8,12 @@ import "./IMappingToken.sol";
 
 contract TokenManagerDelegate is TokenManagerStorage, Admin {
     using SafeMath for uint;
-    /************************************************************
-     **
-     ** EVENTS
-     **
-     ************************************************************/
-
-     event AddToken(address tokenAddress, string name, string symbol, uint8 decimals);
-     event AddTokenPair(uint indexed id, uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount);
-     event UpdateTokenPair(uint indexed id, AncestorInfo aInfo, uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount);
-     event RemoveTokenPair(uint indexed id);
-     event UpdateToken(address tokenAddress, string name, string symbol);
-
-    /**
-     *
-     * MODIFIERS
-     *
-     */
-
+    event AddToken(address tokenAddress, string name, string symbol, uint8 decimals);
+    event AddTokenPair(uint indexed id, uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount);
+    event UpdateTokenPair(uint indexed id, AncestorInfo aInfo, uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount);
+    event RemoveTokenPair(uint indexed id);
+    event UpdateToken(address tokenAddress, string name, string symbol);
+    
     modifier onlyNotExistID(uint id) {
         require(mapTokenPairInfo[id].fromChainID == 0, "token exist");
         _;
@@ -65,13 +23,6 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         require(mapTokenPairInfo[id].fromChainID > 0, "token not exist");
         _;
     }
-
-    /**
-    *
-    * MANIPULATIONS
-    *
-    */
-    
     function bytesToAddress(bytes b) internal pure returns (address addr) {
         assembly {
             addr := mload(add(b,20))
@@ -112,7 +63,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         onlyOwner
     {
         address tokenAddress = new MappingToken(name, symbol, decimals);
-        
+
         emit AddToken(tokenAddress, name, symbol, decimals);
     }
 
@@ -130,7 +81,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         onlyOwner
         onlyNotExistID(id)
     {
-        // create a new record
+
         mapTokenPairInfo[id].fromChainID = fromChainID;
         mapTokenPairInfo[id].fromAccount = fromAccount;
         mapTokenPairInfo[id].toChainID = toChainID;
@@ -144,8 +95,6 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
 
         mapTokenPairIndex[totalTokenPairs] = id;
         totalTokenPairs = totalTokenPairs.add(1);
-
-        // fire event
         emit AddTokenPair(id, fromChainID, fromAccount, toChainID, toAccount);
     }
 
@@ -189,7 +138,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
                 if (i != totalTokenPairs - 1) {
                     mapTokenPairIndex[i] = mapTokenPairIndex[totalTokenPairs - 1];
                 }
- 
+
                 delete mapTokenPairIndex[totalTokenPairs - 1];
                 totalTokenPairs--;
                 delete mapTokenPairInfo[id];

@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 import "../components/BasicStorage.sol";
 
 contract TestBasicStorage is BasicStorage {
-    /* uintData */
+
     function setUintData(bytes key, bytes innerKey, uint value)
         external
     {
@@ -23,8 +23,6 @@ contract TestBasicStorage is BasicStorage {
     {
         return uintData.delStorage(key, innerKey);
     }
-
-    /* boolData */
     function setBoolData(bytes key, bytes innerKey, bool value)
         external
     {
@@ -44,8 +42,6 @@ contract TestBasicStorage is BasicStorage {
     {
         return boolData.delStorage(key, innerKey);
     }
-
-    /* addressData */
     function setAddressData(bytes key, bytes innerKey, address value)
         external
     {
@@ -65,8 +61,6 @@ contract TestBasicStorage is BasicStorage {
     {
         return addressData.delStorage(key, innerKey);
     }
-
-    /* bytesData */
     function setBytesData(bytes key, bytes innerKey, bytes value)
         external
     {
@@ -86,8 +80,6 @@ contract TestBasicStorage is BasicStorage {
     {
         return bytesData.delStorage(key, innerKey);
     }
-
-  /* stringData */
     function setStringData(bytes key, bytes innerKey, string value)
         external
     {
