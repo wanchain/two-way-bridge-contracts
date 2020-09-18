@@ -1,73 +1,26 @@
-
-
-//const QuotaLib = artifacts.require('QuotaLib');
-let PosLib = artifacts.require('PosLib');
+const PosLib = artifacts.require('PosLib');
 const StoremanUtil = artifacts.require('StoremanUtil');
-
-
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-
-const CommonTool = artifacts.require('CommonTool');
-const MetricProxy = artifacts.require('MetricProxy');
-const MetricDelegate = artifacts.require('MetricDelegate');
-const MetricLib = artifacts.require('MetricLib');
-const FakeSmg = artifacts.require('FakeSmg');
-const FakeSkCurve = artifacts.require('FakeSkCurve');
-const FakeBnCurve = artifacts.require('FakeBnCurve');
 const FakePosLib = artifacts.require('FakePosLib');
-const FakeMetric = artifacts.require('FakeMetric');
-
-const FakeCommonTool = artifacts.require('FakeCommonTool');
-
-const Secp256k1Curve = artifacts.require('Secp256k1Curve');
-const Bn256Curve = artifacts.require('Bn256Curve');
-const GpkLib = artifacts.require('GpkLib');
-const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
 const Deposit = artifacts.require('Deposit');
-const TestDeposit = artifacts.require('TestDeposit');
 const StoremanLib = artifacts.require('StoremanLib');
 const IncentiveLib = artifacts.require('IncentiveLib');
-
 const fakeQuota = artifacts.require('fakeQuota');
-
 const RapidityLib = artifacts.require('RapidityLib');
 const CrossDelegate = artifacts.require('CrossDelegate');
 const CrossProxy = artifacts.require('CrossProxy');
-
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
-
 const QuotaDelegate = artifacts.require('QuotaDelegate');
 const QuotaProxy = artifacts.require('QuotaProxy');
-
 const OracleDelegate = artifacts.require('OracleDelegate');
 const OracleProxy = artifacts.require('OracleProxy');
-
-const Bn128SchnorrVerifier = artifacts.require('Bn128SchnorrVerifier');
-const Secp256k1SchnorrVerifier = artifacts.require('Secp256k1SchnorrVerifier');
 const SignatureVerifier = artifacts.require('SignatureVerifier');
-
-const ConfigDelegate = artifacts.require('ConfigDelegate');
-const ConfigProxy = artifacts.require('ConfigProxy');
-
 const config = require("../truffle-config");
 
-const curveMap = new Map([
-    ['secp256k1', 0],
-    ['bn256', 1]
-])
 const coinSymbol = "WAN";
-const htlcLockedTime = 60*60; //unit: s
 const quotaDepositRate = 15000;
-
-function replaceLib(contract, from, to) {
-  let placeholder = '__' + from.contractName + Array(40 - from.contractName.length - 2).fill('_').join("");
-  let newPlaceholder = '__' + to.contractName + Array(40 - to.contractName.length - 2).fill('_').join("");
-  let re = new RegExp(placeholder, 'g');
-  contract.bytecode = contract.bytecode.replace(re, newPlaceholder);
-}
 
 module.exports = async function (deployer, network) {
     global.network = network;
@@ -103,8 +56,6 @@ module.exports = async function (deployer, network) {
 
     // signature verifier
     await deployer.deploy(SignatureVerifier);
-    await deployer.deploy(Bn128SchnorrVerifier);
-    await deployer.deploy(Secp256k1SchnorrVerifier);
 
     await deployer.deploy(RapidityLib);
     await deployer.link(RapidityLib, CrossDelegate);
@@ -119,7 +70,6 @@ module.exports = async function (deployer, network) {
     // ***********osm*****************
     // storeman group admin sc
     let posLib = await deployer.deploy(PosLib);
-    await deployer.deploy(FakeMetric);
     if(network == 'local' || network == 'coverage') {
       posLib = await deployer.deploy(FakePosLib);
       quotaProxy = await fakeQuota.deployed()
@@ -131,7 +81,6 @@ module.exports = async function (deployer, network) {
     await deployer.link(StoremanUtil,IncentiveLib);
     //await deployer.link(PosLib,StoremanGroupDelegate);
     await deployer.deploy(Deposit);
-    await deployer.deploy(TestDeposit);
     await deployer.link(Deposit,StoremanGroupDelegate);
     await deployer.deploy(StoremanLib);
     await deployer.link(StoremanLib,StoremanGroupDelegate);
@@ -151,89 +100,13 @@ module.exports = async function (deployer, network) {
     let smg = await StoremanGroupDelegate.at(smgProxy.address)
     await smg.addAdmin(config.networks[network].admin);
 
-    //deploy metric
-    if(network == 'local' || network == 'coverage') {
-        await deployer.deploy(FakeSmg);
-    }
-    await deployer.deploy(CommonTool);
-    await deployer.link(CommonTool, MetricLib);
-    //await deployer.link(PosLib, MetricLib);
-    await deployer.deploy(MetricLib);
-
-    await deployer.link(CommonTool, MetricDelegate);
-    await deployer.link(MetricLib, MetricDelegate);
-    //await deployer.link(PosLib, MetricDelegate);
-
-    await deployer.deploy(MetricProxy);
-    let metricProxy = await MetricProxy.deployed();
-    await deployer.deploy(MetricDelegate);
-    let metricDlg = await MetricDelegate.deployed();
-    await metricProxy.upgradeTo(metricDlg.address);
-    console.log("metric address:", metricProxy.address);
-
-    let metric = await MetricDelegate.at(metricProxy.address);
-
-    // create gpk sc
-    if (network == 'local' || network == 'coverage') {
-      await deployer.deploy(FakeCommonTool);
-      replaceLib(GpkLib, CommonTool, FakeCommonTool);
-      await deployer.link(FakeCommonTool, GpkLib);
-    } else {
-      await deployer.link(CommonTool, GpkLib);
-    }
-    await deployer.deploy(GpkLib);
-
-    await deployer.link(GpkLib, GpkDelegate);
-    await deployer.deploy(GpkDelegate);
-
-    await deployer.deploy(GpkProxy);
-    let gpkProxy = await GpkProxy.deployed();
-    let gpkDelegate = await GpkDelegate.deployed();
-    await gpkProxy.upgradeTo(gpkDelegate.address);
-    console.log("gpk address:", gpkProxy.address);
-    let gpk = await GpkDelegate.at(GpkProxy.address);
-    await gpk.addAdmin(config.networks[network].admin);
-
-    // config
-    await deployer.deploy(ConfigProxy);
-    let cnfProxy = await ConfigProxy.deployed();
-    await deployer.deploy(ConfigDelegate);
-    let cnfDelegate = await ConfigDelegate.deployed();
-    await cnfProxy.upgradeTo(cnfDelegate.address);
-    let cnf = await ConfigDelegate.at(cnfProxy.address);
-    await cnf.addAdmin(config.networks[network].admin);
-
-    let secp256k1, bn256;
-    if (network == 'local' || network == 'coverage') {
-      await deployer.deploy(FakeSkCurve);
-      secp256k1 = await FakeSkCurve.deployed();
-      await deployer.deploy(FakeBnCurve);
-      bn256 = await FakeBnCurve.deployed();
-    } else {
-      await deployer.deploy(Secp256k1Curve);
-      secp256k1 = await Secp256k1Curve.deployed();
-      await deployer.deploy(Bn256Curve);
-      bn256 = await Bn256Curve.deployed();
-    }
-    await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address], {from: config.networks[network].admin});
-
     // dependence
-    await smg.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address,posLib.address);
-
-    await gpk.setDependence(cnfProxy.address, smgProxy.address);
-    await metric.setDependence(cnfProxy.address, smgProxy.address, posLib.address);
+    await smg.setDependence(quotaProxy.address, quotaProxy.address, quotaProxy.address, posLib.address);
 
     // config SignatureVerifier
     let signatureVerifier = await SignatureVerifier.deployed();
-    let bn128 = await Bn128SchnorrVerifier.deployed();
-    let secp256K1 = await Secp256k1SchnorrVerifier.deployed();
-    signatureVerifier.register(curveMap.get('bn256'), bn128.address);
-    signatureVerifier.register(curveMap.get('secp256k1'), secp256K1.address);
 
     // config crossApproach
-    if (!isMainnet) {
-      await crossApproach.setLockedTime(htlcLockedTime)
-    }
     await crossApproach.setPartners(
       tokenManager.address, // tokenManager
       smg.address, // smgAdminProxy
