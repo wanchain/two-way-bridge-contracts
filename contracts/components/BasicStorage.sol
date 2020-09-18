@@ -9,7 +9,6 @@ contract BasicStorage {
      **
      ************************************************************/
 
-    //// basic variables
     using BasicStorageLib for BasicStorageLib.UintData;
     using BasicStorageLib for BasicStorageLib.BoolData;
     using BasicStorageLib for BasicStorageLib.AddressData;

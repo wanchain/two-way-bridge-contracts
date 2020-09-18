@@ -43,13 +43,6 @@ interface IDebtOracle {
 
 contract QuotaDelegate is QuotaStorage, Halt {
 
-    /// @notice                         config params for owner
-    /// @param _priceOracleAddr         token price oracle contract address
-    /// @param _htlcAddr                HTLC contract address
-    /// @param _depositOracleAddr       deposit oracle address, storemanAdmin or oracle
-    /// @param _depositRate             deposit rate value, 15000 means 150%
-    /// @param _depositTokenSymbol      deposit token symbol, default is WAN
-    /// @param _tokenManagerAddress     token manager contract address
     function config(
         address _priceOracleAddr,
         address _htlcAddr,
@@ -76,10 +69,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         fastCrossMinValue = value;
     }
 
-    /// @notice                                 lock quota in mint direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function userMintLock(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -103,10 +92,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota.asset_receivable = quota.asset_receivable.add(value);
     }
 
-    /// @notice                                 lock quota in mint direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function smgMintLock(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -124,10 +109,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota.debt_receivable = quota.debt_receivable.add(value);
     }
 
-    /// @notice                                 revoke quota in mint direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function userMintRevoke(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -137,10 +118,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota.asset_receivable = quota.asset_receivable.sub(value);
     }
 
-    /// @notice                                 revoke quota in mint direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function smgMintRevoke(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -150,10 +127,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota.debt_receivable = quota.debt_receivable.sub(value);
     }
 
-    /// @notice                                 redeem quota in mint direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function userMintRedeem(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -164,10 +137,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._debt = quota._debt.add(value);
     }
 
-    /// @notice                                 redeem quota in mint direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function smgMintRedeem(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -178,10 +147,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._asset = quota._asset.add(value);
     }
 
-    /// @notice                                 perform a fast crosschain mint
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function userFastMint(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -206,10 +171,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._asset = quota._asset.add(value);
     }
 
-    /// @notice                                 perform a fast crosschain mint
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function smgFastMint(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -226,10 +187,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._debt = quota._debt.add(value);
     }
 
-    /// @notice                                 perform a fast crosschain burn
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function userFastBurn(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -242,10 +199,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._debt = quota._debt.sub(value);
     }
 
-    /// @notice                                 perform a fast crosschain burn
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function smgFastBurn(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -255,10 +208,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._asset = quota._asset.sub(value);
     }
 
-    /// @notice                                 lock quota in burn direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function userBurnLock(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -269,10 +218,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota.debt_payable = quota.debt_payable.add(value);
     }
 
-    /// @notice                                 lock quota in burn direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function smgBurnLock(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -282,10 +227,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota.asset_payable = quota.asset_payable.add(value);
     }
 
-    /// @notice                                 revoke quota in burn direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function userBurnRevoke(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -295,10 +236,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota.debt_payable = quota.debt_payable.sub(value);
     }
 
-    /// @notice                                 revoke quota in burn direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function smgBurnRevoke(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -308,10 +245,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota.asset_payable = quota.asset_payable.sub(value);
     }
 
-    /// @notice                                 redeem quota in burn direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function userBurnRedeem(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -322,10 +255,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota.asset_payable = quota.asset_payable.sub(value);
     }
 
-    /// @notice                                 redeem quota in burn direction
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
-    /// @param value                            amount of exchange token
     function smgBurnRedeem(
         uint tokenId,
         bytes32 storemanGroupId,
@@ -336,9 +265,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota.debt_payable = quota.debt_payable.sub(value);
     }
 
-    /// @notice                                 source storeman group lock the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
     function debtLock(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
@@ -370,9 +296,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
     }
 
-    /// @notice                                 destination storeman group redeem the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
     function debtRedeem(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
@@ -385,7 +308,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
                 continue;
             }
             Quota storage dst = quotaMap[id][dstStoremanGroupId];
-            /// Adjust quota record
+
             dst.debt_receivable = dst.debt_receivable.sub(src.debt_payable);
             dst._debt = dst._debt.add(src._debt);
 
@@ -394,9 +317,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
     }
 
-    /// @notice                                 source storeman group revoke the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
     function debtRevoke(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
@@ -415,9 +335,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
     }
 
-    /// @notice                                 source storeman group lock the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
     function assetLock(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
@@ -448,9 +365,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
     }
 
-    /// @notice                                 destination storeman group redeem the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
     function assetRedeem(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
@@ -463,7 +377,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
                 continue;
             }
             Quota storage dst = quotaMap[id][dstStoremanGroupId];
-            /// Adjust quota record
+
             dst.asset_receivable = dst.asset_receivable.sub(src.asset_payable);
             dst._asset = dst._asset.add(src._asset);
 
@@ -472,9 +386,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
     }
 
-    /// @notice                                 source storeman group revoke the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
     function assetRevoke(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
@@ -493,9 +404,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
     }
 
-    /// @notice                                 get user mint quota of storeman, tokenId
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
     function getUserMintQuota(uint tokenId, bytes32 storemanGroupId)
         public
         view
@@ -516,9 +424,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return fiatQuota.div(tokenPrice).mul(10**decimals).div(1 ether);
     }
 
-    /// @notice                                 get smg mint quota of storeman, tokenId
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
     function getSmgMintQuota(uint tokenId, bytes32 storemanGroupId)
         public
         view
@@ -539,9 +444,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return fiatQuota.div(tokenPrice).mul(10**decimals).div(1 ether);
     }
 
-    /// @notice                                 get user burn quota of storeman, tokenId
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
     function getUserBurnQuota(uint tokenId, bytes32 storemanGroupId)
         public
         view
@@ -551,9 +453,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         burnQuota = quota._debt.sub(quota.debt_payable);
     }
 
-    /// @notice                                 get smg burn quota of storeman, tokenId
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
     function getSmgBurnQuota(uint tokenId, bytes32 storemanGroupId)
         public
         view
@@ -563,9 +462,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         burnQuota = quota._asset.sub(quota.asset_payable);
     }
 
-    /// @notice                                 get asset of storeman, tokenId
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
     function getAsset(uint tokenId, bytes32 storemanGroupId)
         public
         view
@@ -575,9 +471,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return (quota._asset, quota.asset_receivable, quota.asset_payable);
     }
 
-    /// @notice                                 get debt of storeman, tokenId
-    /// @param tokenId                          tokenPairId of crosschain
-    /// @param storemanGroupId                  PK of source storeman group
     function getDebt(uint tokenId, bytes32 storemanGroupId)
         public
         view
@@ -587,8 +480,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return (quota._debt, quota.debt_receivable, quota.debt_payable);
     }
 
-    /// @notice                                 get debt clean state of storeman
-    /// @param storemanGroupId                  PK of source storeman group
     function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {
         uint tokenCount = storemanTokenCountMap[storemanGroupId];
         if (tokenCount == 0) {
@@ -614,7 +505,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return true;
     }
 
-    /// @dev get minimize token count for fast cross chain
     function getFastMinCount(uint tokenId) public view returns (uint, string, uint, uint, uint) {
         if (fastCrossMinValue == 0) {
             return (0, "", 0, 0, 0);
@@ -641,16 +531,11 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return value >= count;
     }
 
-
-
-    /// @notice                                 get storeman group's deposit value in USD
-    /// @param storemanGroupId                  storeman group ID
     function getFiatDeposit(bytes32 storemanGroupId) private view returns (uint) {
         uint deposit = getDepositAmount(storemanGroupId);
         return deposit.mul(getPrice(depositTokenSymbol));
     }
 
-    /// get mint quota in Fiat/USD decimals: 18
     function getUserFiatMintQuota(bytes32 storemanGroupId, string rawSymbol) private view returns (uint) {
         string memory symbol;
         uint decimals;
@@ -678,7 +563,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
         return depositValue.sub(totalTokenUsedValue); /// decimals: 18
     }
 
-    /// get mint quota in Fiat/USD decimals: 18
     function getSmgFiatMintQuota(bytes32 storemanGroupId, string rawSymbol) private view returns (uint) {
         string memory symbol;
         uint decimals;

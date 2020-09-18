@@ -47,33 +47,19 @@ contract WanToken is StandardToken, Owned {
      ** EVENTS
      **
      ****************************************************************************/
-    /// @notice Logger for token mint
-    /// @dev Logger for token mint
-    /// @param account Whom these token will be minted to
-    /// @param value Amount of ETH/WETH to be minted
-    /// @param totalSupply Total amount of WETH after token mint
+
     event TokenMintedLogger(
         address indexed account,
         uint indexed value,
         uint indexed totalSupply
     );
 
-    /// @notice Logger for token burn
-    /// @dev Logger for token burn
-    /// @param account Initiator address
-    /// @param value Amount of WETH to be burnt
-    /// @param totalSupply Total amount of WETH after token burn
     event TokenBurntLogger(
         address indexed account,
         uint indexed value,
         uint indexed totalSupply
     );
 
-    ///@notice Initialize the TokenManager address
-    ///@dev Initialize the TokenManager address
-    ///@param tokenName The token name to be used
-    ///@param tokenSymbol The token symbol to be used
-    ///@param tokenDecimal The token decimals to be used
     constructor(string tokenName, string tokenSymbol, uint8 tokenDecimal)
         public
     {
@@ -88,10 +74,6 @@ contract WanToken is StandardToken, Owned {
      **
      ****************************************************************************/
 
-    /// @notice Create token
-    /// @dev Create token
-    /// @param account Address will receive token
-    /// @param value Amount of token to be minted
     function mint(address account, uint value)
         external
         onlyOwner
@@ -105,10 +87,6 @@ contract WanToken is StandardToken, Owned {
         emit TokenMintedLogger(account, value, totalSupply);
     }
 
-    /// @notice Burn token
-    /// @dev Burn token
-    /// @param account Address of whose token will be burnt
-    /// @param value Amount of token to be burnt
     function burn(address account, uint value)
         external
         onlyOwner

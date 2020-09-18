@@ -41,11 +41,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
      *
      **/
 
-    /// @notice                         event of storeman group ID withdraw the original coin to receiver
-    /// @param smgID                    ID of storemanGroup
-    /// @param timeStamp                timestamp of the withdraw
-    /// @param receiver                 receiver address
-    /// @param fee                      shadow coin of the fee which the storeman group pk got it
     event SmgWithdrawFeeLogger(bytes32 indexed smgID, uint timeStamp, address indexed receiver, uint fee);
 
     /**
@@ -53,14 +48,12 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
      * MODIFIERS
      *
      */
-    /// @dev Check valid value
+
     modifier onlyMeaningfulValue(uint value) {
         require(value != 0, "Value is null");
         _;
     }
 
-    /// @notice                                 check the storeman group is ready
-    /// @param smgID                            ID of storeman group
     modifier onlyReadySmg(bytes32 smgID) {
         uint8 status;
         uint startTime;
@@ -77,10 +70,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
      *
      */
 
-    /// @notice                                 get the exist storeman group info
-    /// @param smgID                            ID of storeman group
-    /// @return curveID                         ID of elliptic curve
-    /// @return PK                              PK of storeman group
     function acquireExistSmgInfo(bytes32 smgID)
         private
         view
@@ -93,10 +82,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         return (curveID, PK);
     }
 
-    /// @notice                                 check the storeman group is ready or not
-    /// @param smgID                            ID of storeman group
-    /// @return curveID                         ID of elliptic curve
-    /// @return PK                              PK of storeman group
     function acquireReadySmgInfo(bytes32 smgID)
         private
         view
@@ -112,10 +97,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         return (curveID, PK);
     }
 
-    /// @notice                                 get the unregistered storeman group info
-    /// @param smgID                            ID of storeman group
-    /// @return curveID                         ID of elliptic curve
-    /// @return PK                              PK of storeman group
     function acquireUnregisteredSmgInfo(bytes32 smgID)
         private
         view
@@ -127,11 +108,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         require(status == uint8(GroupStatus.unregistered), "PK is not unregistered");
     }
 
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     account of user, used to receive shadow chain token
     function userFastMint(bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
@@ -149,14 +125,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         RapidityLib.userFastMint(storageData, params);
     }
 
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  uniqueID                        fast cross chain random number
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     address of user, used to receive WRC20 token
-    /// @param  r                               signature
-    /// @param  s                               signature
     function smgFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
         external
         notHalted
@@ -179,12 +147,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         RapidityLib.smgFastMint(storageData, params);
     }
 
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     account of user, used to receive original chain token
     function userFastBurn(bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
@@ -202,14 +164,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         RapidityLib.userFastBurn(storageData, params);
     }
 
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  uniqueID                        fast cross chain random number
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     address of user, used to receive original token/coin
-    /// @param  r                               signature
-    /// @param  s                               signature
     function smgFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
         external
         notHalted
@@ -232,9 +186,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         RapidityLib.smgFastBurn(storageData, params);
     }
 
-    /// @notice                             get the fee of the storeman group should get
-    /// @param smgID                        ID of storemanGroup
-    /// @return fee                         original coin the storeman group should get
     function getStoremanFee(bytes32 smgID)
         external
         view
@@ -243,11 +194,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         fee = storageData.mapStoremanFee[smgID];
     }
 
-    /// @notice                             get the fee of the storeman group should get
-    /// @param origChainID                  ID of token original chain
-    /// @param shadowChainID                ID of token shadow chain
-    /// @param lockFee                      Coin the storeman group should get while storeman redeem user lock
-    /// @param revokeFee                    Coin the storeman group should get while user revoke its lock
     function setFees(uint origChainID, uint shadowChainID, uint lockFee, uint revokeFee)
         external
         onlyOwner
@@ -256,11 +202,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         storageData.mapRevokeFee[origChainID][shadowChainID] = revokeFee;
     }
 
-    /// @notice                             get the fee of the storeman group should get
-    /// @param origChainID                  Original chain ID
-    /// @param shadowChainID                Shadow Chain ID
-    /// @return lockFee                     Coin the storeman group should get while storeman redeem user lock
-    /// @return revokeFee                   Coin the storeman group should get while user revoke its lock
     function getFees(uint origChainID, uint shadowChainID)
         external
         view
@@ -270,12 +211,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
     }
 
-    /// @notice                             update the initialized state value of this contract
-    /// @param tokenManager                 address of the token manager
-    /// @param smgAdminProxy                address of the storeman group admin
-    /// @param smgFeeProxy                  address of the proxy to store fee for storeman group
-    /// @param quota                        address of the quota
-    /// @param sigVerifier                  address of the signature verifier
     function setPartners(address tokenManager, address smgAdminProxy, address smgFeeProxy, address quota, address sigVerifier)
         external
         onlyOwner
@@ -290,12 +225,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         storageData.sigVerifier = ISignatureVerifier(sigVerifier);
     }
 
-    /// @notice                             get the initialized state value of this contract
-    /// @return tokenManager                address of the token manager
-    /// @return smgAdminProxy               address of the storeman group admin
-    /// @return smgFeeProxy                 address of the proxy to store fee for storeman group
-    /// @return quota                       address of the quota
-    /// @return sigVerifier                 address of the signature verifier
     function getPartners()
         external
         view
@@ -308,8 +237,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         sigVerifier = address(storageData.sigVerifier);
     }
 
-    /// @notice                             get the fee of the storeman group should get
-    /// @param timeout                      Timeout for storeman group receiver withdraw fee, uint second
     function setWithdrawFeeTimeout(uint timeout)
         external
         onlyOwner
@@ -317,11 +244,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         smgFeeReceiverTimeout = timeout;
     }
 
-    /// @notice                             storeman group withdraw the fee to receiver account
-    /// @param smgID                        ID of the storeman group
-    /// @param receiver                     account of the receiver
-    /// @param r                            signature
-    /// @param s                            signature
     function smgWithdrawFee(bytes32 smgID, uint timeStamp, address receiver, bytes r, bytes32 s)
         external
         nonReentrant
@@ -344,20 +266,12 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         emit SmgWithdrawFeeLogger(smgID, now, receiver, fee);
     }
 
-    /// @notice       convert bytes to bytes32
-    /// @param b      bytes array
-    /// @param offset offset of array to begin convert
     function bytesToBytes32(bytes memory b, uint offset) private pure returns (bytes32 result) {
         assembly {
             result := mload(add(add(b, offset), 32))
         }
     }
 
-    /// @notice             verify signature
-    /// @param  curveID     ID of elliptic curve
-    /// @param  message     message to be verified
-    /// @param  r           Signature info r
-    /// @param  s           Signature info s
     function verifySignature(uint curveID, bytes32 message, bytes PK, bytes r, bytes32 s)
         private
         // view

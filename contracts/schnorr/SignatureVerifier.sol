@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 import "../components/Halt.sol";
 
 contract SignatureVerifier is Halt {
-    /// @dev verify is used for check signature.
+
     function verify(
         uint256 curveId,
         bytes32 signature,

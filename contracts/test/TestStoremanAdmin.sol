@@ -21,7 +21,7 @@ contract TestStoremanAdmin {
     }
 
     mapping(bytes32 => SmgData) mapStoreman;
-    /// chainPairID => ChainData
+
     mapping(uint => ChainData) mapChainPair;
     uint totalChainPairID;
 

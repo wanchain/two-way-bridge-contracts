@@ -41,9 +41,6 @@ contract CrossStorage is BasicStorage {
 
     CrossTypes.Data internal storageData;
 
-    /// @notice Since storeman group admin receiver address may be changed, system should make sure the new address
-    /// @notice can be used, and the old address can not be used. The solution is add timestamp.
-    /// @notice unit: second
     uint public smgFeeReceiverTimeout = uint(10*60);
 
     enum GroupStatus { none, initial, curveSeted, failed, selected, ready, unregistered, dismissed }

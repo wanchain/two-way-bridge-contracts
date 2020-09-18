@@ -58,10 +58,8 @@ contract TokenManagerStorage is BasicStorage {
      **
      ************************************************************/
 
-    /// total amount of TokenPair instance
     uint public totalTokenPairs = 0;
 
-    /// a map from a sequence ID to token pair
     mapping(uint => TokenPairInfo) public mapTokenPairInfo;
     // index -> tokenPairId
     mapping(uint => uint) public mapTokenPairIndex;

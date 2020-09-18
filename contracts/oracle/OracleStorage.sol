@@ -25,12 +25,10 @@ contract OracleStorage is BasicStorage {
     ** VARIABLES
     **
     ************************************************************/
-  /// @notice symbol -> price,
+
   mapping(bytes32 => uint) public mapPrices;
 
-  /// @notice smgId -> StoremanGroupConfig
   mapping(bytes32 => StoremanGroupConfig) public mapStoremanGroupConfig;
 
-  /// @notice owner and admin have the authority of admin
   address public admin;
 }

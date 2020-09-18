@@ -45,30 +45,22 @@ library CrossTypes {
 
     struct Data {
 
-        /// map of the rapidity transaction info
         RapidityTxLib.Data rapidityTxData;
 
-        /// quota data of storeman group
         IQuota quota;
 
-        /// token manager instance interface
         ITokenManager tokenManager;
 
-        /// storemanGroup admin instance interface
         IStoremanGroup smgAdminProxy;
 
-        /// storemanGroup fee admin instance address
         address smgFeeProxy;
 
         ISignatureVerifier sigVerifier;
 
-        /// @notice transaction fee, smgID => fee
         mapping(bytes32 => uint) mapStoremanFee;
 
-        /// @notice transaction fee, origChainID => shadowChainID => fee
         mapping(uint => mapping(uint =>uint)) mapLockFee;
 
-        /// @notice transaction fee, origChainID => shadowChainID => fee
         mapping(uint => mapping(uint =>uint)) mapRevokeFee;
 
     }
@@ -86,8 +78,6 @@ library CrossTypes {
     //     // return address(uint160(uint256(b))); // low
     // }
 
-    /// @notice       convert bytes to address
-    /// @param b      bytes
     function bytesToAddress(bytes b) internal pure returns (address addr) {
         assembly {
             addr := mload(add(b,20))

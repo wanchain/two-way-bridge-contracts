@@ -54,10 +54,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         _;
     }
 
-    /// @notice                           function for owner set token manager and htlc contract address
-    /// @param metricAddr                 metricAddr contract address
-    /// @param gpkAddr	                  gpkAddr contract address
-    /// @param quotaAddr                  quotaAddr contract address
    function setDependence(address metricAddr, address gpkAddr,address quotaAddr, address posAddr)
         external
         onlyOwner
@@ -72,10 +68,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         quotaInst = IQuota(quotaAddr);
     }
 
-
-    /// @notice                           function for owner to open a storeman group.
-    /// @param wkAddrs                    white list work address array.
-    /// @param senders                    senders address array of the white list enode.
     function storemanGroupRegisterStart(StoremanType.StoremanGroupInput smg,
         address[] wkAddrs, address[] senders)
         public
@@ -99,7 +91,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return StoremanLib.inheritNode(data, groupId, preGroupId, wkAddrs, senders);
     }
 
-    /// @dev	                    set the group chain and curve.
     function initGroup(bytes32 groupId, StoremanType.StoremanGroupInput smg)
         private
     {
@@ -133,10 +124,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         IncentiveLib.incentiveCandidator(data, wkAddr,metric);
     }
 
-    /// @notice                             Staker use this interface to stake wan to SC.
-    /// @param groupId                      the storeman group index.
-    /// @param PK                           the agent keystore's public key.
-    /// @param enodeID                      the agent enodeID, use for p2p network.
     function stakeIn(bytes32 groupId, bytes PK, bytes enodeID)
         external
         notHalted
@@ -145,8 +132,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return StoremanLib.stakeIn(data, groupId, PK, enodeID);
     }
 
-    /// @notice                             Staker use this interface to append wan to SC.
-    /// @param wkAddr                     the agent keystore's address, which publickey is specified when stakeIn.
     function stakeAppend(address wkAddr)
         external
         notHalted
@@ -155,10 +140,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return StoremanLib.stakeAppend(data, wkAddr);
     }
 
-    /// @notice                             Staker use this interface to anounce he will not continue in next group.
-    ///  the next group will open in advance of the current group end. so if a node want to quit, it should call stakeOut before the new group open. 
-    ///  If the new group has opened, the node in old group can't stake out.
-    /// @param wkAddr                     the agent keystore's address, which publickey is specified when stakeIn.
     function stakeOut(address wkAddr) external notHalted {
         return StoremanLib.stakeOut(data, wkAddr);
     }
@@ -310,9 +291,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return group.threshold;
     }
 
-
-    /// @notice                           function for storeman group apply unregistration through the delegate
-    /// @param groupId              storeman group groupId
     function storemanGroupUnregister(bytes32 groupId)
         external
         notHalted
@@ -321,8 +299,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return StoremanLib.storemanGroupUnregister(data, groupId);
     }
 
-    /// @notice                           function for storeman group apply unregistration through the delegate
-    /// @param groupId                    storeman groupId
     function storemanGroupDismiss(bytes32 groupId)
         external
         notHalted

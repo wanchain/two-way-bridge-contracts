@@ -47,11 +47,6 @@ contract MappingToken is StandardToken, Owned {
      **
      ****************************************************************************/
 
-    ///@notice Initialize the TokenManager address
-    ///@dev Initialize the TokenManager address
-    ///@param tokenName The token name to be used
-    ///@param tokenSymbol The token symbol to be used
-    ///@param tokenDecimal The token decimals to be used
     constructor(string tokenName, string tokenSymbol, uint8 tokenDecimal)
         public
     {
@@ -66,10 +61,6 @@ contract MappingToken is StandardToken, Owned {
      **
      ****************************************************************************/
 
-    /// @notice Create token
-    /// @dev Create token
-    /// @param account Address will receive token
-    /// @param value Amount of token to be minted
     function mint(address account, uint value)
         external
         onlyOwner
@@ -81,10 +72,6 @@ contract MappingToken is StandardToken, Owned {
         emit Transfer(address(0), account, value);
     }
 
-    /// @notice Burn token
-    /// @dev Burn token
-    /// @param account Address of whose token will be burnt
-    /// @param value Amount of token to be burnt
     function burn(address account, uint value)
         external
         onlyOwner
@@ -96,10 +83,6 @@ contract MappingToken is StandardToken, Owned {
         emit Transfer(account, address(0), value);
     }
 
-    /// @notice update token name, symbol
-    /// @dev update token name, symbol
-    /// @param _name token new name
-    /// @param _symbol token new symbol
     function update(string _name, string _symbol)
         external
         onlyOwner

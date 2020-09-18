@@ -43,7 +43,6 @@ library RapidityLib {
     *
     */
 
-    /// @notice struct of Rapidity storeman mint lock parameters
     struct RapidityUserMintParams {
         bytes32 smgID;                      /// ID of storeman group which user has selected
         uint tokenPairID;                   /// token pair id on cross chain
@@ -51,7 +50,6 @@ library RapidityLib {
         bytes userShadowAccount;            /// account of shadow chain, used to receive token
     }
 
-    /// @notice struct of Rapidity storeman mint lock parameters
     struct RapiditySmgMintParams {
         bytes32 uniqueID;                   /// Rapidity random number
         bytes32 smgID;                      /// ID of storeman group which user has selected
@@ -60,7 +58,6 @@ library RapidityLib {
         address userShadowAccount;          /// account of shadow chain, used to receive token
     }
 
-    /// @notice struct of Rapidity user burn lock parameters
     struct RapidityUserBurnParams {
         bytes32 smgID;                  /// ID of storeman group which user has selected
         uint tokenPairID;               /// token pair id on cross chain
@@ -68,7 +65,6 @@ library RapidityLib {
         bytes userOrigAccount;          /// account of token original chain, used to receive token
     }
 
-    /// @notice struct of Rapidity user burn lock parameters
     struct RapiditySmgBurnParams {
         bytes32 uniqueID;               /// Rapidity random number
         bytes32 smgID;                  /// ID of storeman group which user has selected
@@ -83,39 +79,12 @@ library RapidityLib {
      *
      **/
 
-
-    /// @notice                         event of exchange WRC-20 token with original chain token request
-    /// @notice                         event invoked by storeman group
-    /// @param smgID                    ID of storemanGroup
-    /// @param tokenPairID              token pair ID of cross chain token
-    /// @param value                    Rapidity value
-    /// @param userAccount              account of shadow chain, used to receive token
     event UserFastMintLogger(bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
 
-    /// @notice                         event of exchange WRC-20 token with original chain token request
-    /// @notice                         event invoked by storeman group
-    /// @param uniqueID                 unique random number
-    /// @param smgID                    ID of storemanGroup
-    /// @param tokenPairID              token pair ID of cross chain token
-    /// @param value                    Rapidity value
-    /// @param userAccount              account of original chain, used to receive token
     event SmgFastMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address userAccount);
 
-    /// @notice                         event of exchange WRC-20 token with original chain token request
-    /// @notice                         event invoked by storeman group
-    /// @param smgID                    ID of storemanGroup
-    /// @param tokenPairID              token pair ID of cross chain token
-    /// @param value                    Rapidity value
-    /// @param userAccount              account of shadow chain, used to receive token
     event UserFastBurnLogger(bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
 
-    /// @notice                         event of exchange WRC-20 token with original chain token request
-    /// @notice                         event invoked by storeman group
-    /// @param uniqueID                 unique random number
-    /// @param smgID                    ID of storemanGroup
-    /// @param tokenPairID              token pair ID of cross chain token
-    /// @param value                    Rapidity value
-    /// @param userAccount              account of original chain, used to receive token
     event SmgFastBurnLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address userAccount);
 
     /**
@@ -124,10 +93,6 @@ library RapidityLib {
     *
     */
 
-    /// @notice                         mintBridge, user lock token on token original chain
-    /// @notice                         event invoked by user mint lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for user mint lock token on token original chain
     function userFastMint(CrossTypes.Data storage storageData, RapidityUserMintParams memory params)
         public
     {
@@ -165,10 +130,6 @@ library RapidityLib {
         emit UserFastMintLogger(params.smgID, params.tokenPairID, params.value, lockFee, params.userShadowAccount);
     }
 
-    /// @notice                         mintBridge, storeman mint lock token on token shadow chain
-    /// @notice                         event invoked by user mint lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman mint lock token on token shadow chain
     function smgFastMint(CrossTypes.Data storage storageData, RapiditySmgMintParams memory params)
         public
     {
@@ -181,10 +142,6 @@ library RapidityLib {
         emit SmgFastMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.userShadowAccount);
     }
 
-    /// @notice                         burnBridge, user lock token on token original chain
-    /// @notice                         event invoked by user burn lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for user burn lock token on token original chain
     function userFastBurn(CrossTypes.Data storage storageData, RapidityUserBurnParams memory params)
         public
     {
@@ -219,10 +176,6 @@ library RapidityLib {
         emit UserFastBurnLogger(params.smgID, params.tokenPairID, params.value, lockFee, params.userOrigAccount);
     }
 
-    /// @notice                         burnBridge, storeman burn lock token on token shadow chain
-    /// @notice                         event invoked by user burn lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman burn lock token on token shadow chain
     function smgFastBurn(CrossTypes.Data storage storageData, RapiditySmgBurnParams memory params)
         public
     {

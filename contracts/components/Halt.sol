@@ -41,8 +41,6 @@ contract Halt is Owned {
         _;
     }
 
-    /// @notice function Emergency situation that requires
-    /// @notice contribution period to stop or not.
     function setHalt(bool halt)
         public
         onlyOwner

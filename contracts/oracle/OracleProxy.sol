@@ -37,8 +37,6 @@ contract OracleProxy is OracleStorage, Owned, Proxy {
     *
     */
 
-    /// @notice                           function for setting or upgrading OracleDelegate address by owner
-    /// @param impl                       OracleDelegate contract address
     function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");

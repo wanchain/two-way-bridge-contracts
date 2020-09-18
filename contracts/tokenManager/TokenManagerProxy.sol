@@ -41,8 +41,6 @@ contract TokenManagerProxy is TokenManagerStorage, Admin, Proxy {
     *
     */
 
-    /// @notice                           function for setting or upgrading TokenManagerDelegate address by owner
-    /// @param impl                       TokenManagerDelegate contract address
     function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");

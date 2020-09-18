@@ -34,8 +34,6 @@ library RapidityTxLib {
      *
      */
 
-    /// @notice tx info status
-    /// @notice uninitialized,Redeemed
     enum TxStatus {None, Redeemed}
 
     /**
@@ -44,7 +42,7 @@ library RapidityTxLib {
      *
      */
     struct Data {
-        /// @notice mapping of uniqueID to TxStatus -- uniqueID->TxStatus
+
         mapping(bytes32 => TxStatus) mapTxStatus;
 
     }
@@ -55,8 +53,6 @@ library RapidityTxLib {
      *
      */
 
-    /// @notice                     add user transaction info
-    /// @param  uniqueID            Rapidity random number
     function addRapidityTx(Data storage self, bytes32 uniqueID)
         internal
     {
