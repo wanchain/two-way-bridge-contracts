@@ -437,7 +437,7 @@ contract('Test Cross Approach', (accounts) => {
 
     importMochaTest("Test Rapidity", './crossApproach/rapidity_test');
 
-    importMochaTest("Test HTLC", './crossApproach/htlc_test');
+    // importMochaTest("Test HTLC", './crossApproach/htlc_test');
 
     importMochaTest("Test Debt", './crossApproach/debt_test');
 
