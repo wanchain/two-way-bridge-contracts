@@ -40,7 +40,7 @@ contract('StoremanGroupDelegate stakeAppend', async () => {
     it('T1', async ()=>{ // stakeAppend 10000
         let tx = await smg.stakeAppend(wk.addr,{value:10000});
         console.log("tx:", tx);
-        expectEvent(tx, 'stakeAppendEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:g.owner,value:new BN(10000)})
+        expectEvent(tx, 'stakeAppendEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.owner),value:new BN(10000)})
         let ski = await smg.getSelectedSmInfo(groupId, 1);
         let sk = await smg.getStoremanInfo(ski.wkAddr);
         assert.equal(sk.deposit.toString(10), "60000", "deposit is wrong" )
@@ -63,7 +63,7 @@ contract('StoremanGroupDelegate stakeAppend', async () => {
     it('T12', async ()=>{ // stakeAppend 10000
         let tx = await smg.stakeAppend(wk.addr,{value:10000});
         console.log("tx:", tx);
-        expectEvent(tx, 'stakeAppendEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:g.owner,value:new BN(10000)})
+        expectEvent(tx, 'stakeAppendEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.owner),value:new BN(10000)})
         let ski = await smg.getSelectedSmInfo(groupId, 1);
         let sk = await smg.getStoremanInfo(ski.wkAddr);
         assert.equal(sk.deposit.toString(10), "70010", "deposit is wrong" )

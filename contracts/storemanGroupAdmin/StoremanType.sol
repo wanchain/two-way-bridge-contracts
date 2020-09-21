@@ -74,7 +74,7 @@ library StoremanType {
         uint crossIncoming;
         bytes gpk1;
         bytes gpk2;
-        uint delegateFee;
+        uint delegateFee;   // div(10000)
         mapping(uint=>uint) tickedType;
         mapping(uint=>address) tickedNode;
         mapping(uint=>address) skMap;
