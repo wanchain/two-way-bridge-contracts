@@ -52,7 +52,7 @@ const g = {
 }
 
 async function setupNetwork() {
-    let network = args.network;
+    let network = args.network ? args.network : "development";
     g.admin = config.networks[network].admin;
     g.web3url = "http://" + config.networks[network].host + ":" + config.networks[network].port;
     console.log("setup network %s", network);
@@ -93,6 +93,9 @@ async function setupNetwork() {
             "0xffb044cd928c1b7ef6cc15932d06a9ce3351c2dc",
             "0x23dcbe0323605a7a00ce554babcff197baf99b10",
             "0xf45aedd5299d16440f67efe3fb1e1d1dcf358222",
+            "0x63ee75865b30f13b614a144023c133bd683e8134",
+            "0x9ac0e946d9dc8fa6d4731cc51f538936aac968b8",
+            "0xe7215f2786e18a0b0553aeb51421f0aa1615ae6e",
         ]
         g.wks = [
             "0x5793e629c061e7fd642ab6a1b4d552cec0e2d606",
@@ -103,6 +106,9 @@ async function setupNetwork() {
             "0xffb044cd928c1b7ef6cc15932d06a9ce3351c2dc",
             "0x23dcbe0323605a7a00ce554babcff197baf99b10",
             "0xf45aedd5299d16440f67efe3fb1e1d1dcf358222",
+            "0x63ee75865b30f13b614a144023c133bd683e8134",
+            "0x9ac0e946d9dc8fa6d4731cc51f538936aac968b8",
+            "0xe7215f2786e18a0b0553aeb51421f0aa1615ae6e",
         ];
         g.pks = [
             "0x25fa6a4190ddc87d9f9dd986726cafb901e15c21aafd2ed729efed1200c73de89f1657726631d29733f4565a97dc00200b772b4bc2f123a01e582e7e56b80cf8",
@@ -113,8 +119,11 @@ async function setupNetwork() {
             "0x95e8fd461c37f1db5da62bfbee2ad305d77e57fbef917ec8109e6425e942fb60ddc28b1edfdbcda1aa5ace3160b458b9d3d5b1fe306b4d09a030302a08e2db93",
             "0xbe3b7fd88613dc272a36f4de570297f5f33b87c26de3060ad04e2ea697e13125a2454acd296e1879a7ddd0084d9e4e724fca9ef610b21420978476e2632a1782",
             "0xc06543fc47e18816bc720604cfc208266f4e5cc0f436e149e2dab0e8a7981e7722070465f3a4a7c21134819ac194cc9d2818543117ec634ee663483197021441",
+            "0xbdea83a8a6bd7ad6ddcb43abd9ad947287521e6d9e634275a106c1e92fef94a000684f05fb48346c787ba497b9318cf772c2f093a760fe363758ff10f13ac7bb",
+            "0x4983d95b3716aefa4a14d116bded84e10fd5b050bd6001caa2b97086b4d5c68e1373426da2efcd14333d47bcebd3befcf5e609a66fac1b0280cdae2c07f0a279",
+            "0x5a7cef17a69a44cfd04e8a3696420b863e266dfaad35766c33e6d9d2e48c2e917ec73dcf9fef9b9d9a4fc915757102a0776de17904376bae87493a5cbba2d33a",
         ]
-        g.timeBase = 4;
+        g.timeBase = 120;
         web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
         g.web3 = web3;
     }

@@ -87,9 +87,14 @@ library IncentiveLib {
     }
     function incentiveDelegator(uint day, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group,StoremanType.StoremanData storage data) public {
         address deAddr = sk.delegatorMap[sk.incentivedDelegator];
-        sk.delegators[deAddr].incentive[day] = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), sk.delegators[deAddr].deposit.getValueById(day));
-        sk.delegators[deAddr].incentive[0] = sk.delegators[deAddr].incentive[0].add(sk.delegators[deAddr].incentive[day]);
-        data.totalReward = data.totalReward.add(sk.delegators[deAddr].incentive[day]);
+        uint incs = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), sk.delegators[deAddr].deposit.getValueById(day));
+        uint incSk = incs.mul(group.delegateFee).div(10000);
+        uint incDe = incs.sub(incSk);
+        sk.delegators[deAddr].incentive[day] = incDe;
+        sk.delegators[deAddr].incentive[0] = sk.delegators[deAddr].incentive[0].add(incDe);
+        sk.incentive[day] = sk.incentive[day].add(incSk);
+        sk.incentive[0] = sk.incentive[0].add(incSk);
+        data.totalReward = data.totalReward.add(incs);
         sk.incentivedDelegator++;
     }
 
