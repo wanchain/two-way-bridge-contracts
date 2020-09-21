@@ -88,6 +88,7 @@ module.exports = async function (deployer, network) {
     let gpkProxyAddr = '0x1538B85575CC151b868E76ff44Ab6964D21B1a56';
     let cnfProxyAddr = '0xB1AbD22fbb083e12f0Ca227Eb3aCd72fbeBBca5D';
     let quotaProxyAddr = '0x9A4aD54485245BDa7426754Fe08bfb1da3cc8e5c';
+    let smgProxyAddr = '0x63687EAAdeBfB529da387275771c20cA0FeE6e5B';
 
     // ***********osm*****************
     // storeman group admin sc
@@ -108,10 +109,14 @@ module.exports = async function (deployer, network) {
     await deployer.link(IncentiveLib,StoremanGroupDelegate);
     await deployer.link(StoremanUtil,StoremanGroupDelegate);
 
-    await deployer.deploy(StoremanGroupProxy);
-    let smgProxy = await StoremanGroupProxy.deployed();
+    // await deployer.deploy(StoremanGroupProxy);
+    // let smgProxy = await StoremanGroupProxy.deployed();
+
+
     await deployer.deploy(StoremanGroupDelegate);
     let smgDelegate = await StoremanGroupDelegate.deployed();
+
+    let smgProxy = await StoremanGroupProxy.at(smgProxyAddr);
     await smgProxy.upgradeTo(smgDelegate.address);
     console.log("smg address:", smgProxy.address);
 
@@ -122,10 +127,6 @@ module.exports = async function (deployer, network) {
 
     // dependence
     let metric = await MetricDelegate.at(metricProxyAddr);
-    let gpk = await GpkDelegate.at(gpkProxyAddr);
-
-
-    await gpk.setDependence(cnfProxyAddr, smgProxy.address);
     await metric.setDependence(cnfProxyAddr, smgProxy.address, posLib.address);
 
 }
