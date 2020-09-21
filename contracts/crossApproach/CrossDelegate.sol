@@ -30,8 +30,8 @@ pragma experimental ABIEncoderV2;
 import "../components/Halt.sol";
 import "../components/ReentrancyGuard.sol";
 import "./CrossStorage.sol";
-import "./lib/HTLCMintLib.sol";
-import "./lib/HTLCBurnLib.sol";
+// import "./lib/HTLCMintLib.sol";
+// import "./lib/HTLCBurnLib.sol";
 import "./lib/HTLCDebtLib.sol";
 import "./lib/RapidityLib.sol";
 
@@ -150,7 +150,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
 
         require(status == uint8(GroupStatus.unregistered), "PK is not unregistered");
     }
-
+    /*
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
     /// @param  xHash                           hash of HTLC random number
     /// @param  smgID                           ID of storeman
@@ -345,7 +345,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     {
         HTLCBurnLib.userBurnRevoke(storageData, xHash);
     }
-
+*/
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
     /// @param  smgID                           ID of storeman
     /// @param  tokenPairID                     token pair ID of cross chain token

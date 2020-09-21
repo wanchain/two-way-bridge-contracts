@@ -243,7 +243,7 @@ it("Debt -> userFastMint  ==> Disable rapidity cross chain while debt", async ()
         assert.include(err.toString(), "PK is not ready");
     }
 });
-
+/*
 it("Debt -> userMintLock  ==> Disable htlc cross chain while debt", async () => {
     let value;
     let origUserAccount;
@@ -510,6 +510,7 @@ it('Asset -> Original[1] -> Token1 -> userMintRevoke  ==> success', async () => 
         assert.fail(err);
     }
 });
+*/
 
 // ready for debt
 it('Asset -> Original[2] -> Coin2 -> userFastMint  ==> success', async () => {
@@ -944,6 +945,134 @@ it('Chain[2] -> Asset -> destDebtRedeem  ==> success', async () => {
 });
 
 // chain1 BurnBridge
+
+it('Shadow[2] -> Token1 -> userFastBurn  ==>  success', async () => {
+    try {
+        // global.accounts[7] is the chain1 original address of the user.
+        // global.accounts[8] is the chain2 shadow address of the user.
+        let userFastParamsTemp = Object.assign({}, userFastParams);
+        userFastParamsTemp.origUserAccount = global.accounts[7];
+        userFastParamsTemp.shadowUserAccount = global.accounts[8];
+        userFastParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
+        userFastParamsTemp.smgID = global.storemanGroups[2].ID;
+
+        // let mintOracleValue = await global.chains[2].approach.parnters.oracle.getDeposit(userFastParamsTemp.smgID);
+        // console.log("mintOracleValue", mintOracleValue);
+
+        let beforeBurnQuotaValue = await global.chains[1].approach.parnters.quota.getUserBurnQuota(userFastParamsTemp.tokenPairID, userFastParamsTemp.smgID);
+        // console.log("chain1 beforeBurnQuotaValue", beforeBurnQuotaValue);
+
+        let value = web3.utils.toWei(userFastParamsTemp.value.toString());
+        // get token instance
+        let tokenInstance = await getRC20TokenInstance(global.chains[2].coin.shadowTokenAccount);
+        let balance = await tokenInstance.balanceOf(userFastParamsTemp.shadowUserAccount);
+        assert.equal(value, balance.toString());
+
+        // approve value
+        await tokenInstance.approve(global.chains[1].approach.instance.address, 0, {from: userFastParamsTemp.shadowUserAccount});
+        await tokenInstance.approve(global.chains[1].approach.instance.address, value, {from: userFastParamsTemp.shadowUserAccount});
+        let allowance = await tokenInstance.allowance(userFastParamsTemp.shadowUserAccount, global.chains[1].approach.instance.address);
+        assert.equal(value, allowance.toString());
+
+        // console.log("before origUserAccount", await web3.eth.getBalance(userFastParamsTemp.origUserAccount));
+        // console.log("before crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
+        // user mint lock
+        let userFastBurnReceipt = await global.chains[1].approach.instance.userFastBurn(
+            userFastParamsTemp.smgID,
+            userFastParamsTemp.tokenPairID,
+            value,
+            userFastParamsTemp.origUserAccount,
+            {from: userFastParamsTemp.shadowUserAccount, value: global.chains[1].approach.shadowLockFee}
+        );
+
+            // console.log("userBurnLock receipt", userFastBurnReceipt.logs);
+        assert.checkWeb3Event(userFastBurnReceipt, {
+            event: 'UserFastBurnLogger',
+            args: {
+                smgID: web3.utils.padRight(userFastParamsTemp.smgID, 64),
+                tokenPairID: userFastParamsTemp.tokenPairID,
+                value: value,
+                fee: global.chains[1].approach.shadowLockFee,
+                userAccount: userFastParamsTemp.origUserAccount.toLowerCase(),
+            }
+        });
+        // console.log("after origUserAccount", await web3.eth.getBalance(userFastParamsTemp.origUserAccount));
+        // console.log("after crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
+
+        let afterBurnQuotaValue = await global.chains[1].approach.parnters.quota.getUserBurnQuota(userFastParamsTemp.tokenPairID, userFastParamsTemp.smgID);
+        // console.log("chain1 getUserBurnQuota OK");
+        // console.log("chain1 afterBurnQuotaValue", afterBurnQuotaValue);
+        // console.log("chain1 value", value);
+        let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+        // console.log("chain1 difference", difference);
+        assert.equal(value === difference, true);
+    } catch (err) {
+        assert.fail(err);
+    }
+});
+
+it('Original[1] -> Token1 -> smgFastBurn  ==>  success', async () => {
+    try {
+        // global.accounts[7] is the chain1 original address of the user.
+        // global.accounts[8] is the chain2 shadow address of the user.
+        let smgFastParamsTemp = Object.assign({}, userFastParams);
+        smgFastParamsTemp.origUserAccount = global.accounts[7];
+        smgFastParamsTemp.shadowUserAccount = global.accounts[8];
+        smgFastParamsTemp.uniqueID = uniqueInfo.coin2DebtFastBurn;
+        smgFastParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
+        smgFastParamsTemp.smgID = global.storemanGroups[2].ID;
+
+        let beforeBurnQuotaValue = await global.chains[2].approach.parnters.quota.getSmgBurnQuota(smgFastParamsTemp.tokenPairID, smgFastParamsTemp.smgID);
+        // console.log("chain2 beforeBurnQuotaValue", beforeBurnQuotaValue);
+
+        let value = web3.utils.toWei(smgFastParamsTemp.value.toString());
+
+        let pkId = 2;
+        let sk = skInfo.smg2[pkId];
+        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.smgFastBurn, smgFastParamsTemp.uniqueID,
+            smgFastParamsTemp.tokenPairID, value, smgFastParamsTemp.origUserAccount);
+
+        // console.log("pk1:", global.storemanGroups[1].gpk1);
+        // console.log("pk2:", global.storemanGroups[1].gpk2);
+        // user mint lock
+        let smgFastBurnReceipt = await global.chains[2].approach.instance.smgFastBurn(
+            smgFastParamsTemp.uniqueID,
+            smgFastParamsTemp.smgID,
+            smgFastParamsTemp.tokenPairID,
+            value,
+            smgFastParamsTemp.origUserAccount,
+            R,
+            s,
+            {from: global.storemanGroups[2].account}
+        );
+
+        // console.log("smgBurnLock receipt", smgFastBurnReceipt);
+        // console.log("smgBurnLock receipt logs", smgFastBurnReceipt.logs);
+        assert.checkWeb3Event(smgFastBurnReceipt, {
+            event: 'SmgFastBurnLogger',
+            args: {
+                uniqueID: smgFastParamsTemp.uniqueID,
+                smgID: web3.utils.padRight(smgFastParamsTemp.smgID, 64),
+                tokenPairID: smgFastParamsTemp.tokenPairID,
+                value: value,
+                userAccount: smgFastParamsTemp.origUserAccount
+            }
+        });
+
+        // console.log("chain2 check SmgBurnLockLogger OK");
+        let afterBurnQuotaValue = await global.chains[2].approach.parnters.quota.getSmgBurnQuota(smgFastParamsTemp.tokenPairID, smgFastParamsTemp.smgID);
+        // console.log("chain2 getSmgBurnQuota OK");
+        // console.log("chain2 afterBurnQuotaValue", afterBurnQuotaValue);
+        // console.log("chain2 value", value);
+        let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
+        // console.log("chain2 difference", difference);
+        assert.equal(value === difference, true);
+    } catch (err) {
+        assert.fail(err);
+    }
+});
+
+/*
 it('Debt -> Shadow[1] -> Coin2 -> userBurnLock  ==> success', async () => {
     try {
         // global.accounts[7] is the chain1 original address of the user.
@@ -1124,7 +1253,7 @@ it('Debt -> Shadow[1] -> Coin2 -> smgBurnRedeem  ==> success', async () => {
         assert.fail(err);
     }
 });
-
+*/
 it('Debt Cleaned -> Cross Cleaned  ==> success', async () => {
     try {
         let chain1Smg1AssetQuotaValue = await global.chains[1].approach.parnters.quota.getAsset(global.chains[2].coin.tokenPairID, global.storemanGroups[1].ID);
