@@ -33,9 +33,9 @@ const IncentiveLib = artifacts.require('IncentiveLib');
 const fakeQuota = artifacts.require('fakeQuota');
 
 const HTLCTxLib = artifacts.require('HTLCTxLib');
-const HTLCBurnLib = artifacts.require('HTLCBurnLib');
+// const HTLCBurnLib = artifacts.require('HTLCBurnLib');
 const HTLCDebtLib = artifacts.require('HTLCDebtLib');
-const HTLCMintLib = artifacts.require('HTLCMintLib');
+// const HTLCMintLib = artifacts.require('HTLCMintLib');
 const RapidityLib = artifacts.require('RapidityLib');
 const CrossDelegate = artifacts.require('CrossDelegate');
 const CrossProxy = artifacts.require('CrossProxy');
@@ -74,6 +74,7 @@ function replaceLib(contract, from, to) {
 }
 
 module.exports = async function (deployer, network) {
+    network = network.split("-")[0];
     global.network = network;
     if (network === 'nodeploy') return;
     if (network === 'localTest') return;
@@ -116,18 +117,18 @@ module.exports = async function (deployer, network) {
     await deployer.link(HTLCTxLib, HTLCDebtLib);
     await deployer.deploy(HTLCDebtLib);
 
-    await deployer.link(HTLCTxLib, HTLCMintLib);
-    await deployer.deploy(HTLCMintLib);
+    // await deployer.link(HTLCTxLib, HTLCMintLib);
+    // await deployer.deploy(HTLCMintLib);
 
-    await deployer.link(HTLCTxLib, HTLCBurnLib);
-    await deployer.deploy(HTLCBurnLib);
+    // await deployer.link(HTLCTxLib, HTLCBurnLib);
+    // await deployer.deploy(HTLCBurnLib);
 
     await deployer.deploy(RapidityLib);
 
     await deployer.link(HTLCTxLib, CrossDelegate);
     await deployer.link(HTLCDebtLib, CrossDelegate);
-    await deployer.link(HTLCMintLib, CrossDelegate);
-    await deployer.link(HTLCBurnLib, CrossDelegate);
+    // await deployer.link(HTLCMintLib, CrossDelegate);
+    // await deployer.link(HTLCBurnLib, CrossDelegate);
     await deployer.link(RapidityLib, CrossDelegate);
     await deployer.deploy(CrossDelegate);
 
