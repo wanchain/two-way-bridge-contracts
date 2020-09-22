@@ -12,6 +12,15 @@ let web3 = new Web3(new Web3.providers.HttpProvider("http://192.168.1.179:7123")
 const gGasPrice = 1000000000
 const gGasLimit = 10000000
 let scAddr;
+
+const crossScAddr = '0x6b7be32A0b23058285d39A95752d4e1d79FB9052';
+const oracleAddr = '0xDf84FE3D0ba5D5a0bFD661B001afB6507cCeBb6a';
+const quotaAddr = '0x9A4aD54485245BDa7426754Fe08bfb1da3cc8e5c';
+const tokenManagerAddr = '0x02472628eAd59f526F9bA79B55178033aB5445fD';
+const smgAdminAddr = '0x63687EAAdeBfB529da387275771c20cA0FeE6e5B';
+
+
+
 function stringTobytes32(name){
         let b = Buffer.alloc(32)
         b.write(name, 32-name.length,'utf8')
@@ -25,7 +34,7 @@ function getAddressFromInt(i){
         //console.log("priv:", '0x'+b.toString('hex')) 
         let addr = '0x'+ethutil.pubToAddress(pkb).toString('hex')
         let pk = '0x'+pkb.toString('hex')
-        console.log("got address: %s, %s",addr, pk)
+        //console.log("got address: %s, %s",addr, pk)
         return {addr, pk, priv:b}
       }
 
@@ -145,11 +154,10 @@ async function main() {
         let file = 'helpscript/abi.StoremanGroupDelegate.json'
         let content = fs.readFileSync(file, 'utf8')
         let abi = JSON.parse(content)
-        scaddr = "0x63687EAAdeBfB529da387275771c20cA0FeE6e5B"
 
         //let abi = conf.abi
 
-        let ins = new  web3.eth.Contract(abi, scaddr);
+        let ins = new  web3.eth.Contract(abi, smgAdminAddr);
 
         let smInfo = await ins.methods.getStoremanGroupInfo(stringTobytes32("jacob")).call()
         console.log("smInfo:", smInfo)
@@ -168,35 +176,60 @@ async function main() {
 
 
 async function event() {
+        let content;
+        let smgfile = 'helpscript/abi.StoremanGroupDelegate.json'
+        let tmfile = 'helpscript/abi.TokenManagerDelegate.json'
+        let quotafile = 'helpscript/abi.QuotaDelegate.json'
+        // let smgfile = ''
+        // let smgfile = ''
+        // let smgfile = ''
+        // let smgfile = ''
+        // let smgfile = ''
 
-        let file = 'helpscript/abi.StoremanGroupDelegate.json'
-        let content = fs.readFileSync(file, 'utf8')
-        let abi = JSON.parse(content)
-        scaddr = "0x63687EAAdeBfB529da387275771c20cA0FeE6e5B"
+        content = fs.readFileSync(smgfile, 'utf8')
+        let smgAbi = JSON.parse(content)
 
-        //let abi = conf.abi
+        content = fs.readFileSync(tmfile, 'utf8')
+        let tmAbi = JSON.parse(content)
+        content = fs.readFileSync(quotafile, 'utf8')
+        let quotaAbi = JSON.parse(content)
 
-        let ins = new  web3.eth.Contract(abi, scaddr);
+        
 
+        let smg = new  web3.eth.Contract(smgAbi, smgAdminAddr);
+        let tm =  new  web3.eth.Contract(tmAbi, tokenManagerAddr);
+        let quota =  new  web3.eth.Contract(quotaAbi, quotaAddr);
 
         let options = {
                 fromBlock: 930000,
         }
-        let event = await ins.getPastEvents("storemanTransferEvent", options)
-        console.log("event: ", event[0].returnValues)
+        // let event = await smg.getPastEvents("StoremanGroupRegisterStartEvent", options)
+        // for(let i=0; i<event.length; i++){
+        //         let groupId = event[i].returnValues.groupId;
+        //         let groupInfo = await smg.methods.getStoremanGroupInfo(groupId).call();
+        //         if(groupInfo.status == 5){
+        //                 console.log("groupInfo:", groupInfo)
+        //         }
+        // }
 
-        // event = await ins.getPastEvents("StoremanGroupRegisterStartEvent", options)
-        // console.log("event: ", event)
 
-        // let smInfo = await ins.methods.getStoremanInfo("0xE6f60216EE4773Aa4e98ffe536fa42193C2e75A0").call()
-        // console.log("smInfo:", smInfo)
+        //let tp = await tm.methods.getTokenPairs().call();
+	let tp = await smg.methods.getStoremanInfo("0x5C770cBf582D770b93cA90AdaD7E6BD33fAbC44C").call();
+        console.log("tp:", tp)
 
-        smInfo = await ins.methods.getSelectedStoreman(stringTobytes32("jacob")).call()
-        console.log("smInfo:", smInfo)
+        tp = await smg.methods.getStoremanGroupInfo("0x000000000000000000000000000000000000000000000000006a61636f622d32").call();
+        console.log("tp:", tp)
 
-        smInfo = await ins.methods.getSelectedStoreman(stringTobytes32("jacob_1")).call()
-        console.log("smInfo:", smInfo)
 
         
 }
 event();
+async function main() {
+        let count = 4;
+        let index = 0x07d7
+        for(let i=index; i<index+count;i++){
+                let d = getAddressFromInt(i)
+                console.log(d.addr, d.pk)
+        }
+}
+// main();
