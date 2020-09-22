@@ -27,7 +27,7 @@ const curve1 = 0, curve2 = 1;
 const minStakeIn = 50000;
 const minDelegateIn = 100;
 const minPartIn = 10000;
-const delegateFee = 1200;
+const delegateFee = 1000;
 const whiteAddrStartIdx = 0;
 const whiteAddrOffset = 2000;
 const otherAddrOffset = whiteAddrOffset * 20;
@@ -149,6 +149,7 @@ async function registerStart(smg, wlStartIndex = g.whiteAddrStartIdx, option = {
     let memberCountDesign = option.memberCountDesign ? option.memberCountDesign : g.memberCountDesign;
     let threshold = option.threshold ? option.threshold : g.threshold;
     let preGroupId =  option.preGroupId ? option.preGroupId : utils.stringTobytes32("");
+    let delegateFee1 =  option.delegateFee!=undefined ? option.delegateFee : delegateFee;
 
     let smgIn = {
         groupId: groupId,
@@ -165,7 +166,7 @@ async function registerStart(smg, wlStartIndex = g.whiteAddrStartIdx, option = {
         minStakeIn:minStakeIn,
         minDelegateIn:minDelegateIn,
         minPartIn:minPartIn,
-        delegateFee:delegateFee,
+        delegateFee:delegateFee1,
     }
     //console.log("wks: %O, ws: %O, srs: %O", g.wks, ws, srs)
     let tx = await smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
@@ -397,7 +398,7 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
         await toSelect(smg, groupId);
     }
     await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
-    let second = 1+parseInt(groupInfo.endTime)
+    let second = 2+parseInt(groupInfo.endTime)
     await utils.sleepUntil(second*1000)
     await smg.contribute({from: g.owner, value: web3.utils.toWei('1000')})
     while(true){
