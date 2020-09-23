@@ -150,7 +150,6 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool,StoremanUtil);
     await deployer.deploy(StoremanUtil);
-    await deployer.link(CommonTool,StoremanLib);
     await deployer.link(StoremanUtil,StoremanLib);
     await deployer.link(StoremanUtil,IncentiveLib);
     //await deployer.link(PosLib,StoremanGroupDelegate);
