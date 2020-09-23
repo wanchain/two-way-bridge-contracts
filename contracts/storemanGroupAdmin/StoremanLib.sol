@@ -44,6 +44,8 @@ library StoremanLib {
         require(group.status == StoremanType.GroupStatus.curveSeted,"invalid group");
         require(now <= group.registerTime+group.registerDuration,"Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
+        require(StoremanUtil.onCurve(PK), "invalid PK");
+        require(StoremanUtil.onCurve(enodeID), "invalid enodeID");
         address wkAddr = address(keccak256(PK));
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.sender == address(0x00), "Candidate has existed");
