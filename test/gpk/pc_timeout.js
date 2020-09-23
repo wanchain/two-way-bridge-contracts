@@ -61,17 +61,27 @@ contract('Gpk_UT_pc_timeout', async () => {
     assert.equal(result.reason, 'Invalid stage');
   })
 
-  it('[GpkDelegate_polyCommitTimeout] should fail: Not late', async () => {
+  it('[GpkDelegate_polyCommitTimeout] should fail: Invalid status', async () => {
     let result = {};
     try {
       await toSelect(smgSc, groupId);
+      await gpkSc.polyCommitTimeout(groupId, 0);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid status');
+  })
+
+  it('[GpkDelegate_polyCommitTimeout] should fail: Not late', async () => {
+    let result = {};
+    try {
       await data.setPolyCommit(0, 0, 0);
       await gpkSc.polyCommitTimeout(groupId, 0);
     } catch (e) {
       result = e;
     }
     assert.equal(result.reason, 'Not late');
-  })
+  })  
 
   it('[GpkDelegate_polyCommitTimeout] should success', async () => {
     let result = {};

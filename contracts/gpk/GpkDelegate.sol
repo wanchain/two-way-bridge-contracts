@@ -338,14 +338,14 @@ contract GpkDelegate is GpkStorage, Admin {
         view
     {
         require(roundIndex == group.round, "Invalid round"); // must be current round
-        require(curveIndex <= 1, "Invalid curve"); // group is initialized, and curve is permitted
+        require(curveIndex <= 1, "Invalid curve"); // curve only can be 0 or 1
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
-        require(round.status == status, "Invalid status");
-        if (checkStoreman) {
-            require(group.pkMap[storeman].length > 0, "Invalid storeman");
-        }
+        require((round.status == status) && (round.statusTime > 0), "Invalid status");
         if (checkSender) {
             require(group.pkMap[msg.sender].length > 0, "Invalid sender");
+        }
+        if (checkStoreman) {
+            require(group.pkMap[storeman].length > 0, "Invalid storeman");
         }
     }
 
