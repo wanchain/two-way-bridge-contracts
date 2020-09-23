@@ -352,15 +352,13 @@ contract GpkDelegate is GpkStorage, Admin {
     function getGroupInfo(bytes32 groupId, int32 roundIndex)
         external
         view
-        returns(uint16 queriedRound, uint8 curve1Status, uint curve1StatusTime, uint8 curve2Status, uint curve2StatusTime,
-                uint32 ployCommitPeriod, uint32 defaultPeriod, uint32 negotiatePeriod)
+        returns(uint16 queriedRound, address curve1, uint8 curve1Status, uint curve1StatusTime, address curve2, uint8 curve2Status, uint curve2StatusTime)
     {
         GpkTypes.Group storage group = groupMap[groupId];
         queriedRound = (roundIndex >= 0)? uint16(roundIndex) : group.round;
         GpkTypes.Round storage round1 = group.roundMap[queriedRound][0];
         GpkTypes.Round storage round2 = group.roundMap[queriedRound][1];
-        return (queriedRound, uint8(round1.status), round1.statusTime, uint8(round2.status), round2.statusTime,
-                group.ployCommitPeriod, group.defaultPeriod, group.negotiatePeriod);
+        return (queriedRound, round1.curve, uint8(round1.status), round1.statusTime, round2.curve, uint8(round2.status), round2.statusTime);
     }
 
     function getPolyCommit(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src)
