@@ -50,6 +50,7 @@ contract ConfigDelegate is ConfigStorage, Halt , Admin{
 
     function getCurve(uint8 curveId)
     external
+    view
     returns(address){
         require(curves[curveId] != address(0), "No curve");
         return curves[curveId];
