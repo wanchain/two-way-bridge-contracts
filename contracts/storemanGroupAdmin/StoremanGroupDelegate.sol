@@ -236,6 +236,14 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         group.status = status;
     }
+    function cleanStoremanNode(address wkAddr) external onlyAdmin {
+        StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
+        require(sk.deposit.getLastValue() == 0,'using');
+        require(sk.delegateDeposit == 0,'using');
+        require(sk.partnerDeposit == 0,'using');
+        delete data.candidates[0][wkAddr];
+    }
+
 
 
     function getStoremanIncentive(address wkAddr, uint day) external view returns(uint incentive) {
