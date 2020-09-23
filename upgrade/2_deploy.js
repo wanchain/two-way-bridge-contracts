@@ -74,43 +74,32 @@ function replaceLib(contract, from, to) {
 module.exports = async function (deployer, network) {
     global.network = network;
 
-    // before upgrade
-    // MetricProxy: 0x94971AF22185b63A4111ee5A920179c5DDFBC7df
-    // StoremanGroupProxy: 0x07EbFA72F59d0C121Df58d9960Ba0b814098EbE9
-    // GpkProxy: 0x1538B85575CC151b868E76ff44Ab6964D21B1a56
-    // ConfigProxy: 0xB1AbD22fbb083e12f0Ca227Eb3aCd72fbeBBca5D
-    // QuotaProxy: 0x9A4aD54485245BDa7426754Fe08bfb1da3cc8e5c
-
     // update:
     // 1. smg contract
     // 2. posLib
-    let metricProxyAddr = '0x94971AF22185b63A4111ee5A920179c5DDFBC7df';
-    let gpkProxyAddr = '0x1538B85575CC151b868E76ff44Ab6964D21B1a56';
-    let cnfProxyAddr = '0xB1AbD22fbb083e12f0Ca227Eb3aCd72fbeBBca5D';
-    let quotaProxyAddr = '0x9A4aD54485245BDa7426754Fe08bfb1da3cc8e5c';
-    let smgProxyAddr = '0x63687EAAdeBfB529da387275771c20cA0FeE6e5B';
+    //let metricProxyAddr = '0x869276043812B459Cc9d11E255Fb0097D51846EF';
+    let gpkProxyAddr = '0xf0bFfF373EEF7b787f5aecb808A59dF714e2a6E7';
+    let cnfProxyAddr = '0xc59a6E80E387bdeFa89Efb032aA4EE922Ca78036';
+    //let quotaProxyAddr = '0x7585c2ae6a3F3B2998103cB7040F811B550C9930';
+    let smgProxyAddr = '0xaA5A0f7F99FA841F410aafD97E8C435c75c22821';
 
-    // ***********osm*****************
-    // storeman group admin sc
-
-    await deployer.deploy(PosLib);
-    let posLib = await PosLib.deployed();
-
+    // smg
+    await deployer.deploy(CommonTool);
+    await deployer.link(CommonTool,StoremanUtil);
     await deployer.deploy(StoremanUtil);
+
     await deployer.link(StoremanUtil,StoremanLib);
     await deployer.link(StoremanUtil,IncentiveLib);
 
     await deployer.deploy(Deposit);
     await deployer.link(Deposit,StoremanGroupDelegate);
+
     await deployer.deploy(StoremanLib);
     await deployer.link(StoremanLib,StoremanGroupDelegate);
 
     await deployer.deploy(IncentiveLib);
     await deployer.link(IncentiveLib,StoremanGroupDelegate);
     await deployer.link(StoremanUtil,StoremanGroupDelegate);
-
-    // await deployer.deploy(StoremanGroupProxy);
-    // let smgProxy = await StoremanGroupProxy.deployed();
 
 
     await deployer.deploy(StoremanGroupDelegate);
@@ -120,13 +109,21 @@ module.exports = async function (deployer, network) {
     await smgProxy.upgradeTo(smgDelegate.address);
     console.log("smg address:", smgProxy.address);
 
-    // storm group admin dependence
-    let smg = await StoremanGroupDelegate.at(smgProxy.address);
-    await smg.addAdmin(config.networks[network].admin);
-    await smg.setDependence(metricProxyAddr, gpkProxyAddr, quotaProxyAddr,posLib.address);
+    // config
+    let cnfProxy = await ConfigProxy.at(cnfProxyAddr);
+    await deployer.deploy(ConfigDelegate);
+    let cnfDelegate = await ConfigDelegate.deployed();
+    await cnfProxy.upgradeTo(cnfDelegate.address);
 
-    // dependence
-    let metric = await MetricDelegate.at(metricProxyAddr);
-    await metric.setDependence(cnfProxyAddr, smgProxy.address, posLib.address);
+    // gpk
+    await deployer.link(CommonTool, GpkLib);
+    await deployer.deploy(GpkLib);
+
+    await deployer.link(GpkLib, GpkDelegate);
+    await deployer.deploy(GpkDelegate);
+    let gpkDelegate = await GpkDelegate.deployed();
+
+    let gpkProxy = await GpkProxy.at(gpkProxyAddr);
+    await gpkProxy.upgradeTo(gpkDelegate.address);
 
 }
