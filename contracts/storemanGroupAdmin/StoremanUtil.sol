@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 import "../lib/SafeMath.sol";
 import "./StoremanType.sol";
 import "../interfaces/IPosLib.sol";
-
+import "../lib/CommonTool.sol";
 
 library StoremanUtil {
   using SafeMath for uint;
@@ -28,5 +28,16 @@ library StoremanUtil {
     }
     return storemans;
   }
-  
+  function onCurve(bytes pubkey) internal constant returns (bool) {
+    if(pubkey.length != 64) return false;
+    uint[2]  P;
+    P[0] =  CommonTool.bytes2uint(pubkey, 0, 32);
+    P[1] =  CommonTool.bytes2uint(pubkey, 32, 32);
+    uint p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
+    if (0 == P[0] || P[0] == p || 0 == P[1] || P[1] == p)
+      return false;
+    uint LHS = mulmod(P[1], P[1], p);
+    uint RHS = addmod(mulmod(mulmod(P[0], P[0], p), P[0], p), 7, p);
+    return LHS == RHS;
+  }
 }

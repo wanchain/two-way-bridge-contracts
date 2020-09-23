@@ -27,6 +27,37 @@ contract('StoremanGroupDelegate stakeIn', async () => {
         await stakeInPre(smg, groupId)
     })
     it('T1', async ()=>{ // stakeIn 50000
+        let wk = utils.getAddressFromInt(15001)
+        let tx;
+        wk.pk = "0x04db7432110ba814bfe6371ddfd03ba554b558548aa90e81b8e1421321656065a88236f24d965a900384b382e8d772d7e92dee2ce6c3cb33883ea627d54a5170c4";
+        tx = smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
+        await expectRevert(tx, "invalid PK");
+        wk.pk = "0x04db7432110ba814bfe6371ddfd03ba554b558548aa90e81b8e1421321656065a88236f24d965a900384b382e8d772d7e92dee2ce6c3cb33883ea627d54a5170";
+        tx = smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
+        await expectRevert(tx, "invalid PK");
+
+        wk.pk = "0xdb7432110ba814bfe6371ddfd03ba554b558548aa90e81b8e1421321656065a88236f24d965a900384b382e8d772d7e92dee2ce6c3cb33883ea627d54a5170c5";
+        tx = smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
+        await expectRevert(tx, "invalid PK");
+
+
+
+        let wk0 = utils.getAddressFromInt(18001)
+        wk.pk = "0x04db7432110ba814bfe6371ddfd03ba554b558548aa90e81b8e1421321656065a88236f24d965a900384b382e8d772d7e92dee2ce6c3cb33883ea627d54a5170c4";
+        tx = smg.stakeIn(groupId, wk0.pk, wk.pk,{value:50000});
+        await expectRevert(tx, "invalid enodeID");
+        wk.pk = "0x04db7432110ba814bfe6371ddfd03ba554b558548aa90e81b8e1421321656065a88236f24d965a900384b382e8d772d7e92dee2ce6c3cb33883ea627d54a5170";
+        tx = smg.stakeIn(groupId, wk0.pk, wk.pk,{value:50000});
+        await expectRevert(tx, "invalid enodeID");
+
+        wk.pk = "0xdb7432110ba814bfe6371ddfd03ba554b558548aa90e81b8e1421321656065a88236f24d965a900384b382e8d772d7e92dee2ce6c3cb33883ea627d54a5170c5";
+        tx = smg.stakeIn(groupId, wk0.pk, wk.pk,{value:50000});
+        await expectRevert(tx, "invalid enodeID");
+
+
+
+    })
+    it('T1', async ()=>{ // stakeIn 50000
         let wk = utils.getAddressFromInt(10001)
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
         console.log("tx:", tx);

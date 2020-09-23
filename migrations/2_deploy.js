@@ -146,9 +146,11 @@ module.exports = async function (deployer, network) {
       posLib = await deployer.deploy(FakePosLib);
       quotaProxy = await fakeQuota.deployed()
     } 
-        
-    //await deployer.link(PosLib,StoremanUtil);
+
+    await deployer.deploy(CommonTool);
+    await deployer.link(CommonTool,StoremanUtil);
     await deployer.deploy(StoremanUtil);
+    await deployer.link(CommonTool,StoremanLib);
     await deployer.link(StoremanUtil,StoremanLib);
     await deployer.link(StoremanUtil,IncentiveLib);
     //await deployer.link(PosLib,StoremanGroupDelegate);
@@ -177,7 +179,6 @@ module.exports = async function (deployer, network) {
     if(network == 'local' || network == 'coverage') {
         await deployer.deploy(FakeSmg);
     }
-    await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, MetricLib);
     //await deployer.link(PosLib, MetricLib);
     await deployer.deploy(MetricLib);
