@@ -166,7 +166,7 @@ contract('Gpk_UT_gpk', async() => {
     } catch (e) {
       result = e;
     }
-    let info = await gpkSc.getGroupInfo(groupId, -1);
+    let info = await gpkSc.groupMap(groupId);
     assert.equal(info.ployCommitPeriod, ployCommitPeriod);
     assert.equal(info.defaultPeriod, defaultPeriod);
     assert.equal(info.negotiatePeriod, negotiatePeriod);
