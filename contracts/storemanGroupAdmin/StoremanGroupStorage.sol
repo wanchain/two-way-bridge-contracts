@@ -46,7 +46,7 @@ contract StoremanGroupStorage is BasicStorage {
     uint maxSlashedCount = 2;
     uint standaloneWeightDefault = 15000;
     uint chainTypeCoDefault = 10000;
-    uint DelegationMultiDefault = 10;
+    uint DelegationMultiDefault = 5;
 
 
     data.conf.standaloneWeight = standaloneWeightDefault;
