@@ -239,8 +239,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     function cleanStoremanNode(address wkAddr) external onlyAdmin {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.deposit.getLastValue() == 0,'using');
-        require(sk.delegateDeposit == 0,'using');
-        require(sk.partnerDeposit == 0,'using');
+        require(sk.delegatorCount == 0,'using');
+        require(sk.partnerCount == 0,'using');
         delete data.candidates[0][wkAddr];
     }
 
@@ -266,6 +266,14 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         StoremanType.Delegator storage pn = sk.partners[pnAddr];
         return (pnAddr, pn.deposit.getLastValue(), pn.quited);
+    }
+    function getSmPartnerAddr(address wkAddr, uint index) external view returns(address pkAddr) {
+        StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
+        return sk.partMap[index];
+    }
+    function getSmDelegatorAddr(address wkAddr, uint index) external view returns(address deAddr) {
+        StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
+        return sk.delegatorMap[index];
     }
 
     function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2)
