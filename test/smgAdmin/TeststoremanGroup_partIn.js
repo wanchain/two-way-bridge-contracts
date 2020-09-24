@@ -8,7 +8,7 @@ const { expectRevert, expectEvent , BN} = require('@openzeppelin/test-helpers');
 
 
 
-const { registerStart,stakeInPre, setupNetwork, g,timeWaitSelect,timeWaitIncentive } = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork, g,timeWaitSelect,timeWaitIncentive,toPartIn,sendTransaction } = require('../base.js');
 
 
 
@@ -110,7 +110,7 @@ contract('StoremanGroupDelegate partIn', async () => {
         expectEvent(tx, 'partOutEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0])})
         let sk2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(sk.partnerCount, sk2.partnerCount)
-        assert.equal(sk2.partnerDeposit, 6*partValue)
+        assert.equal(sk2.partnerDeposit, 4*partValue)
   
 
     })
@@ -122,9 +122,102 @@ contract('StoremanGroupDelegate partIn', async () => {
 
         tx = smg.partClaim(wk.addr, {from:g.sfs[8]});
         await expectRevert(tx, "not exist")
+
+        let skInfo1 = await smg.getStoremanInfo(wk.addr);
+
         tx = await smg.partClaim(wk.addr, {from:g.sfs[4]});
         console.log("xxxxxxxxxxxxxxxxxxx:", tx)
         expectEvent(tx, "partClaimEvent",{wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[4]), amount:new BN(partValue)});       
+        let skInfo2 = await smg.getStoremanInfo(wk.addr);
+        assert.equal(skInfo1.partnerCount, parseInt(skInfo2.partnerCount)+1,"partCLaim failed")
 
     })
 })
+
+
+
+
+contract('StoremanGroupDelegate partClaim', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+    let de1 = utils.getAddressFromInt(30000)
+    const base=40000
+    const count=5
+
+
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        groupId = await registerStart(smg, 0, {htlcDuration:20,delegateFee:1000});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+    })
+
+
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+        await toPartIn(smg, wk.addr,index=base,count, value=10000)
+        let smInfo = await smg.getStoremanInfo(wk.addr);
+        console.log("stakeIn smInfo:", smInfo)
+        assert.equal(smInfo.partnerCount, 5)
+    })  
+
+    it('check incentive ', async ()=>{
+        let d, sdata, addr;
+        let smInfo1;
+        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.failed, {from:g.admin})
+
+
+        let smInfo = await smg.getStoremanInfo(wk.addr);
+
+        d0 = utils.getAddressFromInt(base+0)
+        d1 = utils.getAddressFromInt(base+1)
+        d2 = utils.getAddressFromInt(base+2)
+        d3 = utils.getAddressFromInt(base+3)
+        d4 = utils.getAddressFromInt(base+4)
+
+        // delete the first one,   0,1,2,3,4  -->  4,1,2,3
+        sdata =  smg.contract.methods.partClaim(wk.addr).encodeABI()
+        await sendTransaction(d0, 0, sdata,smg.contract._address);
+        addr = await smg.getSmPartnerAddr(wk.addr, 0)
+        assert.equal(addr.toLowerCase(), d4.addr)
+        addr = await smg.getSmPartnerAddr(wk.addr, 3)
+        assert.equal(addr.toLowerCase(), d3.addr)
+        smInfo1 = await smg.getStoremanInfo(wk.addr);
+        assert.equal(smInfo1.partnerCount, 4)
+
+        // delete the last one 4,1,2,3  --->  4, 1, 2
+        sdata =  smg.contract.methods.partClaim(wk.addr).encodeABI()
+        await sendTransaction(d3, 0, sdata,smg.contract._address);
+        smInfo1 = await smg.getStoremanInfo(wk.addr);
+        assert.equal(smInfo1.partnerCount, 3)
+
+        addr = await smg.getSmPartnerAddr(wk.addr, 0)
+        assert.equal(addr.toLowerCase(), d4.addr)
+        addr = await smg.getSmPartnerAddr(wk.addr, 2)
+        assert.equal(addr.toLowerCase(), d2.addr)
+
+        // delete the middle one 4, 1, 2  --> 4, 2
+        sdata =  smg.contract.methods.partClaim(wk.addr).encodeABI()
+        await sendTransaction(d1, 0, sdata,smg.contract._address);
+        smInfo1 = await smg.getStoremanInfo(wk.addr);
+        assert.equal(smInfo1.partnerCount, 2)
+        addr = await smg.getSmPartnerAddr(wk.addr, 0)
+        assert.equal(addr.toLowerCase(), d4.addr)
+        addr = await smg.getSmPartnerAddr(wk.addr, 1)
+        assert.equal(addr.toLowerCase(), d2.addr)
+
+        let smInfo2 = await smg.getStoremanInfo(wk.addr);
+        assert.equal(smInfo.partnerCount, 5)
+        assert.equal(smInfo.partnerDeposit, 5*10000)
+        assert.equal(smInfo2.partnerCount, 2)
+        //assert.equal(smInfo2.partnerDeposit, 2*10000)
+    })
+    
+})
+

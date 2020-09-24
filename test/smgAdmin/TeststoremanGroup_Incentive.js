@@ -13,7 +13,7 @@ const {
     registerStart,
     stakeWhiteList,
     g,
-    toSelect,toDelegateIn,toPartIn,
+    toSelect,toDelegateIn,toPartIn, toDelegateClaim, toPartClaim,
     setupNetwork,stakeInPre,timeWaitSelect, timeWaitIncentive,
     initTestValue
 } = require('../base.js');
@@ -787,6 +787,72 @@ contract('incentive incentive value check 2', async () => {
         assert.equal(endIncentive, 450000)
         endIncentive = await smg.getSmDelegatorInfoIncentive(wk.addr, part1.addr, parseInt(groupInfo.endTime-1))
         assert.equal(endIncentive, 0)
+    })
+    
+})
+
+
+
+contract('delete sk', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+    let wk2 = utils.getAddressFromInt(10002)
+    let wk3 = utils.getAddressFromInt(10003)
+    let de1 = utils.getAddressFromInt(30000)
+    let part1 = utils.getAddressFromInt(40000)
+
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        groupId = await registerStart(smg, 0, {htlcDuration:20,delegateFee:1000});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+    })
+
+
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+        await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:100000});
+        await smg.stakeIn(groupId, wk3.pk, wk3.pk,{value:250000});
+        await toDelegateIn(smg, wk.addr, index=30000,count=5, value=15000)
+        await toPartIn(smg, wk.addr,index=40000,count=5)
+        let smInfo = await smg.getStoremanInfo(wk.addr);
+        console.log("stakeIn smInfo:", smInfo)
+    })  
+
+    it('check incentive ', async ()=>{
+        let endIncentive;
+        let tx
+        await timeWaitIncentive(smg, groupId, wk.addr);
+        endIncentive = await smg.getStoremanIncentive(wk.addr, parseInt(groupInfo.endTime-1))
+        console.log("sk info:", await smg.getStoremanInfo(wk.addr))
+        assert.equal(endIncentive, 7750000)
+        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.dismissed, {from:g.admin})
+
+        tx = smg.cleanStoremanNode(wk.addr, {from:g.admin})
+        await expectRevert(tx, 'using')
+
+
+        await toDelegateClaim(smg, wk.addr, index=30000,count=5)
+
+        tx = smg.cleanStoremanNode(wk.addr, {from:g.admin})
+        await expectRevert(tx, 'using')
+
+
+        await toPartClaim(smg, wk.addr,index=40000,count=5)
+        tx = smg.cleanStoremanNode(wk.addr, {from:g.admin})
+        await expectRevert(tx, 'using')
+
+        await smg.stakeClaim(wk.addr);
+        let smInfo = await smg.getStoremanInfo(wk.addr);
+        console.log("smInfo:", smInfo)
+        tx = await smg.cleanStoremanNode(wk.addr, {from:g.admin})
+        console.log(" cleanStoremanNode tx:", tx)
     })
     
 })
