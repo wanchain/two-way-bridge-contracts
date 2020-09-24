@@ -397,9 +397,10 @@ library StoremanLib {
     function partIn(StoremanType.StoremanData storage data, address wkAddr)
         external
     {
+        uint maxPartnerCount = 5;
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
-        require(sk.partnerCount<5,"Too many partners");
+        require(sk.partnerCount<maxPartnerCount,"Too many partners");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
         require(msg.value >= group.minPartIn, "Too small value");
