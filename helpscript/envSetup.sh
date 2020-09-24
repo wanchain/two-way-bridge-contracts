@@ -16,7 +16,6 @@ read -s PASSWD2
 echo ''
 
 
-#DOCKERIMG=wanchain/client-go:2.1.5
 DOCKERIMG=wanchain/openstoremanagent:v1.4
 
 if [ ${PASSWD} != ${PASSWD2} ]
@@ -44,7 +43,7 @@ fi
 
 
 
-#sudo docker pull ${DOCKERIMG}
+sudo docker pull ${DOCKERIMG}
 if [ $? -ne 0 ]; then
     echo "docker pull failed"
     exit 1
