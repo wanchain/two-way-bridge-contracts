@@ -49,7 +49,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-mpcipcDir=$HOME/osm/schnorrmpc/data
+mpcipcDir=$HOME/osm/data
 keystore=$HOME/osm/keystore
 
 
@@ -70,6 +70,8 @@ KEYSTORE=$(sudo cat $keystore/${KEYSTOREFILE})
 NODEKEY=$(sudo cat $mpcipcDir/gwan/nodekey)
 EnodeId=$(sudo docker run -v $mpcipcDir:/osm/schnorrmpc/data -v $keystore:/osm/keystore  --entrypoint="/osm/schnorrmpc/bin/gwan" ${DOCKERIMG}  --datadir=/osm/schnorrmpc/data --keystore=/osm/keystore console --exec "admin.nodeInfo.id")
 
+cp -rf ${mpcipcDir}/osm/data/gwan/nodekey ${mpcipcDir}/osm/data/nodekey
+rm -rf ${mpcipcDir}/osm/data/gwan
 
 echo ''
 echo ''
