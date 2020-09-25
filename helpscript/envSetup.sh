@@ -16,7 +16,7 @@ read -s PASSWD2
 echo ''
 
 
-DOCKERIMG=wanchain/openstoremanagent:v1.4
+DOCKERIMG=wanchain/openstoremanagent:latest
 
 if [ ${PASSWD} != ${PASSWD2} ]
 then
@@ -53,13 +53,13 @@ mpcipcDir=$HOME/osm/data
 keystore=$HOME/osm/keystore
 
 
-getAddr=$(sudo docker run -v $mpcipcDir:/osm/schnorrmpc/data -v $keystore:/osm/keystore  --entrypoint="/osm/schnorrmpc/bin/gwan" ${DOCKERIMG}  --datadir=/osm/schnorrmpc/data --keystore=/osm/keystore console --exec "personal.newAccount('${PASSWD}')"  )
+getAddr=$(sudo docker run -v $mpcipcDir:/osm/schnorrmpc/data -v $keystore:/osm/keystore  --entrypoint="/osm/schnorrmpc/bin/gwan" ${DOCKERIMG} --nodiscover --datadir=/osm/schnorrmpc/data --keystore=/osm/keystore console --exec "personal.newAccount('${PASSWD}')"  )
 
 ADDR=$getAddr
 
 echo $ADDR
 
-getPK=$(sudo docker run -v $mpcipcDir:/osm/schnorrmpc/data -v $keystore:/osm/keystore  --entrypoint="/osm/schnorrmpc/bin/gwan" ${DOCKERIMG}  --datadir=/osm/schnorrmpc/data --keystore=/osm/keystore console --exec "personal.showPublicKey(${ADDR},'${PASSWD}')[0].slice(4)")
+getPK=$(sudo docker run -v $mpcipcDir:/osm/schnorrmpc/data -v $keystore:/osm/keystore  --entrypoint="/osm/schnorrmpc/bin/gwan" ${DOCKERIMG} --nodiscover --datadir=/osm/schnorrmpc/data --keystore=/osm/keystore console --exec "personal.showPublicKey(${ADDR},'${PASSWD}')[0].slice(4)")
 PK=$getPK
 
 
@@ -68,10 +68,11 @@ KEYSTOREFILE=$(sudo ls $keystore)
 KEYSTORE=$(sudo cat $keystore/${KEYSTOREFILE})
 
 NODEKEY=$(sudo cat $mpcipcDir/gwan/nodekey)
-EnodeId=$(sudo docker run -v $mpcipcDir:/osm/schnorrmpc/data -v $keystore:/osm/keystore  --entrypoint="/osm/schnorrmpc/bin/gwan" ${DOCKERIMG}  --datadir=/osm/schnorrmpc/data --keystore=/osm/keystore console --exec "admin.nodeInfo.id")
+EnodeId=$(sudo docker run -v $mpcipcDir:/osm/schnorrmpc/data -v $keystore:/osm/keystore  --entrypoint="/osm/schnorrmpc/bin/gwan" ${DOCKERIMG} --nodiscover --datadir=/osm/schnorrmpc/data --keystore=/osm/keystore console --exec "admin.nodeInfo.id")
 
-cp -rf ${mpcipcDir}/osm/data/gwan/nodekey ${mpcipcDir}/osm/data/nodekey
-rm -rf ${mpcipcDir}/osm/data/gwan
+sudo cp -rf ${mpcipcDir}/gwan/nodekey ${mpcipcDir}/nodekey
+sudo rm -rf ${mpcipcDir}/gwan
+sudo rm -rf ${mpcipcDir}/history
 
 echo ''
 echo ''
