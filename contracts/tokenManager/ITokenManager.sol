@@ -1,5 +1,5 @@
-pragma solidity 0.4.26;
 pragma experimental ABIEncoderV2;
+pragma solidity 0.4.26;
 
 interface ITokenManager {
   function getTokenPairInfo(uint id) external view

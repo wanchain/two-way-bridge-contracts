@@ -24,8 +24,8 @@
 //
 //
 
-pragma solidity ^0.4.26;
 pragma experimental ABIEncoderV2;
+pragma solidity ^0.4.26;
 
 import "./HTLCTxLib.sol";
 import "./CrossTypes.sol";

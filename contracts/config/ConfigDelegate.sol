@@ -23,9 +23,8 @@
 //    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
 //
 //
-
-pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
+pragma solidity ^0.4.24;
 
 import "../components/Halt.sol";
 import "../components/Admin.sol";

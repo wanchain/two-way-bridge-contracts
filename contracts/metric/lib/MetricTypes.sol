@@ -24,8 +24,8 @@
 //
 //
 
-pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
+pragma solidity ^0.4.24;
 
 import "../../interfaces/IConfig.sol";
 import "../../interfaces/IStoremanGroup.sol";

@@ -24,8 +24,8 @@
 //
 //
 
-pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
+pragma solidity ^0.4.24;
 
 /**
  * Math operations with safety checks
