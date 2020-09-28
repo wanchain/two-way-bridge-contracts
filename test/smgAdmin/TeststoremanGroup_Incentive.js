@@ -793,7 +793,7 @@ contract('incentive incentive value check 2', async () => {
 
 
 
-contract('delete sk', async () => {
+contract.skip('delete sk', async () => {
 
     let  smg
     let groupId, groupInfo

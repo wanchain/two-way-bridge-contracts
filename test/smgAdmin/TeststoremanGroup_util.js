@@ -47,15 +47,22 @@ contract('StoremanGroupDelegate util', async () => {
         let d = 10000;
         let w = await smgUtil.calSkWeight(15000,d);
         console.log("weight is ", w.toString(10))
-        assert(w, 15000, "calSkWeight failed")
+        assert.equal(w, 15000, "calSkWeight failed")
     })
     it('getSelectedSmNumber ', async ()=>{
         let w = await smg.getSelectedSmNumber(groupId);
         console.log("getSelectedSmNumber is ", w)
-        assert(w, 4, "getSelectedSmNumber failed")
+        assert.equal(w, 4, "getSelectedSmNumber failed")
     })
 
-
+    it('onCurve ', async ()=>{
+        let w = await smgUtil.onCurve("0x95d9fcbfcd5d977d9b3822b49b1c63750541999a71f6305d255060e1e2fcf816e1b682bd8224ae99fa1b2e965b1825392c26506a1a373cd043928865e384a599");
+        assert.equal(w, true, "onCurve failed")
+        w = await smgUtil.onCurve("0x95d9fcbfcd5d977d9b3822b49b1c63750541999a71f6305d255060e1e2fcf816e1b682bd8224ae99fa1b2e965b1825392c26506a1a373cd043928865e384a591");
+        assert.equal(w, false, "onCurve failed")
+        w = await smgUtil.onCurve("0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+        assert.equal(w, false, "onCurve failed")
+    })
     
     it('getSelectedStoreman ', async ()=>{
         let w = await smg.getSelectedStoreman(groupId);
