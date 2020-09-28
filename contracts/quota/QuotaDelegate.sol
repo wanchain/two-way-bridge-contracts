@@ -32,9 +32,16 @@ pragma solidity 0.4.26;
 
 import "../components/Halt.sol";
 import "./QuotaStorage.sol";
-import "../tokenManager/ITokenManager.sol";
-import "../interfaces/IStoremanGroup.sol";
 import "../interfaces/IOracle.sol";
+
+interface ITokenManager {
+  function getAncestorInfo(uint id) external view
+    returns (bytes account, bytes name, string symbol, uint8 decimals, uint chainId);
+}
+
+interface IStoremanGroup {
+    function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime);
+}
 
 interface IDebtOracle {
     function isDebtClean(bytes32 storemanGroupId) external view returns (bool);
