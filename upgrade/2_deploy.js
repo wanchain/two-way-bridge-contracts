@@ -109,21 +109,4 @@ module.exports = async function (deployer, network) {
     await smgProxy.upgradeTo(smgDelegate.address);
     console.log("smg address:", smgProxy.address);
 
-    // config
-    let cnfProxy = await ConfigProxy.at(cnfProxyAddr);
-    await deployer.deploy(ConfigDelegate);
-    let cnfDelegate = await ConfigDelegate.deployed();
-    await cnfProxy.upgradeTo(cnfDelegate.address);
-
-    // gpk
-    await deployer.link(CommonTool, GpkLib);
-    await deployer.deploy(GpkLib);
-
-    await deployer.link(GpkLib, GpkDelegate);
-    await deployer.deploy(GpkDelegate);
-    let gpkDelegate = await GpkDelegate.deployed();
-
-    let gpkProxy = await GpkProxy.at(gpkProxyAddr);
-    await gpkProxy.upgradeTo(gpkDelegate.address);
-
 }
