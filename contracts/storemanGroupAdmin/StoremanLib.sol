@@ -36,7 +36,12 @@ library StoremanLib {
         emit StoremanGroupUnregisterEvent(groupId);
     }
 
-
+    function deleteStoremanNode(StoremanType.StoremanData storage data, address wkAddr) private {
+        StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
+        if(sk.deposit.getLastValue() == 0  && sk.delegatorCount == 0 && sk.partnerCount == 0) {
+            delete data.candidates[0][wkAddr];
+        }
+    }
 
     function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID) external
     {
@@ -48,6 +53,10 @@ library StoremanLib {
         require(StoremanUtil.onCurve(enodeID), "invalid enodeID");
         address wkAddr = address(keccak256(PK));
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
+        if(sk.sender != address(0x00)){
+            deleteStoremanNode(data, wkAddr);
+            sk = data.candidates[0][wkAddr];
+        }
         require(sk.sender == address(0x00), "Candidate has existed");
         sk.sender = msg.sender;
         sk.enodeID = enodeID;
