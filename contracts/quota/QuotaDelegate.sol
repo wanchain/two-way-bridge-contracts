@@ -34,12 +34,12 @@ import "../components/Halt.sol";
 import "./QuotaStorage.sol";
 import "../interfaces/IOracle.sol";
 
-interface ITokenManager {
+interface _ITokenManager {
   function getAncestorInfo(uint id) external view
     returns (bytes account, bytes name, string symbol, uint8 decimals, uint chainId);
 }
 
-interface IStoremanGroup {
+interface _IStoremanGroup {
     function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime);
 }
 
@@ -718,7 +718,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         view
         returns (uint deposit)
     {
-        IStoremanGroup smgAdmin = IStoremanGroup(depositOracleAddress);
+        _IStoremanGroup smgAdmin = _IStoremanGroup(depositOracleAddress);
         (,,deposit,,,,,,,,) = smgAdmin.getStoremanGroupConfig(storemanGroupId);
     }
 
@@ -727,7 +727,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         view
         returns (string ancestorSymbol, uint decimals)
     {
-        ITokenManager tokenManager = ITokenManager(tokenManagerAddress);
+        _ITokenManager tokenManager = _ITokenManager(tokenManagerAddress);
         (,,ancestorSymbol,decimals,) = tokenManager.getAncestorInfo(tokenId);
     }
 
