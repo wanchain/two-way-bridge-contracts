@@ -1,5 +1,7 @@
 pragma solidity 0.4.26;
 
+import "../interfaces/ITokenManager.sol";
+
 interface IPriceOracle {
     function getValue(bytes symbol) public view returns (uint256 price);
 }
@@ -9,26 +11,6 @@ interface IDepositOracle {
         public
         view
         returns (uint256 deposit);
-}
-
-interface ITokenManager {
-    function getTokenPairInfo(uint256 id)
-        public
-        view
-        returns (bytes ancestorSymbol);
-}
-
-contract StoremanType {
-    enum GroupStatus {
-        none,
-        initial,
-        curveSeted,
-        failed,
-        selected,
-        ready,
-        unregistered,
-        dismissed
-    }
 }
 
 contract TestQuotaHelper {
