@@ -152,9 +152,7 @@ sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 -v $keystore:/osm/keystore \
 -v $mpcpath:/osm/schnorrmpc/data \
 -v $pm2ScriptPath/storeman_pm2.json:/osm/storeman_pm2.json \
--d $image
-
-sudo docker container update --restart=always $container
+-d --restart=always $image
 
 echo "================================================"
 echo "DockerWatch"
@@ -166,8 +164,6 @@ sudo docker rm -f watchtower
 sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 --name watchtower \
 -v /var/run/docker.sock:/var/run/docker.sock \
--d containrrr/watchtower \
+-d --restart=always containrrr/watchtower \
 -c \
 $container
-
-sudo docker container update --restart=always watchtower
