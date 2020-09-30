@@ -86,17 +86,17 @@ bootnodes="enode://0x40b32b294df00e42affb72ab159f66c88a682ade4504568f1dd37141962
 storemanPm2Json='
 {
   "apps" : [{
-    "name"       : "storeman_agent",
-    "script"      : "wanchain-js-storeman-linux",
-    "cwd"         : "agent",
-    "args"        : "-i '$index' --loglevel '$loglevel' --testnet --waddress '$waddress' --chain1 '$chain1' --url1 '$url1' --chain2 '$chain2' --url2 '$url2' --password /osm/pwd.json --keystore /osm/keystore/ --dbip '$dbip' --dbport '$dbport' --mpc --mpcip '$mpcip' --mpcport 8545 --mpcipc /osm/schnorrmpc/data/gwan.ipc --mpcpath /osm/schnorrmpc/data",
-    "log_date_format"  : "YYYY-MM-DD HH:mm Z",
-    "env": {}
-  },{
     "name"        : "schnorrmpc",
     "script"      : "schnorrmpc/startMpc.sh",
     "cwd"         : "schnorrmpc",
     "args"        : "'$bootnodes' '$p2pPort' 8545 '$index'",
+    "log_date_format"  : "YYYY-MM-DD HH:mm Z",
+    "env": {}
+  },{
+    "name"       : "storeman_agent",
+    "script"      : "wanchain-js-storeman-linux",
+    "cwd"         : "agent",
+    "args"        : "-i '$index' --loglevel '$loglevel' --testnet --waddress '$waddress' --chain1 '$chain1' --url1 '$url1' --chain2 '$chain2' --url2 '$url2' --password /osm/pwd.json --keystore /osm/keystore/ --dbip '$dbip' --dbport '$dbport' --mpc --mpcip '$mpcip' --mpcport 8545 --mpcipc /osm/schnorrmpc/data/gwan.ipc --mpcpath /osm/schnorrmpc/data",
     "log_date_format"  : "YYYY-MM-DD HH:mm Z",
     "env": {}
   }]
@@ -154,6 +154,8 @@ sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 -v $pm2ScriptPath/storeman_pm2.json:/osm/storeman_pm2.json \
 -d $image
 
+sudo docker container update --restart=always $container
+
 echo "================================================"
 echo "DockerWatch"
 echo "Docker watchtower will auto update your storemanAgent"
@@ -167,3 +169,5 @@ sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 -d containrrr/watchtower \
 -c \
 $container
+
+sudo docker container update --restart=always watchtower
