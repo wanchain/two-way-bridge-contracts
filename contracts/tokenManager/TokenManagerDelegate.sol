@@ -245,6 +245,24 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         chainId = mapTokenPairInfo[id].aInfo.chainID;
     }
 
+    function getTokenPairsFullFields()
+        external
+        view
+        returns (TokenPairInfoFull[] tokenPairs)
+    {
+        tokenPairs = new TokenPairInfoFull[](totalTokenPairs);
+        for (uint i = 0; i < totalTokenPairs; i++) {
+            uint theId = mapTokenPairIndex[i];
+            tokenPairs[i].aInfo = mapTokenPairInfo[theId].aInfo;
+            tokenPairs[i].fromChainID = mapTokenPairInfo[theId].fromChainID;
+            tokenPairs[i].fromAccount = mapTokenPairInfo[theId].fromAccount;
+            tokenPairs[i].toChainID = mapTokenPairInfo[theId].toChainID;
+            tokenPairs[i].toAccount = mapTokenPairInfo[theId].toAccount;
+            tokenPairs[i].id = theId;
+        }
+        return tokenPairs;
+    }
+
     function getTokenPairs()
         external
         view
