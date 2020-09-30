@@ -176,6 +176,13 @@ contract('TokenManagerDelegate', (accounts) => {
       assert.equal(ancestorInfo.chainId.toNumber(), aChainID);
 
       const tokenPairs = await tokenManagerDelegate.getTokenPairs();
+      const tokenPairsFull = await tokenManagerDelegate.getTokenPairsFullFields();
+      assert.equal(tokenPairsFull[0].aInfo.name, aName)
+      assert.equal(tokenPairsFull[1].aInfo.name, aName)
+      assert.equal(tokenPairsFull[2].aInfo.name, aName)
+      assert.equal(tokenPairsFull[0].id, 11)
+      assert.equal(tokenPairsFull[1].id, 12)
+      assert.equal(tokenPairsFull[2].id, 13)
       assert.equal(tokenPairs.id[0].toNumber(), 11);
       assert.equal(tokenPairs.id[1].toNumber(), 12);
       assert.equal(tokenPairs.id[2].toNumber(), 13);

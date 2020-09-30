@@ -50,6 +50,15 @@ contract TokenManagerStorage is BasicStorage {
       uint      toChainID;              ///
       bytes     toAccount;              /// to token address
     }
+    
+    struct TokenPairInfoFull {
+      uint      id;
+      AncestorInfo aInfo;
+      uint      fromChainID;
+      bytes     fromAccount;
+      uint      toChainID;
+      bytes     toAccount;
+    }
 
 
     /************************************************************
