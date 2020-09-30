@@ -4,14 +4,14 @@
 echo ''
 echo ''
 echo '=========================================='
-echo '|  Welcome to Mainnet Validator Deploy   |'
+echo '|  Welcome to testnet Work Deploy   |'
 echo ''
 
 echo -e "\033[41;30m !!!!!! WARNING Please Remember Your Password !!!!!!!! \033[0m"
 echo -e "\033[41;30m !!!!!!Otherwise You will lose all your assets!!!!!!!! \033[0m"
-echo 'Enter your password of validator account:'
+echo 'Enter your password of Work account:'
 read -s PASSWD
-echo 'Confirm your password of validator account:'
+echo 'Confirm your password of Work account:'
 read -s PASSWD2
 echo ''
 
@@ -78,10 +78,10 @@ echo ''
 echo ''
 echo -e "\033[41;30m !!!!!!!!!!!!!!! Important !!!!!!!!!!!!!!! \033[0m"
 echo '=================================================='
-echo '      Please Backup Your Validator Address'
+echo '      Please Backup Your Work Address'
 echo '     ' ${ADDR}
 echo '=================================================='
-echo '      Please Backup Your Validator Public Key'
+echo '      Please Backup Your Work Public Key'
 echo "0x"${PK:1:-1}
 echo '=================================================='
 echo '      Please Backup Your Keystore JSON String'
