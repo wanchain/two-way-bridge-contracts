@@ -18,6 +18,9 @@ echo $@
 # agent work path
 workPath="$HOME/osm"
 
+# change oms permission
+sudo chown "$USER" $workPath
+
 # agent waddress
 waddress=$1
 
