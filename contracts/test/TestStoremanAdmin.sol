@@ -94,9 +94,7 @@ contract TestStoremanAdmin {
     function setStoremanGroupStatus(bytes32 id, uint8 status)
         public
     {
-        SmgData memory smgData = mapStoreman[id];
-        smgData.status = status;
-        mapStoreman[id] = smgData;
+        mapStoreman[id].status = status;
     }
 
     function smgTransfer(bytes32 smgID) external payable {
