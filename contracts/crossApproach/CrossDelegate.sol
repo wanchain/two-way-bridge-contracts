@@ -101,21 +101,21 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
      *
      */
 
-    /// @notice                                 get the exist storeman group info
-    /// @param smgID                            ID of storeman group
-    /// @return curveID                         ID of elliptic curve
-    /// @return PK                              PK of storeman group
-    function acquireExistSmgInfo(bytes32 smgID)
-        private
-        view
-        returns (uint curveID, bytes memory PK)
-    {
-        uint origChainID;
-        (,,,origChainID,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-        require(origChainID != 0, "PK does not exist");
+    // /// @notice                                 get the exist storeman group info
+    // /// @param smgID                            ID of storeman group
+    // /// @return curveID                         ID of elliptic curve
+    // /// @return PK                              PK of storeman group
+    // function acquireExistSmgInfo(bytes32 smgID)
+    //     private
+    //     view
+    //     returns (uint curveID, bytes memory PK)
+    // {
+    //     uint origChainID;
+    //     (,,,origChainID,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+    //     require(origChainID != 0, "PK does not exist");
 
-        return (curveID, PK);
-    }
+    //     return (curveID, PK);
+    // }
 
     /// @notice                                 check the storeman group is ready or not
     /// @param smgID                            ID of storeman group
@@ -383,7 +383,8 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireExistSmgInfo(smgID);
+        // (curveID, PK) = acquireExistSmgInfo(smgID);
+        (curveID, PK) = acquireReadySmgInfo(smgID);
 
         bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
@@ -436,7 +437,8 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     {
         uint curveID;
         bytes memory PK;
-        (curveID, PK) = acquireExistSmgInfo(smgID);
+        // (curveID, PK) = acquireExistSmgInfo(smgID);
+        (curveID, PK) = acquireReadySmgInfo(smgID);
 
         bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
