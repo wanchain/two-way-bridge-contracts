@@ -171,3 +171,85 @@ contract('StoremanGroupDelegate select', async () => {
 
 
 })
+
+
+
+contract.only('StoremanGroupDelegate setInvalidSm groupInfo', async () => {
+ 
+    let  smg
+    let groupId
+    let groupInfo;
+
+
+    let wk1 = utils.getAddressFromInt(10001)
+    let wk2 = utils.getAddressFromInt(10002)
+    let wk3 = utils.getAddressFromInt(10003)
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+    })
+
+
+    it('registerStart', async ()=>{
+        groupId = await registerStart(smg);
+        console.log("groupId: ", groupId)
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+    })
+
+    it('stakeInPre ', async ()=>{
+        await stakeInPre(smg, groupId)
+    })
+    it('T1', async ()=>{ 
+        let tx = await smg.stakeIn(groupId, wk1.pk, wk1.pk,{value:60000});
+        console.log("tx:", tx);
+
+        let sk = await smg.getSelectedSmInfo(groupId, 1);
+        assert.equal(sk.wkAddr.toLowerCase(), wk1.addr, "the node should be second one")
+    })
+    it('T2', async ()=>{ 
+        let tx = await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:55000});
+        console.log("tx:", tx);
+
+        let sk = await smg.getSelectedSmInfo(groupId, 2);
+        assert.equal(sk.wkAddr.toLowerCase(), wk2.addr, "the node should be third one")
+    })
+
+
+    it('test select', async ()=>{
+        await timeWaitSelect(groupInfo);
+        await toSelect(smg, groupId);
+    })
+
+    it('T7 setInvalidSm', async ()=>{
+        await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+
+        let smAddr = await smg.getSelectedSmInfo(groupId, 2)
+        let sm1 = await smg.getStoremanInfo(smAddr.wkAddr)
+        console.log("2 addr: ", smAddr.wkAddr)
+        let selectedOld = await smg.getSelectedStoreman(groupId);
+        console.log("selected:",selectedOld)
+        let groupInfoOld = await smg.getStoremanGroupInfo(groupId);
+        tx = await smg.setInvalidSm(groupId, [2],[5], {from:g.admin});
+        //console.log(" setInvalidSm tx:", tx)
+        let selectedNew = await smg.getSelectedStoreman(groupId);
+        console.log("selected new:",selectedNew)
+        let smAddr2 = await smg.getSelectedSmInfo(groupId, 2)
+        console.log("2 addr: ", smAddr2.wkAddr)
+        let sm2 = await smg.getStoremanInfo(smAddr2.wkAddr)
+        groupInfo = await smg.getStoremanGroupInfo(groupId);
+        console.log("groupInfo:", groupInfo)
+        // the old node has 55000, the new one is backup, has 50000
+        assert.equal(parseInt(groupInfoOld.deposit)-55000, parseInt(groupInfo.deposit)-50000, "setInvalidSm group deposit")
+        console.log("==============================old sm:", sm1.deposit)
+        console.log("==============================new sm:", sm2.deposit)
+        
+        assert.equal(groupInfo.tickedCount, 1)
+
+    })
+
+
+
+})
+

@@ -30,6 +30,8 @@ pragma solidity ^0.4.24;
 ///  later changed
 contract Owned {
 
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
     /// @dev `owner` is the only address that can call a function with this
     /// modifier
     modifier onlyOwner() {
@@ -45,6 +47,12 @@ contract Owned {
     }
 
     address public newOwner;
+
+    function transferOwner(address _newOwner) public onlyOwner {
+        require(_newOwner != address(0), "New owner is the zero address");
+        emit OwnershipTransferred(owner, _newOwner);
+        owner = _newOwner;
+    }
 
     /// @notice `owner` can step down and assign some other address to this role
     /// @param _newOwner The address of the new owner. 0x0 can be used to create

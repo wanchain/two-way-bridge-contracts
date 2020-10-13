@@ -150,6 +150,23 @@ library IncentiveLib {
         emit incentiveEvent(sk.groupId, wkAddr, true, fromDay, endDay-1);
     }
 
+    function setGroupDeposit(StoremanType.StoremanData storage data,StoremanType.StoremanGroup storage group){
+        uint day = group.workTime;
+        uint groupDeposit = 0;
+        uint groupDepositWeight = 0;
+        for(uint i = 0; i<group.memberCountDesign; i++){
+            StoremanType.Candidate storage sk = data.candidates[0][group.selectedNode[i]];
+            groupDeposit = groupDeposit.add(sk.deposit.getLastValue().add(sk.partnerDeposit).add(sk.delegateDeposit));
+            groupDepositWeight = groupDepositWeight.add(StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue().add(sk.partnerDeposit)).add(sk.delegateDeposit));
+        }
+        Deposit.Record memory deposit = Deposit.Record(day, groupDeposit);
+        Deposit.Record memory depositWeight = Deposit.Record(day, groupDepositWeight);
+        group.deposit.clean();
+        group.depositWeight.clean();
+        group.deposit.addRecord(deposit);
+        group.depositWeight.addRecord(depositWeight);
+        return;        
+    }
     function toSelect(StoremanType.StoremanData storage data,bytes32 groupId) public {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(group.status == StoremanType.GroupStatus.curveSeted,"Wrong status");
@@ -159,21 +176,13 @@ library IncentiveLib {
             return;
         }
         address[] memory members = new address[](group.memberCountDesign);
-        uint groupDeposit = 0;
-        uint groupDepositWeight = 0;
-        uint day = group.workTime;
         for(uint i = 0; i<group.memberCountDesign; i++){
             members[i] = group.selectedNode[i];
-            StoremanType.Candidate storage sk = data.candidates[0][group.selectedNode[i]];
-            groupDeposit = groupDeposit.add(sk.deposit.getLastValue().add(sk.partnerDeposit).add(sk.delegateDeposit));
-            groupDepositWeight = groupDepositWeight.add(StoremanUtil.calSkWeight(data.conf.standaloneWeight,sk.deposit.getLastValue().add(sk.partnerDeposit)).add(sk.delegateDeposit));
         }
-        Deposit.Record memory deposit = Deposit.Record(day, groupDeposit);
-        Deposit.Record memory depositWeight = Deposit.Record(day, groupDepositWeight);
+
         emit selectedEvent(groupId, group.memberCountDesign, members);
         group.status = StoremanType.GroupStatus.selected;
-        group.deposit.addRecord(deposit);
-        group.depositWeight.addRecord(depositWeight);
+        setGroupDeposit(data,group);
         return;
     }
 }

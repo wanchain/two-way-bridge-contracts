@@ -39,6 +39,9 @@ const abiFiles = [
     [
         '../build/contracts/MappingToken.json',
     ],
+    [
+        '../build/contracts/PosLib.json',
+    ],
 ];
 
 function generateAbi(abiFile) {
