@@ -10,6 +10,39 @@ const {
     assert,
 }                               = require('./lib');
 
+it('Transfer owner  ==> Success', async () => {
+    let crossProxy;
+    let currentOwner;
+    try {
+        crossProxy = await CrossProxy.at(global.chains[1].approach.instance.address);
+
+        const origOwner = await crossProxy.owner();
+        const newOwner = accounts[1];
+
+        await crossProxy.transferOwner(newOwner, {from: origOwner});
+        currentOwner = await crossProxy.owner();
+        assert.equal(newOwner.toLowerCase(), currentOwner.toLowerCase(), "transfer owner failed");
+
+        await crossProxy.transferOwner(origOwner, {from: newOwner});
+        currentOwner = await crossProxy.owner();
+        assert.equal(origOwner.toLowerCase(), currentOwner.toLowerCase(), "restore owner failed");
+    } catch (err) {
+        assert.fail(err.toString());
+    }
+});
+
+it('Transfer owner  ==> New owner is the zero address', async () => {
+    let crossProxy;
+    try {
+        crossProxy = await CrossProxy.at(global.chains[1].approach.instance.address);
+        const origOwner = await crossProxy.owner();
+        await crossProxy.transferOwner(ADDRESS_0, {from: origOwner});
+        assert.fail(ERROR_INFO)
+    } catch (err) {
+        assert.include(err.toString(), "New owner is the zero address");
+    }
+});
+
 it('Others getStoremanFee  -> The config value', async () => {
     try {
         let smg1Fee = await global.chains[1].approach.instance.getStoremanFee(global.storemanGroups[1].ID);
