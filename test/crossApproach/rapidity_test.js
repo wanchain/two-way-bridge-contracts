@@ -3,6 +3,7 @@ const CrossProxy                = artifacts.require('CrossProxy.sol');
 const {
     BN,
     ERROR_INFO,
+    storemanGroupStatus,
     skInfo,
     uniqueInfo,
     InvalidTokenPairID,
@@ -134,6 +135,46 @@ it('Shadow[2] -> Token1 -> smgFastMint  ==> Halted', async () => {
         assert.include(err.toString(), "Smart contract is halted");
     } finally {
         await crossProxy.setHalt(false, {from: global.owner});
+    }
+});
+
+it('Shadow[2] -> Token1 -> smgFastMint  ==> Not ready', async () => {
+    let smgFastParamsTemp = Object.assign({}, smgFastParams);
+    try {
+        // global.accounts[3] is the chain1 original address of the user.
+        // global.accounts[4] is the chain2 shadow address of the user.
+        smgFastParamsTemp.origUserAccount = global.accounts[3];
+        smgFastParamsTemp.shadowUserAccount = global.accounts[4];
+        smgFastParamsTemp.uniqueID = uniqueInfo.fastException;
+
+        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(smgFastParamsTemp.smgID, storemanGroupStatus.unregistered);
+        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(smgFastParamsTemp.smgID, storemanGroupStatus.unregistered);
+
+        let value = web3.utils.toWei(smgFastParamsTemp.value.toString());
+
+        let pkId = 2;
+        let sk = skInfo.smg1[pkId];
+        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.smgFastMint, smgFastParamsTemp.uniqueID,
+            smgFastParamsTemp.tokenPairID, value, smgFastParamsTemp.shadowUserAccount);
+
+        // storeman mint lock
+        let smgFastMintReceipt = await global.chains[2].approach.instance.smgFastMint(
+            smgFastParamsTemp.uniqueID,
+            smgFastParamsTemp.smgID,
+            smgFastParamsTemp.tokenPairID,
+            value,
+            smgFastParamsTemp.shadowUserAccount,
+            R,
+            s,
+            {from: global.storemanGroups[1].account}
+        );
+        // console.log("smgFastMint receipt", smgFastMintReceipt.logs);
+        assert.fail(ERROR_INFO);
+    } catch (err) {
+        assert.include(err.toString(), "PK is not ready");
+    } finally {
+        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(smgFastParamsTemp.smgID, storemanGroupStatus.ready);
+        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(smgFastParamsTemp.smgID, storemanGroupStatus.ready);
     }
 });
 
@@ -546,6 +587,46 @@ it('Original[1] -> Token1 -> smgFastBurn  ==> Halted', async () => {
         assert.include(err.toString(), "Smart contract is halted");
     } finally {
         await crossProxy.setHalt(false, {from: global.owner});
+    }
+});
+
+it('Shadow[2] -> smgFastBurn  ==> Not ready', async () => {
+    let smgFastParamsTemp = Object.assign({}, smgFastParams);
+    try {
+        // global.accounts[3] is the chain1 original address of the user.
+        // global.accounts[4] is the chain2 shadow address of the user.
+        smgFastParamsTemp.origUserAccount = global.accounts[3];
+        smgFastParamsTemp.shadowUserAccount = global.accounts[4];
+        smgFastParamsTemp.uniqueID = uniqueInfo.fastException;
+
+        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(smgFastParamsTemp.smgID, storemanGroupStatus.unregistered);
+        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(smgFastParamsTemp.smgID, storemanGroupStatus.unregistered);
+
+
+        let value = web3.utils.toWei(smgFastParamsTemp.value.toString());
+
+        let pkId = 1;
+        let sk = skInfo.smg1[pkId];
+        let {R, s} = buildMpcSign(global.schnorr.curve1, sk, typesArrayList.smgFastBurn, smgFastParamsTemp.uniqueID,
+            smgFastParamsTemp.tokenPairID, value, smgFastParamsTemp.shadowUserAccount);
+
+        // storeman mint lock
+        let smgFastBurnReceipt = await global.chains[2].approach.instance.smgFastBurn(
+            smgFastParamsTemp.uniqueID,
+            smgFastParamsTemp.smgID,
+            smgFastParamsTemp.tokenPairID,
+            value,
+            smgFastParamsTemp.shadowUserAccount,
+            R,
+            s,
+            {from: global.storemanGroups[1].account}
+        );
+        assert.fail(ERROR_INFO);
+    } catch (err) {
+        assert.include(err.toString(), "PK is not ready");
+    } finally {
+        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(smgFastParamsTemp.smgID, storemanGroupStatus.ready);
+        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(smgFastParamsTemp.smgID, storemanGroupStatus.ready);
     }
 });
 

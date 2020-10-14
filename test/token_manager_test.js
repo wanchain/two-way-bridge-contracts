@@ -248,6 +248,10 @@ contract('TokenManagerDelegate', (accounts) => {
       await tokenManagerDelegate.acceptTokenOwnership(token.address, {from: owner});
       const newOwner2 = await token.owner();
       assert.equal(newOwner2, tokenManagerDelegate.address);
+
+      await tokenManagerDelegate.transferTokenOwner(token.address, other, {from: owner});
+      const newOwner3 = await token.owner();
+      assert.equal(newOwner3, other);
     });
   });
 
