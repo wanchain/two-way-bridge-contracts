@@ -2,9 +2,6 @@ pragma solidity ^0.4.24;
 
 import "./Secp256k1.sol";
 
-// pragma experimental ABIEncoderV2;
-
-
 contract Secp256k1SchnorrVerifier is Secp256k1 {
     struct Point {
         uint256 x; uint256 y;

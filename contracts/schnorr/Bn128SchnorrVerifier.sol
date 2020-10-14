@@ -2,9 +2,6 @@ pragma solidity ^0.4.24;
 
 import "./Bn128.sol";
 
-// pragma experimental ABIEncoderV2;
-
-
 contract Bn128SchnorrVerifier is Bn128 {
     struct Point {
         uint256 x; uint256 y;
