@@ -216,6 +216,10 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         IMappingToken(tokenAddress).acceptOwnership();
     }
 
+    function transferTokenOwner(address tokenAddress, address _newOwner) external onlyOwner {
+        IMappingToken(tokenAddress).transferOwner(_newOwner);
+    }
+
     function getTokenPairInfo(
         uint id
     )

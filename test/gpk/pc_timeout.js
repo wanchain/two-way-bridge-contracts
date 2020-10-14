@@ -96,4 +96,17 @@ contract('Gpk_UT_pc_timeout', async () => {
     assert.equal(info.curve1Status, GpkStatus.Close);
     assert.equal(info.curve2Status, GpkStatus.Close);
   })
+
+  it('[GpkDelegate_polyCommitTimeout_round1] should failed', async () => {
+    let result = {};
+    try {
+      await gpkSc.polyCommitTimeout(groupId, 1);
+    } catch (e) {
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid status');
+    let info = await gpkSc.groupMap(groupId);
+    assert.equal(info.round, 1);
+    assert.equal(info.smNumber, 0);
+  })  
 })

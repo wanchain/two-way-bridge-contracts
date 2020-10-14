@@ -182,7 +182,7 @@ async function getRC20TokenInstance(tokenAccount) {
 async function getRC20TokenBalance(tokenAccount, userAccount) {
     let tokenInstance = await getRC20TokenInstance(tokenAccount);
     let balance = await tokenInstance.balanceOf(userAccount);
-    console.log("typeof(balance)", balance);
+    // console.log("typeof(balance)", balance);
     return balance.toString();
 };
 
