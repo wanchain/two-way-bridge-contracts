@@ -61,7 +61,7 @@ contract('TokenManagerDelegate', (accounts) => {
   before("init", async () => {});
 
   describe('normal', () => {
-    it.only('good token manager example', async function() {
+    it('good token manager example', async function() {
       const { tokenManagerDelegate } = await newTokenManager(accounts);
 
       let receipt = await tokenManagerDelegate.addToken(nameDAI, symbolDAI, decimals, {from: owner});
