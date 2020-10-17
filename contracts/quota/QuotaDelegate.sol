@@ -193,7 +193,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc {
+    ) external onlyHtlc checkMinValue(tokenId, value) {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         
         uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
@@ -202,8 +202,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
             "Quota is not enough"
         );
 
-        require(checkFastMinValue(tokenId, value), "Less than minimize value");
-        
         if (!quota._active) {
             quota._active = true;
             storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenId;
@@ -241,9 +239,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc {
-        require(checkFastMinValue(tokenId, value), "Less than minimize value");
-
+    ) external onlyHtlc checkMinValue(tokenId, value) {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         require(quota._debt.sub(quota.debt_payable) >= value, "Value is invalid");
         quota._debt = quota._debt.sub(value);
@@ -636,16 +632,17 @@ contract QuotaDelegate is QuotaStorage, Halt {
 
     // ----------- Private Functions ---------------
 
-    function checkFastMinValue(uint tokenId, uint value) private view returns (bool) {
-        if (fastCrossMinValue == 0) {
-            return true;
+    modifier checkMinValue(uint tokenId, uint value) {
+        if (fastCrossMinValue > 0) {
+            string memory symbol;
+            uint decimals;
+            (symbol, decimals) = getTokenAncestorInfo(tokenId);
+            uint price = getPrice(symbol);
+            require(price > 0, "Price is zero");
+            uint count = fastCrossMinValue.mul(10**decimals).div(price);
+            require(count < value, "value too small");
         }
-        string memory symbol;
-        uint decimals;
-        (symbol, decimals) = getTokenAncestorInfo(tokenId);
-        uint price = getPrice(symbol);
-        uint count = fastCrossMinValue.mul(10**decimals).div(price);
-        return value >= count;
+        _;
     }
 
 
