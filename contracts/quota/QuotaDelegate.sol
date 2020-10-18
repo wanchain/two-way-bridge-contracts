@@ -669,7 +669,8 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
         
         uint depositValue = 0;
-        if (keccak256(rawSymbol) == keccak256("WAN")) {
+        // keccak256("WAN") = 0x28ba6d5ac5913a399cc20b18c5316ad1459ae671dd23558d05943d54c61d0997
+        if (keccak256(rawSymbol) == bytes32(0x28ba6d5ac5913a399cc20b18c5316ad1459ae671dd23558d05943d54c61d0997)) {
             depositValue = getFiatDeposit(storemanGroupId);
         } else {
             depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); // 15000 = 150%
