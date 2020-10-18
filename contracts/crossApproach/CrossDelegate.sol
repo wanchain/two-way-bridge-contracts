@@ -355,9 +355,9 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         external
         payable
         notHalted
-        nonReentrant
+        // nonReentrant
         onlyReadySmg(smgID)
-        onlyMeaningfulValue(value)
+        // onlyMeaningfulValue(value)
     {
         RapidityLib.RapidityUserMintParams memory params = RapidityLib.RapidityUserMintParams({
             smgID: smgID,
