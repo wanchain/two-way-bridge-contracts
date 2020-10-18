@@ -211,7 +211,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         
         uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
         require(
-            value < mintQuota,
+            mintQuota >= value,
             "Quota is not enough"
         );
 
