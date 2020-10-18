@@ -50,6 +50,19 @@ interface IDebtOracle {
 
 contract QuotaDelegate is QuotaStorage, Halt {
 
+    modifier checkMinValue(uint tokenId, uint value) {
+        if (fastCrossMinValue > 0) {
+            string memory symbol;
+            uint decimals;
+            (symbol, decimals) = getTokenAncestorInfo(tokenId);
+            uint price = getPrice(symbol);
+            require(price > 0, "Price is zero");
+            uint count = fastCrossMinValue.mul(10**decimals).div(price);
+            require(count < value, "value too small");
+        }
+        _;
+    }
+    
     /// @notice                         config params for owner
     /// @param _priceOracleAddr         token price oracle contract address
     /// @param _htlcAddr                HTLC contract address
@@ -198,7 +211,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         
         uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
         require(
-            mintQuota >= value,
+            value < mintQuota,
             "Quota is not enough"
         );
 
@@ -631,19 +644,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     // ----------- Private Functions ---------------
-
-    modifier checkMinValue(uint tokenId, uint value) {
-        if (fastCrossMinValue > 0) {
-            string memory symbol;
-            uint decimals;
-            (symbol, decimals) = getTokenAncestorInfo(tokenId);
-            uint price = getPrice(symbol);
-            require(price > 0, "Price is zero");
-            uint count = fastCrossMinValue.mul(10**decimals).div(price);
-            require(count < value, "value too small");
-        }
-        _;
-    }
 
 
 
