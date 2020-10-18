@@ -668,7 +668,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
             totalTokenUsedValue = totalTokenUsedValue.add(tokenValue);
         }
         
-        uint depositValue = 0;
+        return getLastDeposit(storemanGroupId, rawSymbol, totalTokenUsedValue);
+    }
+
+    function getLastDeposit(bytes32 storemanGroupId, string rawSymbol, uint totalTokenUsedValue) private view returns (uint depositValue) {
         // keccak256("WAN") = 0x28ba6d5ac5913a399cc20b18c5316ad1459ae671dd23558d05943d54c61d0997
         if (keccak256(rawSymbol) == bytes32(0x28ba6d5ac5913a399cc20b18c5316ad1459ae671dd23558d05943d54c61d0997)) {
             depositValue = getFiatDeposit(storemanGroupId);
@@ -677,10 +680,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
 
         if (depositValue <= totalTokenUsedValue) {
-            return 0;
+            depositValue = 0;
+        } else {
+            depositValue = depositValue.sub(totalTokenUsedValue); /// decimals: 18
         }
-
-        return depositValue.sub(totalTokenUsedValue); /// decimals: 18
     }
 
     /// get mint quota in Fiat/USD decimals: 18
