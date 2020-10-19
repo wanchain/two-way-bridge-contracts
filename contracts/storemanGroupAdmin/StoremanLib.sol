@@ -297,14 +297,12 @@ library StoremanLib {
     function inheritNode(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] wkAddrs, address[] senders) public
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
-        address[] memory oldAddr =  new address[](group.memberCountDesign+data.conf.backupCount);
+        address[] memory oldAddr =  new address[](group.memberCountDesign+data.conf.backupCount);        
         uint oldCount = 0;
-        uint k = 0;
 
         group.whiteCount = wkAddrs.length.sub(data.conf.backupCount);
         group.whiteCountAll = wkAddrs.length;
-        for(k = 0; k < wkAddrs.length; k++){
+        for(uint k = 0; k < wkAddrs.length; k++){
             group.whiteMap[k] = wkAddrs[k];
             group.whiteWk[wkAddrs[k]] = senders[k];
             if(k < group.whiteCount) {
@@ -325,29 +323,60 @@ library StoremanLib {
         group.memberCount =group.selectedCount;
 
         if (preGroupId != bytes32(0x00)) {
-            for (k = oldGroup.whiteCount; k<oldGroup.memberCountDesign && group.memberCount<group.memberCountDesign; k++) {
-                address wkAddr = oldGroup.selectedNode[k];
-                StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
-                if(sk.groupId == preGroupId && !sk.quited && sk.slashedCount == 0 && !sk.isWhite) {
-                    group.selectedNode[group.selectedCount] = sk.wkAddr;
-                    if(oldGroup.status == StoremanType.GroupStatus.failed){
-                        sk.groupId = groupId;
-                    } else {
-                        sk.nextGroupId = groupId;
-                    }
-                    group.selectedCount++;
-                    group.memberCount++;
-                    oldAddr[oldCount] = sk.wkAddr;
-                    oldCount++;
-                }
-            }
-            address[] memory oldArray = new address[](oldCount);
-            for(k = 0; k<oldCount; k++){
-                oldArray[k] = oldAddr[k];
-            }
-            emit storemanTransferEvent(groupId, preGroupId, oldArray);
+            inheritStaker(data, groupId, preGroupId, oldAddr, oldCount);
         }
     }
+
+    function inheritStaker(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] oldAddr, uint oldCount) public {
+        StoremanType.StoremanGroup storage group = data.groups[groupId];
+        StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
+        uint[] memory stakes = new uint[](group.memberCountDesign + data.conf.backupCount);
+        uint k;
+
+        for (k = oldGroup.whiteCount; k < oldGroup.memberCountDesign && group.memberCount < group.memberCountDesign; k++) {
+            address wkAddr = oldGroup.selectedNode[k];
+            StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
+            if (sk.groupId == preGroupId && !sk.quited && sk.slashedCount == 0 && !sk.isWhite) {
+                // group.selectedNode[group.selectedCount] = sk.wkAddr;
+                if (oldGroup.status == StoremanType.GroupStatus.failed){
+                    sk.groupId = groupId;
+                } else {
+                    sk.nextGroupId = groupId;
+                }
+                // group.selectedCount++;
+                group.memberCount++;
+                oldAddr[oldCount] = sk.wkAddr;
+                stakes[oldCount] = StoremanUtil.calSkWeight(data.conf.standaloneWeight, sk.deposit.getLastValue().add(sk.partnerDeposit)).add(sk.delegateDeposit);
+                oldCount++;
+            }
+        }
+        address[] memory oldArray = new address[](oldCount);
+        for (k = 0; k < oldCount; k++) {
+            oldArray[k] = oldAddr[k];
+        }
+        inheritSortedStaker(group, oldAddr, stakes, oldCount.sub(group.memberCount.sub(group.whiteCount)));
+        emit storemanTransferEvent(groupId, preGroupId, oldArray);
+    }
+
+    function inheritSortedStaker(StoremanType.StoremanGroup storage group, address[] addresses, uint[] stakes, uint start) public {
+      uint end = group.memberCount.sub(group.whiteCount).add(start);
+      while (group.selectedCount < group.memberCount) {
+        uint maxIndex = start;
+        for (uint i = (start + 1); i < end; i++) {
+          if (stakes[i] > stakes[maxIndex]) {
+            maxIndex = i;
+          }
+        }
+        group.selectedNode[group.selectedCount] = addresses[maxIndex];
+        group.selectedCount++;
+        if (maxIndex == start) {
+          start += 1;
+        } else {
+          stakes[maxIndex] = 0;
+        }
+      }
+    }
+
     function delegateOut(StoremanType.StoremanData storage data, address wkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
