@@ -153,6 +153,16 @@ contract OracleDelegate is OracleStorage, Owned {
     endTime = mapStoremanGroupConfig[id].endTime;
   }
 
+  function getStoremanGroupStatus(bytes32 id)
+    public
+    view
+    returns(uint8 status, uint startTime, uint endTime)
+  {
+    status = mapStoremanGroupConfig[id].status;
+    startTime = mapStoremanGroupConfig[id].startTime;
+    endTime = mapStoremanGroupConfig[id].endTime;
+  }
+
   function isDebtClean(
     bytes32 storemanGroupId
   )

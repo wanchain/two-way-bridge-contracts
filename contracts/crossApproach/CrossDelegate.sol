@@ -68,7 +68,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         uint8 status;
         uint startTime;
         uint endTime;
-        (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+        (status,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupStatus(smgID);
 
         require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
         _;

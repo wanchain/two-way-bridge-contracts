@@ -174,7 +174,7 @@ contract('StoremanGroupDelegate select', async () => {
 
 
 
-contract.only('StoremanGroupDelegate setInvalidSm groupInfo', async () => {
+contract('StoremanGroupDelegate setInvalidSm groupInfo', async () => {
  
     let  smg
     let groupId
