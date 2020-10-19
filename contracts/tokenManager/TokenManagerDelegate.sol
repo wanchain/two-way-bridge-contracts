@@ -234,11 +234,18 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     }
 
     function getTokenInfo(uint id) external view returns (address addr, string name, string symbol, uint8 decimals) {
-        address instance = bytesToAddress(mapTokenPairInfo[id].toAccount);
-        name = IMappingToken(instance).name();
-        symbol = IMappingToken(instance).symbol();
-        decimals = IMappingToken(instance).decimals();
-        addr = instance;
+        if (mapTokenPairInfo[id].fromChainID == 0) {
+            name = '';
+            symbol = '';
+            decimals = 0;
+            addr = address(0);
+        } else {
+            address instance = bytesToAddress(mapTokenPairInfo[id].toAccount);
+            name = IMappingToken(instance).name();
+            symbol = IMappingToken(instance).symbol();
+            decimals = IMappingToken(instance).decimals();
+            addr = instance;
+        }
     }
 
     function getAncestorInfo(uint id) external view returns (bytes account, string name, string symbol, uint8 decimals, uint chainId) {
