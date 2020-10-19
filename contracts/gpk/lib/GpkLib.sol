@@ -38,7 +38,7 @@ library GpkLib {
 
     /// submit period
     uint32 constant DEFAULT_PERIOD = 1 * 60 * 60;     // 1 hours
-    uint32 constant PLOYCOMMIT_PERIOD = 24 * 60 * 60; // 24 hours
+    uint32 constant PLOYCOMMIT_PERIOD = 48 * 60 * 60; // 48 hours
     uint32 constant NEGOTIATE_PERIOD = 4 * 60 * 60;   // 4 hours
 
     /**
