@@ -2,17 +2,6 @@ pragma solidity 0.4.26;
 
 import "../interfaces/ITokenManager.sol";
 
-interface IPriceOracle {
-    function getValue(bytes symbol) public view returns (uint256 price);
-}
-
-interface IDepositOracle {
-    function getDepositAmount(bytes32 storemanGroupId)
-        public
-        view
-        returns (uint256 deposit);
-}
-
 contract TestQuotaHelper {
     mapping(bytes32 => uint256) priceMap;
 
@@ -127,6 +116,26 @@ contract TestQuotaHelper {
         }
 
         return ("", "", "", 0, 1);
+    }
+
+    function getAncestorSymbol(uint id) external view returns (string symbol, uint8 decimals) {
+        if (id == 0) {
+            return ("WAN", 18);
+        }
+
+        if (id == 1) {
+            return ("BTC", 8);
+        }
+
+        if (id == 2) {
+            return ("ETH", 18);
+        }
+
+        if (id == 3) {
+            return ("ETC", 18);
+        }
+
+        return ("", 0);
     }
 
     function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {

@@ -91,6 +91,24 @@ contract TestStoremanAdmin {
             smgData.gpk1, smgData.gpk2, smgData.startTime, smgData.endTime);
     }
 
+    function getStoremanGroupStatus(bytes32 id)
+        public
+        view
+        returns(uint8 status, uint startTime, uint endTime)
+    {
+        SmgData storage smgData = mapStoreman[id];
+
+        return (smgData.status, smgData.startTime, smgData.endTime);
+    }
+
+    function getDeposit(bytes32 id) 
+        public
+        view
+        returns (uint deposit) 
+    {
+        return mapStoreman[id].deposit;
+    }
+
     function setStoremanGroupStatus(bytes32 id, uint8 status)
         public
     {
