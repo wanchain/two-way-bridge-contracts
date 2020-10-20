@@ -1,0 +1,223 @@
+const utils = require("../utils");
+
+
+const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
+const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
+const ListGroup = artifacts.require('ListGroup');
+const FakePosLib = artifacts.require('FakePosLib');
+
+const assert = require('chai').assert;
+const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
+const Web3 = require('web3')
+
+const { registerStart,stakeInPre, setupNetwork, timeWaitSelect,toSelect,timeWaitIncentive,g } = require('../base.js');
+
+
+
+contract('TestSmg', async () => {
+
+    let  smg, pos
+		let groupId, groupInfo, groupId2
+		let contValue = 123456;
+		let web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
+    let wk1 = utils.getAddressFromInt(100001)
+    let wk2 = utils.getAddressFromInt(100002)
+    let listGroup;
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        listGroup = await ListGroup.deployed();
+        pos = await FakePosLib.deployed();
+        await setupNetwork();
+    })
+
+
+    it('registerStart_1 ', async ()=>{
+        groupId = await registerStart(smg,0,{memberCountDesign:2});
+        await utils.sleep(4000);
+        groupId2 = await registerStart(smg,0,{memberCountDesign:2});
+    })
+
+    it('stakeInPre ', async ()=>{
+      await smg.stakeIn(groupId, wk1.pk, wk1.pk,{value:80000});
+      await smg.stakeIn(groupId2, wk2.pk, wk2.pk,{value:80000});
+    })
+
+    it('add,clean', async ()=>{
+      groupInfo = await smg.getStoremanGroupInfo(groupId);
+      let cur = parseInt(groupInfo.startTime)
+      let tx = smg.addActiveGroupId(groupId, {from:g.owner});
+      await expectRevert(tx, "not admin")
+      tx = listGroup.addActiveGroup(groupId,0,0, {from:g.owner});
+      await expectRevert(tx, "not allow")
+      await smg.addActiveGroupId(groupId,  {from:g.admin});
+      tx = smg.addActiveGroupId(groupId,  {from:g.admin});
+      await expectRevert(tx, "existed")
+      let as = await smg.getActiveGroupIds(cur+2);
+      assert.equal(as.length, 1)
+      console.log("cur:", cur)
+      console.log("-------------------as:", as)
+      gs = await listGroup.getGroups()
+      console.log("-------------------gs:", gs)
+
+      await smg.addActiveGroupId(groupId2,  {from:g.admin});
+      as = await smg.getActiveGroupIds(cur+8);
+      assert.equal(as.length, 2)
+      assert.equal(as[0], groupId2)
+      assert.equal(as[1], groupId)
+      as = await smg.getActiveGroupIds(cur+12);
+      assert.equal(as.length, 1)
+      assert.equal(as[0], groupId2)
+      gs = await listGroup.getGroups()
+      assert.equal(gs.length, 2)
+      await utils.sleepUntil(1000+1000*parseInt(groupInfo.endTime))
+      await listGroup.cleanExpiredGroup()
+      gs = await listGroup.getGroups()
+      console.log("gs,cur:", gs, parseInt(Date.now()/1000))
+      assert.equal(gs.length, 1)
+    })
+
+})
+
+
+
+
+contract('TestSmg', async () => {
+
+  let  smg, pos
+  let groupId, groupInfo, groupId2
+  let contValue = 123456;
+  let web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
+  let wk1 = utils.getAddressFromInt(100001)
+  let wk2 = utils.getAddressFromInt(100002)
+  let listGroup;
+
+  before("init contracts", async() => {
+      let smgProxy = await StoremanGroupProxy.deployed();
+      smg = await StoremanGroupDelegate.at(smgProxy.address)
+      listGroup = await ListGroup.deployed();
+      pos = await FakePosLib.deployed();
+      await setupNetwork();
+  })
+
+
+  it('registerStart_1 ', async ()=>{
+      groupId = await registerStart(smg,0,{memberCountDesign:2});
+      await utils.sleep(1000);
+      groupId2 = await registerStart(smg,0,{memberCountDesign:2});
+  })
+
+  it('stakeInPre ', async ()=>{
+    await smg.stakeIn(groupId, wk1.pk, wk1.pk,{value:80000});
+    await smg.stakeIn(groupId2, wk2.pk, wk2.pk,{value:80000});
+  })
+  it('pos', async ()=>{
+    let ret;
+    ret = await pos.getMinIncentive(4, 0, 10000);
+    console.log("ret:", ret)
+    ret = await pos.getMinIncentive(5, 0, 10000);
+    console.log("ret:", ret)
+    ret = await pos.getMinIncentive(6, 0, 10000);
+    console.log("ret:", ret)
+  })
+
+
+  it('T7 setGpk', async ()=>{
+
+    await smg.setDependence(g.admin, g.admin, g.admin,pos.address);
+    let tx = smg.setGpk(groupId, g.leader, g.leader, {from:g.admin});
+    await expectRevert(tx, "invalid status")
+    groupInfo = await smg.getStoremanGroupInfo(groupId);
+    groupInfo2 = await smg.getStoremanGroupInfo(groupId2);
+
+    await timeWaitSelect(groupInfo);
+    await timeWaitSelect(groupInfo2);
+    await toSelect(smg, groupId);
+    await toSelect(smg, groupId2);
+    await smg.setGpk(groupId, g.leader, g.leader, {from:g.admin});
+    await smg.setGpk(groupId2, g.leader, g.leader, {from:g.admin});
+
+
+    //
+    let all = await listGroup.getGroups()
+    console.log("groupIds all:", all)
+
+    let groupIds = await smg.getActiveGroupIds(parseInt(groupInfo.startTime))
+    console.log("groupIds:", groupIds)
+
+    let groupIds2 = await smg.getActiveGroupIds(parseInt(groupInfo.endTime)-1)
+    console.log("groupIds:", groupIds2)
+
+    let groupIds3 = await smg.getActiveGroupIds(parseInt(groupInfo.endTime))
+    console.log("groupIds:", groupIds3)
+
+    await utils.sleepUntil(parseInt(groupInfo.endTime)*1000+1000);
+    await listGroup.cleanExpiredGroup();
+    let all2 = await listGroup.getGroups()
+    console.log("groupIds all:", all2)
+
+    await utils.sleepUntil(parseInt(groupInfo2.endTime)*1000+1000);
+    await listGroup.cleanExpiredGroup();
+    let all3 = await listGroup.getGroups()
+    console.log("groupIds all:", all3)
+  })
+
+})
+
+
+
+contract('many group', async () => {
+
+  let  smg, listGroup
+
+  const groupNumber = 100;
+  let groupIds = [];
+  let wk0 = utils.getAddressFromInt(80000)
+
+  before("init contracts", async() => {
+      let smgProxy = await StoremanGroupProxy.deployed();
+      smg = await StoremanGroupDelegate.at(smgProxy.address)
+      listGroup = await ListGroup.deployed()
+      await setupNetwork();
+
+      for(let i=0; i<groupNumber; i++){
+        let wk = utils.getAddressFromInt(80000+i)
+        let groupId = await registerStart(smg, 0, {htlcDuration:100,memberCountDesign:2});
+        groupIds.push(groupId)
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+      }
+      let groupInfo = await smg.getStoremanGroupInfo(groupIds[groupNumber-1])
+      await timeWaitSelect(groupInfo)
+      let dep = await smg.getDependence();
+      await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+      for(let i=0; i<groupNumber; i++){
+        await toSelect(smg, groupIds[i]);
+        let tx = await smg.setGpk(groupIds[i], g.leaderPk, g.leaderPk, {from:g.admin})
+        if(i == groupNumber-1){
+          console.log("setgpk gas:", tx)
+        }
+      }
+      await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+  })
+
+  it('check incentive ', async ()=>{
+      await timeWaitIncentive(smg, groupIds[0], wk0.addr);
+      ginfo = await smg.getStoremanGroupInfo(groupIds[0]);
+      console.log("groupIds[0]:", ginfo)
+
+
+          let dt = await listGroup.getTotalDeposit(parseInt(ginfo.endTime)-1) 
+          console.log("dt i:", parseInt(ginfo.endTime)-1, dt)
+          let tx = listGroup.setTotalDeposit(parseInt(ginfo.endTime)-1, 100)
+          await expectRevert(tx, "not allow")
+          let activeGroup = await smg.getActiveGroupIds(parseInt(ginfo.endTime)-1)
+          console.log("activeGroup:", parseInt(ginfo.endTime)-1, activeGroup.length)
+      
+      console.log("groups:", await listGroup.getGroups().length)
+      await smg.storemanGroupUnregister(groupIds[0], {from:g.leader});
+      console.log("groups:", await listGroup.getGroups().length)
+
+  })
+  
+})

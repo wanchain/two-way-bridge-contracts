@@ -78,6 +78,15 @@ library StoremanLib {
                 revert("invalid sender");
             }
             sk.isWhite = true;
+
+            
+            // check if it is a backup whitelist, if yes, change it's groupId to 0.
+            for(uint i=group.whiteCount; i<group.whiteCountAll; i++) {
+                if(group.skMap[i] == wkAddr){
+                    sk.groupId = bytes32(0x00);
+                    break;
+                }
+            }
         } else {
             realInsert(data,group, wkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value));
         }
@@ -89,14 +98,17 @@ library StoremanLib {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         require(sk.sender == msg.sender, "Only the sender can stakeAppend");
-
+        uint amount = sk.deposit.getLastValue();
+        require(amount != 0, "Claimed");
+        
         uint day = StoremanUtil.getDaybyTime(data.posLib, now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
+        Deposit.Record memory rw = Deposit.Record(day, StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value));
         sk.deposit.addRecord(r);
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
-        updateGroup(data, sk, group, r);
-        updateGroup(data, sk, nextGroup, r);
+        updateGroup(data, sk, group, r, rw);
+        updateGroup(data, sk, nextGroup, r, rw);
         emit stakeAppendEvent(wkAddr, msg.sender,msg.value);
     }
 
@@ -126,7 +138,7 @@ library StoremanLib {
         emit stakeOutEvent(wkAddr, msg.sender);
     }
 
-    function isWorkingNodeInGroup(StoremanType.StoremanGroup storage group, address wkAddr) private  view returns (bool) {
+    function isWorkingNodeInGroup(StoremanType.StoremanGroup storage group, address wkAddr) public  view returns (bool) {
         uint count = group.selectedCount;
         for(uint8 i = 0; i < count; i++) {
             if(wkAddr == group.selectedNode[i]) {
@@ -250,21 +262,23 @@ library StoremanLib {
         }
     }
 
-    function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r) internal {
+    function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r, Deposit.Record rw) internal {
         //如果还没选择, 不需要更新group的值, 在选择的时候一起更新.
         // 如果已经选择过了, 需要更新group的值.
         if(group.status == StoremanType.GroupStatus.none){ // not exist group.
             return;
         }
-        address wkAddr = sk.wkAddr;
+        //address wkAddr = sk.wkAddr;
 
         if(group.status == StoremanType.GroupStatus.curveSeted) {
-            if(group.whiteWk[wkAddr] == address(0x00)){
-                realInsert(data, group, wkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight, sk.deposit.getLastValue().add(sk.partnerDeposit)).add(sk.delegateDeposit));
+            if(group.whiteWk[sk.wkAddr] == address(0x00)){
+                realInsert(data, group, sk.wkAddr, StoremanUtil.calSkWeight(data.conf.standaloneWeight, sk.deposit.getLastValue().add(sk.partnerDeposit)).add(sk.delegateDeposit));
             }            
         } else {
-            group.deposit.addRecord(r);
-            group.depositWeight.addRecord(r);
+            if(isWorkingNodeInGroup(group, sk.wkAddr)){
+                group.deposit.addRecord(r);
+                group.depositWeight.addRecord(rw);
+            }
         }
     }
     function delegateIn(StoremanType.StoremanData storage data, address wkAddr)
@@ -289,32 +303,38 @@ library StoremanLib {
         uint day = StoremanUtil.getDaybyTime(data.posLib, now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         dk.deposit.addRecord(r);
-        updateGroup(data, sk, group, r);
-        updateGroup(data, sk, nextGroup, r);
+        updateGroup(data, sk, group, r, r);
+        updateGroup(data, sk, nextGroup, r, r);
         emit delegateInEvent(wkAddr, msg.sender,msg.value);
     }
-    // 必须指定白名单. 允许重复. 
+
+    // must specify all the whitelist.
     function inheritNode(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] wkAddrs, address[] senders) public
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        address[] memory oldAddr =  new address[](group.memberCountDesign+data.conf.backupCount);        
+        address[] memory oldAddr =  new address[](group.memberCountDesign+data.conf.backupCount);
         uint oldCount = 0;
+        uint k = 0;
 
         group.whiteCount = wkAddrs.length.sub(data.conf.backupCount);
         group.whiteCountAll = wkAddrs.length;
-        for(uint k = 0; k < wkAddrs.length; k++){
+        for(k = 0; k < wkAddrs.length; k++){
             group.whiteMap[k] = wkAddrs[k];
             group.whiteWk[wkAddrs[k]] = senders[k];
+            StoremanType.Candidate storage skw = data.candidates[0][wkAddrs[k]];
+            if(skw.wkAddr != address(0x00)){ // this node has exist
+                if(preGroupId != bytes32(0x00)) {
+                    require(skw.groupId == bytes32(0x00) || skw.groupId == preGroupId, "Invalid whitelist");
+                }
+                require(!skw.quited, "Invalid node");
+                oldAddr[oldCount] = wkAddrs[k];
+                oldCount++;
+            }
             if(k < group.whiteCount) {
                 group.selectedNode[k] = wkAddrs[k];
-                StoremanType.Candidate storage skw = data.candidates[0][wkAddrs[k]];
-                if(skw.wkAddr != address(0x00)){ // this node has exist
-                    if(preGroupId != bytes32(0x00)) {
-                        require(skw.groupId == preGroupId, "Invalid whitelist");
-                    }
-                    require(!skw.quited, "Invalid node");
-                    oldAddr[oldCount] = wkAddrs[k];
-                    oldCount++;
+                if(skw.groupId==bytes32(0x00)){
+                    skw.groupId = groupId;
+                } else {
                     skw.nextGroupId = groupId;
                 }
             }
@@ -337,13 +357,11 @@ library StoremanLib {
             address wkAddr = oldGroup.selectedNode[k];
             StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
             if (sk.groupId == preGroupId && !sk.quited && sk.slashedCount == 0 && !sk.isWhite) {
-                // group.selectedNode[group.selectedCount] = sk.wkAddr;
                 if (oldGroup.status == StoremanType.GroupStatus.failed){
                     sk.groupId = groupId;
                 } else {
                     sk.nextGroupId = groupId;
                 }
-                // group.selectedCount++;
                 group.memberCount++;
                 oldAddr[oldCount] = sk.wkAddr;
                 stakes[oldCount] = StoremanUtil.calSkWeight(data.conf.standaloneWeight, sk.deposit.getLastValue().add(sk.partnerDeposit)).add(sk.delegateDeposit);
@@ -455,9 +473,10 @@ library StoremanLib {
         sk.partnerDeposit = sk.partnerDeposit.add(msg.value);
         uint day = StoremanUtil.getDaybyTime(data.posLib, now);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
+        Deposit.Record memory rw = Deposit.Record(day, StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value));
         pn.deposit.addRecord(r);
-        updateGroup(data, sk, group, r);
-        updateGroup(data, sk, nextGroup, r);
+        updateGroup(data, sk, group, r, rw);
+        updateGroup(data, sk, nextGroup, r, rw);
         emit partInEvent(wkAddr, msg.sender, msg.value);
     }
 
