@@ -30,7 +30,7 @@ library StoremanUtil {
   }
   function onCurve(bytes pubkey) public view returns (bool) {
     if(pubkey.length != 64) return false;
-    uint[2]  P;
+    uint[2] memory P;
     P[0] =  CommonTool.bytes2uint(pubkey, 0, 32);
     P[1] =  CommonTool.bytes2uint(pubkey, 32, 32);
     uint p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
