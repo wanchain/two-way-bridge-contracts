@@ -11,6 +11,7 @@
     "@openzeppelin/test-helpers": "^0.5.6",
     "bigi": "^1.4.2",
     "bignumber.js": "^7.2.1",
+    "bip39": "^3.0.2",
     "chai": "^4.2.0",
     "ecurve": "^1.0.6",
     "ecurve-bn256": "^1.0.15",
@@ -27,8 +28,10 @@
     "truffle": "^5.1.49",
     "truffle-hdwallet-provider": "^1.0.17",
     "truffle-privatekey-provider": "^0.1.0",
+    "wanchain-sc-sdk": "git://github.com/wanchain/wanchain-sc-sdk.git#eth-0.4.26",
     "wanchain-truffle-sdk": "^1.0.0",
     "wanchain-util": "^1.2.0",
+    "web3-eth-abi": "^1.2.4",
     "web3-provider-engine": "^15.0.12"
   },
   "devDependencies": {
