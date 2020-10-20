@@ -57,7 +57,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
             uint price = getPrice(symbol);
             require(price > 0, "Price is zero");
             uint count = fastCrossMinValue.mul(10**decimals).div(price);
-            require(count < value, "value too small");
+            require(value >= count, "value too small");
         }
         _;
     }
