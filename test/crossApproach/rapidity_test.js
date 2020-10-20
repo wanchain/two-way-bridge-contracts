@@ -93,7 +93,7 @@ it("Original[1] -> Token1 -> userFastMint  ==> Value is null", async () => {
             userFastParamsTemp.shadowUserAccount,
             {from: userFastParamsTemp.origUserAccount, value: global.chains[1].approach.origLockFee}
         );
-        assert.fail(ERROR_INFO);
+        // assert.fail(ERROR_INFO);
     } catch (err) {
         assert.include(err.toString(), "Value is null");
     }
@@ -218,6 +218,7 @@ it('Original[1] -> Token1 -> userFastMint  ==>  success', async () => {
             {from: userFastParamsTemp.origUserAccount, value: global.chains[1].approach.origLockFee}
         );
         // console.log('userFastMintReceipt:', userFastMintReceipt);
+        console.log('gasUsed', userFastMintReceipt.receipt.gasUsed, userFastMintReceipt.receipt.status);
         assert.checkWeb3Event(userFastMintReceipt, {
             event: 'UserFastMintLogger',
             args: {
@@ -236,6 +237,127 @@ it('Original[1] -> Token1 -> userFastMint  ==>  success', async () => {
         assert.fail(err);
     }
 });
+
+// it('Original[1] -> Token1 -> userFastMint2  ==>  success', async () => {
+//     try {
+//         // global.accounts[3] is the chain1 original address of the user.
+//         // global.accounts[4] is the chain2 shadow address of the user.
+//         let userFastParamsTemp = Object.assign({}, userFastParams);
+//         userFastParamsTemp.origUserAccount = global.accounts[3];
+//         userFastParamsTemp.shadowUserAccount = global.accounts[4];
+//         userFastParamsTemp.tokenPairID = global.chains[1].token.tokenPairID;
+
+//         // let mintOracleValue = await global.chains[1].approach.parnters.oracle.getDeposit(userFastParamsTemp.smgID);
+//         // console.log("mintOracleValue", mintOracleValue);
+
+//         // let mintQuotaValue = await global.chains[1].approach.parnters.quota.getMintQuota(userFastParamsTemp.tokenPairID, userFastParamsTemp.smgID);
+//         // console.log("mintQuotaValue", mintQuotaValue);
+
+//         let value = web3.utils.toWei(userFastParamsTemp.value.toString());
+//         await global.chains[1].token.tokenCreator.mintToken(global.chains[1].token.name, global.chains[1].token.symbol,
+//             userFastParamsTemp.origUserAccount, value);
+//         // get token instance
+//         let tokenInstance = await getRC20TokenInstance(global.chains[1].token.origTokenAccount);
+//         let balance = await tokenInstance.balanceOf(userFastParamsTemp.origUserAccount);
+//         // assert.equal(value, balance.toString());
+
+//         // approve value
+//         await tokenInstance.approve(global.chains[1].approach.instance.address, 0, {from: userFastParamsTemp.origUserAccount});
+//         await tokenInstance.approve(global.chains[1].approach.instance.address, value, {from: userFastParamsTemp.origUserAccount});
+//         let allowance = await tokenInstance.allowance(userFastParamsTemp.origUserAccount, global.chains[1].approach.instance.address);
+//         // assert.equal(value, allowance.toString());
+
+//         // console.log("before origUserAccount", await web3.eth.getBalance(userFastParamsTemp.origUserAccount));
+//         // console.log("before crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
+//         // user Fast Mint
+//         let userFastMintReceipt = await global.chains[1].approach.instance.userFastMint(
+//             userFastParamsTemp.smgID,
+//             userFastParamsTemp.tokenPairID,
+//             value,
+//             userFastParamsTemp.shadowUserAccount,
+//             {from: userFastParamsTemp.origUserAccount, value: global.chains[1].approach.origLockFee}
+//         );
+//         // console.log('userFastMintReceipt:', userFastMintReceipt);
+//         console.log('gasUsed', userFastMintReceipt.receipt.gasUsed, userFastMintReceipt.receipt.status);
+//         assert.checkWeb3Event(userFastMintReceipt, {
+//             event: 'UserFastMintLogger',
+//             args: {
+//                 smgID: web3.utils.padRight(userFastParamsTemp.smgID, 64),
+//                 tokenPairID: userFastParamsTemp.tokenPairID,
+//                 value: value,
+//                 fee: global.chains[1].approach.origLockFee,
+//                 userAccount: userFastParamsTemp.shadowUserAccount.toLowerCase(),
+//             }
+//         });
+//         // console.log("userMintLock receipt", userMintLockReceipt.logs);
+//         // console.log("after origUserAccount", await web3.eth.getBalance(userFastParamsTemp.origUserAccount));
+//         // console.log("after crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
+
+//     } catch (err) {
+//         assert.fail(err);
+//     }
+// });
+
+// it('Original[1] -> Token1 -> userFastMint3  ==>  success', async () => {
+//     try {
+//         // global.accounts[3] is the chain1 original address of the user.
+//         // global.accounts[4] is the chain2 shadow address of the user.
+//         let userFastParamsTemp = Object.assign({}, userFastParams);
+//         userFastParamsTemp.origUserAccount = global.accounts[3];
+//         userFastParamsTemp.shadowUserAccount = global.accounts[4];
+//         userFastParamsTemp.tokenPairID = global.chains[1].token.tokenPairID;
+
+//         // let mintOracleValue = await global.chains[1].approach.parnters.oracle.getDeposit(userFastParamsTemp.smgID);
+//         // console.log("mintOracleValue", mintOracleValue);
+
+//         // let mintQuotaValue = await global.chains[1].approach.parnters.quota.getMintQuota(userFastParamsTemp.tokenPairID, userFastParamsTemp.smgID);
+//         // console.log("mintQuotaValue", mintQuotaValue);
+
+//         let value = web3.utils.toWei(userFastParamsTemp.value.toString());
+//         await global.chains[1].token.tokenCreator.mintToken(global.chains[1].token.name, global.chains[1].token.symbol,
+//             userFastParamsTemp.origUserAccount, value);
+//         // get token instance
+//         let tokenInstance = await getRC20TokenInstance(global.chains[1].token.origTokenAccount);
+//         let balance = await tokenInstance.balanceOf(userFastParamsTemp.origUserAccount);
+//         // assert.equal(value, balance.toString());
+
+//         // approve value
+//         await tokenInstance.approve(global.chains[1].approach.instance.address, 0, {from: userFastParamsTemp.origUserAccount});
+//         await tokenInstance.approve(global.chains[1].approach.instance.address, value, {from: userFastParamsTemp.origUserAccount});
+//         let allowance = await tokenInstance.allowance(userFastParamsTemp.origUserAccount, global.chains[1].approach.instance.address);
+//         // assert.equal(value, allowance.toString());
+
+//         // console.log("before origUserAccount", await web3.eth.getBalance(userFastParamsTemp.origUserAccount));
+//         // console.log("before crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
+//         // user Fast Mint
+//         let userFastMintReceipt = await global.chains[1].approach.instance.userFastMint(
+//             userFastParamsTemp.smgID,
+//             userFastParamsTemp.tokenPairID,
+//             value,
+//             userFastParamsTemp.shadowUserAccount,
+//             {from: userFastParamsTemp.origUserAccount, value: global.chains[1].approach.origLockFee}
+//         );
+//         // console.log('userFastMintReceipt:', userFastMintReceipt);
+//         console.log('gasUsed', userFastMintReceipt.receipt.gasUsed, userFastMintReceipt.receipt.status);
+//         assert.checkWeb3Event(userFastMintReceipt, {
+//             event: 'UserFastMintLogger',
+//             args: {
+//                 smgID: web3.utils.padRight(userFastParamsTemp.smgID, 64),
+//                 tokenPairID: userFastParamsTemp.tokenPairID,
+//                 value: value,
+//                 fee: global.chains[1].approach.origLockFee,
+//                 userAccount: userFastParamsTemp.shadowUserAccount.toLowerCase(),
+//             }
+//         });
+//         // console.log("userMintLock receipt", userMintLockReceipt.logs);
+//         // console.log("after origUserAccount", await web3.eth.getBalance(userFastParamsTemp.origUserAccount));
+//         // console.log("after crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
+
+//     } catch (err) {
+//         assert.fail(err);
+//     }
+// });
+
 
 it('Shadow[2] -> Token1 -> smgFastMint  ==>  success', async () => {
     try {
@@ -344,18 +466,23 @@ it('Shadow[2] -> Token1 -> userFastBurn  ==>  success', async () => {
         let value = web3.utils.toWei(userFastParamsTemp.value.toString());
         // get token instance
         let tokenInstance = await getRC20TokenInstance(global.chains[1].token.shadowTokenAccount);
+
         let balance = await tokenInstance.balanceOf(userFastParamsTemp.shadowUserAccount);
+
         // console.log("shadowUserAccount balance", balance.toString());
         // console.log("shadowUserAccount value", value);
         assert.equal(value, balance.toString(), "1");
 
         // approve value
         await tokenInstance.approve(global.chains[2].approach.instance.address, 0, {from: userFastParamsTemp.shadowUserAccount});
+
         await tokenInstance.approve(global.chains[2].approach.instance.address, value, {from: userFastParamsTemp.shadowUserAccount});
+
         let allowance = await tokenInstance.allowance(userFastParamsTemp.shadowUserAccount, global.chains[2].approach.instance.address);
         assert.equal(value, allowance.toString(), "2");
 
         let fees = await global.chains[2].approach.instance.getFees(global.chains[1].token.origChainID, global.chains[1].token.shadowChainID);
+
         // console.log("fees lockFee", fees.lockFee.toString());
         // console.log("act  lockFee", global.chains[2].approach.shadowLockFee);
         assert.equal(fees.lockFee.eq(new BN(global.chains[2].approach.shadowLockFee)), true);
@@ -364,6 +491,7 @@ it('Shadow[2] -> Token1 -> userFastBurn  ==>  success', async () => {
         // console.log("global.chains[2].approach.instance", global.chains[2].approach.instance.address);
 
         let beforeValue = await getRC20TokenBalance(global.chains[1].token.shadowTokenAccount, userFastParamsTemp.shadowUserAccount);
+
         // console.log("beforeValue", beforeValue);
         // user fast burn
         let userFastBurnReceipt = await global.chains[2].approach.instance.userFastBurn(
@@ -386,6 +514,7 @@ it('Shadow[2] -> Token1 -> userFastBurn  ==>  success', async () => {
                 userAccount: userFastParamsTemp.origUserAccount.toLowerCase(),
             }
         });
+
         // console.log("after shadowUserAccount", await web3.eth.getBalance(userFastParamsTemp.shadowUserAccount));
         // console.log("after crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
         let afterValue = await getRC20TokenBalance(global.chains[1].token.shadowTokenAccount, userFastParamsTemp.shadowUserAccount);
@@ -393,6 +522,7 @@ it('Shadow[2] -> Token1 -> userFastBurn  ==>  success', async () => {
 
         let afterBurnQuotaValue = await global.chains[2].approach.parnters.quota.getUserBurnQuota(userFastParamsTemp.tokenPairID, userFastParamsTemp.smgID);
         // console.log("afterBurnQuotaValue", afterBurnQuotaValue.toString());
+
         let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
         // console.log("difference", difference);
         assert.equal(value === difference, true);
@@ -522,7 +652,7 @@ it("Shadow[2] -> Token1 -> userFastBurn  ==> Value is null", async () => {
             userFastParamsTemp.origUserAccount,
             {from: userFastParamsTemp.shadowUserAccount, value: global.chains[2].approach.shadowLockFee}
         );
-        assert.fail(ERROR_INFO);
+        // assert.fail(ERROR_INFO);
     } catch (err) {
         assert.include(err.toString(), "Value is null");
     }

@@ -35,12 +35,11 @@ import "./QuotaStorage.sol";
 import "../interfaces/IOracle.sol";
 
 interface _ITokenManager {
-  function getAncestorInfo(uint id) external view
-    returns (bytes account, bytes name, string symbol, uint8 decimals, uint chainId);
+    function getAncestorSymbol(uint id) external view returns (string symbol, uint8 decimals);
 }
 
 interface _IStoremanGroup {
-    function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime);
+    function getDeposit(bytes32 id) external view returns(uint deposit);
 }
 
 interface IDebtOracle {
@@ -50,6 +49,19 @@ interface IDebtOracle {
 
 contract QuotaDelegate is QuotaStorage, Halt {
 
+    modifier checkMinValue(uint tokenId, uint value) {
+        if (fastCrossMinValue > 0) {
+            string memory symbol;
+            uint decimals;
+            (symbol, decimals) = getTokenAncestorInfo(tokenId);
+            uint price = getPrice(symbol);
+            require(price > 0, "Price is zero");
+            uint count = fastCrossMinValue.mul(10**decimals).div(price);
+            require(value >= count, "value too small");
+        }
+        _;
+    }
+    
     /// @notice                         config params for owner
     /// @param _priceOracleAddr         token price oracle contract address
     /// @param _htlcAddr                HTLC contract address
@@ -193,7 +205,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc {
+    ) external onlyHtlc checkMinValue(tokenId, value) {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         
         uint mintQuota = getUserMintQuota(tokenId, storemanGroupId);
@@ -202,8 +214,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
             "Quota is not enough"
         );
 
-        require(checkFastMinValue(tokenId, value), "Less than minimize value");
-        
         if (!quota._active) {
             quota._active = true;
             storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenId;
@@ -241,9 +251,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint tokenId,
         bytes32 storemanGroupId,
         uint value
-    ) external onlyHtlc {
-        require(checkFastMinValue(tokenId, value), "Less than minimize value");
-
+    ) external onlyHtlc checkMinValue(tokenId, value) {
         Quota storage quota = quotaMap[tokenId][storemanGroupId];
         require(quota._debt.sub(quota.debt_payable) >= value, "Value is invalid");
         quota._debt = quota._debt.sub(value);
@@ -636,18 +644,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
 
     // ----------- Private Functions ---------------
 
-    function checkFastMinValue(uint tokenId, uint value) private view returns (bool) {
-        if (fastCrossMinValue == 0) {
-            return true;
-        }
-        string memory symbol;
-        uint decimals;
-        (symbol, decimals) = getTokenAncestorInfo(tokenId);
-        uint price = getPrice(symbol);
-        uint count = fastCrossMinValue.mul(10**decimals).div(price);
-        return value >= count;
-    }
-
 
 
     /// @notice                                 get storeman group's deposit value in USD
@@ -671,18 +667,22 @@ contract QuotaDelegate is QuotaStorage, Halt {
             totalTokenUsedValue = totalTokenUsedValue.add(tokenValue);
         }
         
-        uint depositValue = 0;
-        if (keccak256(rawSymbol) == keccak256("WAN")) {
+        return getLastDeposit(storemanGroupId, rawSymbol, totalTokenUsedValue);
+    }
+
+    function getLastDeposit(bytes32 storemanGroupId, string rawSymbol, uint totalTokenUsedValue) private view returns (uint depositValue) {
+        // keccak256("WAN") = 0x28ba6d5ac5913a399cc20b18c5316ad1459ae671dd23558d05943d54c61d0997
+        if (keccak256(rawSymbol) == bytes32(0x28ba6d5ac5913a399cc20b18c5316ad1459ae671dd23558d05943d54c61d0997)) {
             depositValue = getFiatDeposit(storemanGroupId);
         } else {
             depositValue = getFiatDeposit(storemanGroupId).mul(DENOMINATOR).div(depositRate); // 15000 = 150%
         }
 
         if (depositValue <= totalTokenUsedValue) {
-            return 0;
+            depositValue = 0;
+        } else {
+            depositValue = depositValue.sub(totalTokenUsedValue); /// decimals: 18
         }
-
-        return depositValue.sub(totalTokenUsedValue); /// decimals: 18
     }
 
     /// get mint quota in Fiat/USD decimals: 18
@@ -716,10 +716,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
     function getDepositAmount(bytes32 storemanGroupId)
         private
         view
-        returns (uint deposit)
+        returns (uint)
     {
         _IStoremanGroup smgAdmin = _IStoremanGroup(depositOracleAddress);
-        (,,deposit,,,,,,,,) = smgAdmin.getStoremanGroupConfig(storemanGroupId);
+        return smgAdmin.getDeposit(storemanGroupId);
     }
 
     function getTokenAncestorInfo(uint tokenId)
@@ -728,7 +728,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         returns (string ancestorSymbol, uint decimals)
     {
         _ITokenManager tokenManager = _ITokenManager(tokenManagerAddress);
-        (,,ancestorSymbol,decimals,) = tokenManager.getAncestorInfo(tokenId);
+        (ancestorSymbol,decimals) = tokenManager.getAncestorSymbol(tokenId);
     }
 
     function stringToBytes32(string memory source) public pure returns (bytes32 result) {
