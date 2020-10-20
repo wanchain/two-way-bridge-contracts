@@ -135,7 +135,7 @@ library RapidityLib {
         uint origChainID;
         uint shadowChainID;
         bytes memory tokenOrigAccount;
-        (origChainID,tokenOrigAccount,shadowChainID,) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
+        (origChainID,tokenOrigAccount,shadowChainID) = storageData.tokenManager.getTokenPairInfoSlim(params.tokenPairID);
         require(origChainID != 0, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
@@ -231,7 +231,7 @@ library RapidityLib {
     {
         uint origChainID;
         bytes memory tokenOrigAccount;
-        (origChainID,tokenOrigAccount,,) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
+        (origChainID,tokenOrigAccount,) = storageData.tokenManager.getTokenPairInfoSlim(params.tokenPairID);
         require(origChainID != 0, "Token does not exist");
 
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);

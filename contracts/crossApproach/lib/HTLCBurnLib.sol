@@ -204,7 +204,7 @@ library HTLCBurnLib {
         storageData.quota.userBurnRedeem(tokenPairID, smgID, value);
 
         bytes memory tokenOrigAccount;
-        (,tokenOrigAccount,,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
+        (,tokenOrigAccount,) = storageData.tokenManager.getTokenPairInfoSlim(tokenPairID);
 
         address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
 

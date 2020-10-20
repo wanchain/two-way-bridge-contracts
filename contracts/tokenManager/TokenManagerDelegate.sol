@@ -233,6 +233,18 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         toAccount = mapTokenPairInfo[id].toAccount;
     }
 
+    function getTokenPairInfoSlim(
+        uint id
+    )
+        external
+        view
+        returns (uint fromChainID, bytes fromAccount, uint toChainID)
+    {
+        fromChainID = mapTokenPairInfo[id].fromChainID;
+        fromAccount = mapTokenPairInfo[id].fromAccount;
+        toChainID = mapTokenPairInfo[id].toChainID;
+    }
+
     function getTokenInfo(uint id) external view returns (address addr, string name, string symbol, uint8 decimals) {
         if (mapTokenPairInfo[id].fromChainID == 0) {
             name = '';
@@ -254,6 +266,11 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         symbol = mapTokenPairInfo[id].aInfo.symbol;
         decimals = mapTokenPairInfo[id].aInfo.decimals;
         chainId = mapTokenPairInfo[id].aInfo.chainID;
+    }
+
+    function getAncestorSymbol(uint id) external view returns (string symbol, uint8 decimals) {
+        symbol = mapTokenPairInfo[id].aInfo.symbol;
+        decimals = mapTokenPairInfo[id].aInfo.decimals;
     }
 
     // function getTokenPairsFullFields()
