@@ -37,9 +37,9 @@ import "../../storemanGroupAdmin/StoremanType.sol";
 library GpkLib {
 
     /// submit period
-    uint32 constant DEFAULT_PERIOD = 1 * 60 * 60;     // 1 hours
+    uint32 constant DEFAULT_PERIOD = 2 * 60 * 60;     // 2 hours
     uint32 constant PLOYCOMMIT_PERIOD = 48 * 60 * 60; // 48 hours
-    uint32 constant NEGOTIATE_PERIOD = 4 * 60 * 60;   // 4 hours
+    uint32 constant NEGOTIATE_PERIOD = 6 * 60 * 60;   // 4 hours
 
     /**
      *
