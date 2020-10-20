@@ -123,7 +123,7 @@ async function setupNetwork() {
             "0x4983d95b3716aefa4a14d116bded84e10fd5b050bd6001caa2b97086b4d5c68e1373426da2efcd14333d47bcebd3befcf5e609a66fac1b0280cdae2c07f0a279",
             "0x5a7cef17a69a44cfd04e8a3696420b863e266dfaad35766c33e6d9d2e48c2e917ec73dcf9fef9b9d9a4fc915757102a0776de17904376bae87493a5cbba2d33a",
         ]
-        g.timeBase = 120;
+        g.timeBase = 10; // 120
         web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
         g.web3 = web3;
     }
@@ -170,8 +170,8 @@ async function registerStart(smg, wlStartIndex = g.whiteAddrStartIdx, option = {
     }
     //console.log("wks: %O, ws: %O, srs: %O", g.wks, ws, srs)
     let tx = await smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
-    console.log("registerStart txhash:", tx.tx)
     let group = await smg.getStoremanGroupInfo(groupId)
+    console.log("registerStart group %s txHash: %s", group.groupId, tx.tx)
     assert.equal(group.status, storemanGroupStatus.curveSeted)
     assert.equal(group.groupId, groupId)
     if(!preGroupId) {
@@ -184,7 +184,7 @@ async function registerStart(smg, wlStartIndex = g.whiteAddrStartIdx, option = {
 }
 
 async function stakeInPre(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx, nodeCount = g.stakerCount){
-    console.log("smg.contract:", smg.contract._address);
+    console.log("smg.contract %s stake %d", smg.contract._address, nodeCount);
     for(let i=0; i<nodeCount; i++){
         let stakingValue = g.minStakeIn ;
         let sw, tx;
@@ -192,7 +192,7 @@ async function stakeInPre(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx, no
         //console.log("send============================:", g.sfs[i % g.sfs.length]);
         tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[i % g.sfs.length], value:stakingValue});
 
-        //console.log("preE:", i, tx.tx);
+        console.log("preE:", i, sw.addr);
         let candidate  = await smg.getStoremanInfo(sw.addr)
         //console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), g.sfs[i % g.sfs.length].toLowerCase());
@@ -222,37 +222,6 @@ async function stakeWhiteList(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx
     return g.whiteCountAll;
 }
 
-async function stakeInOne(smg, groupId, nodeIndex, value){
-    console.log("smg.contract:", smg.contract._address)
-    let sf = utils.getAddressFromInt(nodeIndex+1000)
-    let sw = utils.getAddressFromInt(nodeIndex+g.whiteAddrOffset)
-    let en = utils.getAddressFromInt(nodeIndex+3000)
-    let sdata =  smg.contract.methods.stakeIn(groupId, sw.pk,en.pk).encodeABI()
-    //console.log("sdata:",sdata)
-    let rawTx = {
-        Txtype: 0x01,
-        nonce:  await pu.promisefy(web3.eth.getTransactionCount,[sf.addr,"pending"], web3.eth),
-        gasPrice: gGasPrice,
-        gas: gGasLimit,
-        to: smg.contract._address,
-        chainId: 6,
-        value: value,
-        data: sdata,
-    }
-    //console.log("rawTx:", rawTx)
-    let tx = new Tx(rawTx)
-    tx.sign(sf.priv)
-    const serializedTx = '0x'+tx.serialize().toString('hex');
-    //console.log("serializedTx:",serializedTx)
-    console.log("sm %d %s stakein %d", nodeIndex, sw.addr, value)
-    await web3.eth.sendSignedTransaction(serializedTx)
-    let candidate  = await smg.getStoremanInfo(sw.addr)
-    //console.log("candidate:", candidate)
-    assert.equal(candidate.sender.toLowerCase(), sf.addr)
-    assert.equal(candidate.wkAddr.toLowerCase(), sw.addr)
-    assert.equal(candidate.deposit, value)
-    return sw.addr
-}
 async function sendTransaction(sf, value, sdata, to){
 
     let rawTx = {
@@ -295,6 +264,16 @@ async function toStakeIn(smg, groupId, wk, value=50000, from=g.admin){
     let block = await g.web3.eth.getBlock(tx.receipt.blockNumber);
     console.log("toStakeIn sk %s at %d:", wk.addr, block.timestamp)  
     return block.timestamp
+}
+
+async function toStakeAppend(smg, ascend = true, nodeStartIndex = g.whiteCountAll, nodeCount = g.memberCountDesign - g.whiteCount){
+  for (let i = 0; i < nodeCount; i++) {
+    let index = nodeStartIndex + i;
+    let wkAddr = g.wks[index];
+    let value = ascend? i + 1 : nodeCount - i;
+    console.log("sk %d(%s) stakeAppend value %d", index, wkAddr, value);
+    await smg.stakeAppend(wkAddr, {from: g.sfs[index], value: value});
+  }
 }
 
 async function toDelegateIn(smg, wkAddr, index=30000,count=11, value=100){
@@ -403,7 +382,7 @@ async function toPartClaim(smg, wkAddr, index=40000,count=3){
 //     }
 // }
 async function timeWaitSelect(groupInfo) {
-    let second = 1+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
+    let second = g.timeBase+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
     await utils.sleepUntil(second*1000)
 }
 async function timeWaitEnd(groupInfo) {
@@ -456,7 +435,7 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
 
 module.exports = {
     g,setupNetwork,toDelegateClaim, toPartClaim,
-    registerStart,stakeInOne,toStakeIn,timeWaitIncentive,toDelegateIn,toPartIn,
+    registerStart,toStakeIn,toStakeAppend,timeWaitIncentive,toDelegateIn,toPartIn,
     stakeInPre,stakeWhiteList,toSelect,timeWaitSelect,timeWaitEnd,sendTransaction,
     initTestValue
 }
