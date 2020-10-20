@@ -4,12 +4,10 @@ import "./Deposit.sol";
 
 library StoremanType {
     using Deposit for Deposit.Records;
-    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
-    //ready: gpk finished.
-    
+    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}  //ready: gpk finished.
+
+
     struct Delegator {
-        //address sender; // the delegator wallet address
-        //address staker;
         bool  quited;
         uint index; // for delete from candidate;
         Deposit.Records deposit;
@@ -30,13 +28,13 @@ library StoremanType {
         uint crossIncoming;
         uint slashedCount;
 
-        uint incentivedDelegator; // 计算了多少个delegator的奖励, == delegatorCount 表示奖励都计算完成了.
+        uint incentivedDelegator; // how may delegator have beend incentived, == delegatorCount means incentive finished.
         uint incentivedDay;
         bytes32  groupId;
         bytes32  nextGroupId;
-        Deposit.Records  deposit;         // 自有资金记录
+        Deposit.Records  deposit;         // the sk hiself's deposit.
         
-        mapping(uint=>uint) incentive;       // without delegation.. set to 0 after incentive.        
+        mapping(uint=>uint) incentive;       // without delegation.. set to 0 after claim.        
 
         // delegator index => delegator addr
         mapping(uint=>address) delegatorMap;
@@ -49,10 +47,9 @@ library StoremanType {
     }
 
     struct StoremanGroup {
-        //bytes32    groupId;
         GroupStatus    status;
-        Deposit.Records    deposit;                  //用于计算group的总收益
-        Deposit.Records     depositWeight;            /// 用于在group内给各个成员分配利润.
+        Deposit.Records    deposit;                  //group's deposit, used for calculate group incentive
+        Deposit.Records     depositWeight;            // use for incentive distribution in a group
         uint selectedCount;
         uint memberCount;
         uint whiteCount;    // only used node, don't include backup.
@@ -80,7 +77,7 @@ library StoremanType {
         mapping(uint=>address) skMap;
         mapping(uint=>address) selectedNode;
         mapping(uint=>address) whiteMap;
-        mapping(address=>address) whiteWk;   // the white list specified when start group. 储存白名单对应的钱包地址.
+        mapping(address=>address) whiteWk;   // the white list specified when start group. the from sender of whitelist.
         mapping(uint=>uint) groupIncentive; // by day.
     }
     struct StoremanGlobalConf {
@@ -125,8 +122,8 @@ library StoremanType {
     struct StoremanGroupInfo {
         bytes32    groupId;
         GroupStatus    status;
-        uint    deposit;                  //用于计算group的总收益
-        uint    depositWeight;            /// 用于在group内给各个成员分配利润.
+        uint    deposit;
+        uint    depositWeight;
         uint selectedCount;
         uint memberCount;
         uint whiteCount;    // only used node, don't include backup.
@@ -153,8 +150,8 @@ library StoremanType {
     struct StoremanGroupInput {
         bytes32    groupId;
         bytes32    preGroupId;
-        uint workTime;
-        uint totalTime;
+        uint workTime;  // cross chain start time 
+        uint totalTime; // cross chain duration. 
         uint registerDuration;
         uint memberCountDesign;
         uint threshold;

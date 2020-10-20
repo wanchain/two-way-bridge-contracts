@@ -31,7 +31,7 @@ import "../lib/SafeMath.sol";
 import "../components/Halt.sol";
 import "../components/Admin.sol";
 import "./StoremanGroupStorage.sol";
-//import "../interfaces/IPosLib.sol";
+import "../interfaces/IListGroup.sol";
 import "./StoremanLib.sol";
 import "./StoremanType.sol";
 import "./IncentiveLib.sol";
@@ -42,6 +42,8 @@ import "../components/ReentrancyGuard.sol";
 contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGuard {
     using SafeMath for uint;
     using Deposit for Deposit.Records;
+    bytes key = "openStoreman";
+    bytes innerKey = "totalDeposit";
 
     event StoremanGroupRegisterStartEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, uint workStart, uint workDuration, uint registerDuration);
     event StoremanGroupDismissedEvent(bytes32 indexed groupId, uint dismissTime);
@@ -89,7 +91,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         // check preGroupId 是否存在.
         if(preGroupId != bytes32(0x00)){
             StoremanType.StoremanGroup storage preGroup = data.groups[preGroupId];
-            require(preGroup.status >= StoremanType.GroupStatus.ready || preGroup.status == StoremanType.GroupStatus.failed,"invalid preGroup");
+            require(preGroup.status == StoremanType.GroupStatus.ready || preGroup.status == StoremanType.GroupStatus.failed,"invalid preGroup");
         }
 
         initGroup(groupId, smg);
@@ -130,7 +132,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     }
 
     function incentiveCandidator( address wkAddr) external   {
-        IncentiveLib.incentiveCandidator(data, wkAddr,metric);
+        IncentiveLib.incentiveCandidator(data, wkAddr,metric, getGlobalGroupScAddr());
     }
 
     /// @notice                             Staker use this interface to stake wan to SC.
@@ -272,9 +274,38 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     {
         require(msg.sender == createGpkAddr, "Sender is not allowed");
         StoremanType.StoremanGroup storage group = data.groups[groupId];
+        require(group.status == StoremanType.GroupStatus.selected,"invalid status");
         group.gpk1 = gpk1;
         group.gpk2 = gpk2;
         group.status = StoremanType.GroupStatus.ready;
+        addActiveGroup(groupId, group.workTime, group.workTime+group.totalTime);
+    }
+    function addActiveGroupId(bytes32 groupId) external onlyAdmin{
+        address addr = getGlobalGroupScAddr();
+        StoremanType.StoremanGroup storage group = data.groups[groupId];
+        IListGroup(addr).addActiveGroup(groupId, group.workTime, group.workTime+group.totalTime);
+    }
+    function getDependence() public view  returns(address metricAddr, address gpkAddr,address quotaAddr, address posAddr, address listGroupAddr) {
+        return (metric, createGpkAddr,address(quotaInst), data.posLib, getGlobalGroupScAddr());
+    }
+
+    function setGlobalGroupScAddr(address _addr) external onlyOwner {
+        addressData.setStorage(key, innerKey, _addr);
+    }
+    function getGlobalGroupScAddr() public view returns(address) {
+        return addressData.getStorage(key, innerKey);
+    }
+    function addActiveGroup(bytes32 groupId, uint startTime, uint endTime) private {
+        address addr = getGlobalGroupScAddr();
+        IListGroup(addr).addActiveGroup(groupId, startTime, endTime);
+    }
+    function cleanExpiredGroup() private {
+        address addr = getGlobalGroupScAddr();
+        IListGroup(addr).cleanExpiredGroup();
+    }
+    function getActiveGroupIds(uint epochId) external view returns(bytes32[]){
+        address addr = getGlobalGroupScAddr();
+        return IListGroup(addr).getActiveGroupIds(epochId);
     }
 
 
@@ -288,16 +319,25 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
             return false;
         }
         for (uint i = 0; i < indexs.length; i++) {
+            StoremanType.Candidate storage skt = data.candidates[0][group.selectedNode[indexs[i]]];
+            if (slashTypes[i] == GpkTypes.SlashType.SijInvalid || slashTypes[i] == GpkTypes.SlashType.CheckInvalid || slashTypes[i] == GpkTypes.SlashType.SijTimeout) {
+                recordSmSlash(group.selectedNode[indexs[i]]);
+            }
+            IncentiveLib.cleanSmNode(skt, groupId);
             if (group.tickedCount + group.whiteCount >= group.whiteCountAll) {
                 group.status = StoremanType.GroupStatus.failed;
                 return false;
             }
             group.tickedNode[group.tickedCount] = group.selectedNode[indexs[i]];
             group.selectedNode[indexs[i]] = group.whiteMap[group.whiteCount + group.tickedCount];
-            if (slashTypes[i] == GpkTypes.SlashType.SijInvalid || slashTypes[i] == GpkTypes.SlashType.CheckInvalid || slashTypes[i] == GpkTypes.SlashType.SijTimeout) {
-                recordSmSlash(group.tickedNode[group.tickedCount]);
-            }
             group.tickedCount++;
+            StoremanType.Candidate storage skn = data.candidates[0][group.selectedNode[indexs[i]]];
+            if(skn.groupId == 0) {
+                skn.groupId = groupId;
+            }else {
+                skn.nextGroupId = groupId;
+            }
+
         }
         IncentiveLib.setGroupDeposit(data, group);
         return true;
@@ -326,7 +366,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         notHalted
         onlyGroupLeader(groupId)
     {
-        return StoremanLib.storemanGroupUnregister(data, groupId);
+        StoremanLib.storemanGroupUnregister(data, groupId);
+        return cleanExpiredGroup();
     }
 
     /// @notice                           function for storeman group apply unregistration through the delegate

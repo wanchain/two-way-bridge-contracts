@@ -3,6 +3,8 @@ const assert = require('chai').assert;
 const Web3 = require('web3');
 const optimist = require("optimist");
 const config = require("../truffle-config");
+const ListGroup = artifacts.require('ListGroup');
+ 
 //const timeMachine = require('ganache-time-traveler');
 const wanutil = require('wanchain-util');
 const Tx = wanutil.wanchainTx
@@ -19,7 +21,7 @@ const threshold  = 3;
 const stakerCount = memberCountDesign + whiteBackup;
 const registerDuration = 5; // open staking for 10 days.
 const gpkDuration = 3;
-const htlcDuration = 1; // work 90 day.
+const htlcDuration = 10; // work 90 day.
 const timeBase = 1;
 const wanChainId = 2153201998;
 const ethChainId = 2147483708;
@@ -390,22 +392,51 @@ async function timeWaitEnd(groupInfo) {
     let second = 1+parseInt(groupInfo.endTime)
     await utils.sleepUntil(second*1000)
 }
-
-async function timeWaitIncentive(smg, groupId, wkAddr) {
+async function toSetGpk(smg, groupId){
     let groupInfo = await smg.getStoremanGroupInfo(groupId)
     if(groupInfo.status < g.storemanGroupStatus.selected){
         await timeWaitSelect(groupInfo)
         await toSelect(smg, groupId);
     }
-    await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
+    if(groupInfo.status < g.storemanGroupStatus.ready){
+        let dep = await smg.getDependence();
+        await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+        await smg.setGpk(groupId, g.leaderPk, g.leaderPk, {from:g.admin})
+        await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+    }
+}
+async function timeWaitIncentive(smg, groupId, wkAddr) {
+    let groupInfo = await smg.getStoremanGroupInfo(groupId)
+    let listGroup = await ListGroup.deployed();
+    if(groupInfo.status < g.storemanGroupStatus.selected){
+        await timeWaitSelect(groupInfo)
+        await toSelect(smg, groupId);
+    }
+    if(groupInfo.status < g.storemanGroupStatus.ready){
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        console.log("selected groupInfo:", groupInfo)
+        let dep = await smg.getDependence();
+        await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+        await smg.setGpk(groupId, g.leaderPk, g.leaderPk, {from:g.admin})
+        await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+    }
+
+    //await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
     let second = 2+parseInt(groupInfo.endTime)
     await utils.sleepUntil(second*1000)
     await smg.contribute({from: g.owner, value: web3.utils.toWei('1000')})
     while(true){
+        let cur = parseInt(Date.now()/1000);
+        try {
         let tx = await smg.incentiveCandidator(wkAddr, {from:g.leader, gas:"0x6691b7"})
         let incLog = tx.logs[0].args;
         console.log("====================================================incLog:", incLog, tx)
         if(incLog.finished) break;
+        } catch(err){
+            let gs = await listGroup.getGroups();
+            console.log("cur gs:", cur, gs, err)
+            throw(err);
+        }
     }
     Info = await smg.getStoremanInfo(wkAddr)
     console.log("Info after endIncentive:", Info)
@@ -435,7 +466,7 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
 
 module.exports = {
     g,setupNetwork,toDelegateClaim, toPartClaim,
-    registerStart,toStakeIn,toStakeAppend,timeWaitIncentive,toDelegateIn,toPartIn,
+    registerStart,toStakeAppend,toStakeIn,timeWaitIncentive,toDelegateIn,toPartIn,toSetGpk,
     stakeInPre,stakeWhiteList,toSelect,timeWaitSelect,timeWaitEnd,sendTransaction,
     initTestValue
 }

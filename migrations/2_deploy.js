@@ -17,6 +17,7 @@ const FakeSkCurve = artifacts.require('FakeSkCurve');
 const FakeBnCurve = artifacts.require('FakeBnCurve');
 const FakePosLib = artifacts.require('FakePosLib');
 const FakeMetric = artifacts.require('FakeMetric');
+const ListGroup = artifacts.require('ListGroup');
 
 const FakeCommonTool = artifacts.require('FakeCommonTool');
 
@@ -152,6 +153,7 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(StoremanUtil);
     await deployer.link(StoremanUtil,StoremanLib);
     await deployer.link(StoremanUtil,IncentiveLib);
+    await deployer.link(StoremanUtil,ListGroup);
     //await deployer.link(PosLib,StoremanGroupDelegate);
     await deployer.deploy(Deposit);
     await deployer.deploy(TestDeposit);
@@ -244,6 +246,9 @@ module.exports = async function (deployer, network) {
 
     await gpk.setDependence(cnfProxy.address, smgProxy.address);
     await metric.setDependence(cnfProxy.address, smgProxy.address, posLib.address);
+    await deployer.deploy(ListGroup,smgProxy.address, posLib.address);
+    let listGroup = await ListGroup.deployed();
+    await smg.setGlobalGroupScAddr(listGroup.address);
 
     // config SignatureVerifier
     let signatureVerifier = await SignatureVerifier.deployed();
