@@ -357,7 +357,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         notHalted
         // nonReentrant
         onlyReadySmg(smgID)
-        // onlyMeaningfulValue(value)
+        onlyMeaningfulValue(value)
     {
         RapidityLib.RapidityUserMintParams memory params = RapidityLib.RapidityUserMintParams({
             smgID: smgID,
