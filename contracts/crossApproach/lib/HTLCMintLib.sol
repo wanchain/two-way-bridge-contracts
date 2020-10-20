@@ -144,7 +144,7 @@ library HTLCMintLib {
         uint origChainID;
         uint shadowChainID;
         bytes memory tokenOrigAccount;
-        (origChainID,tokenOrigAccount,shadowChainID,) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
+        (origChainID,tokenOrigAccount,shadowChainID) = storageData.tokenManager.getTokenPairInfoSlim(params.tokenPairID);
         require(origChainID != 0, "Token does not exist");
 
         uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
@@ -280,7 +280,7 @@ library HTLCMintLib {
         uint origChainID;
         uint shadowChainID;
         bytes memory tokenOrigAccount;
-        (origChainID, tokenOrigAccount, shadowChainID,) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
+        (origChainID, tokenOrigAccount, shadowChainID) = storageData.tokenManager.getTokenPairInfoSlim(tokenPairID);
 
         uint revokeFee = storageData.mapRevokeFee[origChainID][shadowChainID];
 
