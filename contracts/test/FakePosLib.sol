@@ -12,6 +12,9 @@ library FakePosLib {
     }
 
     function getMinIncentive (uint256 smgDeposit,uint256 targetSecond, uint256 totalDeposit) public view returns(uint256) {
-        return 30000000;
+        uint posCap = 60000000000;
+        if(totalDeposit < posCap) return 30000000;
+        uint cap = posCap.mul(smgDeposit).div(totalDeposit);
+        return cap > 30000000 ? 30000000 : cap;
     }
 }

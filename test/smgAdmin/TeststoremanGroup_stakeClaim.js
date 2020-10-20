@@ -84,6 +84,9 @@ contract('StoremanGroupDelegate stakeClaim', async () => {
         tx = smg.stakeClaim(wk.addr);
         await expectRevert(tx, "Claimed")
 
+        tx = smg.stakeAppend(wk.addr,{value:10, from:tester});
+        await expectRevert(tx, "Claimed")
+
 
     })
 

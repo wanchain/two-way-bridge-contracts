@@ -11,13 +11,6 @@ const assert  = require('assert')
 
 const { setupNetwork, registerStart,g } = require('../base.js')
 
-/*************************************
-staker: 1000 ~ 1000+100
-delegator: stakerId*100 ~ stakerID*100+1000
- ****************************************/
-
-
-
 contract('StoremanGroupDelegate_registerStart', async () => {
 
     let  smg
@@ -49,7 +42,7 @@ contract('StoremanGroupDelegate_registerStart', async () => {
     })
 
 
-    it('T1 ', async ()=>{
+    it('Invalid white list length ', async ()=>{
         let option = {}
         let now = parseInt(Date.now());
         let ws = []
@@ -88,7 +81,7 @@ contract('StoremanGroupDelegate_registerStart', async () => {
         await expectRevert(tx, "Invalid white list length")
     })
 
-    it('T2 ', async ()=>{
+    it('Insufficient white list ', async ()=>{
         let option = {}
         let now = parseInt(Date.now());
         let ws = []
@@ -126,7 +119,7 @@ contract('StoremanGroupDelegate_registerStart', async () => {
         await expectRevert(tx, "Insufficient white list.")
     })
 
-    it('T3 ', async ()=>{
+    it('Too many whitelist node ', async ()=>{
         let option = {}
         let now = parseInt(Date.now());
         let ws = []
@@ -164,7 +157,7 @@ contract('StoremanGroupDelegate_registerStart', async () => {
         await expectRevert(tx, "Too many whitelist node")
     })
 
-    it('T4 ', async ()=>{
+    it('invalid preGroup ', async ()=>{
         let option = {}
         let wlStartIndex =0
         let now = parseInt(Date.now());
@@ -203,10 +196,10 @@ contract('StoremanGroupDelegate_registerStart', async () => {
         await expectRevert(tx, "invalid preGroup")
     })
 
-    it('T5 ', async ()=>{
+    it('invalid preGroup ', async ()=>{
 
         let oldgroupId = await registerStart(smg, 0, {htlcDuration: 90});
-        console.log("oldgroupId:", oldgroupId)
+        //console.log("oldgroupId:", oldgroupId)
         let option = {}
         let wlStartIndex =0
         let now = parseInt(Date.now());
@@ -243,6 +236,6 @@ contract('StoremanGroupDelegate_registerStart', async () => {
         let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
         await expectRevert(tx, "group has existed already")
         let groupInfo = await smg.getStoremanGroupInfo(oldgroupId)
-        console.log("groupInfo:", groupInfo)
+        //console.log("groupInfo:", groupInfo)
     })
 })
