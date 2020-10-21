@@ -239,10 +239,10 @@ contract('group totalDeposit', async () => {
       smg = await StoremanGroupDelegate.at(smgProxy.address)
       listGroup = await ListGroup.deployed()
       await setupNetwork();
-
-        groupId0 = await registerStart(smg, 0, {htlcDuration:20,memberCountDesign:2});
-        groupId1 = await registerStart(smg, 0, {htlcDuration:30,memberCountDesign:2});
-        groupId2 = await registerStart(smg, 0, {htlcDuration:40,memberCountDesign:2});
+        let cur = parseInt(Date.now()/1000)
+        groupId0 = await registerStart(smg, 0, {startTIme:cur+6, htlcDuration:20,memberCountDesign:2});
+        groupId1 = await registerStart(smg, 0, {startTIme:cur+6, htlcDuration:30,memberCountDesign:2});
+        groupId2 = await registerStart(smg, 0, {startTIme:cur+6, htlcDuration:40,memberCountDesign:2});
 
         await smg.stakeIn(groupId0, wk0.pk, wk0.pk,{value:100000});
         await smg.stakeIn(groupId1, wk1.pk, wk1.pk,{value:100000});

@@ -611,6 +611,35 @@ contract('incentive rotate', async () => {
 
 })
 
+contract('incentive rotate rotateSkGroup white', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        groupId = await registerStart(smg, 0, {htlcDuration:10});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+
+    })
+
+
+
+    it('stakeIn 2', async ()=>{
+        await timeWaitIncentive(smg, groupId, g.leader)
+        await smg.storemanGroupDismiss(groupId, {from:g.leader});
+    })
+
+
+
+})
+
+
 contract('incentive rotate', async () => {
 
     let  smg
@@ -686,6 +715,8 @@ contract('incentive rotate2', async () => {
         await smg.storemanGroupDismiss(groupId, {from:g.admin});
 
         let tx = await smg.incentiveCandidator(wk.addr);
+        expectEvent(tx, "incentiveEvent")
+        tx = await smg.incentiveCandidator(g.leader);
         expectEvent(tx, "incentiveEvent")
     })
 

@@ -17,6 +17,7 @@ contract('StoremanGroupDelegate delegateIn', async () => {
     let  smg
     let groupId, groupInfo
     let wk = utils.getAddressFromInt(10000)
+    let wk2 = utils.getAddressFromInt(10002)
     let delegateValue = 120
     let tester
     before("init contracts", async() => {
@@ -39,6 +40,7 @@ contract('StoremanGroupDelegate delegateIn', async () => {
     it('stakeIn', async ()=>{
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
         console.log("tx:", tx);
+        await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:50000});
     })
 
     it('T1 delegateIn normal', async ()=>{
@@ -53,7 +55,19 @@ contract('StoremanGroupDelegate delegateIn', async () => {
         let tx =  smg.delegateIn(wk.addr,{value:10});
         await expectRevert(tx, "Too small value");       
     })
-
+    it('T3 delegateIn: to whitelist before select', async ()=>{
+        let tx = await smg.delegateIn(g.leader,{value:100});
+        expectEvent(tx, "delegateInEvent");       
+    })
+    if('delegateIn to unselected node after select', async ()=>{
+        await toSelect(smg, groupId);
+        let ginfo1 = await smg.getStoremanGroupInfo(groupId)
+        let tx = await smg.delegateIn(wk2.addr,{value:100});
+        expectEvent(tx, "delegateInEvent");   
+        let ginfo2 = await smg.getStoremanGroupInfo(groupId)
+        assert.equal(ginfo1.deposit, ginfo2.deposit)
+        assert.equal(ginfo1.deposit.mul(15000).div(10000), ginfo1.depositWeight)
+    })
     it('delegateIncentiveClaim', async ()=>{
         
         await timeWaitIncentive(smg, groupId, wk.addr);
