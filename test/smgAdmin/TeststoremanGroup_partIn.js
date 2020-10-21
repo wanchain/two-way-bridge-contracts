@@ -8,7 +8,7 @@ const { expectRevert, expectEvent , BN} = require('@openzeppelin/test-helpers');
 
 
 
-const { registerStart,stakeInPre, setupNetwork, g,timeWaitSelect,timeWaitIncentive,toPartIn,sendTransaction } = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork, g,toSelect,timeWaitIncentive,toPartIn,sendTransaction } = require('../base.js');
 
 
 
@@ -98,13 +98,9 @@ contract('StoremanGroupDelegate partIn', async () => {
         await expectRevert(tx, "Candidate doesn't exist");       
     })
 
-    it('T6 partout: partner does not exist', async ()=>{
-        await smg.updateGroupStatus(groupId,g.storemanGroupStatus.ready,{from:g.admin})
-        let tx =  smg.partOut(wk.addr, {from:g.sfs[6]});
-        await expectRevert(tx, "Partner doesn't exist");       
-    })
+
     it('T7 normal partOut', async ()=>{
-        await timeWaitSelect(groupInfo);
+        await toSelect(smg, groupId);
         let sk = await smg.getStoremanInfo(wk.addr);
         let tx =  await smg.partOut(wk.addr,{from:g.sfs[0]});
         expectEvent(tx, 'partOutEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0])})
@@ -113,6 +109,10 @@ contract('StoremanGroupDelegate partIn', async () => {
         assert.equal(sk2.partnerDeposit, 4*partValue)
   
 
+    })
+    it('T6 partout: partner does not exist', async ()=>{
+        let tx =  smg.partOut(wk.addr, {from:g.sfs[6]});
+        await expectRevert(tx, "Partner doesn't exist");       
     })
     it('T8 partClaim', async ()=>{
 

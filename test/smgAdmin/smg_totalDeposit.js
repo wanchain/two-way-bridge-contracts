@@ -221,3 +221,77 @@ contract('many group', async () => {
   })
   
 })
+
+
+contract('group totalDeposit', async () => {
+
+  let  smg, listGroup
+
+  const groupNumber = 3;
+  let groupId0, groupId1, groupId2
+  let groupInfo0, groupInfo1, groupInfo2
+  let wk0 = utils.getAddressFromInt(80000)
+  let wk1 = utils.getAddressFromInt(80001)
+  let wk2 = utils.getAddressFromInt(80002)
+
+  before("init contracts", async() => {
+      let smgProxy = await StoremanGroupProxy.deployed();
+      smg = await StoremanGroupDelegate.at(smgProxy.address)
+      listGroup = await ListGroup.deployed()
+      await setupNetwork();
+
+        groupId0 = await registerStart(smg, 0, {htlcDuration:20,memberCountDesign:2});
+        groupId1 = await registerStart(smg, 0, {htlcDuration:30,memberCountDesign:2});
+        groupId2 = await registerStart(smg, 0, {htlcDuration:40,memberCountDesign:2});
+
+        await smg.stakeIn(groupId0, wk0.pk, wk0.pk,{value:100000});
+        await smg.stakeIn(groupId1, wk1.pk, wk1.pk,{value:100000});
+        await smg.stakeIn(groupId2, wk2.pk, wk2.pk,{value:100000});
+
+      let dep = await smg.getDependence();
+      await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+      await toSelect(smg, groupId0);
+      await toSelect(smg, groupId1);
+      await toSelect(smg, groupId2);
+      await smg.setGpk(groupId0, g.leaderPk, g.leaderPk, {from:g.admin})
+      await smg.setGpk(groupId1, g.leaderPk, g.leaderPk, {from:g.admin})
+      await smg.setGpk(groupId2, g.leaderPk, g.leaderPk, {from:g.admin})
+      await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+  })
+
+  it('check incentive ', async ()=>{
+      await timeWaitIncentive(smg, groupId0, wk0.addr);
+      await timeWaitIncentive(smg, groupId1, wk1.addr);
+      await timeWaitIncentive(smg, groupId2, wk2.addr);
+      groupInfo0 = await smg.getStoremanGroupInfo(groupId0);
+      groupInfo1 = await smg.getStoremanGroupInfo(groupId1);
+      groupInfo2 = await smg.getStoremanGroupInfo(groupId2);
+
+      let start = parseInt(groupInfo0.startTime)
+      let end = parseInt(groupInfo2.endTime)
+
+      for(let i=start; i<=end; i++){
+        let dt = await listGroup.getTotalDeposit(i) 
+        let ag = await smg.getActiveGroupIds(i);
+        if(i-start<20){
+          assert.equal(ag.length,3)
+          assert.equal(dt.toString(10), "300000")
+        }else if(i-start<30){
+          assert.equal(ag.length,2)
+          assert.equal(dt.toString(10), "200000")
+        }else if(i-start<40){
+          assert.equal(ag.length,1)
+          assert.equal(dt.toString(10), "100000")
+        }else{
+          assert.equal(ag.length,0)
+          assert.equal(dt.toString(10), 0)
+        }
+        console.log("dt i:", i, dt)
+        console.log("ag, i:", i, ag)
+      }
+  })
+  
+})
+
+
+

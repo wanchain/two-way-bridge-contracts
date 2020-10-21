@@ -7,6 +7,11 @@ echo '=========================================='
 echo '|  Welcome to testnet Work Deploy   |'
 echo ''
 
+if [ -d $HOME/osm ]; then
+    echo "$HOME/osm exist, please rename it and try again"
+    exit 1
+fi
+
 echo -e "\033[41;30m !!!!!! WARNING Please Remember Your Password !!!!!!!! \033[0m"
 echo -e "\033[41;30m !!!!!!Otherwise You will lose all your assets!!!!!!!! \033[0m"
 echo 'Enter your password of Work account:'
