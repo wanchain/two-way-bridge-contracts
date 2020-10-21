@@ -27,6 +27,7 @@ const Deposit = artifacts.require('Deposit');
 const TestDeposit = artifacts.require('TestDeposit');
 const StoremanLib = artifacts.require('StoremanLib');
 const IncentiveLib = artifacts.require('IncentiveLib');
+const ListGroup = artifacts.require('ListGroup');
 
 const fakeQuota = artifacts.require('fakeQuota');
 
@@ -82,6 +83,7 @@ module.exports = async function (deployer, network) {
     let cnfProxyAddr = '0xc59a6E80E387bdeFa89Efb032aA4EE922Ca78036';
     //let quotaProxyAddr = '0x7585c2ae6a3F3B2998103cB7040F811B550C9930';
     let smgProxyAddr = '0xaA5A0f7F99FA841F410aafD97E8C435c75c22821';
+    let posLibAddr = '0x4Ec1e3c0aB865707eEc5F9a97Bcaee2E39b8a2De';
 
     // smg
     await deployer.deploy(CommonTool);
@@ -90,6 +92,7 @@ module.exports = async function (deployer, network) {
 
     await deployer.link(StoremanUtil,StoremanLib);
     await deployer.link(StoremanUtil,IncentiveLib);
+    await deployer.link(StoremanUtil,ListGroup);
 
     await deployer.deploy(Deposit);
     await deployer.link(Deposit,StoremanGroupDelegate);
@@ -108,5 +111,24 @@ module.exports = async function (deployer, network) {
     let smgProxy = await StoremanGroupProxy.at(smgProxyAddr);
     await smgProxy.upgradeTo(smgDelegate.address);
     console.log("smg address:", smgProxy.address);
+
+    // ListGroup
+    await deployer.deploy(ListGroup,smgProxyAddr, posLibAddr);
+    let listGroup = await ListGroup.deployed();
+
+    let smg = await StoremanGroupDelegate.at(smgProxyAddr);
+    await smg.setGlobalGroupScAddr(listGroup.address);
+    await smg.addActiveGroupId('0x000000000000000000000000000000000000000000746573746e65745f303035',{from: config.networks[network].admin});
+
+    // gpk
+    await deployer.link(CommonTool, GpkLib);
+    await deployer.deploy(GpkLib);
+
+    await deployer.link(GpkLib, GpkDelegate);
+    await deployer.deploy(GpkDelegate);
+    let gpkDelegate = await GpkDelegate.deployed();
+
+    let gpkProxy = await GpkProxy.at(gpkProxyAddr);
+    await gpkProxy.upgradeTo(gpkDelegate.address);
 
 }
