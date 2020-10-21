@@ -385,14 +385,9 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         emit StoremanGroupDismissedEvent(groupId, now);
         // group状态进入dismissed, 并且完成了收益结算, sk的当前group变成nextGroup.
         StoremanType.Candidate storage sk;
-        for(uint i=0; i<group.memberCount; i++){
+        for(uint i=0; i<group.selectedCount; i++){
             sk = data.candidates[0][group.selectedNode[i]];
-            if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(data.posLib, group.workTime+group.totalTime)) {
-                if(bytes32(0x00) != sk.nextGroupId) {
-                    sk.groupId = sk.nextGroupId;
-                    sk.nextGroupId = bytes32(0x00);
-                }
-            }
+            IncentiveLib.rotateSkGroup(data.posLib, sk, group);
         }
     }
 
