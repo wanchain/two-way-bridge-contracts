@@ -280,6 +280,9 @@ async function sendTransaction(sf, value, sdata, to){
 }
 
 async function toSelect(smg, groupId){
+    let groupInfo = await smg.getStoremanGroupInfo(groupId);
+    let second = 1+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
+    await utils.sleepUntil(second*1000)
     let tx = await smg.select(groupId,{from: g.leader})
     console.log("group %s select tx:", groupId, tx.tx)
     let count = await smg.getSelectedSmNumber(groupId)
@@ -449,10 +452,10 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
     while(true){
         let cur = parseInt(Date.now()/1000);
         try {
-        let tx = await smg.incentiveCandidator(wkAddr, {from:g.leader, gas:"0x6691b7"})
-        let incLog = tx.logs[0].args;
-        console.log("====================================================incLog:", incLog, tx)
-        if(incLog.finished) break;
+            let tx = await smg.incentiveCandidator(wkAddr, {from:g.leader, gas:"0x6691b7"})
+            let incLog = tx.logs[0].args;
+            console.log("====================================================incLog:", incLog, tx)
+            if(incLog.finished) break;
         } catch(err){
             let gs = await listGroup.getGroups();
             console.log("cur gs:", cur, gs, err)

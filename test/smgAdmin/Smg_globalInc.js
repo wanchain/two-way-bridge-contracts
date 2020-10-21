@@ -7,7 +7,7 @@ const assert = require('chai').assert;
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 const Web3 = require('web3')
 
-const { registerStart,stakeInPre, setupNetwork,toSelect, g, timeWaitSelect,timeWaitIncentive, toStakeIn } = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork,toSelect, g, timeWaitSelect,timeWaitIncentive, toSetGpk } = require('../base.js');
 
 
 
@@ -40,7 +40,7 @@ contract('TestSmg', async () => {
     it('prpare', async ()=>{
       await timeWaitSelect(groupInfo);
       await toSelect(smg, groupId);
-      await smg.updateGroupStatus(groupId,g.storemanGroupStatus.ready,{from:g.admin})
+      await toSetGpk(smg,groupId);
     })
 
 

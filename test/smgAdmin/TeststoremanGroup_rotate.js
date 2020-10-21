@@ -6,7 +6,7 @@ const fakeQuota = artifacts.require('fakeQuota');
 const assert  = require('assert')
 const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 
-const { registerStart,stakeInPre, g, toSelect,setupNetwork, timeWaitSelect,timeWaitIncentive } = require('../base.js')
+const { registerStart,stakeInPre, g, toSelect,setupNetwork, timeWaitSelect,timeWaitIncentive,toSetGpk } = require('../base.js')
 
 contract('StoremanGroupDelegate_rotate', async () => {
  
@@ -55,7 +55,7 @@ contract('StoremanGroupDelegate_rotate', async () => {
     })
     it('T3 registerStart2', async ()=>{
         await utils.sleep(1000)
-        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.leader});
+        await toSetGpk(smg, groupId);
         groupId2 = await registerStart(smg, 0, {preGroupId:groupId});
         console.log("groupId2: ", groupId2)
         groupInfo2 = await smg.getStoremanGroupInfo(groupId2);

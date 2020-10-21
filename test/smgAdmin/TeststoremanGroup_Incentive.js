@@ -638,7 +638,7 @@ contract('incentive rotate', async () => {
             await timeWaitSelect(groupInfo)
             await toSelect(smg, groupId);
         }
-        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready)
+        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
         let second = 1+parseInt(groupInfo.endTime)
         await utils.sleepUntil(second*1000)
         await registerStart(smg, 0, {preGroupId:groupId});
