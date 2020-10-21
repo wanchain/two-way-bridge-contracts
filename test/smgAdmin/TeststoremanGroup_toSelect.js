@@ -8,7 +8,7 @@ const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
 
 
-const { registerStart,stakeInPre, g, toSelect, setupNetwork,timeWaitSelect} = require('../base.js')
+const { registerStart,stakeInPre, g, toSetGpk,toSelect, setupNetwork,timeWaitSelect} = require('../base.js')
 
 contract('StoremanGroupDelegate select', async () => {
  
@@ -220,6 +220,11 @@ contract('StoremanGroupDelegate setInvalidSm groupInfo', async () => {
     it('test select', async ()=>{
         await timeWaitSelect(groupInfo);
         await toSelect(smg, groupId);
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        let deposit = await smg.getDeposit(groupId)
+        assert.equal(deposit,groupInfo.deposit )
+        let status = await smg.getStoremanGroupStatus(groupId)
+        assert.equal(status.status, groupInfo.status)
     })
 
     it('T7 setInvalidSm', async ()=>{
@@ -248,8 +253,61 @@ contract('StoremanGroupDelegate setInvalidSm groupInfo', async () => {
         assert.equal(groupInfo.tickedCount, 1)
 
     })
-
-
-
 })
 
+
+contract('StoremanGroupDelegate setInvalidSm fetch backup whitelist again', async () => {
+ 
+    let  smg
+    let groupId,groupId2
+    let dep
+    let sk
+
+    let wk1 = utils.getAddressFromInt(10001)
+    let wk2 = utils.getAddressFromInt(10002)
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        dep  = await smg.getDependence();
+    })
+    it('registerStart', async ()=>{
+        groupId = await registerStart(smg);
+        await stakeInPre(smg, groupId)
+        await smg.stakeIn(groupId, wk1.pk, wk1.pk,{value:60000});
+        await toSelect(smg,groupId);
+    })
+
+   
+
+    it('T7 setInvalidSm', async ()=>{
+        await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+        tx = await smg.setInvalidSm(groupId, [1],[5], {from:g.admin});
+        let selecteds = await smg.getSelectedStoreman(groupId);
+        console.log("selected:",selecteds)
+        console.log("wk1.addr:", wk1.addr)
+        let smAddr2 = await smg.getSelectedSmInfo(groupId, 1)
+        sk = await smg.getStoremanInfo(smAddr2.wkAddr)
+        console.log("sk:", sk)
+        assert.equal(sk.groupId, groupId)
+        assert.equal(sk.nextGroupId, utils.stringTobytes32(""))
+        await toSetGpk(smg, groupId)
+        await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+    })
+
+    it('T7 setInvalidSm', async ()=>{
+        groupId2 = await registerStart(smg,0,{preGroupId:groupId});
+        await smg.stakeIn(groupId2, wk2.pk, wk2.pk,{value:60000});
+        await toSelect(smg, groupId2);
+
+        await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+        tx = await smg.setInvalidSm(groupId2, [1],[5], {from:g.admin});
+        let smAddr3 = await smg.getSelectedSmInfo(groupId2, 1)
+        sk3 = await smg.getStoremanInfo(smAddr3.wkAddr)
+        console.log("sk3:", sk3)
+        assert.equal(sk3.groupId, groupId)
+        assert.equal(sk3.nextGroupId, groupId2)
+        assert.equal(sk.wkAddr,sk3.wkAddr);
+        await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+    })
+})

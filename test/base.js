@@ -156,7 +156,7 @@ async function registerStart(smg, wlStartIndex = g.whiteAddrStartIdx, option = {
     let smgIn = {
         groupId: groupId,
         preGroupId: preGroupId,
-        workTime:now+(registerDuration+gpkDuration)*g.timeBase,
+        workTime:option.startTIme? option.startTIme : now+(registerDuration+gpkDuration)*g.timeBase,
         totalTime:htlcDuration*g.timeBase,
         registerDuration: registerDuration*g.timeBase,
         memberCountDesign:memberCountDesign,

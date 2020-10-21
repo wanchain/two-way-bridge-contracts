@@ -127,6 +127,37 @@ contract('StoremanGroupDelegate_rotate', async () => {
 
 
 
+contract('StoremanGroupDelegate_rotate_whiteReuse', async () => {
+ 
+    let  smg, quota
+    let groupId
+    let groupId2
+    let groupInfo,groupInfo2;
+    let wk = utils.getAddressFromInt(10001)
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        quota = await fakeQuota.deployed();
+        await setupNetwork();
+    })
+
+
+    it('registerStart', async ()=>{
+        groupId = await registerStart(smg);
+        await stakeInPre(smg, groupId)
+        await toSetGpk(smg, groupId)
+        groupId2 = await registerStart(smg,0,{preGroupId:groupId});
+    })
+
+    it('T5 select2, set whitelist nextGroupId', async ()=>{
+        await toSelect(smg, groupId2);
+        let sk = await smg.getStoremanInfo(g.leader);
+        assert.equal(sk.groupId,groupId)
+        assert.equal(sk.nextGroupId, utils.stringTobytes32(""))
+    })
+})
+
+
 
 
 contract('StoremanGroupDelegate_rotate sm check', async () => {
