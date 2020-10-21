@@ -56,7 +56,7 @@ library IncentiveLib {
         }
         return false;
     }
-    function rotateSkGroup(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private {
+    function rotateSkGroup(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) public {
         if(sk.incentivedDay+1 == StoremanUtil.getDaybyTime(posLib, group.workTime+group.totalTime) && group.status == StoremanType.GroupStatus.dismissed) {
             if(sk.nextGroupId != bytes32(0x00)) {
                 sk.groupId = sk.nextGroupId;

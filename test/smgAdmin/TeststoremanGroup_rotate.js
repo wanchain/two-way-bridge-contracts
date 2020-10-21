@@ -146,7 +146,7 @@ contract('StoremanGroupDelegate_rotate_whiteReuse', async () => {
         groupId = await registerStart(smg);
         await stakeInPre(smg, groupId)
         await toSetGpk(smg, groupId)
-        groupId2 = await registerStart(smg,0,{preGroupId:groupId});
+        groupId2 = await registerStart(smg);
     })
 
     it('T5 select2, set whitelist nextGroupId', async ()=>{
