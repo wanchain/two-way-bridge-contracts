@@ -312,8 +312,14 @@ library StoremanLib {
     function inheritNode(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] wkAddrs, address[] senders) public
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
-        address[] memory oldAddr =  new address[](oldGroup.memberCountDesign * 2);
+        uint len = 0;
+        if(preGroupId != bytes32(0x00)) {
+            StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
+            len = oldGroup.memberCountDesign * 2;
+        }else {
+            len = wkAddrs.length;
+        }
+        address[] memory oldAddr =  new address[](len);
         uint oldCount = 0;
         uint k = 0;
 
@@ -344,11 +350,16 @@ library StoremanLib {
         group.memberCount = group.selectedCount;
 
         if (preGroupId != bytes32(0x00)) {
-            inheritStaker(data, groupId, preGroupId, oldAddr, oldCount);
+            oldCount = inheritStaker(data, groupId, preGroupId, oldAddr, oldCount);
         }
+        address[] memory oldArray = new address[](oldCount);
+        for (k = 0; k < oldCount; k++) {
+            oldArray[k] = oldAddr[k];
+        }
+        emit storemanTransferEvent(groupId, preGroupId, oldArray);
     }
 
-    function inheritStaker(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] oldAddr, uint oldCount) public {
+    function inheritStaker(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] oldAddr, uint oldCount) public returns(uint) {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
         uint[] memory stakes = new uint[](oldGroup.memberCountDesign * 2);
@@ -369,12 +380,8 @@ library StoremanLib {
                 oldCount++;
             }
         }
-        address[] memory oldArray = new address[](oldCount);
-        for (k = 0; k < oldCount; k++) {
-            oldArray[k] = oldAddr[k];
-        }
         inheritSortedStaker(group, oldAddr, stakes, oldCount.sub(group.memberCount.sub(group.whiteCount)), oldCount);
-        emit storemanTransferEvent(groupId, preGroupId, oldArray);
+        return oldCount;
     }
 
     function inheritSortedStaker(StoremanType.StoremanGroup storage group, address[] addresses, uint[] stakes, uint start, uint end) public {
