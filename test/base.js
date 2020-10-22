@@ -182,11 +182,16 @@ async function registerStart(smg, wlStartIndex = g.whiteAddrStartIdx, option = {
     }
 
     //console.log("group:", group)
-    return group.groupId
+    if (option.getTx) {
+        return {groupId: group.groupId, tx: tx};
+    } else {
+        return group.groupId;
+    }
 }
 
 async function stakeInPre(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx, nodeCount = g.stakerCount){
     console.log("smg.contract %s stake %d", smg.contract._address, nodeCount);
+    let addresses = [];
     for(let i=0; i<nodeCount; i++){
         let stakingValue = g.minStakeIn ;
         let sw, tx;
@@ -201,7 +206,9 @@ async function stakeInPre(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx, no
         assert.equal(candidate.sender.toLowerCase(), g.sfs[index % g.sfs.length].toLowerCase());
         assert.equal(candidate.wkAddr.toLowerCase(), sw.addr.toLowerCase());
         assert.equal(candidate.deposit, stakingValue);
+        addresses.push(sw.addr.toLowerCase());
     }
+    return addresses;
 }
 
 async function stakeWhiteList(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx){
@@ -226,7 +233,6 @@ async function stakeWhiteList(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx
 }
 
 async function sendTransaction(sf, value, sdata, to){
-
     let rawTx = {
         nonce:  await web3.eth.getTransactionCount(sf.addr,"pending"),
         gasPrice: gGasPrice,
@@ -272,7 +278,7 @@ async function toStakeIn(smg, groupId, wk, value=50000, from=g.admin){
     return block.timestamp
 }
 
-async function toStakeAppend(smg, ascend = true, nodeStartIndex = g.whiteCountAll, nodeCount = g.memberCountDesign - g.whiteCount, step = 1){
+async function toStakeAppend(smg, ascend = true, nodeStartIndex = g.whiteCountAll, nodeCount = g.memberCountDesign - g.whiteCount, step = 1) {
   for (let i = 0; i < nodeCount; i++) {
     let index = nodeStartIndex + i;
     let wkAddr = g.wks[index];
