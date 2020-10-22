@@ -101,7 +101,7 @@ library IncentiveLib {
         uint incs = calIncentive(group.groupIncentive[day], group.depositWeight.getValueById(day), sk.delegators[deAddr].deposit.getValueById(day));
         uint incSk = incs.mul(group.delegateFee).div(DIVISOR);
         uint incDe = incs.sub(incSk);
-        sk.delegators[deAddr].incentive[day] = incDe;
+        sk.delegators[deAddr].incentive[day] = sk.delegators[deAddr].incentive[day].add(incDe);
         sk.delegators[deAddr].incentive[0] = sk.delegators[deAddr].incentive[0].add(incDe);
         sk.incentive[day] = sk.incentive[day].add(incSk);
         sk.incentive[0] = sk.incentive[0].add(incSk);
