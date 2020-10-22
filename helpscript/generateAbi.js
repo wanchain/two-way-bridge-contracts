@@ -42,6 +42,9 @@ const abiFiles = [
     [
         '../build/contracts/PosLib.json',
     ],
+    [
+        '../build/contracts/ListGroup.json',
+    ],
 ];
 
 function generateAbi(abiFile) {

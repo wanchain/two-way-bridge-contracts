@@ -5,7 +5,6 @@ const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
-const Web3 = require('web3')
 
 const { registerStart,stakeInPre, setupNetwork, g } = require('../base.js');
 
@@ -16,7 +15,6 @@ contract('TestSmg', async () => {
     let  smg
 		let groupId, groupInfo
 		let contValue = 123456;
-		let web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
     let wk = utils.getAddressFromInt(10000)
 
     before("init contracts", async() => {
@@ -153,6 +151,4 @@ contract('TestSmg', async () => {
       assert.equal(groupInfo.status, g.storemanGroupStatus.ready,"setGpk")
 
     })
-    
-
 })
