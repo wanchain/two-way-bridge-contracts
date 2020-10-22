@@ -3,11 +3,11 @@ const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const { registerStart,stakeInPre, g, toSelect,setupNetwork, timeWaitSelect, toStakeAppend } = require('../base.js')
 
-contract('StoremanGroupDelegate_inherit', async () => {
+contract('StoremanGroupDelegate_inherit_less', async () => {
  
     let smg;
     let groupId, groupId2;
-    let groupInfo,groupInfo2;
+    let groupInfo;
     let stakes = [];
 
     before("init contracts", async() => {
