@@ -292,6 +292,7 @@ library StoremanLib {
 
         require(sk.delegateDeposit.add(msg.value) <= sk.deposit.getLastValue().mul(data.conf.DelegationMulti), "Too many delegation");
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
+        require(dk.quited == false, "Quited");
         if(dk.deposit.getLastValue() == 0) {
             sk.delegatorMap[sk.delegatorCount] = msg.sender;
             dk.index = sk.delegatorCount;
@@ -469,6 +470,7 @@ library StoremanLib {
         require(msg.value >= group.minPartIn, "Too small value");
 
         StoremanType.Delegator storage pn = sk.partners[msg.sender];
+        require(pn.quited == false, "Quited");
         if(pn.deposit.getLastValue() == 0) {
             sk.partMap[sk.partnerCount] = msg.sender;
             pn.index = sk.partnerCount;
