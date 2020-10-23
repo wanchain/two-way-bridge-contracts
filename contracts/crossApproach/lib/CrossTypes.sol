@@ -116,9 +116,9 @@ library CrossTypes {
         uint beforeBalance;
         uint afterBalance;
         beforeBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
-        IRC20Protocol(tokenScAddr).transferFrom(from, to, value);
+        // IRC20Protocol(tokenScAddr).transferFrom(from, to, value);
+        tokenScAddr.call(bytes4(keccak256("transferFrom(address,address,uint256)")), from, to, value);
         afterBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
         return afterBalance == beforeBalance.add(value);
     }
-
 }
