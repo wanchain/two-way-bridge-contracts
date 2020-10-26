@@ -150,7 +150,8 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Group storage group = groupMap[groupId];
         checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.PolyCommit, false, false, address(0));
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        require(now.sub(round.statusTime) > group.ployCommitPeriod, "Not late"); // round.statusTime should have be assigned
+        uint32 timeout = (group.round == 0) ? group.ployCommitPeriod : group.defaultPeriod;
+        require(now.sub(round.statusTime) > timeout, "Not late");
         uint slashCount = 0;
         for (uint i = 0; (i < group.smNumber) && (slashCount + round.polyCommitCount < group.smNumber); i++) {
             address src = group.addrMap[i];
