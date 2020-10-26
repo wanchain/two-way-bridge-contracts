@@ -47,6 +47,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
 
     event StoremanGroupRegisterStartEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, uint workStart, uint workDuration, uint registerDuration);
     event StoremanGroupDismissedEvent(bytes32 indexed groupId, uint dismissTime);
+    event StoremanGroupSetGpkEvent(bytes32 indexed groupId);
     event updateGroupChainEvent(bytes32 indexed groupId, uint256 indexed chain1, uint256 indexed chain2, uint256 curve1, uint256 curve2);
     event storemanGroupContributeEvent(address indexed sender, uint indexed value);
 
@@ -267,8 +268,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     function getSmDelegatorAddr(address wkAddr, uint index) external view returns(address deAddr) {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         return sk.delegatorMap[index];
-    }
-
+    } 
     function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2)
         external
     {
@@ -279,6 +279,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         group.gpk2 = gpk2;
         group.status = StoremanType.GroupStatus.ready;
         addActiveGroup(groupId, group.workTime, group.workTime+group.totalTime);
+        emit StoremanGroupSetGpkEvent(groupId);
     }
     function addActiveGroupId(bytes32 groupId) external onlyAdmin{
         address addr = getGlobalGroupScAddr();
