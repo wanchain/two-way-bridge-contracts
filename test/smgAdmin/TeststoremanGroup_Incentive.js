@@ -863,7 +863,7 @@ contract('incentive incentive value check 2', async () => {
 
 
 
-contract('incentive incentive value check 2', async () => {
+contract('incentive incentive value check 3', async () => {
 
     let  smg, listGroup
     let groupId, groupInfo,groupId2, groupInfo2

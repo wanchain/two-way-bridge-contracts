@@ -104,6 +104,9 @@ contract('StoremanGroupDelegate partIn', async () => {
         let sk = await smg.getStoremanInfo(wk.addr);
         let tx =  await smg.partOut(wk.addr,{from:g.sfs[0]});
         expectEvent(tx, 'partOutEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0])})
+        tx = smg.partIn(wk.addr,{from:g.sfs[0], value:10000});
+        await expectRevert(tx, "Quited")
+
         let sk2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(sk.partnerCount, sk2.partnerCount)
         assert.equal(sk2.partnerDeposit, 4*partValue)
@@ -130,7 +133,6 @@ contract('StoremanGroupDelegate partIn', async () => {
         expectEvent(tx, "partClaimEvent",{wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[4]), amount:new BN(partValue)});       
         let skInfo2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(skInfo1.partnerCount, parseInt(skInfo2.partnerCount)+1,"partCLaim failed")
-
     })
 })
 

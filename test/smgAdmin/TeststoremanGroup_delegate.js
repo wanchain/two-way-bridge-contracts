@@ -121,6 +121,9 @@ contract('StoremanGroupDelegate delegate', async () => {
             console.log("result:", result);
         }
         assert.equal(result.reason, undefined);
+        let tx = smg.delegateIn(wk.addr, {from: tester,value:100})
+        await expectRevert(tx, "Quited")
+
         let candidate  = await smg.getStoremanInfo(wk.addr)
         console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), tester.toLowerCase())
