@@ -407,9 +407,9 @@ library StoremanLib {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         require(checkCanStakeOut(data, wkAddr),"selecting");
-        require(dk.quited == false,"quited");
 
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
+        require(dk.quited == false,"quited");
         require(dk.deposit.getLastValue() != 0, "no deposit");
         dk.quited = true;
         uint amount = dk.deposit.getLastValue();
