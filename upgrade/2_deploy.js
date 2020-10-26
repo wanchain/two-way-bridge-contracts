@@ -121,7 +121,7 @@ module.exports = async function (deployer, network) {
     // await smg.addActiveGroupId('0x000000000000000000000000000000000000000000746573746e65745f303035',{from: config.networks[network].admin});
 
     // gpk
-
+    /*
     await deployer.link(CommonTool, GpkLib);
     await deployer.deploy(GpkLib);
 
@@ -131,6 +131,6 @@ module.exports = async function (deployer, network) {
 
     let gpkProxy = await GpkProxy.at(gpkProxyAddr);
     await gpkProxy.upgradeTo(gpkDelegate.address);
-
+    */
 
 }
