@@ -2,6 +2,7 @@ const bip39 = require('bip39');
 
 const Web3 = require('web3');
 const ethUtil = require('ethereumjs-util');
+const ethCommon = require('ethereumjs-common').default;
 const ethTx = require('ethereumjs-tx').Transaction
 const wallet = require('ethereumjs-wallet');
 const hdkey = require('ethereumjs-wallet/hdkey');
@@ -11,15 +12,16 @@ const wanTx = wanUtil.wanchainTx;
 
 const {
   chainDict,
-  chainIdxDict,
-  defaultContractCfg
+  chainIndexDict,
+  networkDict,
+  networks,
+  defaultContractCfg,
 } = require('./config');
 
 class ContractWrapper {
   constructor(userCfg) {
     // update config
-    this.cfg = Object.assign({}, defaultContractCfg, userCfg);
-
+    this.cfg = Object.assign({}, defaultContractCfg.mainnet, userCfg);
     // init
     this.init();
   }
@@ -37,11 +39,19 @@ class ContractWrapper {
       throw new Error("invalid protocol, can only be http or wss");
     }
 
+    if (!this.cfg.network || !networkDict[this.cfg.network]) {
+      throw new Error(`invalid network, can only be in ${networks}`);
+    }
+
+    if (!this.cfg.privateKey && (!this.cfg.mnemonic || Number.isNaN(Number(this.cfg.index)))) {
+      throw new Error(`Need identify privateKey or (mnemonic and index)`);
+    }
+
     // private key
     if (!this.cfg.privateKey && this.cfg.mnemonic) {
-      this.privateKey = ContractWrapper.exportPrivateKey(this.cfg.mnemonic);
+      this.privateKey = ContractWrapper.exportPrivateKey(this.cfg.mnemonic, Number(this.cfg.index));
     } else if (typeof(this.cfg.privateKey) === "string") {
-      if (this.cfg.privateKey.startWith('0x')) {
+      if (this.cfg.privateKey.startsWith('0x')) {
         const pos = this.cfg.privateKey.indexOf('0x');
         this.cfg.privateKey = this.cfg.privateKey.slice(pos, this.cfg.privateKey.length);
       }
@@ -55,12 +65,9 @@ class ContractWrapper {
     }
     this.deployerAddress = this.privateKeyToAddress(this.privateKey);
 
-    this.chainType = this.cfg.chainType;
+    // this.chainType = this.cfg.chainType;
+    this.chainType = networkDict[this.cfg.network].chainType;
   }
-
-  // privateKeyToAddress(buffer) {
-  //   return `0x${ethUtil.privateToAddress(buffer).toString('hex').toLowerCase()}`;
-  // }
 
   privateKeyToAddress(privateKey) {
     if (!Buffer.isBuffer(privateKey)) {
@@ -72,12 +79,14 @@ class ContractWrapper {
   contractAt(abi, address) {
     let contract = new this.web3.eth.Contract(abi, address);
     contract.address = contract._address;
+    contract.abi = contract._jsonInterface;
     return contract;
   }
 
   async getChainId() {
     if (!this.chainId) {
-      this.chainId = await this.web3.eth.getChainId();
+      // this.chainId = await this.web3.eth.getChainId();
+      this.chainId = networkDict[this.cfg.network].chainId;
     }
 
     return this.chainId;
@@ -114,46 +123,71 @@ class ContractWrapper {
     return contract.methods[func]().encodeABI();
   }
 
-  async sendTx(contractAddr, data, value = 0) {
+  async sendTx(contractAddr, data, options) {
+    options = Object.assign({}, {value:0, privateKey: null}, options);
+    // console.log("sendTx, options", options);
+
     if (0 != data.indexOf('0x')){
       data = `0x${data}`;
     }
 
-    let value2Wei = this.web3.utils.toWei(value.toString(), 'ether');
-    value2Wei = new this.web3.utils.BN(value2Wei);
-    value2Wei = `0x${value2Wei.toString(16)}`;
+    let currPrivateKey;
+    let currDeployerAddress;
+    if (options.privateKey && options.privateKey.toLowerCase() !== this.cfg.privateKey.toLowerCase()) {
+      currPrivateKey = Buffer.from(options.privateKey, 'hex');
+      currDeployerAddress = ContractWrapper.getAddressString(options.privateKey);
+      // currDeployerAddress = '0x' + ethUtil.privateToAddress(options.privateKey).toString('hex').toLowerCase();
+    } else {
+      currPrivateKey = this.privateKey;
+      currDeployerAddress = this.deployerAddress;
+    }
+
+    let value = this.web3.utils.toWei(options.value.toString(), 'ether');
+    value = new this.web3.utils.BN(value);
+    value = `0x${value.toString(16)}`;
 
     let rawTx = {
-      chainId: this.getChainId(),
+      chainId: await this.getChainId(),
       to: contractAddr,
-      nonce: await this.getNonce(this.deployerAddress),
+      nonce: await this.getNonce(currDeployerAddress),
       gasPrice: this.cfg.gasPrice,
       gasLimit: this.cfg.gasLimit,
-      value: value2Wei,
+      value: value,
       data: data
     };
-    // console.log("serializeTx: %O", rawTx);
+    // console.log(this.chainType, "rawTx: ", rawTx);
 
     let tx
     if (this.chainType === chainDict.ETH) {
-      tx = new ethTx(rawTx);
+      let chainParams = {
+        name: networkDict.mainnet.name,
+        chainId: networkDict[this.cfg.network].chainId,
+        url: this.cfg.nodeURL,
+      };
+      if (this.cfg.network !== networkDict.ethereum.name) {
+        options.name = networkDict[this.cfg.network].name;
+      }
+      const customCommon = ethCommon.forCustomChain(chainParams.name, chainParams, this.cfg.hardfork);
+
+      tx = new ethTx(rawTx, {common: customCommon});
     } else {
       rawTx.Txtype = 0x01;
       tx = new wanTx(rawTx);
     }
-    // console.log("tx", JSON.stringify(tx, null, 4));
-    tx.sign(this.privateKey);
+    tx.sign(currPrivateKey);
+    // console.log("getSenderAddress", tx.getSenderAddress().toString('hex'))
+    // console.log("signedTx: %O", tx);
 
-    try {
-      let receipt = await this.web3.eth.sendSignedTransaction(`0x${tx.serialize().toString('hex')}`);
+    // try {
+      let receipt = await this.web3.eth.sendSignedTransaction('0x' + tx.serialize().toString('hex'));
       return receipt;
-    } catch(err) {
-      console.error("sendTx to contract %s error: %O", contractAddr, err);
-      return null;
-    }
+    // } catch(err) {
+    //   console.error("sendTx to contract %s error: %O", contractAddr, err);
+    //   return null;
+    // }
   }
 
-  static exportPrivateKey(mnemonic, chainIdx = chainIdxDict.WAN, pos = 0) {
+  static exportPrivateKey(mnemonic, chainIdx = chainIndexDict.WAN, pos = 0) {
     const seed = bip39.mnemonicToSeedSync(mnemonic); // mnemonic is the string containing the words
     const hdk = hdkey.fromMasterSeed(seed);
     // const addr_node = hdk.derivePath(`m/44'/60'/0'/0/${pos}`); //m/44'/60'/0'/0/0 is derivation path for the first account. m/44'/60'/0'/0/1 is the derivation path for the second account and so on
@@ -165,7 +199,7 @@ class ContractWrapper {
     return private_key;
   }
 
-  static exportHDAddress(mnemonic, chainIdx = chainIdxDict.WAN, pos = 0) {
+  static exportHDAddress(mnemonic, chainIdx = chainIndexDict.WAN, pos = 0) {
     const seed = bip39.mnemonicToSeedSync(mnemonic); // mnemonic is the string containing the words
     const hdk = hdkey.fromMasterSeed(seed);
     // const addr_node = hdk.derivePath(`m/44'/60'/0'/0/${pos}`); //m/44'/60'/0'/0/0 is derivation path for the first account. m/44'/60'/0'/0/1 is the derivation path for the second account and so on
@@ -180,9 +214,16 @@ class ContractWrapper {
     };
   }
 
+  static getAddressString(privateKey) {
+    if (!Buffer.isBuffer(privateKey)) {
+      privateKey = Buffer.from(privateKey, "hex")
+    }
+    return ethUtil.bufferToHex(ethUtil.privateToAddress(privateKey));
+  };
+
   static getChainIndex(chainType) {
     chainType = chainType && chainType.toUpperCase();
-    return chainIdxDict[chainType];
+    return chainIndexDict[chainType];
   }
 
 }

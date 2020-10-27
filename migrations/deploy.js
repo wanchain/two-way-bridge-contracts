@@ -6,7 +6,8 @@ const {
   contractLoad,
   wanchainScScript,
   chainDict,
-  networks
+  networks,
+  defaultArgv
 } = require("./utils/config");
 const {
   mkdir,
@@ -18,8 +19,8 @@ const {
 } = require("./utils/tool");
 
 const defaultScCfg = {
-  network: 'mainnet',
-  nodeURL: 'http://geth-testnet.wandevs.org:36892',
+  network: 'testnet',
+  nodeURL: 'http://gwan-testnet.wandevs.org:36891',
   mnemonic: '',
   ownerIdx: undefined,
   adminIdx: undefined,
@@ -36,20 +37,20 @@ async function deploy(argv) {
   let adminPrivateKey;
   let deployedPath;
 
-  argv = Object.assign({}, defaultScCfg, argv);
+  argv = Object.assign({}, defaultArgv[argv.network], argv);
   if (!networks.includes(argv.network)) {
     error = `Invalid network ${argv.network}`;
   }
   if (!argv.nodeURL) {
     error = `Invalid nodeURL ${argv.nodeURL}`;
   }
-  if (!argv.ownerPk && (!argv.mnemonic || typeof(argv.ownerIdx) === "undefined")) {
+  if (!argv.ownerPk && (!argv.mnemonic || Number.isNaN(Number(argv.ownerIdx)))) {
     error = `Need identify ownerPk or (mnemonic and ownerIdx)`;
   }
 
   const {chainType, isMainnet} = parseNetwork(argv.network);
   if (chainType === chainDict.WAN) {
-    if (!argv.adminPk && (!argv.mnemonic || typeof(argv.adminIdx) === "undefined")) {
+    if (!argv.adminPk && (!argv.mnemonic || Number.isNaN(Number(argv.adminIdx)))) {
       error = `Need identify adminPk or (mnemonic and adminIdx)`;
     }
   }
@@ -95,8 +96,6 @@ async function deploy(argv) {
     deployedPath = argv.outputDir;
   }
   mkdir(deployedPath);
-  console.log("deployed path", deployedPath);
-
 
   let deployed = {};
   for (let contract in contractDict.address) {
@@ -112,7 +111,10 @@ async function deploy(argv) {
     }
   }
 
-  fs.writeFileSync(path.join(deployedPath,`${argv.network}.json`), JSON.stringify(deployed, null, 5), {flag: 'w', encoding: 'utf8', mode: '0666'});
+  if (Object.keys(deployed).length > 0) {
+    fs.writeFileSync(path.join(deployedPath,`${argv.network}.json`), JSON.stringify(deployed, null, 5), {flag: 'w', encoding: 'utf8', mode: '0666'});
+    console.log("output", deployedPath);
+  }
 }
 
 module.exports = deploy;
