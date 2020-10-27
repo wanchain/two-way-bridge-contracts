@@ -167,6 +167,7 @@ async function deploy(cfg, isMainnet) {
     await deployer.link(scDict.ListGroup, scDict.StoremanUtil);
     let listGroup = await deployer.deploy(scDict.ListGroup, smgProxy.address, posLib.address);
     contract[scDict.ListGroup] = listGroup.address;
+    abi[scDict.ListGroup] = listGroup.abi;
 
     // storm group global dependence
     txData = await smg.methods.setGlobalGroupScAddr(listGroup.address).encodeABI();
