@@ -113,12 +113,13 @@ module.exports = async function (deployer, network) {
     console.log("smg address:", smgProxy.address);
 
     // ListGroup
-    // await deployer.deploy(ListGroup,smgProxyAddr, posLibAddr);
-    // let listGroup = await ListGroup.deployed();
-    //
-    // let smg = await StoremanGroupDelegate.at(smgProxyAddr);
-    // await smg.setGlobalGroupScAddr(listGroup.address);
-    // await smg.addActiveGroupId('0x000000000000000000000000000000000000000000746573746e65745f303035',{from: config.networks[network].admin});
+    await deployer.deploy(ListGroup,smgProxyAddr, posLibAddr);
+    let listGroup = await ListGroup.deployed();
+
+    let smg = await StoremanGroupDelegate.at(smgProxyAddr);
+    await smg.setGlobalGroupScAddr(listGroup.address);
+    await smg.addActiveGroupId('0x000000000000000000000000000000000000000000746573746e65745f303036',{from: config.networks[network].admin});
+    await smg.addActiveGroupId('0x000000000000000000000000000000000000000000000041726965735f303032',{from: config.networks[network].admin});
 
     // gpk
     /*
