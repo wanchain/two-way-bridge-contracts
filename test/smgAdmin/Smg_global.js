@@ -6,7 +6,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
-const { registerStart,stakeInPre, setupNetwork, g } = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork,toSelect, toSetGpk,g } = require('../base.js');
 
 
 
@@ -144,9 +144,8 @@ contract('TestSmg', async () => {
     })
 
     it('T7 setGpk', async ()=>{
-      await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
-      await smg.updateGroupStatus(groupId, g.storemanGroupStatus.selected, {from:g.admin})
-      await smg.setGpk(groupId, g.leader, g.leader, {from:g.admin});
+      await toSelect(smg, groupId);
+      await toSetGpk(smg, groupId)
       groupInfo = await smg.getStoremanGroupInfo(groupId);
       assert.equal(groupInfo.status, g.storemanGroupStatus.ready,"setGpk")
 

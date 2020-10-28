@@ -19,6 +19,7 @@ contract('StoremanGroupDelegate delegate', async () => {
     let groupId
     let wk = utils.getAddressFromInt(10000)
     let wk2 = utils.getAddressFromInt(10001)
+    let wk3 = utils.getAddressFromInt(10003)
     let tester
     let groupInfo
 
@@ -43,6 +44,7 @@ contract('StoremanGroupDelegate delegate', async () => {
     it('stakeIn', async ()=>{
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000, from:tester});
         console.log("tx:", tx);
+        tx = await smg.stakeIn(groupId, wk3.pk, wk3.pk,{value:50000, from:tester});
     })
     it('stakeIn', async ()=>{
         let tx =  smg.delegateIn(wk2.addr,{value:120});
@@ -58,6 +60,7 @@ contract('StoremanGroupDelegate delegate', async () => {
         let tx = await smg.delegateIn(wk.addr,{value:120});
         assert.equal(tx.receipt.logs[0].event, 'delegateInEvent')
         console.log("tx:", tx);
+        await smg.delegateIn(wk3.addr,{value:120});
     })
 
 
@@ -121,7 +124,10 @@ contract('StoremanGroupDelegate delegate', async () => {
             console.log("result:", result);
         }
         assert.equal(result.reason, undefined);
-        let tx = smg.delegateIn(wk.addr, {from: tester,value:100})
+        await smg.delegateOut(wk3.addr)
+        let tx = smg.delegateOut(wk.addr, {from: tester})
+        await expectRevert(tx, "Quited")
+        tx = smg.delegateIn(wk.addr, {from: tester,value:100})
         await expectRevert(tx, "Quited")
 
         let candidate  = await smg.getStoremanInfo(wk.addr)
@@ -144,7 +150,6 @@ contract('StoremanGroupDelegate delegate', async () => {
     it('[StoremanGroupDelegate_delegateClaim] should fail:', async () => {
         let tx = smg.delegateClaim(wk2.addr, {from: tester})
         await expectRevert(tx, 'Cannot claim')
-
     })
     it('[StoremanGroupDelegate_delegateClaim] should success:', async () => {
         await timeWaitIncentive(smg, groupId, wk.addr);
@@ -171,7 +176,8 @@ contract('StoremanGroupDelegate delegate', async () => {
         tx = await smg.delegateClaim(wk.addr, {from: tester})
         expectEvent(tx, "delegateClaimEvent")
         console.log("delegateClaim :", tx);
-
+        tx = await smg.delegateClaim(wk3.addr)
+        expectEvent(tx, "delegateClaimEvent")
         tx = smg.delegateClaim(wk.addr, {from: g.sfs[8]})
         await expectRevert(tx,"not exist")
 
