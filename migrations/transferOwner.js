@@ -38,7 +38,7 @@ async function transferOwner(argv) {
   } else {
     outputDir = argv.inputDir;
   }
-  if ( (!fs.existsSync(inputFile))) {
+  if (!fs.existsSync(inputFile)) {
     throw new Error(`input file ${inputFile} doesn't exist`);
   }
 

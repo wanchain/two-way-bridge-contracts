@@ -45,6 +45,13 @@ async function deploy(argv) {
     exit(error);
   }
 
+  if (!path.isAbsolute(argv.outputDir)) {
+    deployedPath = path.join(__dirname, argv.outputDir);
+  } else {
+    deployedPath = argv.outputDir;
+  }
+  mkdir(deployedPath);
+
   if (argv.ownerPk) {
     ownerPrivateKey = argv.ownerPk;
   } else {
@@ -77,13 +84,6 @@ async function deploy(argv) {
   const {deploy} = require(workspace[chainType].deploy);
   let contractDict = await deploy(cfg, isMainnet);
 
-  if (!path.isAbsolute(argv.outputDir)) {
-    deployedPath = path.join(__dirname, argv.outputDir);
-  } else {
-    deployedPath = argv.outputDir;
-  }
-  mkdir(deployedPath);
-
   let deployed = {};
   for (let contract in contractDict.address) {
     let abiName;
@@ -99,7 +99,17 @@ async function deploy(argv) {
   }
 
   if (Object.keys(deployed).length > 0) {
-    fs.writeFileSync(path.join(deployedPath,`${argv.network}.json`), JSON.stringify(deployed, null, 5), {flag: 'w', encoding: 'utf8', mode: '0666'});
+    // merge
+    const outputFile = path.join(deployedPath,`${argv.network}.json`);
+    if (fs.existsSync(outputFile)) {
+      const preDeployed = require(outputFile);
+      for (let key in preDeployed) {
+        if (!deployed[key]) {
+          deployed[key] = preDeployed[key];
+        }
+      }
+    }
+    fs.writeFileSync(outputFile, JSON.stringify(deployed, null, 5), {flag: 'w', encoding: 'utf8', mode: '0666'});
     console.log("output", deployedPath);
   }
 }
