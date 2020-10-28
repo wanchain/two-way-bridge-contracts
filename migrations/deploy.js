@@ -18,19 +18,6 @@ const {
   hideObject
 } = require("./utils/tool");
 
-const defaultScCfg = {
-  network: 'testnet',
-  nodeURL: 'http://gwan-testnet.wandevs.org:36891',
-  mnemonic: '',
-  ownerIdx: undefined,
-  adminIdx: undefined,
-  ownerPk: '',
-  adminPk: '',
-  gasPrice: 180000000000,
-  gasLimit: 8000000,
-  outputDir:''
-}
-
 async function deploy(argv) {
   let error;
   let ownerPrivateKey;

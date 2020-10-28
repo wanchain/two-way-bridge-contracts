@@ -24,18 +24,6 @@ const ownerFunc = "owner";
 const transferOwnerFunc = "transferOwner";
 const renounceOwnershipFunc = "renounceOwnership";
 
-const defaultOwnerCfg = {
-  network: 'testnet',
-  nodeURL: 'http://gwan-testnet.wandevs.org:36891',
-  mnemonic: '',
-  ownerIdx: undefined,
-  ownerPk: '',
-  address: '',
-  gasPrice: 180000000000,
-  gasLimit: 800000,
-  inputDir:''
-}
-
 async function transferOwner(argv) {
   let inputFile;
   let outputDir;
