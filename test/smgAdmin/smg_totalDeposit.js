@@ -295,3 +295,33 @@ contract('group totalDeposit', async () => {
 
 
 
+
+contract('group totalDeposit', async () => {
+
+  let  smg, listGroup
+
+  const groupNumber = 3;
+  let groupId0, groupId1, groupId2
+  let groupInfo0, groupInfo1, groupInfo2
+  let wk0 = utils.getAddressFromInt(80000)
+  let wk1 = utils.getAddressFromInt(80001)
+  let wk2 = utils.getAddressFromInt(80002)
+
+  before("init contracts", async() => {
+      let smgProxy = await StoremanGroupProxy.deployed();
+      smg = await StoremanGroupDelegate.at(smgProxy.address)
+      listGroup = await ListGroup.deployed()
+      await setupNetwork();
+  })
+
+  it('check incentive ', async ()=>{
+    let tx;
+    tx = listGroup.setDelegateQuitGroupId(g.leader, g.leader, utils.stringTobytes32("1"), utils.stringTobytes32("1"))
+    await expectRevert(tx, "not allow");
+    tx = listGroup.setPartQuitGroupId(g.leader, g.leader, utils.stringTobytes32("1"), utils.stringTobytes32("1"))
+    await expectRevert(tx, "not allow");
+
+  })
+  
+})
+

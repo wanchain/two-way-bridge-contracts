@@ -18,6 +18,7 @@ contract('StoremanGroupDelegate partIn', async () => {
     let groupId,groupInfo
     let wk = utils.getAddressFromInt(10000)
     let wk2 = utils.getAddressFromInt(10002)
+    let wk3 = utils.getAddressFromInt(10003)
     let partValue = 10000;
 
     before("init contracts", async() => {
@@ -40,6 +41,8 @@ contract('StoremanGroupDelegate partIn', async () => {
     it('stakeIn', async ()=>{
         let tx = await smg.stakeIn(groupId, wk.pk, wk.pk,{value:50000});
         console.log("tx:", tx);
+        await smg.stakeIn(groupId, wk3.pk, wk3.pk,{value:50000});
+        await smg.partIn(wk3.addr, {value:10000})
     })
 
     it('T1 staker doesnot exist', async ()=>{
@@ -86,7 +89,7 @@ contract('StoremanGroupDelegate partIn', async () => {
     })
     it('T8 partClaim', async ()=>{
         let tx = smg.partClaim(wk.addr, {from:g.sfs[4]});
-        await expectRevert(tx, "Cannot claim");       
+        await expectRevert(tx, "Cannot claim");   
     })
 
     it('T4 partout when selecting', async ()=>{
@@ -104,6 +107,8 @@ contract('StoremanGroupDelegate partIn', async () => {
         let sk = await smg.getStoremanInfo(wk.addr);
         let tx =  await smg.partOut(wk.addr,{from:g.sfs[0]});
         expectEvent(tx, 'partOutEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0])})
+        tx =  smg.partOut(wk.addr,{from:g.sfs[0]});
+        await expectRevert(tx,"Quited")
         tx = smg.partIn(wk.addr,{from:g.sfs[0], value:10000});
         await expectRevert(tx, "Quited")
 
@@ -120,7 +125,7 @@ contract('StoremanGroupDelegate partIn', async () => {
     it('T8 partClaim', async ()=>{
 
         await timeWaitIncentive(smg, groupId, wk.addr);
-
+        await timeWaitIncentive(smg, groupId, wk3.addr);
         await smg.storemanGroupDismiss(groupId, {from:g.leader})
 
         tx = smg.partClaim(wk.addr, {from:g.sfs[8]});
@@ -133,6 +138,11 @@ contract('StoremanGroupDelegate partIn', async () => {
         expectEvent(tx, "partClaimEvent",{wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[4]), amount:new BN(partValue)});       
         let skInfo2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(skInfo1.partnerCount, parseInt(skInfo2.partnerCount)+1,"partCLaim failed")
+        tx = await smg.partClaim(wk3.addr);
+        expectEvent(tx, "partClaimEvent")    
+        let skInfo3 = await smg.getStoremanInfo(wk3.addr);
+        assert.equal(skInfo3.partnerCount, 0,"partCLaim failed")
+        assert.equal(skInfo3.delegateDeposit, 0)
     })
 })
 
