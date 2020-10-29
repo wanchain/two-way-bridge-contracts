@@ -18,19 +18,6 @@ const {
   hideObject
 } = require("./utils/tool");
 
-const defaultScCfg = {
-  network: 'testnet',
-  nodeURL: 'http://gwan-testnet.wandevs.org:36891',
-  mnemonic: '',
-  ownerIdx: undefined,
-  adminIdx: undefined,
-  ownerPk: '',
-  adminPk: '',
-  gasPrice: 180000000000,
-  gasLimit: 8000000,
-  outputDir:''
-}
-
 async function deploy(argv) {
   let error;
   let ownerPrivateKey;
@@ -57,6 +44,13 @@ async function deploy(argv) {
   if (error) {
     exit(error);
   }
+
+  if (!path.isAbsolute(argv.outputDir)) {
+    deployedPath = path.join(__dirname, argv.outputDir);
+  } else {
+    deployedPath = argv.outputDir;
+  }
+  mkdir(deployedPath);
 
   if (argv.ownerPk) {
     ownerPrivateKey = argv.ownerPk;
@@ -90,13 +84,6 @@ async function deploy(argv) {
   const {deploy} = require(workspace[chainType].deploy);
   let contractDict = await deploy(cfg, isMainnet);
 
-  if (!path.isAbsolute(argv.outputDir)) {
-    deployedPath = path.join(__dirname, argv.outputDir);
-  } else {
-    deployedPath = argv.outputDir;
-  }
-  mkdir(deployedPath);
-
   let deployed = {};
   for (let contract in contractDict.address) {
     let abiName;
@@ -112,7 +99,17 @@ async function deploy(argv) {
   }
 
   if (Object.keys(deployed).length > 0) {
-    fs.writeFileSync(path.join(deployedPath,`${argv.network}.json`), JSON.stringify(deployed, null, 5), {flag: 'w', encoding: 'utf8', mode: '0666'});
+    // merge
+    const outputFile = path.join(deployedPath,`${argv.network}.json`);
+    if (fs.existsSync(outputFile)) {
+      const preDeployed = require(outputFile);
+      for (let key in preDeployed) {
+        if (!deployed[key]) {
+          deployed[key] = preDeployed[key];
+        }
+      }
+    }
+    fs.writeFileSync(outputFile, JSON.stringify(deployed, null, 5), {flag: 'w', encoding: 'utf8', mode: '0666'});
     console.log("output", deployedPath);
   }
 }

@@ -95,6 +95,7 @@ function parseScArgs() {
   .default('gasLimit', defaultGas.gasLimit)
   .default('outputDir', path.join("deployed"))
   .string(["network", "nodeURL", "mnemonic", "ownerPk", "adminPk", "outputDir"])
+  .demand(['network'])
   .argv;
 
   if (argv.help) {
@@ -129,6 +130,7 @@ function parseOwnerArgs() {
   .default('inputDir', path.join("deployed"))
   .string(["network", "nodeURL", "address", "mnemonic", "ownerPk", "inputDir"])
   .boolean(['skipDelegate', 'leave'])
+  .demand(['network'])
   .argv;
 
   if (argv.help) {
