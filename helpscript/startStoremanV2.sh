@@ -133,7 +133,7 @@ echo '*********** use db config ***********:  '$dbip":"$dbport
 # mongocontainer=openstoremanmongo
 echo '*********** use mongocontainer name ***********:  '$mongocontainer
 # echo "Plz ignore the error 'Error: No such container: $mongocontainer' if your first start the script"
-`sudo docker rm -f $mongocontainer > /dev/null 2>&`
+`sudo docker rm -f $mongocontainer > /dev/null 2>&1`
 
 sudo docker run -itd --name $mongocontainer -v $dbdir:/data/db -p 27018:27017 --restart=always mongo
 
@@ -220,7 +220,7 @@ CRTDIR=$(pwd)
 pm2ScriptPath=$workPath
 echo $storemanPm2Json > $pm2ScriptPath/storeman_pm2.json
 # echo "Plz ignore the error: 'Error: No such container: $container' if your first start the script"
-`sudo docker rm -f $container > /dev/null 2>&2`
+`sudo docker rm -f $container > /dev/null 2>&1`
 
 # cmd="sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 # --name $container \
@@ -277,7 +277,7 @@ if [ "$autoupdate" == "Y" ] || [ "$autoupdate" == "y" ]; then
 	echo "Docker watchtower will auto update your storemanAgent"
 	echo "================================================"
 	# echo "Plz ignore the error: 'Error: No such container: $watchcontainer' if your first start the script"
-	`sudo docker rm -f $watchcontainer > /dev/null 2>&`
+	`sudo docker rm -f $watchcontainer > /dev/null 2>&1`
 
 	sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 	--name $watchcontainer \
