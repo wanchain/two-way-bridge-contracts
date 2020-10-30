@@ -4,7 +4,7 @@
 echo ''
 echo ''
 echo '=========================================='
-echo '|  Welcome to testnet Work Deploy   |'
+echo '|  Welcome to Work Deploy   |'
 echo ''
 
 if [ -d $HOME/osm ]; then
