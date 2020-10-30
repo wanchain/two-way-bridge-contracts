@@ -132,8 +132,8 @@ echo '*********** use db config ***********:  '$dbip":"$dbport
 # mongo container name
 # mongocontainer=openstoremanmongo
 echo '*********** use mongocontainer name ***********:  '$mongocontainer
-echo "Plz ignore the error 'Error: No such container: $mongocontainer' if your first start the script"
-`sudo docker rm -f $mongocontainer 1>&2`
+# echo "Plz ignore the error 'Error: No such container: $mongocontainer' if your first start the script"
+`sudo docker rm -f $mongocontainer > /dev/null 2>&`
 
 sudo docker run -itd --name $mongocontainer -v $dbdir:/data/db -p 27018:27017 --restart=always mongo
 
@@ -182,7 +182,7 @@ if [ "$isTestnet" == true ]; then
 		"name"       : "storeman_agent",
 		"script"      : "wanchain-js-storeman-linux",
 		"cwd"         : "agent",
-		"args"        : "-i '$index' --loglevel '$loglevel' --testnet --waddress '$waddress' --chain1 '$chain1' --url1 '$url1' --chain2 '$chain2' --url2 '$url2' --password /osm/pwd.json --keystore /osm/keystore/ --dbip '$dbip' --dbport '$dbport' --mpc --mpcip '$mpcip' --mpcipc /osm/schnorrmpc/data/gwan.ipc --mpcpath /osm/schnorrmpc/data",
+		"args"        : "-i '$index' --loglevel '$loglevel' --testnet --waddress '$waddress' --chain1 '$chain1' --url1 '$url1' --chain2 '$chain2' --url2 '$url2' --password /osm/pwd.json --keystore /osm/keystore/ --dbip '$dbip' --dbport '$dbport' --mpc --mpcip '$mpcip' --mpcport 8545 --mpcipc /osm/schnorrmpc/data/gwan.ipc --mpcpath /osm/schnorrmpc/data",
 		"log_date_format"  : "YYYY-MM-DD HH:mm Z",
 		"env": {}
 	  }]
@@ -208,7 +208,7 @@ else
 		"name"       : "storeman_agent",
 		"script"      : "wanchain-js-storeman-linux",
 		"cwd"         : "agent",
-		"args"        : "-i '$index' --loglevel '$loglevel' --waddress '$waddress' --chain1 '$chain1' --url1 '$url1' --chain2 '$chain2' --url2 '$url2' --password /osm/pwd.json --keystore /osm/keystore/ --dbip '$dbip' --dbport '$dbport' --mpc --mpcip '$mpcip' --mpcipc /osm/schnorrmpc/data/gwan.ipc --mpcpath /osm/schnorrmpc/data",
+		"args"        : "-i '$index' --loglevel '$loglevel' --waddress '$waddress' --chain1 '$chain1' --url1 '$url1' --chain2 '$chain2' --url2 '$url2' --password /osm/pwd.json --keystore /osm/keystore/ --dbip '$dbip' --dbport '$dbport' --mpc --mpcip '$mpcip' --mpcport 8545 --mpcipc /osm/schnorrmpc/data/gwan.ipc --mpcpath /osm/schnorrmpc/data",
 		"log_date_format"  : "YYYY-MM-DD HH:mm Z",
 		"env": {}
 	  }]
@@ -219,8 +219,8 @@ fi
 CRTDIR=$(pwd)
 pm2ScriptPath=$workPath
 echo $storemanPm2Json > $pm2ScriptPath/storeman_pm2.json
-echo "Plz ignore the error: 'Error: No such container: $container' if your first start the script"
-`sudo docker rm -f $container 1>&2`
+# echo "Plz ignore the error: 'Error: No such container: $container' if your first start the script"
+`sudo docker rm -f $container > /dev/null 2>&2`
 
 # cmd="sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 # --name $container \
@@ -248,7 +248,7 @@ echo "Plz ignore the error: 'Error: No such container: $container' if your first
 if [ "$savepasswd" == "Y" ] || [ "$savepasswd" == "y" ]; then
 	cmd="sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 	--name $container \
-	-p $p2pPort:$p2pPort -p $p2pPort:$p2pPort/udp \
+	-p $p2pPort:$p2pPort -p $p2pPort:$p2pPort/udp -p $mpcport:8545 \
 	-v $password:/osm/pwd.json \
 	-v $keystore:/osm/keystore \
 	-v $mpcpath:/osm/schnorrmpc/data \
@@ -258,7 +258,7 @@ if [ "$savepasswd" == "Y" ] || [ "$savepasswd" == "y" ]; then
 else
 	cmd="sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 	--name $container \
-	-p $p2pPort:$p2pPort -p $p2pPort:$p2pPort/udp \
+	-p $p2pPort:$p2pPort -p $p2pPort:$p2pPort/udp -p $mpcport:8545 \
 	-v $password:/osm/pwd.json \
 	-v $keystore:/osm/keystore \
 	-v $mpcpath:/osm/schnorrmpc/data \
@@ -276,8 +276,8 @@ if [ "$autoupdate" == "Y" ] || [ "$autoupdate" == "y" ]; then
 	echo "start DockerWatch "$watchcontainer
 	echo "Docker watchtower will auto update your storemanAgent"
 	echo "================================================"
-	echo "Plz ignore the error: 'Error: No such container: $watchcontainer' if your first start the script"
-	`sudo docker rm -f $watchcontainer 1>&2`
+	# echo "Plz ignore the error: 'Error: No such container: $watchcontainer' if your first start the script"
+	`sudo docker rm -f $watchcontainer > /dev/null 2>&`
 
 	sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 	--name $watchcontainer \
