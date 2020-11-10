@@ -83,7 +83,7 @@ library StoremanLib {
             
             // check if it is a backup whitelist, if yes, change it's groupId to 0.
             for(uint i=group.whiteCount; i<group.whiteCountAll; i++) {
-                if(group.skMap[i] == wkAddr){
+                if(group.whiteMap[i] == wkAddr){
                     sk.groupId = bytes32(0x00);
                     break;
                 }
