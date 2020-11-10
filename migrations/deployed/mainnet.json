@@ -1,29 +1,29 @@
 {
-     "PosLib": {
-          "address": "0xe5D05F0C52DAe635B8bd2e5AFAF5c72369920B39"
-     },
      "CommonTool": {
-          "address": "0x813A7b85090aA563a46b040135014470E60DC19F"
+          "address": "0xE73Ed92E16e48D1604515C7268be5e5199421846"
      },
      "StoremanUtil": {
-          "address": "0x9AC6492c22AF58f81f04C23aaA700E73856a9Be6"
+          "address": "0xe569ca0DBbCC0B33D42d4098034Ba6De0fadE2dE"
      },
      "StoremanLib": {
-          "address": "0x6d7cdcbAa90f9C5ffEB8C22F1a58cAE2b476095A"
+          "address": "0xad7BEf78b1D27D4290BF1A4d95f52EAc054fc478"
      },
      "IncentiveLib": {
-          "address": "0xb7B54A4b2Be8265F993E7842449494Ec2c3d1301"
+          "address": "0xa7e493b11cB6866576eaD5A6fa9daD14fEddd55f"
      },
      "Deposit": {
-          "address": "0x0146263b16Ef54D599993E2DA4f0EC732C579920"
+          "address": "0xc69569510A8D649F1DA342Ba00bA468094E126b2"
      },
      "StoremanGroupProxy": {
           "address": "0x1E7450D5d17338a348C5438546f0b4D0A5fbeaB6",
           "abi": "abi.StoremanGroupDelegate.json"
      },
      "StoremanGroupDelegate": {
-          "address": "0x72F2BD7769F4D5F149121758e0457D7a2c94f3A6",
+          "address": "0xA3BB5ceC8b48f49a9aDb997b69cb3b3C40CDE728",
           "abi": "abi.StoremanGroupDelegate.json"
+     },
+     "PosLib": {
+          "address": "0xe5D05F0C52DAe635B8bd2e5AFAF5c72369920B39"
      },
      "ListGroup": {
           "address": "0x8113a9373BD319A05b607747f396CA8e78e8F5B9",
