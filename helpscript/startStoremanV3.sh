@@ -74,10 +74,10 @@ done
 
 while true
 do
-	read -p "*********** Do you want to use kms to encrypt/decrypt your storeman pk piece? (N/y): " kms
+	read -p "*********** Do you want to use KMS to encrypt/decrypt your storeman secret piece? (N/y): " KMS
 
-	if [ "$kms" == "Y" ] || [ "$kms" == "y" ]; then
-		echo "*********** You selected to use kms, please provide your KMS_ACCESS_KID/KMS_SECRET_KEY/KMS_REGION/KMS_KEYID."
+	if [ "$KMS" == "Y" ] || [ "$KMS" == "y" ]; then
+		echo "*********** You selected to use KMS, please provide your KMS_ACCESS_KID/KMS_SECRET_KEY/KMS_REGION/KMS_KEYID."
 		read -p "KMS_ACCESS_KID: " accessKid
 		read -p "KMS_SECRET_KEY: " secretKey
 		read -p "KMS_REGION: " region
@@ -112,13 +112,21 @@ do
 
 done
 
-read -p "*********** Do you want to save your password to disk for auto update storemanAgent? (N/y): " autoupdate
-
-if [ "$autoupdate" == "Y" ] || [ "$autoupdate" == "y" ]; then
-    savepasswd="Y"
+if [ "$KMS" == "Y" ] || [ "$KMS" == "y" ]; then
+    savepasswd="N"
+	autoupdate="N"
 else
-    read -p "*********** Do you want save your password to disk for auto restart? (N/y): " savepasswd
+	read -p "*********** Do you want to save your password to disk for auto update storemanAgent? (N/y): " autoupdate
+	if [ "$autoupdate" == "Y" ] || [ "$autoupdate" == "y" ]; then
+		savepasswd="Y"
+	else
+		#read -p "*********** Do you want to save your password to disk for auto restart? (N/y): " savepasswd
+		savepasswd="N"
+		autoupdate="N"
+	fi
+
 fi
+
 
 password=$workPath'/pwd.json'
 
@@ -133,10 +141,10 @@ pwdString='
 '
 echo $pwdString > $password
 
-# For follower nodes
+# For storeman nodes
 echo "================================================"
 echo "storeman-"$waddress
-echo "Start as a follower  : storeman agent"
+echo "Start  : storeman agent"
 echo "================================================"
 
 # agent index, index default can be empty 
@@ -272,29 +280,6 @@ echo $storemanPm2Json > $pm2ScriptPath/storeman_pm2.json
 # echo "Please ignore the error: 'Error: No such container: $container' if your first start the script"
 `sudo docker rm -f $container > /dev/null 2>&1`
 
-# cmd="sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
-# --name $container \
-# -p $p2pPort:17717 -p $p2pPort:17717/udp -p $mpcport:8545 \
-# -v $password:/osm/pwd.json \
-# -v $keystore:/osm/keystore \
-# -v $mpcpath:/osm/schnorrmpc/data \
-# $image -- -i $index \
-# --loglevel $loglevel \
-# --testnet \
-# --waddress $waddress \
-# --chain1 $chain1 --url1 $url1 --add1 $add1 \
-# --chain2 $chain2 --url2 $url2 --add2 $add2 \
-# --password /osm/pwd.json \
-# --keystore /osm/keystore/ \
-# --dbip $dbip --dbport $dbport --replica \
-# --mpc --mpcip $mpcip --mpcport 8545 \
-# --mpcipc /osm/schnorrmpc/data/gwan.ipc \
-# --mpcpath /osm/schnorrmpc/data \
-# --p2pPort 17717 \
-# --threshold $threshold \
-# --totalnodes $totalnodes \
-# "
-
 if [ "$savepasswd" == "Y" ] || [ "$savepasswd" == "y" ]; then
 	cmd="sudo docker run --log-opt max-size=200m --log-opt max-file=3 \
 	--name $container \
@@ -338,5 +323,19 @@ if [ "$autoupdate" == "Y" ] || [ "$autoupdate" == "y" ]; then
 fi
 
 if [ "$savepasswd" == "N" ] || [ "$savepasswd" == "n" ]; then
+
+	echo 'Please wait a few seconds...'
+
+	sleep 10
+
     sudo rm $password
+	
+	if [ $? -ne 0 ]; then
+		echo "rm $password failed"
+		exit 1
+	fi
 fi
+
+echo ''
+echo "Storeman Start Success";
+
