@@ -92,7 +92,7 @@ module.exports = async function (deployer, network) {
 
     await deployer.link(StoremanUtil,StoremanLib);
     await deployer.link(StoremanUtil,IncentiveLib);
-    await deployer.link(StoremanUtil,ListGroup);
+    //await deployer.link(StoremanUtil,ListGroup);
 
     await deployer.deploy(Deposit);
     await deployer.link(Deposit,StoremanGroupDelegate);
@@ -112,6 +112,7 @@ module.exports = async function (deployer, network) {
     await smgProxy.upgradeTo(smgDelegate.address);
     console.log("smg address:", smgProxy.address);
 
+    /*
     // ListGroup
     await deployer.deploy(ListGroup,smgProxyAddr, posLibAddr);
     let listGroup = await ListGroup.deployed();
@@ -120,6 +121,7 @@ module.exports = async function (deployer, network) {
     await smg.setGlobalGroupScAddr(listGroup.address);
     await smg.addActiveGroupId('0x000000000000000000000000000000000000000000746573746e65745f303036',{from: config.networks[network].admin});
     await smg.addActiveGroupId('0x000000000000000000000000000000000000000000000041726965735f303032',{from: config.networks[network].admin});
+    */
 
     // gpk
     /*
