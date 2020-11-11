@@ -44,6 +44,7 @@ do
 		continue
 	fi
 
+	echo "... Wait a while, docker image is updating! ..."
 	sudo docker pull $image
 
 	# agent waddress
