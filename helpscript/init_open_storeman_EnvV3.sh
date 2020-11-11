@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Create the open-storeman project folders.
-mkdir -p ~/osm/data/keystore
+# mkdir -p ~/osm/data/keystore
 
 echo '*********** open-storeman init Env *********** Creat folders done!'
 
