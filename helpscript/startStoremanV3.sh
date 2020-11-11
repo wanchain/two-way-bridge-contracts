@@ -44,6 +44,8 @@ do
 		continue
 	fi
 
+	sudo docker pull $image
+
 	# agent waddress
 	echo '*********** Please Enter your work address:'
 	read waddress
