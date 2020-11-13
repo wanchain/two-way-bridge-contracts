@@ -283,6 +283,9 @@ pm2ScriptPath=$workPath
 
 sudo rm -rf $pm2ScriptPath/storeman_pm2.json
 echo $storemanPm2Json > $pm2ScriptPath/storeman_pm2.json
+
+sleep 6
+
 # echo "Please ignore the error: 'Error: No such container: $container' if your first start the script"
 `sudo docker rm -f $container > /dev/null 2>&1`
 
