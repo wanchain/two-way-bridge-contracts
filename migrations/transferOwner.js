@@ -76,10 +76,11 @@ async function transferOwner(argv) {
 
         if (owner.toLowerCase() !== newOwner.toLowerCase()) {
           const receipt = await contract.send(transferOwnerFunc, newOwner.toLowerCase());
+          const currOwner = await contract.call(ownerFunc);
 
           changeOwner[contractName] = deployed[contractName];
           changeOwner[contractName].oldOwner = owner;
-          changeOwner[contractName].newOwner = newOwner;
+          changeOwner[contractName].newOwner = currOwner;
           changeOwner[contractName].txHash = receipt.transactionHash;
 
           showTxInfo(receipt, contractName);

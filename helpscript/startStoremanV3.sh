@@ -44,6 +44,9 @@ do
 		continue
 	fi
 
+	echo "... Wait a while, docker image is updating! ..."
+	sudo docker pull $image
+
 	# agent waddress
 	echo '*********** Please Enter your work address:'
 	read waddress
