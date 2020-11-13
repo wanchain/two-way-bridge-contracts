@@ -132,6 +132,7 @@ fi
 
 
 password=$workPath'/pwd.json'
+sudo rm -f $password
 
 pwdString='
 {
@@ -329,7 +330,7 @@ if [ "$savepasswd" == "N" ] || [ "$savepasswd" == "n" ]; then
 
 	echo 'Please wait a few seconds...'
 
-	sleep 10
+	sleep 36
 
     sudo rm $password
 	
