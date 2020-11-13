@@ -132,7 +132,10 @@ fi
 
 
 password=$workPath'/pwd.json'
-sudo rm -f $password
+
+if [ -d $password ] || [ -f $password ]; then
+	sudo rm -rf $password
+fi
 
 pwdString='
 {
@@ -281,7 +284,10 @@ fi
 CRTDIR=$(pwd)
 pm2ScriptPath=$workPath
 
-sudo rm -rf $pm2ScriptPath/storeman_pm2.json
+if [ -d $pm2ScriptPath/storeman_pm2.json ] || [ -f $pm2ScriptPath/storeman_pm2.json ]; then
+	sudo rm -rf $pm2ScriptPath/storeman_pm2.json
+fi
+
 echo $storemanPm2Json > $pm2ScriptPath/storeman_pm2.json
 
 sleep 6
