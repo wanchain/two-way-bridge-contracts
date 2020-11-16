@@ -50,14 +50,14 @@ contract('StoremanGroupDelegate partIn', async () => {
         await expectRevert(tx, "Candidate doesn't exist");       
     })
 
-    it('T2 partIn', async ()=>{
+    it('T2 partIn [smallValue]', async ()=>{
         let smallValue = 1000;
         let sk = await smg.getStoremanInfo(wk.addr);
         let tx =  smg.partIn(wk.addr,{value:smallValue, from:g.sfs[0]});
         await expectRevert(tx, "Too small value")
     })
 
-    it('T2 partIn', async ()=>{
+    it('T2 partIn [normalValue]', async ()=>{
         let sk = await smg.getStoremanInfo(wk.addr);
         let tx = await smg.partIn(wk.addr,{value:partValue, from:g.sfs[0]});
         expectEvent(tx, 'partInEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0]), value:new BN(partValue)})
@@ -68,7 +68,7 @@ contract('StoremanGroupDelegate partIn', async () => {
         assert.equal(sk2.partnerDeposit, partValue)
         console.log("tx:", tx);
     })
-    it('T2 partIn again', async ()=>{
+    it('T2 partIn again [normalValue]', async ()=>{
         let sk = await smg.getStoremanInfo(wk.addr);
         let tx = await smg.partIn(wk.addr,{value:partValue, from:g.sfs[0]});
         expectEvent(tx, 'partInEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0]), value:new BN(partValue)})
@@ -77,6 +77,19 @@ contract('StoremanGroupDelegate partIn', async () => {
         assert.equal(sk.partnerDeposit, partValue)
         assert.equal(sk2.partnerCount, 1)
         assert.equal(sk2.partnerDeposit, partValue*2)
+        console.log("tx:", tx);
+    })
+    // partIn again, first big value, second  small value
+    it('T2 partIn again[first big value, second small value]', async ()=>{
+        let smallValue = 1000;
+        let sk = await smg.getStoremanInfo(wk.addr);
+        let tx = await smg.partIn(wk.addr,{value:smallValue, from:g.sfs[0]});
+        expectEvent(tx, 'partInEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0]), value:new BN(smallValue)})
+        let sk2 = await smg.getStoremanInfo(wk.addr);
+        assert.equal(sk.partnerCount, 1)
+        assert.equal(sk.partnerDeposit, partValue*2)
+        assert.equal(sk2.partnerCount, 1)
+        assert.equal(sk2.partnerDeposit, (partValue*2+smallValue))
         console.log("tx:", tx);
     })
 
