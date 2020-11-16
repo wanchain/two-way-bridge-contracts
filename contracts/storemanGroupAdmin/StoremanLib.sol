@@ -291,7 +291,10 @@ library StoremanLib {
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
         require(msg.value >= group.minDelegateIn, "Too small value");
 
-        require(sk.delegateDeposit.add(msg.value) <= sk.deposit.getLastValue().mul(data.conf.DelegationMulti), "Too many delegation");
+        //require(sk.delegateDeposit.add(msg.value) <= sk.deposit.getLastValue().mul(data.conf.DelegationMulti), "Too many delegation");
+
+        require(sk.delegateDeposit.add(msg.value) <= (sk.deposit.getLastValue().add(sk.partnerDeposit)).mul(data.conf.DelegationMulti), "Too many delegation");
+
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
         require(dk.quited == false, "Quited");
         if(dk.deposit.getLastValue() == 0) {
@@ -472,11 +475,14 @@ library StoremanLib {
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
-        require(msg.value >= group.minPartIn, "Too small value");
+        //require(msg.value >= group.minPartIn, "Too small value");
 
         StoremanType.Delegator storage pn = sk.partners[msg.sender];
         require(pn.quited == false, "Quited");
         if(pn.deposit.getLastValue() == 0) {
+
+            require(msg.value >= group.minPartIn, "Too small value");
+
             require(sk.partnerCount<maxPartnerCount,"Too many partners");
             sk.partMap[sk.partnerCount] = msg.sender;
             pn.index = sk.partnerCount;
