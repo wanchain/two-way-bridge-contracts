@@ -43,6 +43,23 @@ contract('StoremanGroupDelegate delegateIn', async () => {
         await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:50000});
     })
 
+    it('T0 partIn [normalValue]', async ()=>{
+        let partValue = 10000
+        let sk = await smg.getStoremanInfo(wk.addr);
+        let tx = await smg.partIn(wk.addr,{value:partValue, from:g.sfs[0]});
+        expectEvent(tx, 'partInEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0]), value:new BN(partValue)})
+        let sk2 = await smg.getStoremanInfo(wk.addr);
+
+        console.log("sk in T0 partIn [normalValue]",sk);
+        console.log("sk2 in T0 partIn [normalValue]",sk2);
+        assert.equal(sk.partnerCount, 0)
+        assert.equal(sk.partnerDeposit, 0)
+        assert.equal(sk2.partnerCount, 1)
+        assert.equal(sk2.partnerDeposit, partValue)
+        assert.equal(sk2.deposit, 50000)
+        console.log("tx:", tx);
+    })
+
     it('T1 delegateIn normal', async ()=>{
         let sk = await smg.getStoremanInfo(wk.addr);
         console.log("sk:", sk);
@@ -52,9 +69,27 @@ contract('StoremanGroupDelegate delegateIn', async () => {
     })
 
     it('T2 delegateIn: small value', async ()=>{
-        let tx =  smg.delegateIn(wk.addr,{value:10});
-        await expectRevert(tx, "Too small value");       
+        let tx =   smg.delegateIn(wk.addr,{value:10});
+        await expectRevert(tx, "Too small value");
     })
+
+    // default 5*(50000+10000)
+    it('T2 delegateIn: on the range value.', async ()=>{
+        let ret = await smg.getStoremanConf();
+        console.log("backupCount:%s,standaloneWeight:%s,delegationMulti:%s",
+            ret["backupCount"],
+            ret["standaloneWeight"],
+            ret["delegationMulti"]);
+
+        let tx =  await smg.delegateIn(wk.addr,{value:parseInt(ret["delegationMulti"])*(50000+10000)-delegateValue,from:tester});
+        assert.equal(tx.receipt.logs[0].event, 'delegateInEvent')
+        console.log("tx:", tx);
+    })
+    it('T2 delegateIn: out of range value', async ()=>{
+        let tx =  smg.delegateIn(wk.addr,{value:delegateValue});
+        await expectRevert(tx, "Too many delegation");
+    })
+
     it('T3 delegateIn: to whitelist before select', async ()=>{
         let tx = await smg.delegateIn(g.leader,{value:100});
         expectEvent(tx, "delegateInEvent");       
