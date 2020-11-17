@@ -40,7 +40,7 @@ library HTLCTxLib {
 
     /// @notice tx info status
     /// @notice uninitialized,locked,redeemed,revoked
-    enum TxStatus {None, Locked, Redeemed, Revoked}
+    enum TxStatus {None, Locked, Redeemed, Revoked, AssetLocked, DebtLocked}
 
     /**
      *
@@ -246,7 +246,8 @@ library HTLCTxLib {
     /// @param  srcSmgID            ID of source storeman group
     /// @param  destSmgID           ID of the storeman which will take over of the debt of source storeman group
     /// @param  lockedTime          HTLC lock time
-    function addDebtTx(Data storage self, bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, uint lockedTime)
+    /// @param  status              Status, should be 'Locked' for asset or 'DebtLocked' for debt
+    function addDebtTx(Data storage self, bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, uint lockedTime, TxStatus status)
         external
     {
         DebtTx memory debtTx = self.mapHashXDebtTxs[xHash];
@@ -254,7 +255,7 @@ library HTLCTxLib {
         require(debtTx.baseTx.status == TxStatus.None, "Debt tx exists");
 
         debtTx.baseTx.smgID = destSmgID;
-        debtTx.baseTx.status = TxStatus.Locked;
+        debtTx.baseTx.status = status;//TxStatus.Locked;
         debtTx.baseTx.lockedTime = lockedTime;
         debtTx.baseTx.beginLockedTime = now;
         debtTx.srcSmgID = srcSmgID;
@@ -264,14 +265,16 @@ library HTLCTxLib {
 
     /// @notice                     refund coins from HTLC transaction
     /// @param x                    HTLC random number
-    function redeemDebtTx(Data storage self, bytes32 x)
+    /// @param status               Status, should be 'Locked' for asset or 'DebtLocked' for debt
+    function redeemDebtTx(Data storage self, bytes32 x, TxStatus status)
         external
         returns(bytes32 xHash)
     {
         xHash = sha256(abi.encodePacked(x));
 
         DebtTx storage debtTx = self.mapHashXDebtTxs[xHash];
-        require(debtTx.baseTx.status == TxStatus.Locked, "Status is not locked");
+        // require(debtTx.baseTx.status == TxStatus.Locked, "Status is not locked");
+        require(debtTx.baseTx.status == status, "Status is not locked");
         require(now < debtTx.baseTx.beginLockedTime.add(debtTx.baseTx.lockedTime), "Redeem timeout");
 
         debtTx.baseTx.status = TxStatus.Redeemed;
@@ -281,11 +284,13 @@ library HTLCTxLib {
 
     /// @notice                     revoke debt transaction, which is used for source storeman group
     /// @param  xHash               hash of HTLC random number
-    function revokeDebtTx(Data storage self, bytes32 xHash)
+    /// @param  status              Status, should be 'Locked' for asset or 'DebtLocked' for debt
+    function revokeDebtTx(Data storage self, bytes32 xHash, TxStatus status)
         external
     {
         DebtTx storage debtTx = self.mapHashXDebtTxs[xHash];
-        require(debtTx.baseTx.status == TxStatus.Locked, "Status is not locked");
+        // require(debtTx.baseTx.status == TxStatus.Locked, "Status is not locked");
+        require(debtTx.baseTx.status == status, "Status is not locked");
         require(now >= debtTx.baseTx.beginLockedTime.add(debtTx.baseTx.lockedTime), "Revoke is not permitted");
 
         debtTx.baseTx.status = TxStatus.Revoked;
