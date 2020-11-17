@@ -571,6 +571,14 @@ library StoremanLib {
         delete sk.partMap[sk.partnerCount];
         delete sk.partners[msg.sender];
         IListGroup(listGroupAddr).setPartQuitGroupId(wkAddr, msg.sender, bytes32(0x00), bytes32(0x00));
+
+        // slash the node
+        if(sk.slashedCount >= data.conf.maxSlashedCount) {
+            amount = 0;
+        } else {
+            amount = amount.mul(data.conf.maxSlashedCount.sub(sk.slashedCount)).div(data.conf.maxSlashedCount);
+        }
+
         emit partClaimEvent(wkAddr, msg.sender, amount);
         msg.sender.transfer(amount);
     }
