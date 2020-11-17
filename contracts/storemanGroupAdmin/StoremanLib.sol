@@ -291,7 +291,10 @@ library StoremanLib {
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
         require(msg.value >= group.minDelegateIn, "Too small value");
 
-        require(sk.delegateDeposit.add(msg.value) <= sk.deposit.getLastValue().mul(data.conf.DelegationMulti), "Too many delegation");
+        //require(sk.delegateDeposit.add(msg.value) <= sk.deposit.getLastValue().mul(data.conf.DelegationMulti), "Too many delegation");
+
+        require(sk.delegateDeposit.add(msg.value) <= (sk.deposit.getLastValue().add(sk.partnerDeposit)).mul(data.conf.DelegationMulti), "Too many delegation");
+
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
         require(dk.quited == false, "Quited");
         if(dk.deposit.getLastValue() == 0) {
@@ -472,11 +475,14 @@ library StoremanLib {
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
-        require(msg.value >= group.minPartIn, "Too small value");
+        //require(msg.value >= group.minPartIn, "Too small value");
 
         StoremanType.Delegator storage pn = sk.partners[msg.sender];
         require(pn.quited == false, "Quited");
         if(pn.deposit.getLastValue() == 0) {
+
+            require(msg.value >= group.minPartIn, "Too small value");
+
             require(sk.partnerCount<maxPartnerCount,"Too many partners");
             sk.partMap[sk.partnerCount] = msg.sender;
             pn.index = sk.partnerCount;
@@ -565,6 +571,14 @@ library StoremanLib {
         delete sk.partMap[sk.partnerCount];
         delete sk.partners[msg.sender];
         IListGroup(listGroupAddr).setPartQuitGroupId(wkAddr, msg.sender, bytes32(0x00), bytes32(0x00));
+
+        // slash the node
+        if(sk.slashedCount >= data.conf.maxSlashedCount) {
+            amount = 0;
+        } else {
+            amount = amount.mul(data.conf.maxSlashedCount.sub(sk.slashedCount)).div(data.conf.maxSlashedCount);
+        }
+
         emit partClaimEvent(wkAddr, msg.sender, amount);
         msg.sender.transfer(amount);
     }
