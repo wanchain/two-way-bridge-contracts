@@ -84,8 +84,10 @@ module.exports = async function (deployer, network) {
     //let quotaProxyAddr = '0x7585c2ae6a3F3B2998103cB7040F811B550C9930';
     let smgProxyAddr = '0xaA5A0f7F99FA841F410aafD97E8C435c75c22821';
     let posLibAddr = '0x4Ec1e3c0aB865707eEc5F9a97Bcaee2E39b8a2De';
+    let crossProxyAddr = '0x62dE27e16f6f31d9Aa5B02F4599Fc6E21B339e79';
 
-    // smg
+
+    //### smg
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool,StoremanUtil);
     await deployer.deploy(StoremanUtil);
@@ -111,6 +113,26 @@ module.exports = async function (deployer, network) {
     let smgProxy = await StoremanGroupProxy.at(smgProxyAddr);
     await smgProxy.upgradeTo(smgDelegate.address);
     console.log("smg address:", smgProxy.address);
+
+    //###htlc
+    // cross approach smart contracts
+    await deployer.deploy(HTLCTxLib);
+
+    await deployer.link(HTLCTxLib, HTLCDebtLib);
+    await deployer.deploy(HTLCDebtLib);
+
+    await deployer.deploy(RapidityLib);
+
+    await deployer.link(HTLCTxLib, CrossDelegate);
+    await deployer.link(HTLCDebtLib, CrossDelegate);
+
+    await deployer.link(RapidityLib, CrossDelegate);
+    await deployer.deploy(CrossDelegate);
+
+    let crossProxy = await CrossProxy.at(crossProxyAddr);
+    console.log("crossProxyAddr",crossProxyAddr);
+    let crossDelegate = await CrossDelegate.deployed();
+    await crossProxy.upgradeTo(crossDelegate.address);
 
     /*
     // ListGroup
