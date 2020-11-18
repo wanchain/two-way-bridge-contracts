@@ -114,6 +114,7 @@ module.exports = async function (deployer, network) {
     await smgProxy.upgradeTo(smgDelegate.address);
     console.log("smg address:", smgProxy.address);
 
+    /*
     //###htlc
     // cross approach smart contracts
     await deployer.deploy(HTLCTxLib);
@@ -133,6 +134,8 @@ module.exports = async function (deployer, network) {
     console.log("crossProxyAddr",crossProxyAddr);
     let crossDelegate = await CrossDelegate.deployed();
     await crossProxy.upgradeTo(crossDelegate.address);
+    */
+
 
     /*
     // ListGroup
