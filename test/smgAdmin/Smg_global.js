@@ -130,6 +130,7 @@ contract('TestSmg', async () => {
     
     
     it('T7 recordSmSlash', async ()=>{
+      let dep = await smg.getDependence();
       await smg.setDependence(g.owner, g.owner, g.owner,g.leader);
       let tx = await smg.recordSmSlash(g.leader);
       console.log("tx:", tx);
@@ -141,6 +142,8 @@ contract('TestSmg', async () => {
       sk = await smg.getStoremanInfo(g.leader);
       console.log("sk:", sk);
       assert(sk.slashedCount, 1, "recordSmSlash failed")
+      await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+
     })
 
     it('T7 setGpk', async ()=>{
