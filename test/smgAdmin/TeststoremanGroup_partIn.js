@@ -256,6 +256,10 @@ contract('StoremanGroupDelegate partClaim', async () => {
         await sendTransaction(d0, 0, sdata,smg.contract._address);
         addr = await smg.getSmPartnerAddr(wk.addr, 0)
         assert.equal(addr.toLowerCase(), d4.addr)
+        addr = await smg.getSmPartnerAddr(wk.addr, 1)
+        assert.equal(addr.toLowerCase(), d1.addr)
+        addr = await smg.getSmPartnerAddr(wk.addr, 2)
+        assert.equal(addr.toLowerCase(), d2.addr)
         addr = await smg.getSmPartnerAddr(wk.addr, 3)
         assert.equal(addr.toLowerCase(), d3.addr)
         smInfo1 = await smg.getStoremanInfo(wk.addr);
@@ -269,6 +273,8 @@ contract('StoremanGroupDelegate partClaim', async () => {
 
         addr = await smg.getSmPartnerAddr(wk.addr, 0)
         assert.equal(addr.toLowerCase(), d4.addr)
+        addr = await smg.getSmPartnerAddr(wk.addr, 1)
+        assert.equal(addr.toLowerCase(), d1.addr)
         addr = await smg.getSmPartnerAddr(wk.addr, 2)
         assert.equal(addr.toLowerCase(), d2.addr)
 
