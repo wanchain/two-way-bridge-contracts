@@ -193,7 +193,7 @@ library IncentiveLib {
     }
 
     function setGroupDeposit(StoremanType.StoremanData storage data,StoremanType.StoremanGroup storage group) public {
-        uint day = group.workTime;
+        uint day = StoremanUtil.getDaybyTime(data.posLib, group.workTime);
         uint groupDeposit = 0;
         uint groupDepositWeight = 0;
         for(uint i = 0; i<group.memberCountDesign; i++){
