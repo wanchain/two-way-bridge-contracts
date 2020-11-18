@@ -103,7 +103,7 @@ library HTLCDebtLib {
     function srcDebtLock(CrossTypes.Data storage storageData, HTLCDebtLockParams memory params)
         public
     {
-        storageData.htlcTxData.addDebtTx(params.xHash, params.srcSmgID, params.destSmgID, params.lockedTime);
+        storageData.htlcTxData.addDebtTx(params.xHash, params.srcSmgID, params.destSmgID, params.lockedTime, HTLCTxLib.TxStatus.AssetLocked);
 
         storageData.quota.assetLock(params.srcSmgID, params.destSmgID);
 
@@ -116,7 +116,7 @@ library HTLCDebtLib {
     function destDebtLock(CrossTypes.Data storage storageData, HTLCDebtLockParams memory params)
         public
     {
-        storageData.htlcTxData.addDebtTx(params.xHash, params.srcSmgID, params.destSmgID, params.lockedTime);
+        storageData.htlcTxData.addDebtTx(params.xHash, params.srcSmgID, params.destSmgID, params.lockedTime, HTLCTxLib.TxStatus.DebtLocked);
 
         storageData.quota.debtLock(params.srcSmgID, params.destSmgID);
 
@@ -129,7 +129,7 @@ library HTLCDebtLib {
     function srcDebtRedeem(CrossTypes.Data storage storageData, bytes32 x)
         external
     {
-        bytes32 xHash = storageData.htlcTxData.redeemDebtTx(x);
+        bytes32 xHash = storageData.htlcTxData.redeemDebtTx(x, HTLCTxLib.TxStatus.DebtLocked);
 
         bytes32 srcSmgID;
         bytes32 destSmgID;
@@ -146,7 +146,7 @@ library HTLCDebtLib {
     function destDebtRedeem(CrossTypes.Data storage storageData, bytes32 x)
         external
     {
-        bytes32 xHash = storageData.htlcTxData.redeemDebtTx(x);
+        bytes32 xHash = storageData.htlcTxData.redeemDebtTx(x, HTLCTxLib.TxStatus.AssetLocked);
 
         bytes32 srcSmgID;
         bytes32 destSmgID;
@@ -163,7 +163,7 @@ library HTLCDebtLib {
     function destDebtRevoke(CrossTypes.Data storage storageData, bytes32 xHash)
         external
     {
-        storageData.htlcTxData.revokeDebtTx(xHash);
+        storageData.htlcTxData.revokeDebtTx(xHash, HTLCTxLib.TxStatus.DebtLocked);
 
         bytes32 srcSmgID;
         bytes32 destSmgID;
@@ -180,7 +180,7 @@ library HTLCDebtLib {
     function srcDebtRevoke(CrossTypes.Data storage storageData, bytes32 xHash)
         external
     {
-        storageData.htlcTxData.revokeDebtTx(xHash);
+        storageData.htlcTxData.revokeDebtTx(xHash, HTLCTxLib.TxStatus.AssetLocked);
 
         bytes32 srcSmgID;
         bytes32 destSmgID;

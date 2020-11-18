@@ -902,6 +902,11 @@ it("Chain[1] -> Debt -> destDebtLock  ==> success", async () => {
 
 it('Chain[1] -> Debt -> srcDebtRedeem  ==> success', async () => {
     try {
+        try {
+            await global.chains[1].approach.instance.destDebtRedeem(xInfo.chain2DebtRedeem.x, {from: global.storemanGroups[1].account});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
 
         let srcDebtRedeemReceipt = await global.chains[1].approach.instance.srcDebtRedeem(xInfo.chain2DebtRedeem.x, {from: global.storemanGroups[1].account});
 
@@ -924,6 +929,12 @@ it('Chain[1] -> Debt -> srcDebtRedeem  ==> success', async () => {
 
 it('Chain[2] -> Asset -> destDebtRedeem  ==> success', async () => {
     try {
+
+        try {
+            await global.chains[2].approach.instance.srcDebtRedeem(xInfo.chain2DebtRedeem.x, {from: global.storemanGroups[2].account});
+        } catch (err) {
+            assert.include(err.toString(), "Status is not locked");
+        }
 
         let destDebtRedeemReceipt = await global.chains[2].approach.instance.destDebtRedeem(xInfo.chain2DebtRedeem.x, {from: global.storemanGroups[2].account});
 
