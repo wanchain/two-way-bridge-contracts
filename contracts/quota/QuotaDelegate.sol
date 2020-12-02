@@ -320,7 +320,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
 
     /** New Cross Chain Interface*/
     function userOrigCross(uint tokenId, bytes32 storemanGroupId, uint value) 
-        external 
+        public 
         onlyHtlc 
         checkMinValue(tokenId, value) 
     {
@@ -360,7 +360,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     function smgMappingCross(uint tokenId, bytes32 storemanGroupId, uint value) 
-        external onlyHtlc 
+        public onlyHtlc 
     {
         uint tokenKey = getTokenKey(tokenId);
 
