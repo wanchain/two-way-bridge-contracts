@@ -374,7 +374,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._debt = quota._debt.add(value);
     }
 
-    function upgrade(bytes32 storemanGroupId) {
+    function upgrade(bytes32 storemanGroupId) external onlyOwner {
         uint tokenCount = storemanTokenCountMap[storemanGroupId];
         if (tokenCount == 0) {
             return;
@@ -385,13 +385,13 @@ contract QuotaDelegate is QuotaStorage, Halt {
             Quota storage src = quotaMap[id][storemanGroupId];
             uint debt = src._debt;
             if (debt > 0) {
-                smgMappingCross(id, storemanGroupId, debt);
                 src._debt = 0;
+                smgMappingCross(id, storemanGroupId, debt);
             }
 
             if (src._asset > 0) {
-                userOrigCross(id, storemanGroupId, debt);
                 src._debt = 0;
+                userOrigCross(id, storemanGroupId, debt);
             }
         }
     }
