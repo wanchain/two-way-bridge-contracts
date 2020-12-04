@@ -25,6 +25,7 @@ contract('Quota', accounts => {
     const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
     let ret;
+    let key = await quota.methods.getTokenKey(3).call();
 
     await checkAsset(quota, 1, web3.utils.keccak256("storeman1"));
 
@@ -45,7 +46,7 @@ contract('Quota', accounts => {
 
     console.log('4 ret');
 
-    const helper = SC.helper;
+
 
     ret = await quota.methods.userOrigCross(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkAsset(quota, 1, web3.utils.keccak256("storeman1"), 20000);
@@ -66,16 +67,46 @@ contract('Quota', accounts => {
     console.log('12 ret');
     ret = await quota.methods.userOrigCross(3, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkAsset(quota, 3, web3.utils.keccak256("storeman1"), 10000);
+    key = await quota.methods.getTokenKey(3).call();
+    console.log('key', key);
+    ret = await quota.methods.getQuotaMap(key, web3.utils.keccak256("storeman1")).call();
+    console.log('quota', ret);
 
     console.log('13 ret');
     ret = await quota.methods.smgMappingCross(3, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkDebt(quota, 3, web3.utils.keccak256("storeman1"), 10000);
     console.log('14 ret');
+    
     await quota.methods.setFastCrossMinValue(web3.utils.toWei('10')).send({from: accounts[0], gas:1e7});
     console.log('15 ret');
 
+    ret = await quota.methods.getFastMinCount(1).call();
+    console.log('16 ret', ret);
+
+    try {
+      ret = await quota.methods.userOrigCross(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+      assert(false, 'Should never get here');
+    } catch (error) {}
+    let owner = await quota.methods.owner().call();
+    console.log('owner', owner, accounts[0]);
     
+
+    await quota.methods.upgrade(web3.utils.keccak256("storeman1")).send({from: accounts[0], gas:1e7});
+    console.log('17 ret');
+    await checkDebt(quota, 3, web3.utils.keccak256("storeman1"), 10000);
+    await checkAsset(quota, 3, web3.utils.keccak256("storeman1"), 10000);
+    ret = await quota.methods.getQuotaMap(key, web3.utils.keccak256("storeman1")).call();
+    console.log(ret);
   });
+
+  it("should success when upgrade", async ()=> {
+    const SC = (await getQuotaContracts(accounts));
+    const quota = SC.quota;
+    ret = await quota.methods.userOrigCross(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    await checkAsset(quota, 1, web3.utils.keccak256("storeman1"), 10000);
+    await quota.methods.upgrade(web3.utils.keccak256("storeman1")).send({from: accounts[0], gas:1e7});
+    console.log('17 ret');
+  })
 
   it("should fail when value error", async () => {
     const SC = (await getQuotaContracts(accounts));
