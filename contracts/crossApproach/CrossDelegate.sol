@@ -30,8 +30,6 @@ pragma experimental ABIEncoderV2;
 import "../components/Halt.sol";
 import "../components/ReentrancyGuard.sol";
 import "./CrossStorage.sol";
-// import "./lib/HTLCMintLib.sol";
-// import "./lib/HTLCBurnLib.sol";
 import "./lib/HTLCDebtLib.sol";
 import "./lib/RapidityLib.sol";
 
@@ -74,26 +72,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         _;
     }
 
-
-    // function _checkValue(uint value) private view {
-    //     require(value != 0, "Value is null");
-    // }
-
-    // function _checkReadySmg(bytes32 smgID) private view {
-    //     uint8 status;
-    //     uint startTime;
-    //     uint endTime;
-    //     (,status,,,,,,,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-    //     require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
-    // }
-
-    // function _checkUnregisteredSmg(bytes32 smgID) private view {
-    //     uint8 status;
-    //     (,status,,,,,,,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-
-    //     require(status == uint8(GroupStatus.unregistered), "PK is not unregistered");
-    // }
 
     /**
      *
@@ -149,308 +127,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         (,status,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
         require(status == uint8(GroupStatus.unregistered), "PK is not unregistered");
-    }
-    /*
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  xHash                           hash of HTLC random number
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     account of user, used to receive WRC20 token
-    function userMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
-        external
-        payable
-        notHalted
-        nonReentrant
-        onlyReadySmg(smgID)
-        onlyMeaningfulValue(value)
-    {
-        HTLCMintLib.HTLCUserMintLockParams memory params = HTLCMintLib.HTLCUserMintLockParams({
-            xHash: xHash,
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            value: value,
-            lockedTime: lockedTime.mul(2),
-            userShadowAccount: userAccount
-        });
-
-        HTLCMintLib.userMintLock(storageData, params);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  xHash                           hash of HTLC random number
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     address of user, used to receive WRC20 token
-    /// @param  r                               signature
-    /// @param  s                               signature
-    function smgMintLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
-        external
-        notHalted
-        nonReentrant
-    {
-        uint curveID;
-        bytes memory PK;
-        (curveID, PK) = acquireReadySmgInfo(smgID);
-
-        bytes32 mHash = sha256(abi.encode(xHash, tokenPairID, value, userAccount));
-        verifySignature(curveID, mHash, PK, r, s);
-
-        HTLCMintLib.HTLCSmgMintLockParams memory params = HTLCMintLib.HTLCSmgMintLockParams({
-            xHash: xHash,
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            value: value,
-            lockedTime: lockedTime,
-            userShadowAccount: userAccount
-        });
-        HTLCMintLib.smgMintLock(storageData, params);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  x                               HTLC random number
-    function userMintRedeem(bytes32 x)
-        external
-        notHalted
-        nonReentrant
-    {
-        HTLCMintLib.userMintRedeem(storageData, x);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  x                               HTLC random number
-    function smgMintRedeem(bytes32 x)
-        external
-        notHalted
-        nonReentrant
-    {
-        HTLCMintLib.smgMintRedeem(storageData, x);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  xHash                           hash of HTLC random number
-    function smgMintRevoke(bytes32 xHash)
-        external
-        notHalted
-        nonReentrant
-    {
-        HTLCMintLib.smgMintRevoke(storageData, xHash);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  xHash                           hash of HTLC random number
-    function userMintRevoke(bytes32 xHash)
-        external
-        payable
-        notHalted
-        nonReentrant
-    {
-        HTLCMintLib.userMintRevoke(storageData, xHash);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  xHash                           hash of HTLC random number
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     account of user, used to receive original chain token
-    function userBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
-        external
-        payable
-        notHalted
-        nonReentrant
-        onlyReadySmg(smgID)
-        onlyMeaningfulValue(value)
-    {
-        HTLCBurnLib.HTLCUserBurnLockParams memory params = HTLCBurnLib.HTLCUserBurnLockParams({
-            xHash: xHash,
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            value: value,
-            lockedTime: lockedTime.mul(2),
-            userOrigAccount: userAccount
-        });
-        HTLCBurnLib.userBurnLock(storageData, params);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  xHash                           hash of HTLC random number
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     address of user, used to receive WRC20 token
-    /// @param  r                               signature
-    /// @param  s                               signature
-    function smgBurnLock(bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
-        external
-        notHalted
-        nonReentrant
-    {
-        uint curveID;
-        bytes memory PK;
-        (curveID, PK) = acquireReadySmgInfo(smgID);
-
-        bytes32 mHash = sha256(abi.encode(xHash, tokenPairID, value, userAccount));
-        verifySignature(curveID, mHash, PK, r, s);
-
-        HTLCBurnLib.HTLCSmgBurnLockParams memory params = HTLCBurnLib.HTLCSmgBurnLockParams({
-            xHash: xHash,
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            value: value,
-            lockedTime: lockedTime,
-            userOrigAccount: userAccount
-        });
-        HTLCBurnLib.smgBurnLock(storageData, params);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  x                               HTLC random number
-    function userBurnRedeem(bytes32 x)
-        external
-        notHalted
-        nonReentrant
-    {
-        HTLCBurnLib.userBurnRedeem(storageData, x);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  x                               HTLC random number
-    function smgBurnRedeem(bytes32 x)
-        external
-        notHalted
-        nonReentrant
-    {
-        HTLCBurnLib.smgBurnRedeem(storageData, x);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  xHash                           hash of HTLC random number
-    function smgBurnRevoke(bytes32 xHash)
-        external
-        notHalted
-        nonReentrant
-    {
-        HTLCBurnLib.smgBurnRevoke(storageData, xHash);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  xHash                           hash of HTLC random number
-    function userBurnRevoke(bytes32 xHash)
-        external
-        payable
-        notHalted
-        nonReentrant
-    {
-        HTLCBurnLib.userBurnRevoke(storageData, xHash);
-    }
-*/
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     account of user, used to receive shadow chain token
-    function userFastMint(bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
-        external
-        payable
-        notHalted
-        // nonReentrant
-        onlyReadySmg(smgID)
-        onlyMeaningfulValue(value)
-    {
-        RapidityLib.RapidityUserMintParams memory params = RapidityLib.RapidityUserMintParams({
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            value: value,
-            userShadowAccount: userAccount
-        });
-        RapidityLib.userFastMint(storageData, params);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  uniqueID                        fast cross chain random number
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     address of user, used to receive WRC20 token
-    /// @param  r                               signature
-    /// @param  s                               signature
-    function smgFastMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
-        external
-        notHalted
-        nonReentrant
-    {
-        uint curveID;
-        bytes memory PK;
-        // (curveID, PK) = acquireExistSmgInfo(smgID);
-        (curveID, PK) = acquireReadySmgInfo(smgID);
-
-        bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
-        verifySignature(curveID, mHash, PK, r, s);
-
-        RapidityLib.RapiditySmgMintParams memory params = RapidityLib.RapiditySmgMintParams({
-            uniqueID: uniqueID,
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            value: value,
-            userShadowAccount: userAccount
-        });
-        RapidityLib.smgFastMint(storageData, params);
-    }
-
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     account of user, used to receive original chain token
-    function userFastBurn(bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
-        external
-        payable
-        notHalted
-        nonReentrant
-        onlyReadySmg(smgID)
-        onlyMeaningfulValue(value)
-    {
-        RapidityLib.RapidityUserBurnParams memory params = RapidityLib.RapidityUserBurnParams({
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            value: value,
-            userOrigAccount: userAccount
-        });
-        RapidityLib.userFastBurn(storageData, params);
-    }
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  uniqueID                        fast cross chain random number
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  value                           exchange value
-    /// @param  userAccount                     address of user, used to receive original token/coin
-    /// @param  r                               signature
-    /// @param  s                               signature
-    function smgFastBurn(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
-        external
-        notHalted
-        nonReentrant
-    {
-        uint curveID;
-        bytes memory PK;
-        // (curveID, PK) = acquireExistSmgInfo(smgID);
-        (curveID, PK) = acquireReadySmgInfo(smgID);
-
-        bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
-        verifySignature(curveID, mHash, PK, r, s);
-
-        RapidityLib.RapiditySmgBurnParams memory params = RapidityLib.RapiditySmgBurnParams({
-            uniqueID: uniqueID,
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            value: value,
-            userOrigAccount: userAccount
-        });
-        RapidityLib.smgFastBurn(storageData, params);
     }
 
     /// @notice                                 lock storeman debt
@@ -673,14 +349,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @notice       convert bytes to bytes32
     /// @param b      bytes array
     /// @param offset offset of array to begin convert
-    // function bytesToBytes32(bytes b, uint offset) private pure returns (bytes32) {
-    //     bytes32 out;
-
-    //     for (uint i = 0; i < 32; i++) {
-    //       out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
-    //     }
-    //     return out;
-    // }
     function bytesToBytes32(bytes memory b, uint offset) private pure returns (bytes32 result) {
         assembly {
             result := mload(add(add(b, offset), 32))
@@ -705,20 +373,110 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         require(storageData.sigVerifier.verify(curveID, s, PKx, PKy, Rx, Ry, message), "Signature verification failed");
     }
 
-    // /// @notice                              get the detailed quota info. of this storeman group
-    // /// @param smgID                         ID of storemanGroup
-    // /// @param tokenPairID                   token pair ID of cross chain token
-    // /// @return _quota                       storemanGroup's total quota
-    // /// @return mintBridgeQuota              inbound, the amount which storeman group can handle
-    // /// @return BurnBridgeQuota              outbound, the amount which storeman group can handle
-    // /// @return _receivable                  amount of original token to be received, equals to amount of WAN token to be minted
-    // /// @return _payable                     amount of WAN token to be burnt
-    // /// @return _debt                        amount of original token has been exchanged to the wanchain
-    // function queryStoremanGroupQuota(bytes32 smgID, uint tokenPairID)
-    //     external
-    //     view
-    //     returns(uint, uint, uint, uint, uint, uint)
-    // {
-    //     return storageData.quotaData.queryQuotaInfo(smgID, tokenPairID);
-    // }
+    /// @notice                                 request exchange orignal coin or token with WRC20 on wanchain
+    /// @param  smgID                           ID of storeman
+    /// @param  tokenPairID                     token pair ID of cross chain coin/token
+    /// @param  value                           exchange value
+    /// @param  userAccount                     account of user, used to receive shadow chain token
+    function userOrigCross(bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+        external
+        payable
+        notHalted
+        // nonReentrant
+        onlyReadySmg(smgID)
+        onlyMeaningfulValue(value)
+    {
+        RapidityLib.RapidityUserMintParams memory params = RapidityLib.RapidityUserMintParams({
+            smgID: smgID,
+            tokenPairID: tokenPairID,
+            value: value,
+            userShadowAccount: userAccount
+        });
+        RapidityLib.userOrigCross(storageData, params);
+    }
+
+    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
+    /// @param  smgID                           ID of storeman
+    /// @param  tokenPairID                     token pair ID of cross chain token
+    /// @param  value                           exchange value
+    /// @param  userAccount                     account of user, used to receive original chain token
+    function userMappingCross(bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+        external
+        payable
+        notHalted
+        nonReentrant
+        onlyReadySmg(smgID)
+        onlyMeaningfulValue(value)
+    {
+        RapidityLib.RapidityUserBurnParams memory params = RapidityLib.RapidityUserBurnParams({
+            smgID: smgID,
+            tokenPairID: tokenPairID,
+            value: value,
+            userOrigAccount: userAccount
+        });
+        RapidityLib.userMappingCross(storageData, params);
+    }
+
+    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
+    /// @param  uniqueID                        fast cross chain random number
+    /// @param  smgID                           ID of storeman
+    /// @param  tokenPairID                     token pair ID of cross chain token
+    /// @param  value                           exchange value
+    /// @param  userAccount                     address of user, used to receive WRC20 token
+    /// @param  r                               signature
+    /// @param  s                               signature
+    function smgMappingCross(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
+        external
+        notHalted
+        nonReentrant
+    {
+        uint curveID;
+        bytes memory PK;
+        // (curveID, PK) = acquireExistSmgInfo(smgID);
+        (curveID, PK) = acquireReadySmgInfo(smgID);
+
+        bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
+        verifySignature(curveID, mHash, PK, r, s);
+
+        RapidityLib.RapiditySmgMintParams memory params = RapidityLib.RapiditySmgMintParams({
+            uniqueID: uniqueID,
+            smgID: smgID,
+            tokenPairID: tokenPairID,
+            value: value,
+            userShadowAccount: userAccount
+        });
+        RapidityLib.smgMappingCross(storageData, params);
+    }
+
+    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
+    /// @param  uniqueID                        fast cross chain random number
+    /// @param  smgID                           ID of storeman
+    /// @param  tokenPairID                     token pair ID of cross chain token
+    /// @param  value                           exchange value
+    /// @param  userAccount                     address of user, used to receive original token/coin
+    /// @param  r                               signature
+    /// @param  s                               signature
+    function smgOrigCross(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address userAccount, bytes r, bytes32 s)
+        external
+        notHalted
+        nonReentrant
+    {
+        uint curveID;
+        bytes memory PK;
+        // (curveID, PK) = acquireExistSmgInfo(smgID);
+        (curveID, PK) = acquireReadySmgInfo(smgID);
+
+        bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, userAccount));
+        verifySignature(curveID, mHash, PK, r, s);
+
+        RapidityLib.RapiditySmgBurnParams memory params = RapidityLib.RapiditySmgBurnParams({
+            uniqueID: uniqueID,
+            smgID: smgID,
+            tokenPairID: tokenPairID,
+            value: value,
+            userOrigAccount: userAccount
+        });
+        RapidityLib.smgOrigCross(storageData, params);
+    }
+
 }
