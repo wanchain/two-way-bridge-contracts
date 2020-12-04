@@ -384,19 +384,52 @@ contract QuotaDelegate is QuotaStorage, Halt {
             uint id = storemanTokensMap[storemanGroupId][i];
             Quota storage src = quotaMap[id][storemanGroupId];
             uint debt = src._debt;
-            if (debt > 0) {
-                src._debt = 0;
-                smgMappingCross(id, storemanGroupId, debt);
+            uint tokenKey = getTokenKey(id);
+
+            // 
+            if (tokenKey == id) {
+                continue;
             }
 
-            if (src._asset > 0) {
+            if (debt > 0) {
                 src._debt = 0;
-                userOrigCross(id, storemanGroupId, debt);
+                Quota storage quota = quotaMap[tokenKey][storemanGroupId];        
+                if (!quota._active) {
+                    quota._active = true;
+                    storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenKey;
+                    storemanTokenCountMap[storemanGroupId] = storemanTokenCountMap[storemanGroupId]
+                        .add(1);
+                }
+                quota._debt = quota._debt.add(debt);
+                
+            }
+
+            uint asset = src._asset;
+            if (asset > 0) {
+                src._asset = 0;
+                Quota storage quota2 = quotaMap[tokenKey][storemanGroupId];
+                if (!quota2._active) {
+                    quota2._active = true;
+                    storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenKey;
+                    storemanTokenCountMap[storemanGroupId] = storemanTokenCountMap[storemanGroupId]
+                        .add(1);
+                }
+                quota2._asset = quota2._asset.add(asset);
             }
         }
     }
 
-    function getTokenKey(uint tokenId) returns (uint) {
+    function getQuotaMap(uint tokenKey, bytes32 storemanGroupId) 
+        public view returns (uint debt_receivable, uint debt_payable, uint _debt, uint asset_receivable, uint asset_payable, uint _asset, bool _active) {
+        Quota storage quota = quotaMap[tokenKey][storemanGroupId];
+        return (quota.debt_receivable, quota.debt_payable, quota._debt, quota.asset_receivable, quota.asset_payable, quota._asset, quota._active);
+    }
+
+    function getTokenKey(uint tokenId) public view returns (uint) {
+        // If token id <= 100000, we think it is an old tokenPairId.
+        if (tokenId > 100000) {
+            return tokenId;
+        }
         string memory symbol;
         uint decimals;
         (symbol, decimals) = getTokenAncestorInfo(tokenId);
