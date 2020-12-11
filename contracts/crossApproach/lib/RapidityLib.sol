@@ -132,6 +132,8 @@ library RapidityLib {
     function userOrigCross(CrossTypes.Data storage storageData, RapidityUserMintParams memory params)
         public
     {
+        require(storageData.tokenManager.isOrigTokenPair(params.tokenPairID), "Token does not an original token pair");
+
         uint origChainID;
         uint shadowChainID;
         bytes memory tokenOrigAccount;
@@ -229,6 +231,8 @@ library RapidityLib {
     function smgOrigCross(CrossTypes.Data storage storageData, RapiditySmgBurnParams memory params)
         public
     {
+        require(storageData.tokenManager.isOrigTokenPair(params.tokenPairID), "Token does not an original token pair");
+
         uint origChainID;
         bytes memory tokenOrigAccount;
         (origChainID,tokenOrigAccount,) = storageData.tokenManager.getTokenPairInfoSlim(params.tokenPairID);

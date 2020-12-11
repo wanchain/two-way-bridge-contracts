@@ -395,4 +395,9 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
             ancestorDecimals[i] = mapTokenPairInfo[theId].aInfo.decimals;
         }
     }
+
+    function isOrigTokenPair(uint id) external view returns (bool isOrigPair) {
+        isOrigPair = ((mapTokenPairInfo[id].aInfo.chainID != 0) && (mapTokenPairInfo[id].aInfo.chainID == mapTokenPairInfo[id].fromChainID));
+    }
+
 }
