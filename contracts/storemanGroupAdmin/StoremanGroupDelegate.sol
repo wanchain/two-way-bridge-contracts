@@ -172,6 +172,12 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     function checkCanStakeClaim(address wkAddr) external view returns(bool){
         return StoremanLib.checkCanStakeClaim(data, wkAddr);
     }
+    function checkCanPartnerClaim(address wkAddr, address pnAddr) external view returns(bool) {
+        return StoremanLib.checkCanPartnerClaim(data, wkAddr, pnAddr, getGlobalGroupScAddr());
+    }
+    function checkCanDelegatorClaim(address wkAddr, address deAddr) external view returns(bool) {
+        return StoremanLib.checkCanDelegatorClaim(data, wkAddr, deAddr, getGlobalGroupScAddr());
+    }
     function stakeClaim(address wkAddr) external notHalted nonReentrant {
         return StoremanLib.stakeClaim(data,wkAddr);
     }
@@ -187,12 +193,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return StoremanLib.delegateIn(data,wkAddr);
     }
     function delegateOut(address wkAddr) external {
-        return StoremanLib.delegateOut(data,wkAddr);
+        return StoremanLib.delegateOut(data,wkAddr, getGlobalGroupScAddr());
 
     }
     function delegateClaim(address wkAddr) external notHalted nonReentrant{
-
-        return StoremanLib.delegateClaim(data, wkAddr);
+        return StoremanLib.delegateClaim(data, wkAddr, getGlobalGroupScAddr());
     }
     function delegateIncentiveClaim(address wkAddr) external notHalted nonReentrant{
 
@@ -207,11 +212,11 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return StoremanLib.partIn(data,wkAddr);
     }
     function partOut(address wkAddr) external notHalted{
-        return StoremanLib.partOut(data,wkAddr);
+        return StoremanLib.partOut(data, wkAddr, getGlobalGroupScAddr());
 
     }
     function partClaim(address wkAddr) external notHalted nonReentrant{
-        return StoremanLib.partClaim(data,wkAddr);
+        return StoremanLib.partClaim(data,wkAddr, getGlobalGroupScAddr());
     }
 
     function getSelectedSmNumber(bytes32 groupId) external view returns(uint) {
