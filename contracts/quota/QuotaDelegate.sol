@@ -319,7 +319,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     /** New Cross Chain Interface*/
-    function userOrigCross(uint tokenId, bytes32 storemanGroupId, uint value) 
+    function userLock(uint tokenId, bytes32 storemanGroupId, uint value) 
         public 
         onlyHtlc 
         checkMinValue(tokenId, value) 
@@ -337,7 +337,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._asset = quota._asset.add(value);
     }
 
-    function userMappingCross(uint tokenId, bytes32 storemanGroupId, uint value) 
+    function userBurn(uint tokenId, bytes32 storemanGroupId, uint value) 
         external 
         onlyHtlc 
         checkMinValue(tokenId, value) 
@@ -349,7 +349,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._debt = quota._debt.sub(value);
     }
 
-    function smgOrigCross(uint tokenId, bytes32 storemanGroupId, uint value) 
+    function smgRelease(uint tokenId, bytes32 storemanGroupId, uint value) 
         external 
         onlyHtlc 
     {
@@ -359,7 +359,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._asset = quota._asset.sub(value);
     }
 
-    function smgMappingCross(uint tokenId, bytes32 storemanGroupId, uint value) 
+    function smgBurn(uint tokenId, bytes32 storemanGroupId, uint value) 
         public onlyHtlc 
     {
         uint tokenKey = getTokenKey(tokenId);
