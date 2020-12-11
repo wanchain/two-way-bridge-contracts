@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./StoremanType.sol";
 import "./StoremanUtil.sol";
+import "../interfaces/IListGroup.sol";
 
 
 library StoremanLib {
@@ -82,7 +83,7 @@ library StoremanLib {
             
             // check if it is a backup whitelist, if yes, change it's groupId to 0.
             for(uint i=group.whiteCount; i<group.whiteCountAll; i++) {
-                if(group.skMap[i] == wkAddr){
+                if(group.whiteMap[i] == wkAddr){
                     sk.groupId = bytes32(0x00);
                     break;
                 }
@@ -117,9 +118,9 @@ library StoremanLib {
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
-        //如果group还没选择, 不许退.
-        // 如果参加了下一个group, 下一个group还没选择, 不许退.
-        //否则标志为退出状态 quited==true
+        // if a group haven't selected, can't quit.
+        // if the sk joined in the next group, and the next group haven't selected, cannot quit. 
+        //else change the flag quited==true
         if(group.status < StoremanType.GroupStatus.selected) {
             return false;
         }
@@ -149,10 +150,10 @@ library StoremanLib {
     }
 
     function checkCanStakeClaimFromGroup(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns (bool) {
-        // 如果group还没选择, 不许提取.
-        // group组建失败, 可以提取.
-        // 如果已经选择过了, 没选中, 可以提取.
-        // 如果选择过了, 而且选中了, 那么必须 1, group状态是dismissed了. 2. incentived.
+        // if group haven't selected, can't claim 
+        // if group failed, can claim. 
+        // if group selected and the sk haven't been selected, can claim.
+        // if group selected and the sk was selected, then, must 1, group is dismissed. 2. incentived.
         if(group.status == StoremanType.GroupStatus.none) {
             return true; // group does not exist.
         }
@@ -263,8 +264,8 @@ library StoremanLib {
     }
 
     function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r, Deposit.Record rw) internal {
-        //如果还没选择, 不需要更新group的值, 在选择的时候一起更新.
-        // 如果已经选择过了, 需要更新group的值.
+        //if haven't selected, need not update group. 
+        // if selected, need to update group. 
         if(group.status == StoremanType.GroupStatus.none){ // not exist group.
             return;
         }
@@ -290,7 +291,10 @@ library StoremanLib {
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
         require(msg.value >= group.minDelegateIn, "Too small value");
 
-        require(sk.delegateDeposit.add(msg.value) <= sk.deposit.getLastValue().mul(data.conf.DelegationMulti), "Too many delegation");
+        //require(sk.delegateDeposit.add(msg.value) <= sk.deposit.getLastValue().mul(data.conf.DelegationMulti), "Too many delegation");
+
+        require(sk.delegateDeposit.add(msg.value) <= (sk.deposit.getLastValue().add(sk.partnerDeposit)).mul(data.conf.DelegationMulti), "Too many delegation");
+
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
         require(dk.quited == false, "Quited");
         if(dk.deposit.getLastValue() == 0) {
@@ -403,22 +407,24 @@ library StoremanLib {
       }
     }
 
-    function delegateOut(StoremanType.StoremanData storage data, address wkAddr) external {
+    function delegateOut(StoremanType.StoremanData storage data, address wkAddr, address listGroupAddr) external {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         require(checkCanStakeOut(data, wkAddr),"selecting");
 
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
-        require(dk.quited == false,"quited");
+        require(dk.quited == false,"Quited");
         require(dk.deposit.getLastValue() != 0, "no deposit");
         dk.quited = true;
+
         uint amount = dk.deposit.getLastValue();
         sk.delegateDeposit = sk.delegateDeposit.sub(amount);
+        IListGroup(listGroupAddr).setDelegateQuitGroupId(wkAddr, msg.sender, sk.groupId, sk.nextGroupId);
         emit delegateOutEvent(wkAddr, msg.sender);
     }
 
-    function delegateClaim(StoremanType.StoremanData storage data, address wkAddr) external {
-        require(checkCanStakeClaim(data,wkAddr),"Cannot claim");
+    function delegateClaim(StoremanType.StoremanData storage data, address wkAddr, address listGroupAddr) external {
+        require(checkCanDelegatorClaim(data, wkAddr, msg.sender, listGroupAddr),"Cannot claim");
 
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
@@ -440,7 +446,8 @@ library StoremanLib {
 
         sk.delegatorCount = sk.delegatorCount.sub(1);
         delete sk.delegatorMap[sk.delegatorCount];
-        delete sk.delegators[msg.sender];       
+        delete sk.delegators[msg.sender];    
+        IListGroup(listGroupAddr).setDelegateQuitGroupId(wkAddr, msg.sender, bytes32(0x00), bytes32(0x00));   
         msg.sender.transfer(amount);
     }
     
@@ -468,11 +475,14 @@ library StoremanLib {
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
-        require(msg.value >= group.minPartIn, "Too small value");
+        //require(msg.value >= group.minPartIn, "Too small value");
 
         StoremanType.Delegator storage pn = sk.partners[msg.sender];
         require(pn.quited == false, "Quited");
         if(pn.deposit.getLastValue() == 0) {
+
+            require(msg.value >= group.minPartIn, "Too small value");
+
             require(sk.partnerCount<maxPartnerCount,"Too many partners");
             sk.partMap[sk.partnerCount] = msg.sender;
             pn.index = sk.partnerCount;
@@ -491,20 +501,59 @@ library StoremanLib {
         emit partInEvent(wkAddr, msg.sender, msg.value);
     }
 
-    function partOut(StoremanType.StoremanData storage data, address wkAddr) external {
+    function partOut(StoremanType.StoremanData storage data, address wkAddr, address listGroupAddr) external {
         require(checkCanStakeOut(data, wkAddr),"selecting");
 
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         StoremanType.Delegator storage pn = sk.partners[msg.sender];
-        require(pn.quited == false,"quited");   
+        require(pn.quited == false,"Quited");   
         require(pn.deposit.getLastValue() != 0, "Partner doesn't exist");
         pn.quited = true;
         uint amount = pn.deposit.getLastValue();
         sk.partnerDeposit = sk.partnerDeposit.sub(amount);
+        IListGroup(listGroupAddr).setPartQuitGroupId(wkAddr, msg.sender, sk.groupId, sk.nextGroupId);
         emit partOutEvent(wkAddr, msg.sender);
     }
-    function partClaim(StoremanType.StoremanData storage data, address wkAddr) external {
-        require(checkCanStakeClaim(data,wkAddr),"Cannot claim");
+    function checkGroupTerminated(StoremanType.StoremanData storage data, bytes32 groupId) public returns(bool){
+        if(groupId == bytes32(0x00)) {
+            return true;
+        }
+        StoremanType.StoremanGroup storage  group = data.groups[groupId];
+        if(group.status == StoremanType.GroupStatus.none || group.status == StoremanType.GroupStatus.failed || group.status == StoremanType.GroupStatus.dismissed){
+            return true;
+        }
+        return false;
+    }
+    function checkCanPartnerClaim(StoremanType.StoremanData storage data, address wkAddr, address pnAddr, address listGroupAddr) public returns(bool) {
+        if(checkCanStakeClaim(data,wkAddr)){
+            return true;
+        }
+        StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
+        StoremanType.Delegator storage pn = sk.partners[pnAddr];
+        bytes32 quitGroupId;
+        bytes32 quitNextGroupId;
+        (quitGroupId,quitNextGroupId) = IListGroup(listGroupAddr).getPartQuitGroupId(wkAddr, pnAddr);
+        if(pn.quited && checkGroupTerminated(data, quitGroupId) && checkGroupTerminated(data, quitNextGroupId)){
+            return true;
+        }
+        return false;
+    }
+    function checkCanDelegatorClaim(StoremanType.StoremanData storage data, address wkAddr, address deAddr, address listGroupAddr) public returns(bool) {
+        if(checkCanStakeClaim(data,wkAddr)){
+            return true;
+        }
+        StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
+        StoremanType.Delegator storage de = sk.delegators[deAddr];
+        bytes32 quitGroupId;
+        bytes32 quitNextGroupId;
+        (quitGroupId,quitNextGroupId) = IListGroup(listGroupAddr).getDelegateQuitGroupId(wkAddr, deAddr);
+        if(de.quited && checkGroupTerminated(data, quitGroupId) && checkGroupTerminated(data, quitNextGroupId)){
+            return true;
+        }
+        return false;
+    }    
+    function partClaim(StoremanType.StoremanData storage data, address wkAddr, address listGroupAddr) external {
+        require(checkCanPartnerClaim(data,wkAddr, msg.sender,listGroupAddr),"Cannot claim");
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         StoremanType.Delegator storage pn = sk.partners[msg.sender];
         uint amount = pn.deposit.getLastValue();
@@ -521,6 +570,15 @@ library StoremanLib {
         sk.partnerCount = sk.partnerCount.sub(1);
         delete sk.partMap[sk.partnerCount];
         delete sk.partners[msg.sender];
+        IListGroup(listGroupAddr).setPartQuitGroupId(wkAddr, msg.sender, bytes32(0x00), bytes32(0x00));
+
+        // slash the node
+        if(sk.slashedCount >= data.conf.maxSlashedCount) {
+            amount = 0;
+        } else {
+            amount = amount.mul(data.conf.maxSlashedCount.sub(sk.slashedCount)).div(data.conf.maxSlashedCount);
+        }
+
         emit partClaimEvent(wkAddr, msg.sender, amount);
         msg.sender.transfer(amount);
     }
