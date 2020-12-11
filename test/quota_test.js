@@ -29,43 +29,43 @@ contract('Quota', accounts => {
 
     await checkAsset(quota, 1, web3.utils.keccak256("storeman1"));
 
-    ret = await quota.methods.userOrigCross(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.userLock(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkAsset(quota, 1, web3.utils.keccak256("storeman1"), 10000);
 
     console.log('1 ret');
-    ret = await quota.methods.smgMappingCross(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.smgBurn(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkDebt(quota, 1, web3.utils.keccak256("storeman1"), 10000);
     
     console.log('2 ret');
-    ret = await quota.methods.userMappingCross(1, web3.utils.keccak256("storeman1"), 5000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.userBurn(1, web3.utils.keccak256("storeman1"), 5000).send({from: accounts[1], gas:1e7});
     await checkDebt(quota, 1, web3.utils.keccak256("storeman1"), 5000);
 
     console.log('3 ret');
-    ret = await quota.methods.smgMappingCross(1, web3.utils.keccak256("storeman1"), 5000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.smgBurn(1, web3.utils.keccak256("storeman1"), 5000).send({from: accounts[1], gas:1e7});
     await checkDebt(quota, 1, web3.utils.keccak256("storeman1"), 10000);
 
     console.log('4 ret');
 
 
 
-    ret = await quota.methods.userOrigCross(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.userLock(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkAsset(quota, 1, web3.utils.keccak256("storeman1"), 20000);
 
 
     console.log('9 ret');
-    ret = await quota.methods.smgMappingCross(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.smgBurn(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkDebt(quota, 1, web3.utils.keccak256("storeman1"), 20000);
 
     console.log('10 ret');
-    ret = await quota.methods.userOrigCross(2, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.userLock(2, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkAsset(quota, 2, web3.utils.keccak256("storeman1"), 10000);
 
     console.log('11 ret');
-    ret = await quota.methods.smgOrigCross(2, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.smgRelease(2, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkAsset(quota, 2, web3.utils.keccak256("storeman1"), 0);
 
     console.log('12 ret');
-    ret = await quota.methods.userOrigCross(3, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.userLock(3, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkAsset(quota, 3, web3.utils.keccak256("storeman1"), 10000);
     key = await quota.methods.getTokenKey(3).call();
     console.log('key', key);
@@ -73,7 +73,7 @@ contract('Quota', accounts => {
     console.log('quota', ret);
 
     console.log('13 ret');
-    ret = await quota.methods.smgMappingCross(3, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.smgBurn(3, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkDebt(quota, 3, web3.utils.keccak256("storeman1"), 10000);
     console.log('14 ret');
     
@@ -84,7 +84,7 @@ contract('Quota', accounts => {
     console.log('16 ret', ret);
 
     try {
-      ret = await quota.methods.userOrigCross(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+      ret = await quota.methods.userLock(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
       assert(false, 'Should never get here');
     } catch (error) {}
     let owner = await quota.methods.owner().call();
@@ -102,7 +102,7 @@ contract('Quota', accounts => {
   it("should success when upgrade", async ()=> {
     const SC = (await getQuotaContracts(accounts));
     const quota = SC.quota;
-    ret = await quota.methods.userOrigCross(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
+    ret = await quota.methods.userLock(1, web3.utils.keccak256("storeman1"), 10000).send({from: accounts[1], gas:1e7});
     await checkAsset(quota, 1, web3.utils.keccak256("storeman1"), 10000);
     await quota.methods.upgrade(web3.utils.keccak256("storeman1")).send({from: accounts[0], gas:1e7});
     console.log('17 ret');
@@ -124,8 +124,8 @@ contract('Quota', accounts => {
 
 
 
-    await quota.methods.userOrigCross(1, web3.utils.keccak256("storeman1"), 1000000).send({from: accounts[1], gas:1e7});
-    await quota.methods.smgMappingCross(1, web3.utils.keccak256("storeman1"), 1000000).send({from: accounts[1], gas:1e7});
+    await quota.methods.userLock(1, web3.utils.keccak256("storeman1"), 1000000).send({from: accounts[1], gas:1e7});
+    await quota.methods.smgBurn(1, web3.utils.keccak256("storeman1"), 1000000).send({from: accounts[1], gas:1e7});
     ret = await quota.methods.isDebtClean(web3.utils.keccak256("storeman1")).call();
     assert.strictEqual(ret, false);
     await quota.methods.debtLock(web3.utils.keccak256("storeman1"), web3.utils.keccak256("storeman4")).send({from: accounts[1], gas:1e7});
