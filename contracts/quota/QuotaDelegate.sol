@@ -359,7 +359,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         quota._asset = quota._asset.sub(value);
     }
 
-    function smgBurn(uint tokenId, bytes32 storemanGroupId, uint value) 
+    function smgMint(uint tokenId, bytes32 storemanGroupId, uint value)
         public onlyHtlc 
     {
         uint tokenKey = getTokenKey(tokenId);
