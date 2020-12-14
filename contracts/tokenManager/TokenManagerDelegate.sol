@@ -79,28 +79,25 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     }
 
     function mintToken(
-        uint    id,
+        address tokenAddress,
         address to,
         uint    value
     )
         external
         onlyAdmin
-        onlyExistID(id)
     {
-        address instance = bytesToAddress(mapTokenPairInfo[id].toAccount);
-        IMappingToken(instance).mint(to, value);
+        IMappingToken(tokenAddress).mint(to, value);
     }
 
     function burnToken(
-        uint    id,
+        address tokenAddress,
+        address from,
         uint    value
     )
         external
         onlyAdmin
-        onlyExistID(id)
     {
-        address instance = bytesToAddress(mapTokenPairInfo[id].toAccount);
-        IMappingToken(instance).burn(msg.sender, value);
+        IMappingToken(tokenAddress).burn(from, value);
     }
 
     function addToken(
@@ -238,11 +235,10 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     )
         external
         view
-        returns (uint fromChainID, bytes fromAccount, uint toChainID)
+        returns (bytes fromAccount, bytes toAccount)
     {
-        fromChainID = mapTokenPairInfo[id].fromChainID;
         fromAccount = mapTokenPairInfo[id].fromAccount;
-        toChainID = mapTokenPairInfo[id].toChainID;
+        toAccount = mapTokenPairInfo[id].toAccount;
     }
 
     function getTokenInfo(uint id) external view returns (address addr, string name, string symbol, uint8 decimals) {
@@ -396,8 +392,10 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         }
     }
 
-    function isOrigTokenPair(uint id) external view returns (bool isOrigPair) {
-        isOrigPair = ((mapTokenPairInfo[id].aInfo.chainID != 0) && (mapTokenPairInfo[id].aInfo.chainID == mapTokenPairInfo[id].fromChainID));
+    function isOriginalTokenPair(uint id) external view returns (bool isOriginalPair) {
+        uint fromChainID = mapTokenPairInfo[id].fromChainID;
+        uint ancestorChainID = mapTokenPairInfo[id].aInfo.chainID;
+        isOriginalPair = ((fromChainID != 0) && (fromChainID == ancestorChainID));
     }
 
 }

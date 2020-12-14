@@ -31,14 +31,14 @@ interface ITokenManager {
       returns (uint origChainID, bytes tokenOrigAccount, uint shadowChainID, bytes tokenShadowAccount);
 
     function getTokenPairInfoSlim(uint id) external view 
-      returns (uint origChainID, bytes tokenOrigAccount, uint shadowChainID);
+      returns (bytes fromAccount, bytes toAccount);
 
     function getAncestorInfo(uint id) external view
       returns (bytes account, string name, string symbol, uint8 decimals, uint chainId);
 
-    function isOrigTokenPair(uint id) external view returns (bool isOrigPair);
+    function isOriginalTokenPair(uint id) external view returns (bool isOriginalPair);
 
-    function mintToken(uint id, address to,uint value) external;
+    function mintToken(address tokenAddress, address to, uint value) external;
 
-    function burnToken(uint id, uint value) external;
+    function burnToken(address tokenAddress, address from, uint value) external;
 }
