@@ -141,7 +141,7 @@ library RapidityLib {
         public
     {
         ITokenManager tokenManager = storageData.tokenManager;
-        require(tokenManager.isOriginalTokenPair(params.tokenPairID), "Token does not an original token pair");
+        require(tokenManager.isOriginalTokenPair(params.tokenPairID), "Token does not an original token");
 
         uint fromChainID;
         uint toChainID;
@@ -246,9 +246,11 @@ library RapidityLib {
         bytes memory fromTokenAccount;
         bytes memory toTokenAccount;
         (fromTokenAccount, toTokenAccount) = tokenManager.getTokenPairInfoSlim(params.tokenPairID);
+        require(fromTokenAccount.length != 0 && toTokenAccount.length != 0, "Token does not exist");
 
         address fromTokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
         address toTokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
+
         require((fromTokenScAddr == params.shadowTokenAccount) || (toTokenScAddr == params.shadowTokenAccount), "Invalid Token account");
 
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
@@ -268,11 +270,12 @@ library RapidityLib {
         public
     {
         ITokenManager tokenManager = storageData.tokenManager;
-        require(tokenManager.isOriginalTokenPair(params.tokenPairID), "Token does not an original token pair");
+        require(tokenManager.isOriginalTokenPair(params.tokenPairID), "Token does not an original token");
 
         bytes memory fromTokenAccount;
         bytes memory toTokenAccount;
         (fromTokenAccount, toTokenAccount) = tokenManager.getTokenPairInfoSlim(params.tokenPairID);
+        require(fromTokenAccount.length != 0 && toTokenAccount.length != 0, "Token does not exist");
 
         address fromTokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
         address toTokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
