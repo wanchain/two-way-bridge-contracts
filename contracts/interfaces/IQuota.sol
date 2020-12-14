@@ -27,11 +27,11 @@
 pragma solidity 0.4.26;
 
 interface IQuota {
-  function userOrigCross(uint tokenId, bytes32 storemanGroupId, uint value) external;
-  function userMappingCross(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function userLock(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function userBurn(uint tokenId, bytes32 storemanGroupId, uint value) external;
 
-  function smgOrigCross(uint tokenId, bytes32 storemanGroupId, uint value) external;
-  function smgMappingCross(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function smgRelease(uint tokenId, bytes32 storemanGroupId, uint value) external;
+  function smgMint(uint tokenId, bytes32 storemanGroupId, uint value) external;
 
   function upgrade(bytes32 storemanGroupId) external;
 
