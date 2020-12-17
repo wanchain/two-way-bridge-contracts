@@ -269,6 +269,10 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         decimals = mapTokenPairInfo[id].aInfo.decimals;
     }
 
+    function getAncestorChainID(uint id) external view returns (uint chainID) {
+        chainID = mapTokenPairInfo[id].aInfo.chainID;
+    }
+
     // function getTokenPairsFullFields()
     //     external
     //     view
@@ -394,8 +398,9 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
 
     function isOriginalTokenPair(uint id) external view returns (bool isOriginalPair) {
         uint fromChainID = mapTokenPairInfo[id].fromChainID;
+        uint toChainID = mapTokenPairInfo[id].toChainID;
         uint ancestorChainID = mapTokenPairInfo[id].aInfo.chainID;
-        isOriginalPair = ((fromChainID != 0) && (fromChainID == ancestorChainID));
+        isOriginalPair = ((fromChainID != 0) && (fromChainID == ancestorChainID || toChainID == ancestorChainID));
     }
 
 }
