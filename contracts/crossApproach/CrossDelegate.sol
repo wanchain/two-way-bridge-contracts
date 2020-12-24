@@ -240,13 +240,13 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         RapidityLib.smgRelease(storageData, params);
     }
 
-    /// @notice                                 lock storeman debt
-    /// @param  xHash                           hash of HTLC random number
+    /// @notice                                 transfer storeman asset
+    /// @param  uniqueID                        random number (likes old xHash)
     /// @param  srcSmgID                        ID of src storeman
     /// @param  destSmgID                       ID of dst storeman
     /// @param  r                               signature
     /// @param  s                               signature
-    function srcDebtLock(bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, bytes r, bytes32 s)
+    function transferAsset(bytes32 uniqueID, bytes32 srcSmgID, bytes32 destSmgID, bytes r, bytes32 s)
         external
         notHalted
         onlyReadySmg(destSmgID)
@@ -255,78 +255,40 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         bytes memory PK;
         (curveID, PK) = acquireUnregisteredSmgInfo(srcSmgID);
 
-        bytes32 mHash = sha256(abi.encode(xHash, destSmgID));
+        bytes32 mHash = sha256(abi.encode(uniqueID, destSmgID));
         verifySignature(curveID, mHash, PK, r, s);
 
-        HTLCDebtLib.HTLCDebtLockParams memory params = HTLCDebtLib.HTLCDebtLockParams({
-            xHash: xHash,
+        HTLCDebtLib.DebtAssetParams memory params = HTLCDebtLib.DebtAssetParams({
+            uniqueID: uniqueID,
             srcSmgID: srcSmgID,
-            destSmgID: destSmgID,
-            lockedTime: lockedTime.mul(2)
+            destSmgID: destSmgID
         });
-        HTLCDebtLib.srcDebtLock(storageData, params);
+        HTLCDebtLib.transferAsset(storageData, params);
     }
 
-    /// @notice                                 lock storeman debt
-    /// @param  xHash                           hash of HTLC random number
+    /// @notice                                 receive storeman debt
+    /// @param  uniqueID                        random number (likes old xHash)
     /// @param  srcSmgID                        ID of src storeman
     /// @param  destSmgID                       ID of dst storeman
     /// @param  r                               signature
     /// @param  s                               signature
-    function destDebtLock(bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, bytes r, bytes32 s)
+    function receiveDebt(bytes32 uniqueID, bytes32 srcSmgID, bytes32 destSmgID, bytes r, bytes32 s)
         external
-        notHalted
+        notHalted 
     {
         uint curveID;
         bytes memory PK;
         (curveID, PK) = acquireReadySmgInfo(destSmgID);
 
-        bytes32 mHash = sha256(abi.encode(xHash, srcSmgID));
+        bytes32 mHash = sha256(abi.encode(uniqueID, srcSmgID));
         verifySignature(curveID, mHash, PK, r, s);
 
-        HTLCDebtLib.HTLCDebtLockParams memory params = HTLCDebtLib.HTLCDebtLockParams({
-            xHash: xHash,
+        HTLCDebtLib.DebtAssetParams memory params = HTLCDebtLib.DebtAssetParams({
+            uniqueID: uniqueID,
             srcSmgID: srcSmgID,
-            destSmgID: destSmgID,
-            lockedTime: lockedTime
+            destSmgID: destSmgID
         });
-        HTLCDebtLib.destDebtLock(storageData, params);
-    }
-
-    /// @notice                                 redeem debt, destination storeman group takes over the debt of source storeman group
-    /// @param  x                               HTLC random number
-    function srcDebtRedeem(bytes32 x)
-        external
-        notHalted
-    {
-        HTLCDebtLib.srcDebtRedeem(storageData, x);
-    }
-
-    /// @notice                                 redeem debt, destination storeman group takes over the debt of source storeman group
-    /// @param  x                               HTLC random number
-    function destDebtRedeem(bytes32 x)
-        external
-        notHalted
-    {
-        HTLCDebtLib.destDebtRedeem(storageData, x);
-    }
-
-    /// @notice                                 source storeman group revoke the debt on debt chain
-    /// @param  xHash                           hash of HTLC random number
-    function destDebtRevoke(bytes32 xHash)
-        external
-        notHalted
-    {
-        HTLCDebtLib.destDebtRevoke(storageData, xHash);
-    }
-
-    /// @notice                                 source storeman group revoke the debt on asset chain
-    /// @param  xHash                           hash of HTLC random number
-    function srcDebtRevoke(bytes32 xHash)
-        external
-        notHalted
-    {
-        HTLCDebtLib.srcDebtRevoke(storageData, xHash);
+        HTLCDebtLib.receiveDebt(storageData, params);
     }
 
     /// @notice                             get the fee of the storeman group should get
