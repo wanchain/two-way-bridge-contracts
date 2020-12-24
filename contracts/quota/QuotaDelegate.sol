@@ -49,6 +49,10 @@ interface IDebtOracle {
 
 contract QuotaDelegate is QuotaStorage, Halt {
 
+    event AssetTransfered(bytes32 indexed srcStoremanGroupId, bytes32 indexed dstStoremanGroupId, uint tokenId, uint value);
+
+    event DebtReceived(bytes32 indexed srcStoremanGroupId, bytes32 indexed dstStoremanGroupId, uint tokenId, uint value);
+
     modifier checkMinValue(uint tokenId, uint value) {
         if (fastCrossMinValue > 0) {
             string memory symbol;
@@ -93,163 +97,6 @@ contract QuotaDelegate is QuotaStorage, Halt {
 
     function setFastCrossMinValue(uint value) external onlyOwner {
         fastCrossMinValue = value;
-    }
-
-    /// @notice                                 source storeman group lock the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
-    function debtLock(
-        bytes32 srcStoremanGroupId,
-        bytes32 dstStoremanGroupId
-    ) external onlyHtlc {
-        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
-        // TODO gas out of range
-        for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[srcStoremanGroupId][i];
-            Quota storage src = quotaMap[id][srcStoremanGroupId];
-
-            require( src.debt_receivable == uint(0) && src.debt_payable == uint(0),
-                "There are debt_receivable or debt_payable in src storeman"
-            );
-
-            if (src._debt == 0) {
-                continue;
-            }
-
-            Quota storage dst = quotaMap[id][dstStoremanGroupId];
-            if (!dst._active) {
-                dst._active = true;
-                storemanTokensMap[dstStoremanGroupId][storemanTokenCountMap[dstStoremanGroupId]] = id;
-                storemanTokenCountMap[dstStoremanGroupId] = storemanTokenCountMap[dstStoremanGroupId]
-                    .add(1);
-            }
-
-            dst.debt_receivable = dst.debt_receivable.add(src._debt);
-            src.debt_payable = src.debt_payable.add(src._debt);
-        }
-    }
-
-    /// @notice                                 destination storeman group redeem the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
-    function debtRedeem(
-        bytes32 srcStoremanGroupId,
-        bytes32 dstStoremanGroupId
-    ) external onlyHtlc {
-        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
-        for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[srcStoremanGroupId][i];
-            Quota storage src = quotaMap[id][srcStoremanGroupId];
-            if (src._debt == 0) {
-                continue;
-            }
-            Quota storage dst = quotaMap[id][dstStoremanGroupId];
-            /// Adjust quota record
-            dst.debt_receivable = dst.debt_receivable.sub(src.debt_payable);
-            dst._debt = dst._debt.add(src._debt);
-
-            src.debt_payable = 0;
-            src._debt = 0;
-        }
-    }
-
-    /// @notice                                 source storeman group revoke the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
-    function debtRevoke(
-        bytes32 srcStoremanGroupId,
-        bytes32 dstStoremanGroupId
-    ) external onlyHtlc {
-        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
-        for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[srcStoremanGroupId][i];
-            Quota storage src = quotaMap[id][srcStoremanGroupId];
-            if (src._debt == 0) {
-                continue;
-            }
-            Quota storage dst = quotaMap[id][dstStoremanGroupId];
-            
-            dst.debt_receivable = dst.debt_receivable.sub(src.debt_payable);
-            src.debt_payable = 0;
-        }
-    }
-
-    /// @notice                                 source storeman group lock the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
-    function assetLock(
-        bytes32 srcStoremanGroupId,
-        bytes32 dstStoremanGroupId
-    ) external onlyHtlc {
-        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
-        for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[srcStoremanGroupId][i];
-            Quota storage src = quotaMap[id][srcStoremanGroupId];
-
-            require( src.asset_receivable == uint(0) && src.asset_payable == uint(0),
-                "There are asset_receivable or asset_payable in src storeman"
-            );
-
-            if (src._asset == 0) {
-                continue;
-            }
-
-            Quota storage dst = quotaMap[id][dstStoremanGroupId];
-            if (!dst._active) {
-                dst._active = true;
-                storemanTokensMap[dstStoremanGroupId][storemanTokenCountMap[dstStoremanGroupId]] = id;
-                storemanTokenCountMap[dstStoremanGroupId] = storemanTokenCountMap[dstStoremanGroupId]
-                    .add(1);
-            }
-
-            dst.asset_receivable = dst.asset_receivable.add(src._asset);
-            src.asset_payable = src.asset_payable.add(src._asset);
-        }
-    }
-
-    /// @notice                                 destination storeman group redeem the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
-    function assetRedeem(
-        bytes32 srcStoremanGroupId,
-        bytes32 dstStoremanGroupId
-    ) external onlyHtlc {
-        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
-        for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[srcStoremanGroupId][i];
-            Quota storage src = quotaMap[id][srcStoremanGroupId];
-            if (src._asset == 0) {
-                continue;
-            }
-            Quota storage dst = quotaMap[id][dstStoremanGroupId];
-            /// Adjust quota record
-            dst.asset_receivable = dst.asset_receivable.sub(src.asset_payable);
-            dst._asset = dst._asset.add(src._asset);
-
-            src.asset_payable = 0;
-            src._asset = 0;
-        }
-    }
-
-    /// @notice                                 source storeman group revoke the debt transaction,update the detailed quota info. of the storeman group
-    /// @param srcStoremanGroupId               PK of source storeman group
-    /// @param dstStoremanGroupId               PK of destination storeman group
-    function assetRevoke(
-        bytes32 srcStoremanGroupId,
-        bytes32 dstStoremanGroupId
-    ) external onlyHtlc {
-        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
-        for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[srcStoremanGroupId][i];
-            Quota storage src = quotaMap[id][srcStoremanGroupId];
-            if (src._asset == 0) {
-                continue;
-            }
-            Quota storage dst = quotaMap[id][dstStoremanGroupId];
-            
-            dst.asset_receivable = dst.asset_receivable.sub(src.asset_payable);
-            src.asset_payable = 0;
-        }
     }
 
     /// @notice                                 get asset of storeman, tokenId
@@ -419,6 +266,62 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
     }
 
+    function transferAsset(
+        bytes32 srcStoremanGroupId,
+        bytes32 dstStoremanGroupId
+    ) external onlyHtlc {
+        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
+        for (uint i = 0; i < tokenCount; i++) {
+            uint id = storemanTokensMap[srcStoremanGroupId][i];
+            Quota storage src = quotaMap[id][srcStoremanGroupId];
+            if (src._asset == 0) {
+                continue;
+            }
+            Quota storage dst = quotaMap[id][dstStoremanGroupId];
+            if (!dst._active) {
+                dst._active = true;
+                storemanTokensMap[dstStoremanGroupId][storemanTokenCountMap[dstStoremanGroupId]] = id;
+                storemanTokenCountMap[dstStoremanGroupId] = storemanTokenCountMap[dstStoremanGroupId]
+                    .add(1);
+            }
+            /// Adjust quota record
+            dst._asset = dst._asset.add(src._asset);
+
+            emit AssetTransfered(srcStoremanGroupId, dstStoremanGroupId, id, src._asset);
+
+            src.asset_payable = 0;
+            src._asset = 0;
+        }
+    }
+
+    function receiveDebt(
+        bytes32 srcStoremanGroupId,
+        bytes32 dstStoremanGroupId
+    ) external onlyHtlc {
+        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
+        for (uint i = 0; i < tokenCount; i++) {
+            uint id = storemanTokensMap[srcStoremanGroupId][i];
+            Quota storage src = quotaMap[id][srcStoremanGroupId];
+            if (src._debt == 0) {
+                continue;
+            }
+            Quota storage dst = quotaMap[id][dstStoremanGroupId];
+            if (!dst._active) {
+                dst._active = true;
+                storemanTokensMap[dstStoremanGroupId][storemanTokenCountMap[dstStoremanGroupId]] = id;
+                storemanTokenCountMap[dstStoremanGroupId] = storemanTokenCountMap[dstStoremanGroupId]
+                    .add(1);
+            }
+            /// Adjust quota record
+            dst._debt = dst._debt.add(src._debt);
+
+            emit DebtReceived(srcStoremanGroupId, dstStoremanGroupId, id, src._debt);
+
+            src.debt_payable = 0;
+            src._debt = 0;
+        }
+    }
+
     function getQuotaMap(uint tokenKey, bytes32 storemanGroupId) 
         public view returns (uint debt_receivable, uint debt_payable, uint _debt, uint asset_receivable, uint asset_payable, uint _asset, bool _active) {
         Quota storage quota = quotaMap[tokenKey][storemanGroupId];
@@ -435,6 +338,14 @@ contract QuotaDelegate is QuotaStorage, Halt {
         (symbol, decimals) = getTokenAncestorInfo(tokenId);
         uint tokenKey = uint(keccak256(abi.encodePacked(symbol, decimals)));
         return tokenKey;
+    }
+
+    function getTokenCount(bytes32 storemanGroupId) public view returns (uint) {
+        return storemanTokenCountMap[storemanGroupId];
+    }
+
+    function getTokenId(bytes32 storemanGroupId, uint index) public view returns (uint) {
+        return storemanTokensMap[storemanGroupId][index];
     }
 
     // ----------- Private Functions ---------------
