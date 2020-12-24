@@ -35,13 +35,8 @@ interface IQuota {
 
   function upgrade(bytes32 storemanGroupId) external;
 
-  function assetLock(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
-  function assetRedeem(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
-  function assetRevoke(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
-
-  function debtLock(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
-  function debtRedeem(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
-  function debtRevoke(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
+  function transferAsset(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
+  function receiveDebt(bytes32 srcStoremanGroupId, bytes32 dstStoremanGroupId) external;
 
   function getUserMintQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint);
   function getSmgMintQuota(uint tokenId, bytes32 storemanGroupId) external view returns (uint);
