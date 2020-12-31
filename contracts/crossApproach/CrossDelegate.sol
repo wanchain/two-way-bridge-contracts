@@ -194,9 +194,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         // (curveID, PK) = acquireExistSmgInfo(smgID);
         (curveID, PK) = acquireReadySmgInfo(smgID);
 
-        bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, tokenAccount, userAccount));
-        verifySignature(curveID, mHash, PK, r, s);
-
         RapidityLib.RapiditySmgMintParams memory params = RapidityLib.RapiditySmgMintParams({
             uniqueID: uniqueID,
             smgID: smgID,
@@ -206,6 +203,9 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
             userShadowAccount: userAccount
         });
         RapidityLib.smgMint(storageData, params);
+
+        bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, tokenAccount, userAccount));
+        verifySignature(curveID, mHash, PK, r, s);
     }
 
     /// @notice                                 request exchange RC20 token with WRC20 on wanchain
@@ -226,9 +226,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         // (curveID, PK) = acquireExistSmgInfo(smgID);
         (curveID, PK) = acquireReadySmgInfo(smgID);
 
-        bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, tokenAccount, userAccount));
-        verifySignature(curveID, mHash, PK, r, s);
-
         RapidityLib.RapiditySmgReleaseParams memory params = RapidityLib.RapiditySmgReleaseParams({
             uniqueID: uniqueID,
             smgID: smgID,
@@ -238,6 +235,9 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
             userOrigAccount: userAccount
         });
         RapidityLib.smgRelease(storageData, params);
+
+        bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, tokenAccount, userAccount));
+        verifySignature(curveID, mHash, PK, r, s);
     }
 
     /// @notice                                 transfer storeman asset
@@ -255,15 +255,15 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         bytes memory PK;
         (curveID, PK) = acquireUnregisteredSmgInfo(srcSmgID);
 
-        bytes32 mHash = sha256(abi.encode(uniqueID, destSmgID));
-        verifySignature(curveID, mHash, PK, r, s);
-
         HTLCDebtLib.DebtAssetParams memory params = HTLCDebtLib.DebtAssetParams({
             uniqueID: uniqueID,
             srcSmgID: srcSmgID,
             destSmgID: destSmgID
         });
         HTLCDebtLib.transferAsset(storageData, params);
+
+        bytes32 mHash = sha256(abi.encode(uniqueID, destSmgID));
+        verifySignature(curveID, mHash, PK, r, s);
     }
 
     /// @notice                                 receive storeman debt
@@ -280,15 +280,15 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         bytes memory PK;
         (curveID, PK) = acquireReadySmgInfo(destSmgID);
 
-        bytes32 mHash = sha256(abi.encode(uniqueID, srcSmgID));
-        verifySignature(curveID, mHash, PK, r, s);
-
         HTLCDebtLib.DebtAssetParams memory params = HTLCDebtLib.DebtAssetParams({
             uniqueID: uniqueID,
             srcSmgID: srcSmgID,
             destSmgID: destSmgID
         });
         HTLCDebtLib.receiveDebt(storageData, params);
+
+        bytes32 mHash = sha256(abi.encode(uniqueID, srcSmgID));
+        verifySignature(curveID, mHash, PK, r, s);
     }
 
     /// @notice                             get the fee of the storeman group should get
