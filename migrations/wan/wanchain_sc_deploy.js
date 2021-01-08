@@ -274,7 +274,7 @@ async function deploy(cfg, isMainnet) {
     contract[scDict.Bn256Curve] = bn256.address;
 
     // dependence
-    txData = await smg.methods.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address,posLib.address).encodeABI();
+    txData = await smg.methods.setDependence(metricProxy.address, gpkProxy.address, oracleProxy.address,posLib.address).encodeABI();
     await deployer.sendTx(smg.address, txData);
 
     txData = await gpk.methods.setDependence(cnfProxy.address, smgProxy.address).encodeABI();
