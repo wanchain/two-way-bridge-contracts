@@ -16,6 +16,9 @@ contract OracleDelegate is OracleStorage, Owned {
   event SetAdmin(address addr);
   event UpdatePrice(bytes32[] keys, uint[] prices);
   event SetDebtClean(bytes32 indexed id, bool isDebtClean);
+  event SetStoremanGroupConfig(bytes32 indexed id, uint8 status, uint deposit, uint[2] chain, uint[2] curve, bytes gpk1, bytes gpk2, uint startTime, uint endTime);
+  event SetStoremanGroupStatus(bytes32 indexed id, uint8 status);
+  event UpdateDeposit(bytes32 indexed id, uint deposit);
 
   /**
     *
@@ -58,6 +61,8 @@ contract OracleDelegate is OracleStorage, Owned {
     onlyAdmin
   {
     mapStoremanGroupConfig[smgID].deposit = amount;
+
+    emit UpdateDeposit(smgID, amount);
   }
 
   function setStoremanGroupStatus(
@@ -68,6 +73,8 @@ contract OracleDelegate is OracleStorage, Owned {
     onlyAdmin
   {
     mapStoremanGroupConfig[id].status = status;
+
+    emit SetStoremanGroupStatus(id, status);
   }
 
   function setStoremanGroupConfig(
@@ -94,6 +101,8 @@ contract OracleDelegate is OracleStorage, Owned {
     mapStoremanGroupConfig[id].gpk2 = gpk2;
     mapStoremanGroupConfig[id].startTime = startTime;
     mapStoremanGroupConfig[id].endTime = endTime;
+
+    emit SetStoremanGroupConfig(id, status, deposit, chain, curve, gpk1, gpk2, startTime, endTime);
   }
 
   // robot 都是true时,才调用
@@ -149,16 +158,6 @@ contract OracleDelegate is OracleStorage, Owned {
     curve2 = mapStoremanGroupConfig[id].curve[1];
     gpk1 = mapStoremanGroupConfig[id].gpk1;
     gpk2 = mapStoremanGroupConfig[id].gpk2;
-    startTime = mapStoremanGroupConfig[id].startTime;
-    endTime = mapStoremanGroupConfig[id].endTime;
-  }
-
-  function getStoremanGroupStatus(bytes32 id)
-    public
-    view
-    returns(uint8 status, uint startTime, uint endTime)
-  {
-    status = mapStoremanGroupConfig[id].status;
     startTime = mapStoremanGroupConfig[id].startTime;
     endTime = mapStoremanGroupConfig[id].endTime;
   }
