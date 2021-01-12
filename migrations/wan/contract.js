@@ -25,6 +25,7 @@ const scDict = {
   Deposit: "Deposit",
   StoremanLib: "StoremanLib",
   IncentiveLib: "IncentiveLib",
+  ListGroup: "ListGroup",
 
   ConfigProxy: "ConfigProxy",
   ConfigDelegate: "ConfigDelegate",

@@ -114,41 +114,6 @@ async function deploy(cfg, isMainnet) {
     contract[scDict.Secp256k1SchnorrVerifier] = secp256K1.address;
     abi[scDict.SignatureVerifier] = signatureVerifier.abi;
 
-    // config crossApproach
-    if (!isMainnet) {
-      txData = await crossApproach.methods.setLockedTime(htlcTimeTestnet).encodeABI();
-      await deployer.sendTx(crossApproach.address, txData);
-    }
-    console.log("tokenManagerAddr", tokenManager.address);
-    console.log("smgAdminProxyAddr", oracle.address);
-    console.log("smgFeeProxyAddr", ADDRESS_0);
-    console.log("quotaAddr", quota.address);
-    console.log("sigVerifierAddr", signatureVerifier.address);
-    console.log("oracleAddr", oracle.address);
-    console.log("crossApproach", crossApproach.address);
-    txData = await crossApproach.methods.setPartners(
-        tokenManager.address, // tokenManager
-        oracle.address, // smgAdminProxy
-        ADDRESS_0, // smgFeeProxy
-        quota.address, // quota
-        signatureVerifier.address // sigVerifier
-    ).encodeABI();
-    await deployer.sendTx(crossApproach.address, txData);
-    // config tokenManager admin
-    txData = await tokenManager.methods.addAdmin(crossApproach.address).encodeABI();
-    await deployer.sendTx(tokenManager.address, txData);
-    // config quota
-    txData = await quota.methods.config(
-        oracle.address,
-        crossApproach.address,
-        crossApproach.address,
-        oracle.address,
-        tokenManager.address,
-        quotaDepositRate,
-        priceSymbol
-    ).encodeABI();
-    await deployer.sendTx(quota.address, txData);
-
     // ***********osm*****************
     
     // storeman group admin sc
@@ -196,6 +161,16 @@ async function deploy(cfg, isMainnet) {
     // storm group admin dependence
     let smg = await deployer.at(scDict.StoremanGroupDelegate, smgProxy.address);
     txData = await smg.methods.addAdmin(admin).encodeABI();
+    await deployer.sendTx(smg.address, txData);
+
+    // ListGroup
+    await deployer.link(scDict.ListGroup, scDict.StoremanUtil);
+    let listGroup = await deployer.deploy(scDict.ListGroup, smgProxy.address, posLib.address);
+    contract[scDict.ListGroup] = listGroup.address;
+    abi[scDict.ListGroup] = listGroup.abi;
+
+    // storm group global dependence
+    txData = await smg.methods.setGlobalGroupScAddr(listGroup.address).encodeABI();
     await deployer.sendTx(smg.address, txData);
 
     //deploy metric
@@ -274,13 +249,49 @@ async function deploy(cfg, isMainnet) {
     contract[scDict.Bn256Curve] = bn256.address;
 
     // dependence
-    txData = await smg.methods.setDependence(metricProxy.address, gpkProxy.address, oracleProxy.address,posLib.address).encodeABI();
+    txData = await smg.methods.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address,posLib.address).encodeABI();
     await deployer.sendTx(smg.address, txData);
 
     txData = await gpk.methods.setDependence(cnfProxy.address, smgProxy.address).encodeABI();
     await deployer.sendTx(gpk.address, txData);
     txData = await metric.methods.setDependence(cnfProxy.address, smgProxy.address, posLib.address).encodeABI();
     await deployer.sendTx(metric.address, txData);
+
+    // config crossApproach
+    if (!isMainnet) {
+      txData = await crossApproach.methods.setLockedTime(htlcTimeTestnet).encodeABI();
+      await deployer.sendTx(crossApproach.address, txData);
+    }
+    console.log("TokenManagerProxy", tokenManager.address);
+    console.log("StoremanGroupProxy", smg.address);
+    console.log("smgFeeProxyAddr", smg.address);
+    console.log("QuotaProxy", quota.address);
+    console.log("SignatureVerifier", signatureVerifier.address);
+    console.log("OracleProxy", oracle.address);
+    console.log("CrossProxy", crossApproach.address);
+
+    txData = await crossApproach.methods.setPartners(
+        tokenManager.address, // tokenManager
+        smg.address, // smgAdminProxy
+        smg.address, // smgFeeProxy
+        quota.address, // quota
+        signatureVerifier.address // sigVerifier
+    ).encodeABI();
+    await deployer.sendTx(crossApproach.address, txData);
+    // config tokenManager admin
+    txData = await tokenManager.methods.addAdmin(crossApproach.address).encodeABI();
+    await deployer.sendTx(tokenManager.address, txData);
+    // config quota
+    txData = await quota.methods.config(
+        oracle.address,
+        crossApproach.address,
+        crossApproach.address,
+        smg.address,
+        tokenManager.address,
+        quotaDepositRate,
+        priceSymbol
+    ).encodeABI();
+    await deployer.sendTx(quota.address, txData);
 
     return {address:contract, abi:abi};
 }
