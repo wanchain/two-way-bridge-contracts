@@ -81,19 +81,19 @@ contract('Oracle', function(accounts) {
       console.log(`setStoremanGroupConfig estimate = ${gas1}`);
       receipt = await oracleDelegate.setStoremanGroupConfig(smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10, { from: owner});
       console.log(`setStoremanGroupConfig used = ${receipt.receipt.gasUsed}`);
-      // // check setStoremanGroupConfig event log
-      // const setStoremanGroupConfigEvent = receipt.logs[0].args;
-      // assert.equal(web3.utils.padRight(web3.utils.bytesToHex(smgID), 64), setStoremanGroupConfigEvent.id);
-      // assert.equal(1, setStoremanGroupConfigEvent.status.toNumber());
-      // assert.equal(2, setStoremanGroupConfigEvent.deposit.toNumber());
-      // assert.equal(3, setStoremanGroupConfigEvent.chain[0].toNumber());
-      // assert.equal(4, setStoremanGroupConfigEvent.chain[1].toNumber());
-      // assert.equal(5, setStoremanGroupConfigEvent.curve[0].toNumber());
-      // assert.equal(6, setStoremanGroupConfigEvent.curve[1].toNumber());
-      // assert.equal(web3.utils.bytesToHex(gpk1), setStoremanGroupConfigEvent.gpk1);
-      // assert.equal(web3.utils.bytesToHex(gpk2), setStoremanGroupConfigEvent.gpk2);
-      // assert.equal(9, setStoremanGroupConfigEvent.startTime.toNumber());
-      // assert.equal(10, setStoremanGroupConfigEvent.endTime.toNumber());
+      // check setStoremanGroupConfig event log
+      const setStoremanGroupConfigEvent = receipt.logs[0].args;
+      assert.equal(web3.utils.padRight(web3.utils.bytesToHex(smgID), 64), setStoremanGroupConfigEvent.id);
+      assert.equal(1, setStoremanGroupConfigEvent.status.toNumber());
+      assert.equal(2, setStoremanGroupConfigEvent.deposit.toNumber());
+      assert.equal(3, setStoremanGroupConfigEvent.chain[0].toNumber());
+      assert.equal(4, setStoremanGroupConfigEvent.chain[1].toNumber());
+      assert.equal(5, setStoremanGroupConfigEvent.curve[0].toNumber());
+      assert.equal(6, setStoremanGroupConfigEvent.curve[1].toNumber());
+      assert.equal(web3.utils.bytesToHex(gpk1), setStoremanGroupConfigEvent.gpk1);
+      assert.equal(web3.utils.bytesToHex(gpk2), setStoremanGroupConfigEvent.gpk2);
+      assert.equal(9, setStoremanGroupConfigEvent.startTime.toNumber());
+      assert.equal(10, setStoremanGroupConfigEvent.endTime.toNumber());
       // check storage
       let obj = await oracleDelegate.getStoremanGroupConfig(smgID);
       assert.equal(obj.groupId, "0x6b175474e89094c44da98b954eedeac495271d0f000000000000000000000000");
