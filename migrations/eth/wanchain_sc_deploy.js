@@ -113,13 +113,13 @@ async function deploy(cfg, isMainnet) {
       txData = await crossApproach.methods.setLockedTime(htlcTimeTestnet).encodeABI();
       await deployer.sendTx(crossApproach.address, txData);
     }
-    console.log("tokenManagerAddr", tokenManager.address);
-    console.log("smgAdminProxyAddr", oracle.address);
+    console.log("TokenManagerProxy", tokenManager.address);
+    console.log("StoremanGroupProxy", oracle.address);
     console.log("smgFeeProxyAddr", ADDRESS_0);
-    console.log("quotaAddr", quota.address);
-    console.log("sigVerifierAddr", signatureVerifier.address);
-    console.log("oracleAddr", oracle.address);
-    console.log("crossApproach", crossApproach.address);
+    console.log("QuotaProxy", quota.address);
+    console.log("SignatureVerifier", signatureVerifier.address);
+    console.log("OracleProxy", oracle.address);
+    console.log("CrossProxy", crossApproach.address);
     txData = await crossApproach.methods.setPartners(
         tokenManager.address, // tokenManager
         oracle.address, // smgAdminProxy
