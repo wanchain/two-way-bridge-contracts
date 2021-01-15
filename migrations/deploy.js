@@ -6,7 +6,8 @@ const {
   contractLoad,
   wanchainScScript,
   chainDict,
-  networks
+  networks,
+  defaultArgv
 } = require("./utils/config");
 const {
   mkdir,
@@ -17,45 +18,39 @@ const {
   hideObject
 } = require("./utils/tool");
 
-const defaultScCfg = {
-  network: 'mainnet',
-  nodeURL: 'http://geth-testnet.wandevs.org:36892',
-  mnemonic: '',
-  ownerIdx: undefined,
-  adminIdx: undefined,
-  ownerPk: '',
-  adminPk: '',
-  gasPrice: 180000000000,
-  gasLimit: 8000000,
-  outputDir:''
-}
-
 async function deploy(argv) {
   let error;
   let ownerPrivateKey;
   let adminPrivateKey;
   let deployedPath;
 
-  argv = Object.assign({}, defaultScCfg, argv);
+  argv = Object.assign({}, defaultArgv[argv.network], argv);
   if (!networks.includes(argv.network)) {
     error = `Invalid network ${argv.network}`;
   }
   if (!argv.nodeURL) {
     error = `Invalid nodeURL ${argv.nodeURL}`;
   }
-  if (!argv.ownerPk && (!argv.mnemonic || typeof(argv.ownerIdx) === "undefined")) {
+  if (!argv.ownerPk && (!argv.mnemonic || Number.isNaN(Number(argv.ownerIdx)))) {
     error = `Need identify ownerPk or (mnemonic and ownerIdx)`;
   }
 
   const {chainType, isMainnet} = parseNetwork(argv.network);
   if (chainType === chainDict.WAN) {
-    if (!argv.adminPk && (!argv.mnemonic || typeof(argv.adminIdx) === "undefined")) {
+    if (!argv.adminPk && (!argv.mnemonic || Number.isNaN(Number(argv.adminIdx)))) {
       error = `Need identify adminPk or (mnemonic and adminIdx)`;
     }
   }
   if (error) {
     exit(error);
   }
+
+  if (!path.isAbsolute(argv.outputDir)) {
+    deployedPath = path.join(__dirname, argv.outputDir);
+  } else {
+    deployedPath = argv.outputDir;
+  }
+  mkdir(deployedPath);
 
   if (argv.ownerPk) {
     ownerPrivateKey = argv.ownerPk;
@@ -89,15 +84,6 @@ async function deploy(argv) {
   const {deploy} = require(workspace[chainType].deploy);
   let contractDict = await deploy(cfg, isMainnet);
 
-  if (!path.isAbsolute(argv.outputDir)) {
-    deployedPath = path.join(__dirname, argv.outputDir);
-  } else {
-    deployedPath = argv.outputDir;
-  }
-  mkdir(deployedPath);
-  console.log("deployed path", deployedPath);
-
-
   let deployed = {};
   for (let contract in contractDict.address) {
     let abiName;
@@ -112,7 +98,20 @@ async function deploy(argv) {
     }
   }
 
-  fs.writeFileSync(path.join(deployedPath,`${argv.network}.json`), JSON.stringify(deployed, null, 5), {flag: 'w', encoding: 'utf8', mode: '0666'});
+  if (Object.keys(deployed).length > 0) {
+    // merge
+    const outputFile = path.join(deployedPath,`${argv.network}.json`);
+    if (fs.existsSync(outputFile)) {
+      const preDeployed = require(outputFile);
+      for (let key in preDeployed) {
+        if (!deployed[key]) {
+          deployed[key] = preDeployed[key];
+        }
+      }
+    }
+    fs.writeFileSync(outputFile, JSON.stringify(deployed, null, 5), {flag: 'w', encoding: 'utf8', mode: '0666'});
+    console.log("output", deployedPath);
+  }
 }
 
 module.exports = deploy;
