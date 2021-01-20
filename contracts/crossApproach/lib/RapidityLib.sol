@@ -68,6 +68,7 @@ library RapidityLib {
         bytes32 smgID;                  /// ID of storeman group which user has selected
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
+        uint releaseFee;                     /// exchange token value
         address shadowTokenAccount;     /// shadow token account
         bytes userOrigAccount;          /// account of token original chain, used to receive token
     }
@@ -105,7 +106,7 @@ library RapidityLib {
     /// @param tokenAccount             Rapidity shadow token account
     /// @param value                    Rapidity value
     /// @param userAccount              account of shadow chain, used to receive token
-    event UserBurnLogger(bytes32 indexed smgID, uint indexed tokenPairID, address indexed tokenAccount, uint value, uint fee, bytes userAccount);
+    event UserBurnLogger(bytes32 indexed smgID, uint indexed tokenPairID, address indexed tokenAccount, uint value, uint fee, uint releaseFee, bytes userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -150,17 +151,18 @@ library RapidityLib {
         (fromChainID,fromTokenAccount,toChainID, toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
-        address fromTokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
-        address toTokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
-        // require((fromTokenScAddr == params.origTokenAccount) || (toTokenScAddr == params.origTokenAccount), "Invalid Token account");
+        address tokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
 
         uint lockFee;
-        if (fromTokenScAddr == params.origTokenAccount) {
+        if (tokenScAddr == params.origTokenAccount) {
             lockFee = storageData.mapLockFee[fromChainID][toChainID];
-        } else if (toTokenScAddr == params.origTokenAccount) {
-            lockFee = storageData.mapLockFee[toChainID][fromChainID];
         } else {
-            require(false, "Invalid Token account");
+            tokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
+            if (tokenScAddr == params.origTokenAccount) {
+                lockFee = storageData.mapLockFee[toChainID][fromChainID];
+            } else {
+                require(false, "Invalid Token account");
+            }
         }
 
         storageData.quota.userLock(params.tokenPairID, params.smgID, params.value);
@@ -187,6 +189,60 @@ library RapidityLib {
         emit UserLockLogger(params.smgID, params.tokenPairID, params.origTokenAccount, params.value, lockFee, params.userShadowAccount);
     }
 
+    // /// @notice                         mintBridge, user lock token on token original chain
+    // /// @notice                         event invoked by user mint lock
+    // /// @param storageData              Cross storage data
+    // /// @param params                   parameters for user mint lock token on token original chain
+    // function userLock(CrossTypes.Data storage storageData, RapidityUserLockParams memory params)
+    //     public
+    // {
+    //     ITokenManager tokenManager = storageData.tokenManager;
+    //     require(tokenManager.isOriginalTokenPair(params.tokenPairID), "Token does not an original token");
+
+    //     uint fromChainID;
+    //     uint toChainID;
+    //     bytes memory fromTokenAccount;
+    //     bytes memory toTokenAccount;
+    //     (fromChainID,fromTokenAccount,toChainID, toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
+    //     require(fromChainID != 0, "Token does not exist");
+
+    //     address fromTokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
+    //     address toTokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
+    //     // require((fromTokenScAddr == params.origTokenAccount) || (toTokenScAddr == params.origTokenAccount), "Invalid Token account");
+
+    //     uint lockFee;
+    //     if (fromTokenScAddr == params.origTokenAccount) {
+    //         lockFee = storageData.mapLockFee[fromChainID][toChainID];
+    //     } else if (toTokenScAddr == params.origTokenAccount) {
+    //         lockFee = storageData.mapLockFee[toChainID][fromChainID];
+    //     } else {
+    //         require(false, "Invalid Token account");
+    //     }
+
+    //     storageData.quota.userLock(params.tokenPairID, params.smgID, params.value);
+
+    //     if (lockFee > 0) {
+    //         if (storageData.smgFeeProxy == address(0)) {
+    //             storageData.mapStoremanFee[params.smgID] = storageData.mapStoremanFee[params.smgID].add(lockFee);
+    //         } else {
+    //             ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(params.smgID);
+    //         }
+    //     }
+
+    //     uint left;
+    //     if (params.origTokenAccount == address(0)) {
+    //         left = (msg.value).sub(params.value).sub(lockFee);
+    //     } else {
+    //         left = (msg.value).sub(lockFee);
+
+    //         require(CrossTypes.transferFrom(params.origTokenAccount, msg.sender, this, params.value), "Lock token failed");
+    //     }
+    //     if (left != 0) {
+    //         (msg.sender).transfer(left);
+    //     }
+    //     emit UserLockLogger(params.smgID, params.tokenPairID, params.origTokenAccount, params.value, lockFee, params.userShadowAccount);
+    // }
+
     /// @notice                         burnBridge, user lock token on token original chain
     /// @notice                         event invoked by user burn lock
     /// @param storageData              Cross storage data
@@ -202,17 +258,18 @@ library RapidityLib {
         (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
-        address fromTokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
-        address toTokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
-        // require((fromTokenScAddr == params.shadowTokenAccount) || (toTokenScAddr == params.shadowTokenAccount), "Invalid Token account");
+        address tokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
 
         uint lockFee;
-        if (fromTokenScAddr == params.shadowTokenAccount) {
+        if (tokenScAddr == params.shadowTokenAccount) {
             lockFee = storageData.mapLockFee[toChainID][fromChainID];
-        } else if (toTokenScAddr == params.shadowTokenAccount) {
-            lockFee = storageData.mapLockFee[fromChainID][toChainID];
         } else {
+            tokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
+            if (tokenScAddr == params.shadowTokenAccount) {
+                lockFee = storageData.mapLockFee[fromChainID][toChainID];
+            } else {
             require(false, "Invalid Token account");
+            }
         }
 
         storageData.quota.userBurn(params.tokenPairID, params.smgID, params.value);
@@ -232,8 +289,56 @@ library RapidityLib {
             (msg.sender).transfer(left);
         }
 
-        emit UserBurnLogger(params.smgID, params.tokenPairID, params.shadowTokenAccount, params.value, lockFee, params.userOrigAccount);
+        emit UserBurnLogger(params.smgID, params.tokenPairID, params.shadowTokenAccount, params.value, lockFee, params.releaseFee, params.userOrigAccount);
     }
+
+    // /// @notice                         burnBridge, user lock token on token original chain
+    // /// @notice                         event invoked by user burn lock
+    // /// @param storageData              Cross storage data
+    // /// @param params                   parameters for user burn lock token on token original chain
+    // function userBurn(CrossTypes.Data storage storageData, RapidityUserBurnParams memory params)
+    //     public
+    // {
+    //     ITokenManager tokenManager = storageData.tokenManager;
+    //     uint fromChainID;
+    //     uint toChainID;
+    //     bytes memory fromTokenAccount;
+    //     bytes memory toTokenAccount;
+    //     (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
+    //     require(fromChainID != 0, "Token does not exist");
+
+    //     address fromTokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
+    //     address toTokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
+    //     // require((fromTokenScAddr == params.shadowTokenAccount) || (toTokenScAddr == params.shadowTokenAccount), "Invalid Token account");
+
+    //     uint lockFee;
+    //     if (fromTokenScAddr == params.shadowTokenAccount) {
+    //         lockFee = storageData.mapLockFee[toChainID][fromChainID];
+    //     } else if (toTokenScAddr == params.shadowTokenAccount) {
+    //         lockFee = storageData.mapLockFee[fromChainID][toChainID];
+    //     } else {
+    //         require(false, "Invalid Token account");
+    //     }
+
+    //     storageData.quota.userBurn(params.tokenPairID, params.smgID, params.value);
+
+    //     tokenManager.burnToken(params.shadowTokenAccount, msg.sender, params.value);
+
+    //     if (lockFee > 0) {
+    //         if (storageData.smgFeeProxy == address(0)) {
+    //             storageData.mapStoremanFee[params.smgID] = storageData.mapStoremanFee[params.smgID].add(lockFee);
+    //         } else {
+    //             ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(params.smgID);
+    //         }
+    //     }
+
+    //     uint left = (msg.value).sub(lockFee);
+    //     if (left != 0) {
+    //         (msg.sender).transfer(left);
+    //     }
+
+    //     emit UserBurnLogger(params.smgID, params.tokenPairID, params.shadowTokenAccount, params.value, lockFee, params.releaseFee, params.userOrigAccount);
+    // }
 
     /// @notice                         mintBridge, storeman mint lock token on token shadow chain
     /// @notice                         event invoked by user mint lock
