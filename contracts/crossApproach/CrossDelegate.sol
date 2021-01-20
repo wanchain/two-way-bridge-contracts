@@ -158,7 +158,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userBurn(bytes32 smgID, uint tokenPairID, uint value, address tokenAccount, bytes userAccount)
+    function userBurn(bytes32 smgID, uint tokenPairID, uint value, uint releaseFee, address tokenAccount, bytes userAccount)
         external
         payable
         notHalted
@@ -170,6 +170,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
             smgID: smgID,
             tokenPairID: tokenPairID,
             value: value,
+            releaseFee: releaseFee,
             shadowTokenAccount: tokenAccount,
             userOrigAccount: userAccount
         });
