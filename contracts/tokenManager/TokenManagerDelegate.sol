@@ -235,10 +235,11 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     )
         external
         view
-        returns (bytes fromAccount, bytes toAccount)
+        returns (uint fromChainID, bytes fromAccount, uint toChainID)
     {
+        fromChainID = mapTokenPairInfo[id].fromChainID;
         fromAccount = mapTokenPairInfo[id].fromAccount;
-        toAccount = mapTokenPairInfo[id].toAccount;
+        toChainID = mapTokenPairInfo[id].toChainID;
     }
 
     function getTokenInfo(uint id) external view returns (address addr, string name, string symbol, uint8 decimals) {
@@ -405,12 +406,4 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
             ancestorDecimals[i] = mapTokenPairInfo[theId].aInfo.decimals;
         }
     }
-
-    function isOriginalTokenPair(uint id) external view returns (bool isOriginalPair) {
-        uint fromChainID = mapTokenPairInfo[id].fromChainID;
-        uint toChainID = mapTokenPairInfo[id].toChainID;
-        uint ancestorChainID = mapTokenPairInfo[id].aInfo.chainID;
-        isOriginalPair = ((fromChainID != 0) && (fromChainID == ancestorChainID || toChainID == ancestorChainID));
-    }
-
 }
