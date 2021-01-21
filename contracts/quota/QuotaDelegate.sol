@@ -30,8 +30,7 @@ pragma solidity 0.4.26;
  * Math operations with safety checks
  */
 
-import "../components/Halt.sol";
-import "./QuotaStorage.sol";
+import "./QuotaStorageV2.sol";
 import "../interfaces/IOracle.sol";
 
 interface _ITokenManager {
@@ -47,7 +46,7 @@ interface IDebtOracle {
 }
 
 
-contract QuotaDelegate is QuotaStorage, Halt {
+contract QuotaDelegate is QuotaStorageV2 {
 
     event AssetTransfered(bytes32 indexed srcStoremanGroupId, bytes32 indexed dstStoremanGroupId, uint tokenId, uint value);
 
@@ -59,9 +58,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
             uint decimals;
             (symbol, decimals) = getTokenAncestorInfo(tokenId);
             uint price = getPrice(symbol);
-            require(price > 0, "Price is zero");
-            uint count = fastCrossMinValue.mul(10**decimals).div(price);
-            require(value >= count, "value too small");
+            if (price > 0) {
+                uint count = fastCrossMinValue.mul(10**decimals).div(price);
+                require(value >= count, "value too small");
+            }
         }
         _;
     }
@@ -108,7 +108,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
         returns (uint asset, uint asset_receivable, uint asset_payable)
     {
         uint tokenKey = getTokenKey(tokenId);
-        Quota storage quota = quotaMap[tokenKey][storemanGroupId];
+        Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];
         return (quota._asset, quota.asset_receivable, quota.asset_payable);
     }
 
@@ -121,14 +121,14 @@ contract QuotaDelegate is QuotaStorage, Halt {
         returns (uint debt, uint debt_receivable, uint debt_payable)
     {
         uint tokenKey = getTokenKey(tokenId);
-        Quota storage quota = quotaMap[tokenKey][storemanGroupId];
+        Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];
         return (quota._debt, quota.debt_receivable, quota.debt_payable);
     }
 
     /// @notice                                 get debt clean state of storeman
     /// @param storemanGroupId                  PK of source storeman group
     function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {
-        uint tokenCount = storemanTokenCountMap[storemanGroupId];
+        uint tokenCount = v2TokenCountMap[storemanGroupId];
         if (tokenCount == 0) {
             if (debtOracleAddress == address(0)) {
                 return true;
@@ -139,8 +139,8 @@ contract QuotaDelegate is QuotaStorage, Halt {
         }
 
         for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[storemanGroupId][i];
-            Quota storage src = quotaMap[id][storemanGroupId];
+            uint id = v2TokensMap[storemanGroupId][i];
+            Quota storage src = v2QuotaMap[id][storemanGroupId];
             if (src._debt > 0 || src.debt_payable > 0 || src.debt_receivable > 0) {
                 return false;
             }
@@ -161,7 +161,10 @@ contract QuotaDelegate is QuotaStorage, Halt {
         uint decimals;
         (symbol, decimals) = getTokenAncestorInfo(tokenId);
         uint price = getPrice(symbol);
-        uint count = fastCrossMinValue.mul(10**decimals).div(price);
+        uint count = 0;
+        if (price > 0) {
+            count = fastCrossMinValue.mul(10**decimals).div(price);
+        }
         return (fastCrossMinValue, symbol, decimals, price, count);
     }
 
@@ -173,12 +176,12 @@ contract QuotaDelegate is QuotaStorage, Halt {
     {
         uint tokenKey = getTokenKey(tokenId);
 
-        Quota storage quota = quotaMap[tokenKey][storemanGroupId];
+        Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];
 
         if (!quota._active) {
             quota._active = true;
-            storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenKey;
-            storemanTokenCountMap[storemanGroupId] = storemanTokenCountMap[storemanGroupId]
+            v2TokensMap[storemanGroupId][v2TokenCountMap[storemanGroupId]] = tokenKey;
+            v2TokenCountMap[storemanGroupId] = v2TokenCountMap[storemanGroupId]
                 .add(1);
         }
         quota._asset = quota._asset.add(value);
@@ -191,8 +194,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     {
         uint tokenKey = getTokenKey(tokenId);
 
-        Quota storage quota = quotaMap[tokenKey][storemanGroupId];
-        require(quota._debt.sub(quota.debt_payable) >= value, "Value is invalid");
+        Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];
         quota._debt = quota._debt.sub(value);
     }
 
@@ -202,7 +204,7 @@ contract QuotaDelegate is QuotaStorage, Halt {
     {
         uint tokenKey = getTokenKey(tokenId);
 
-        Quota storage quota = quotaMap[tokenKey][storemanGroupId];
+        Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];
         quota._asset = quota._asset.sub(value);
     }
 
@@ -211,11 +213,11 @@ contract QuotaDelegate is QuotaStorage, Halt {
     {
         uint tokenKey = getTokenKey(tokenId);
 
-        Quota storage quota = quotaMap[tokenKey][storemanGroupId];        
+        Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];        
         if (!quota._active) {
             quota._active = true;
-            storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenKey;
-            storemanTokenCountMap[storemanGroupId] = storemanTokenCountMap[storemanGroupId]
+            v2TokensMap[storemanGroupId][v2TokenCountMap[storemanGroupId]] = tokenKey;
+            v2TokenCountMap[storemanGroupId] = v2TokenCountMap[storemanGroupId]
                 .add(1);
         }
         quota._debt = quota._debt.add(value);
@@ -223,65 +225,59 @@ contract QuotaDelegate is QuotaStorage, Halt {
 
     function upgrade(bytes32 storemanGroupId) external onlyOwner {
         uint tokenCount = storemanTokenCountMap[storemanGroupId];
-        if (tokenCount == 0) {
-            return;
-        }
+
+        require(version < 2, "Can upgrade again.");
+        version = 2; //upgraded v2
 
         for (uint i = 0; i < tokenCount; i++) {
             uint id = storemanTokensMap[storemanGroupId][i];
-            Quota storage src = quotaMap[id][storemanGroupId];
-            uint debt = src._debt;
             uint tokenKey = getTokenKey(id);
 
-            // 
-            if (tokenKey == id) {
-                continue;
-            }
+            Quota storage src = quotaMap[id][storemanGroupId];
 
+            uint debt = src._debt;
             if (debt > 0) {
-                src._debt = 0;
-                Quota storage quota = quotaMap[tokenKey][storemanGroupId];        
+                Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];        
                 if (!quota._active) {
                     quota._active = true;
-                    storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenKey;
-                    storemanTokenCountMap[storemanGroupId] = storemanTokenCountMap[storemanGroupId]
+                    v2TokensMap[storemanGroupId][v2TokenCountMap[storemanGroupId]] = tokenKey;
+                    v2TokenCountMap[storemanGroupId] = v2TokenCountMap[storemanGroupId]
                         .add(1);
                 }
                 quota._debt = quota._debt.add(debt);
-                
             }
 
             uint asset = src._asset;
             if (asset > 0) {
-                src._asset = 0;
-                Quota storage quota2 = quotaMap[tokenKey][storemanGroupId];
+                Quota storage quota2 = v2QuotaMap[tokenKey][storemanGroupId];
                 if (!quota2._active) {
                     quota2._active = true;
-                    storemanTokensMap[storemanGroupId][storemanTokenCountMap[storemanGroupId]] = tokenKey;
-                    storemanTokenCountMap[storemanGroupId] = storemanTokenCountMap[storemanGroupId]
+                    v2TokensMap[storemanGroupId][v2TokenCountMap[storemanGroupId]] = tokenKey;
+                    v2TokenCountMap[storemanGroupId] = v2TokenCountMap[storemanGroupId]
                         .add(1);
                 }
                 quota2._asset = quota2._asset.add(asset);
             }
         }
+
     }
 
     function transferAsset(
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
     ) external onlyHtlc {
-        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
+        uint tokenCount = v2TokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[srcStoremanGroupId][i];
-            Quota storage src = quotaMap[id][srcStoremanGroupId];
+            uint id = v2TokensMap[srcStoremanGroupId][i];
+            Quota storage src = v2QuotaMap[id][srcStoremanGroupId];
             if (src._asset == 0) {
                 continue;
             }
-            Quota storage dst = quotaMap[id][dstStoremanGroupId];
+            Quota storage dst = v2QuotaMap[id][dstStoremanGroupId];
             if (!dst._active) {
                 dst._active = true;
-                storemanTokensMap[dstStoremanGroupId][storemanTokenCountMap[dstStoremanGroupId]] = id;
-                storemanTokenCountMap[dstStoremanGroupId] = storemanTokenCountMap[dstStoremanGroupId]
+                v2TokensMap[dstStoremanGroupId][v2TokenCountMap[dstStoremanGroupId]] = id;
+                v2TokenCountMap[dstStoremanGroupId] = v2TokenCountMap[dstStoremanGroupId]
                     .add(1);
             }
             /// Adjust quota record
@@ -298,18 +294,18 @@ contract QuotaDelegate is QuotaStorage, Halt {
         bytes32 srcStoremanGroupId,
         bytes32 dstStoremanGroupId
     ) external onlyHtlc {
-        uint tokenCount = storemanTokenCountMap[srcStoremanGroupId];
+        uint tokenCount = v2TokenCountMap[srcStoremanGroupId];
         for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[srcStoremanGroupId][i];
-            Quota storage src = quotaMap[id][srcStoremanGroupId];
+            uint id = v2TokensMap[srcStoremanGroupId][i];
+            Quota storage src = v2QuotaMap[id][srcStoremanGroupId];
             if (src._debt == 0) {
                 continue;
             }
-            Quota storage dst = quotaMap[id][dstStoremanGroupId];
+            Quota storage dst = v2QuotaMap[id][dstStoremanGroupId];
             if (!dst._active) {
                 dst._active = true;
-                storemanTokensMap[dstStoremanGroupId][storemanTokenCountMap[dstStoremanGroupId]] = id;
-                storemanTokenCountMap[dstStoremanGroupId] = storemanTokenCountMap[dstStoremanGroupId]
+                v2TokensMap[dstStoremanGroupId][v2TokenCountMap[dstStoremanGroupId]] = id;
+                v2TokenCountMap[dstStoremanGroupId] = v2TokenCountMap[dstStoremanGroupId]
                     .add(1);
             }
             /// Adjust quota record
@@ -323,16 +319,12 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     function getQuotaMap(uint tokenKey, bytes32 storemanGroupId) 
-        public view returns (uint debt_receivable, uint debt_payable, uint _debt, uint asset_receivable, uint asset_payable, uint _asset, bool _active) {
-        Quota storage quota = quotaMap[tokenKey][storemanGroupId];
+        external view returns (uint debt_receivable, uint debt_payable, uint _debt, uint asset_receivable, uint asset_payable, uint _asset, bool _active) {
+        Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];
         return (quota.debt_receivable, quota.debt_payable, quota._debt, quota.asset_receivable, quota.asset_payable, quota._asset, quota._active);
     }
 
     function getTokenKey(uint tokenId) public view returns (uint) {
-        // If token id <= 100000, we think it is an old tokenPairId.
-        if (tokenId > 100000) {
-            return tokenId;
-        }
         string memory symbol;
         uint decimals;
         (symbol, decimals) = getTokenAncestorInfo(tokenId);
@@ -341,11 +333,11 @@ contract QuotaDelegate is QuotaStorage, Halt {
     }
 
     function getTokenCount(bytes32 storemanGroupId) public view returns (uint) {
-        return storemanTokenCountMap[storemanGroupId];
+        return v2TokenCountMap[storemanGroupId];
     }
 
     function getTokenId(bytes32 storemanGroupId, uint index) public view returns (uint) {
-        return storemanTokensMap[storemanGroupId][index];
+        return v2TokensMap[storemanGroupId][index];
     }
 
     // ----------- Private Functions ---------------
