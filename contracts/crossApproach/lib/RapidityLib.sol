@@ -258,17 +258,17 @@ library RapidityLib {
         (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
-        address tokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
+        address tokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
 
         uint lockFee;
         if (tokenScAddr == params.shadowTokenAccount) {
-            lockFee = storageData.mapLockFee[toChainID][fromChainID];
+            lockFee = storageData.mapLockFee[fromChainID][toChainID];
         } else {
-            tokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
+            tokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
             if (tokenScAddr == params.shadowTokenAccount) {
-                lockFee = storageData.mapLockFee[fromChainID][toChainID];
+                lockFee = storageData.mapLockFee[toChainID][fromChainID];
             } else {
-            require(false, "Invalid Token account");
+                require(false, "Invalid Token account");
             }
         }
 
