@@ -31,12 +31,10 @@ interface ITokenManager {
       returns (uint origChainID, bytes tokenOrigAccount, uint shadowChainID, bytes tokenShadowAccount);
 
     function getTokenPairInfoSlim(uint id) external view 
-      returns (bytes fromAccount, bytes toAccount);
+      returns (uint origChainID, bytes tokenOrigAccount, uint shadowChainID);
 
     function getAncestorInfo(uint id) external view
       returns (bytes account, string name, string symbol, uint8 decimals, uint chainId);
-
-    function isOriginalTokenPair(uint id) external view returns (bool isOriginalPair);
 
     function mintToken(address tokenAddress, address to, uint value) external;
 
