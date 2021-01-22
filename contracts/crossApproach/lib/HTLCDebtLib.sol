@@ -27,12 +27,12 @@
 pragma solidity ^0.4.26;
 pragma experimental ABIEncoderV2;
 
-import "./HTLCTxLib.sol";
+// import "./HTLCTxLib.sol";
 import "./CrossTypes.sol";
 
 library HTLCDebtLib {
-    using SafeMath for uint;
-    using HTLCTxLib for HTLCTxLib.Data;
+    // using SafeMath for uint;
+    // using HTLCTxLib for HTLCTxLib.Data;
 
     /**
      *
