@@ -223,43 +223,46 @@ contract QuotaDelegate is QuotaStorageV2 {
         quota._debt = quota._debt.add(value);
     }
 
-    function upgrade(bytes32 storemanGroupId) external onlyOwner {
-        uint tokenCount = storemanTokenCountMap[storemanGroupId];
-
+    function upgrade(bytes32[] storemanGroupIdArray) external onlyOwner {
         require(version < 2, "Can upgrade again.");
         version = 2; //upgraded v2
+        uint length = storemanGroupIdArray.length;
 
-        for (uint i = 0; i < tokenCount; i++) {
-            uint id = storemanTokensMap[storemanGroupId][i];
-            uint tokenKey = getTokenKey(id);
+        for (uint m = 0; m < length; m++) {
+            bytes32 storemanGroupId = storemanGroupIdArray[m];
+            uint tokenCount = storemanTokenCountMap[storemanGroupId];
 
-            Quota storage src = quotaMap[id][storemanGroupId];
+            for (uint i = 0; i < tokenCount; i++) {
+                uint id = storemanTokensMap[storemanGroupId][i];
+                uint tokenKey = getTokenKey(id);
 
-            uint debt = src._debt;
-            if (debt > 0) {
-                Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];        
-                if (!quota._active) {
-                    quota._active = true;
-                    v2TokensMap[storemanGroupId][v2TokenCountMap[storemanGroupId]] = tokenKey;
-                    v2TokenCountMap[storemanGroupId] = v2TokenCountMap[storemanGroupId]
-                        .add(1);
+                Quota storage src = quotaMap[id][storemanGroupId];
+
+                uint debt = src._debt;
+                if (debt > 0) {
+                    Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];        
+                    if (!quota._active) {
+                        quota._active = true;
+                        v2TokensMap[storemanGroupId][v2TokenCountMap[storemanGroupId]] = tokenKey;
+                        v2TokenCountMap[storemanGroupId] = v2TokenCountMap[storemanGroupId]
+                            .add(1);
+                    }
+                    quota._debt = quota._debt.add(debt);
                 }
-                quota._debt = quota._debt.add(debt);
-            }
 
-            uint asset = src._asset;
-            if (asset > 0) {
-                Quota storage quota2 = v2QuotaMap[tokenKey][storemanGroupId];
-                if (!quota2._active) {
-                    quota2._active = true;
-                    v2TokensMap[storemanGroupId][v2TokenCountMap[storemanGroupId]] = tokenKey;
-                    v2TokenCountMap[storemanGroupId] = v2TokenCountMap[storemanGroupId]
-                        .add(1);
+                uint asset = src._asset;
+                if (asset > 0) {
+                    Quota storage quota2 = v2QuotaMap[tokenKey][storemanGroupId];
+                    if (!quota2._active) {
+                        quota2._active = true;
+                        v2TokensMap[storemanGroupId][v2TokenCountMap[storemanGroupId]] = tokenKey;
+                        v2TokenCountMap[storemanGroupId] = v2TokenCountMap[storemanGroupId]
+                            .add(1);
+                    }
+                    quota2._asset = quota2._asset.add(asset);
                 }
-                quota2._asset = quota2._asset.add(asset);
             }
         }
-
     }
 
     function transferAsset(
