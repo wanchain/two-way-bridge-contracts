@@ -54,11 +54,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
      * MODIFIERS
      *
      */
-    /// @dev Check valid value
-    modifier onlyMeaningfulValue(uint value) {
-        require(value != 0, "Value is null");
-        _;
-    }
 
     /// @notice                                 check the storeman group is ready
     /// @param smgID                            ID of storeman group
@@ -78,22 +73,6 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
      * MANIPULATIONS
      *
      */
-
-    // /// @notice                                 get the exist storeman group info
-    // /// @param smgID                            ID of storeman group
-    // /// @return curveID                         ID of elliptic curve
-    // /// @return PK                              PK of storeman group
-    // function acquireExistSmgInfo(bytes32 smgID)
-    //     private
-    //     view
-    //     returns (uint curveID, bytes memory PK)
-    // {
-    //     uint origChainID;
-    //     (,,,origChainID,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-    //     require(origChainID != 0, "PK does not exist");
-
-    //     return (curveID, PK);
-    // }
 
     /// @notice                                 check the storeman group is ready or not
     /// @param smgID                            ID of storeman group
@@ -133,21 +112,17 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  smgID                           ID of storeman
     /// @param  tokenPairID                     token pair ID of cross chain coin/token
     /// @param  value                           exchange value
-    /// @param  tokenAccount                    original coin/token
     /// @param  userAccount                     account of user, used to receive shadow chain token
-    function userLock(bytes32 smgID, uint tokenPairID, uint value, address tokenAccount, bytes userAccount)
+    function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
         external
         payable
         notHalted
-        // nonReentrant
         onlyReadySmg(smgID)
-        onlyMeaningfulValue(value)
     {
         RapidityLib.RapidityUserLockParams memory params = RapidityLib.RapidityUserLockParams({
             smgID: smgID,
             tokenPairID: tokenPairID,
             value: value,
-            origTokenAccount: tokenAccount,
             userShadowAccount: userAccount
         });
         RapidityLib.userLock(storageData, params);
@@ -158,19 +133,17 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userBurn(bytes32 smgID, uint tokenPairID, uint value, uint releaseFee, address tokenAccount, bytes userAccount)
+    function userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes userAccount)
         external
         payable
         notHalted
-        nonReentrant
         onlyReadySmg(smgID)
-        onlyMeaningfulValue(value)
     {
         RapidityLib.RapidityUserBurnParams memory params = RapidityLib.RapidityUserBurnParams({
             smgID: smgID,
             tokenPairID: tokenPairID,
             value: value,
-            releaseFee: releaseFee,
+            fee: fee,
             shadowTokenAccount: tokenAccount,
             userOrigAccount: userAccount
         });
@@ -188,11 +161,9 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     function smgMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address tokenAccount, address userAccount, bytes r, bytes32 s)
         external
         notHalted
-        nonReentrant
     {
         uint curveID;
         bytes memory PK;
-        // (curveID, PK) = acquireExistSmgInfo(smgID);
         (curveID, PK) = acquireReadySmgInfo(smgID);
 
         RapidityLib.RapiditySmgMintParams memory params = RapidityLib.RapiditySmgMintParams({
@@ -220,11 +191,9 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     function smgRelease(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, address tokenAccount, address userAccount, bytes r, bytes32 s)
         external
         notHalted
-        nonReentrant
     {
         uint curveID;
         bytes memory PK;
-        // (curveID, PK) = acquireExistSmgInfo(smgID);
         (curveID, PK) = acquireReadySmgInfo(smgID);
 
         RapidityLib.RapiditySmgReleaseParams memory params = RapidityLib.RapiditySmgReleaseParams({
@@ -402,13 +371,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         external
         nonReentrant
     {
-
         require(now < timeStamp.add(smgFeeReceiverTimeout), "The receiver address expired");
-
-        uint curveID;
-        bytes memory PK;
-        (,,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-        verifySignature(curveID, sha256(abi.encode(timeStamp, receiver)), PK, r, s);
 
         uint fee = storageData.mapStoremanFee[smgID];
 
@@ -416,6 +379,11 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
 
         delete storageData.mapStoremanFee[smgID];
         receiver.transfer(fee);
+
+        uint curveID;
+        bytes memory PK;
+        (,,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
+        verifySignature(curveID, sha256(abi.encode(timeStamp, receiver)), PK, r, s);
 
         emit SmgWithdrawFeeLogger(smgID, now, receiver, fee);
     }
