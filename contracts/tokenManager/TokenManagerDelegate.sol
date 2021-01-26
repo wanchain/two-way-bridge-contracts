@@ -369,7 +369,8 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     function getTokenPairsByChainID(uint chainID1, uint chainID2)
         external
         view
-        returns (uint[] id, uint[] fromChainID, bytes[] fromAccount, uint[] toChainID, bytes[] toAccount, string[] ancestorSymbol, uint8[] ancestorDecimals)
+        returns (uint[] id, uint[] fromChainID, bytes[] fromAccount, uint[] toChainID, bytes[] toAccount,
+          string[] ancestorSymbol, uint8[] ancestorDecimals, bytes[] ancestorAccount, string[] ancestorName, uint[] ancestorChainID)
     {
         uint cnt = 0;
         uint i = 0;
@@ -393,6 +394,10 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         ancestorSymbol = new string[](cnt);
         ancestorDecimals = new uint8[](cnt);
 
+        ancestorAccount = new bytes[](cnt);
+        ancestorName = new string[](cnt);
+        ancestorChainID = new uint[](cnt);
+
         for (i = 0; i < cnt; i++) {
             theId = id_valid[i];
 
@@ -404,6 +409,10 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
 
             ancestorSymbol[i] = mapTokenPairInfo[theId].aInfo.symbol;
             ancestorDecimals[i] = mapTokenPairInfo[theId].aInfo.decimals;
+            
+            ancestorAccount[i] = mapTokenPairInfo[theId].aInfo.account;
+            ancestorName[i] = mapTokenPairInfo[theId].aInfo.name;
+            ancestorChainID[i] = mapTokenPairInfo[theId].aInfo.chainID;
         }
     }
 }
