@@ -322,7 +322,7 @@ contract QuotaDelegate is QuotaStorageV2 {
     }
 
     function getQuotaMap(uint tokenKey, bytes32 storemanGroupId) 
-        external view returns (uint debt_receivable, uint debt_payable, uint _debt, uint asset_receivable, uint asset_payable, uint _asset, bool _active) {
+        public view returns (uint debt_receivable, uint debt_payable, uint _debt, uint asset_receivable, uint asset_payable, uint _asset, bool _active) {
         Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];
         return (quota.debt_receivable, quota.debt_payable, quota._debt, quota.asset_receivable, quota.asset_payable, quota._asset, quota._active);
     }
@@ -341,6 +341,12 @@ contract QuotaDelegate is QuotaStorageV2 {
 
     function getTokenId(bytes32 storemanGroupId, uint index) public view returns (uint) {
         return v2TokensMap[storemanGroupId][index];
+    }
+
+    function getTokenQuota(string ancestorSymbol, uint decimals, bytes32 storemanGroupId)
+        public view returns (uint debt_receivable, uint debt_payable, uint _debt, uint asset_receivable, uint asset_payable, uint _asset, bool _active) {
+        uint tokenKey = uint(keccak256(abi.encodePacked(ancestorSymbol, decimals)));
+        return getQuotaMap(tokenKey, storemanGroupId);
     }
 
     // ----------- Private Functions ---------------
