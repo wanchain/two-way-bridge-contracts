@@ -349,6 +349,12 @@ contract QuotaDelegate is QuotaStorageV2 {
         return getQuotaMap(tokenKey, storemanGroupId);
     }
 
+    function getOldQuotaMap(uint tokenId, bytes32 storemanGroupId) 
+        public view returns (uint debt_receivable, uint debt_payable, uint _debt, uint asset_receivable, uint asset_payable, uint _asset, bool _active) {
+        Quota storage quota = quotaMap[tokenId][storemanGroupId];
+        return (quota.debt_receivable, quota.debt_payable, quota._debt, quota.asset_receivable, quota.asset_payable, quota._asset, quota._active);
+    }
+
     // ----------- Private Functions ---------------
 
     function getTokenAncestorInfo(uint tokenId)
