@@ -1,40 +1,44 @@
 const CrossProxy                = artifacts.require('CrossProxy.sol');
+const CrossDelegate             = artifacts.require('CrossDelegate.sol');
 
+// const { CrossDelegate } = require("../../migrations/wan/contract");
 const {
-    BN,
-    ERROR_INFO,
     ADDRESS_0,
     ADDRESS_CROSS_PROXY_IMPL,
-    xInfo,
+    ERROR_INFO,
+    uniqueInfo,
+    chainTypes,
     htlcLockedTime,
+} = require("./common");
+
+const {
     assert,
 }                               = require('./lib');
 
-it('Transfer owner  ==> Success', async () => {
+it('Transfer owner @wanchain  ==> Success', async () => {
+    const currentChainType = chainTypes.WAN;
     let crossProxy;
     let currentOwner;
-    try {
-        crossProxy = await CrossProxy.at(global.chains[1].approach.instance.address);
 
-        const origOwner = await crossProxy.owner();
-        const newOwner = accounts[1];
+    crossProxy = await CrossProxy.at(global.chains[currentChainType].scAddr.CrossProxy);
 
-        await crossProxy.transferOwner(newOwner, {from: origOwner});
-        currentOwner = await crossProxy.owner();
-        assert.equal(newOwner.toLowerCase(), currentOwner.toLowerCase(), "transfer owner failed");
+    const origOwner = await crossProxy.owner();
+    const newOwner = global.aliceAccount.WAN;
 
-        await crossProxy.transferOwner(origOwner, {from: newOwner});
-        currentOwner = await crossProxy.owner();
-        assert.equal(origOwner.toLowerCase(), currentOwner.toLowerCase(), "restore owner failed");
-    } catch (err) {
-        assert.fail(err.toString());
-    }
+    await crossProxy.transferOwner(newOwner, {from: origOwner});
+    currentOwner = await crossProxy.owner();
+    assert.equal(newOwner.toLowerCase(), currentOwner.toLowerCase(), `transfer owner from current owner (${currentOwner}) to new owner (${newOwner}) failed`);
+
+    await crossProxy.transferOwner(origOwner, {from: newOwner});
+    currentOwner = await crossProxy.owner();
+    assert.equal(origOwner.toLowerCase(), currentOwner.toLowerCase(), `restore owner from current owner (${currentOwner}) to original owner (${origOwner}) failed`);
 });
 
-it('Transfer owner  ==> New owner is the zero address', async () => {
+it('Transfer owner @wanchain  ==> New owner is the zero address', async () => {
+    const currentChainType = chainTypes.WAN;
     let crossProxy;
     try {
-        crossProxy = await CrossProxy.at(global.chains[1].approach.instance.address);
+        crossProxy = await CrossProxy.at(global.chains[currentChainType].scAddr.CrossProxy);
         const origOwner = await crossProxy.owner();
         await crossProxy.transferOwner(ADDRESS_0, {from: origOwner});
         assert.fail(ERROR_INFO)
@@ -43,170 +47,155 @@ it('Transfer owner  ==> New owner is the zero address', async () => {
     }
 });
 
-it('Others getStoremanFee  -> The config value', async () => {
-    try {
-        let smg1Fee = await global.chains[1].approach.instance.getStoremanFee(global.storemanGroups[1].ID);
-        assert.equal(new BN(smg1Fee).eq(new BN(0)), true);
-        let smg2Fee = await global.chains[2].approach.instance.getStoremanFee(global.storemanGroups[2].ID);
-        assert.equal(new BN(smg2Fee).eq(new BN(0)), true);
-    } catch (err) {
-        assert.fail(err.toString());
-    }
+it('Others getStoremanFee @wanchain and @ethereum  -> The config value', async () => {
+    let wanCross = await CrossDelegate.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
+    let smgWanFee = await wanCross.getStoremanFee(global.storemanGroups.src.ID);
+    assert.equal(new web3.utils.BN(smgWanFee).eq(new web3.utils.BN(0)), true, `check storeman group fee at ${chainTypes.WAN} failed`);
+
+    let ethCross = await CrossDelegate.at(global.chains[chainTypes.ETH].scAddr.CrossProxy);
+    let smgEthFee = await ethCross.getStoremanFee(global.storemanGroups.src.ID);
+    assert.equal(new web3.utils.BN(smgEthFee).eq(new web3.utils.BN(0)), true, `check storeman group fee at ${chainTypes.ETH} failed`);
 });
 
-it('Others getPartners  ==> The config value', async () => {
-    try {
-        let partners1 = await global.chains[1].approach.instance.getPartners();
-        assert.equal(global.chains[1].approach.parnters.tokenManager.address, partners1[0]);
-        assert.equal(global.chains[1].approach.parnters.smgAdminProxy.address, partners1[1]);
-        assert.equal(global.chains[1].approach.parnters.smgFeeProxy, partners1[2]);
-        assert.equal(global.chains[1].approach.parnters.quota.address, partners1[3]);
-        assert.equal(global.chains[1].approach.parnters.sigVerifier.address, partners1[4]);
+it('Others getPartners @wanchain and @ethereum  ==> The config value', async () => {
+    let wanchain = chainTypes.WAN;
+    let wanCross = await CrossDelegate.at(global.chains[wanchain].scAddr.CrossProxy);
+    let wanPartners = await wanCross.getPartners();
+    assert.equal(global.chains[wanchain].scAddr.TokenManagerProxy, wanPartners.tokenManager, `check parnters tokenManager at ${wanchain} failed`);
+    assert.equal(global.chains[wanchain].scAddr.TestStoremanAdmin, wanPartners.smgAdminProxy, `check parnters smgAdminProxy at ${wanchain} failed`);
+    assert.equal(global.chains[wanchain].scAddr.TestStoremanAdmin, wanPartners.smgFeeProxy, `check parnters smgFeeProxy at ${wanchain} failed`);
+    assert.equal(global.chains[wanchain].scAddr.QuotaProxy, wanPartners.quota, `check parnters quota at ${wanchain} failed`);
+    assert.equal(global.chains[wanchain].scAddr.SignatureVerifier, wanPartners.sigVerifier, `check parnters sigVerifier at ${wanchain} failed`);
 
-        let partners2 = await global.chains[2].approach.instance.getPartners();
-        assert.equal(global.chains[2].approach.parnters.tokenManager.address, partners2[0]);
-        assert.equal(global.chains[2].approach.parnters.smgAdminProxy.address, partners2[1]);
-        assert.equal(ADDRESS_0, partners2[2]);
-        assert.equal(global.chains[2].approach.parnters.quota.address, partners2[3]);
-        assert.equal(global.chains[2].approach.parnters.sigVerifier.address, partners2[4]);
-    } catch (err) {
-        assert.fail(err.toString());
-    }
+    let ethereum = chainTypes.ETH;
+    let ethCross = await CrossDelegate.at(global.chains[ethereum].scAddr.CrossProxy);
+    let ethPartners = await ethCross.getPartners();
+    assert.equal(global.chains[ethereum].scAddr.TokenManagerProxy, ethPartners.tokenManager, `check parnters tokenManager at ${ethereum} failed`);
+    assert.equal(global.chains[ethereum].scAddr.OracleProxy, ethPartners.smgAdminProxy, `check parnters smgAdminProxy at ${ethereum} failed`);
+    assert.equal(ADDRESS_0, ethPartners.smgFeeProxy, `check parnters smgFeeProxy at ${ethereum} failed`);
+    assert.equal(global.chains[ethereum].scAddr.QuotaProxy, ethPartners.quota, `check parnters quota at ${ethereum} failed`);
+    assert.equal(global.chains[ethereum].scAddr.SignatureVerifier, ethPartners.sigVerifier, `check parnters sigVerifier at ${ethereum} failed`);
 });
 
-it('Others setPartners  ==> Parameter is invalid', async () => {
+it('Others setPartners @wanchain  ==> Parameter is invalid', async () => {
     try {
-        await global.chains[1].approach.instance.setPartners(ADDRESS_0, ADDRESS_0, global.chains[1].approach.parnters.smgFeeProxy, ADDRESS_0, ADDRESS_0);
+        let wanCross = await CrossDelegate.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
+        await wanCross.setPartners(ADDRESS_0, ADDRESS_0, global.chains[chainTypes.WAN].scAddr.TestStoremanAdmin, ADDRESS_0, ADDRESS_0);
         assert.fail(ERROR_INFO)
     } catch (err) {
         assert.include(err.toString(), "Parameter is invalid");
     }
 });
 
-it('Others setWithdrawFeeTimeout  ==> Not owner', async () => {
+it('Others setWithdrawFeeTimeout @wanchain  ==> Not owner', async () => {
     try {
-        await global.chains[1].approach.instance.setWithdrawFeeTimeout(0, {from: accounts[9]});
+        let wanCross = await CrossDelegate.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
+        await wanCross.setWithdrawFeeTimeout(0, {from: global.aliceAccount.WAN});
         assert.fail(ERROR_INFO)
     } catch (err) {
         assert.include(err.toString(), "Not owner");
     }
 });
 
-it('Others setWithdrawFeeTimeout  ==> Success', async () => {
-    try {
-        await global.chains[1].approach.instance.setWithdrawFeeTimeout(600, {from: global.owner});
-    } catch (err) {
-        assert.fail(err)
-    }
+it('Others setWithdrawFeeTimeout @wanchain  ==> Success', async () => {
+    let wanCross = await CrossDelegate.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
+    await wanCross.setWithdrawFeeTimeout(600);
 });
 
-it('Others getLeftLockedTime  ==> invalid xHash', async () => {
+it('Others getLeftLockedTime @wanchain  ==> invalid xHash', async () => {
     try {
-        await global.chains[1].approach.instance.getLeftLockedTime(xInfo.htlcException.hash);
+        let wanCross = await CrossDelegate.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
+        await wanCross.getLeftLockedTime(uniqueInfo.fastException);
         assert.fail(ERROR_INFO)
     } catch (err) {
         assert.include(err.toString(), "invalid xHash");
     }
 });
 
-it('Others getFees  ==> The config value', async () => {
-    try {
-        let ret = await global.chains[1].approach.instance.getFees(global.chains[1].ID, global.chains[2].ID);
-        assert.equal(global.chains[1].approach.origLockFee, ret[0]);
-        assert.equal(global.chains[1].approach.origRevokeFee, ret[1]);
-        // console.log("chain1 orig fees", ret[0], ret[1]);
+it('Others getFees @wanchain and @ethereum  ==> The config value', async () => {
+    const wanchain = chainTypes.WAN;
+    const ethereum = chainTypes.ETH;
+    let fees;
+    let ret;
 
-        ret = await global.chains[1].approach.instance.getFees(global.chains[2].ID, global.chains[1].ID);
-        assert.equal(global.chains[1].approach.shadowLockFee, ret[0]);
-        assert.equal(global.chains[1].approach.shadowRevokeFee, ret[1]);
-        // console.log("chain1 shadow fees", ret[0], ret[1]);
+    // wanchain
+    let wanCross = await CrossDelegate.at(global.chains[wanchain].scAddr.CrossProxy);
 
-        ret = await global.chains[2].approach.instance.getFees(global.chains[2].ID, global.chains[1].ID);
-        assert.equal(global.chains[2].approach.origLockFee, ret[0]);
-        assert.equal(global.chains[2].approach.origRevokeFee, ret[1]);
-        // console.log("chain2 orig fees", ret[0], ret[1]);
+    fees = global.crossFees[wanchain][wanchain][ethereum];
+    ret = await wanCross.getFees(global.chains[wanchain].ID, global.chains[ethereum].ID);
+    assert.equal(fees.lockFee, ret.lockFee, `check lockFee from ${wanchain} to ${ethereum} at ${wanchain} failed`);
+    assert.equal(fees.revokeFee, ret.revokeFee, `check revokeFee from ${wanchain} to ${ethereum} at ${wanchain} failed`);
 
-        ret = await global.chains[2].approach.instance.getFees(global.chains[1].ID, global.chains[2].ID);
-        assert.equal(global.chains[2].approach.shadowLockFee, ret[0]);
-        assert.equal(global.chains[2].approach.shadowRevokeFee, ret[1]);
-        // console.log("chain1 shadow fees", ret[0], ret[1]);
+    fees = global.crossFees[wanchain][ethereum][wanchain];
+    ret = await wanCross.getFees(global.chains[ethereum].ID, global.chains[wanchain].ID);
+    assert.equal(fees.lockFee, ret.lockFee, `check lockFee from ${ethereum} to ${wanchain} at ${wanchain} failed`);
+    assert.equal(fees.revokeFee, ret.revokeFee, `check revokeFee from ${ethereum} to ${wanchain} at ${wanchain} failed`);
 
-    } catch (err) {
-        assert.fail(err.toString());
-    }
+    // ethereum
+    let ethCross = await CrossDelegate.at(global.chains[ethereum].scAddr.CrossProxy);
+    // userLock
+    fees = global.crossFees[ethereum][ethereum][wanchain];
+    ret = await ethCross.getFees(global.chains[ethereum].ID, global.chains[wanchain].ID);
+    assert.equal(fees.lockFee, ret.lockFee, `check lockFee from ${ethereum} to ${wanchain} at ${ethereum} failed`);
+    assert.equal(fees.revokeFee, ret.revokeFee, `check revokeFee from ${ethereum} to ${wanchain} at ${ethereum} failed`);
+
+    // userBurn
+    fees = global.crossFees[ethereum][wanchain][ethereum];
+    ret = await ethCross.getFees(global.chains[wanchain].ID, global.chains[ethereum].ID);
+    assert.equal(fees.lockFee, ret.lockFee, `check lockFee from ${wanchain} to ${ethereum} at ${ethereum} failed`);
+    assert.equal(fees.revokeFee, ret.revokeFee, `check revokeFee from ${wanchain} to ${ethereum} at ${ethereum} failed`);
 });
 
-it('Others lockedTime  ==> The config value', async () => {
-    try {
-        let ret = await global.chains[1].approach.instance.lockedTime();
-        assert.equal(htlcLockedTime, ret);
-    } catch (err) {
-        assert.fail(err.toString());
-    }
+it('Others lockedTime @wanchain  ==> The config value', async () => {
+    let wanCross = await CrossDelegate.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
+    let ret = await wanCross.lockedTime();
+    assert.equal(htlcLockedTime, ret, "check lockedTime failed");
 });
 
-it('Proxy   -> get the implementation address', async () => {
-    try {
-        let crossProxy = await CrossProxy.at(global.chains[1].approach.instance.address);
-        let address = await crossProxy.implementation();
-        assert.equal(address, global.chains[1].approach.delegate.address);
-    } catch (err) {
-        assert.fail(err.toString());
-    }
+it('Proxy @wanchain   -> get the implementation address', async () => {
+    let crossProxy = await CrossProxy.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
+    let address = await crossProxy.implementation();
+    assert.equal(address, global.chains[chainTypes.WAN].scAddr.CrossDelegate, "check implementation failed");
 });
 
-it('Proxy   -> upgradeTo', async () => {
+it('Proxy @wanchain   -> upgradeTo', async () => {
+    let crossProxy = await CrossProxy.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
+    await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
+
+    let address = await crossProxy.implementation();
+    assert.equal(address, ADDRESS_CROSS_PROXY_IMPL, "check implementation failed");
+});
+
+it('Proxy @wanchain   -> upgradeTo with the same implementation address', async () => {
     try {
-        let crossProxy = await CrossProxy.at(global.chains[1].approach.instance.address);
+        let crossProxy = await CrossProxy.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
         await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
-
-        let address = await crossProxy.implementation();
-        assert.equal(address, ADDRESS_CROSS_PROXY_IMPL);
-    } catch (err) {
-        assert.fail(err.toString());
-    }
-});
-
-it('Proxy   -> upgradeTo with the same implementation address', async () => {
-    try {
-        let crossProxy = await CrossProxy.at(global.chains[1].approach.instance.address);
-        await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
-
-        let address = await crossProxy.implementation();
-        assert.equal(address, ADDRESS_CROSS_PROXY_IMPL);
         assert.fail(ERROR_INFO);
     } catch (err) {
         assert.include(err.toString(), "Cannot upgrade to the same implementation");
     }
 });
 
-it('Proxy   -> upgradeTo with 0x address', async () => {
+it('Proxy @wanchain   -> upgradeTo with 0x address', async () => {
     try {
-        let crossProxy = await CrossProxy.at(global.chains[1].approach.instance.address);
+        let crossProxy = await CrossProxy.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
         await crossProxy.upgradeTo(ADDRESS_0);
-
-        let address = await crossProxy.implementation();
-        assert.equal(address, ADDRESS_0);
         assert.fail(ERROR_INFO);
     } catch (err) {
         assert.include(err.toString(), "Cannot upgrade to invalid address");
     }
 });
 
-it('Proxy   -> restore', async () => {
-    try {
-        let crossProxy = await CrossProxy.at(global.chains[1].approach.instance.address);
-        let ret = await crossProxy.upgradeTo(global.chains[1].approach.delegate.address);
-        let address = await crossProxy.implementation();
-        assert.equal(address, global.chains[1].approach.delegate.address);
+it('Proxy @wanchain   -> restore', async () => {
+    let crossProxy = await CrossProxy.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
+    let ret = await crossProxy.upgradeTo(global.chains[chainTypes.WAN].scAddr.CrossDelegate);
+    let address = await crossProxy.implementation();
+    assert.equal(address, global.chains[chainTypes.WAN].scAddr.CrossDelegate, "check implementation failed");
 
-        assert.checkWeb3Event(ret, {
-            event: 'Upgraded',
-            args: {
-                implementation:address
-            }
-        });
-    } catch (err) {
-        assert.fail(err.toString());
-    }
+    assert.checkWeb3Event(ret, {
+        event: 'Upgraded',
+        args: {
+            implementation:address
+        }
+    });
 });

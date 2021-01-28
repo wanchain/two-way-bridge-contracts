@@ -1,87 +1,152 @@
-const CrossProxy                = artifacts.require('CrossProxy.sol');
+const CrossDelegate = artifacts.require('CrossDelegate');
+const CrossProxy = artifacts.require('CrossProxy');
+
+const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
+
+const QuotaDelegate = artifacts.require('QuotaDelegate');
+
 const {
-    BN,
     ERROR_INFO,
-    storemanGroupStatus,
-    xInfo,
-    skInfo,
     uniqueInfo,
-    htlcLockedTime,
-    userLockParams,
-    smgLockParams,
-    userFastParams,
-    smgFastParams,
-    debtLockParams,
-    typesArrayList,
+    chainTypes,
+    defaultCurve2Schnorr,
+} = require("./common");
+
+const {
+    skInfo,
+    storemanGroupStatus,
+} = require("./smg-config");
+
+const {
+    filterTokenPair,
+    getTokenAccount
+} = require("./token-config");
+
+const {
     assert,
-    testInit
+    testInit,
+    getTxParsedLogs
 }                               = require('./lib');
 
 const {
-    sleep,
+    typesArrayList,
+} = require("./sc-config");
+
+const {
     getRC20TokenInstance,
     buildMpcSign,
 }                               = require('../utils');
 
+const crossValue = 10;
+const minerFee = 5;
+
+
 before("init...   -> success", () => {
-    try {
-        testInit();
-    } catch(err) {
-        assert.fail(err);
-    }
+    testInit();
 });
 
-it('Debt -> srcDebtLock  ==> Halted', async () => {
+it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> -> transferAsset  ==> Halted', async () => {
     let crossProxy;
     try {
-        crossProxy = await CrossProxy.at(global.chains[1].approach.instance.address);
-        await crossProxy.setHalt(true, {from: global.owner});
+        const currentChainType = chainTypes.WAN;
+        const buddyChainType = chainTypes.ETH;
+        const srcSmgID = global.storemanGroups.src.ID;
+        const destSmgID = global.storemanGroups.dest.ID;
+        const uniqueID = uniqueInfo.wanAssetDebt;
+        const senderAccount = global.smgAccount.src[currentChainType];
 
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.htlcException.hash;
+        // cross
+        const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+        const parnters = await cross.getPartners();
 
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve1, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
+        let funcParams = {
+            uniqueID: uniqueID,
+            srcSmgID: srcSmgID,
+            destSmgID: destSmgID,
+        };
 
-        let srcDebtLockReceipt = await global.chains[1].approach.instance.srcDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
+        // curveID
+        let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+        let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.srcSmgID);
+        let curveID = smgConfig.curve1;
+        let sk = skInfo.src[currentChainType];
+
+        // sign
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+        funcParams = {...funcParams, R: R, s: s};
+
+        // crossProxy halted
+        crossProxy = await CrossProxy.at(global.chains[currentChainType].scAddr.CrossProxy);
+        await crossProxy.setHalt(true, {from: global.contractOwner});
+
+        // transferAsset
+        let receipt = await cross.transferAsset(...Object.values(funcParams), {from: senderAccount});
+        if (!receipt.logs.length) {
+            receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
+        }
+
+        assert.checkWeb3Event(receipt, {
+            event: 'TransferAssetLogger',
+            args: {
+                uniqueID: funcParams.uniqueID,
+                srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+                destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
+            }
+        });
 
         assert.fail(ERROR_INFO);
     } catch (err) {
         assert.include(err.toString(), "Smart contract is halted");
     } finally {
-        await crossProxy.setHalt(false, {from: global.owner});
+        if (crossProxy) {
+            await crossProxy.setHalt(false, {from: global.contractOwner});
+        }
     }
 });
 
-it("Debt -> srcDebtLock  ==> Destination storeman group ID is invalid, source storeman group ID is ready", async () => {
+it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> -> transferAsset  ==> Destination storeman group ID is invalid', async () => {
     try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups.htlcException.ID;
-        debtLockParamsTemp.xHash = xInfo.htlcException.hash;
+        const currentChainType = chainTypes.WAN;
+        const buddyChainType = chainTypes.ETH;
+        const srcSmgID = global.storemanGroups.src.ID;
+        const destSmgID = global.storemanGroups.exception.ID;
+        const uniqueID = uniqueInfo.wanAssetDebt;
+        const senderAccount = global.smgAccount.src[currentChainType];
 
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve1, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
+        // cross
+        const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+        const parnters = await cross.getPartners();
 
-        let srcDebtLockReceipt = await global.chains[1].approach.instance.srcDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
+        let funcParams = {
+            uniqueID: uniqueID,
+            srcSmgID: srcSmgID,
+            destSmgID: destSmgID,
+        };
+
+        // curveID
+        let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+        let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.srcSmgID);
+        let curveID = smgConfig.curve1;
+        let sk = skInfo.src[currentChainType];
+
+        // sign
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+        funcParams = {...funcParams, R: R, s: s};
+
+        // transferAsset
+        let receipt = await cross.transferAsset(...Object.values(funcParams), {from: senderAccount});
+        if (!receipt.logs.length) {
+            receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
+        }
+
+        assert.checkWeb3Event(receipt, {
+            event: 'TransferAssetLogger',
+            args: {
+                uniqueID: funcParams.uniqueID,
+                srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+                destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
+            }
+        });
 
         assert.fail(ERROR_INFO);
     } catch (err) {
@@ -89,1209 +154,1123 @@ it("Debt -> srcDebtLock  ==> Destination storeman group ID is invalid, source st
     }
 });
 
-it("Debt -> srcDebtLock  ==> Destination storeman group ID is not ready, source storeman group ID is ready", async () => {
-    let debtLockParamsTemp = Object.assign({}, debtLockParams);
+it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> -> transferAsset  ==> Destination storeman group ID is not ready', async () => {
+    let smg;
+    let funcParams;
     try {
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.htlcException.hash;
+        const currentChainType = chainTypes.WAN;
+        const buddyChainType = chainTypes.ETH;
+        const srcSmgID = global.storemanGroups.src.ID;
+        const destSmgID = global.storemanGroups.dest.ID;
+        const uniqueID = uniqueInfo.wanAssetDebt;
+        const senderAccount = global.smgAccount.src[currentChainType];
 
-        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.destSmgID, storemanGroupStatus.dismissed);
-        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.destSmgID, storemanGroupStatus.dismissed);
+        // cross
+        const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+        const parnters = await cross.getPartners();
 
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve1, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
+        funcParams = {
+            uniqueID: uniqueID,
+            srcSmgID: srcSmgID,
+            destSmgID: destSmgID,
+        };
 
-        let srcDebtLockReceipt = await global.chains[1].approach.instance.srcDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
+        // curveID
+        smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+        let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.srcSmgID);
+        let curveID = smgConfig.curve1;
+        let sk = skInfo.src[currentChainType];
+
+        // sign
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+        funcParams = {...funcParams, R: R, s: s};
+
+        // destination storeman group is ready
+        await smg.setStoremanGroupStatus(funcParams.srcSmgID, storemanGroupStatus.ready);
+        // source storeman group is unregistered
+        await smg.setStoremanGroupStatus(funcParams.destSmgID, storemanGroupStatus.unregistered);
+
+        let receipt = await cross.transferAsset(...Object.values(funcParams), {from: senderAccount});
+        if (!receipt.logs.length) {
+            receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
+        }
+
+        assert.checkWeb3Event(receipt, {
+            event: 'TransferAssetLogger',
+            args: {
+                uniqueID: funcParams.uniqueID,
+                srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+                destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
+            }
+        });
 
         assert.fail(ERROR_INFO);
     } catch (err) {
         assert.include(err.toString(), "PK is not ready");
     } finally {
-        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.destSmgID, storemanGroupStatus.ready);
-        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.destSmgID, storemanGroupStatus.ready);
+        if (smg) {
+            // restore storeman group ready
+            await smg.setStoremanGroupStatus(funcParams.srcSmgID, storemanGroupStatus.ready);
+            await smg.setStoremanGroupStatus(funcParams.destSmgID, storemanGroupStatus.ready);
+        }
     }
 });
 
-it("Debt -> srcDebtLock  ==> Destination storeman group ID is ready, source storeman group ID is ready", async () => {
+it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> -> transferAsset  ==> Source storeman group ID is ready', async () => {
+    let smg;
+    let funcParams;
     try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.htlcException.hash;
+        const currentChainType = chainTypes.WAN;
+        const buddyChainType = chainTypes.ETH;
+        const srcSmgID = global.storemanGroups.src.ID;
+        const destSmgID = global.storemanGroups.dest.ID;
+        const uniqueID = uniqueInfo.wanAssetDebt;
+        const senderAccount = global.smgAccount.src[currentChainType];
 
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve1, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
+        // cross
+        const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+        const parnters = await cross.getPartners();
 
-        let srcDebtLockReceipt = await global.chains[1].approach.instance.srcDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
+        funcParams = {
+            uniqueID: uniqueID,
+            srcSmgID: srcSmgID,
+            destSmgID: destSmgID,
+        };
+
+        // curveID
+        smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+        let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.srcSmgID);
+        let curveID = smgConfig.curve1;
+        let sk = skInfo.src[currentChainType];
+
+        // sign
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+        funcParams = {...funcParams, R: R, s: s};
+
+        // destination storeman group is unregistered
+        await smg.setStoremanGroupStatus(funcParams.srcSmgID, storemanGroupStatus.ready);
+        // destination storeman group is ready
+        await smg.setStoremanGroupStatus(funcParams.destSmgID, storemanGroupStatus.ready);
+
+        let receipt = await cross.transferAsset(...Object.values(funcParams), {from: senderAccount});
+        if (!receipt.logs.length) {
+            receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
+        }
+
+        assert.checkWeb3Event(receipt, {
+            event: 'TransferAssetLogger',
+            args: {
+                uniqueID: funcParams.uniqueID,
+                srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+                destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
+            }
+        });
 
         assert.fail(ERROR_INFO);
-        } catch (err) {
+    } catch (err) {
+        assert.include(err.toString(), "PK is not unregistered");
+    } finally {
+        if (smg) {
+            // restore storeman group ready
+            await smg.setStoremanGroupStatus(funcParams.srcSmgID, storemanGroupStatus.ready);
+            await smg.setStoremanGroupStatus(funcParams.destSmgID, storemanGroupStatus.ready);
+        }
+    }
+});
+
+it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> -> transferAsset  ==> Signature is invalid', async () => {
+    let smg;
+    try {
+        const currentChainType = chainTypes.WAN;
+        const buddyChainType = chainTypes.ETH;
+        const srcSmgID = global.storemanGroups.src.ID;
+        const destSmgID = global.storemanGroups.dest.ID;
+        const uniqueID = uniqueInfo.wanAssetDebt;
+        const senderAccount = global.smgAccount.src[currentChainType];
+
+        // cross
+        const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+        const parnters = await cross.getPartners();
+
+        let funcParams = {
+            uniqueID: uniqueID,
+            srcSmgID: srcSmgID,
+            destSmgID: destSmgID,
+        };
+
+        // curveID
+        smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+        let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.srcSmgID);
+        let curveID = smgConfig.curve1;
+        let sk = skInfo.src[currentChainType];
+
+        // sign
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.srcSmgID);
+        funcParams = {...funcParams, R: R, s: s};
+
+        let receipt = await cross.transferAsset(...Object.values(funcParams), {from: senderAccount});
+        if (!receipt.logs.length) {
+            receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
+        }
+
+        assert.checkWeb3Event(receipt, {
+            event: 'TransferAssetLogger',
+            args: {
+                uniqueID: funcParams.uniqueID,
+                srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+                destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
+            }
+        });
+
+        assert.fail(ERROR_INFO);
+    } catch (err) {
         assert.include(err.toString(), "PK is not unregistered");
     }
 });
 
-it("Debt -> srcDebtLock [revoke]  ==> Destination storeman group ID is ready, source storeman group ID is unregistered ==> success", async () => {
+it('Chain [WAN] <=> Chain [ETH] -> Debt @ethereum <( wanchain => ethereum )> -> receiveDebt  ==> Halted', async () => {
+    let crossProxy;
     try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.chain1DebtRevoke.hash;
+        const currentChainType = chainTypes.ETH;
+        const buddyChainType = chainTypes.WAN;
+        const srcSmgID = global.storemanGroups.src.ID;
+        const destSmgID = global.storemanGroups.dest.ID;
+        const uniqueID = uniqueInfo.wanAssetDebt;
+        const senderAccount = global.smgAccount.dest[currentChainType];
 
-        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
-        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
+        // cross
+        const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+        const parnters = await cross.getPartners();
 
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve1, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
+        let funcParams = {
+            uniqueID: uniqueID,
+            srcSmgID: srcSmgID,
+            destSmgID: destSmgID,
+        };
 
-        let srcDebtLockReceipt = await global.chains[1].approach.instance.srcDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
+        // curveID
+        let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+        let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.destSmgID);
+        let curveID = smgConfig.curve1;
+        let sk = skInfo.dest[currentChainType];
 
-        // console.log(srcDebtLockReceipt.logs);
-        assert.checkWeb3Event(srcDebtLockReceipt, {
-            event: 'SrcDebtLockLogger',
+        // sign
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.srcSmgID);
+        funcParams = {...funcParams, R: R, s: s};
+
+        // crossProxy halted
+        crossProxy = await CrossProxy.at(global.chains[currentChainType].scAddr.CrossProxy);
+        await crossProxy.setHalt(true, {from: global.contractOwner});
+
+        // receiveDebt
+        let receipt = await cross.receiveDebt(...Object.values(funcParams), {from: senderAccount});
+        if (!receipt.logs.length) {
+            receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
+        }
+
+        assert.checkWeb3Event(receipt, {
+            event: 'ReceiveDebtLogger',
             args: {
-                xHash: debtLockParamsTemp.xHash,
-                srcSmgID: web3.utils.padRight(debtLockParamsTemp.srcSmgID, 64),
-                destSmgID: web3.utils.padRight(debtLockParamsTemp.destSmgID, 64),
+                uniqueID: funcParams.uniqueID,
+                srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+                destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
             }
         });
+
+        assert.fail(ERROR_INFO);
     } catch (err) {
-        assert.fail(err);
+        assert.include(err.toString(), "Smart contract is halted");
+    } finally {
+        if (crossProxy) {
+            await crossProxy.setHalt(false, {from: global.contractOwner});
+        }
     }
 });
 
-it("Debt -> destDebtLock [revoke]  ==> success", async () => {
+it('Chain [WAN] <=> Chain [ETH] -> Debt @ethereum <( wanchain => ethereum )> -> receiveDebt  ==> Destination storeman group ID is invalid', async () => {
     try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.chain1DebtRevoke.hash;
+        const currentChainType = chainTypes.ETH;
+        const buddyChainType = chainTypes.WAN;
+        const srcSmgID = global.storemanGroups.src.ID;
+        const destSmgID = global.storemanGroups.exception.ID;
+        const uniqueID = uniqueInfo.wanAssetDebt;
+        const senderAccount = global.smgAccount.dest[currentChainType];
 
-        let pkId = 2;
-        let sk = skInfo.smg2[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.destDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.srcSmgID);
+        // cross
+        const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+        const parnters = await cross.getPartners();
 
-        let srcDebtLockReceipt = await global.chains[2].approach.instance.destDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[2].account}
-        );
+        let funcParams = {
+            uniqueID: uniqueID,
+            srcSmgID: srcSmgID,
+            destSmgID: destSmgID,
+        };
 
-        // console.log(srcDebtLockReceipt.logs);
-        assert.checkWeb3Event(srcDebtLockReceipt, {
-            event: 'DestDebtLockLogger',
+        // curveID
+        let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+        let smgConfig = await smg.getStoremanGroupConfig.call(global.storemanGroups.dest.ID);
+        let curveID = smgConfig.curve1;
+        let sk = skInfo.dest[currentChainType];
+
+        // sign
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.srcSmgID);
+        funcParams = {...funcParams, R: R, s: s};
+
+        // receiveDebt
+        let receipt = await cross.receiveDebt(...Object.values(funcParams), {from: senderAccount});
+        if (!receipt.logs.length) {
+            receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
+        }
+
+        assert.checkWeb3Event(receipt, {
+            event: 'ReceiveDebtLogger',
             args: {
-                xHash: debtLockParamsTemp.xHash,
-                srcSmgID: web3.utils.padRight(debtLockParamsTemp.srcSmgID, 64),
-                destSmgID: web3.utils.padRight(debtLockParamsTemp.destSmgID, 64),
+                uniqueID: funcParams.uniqueID,
+                srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+                destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
             }
         });
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it("Debt -> userFastMint  ==> Disable rapidity cross chain while debt", async () => {
-    try {
-        // global.accounts[7] is the chain1 original address of the user.
-        // global.accounts[8] is the chain2 shadow address of the user.
-        let userFastParamsTemp = Object.assign({}, userFastParams);
-        userFastParamsTemp.origUserAccount = global.accounts[7];
-        userFastParamsTemp.shadowUserAccount = global.accounts[8];
-        userFastParamsTemp.smgID = global.storemanGroups[1].ID;
-        userFastParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
-
-        let value = web3.utils.toWei(userFastParamsTemp.value.toString());
-
-        let userFastMintReceipt = await global.chains[1].approach.instance.userFastMint(
-            userFastParamsTemp.smgID,
-            userFastParamsTemp.tokenPairID,
-            value,
-            userFastParamsTemp.shadowUserAccount,
-            {from: global.storemanGroups[1].account}
-        );
 
         assert.fail(ERROR_INFO);
     } catch (err) {
         assert.include(err.toString(), "PK is not ready");
     }
 });
-/*
-it("Debt -> userMintLock  ==> Disable htlc cross chain while debt", async () => {
-    let value;
-    let origUserAccount;
+
+it('Chain [WAN] <=> Chain [ETH] -> Debt @ethereum <( wanchain => ethereum )> -> receiveDebt  ==> Destination storeman group ID is not ready', async () => {
+    let smg;
+    let funcParams;
     try {
-        // global.accounts[7] is the chain1 original address of the user.
-        // global.accounts[8] is the chain2 shadow address of the user.
-        let userLockParamsTemp = Object.assign({}, userLockParams);
-        userLockParamsTemp.origUserAccount = global.accounts[7];
-        userLockParamsTemp.shadowUserAccount = global.accounts[8];
-        userLockParamsTemp.xHash = xInfo.htlcException.hash;
-        userLockParamsTemp.tokenPairID = global.chains[1].token.tokenPairID;
+        const currentChainType = chainTypes.ETH;
+        const buddyChainType = chainTypes.WAN;
+        const srcSmgID = global.storemanGroups.src.ID;
+        const destSmgID = global.storemanGroups.dest.ID;
+        const uniqueID = uniqueInfo.wanAssetDebt;
+        const senderAccount = global.smgAccount.dest[currentChainType];
 
-        value = web3.utils.toWei(userLockParamsTemp.value.toString());
-        origUserAccount = userLockParamsTemp.origUserAccount;
+        // cross
+        const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+        const parnters = await cross.getPartners();
 
-        await global.chains[1].token.tokenCreator.mintToken(global.chains[1].token.name, global.chains[1].token.symbol,
-            userLockParamsTemp.origUserAccount, value);
-        // get token instance
-        let tokenInstance = await getRC20TokenInstance(global.chains[1].token.origTokenAccount);
-        let balance = await tokenInstance.balanceOf(userLockParamsTemp.origUserAccount);
-        assert.equal(value, balance.toString());
+        funcParams = {
+            uniqueID: uniqueID,
+            srcSmgID: srcSmgID,
+            destSmgID: destSmgID,
+        };
 
-        // approve value
-        await tokenInstance.approve(global.chains[1].approach.instance.address, 0, {from: userLockParamsTemp.origUserAccount});
-        await tokenInstance.approve(global.chains[1].approach.instance.address, value, {from: userLockParamsTemp.origUserAccount});
-        let allowance = await tokenInstance.allowance(userLockParamsTemp.origUserAccount, global.chains[1].approach.instance.address);
-        assert.equal(value, allowance.toString());
+        // curveID
+        smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+        let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.destSmgID);
+        let curveID = smgConfig.curve1;
+        let sk = skInfo.dest[currentChainType];
 
-        // user mint lock
-        let userMintLockReceipt = await global.chains[1].approach.instance.userMintLock(
-            userLockParamsTemp.xHash,
-            userLockParamsTemp.smgID,
-            userLockParamsTemp.tokenPairID,
-            value,
-            userLockParamsTemp.shadowUserAccount.toLowerCase(),
-            {from: userLockParamsTemp.origUserAccount, value: global.chains[1].approach.origLockFee}
-        );
+        // sign
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.srcSmgID);
+        funcParams = {...funcParams, R: R, s: s};
+
+        // destination storeman group is ready
+        await smg.setStoremanGroupStatus(funcParams.srcSmgID, storemanGroupStatus.ready);
+        // source storeman group is unregistered
+        await smg.setStoremanGroupStatus(funcParams.destSmgID, storemanGroupStatus.unregistered);
+
+        // receiveDebt
+        let receipt = await cross.receiveDebt(...Object.values(funcParams), {from: senderAccount});
+        if (!receipt.logs.length) {
+            receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
+        }
+
+        assert.checkWeb3Event(receipt, {
+            event: 'ReceiveDebtLogger',
+            args: {
+                uniqueID: funcParams.uniqueID,
+                srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+                destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
+            }
+        });
 
         assert.fail(ERROR_INFO);
     } catch (err) {
         assert.include(err.toString(), "PK is not ready");
     } finally {
-        await global.chains[1].token.tokenCreator.burnToken(global.chains[1].token.name, global.chains[1].token.symbol,
-            origUserAccount, value);
+        if (smg) {
+            // restore storeman group ready
+            await smg.setStoremanGroupStatus(funcParams.srcSmgID, storemanGroupStatus.ready);
+            await smg.setStoremanGroupStatus(funcParams.destSmgID, storemanGroupStatus.ready);
+        }
     }
 });
 
-it('Debt -> srcDebtRedeem [revoke]  ==> Redeem timeout', async () => {
+it('Chain [WAN] <=> Chain [ETH] -> Debt @ethereum <( wanchain => ethereum )> -> receiveDebt  ==> Signature is invalid', async () => {
     try {
-        let lockedTime = htlcLockedTime * 1000 + 1;
-        // let leftTime = await global.chains[1].approach.instance.getLeftLockedTime(xInfo.chain1DebtRevoke.hash);
-        // let lockedTime = leftTime * 1000 + 1;
+        const currentChainType = chainTypes.ETH;
+        const buddyChainType = chainTypes.WAN;
+        const srcSmgID = global.storemanGroups.src.ID;
+        const destSmgID = global.storemanGroups.dest.ID;
+        const uniqueID = uniqueInfo.wanAssetDebt;
+        const senderAccount = global.smgAccount.dest[currentChainType];
 
-        console.log("await", lockedTime, "ms");
-        await sleep(lockedTime); // ms
+        // cross
+        const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+        const parnters = await cross.getPartners();
 
-        // let leftTime = await global.chains[1].approach.instance.getLeftLockedTime(xInfo.chain1DebtRevoke.hash);
-        // console.log("Debt Number(leftTime)", Number(leftTime));
-        // console.log("Debt leftTime BN   ", leftTime);
-        // console.log("Debt leftTime number", leftTime.toNumber());
-        // console.log("Debt leftTime string", leftTime.toString(10));
-        // assert.equal(leftTime.toNumber() === 0, true);
-        // // assert.equal(Number(leftTime) === 0, true);
+        let funcParams = {
+            uniqueID: uniqueID,
+            srcSmgID: srcSmgID,
+            destSmgID: destSmgID,
+        };
 
-        await global.chains[2].approach.instance.srcDebtRedeem(xInfo.chain1DebtRevoke.x, {from: global.storemanGroups[1].account});
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Redeem timeout");
-    }
-});
+        // curveID
+        let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+        let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.destSmgID);
+        let curveID = smgConfig.curve1;
+        let sk = skInfo.dest[currentChainType];
 
-it('Debt -> destDebtRedeem  ==> Redeem timeout', async () => {
-    try {
-        let lockedTime = 2 * htlcLockedTime * 1000 + 1;
-        // let leftTime = await global.chains[1].approach.instance.getLeftLockedTime(xInfo.chain1DebtRevoke.hash);
-        // let lockedTime = leftTime * 1000 + 1;
+        // sign
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.destSmgID);
+        funcParams = {...funcParams, R: R, s: s};
 
-        console.log("await", lockedTime, "ms");
-        await sleep(lockedTime); // ms
+        // receiveDebt
+        let receipt = await cross.receiveDebt(...Object.values(funcParams), {from: senderAccount});
+        if (!receipt.logs.length) {
+            receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
+        }
 
-        await global.chains[1].approach.instance.destDebtRedeem(xInfo.chain1DebtRevoke.x, {from: global.storemanGroups[2].account});
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Redeem timeout");
-    }
-});
-
-it('Debt -> srcDebtRevoke [revoke]  ==> success', async () => {
-    try {
-        // console.log("revoke hash", xInfo.chain1DebtRevoke.hash);
-        let srcDebtRevokeReceipt = await global.chains[1].approach.instance.srcDebtRevoke(xInfo.chain1DebtRevoke.hash, {from: global.storemanGroups[1].account});
-
-        // console.log("srcDebtRevokeReceipt", srcDebtRevokeReceipt.logs);
-        assert.checkWeb3Event(srcDebtRevokeReceipt, {
-            event: 'SrcDebtRevokeLogger',
+        assert.checkWeb3Event(receipt, {
+            event: 'ReceiveDebtLogger',
             args: {
-                xHash: xInfo.chain1DebtRevoke.hash,
-                srcSmgID: web3.utils.padRight(global.storemanGroups[1].ID, 64),
-                destSmgID: web3.utils.padRight(global.storemanGroups[2].ID, 64),
+                uniqueID: funcParams.uniqueID,
+                srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+                destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
             }
         });
-        let leftTime = await global.chains[1].approach.instance.getLeftLockedTime(xInfo.chain1DebtRevoke.hash);
-        assert.equal(leftTime.toNumber() === 0, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it('Debt -> destDebtRevoke  [revoke]  ==> success', async () => {
-    try {
-        // console.log("revoke hash", xInfo.chain1DebtRevoke.hash);
-        let destDebtRevokeReceipt = await global.chains[2].approach.instance.destDebtRevoke(xInfo.chain1DebtRevoke.hash, {from: global.storemanGroups[2].account});
-
-        // console.log("destDebtRevokeReceipt", destDebtRevokeReceipt.logs);
-        assert.checkWeb3Event(destDebtRevokeReceipt, {
-            event: 'DestDebtRevokeLogger',
-            args: {
-                xHash: xInfo.chain1DebtRevoke.hash,
-                srcSmgID: web3.utils.padRight(global.storemanGroups[1].ID, 64),
-                destSmgID: web3.utils.padRight(global.storemanGroups[2].ID, 64),
-            }
-        });
-        let leftTime = await global.chains[2].approach.instance.getLeftLockedTime(xInfo.chain1DebtRevoke.hash);
-        assert.equal(leftTime.toNumber() === 0, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it('Asset -> Original[1] -> Token1 -> userMintLock  ==> success', async () => {
-    try {
-        // global.accounts[7] is the chain1 original address of the user.
-        // global.accounts[8] is the chain2 shadow address of the user.
-        let userLockParamsTemp = Object.assign({}, userLockParams);
-        userLockParamsTemp.origUserAccount = global.accounts[7];
-        userLockParamsTemp.shadowUserAccount = global.accounts[8];
-        userLockParamsTemp.xHash = xInfo.chain1DebtMintLock.hash;
-
-        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(userLockParamsTemp.smgID, storemanGroupStatus.ready);
-        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(userLockParamsTemp.smgID, storemanGroupStatus.ready);
-
-        // let mintOracleValue = await global.chains[1].approach.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
-        // console.log("mintOracleValue", mintOracleValue);
-
-        let beforeMintQuotaValue = await global.chains[1].approach.parnters.quota.getUserMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-        // console.log("before MintQuotaValue", beforeMintQuotaValue);
-
-        let value = web3.utils.toWei(userLockParamsTemp.value.toString());
-        await global.chains[1].token.tokenCreator.mintToken(global.chains[1].token.name, global.chains[1].token.symbol,
-            userLockParamsTemp.origUserAccount, value);
-        // get token instance
-        let tokenInstance = await getRC20TokenInstance(global.chains[1].token.origTokenAccount);
-        let balance = await tokenInstance.balanceOf(userLockParamsTemp.origUserAccount);
-        assert.equal(value, balance.toString());
-
-        // approve value
-        await tokenInstance.approve(global.chains[1].approach.instance.address, 0, {from: userLockParamsTemp.origUserAccount});
-        await tokenInstance.approve(global.chains[1].approach.instance.address, value, {from: userLockParamsTemp.origUserAccount});
-        let allowance = await tokenInstance.allowance(userLockParamsTemp.origUserAccount, global.chains[1].approach.instance.address);
-        assert.equal(value, allowance.toString());
-
-        // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
-        // console.log("before crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
-        // user mint lock
-        let userMintLockReceipt = await global.chains[1].approach.instance.userMintLock(
-            userLockParamsTemp.xHash,
-            userLockParamsTemp.smgID,
-            userLockParamsTemp.tokenPairID,
-            value,
-            userLockParamsTemp.shadowUserAccount,
-            {from: userLockParamsTemp.origUserAccount, value: global.chains[1].approach.origLockFee}
-        );
-        // console.log("userMintLock receipt", userMintLockReceipt.logs);
-        assert.checkWeb3Event(userMintLockReceipt, {
-            event: 'UserMintLockLogger',
-            args: {
-                xHash: userLockParamsTemp.xHash,
-                smgID: web3.utils.padRight(userLockParamsTemp.smgID, 64),
-                tokenPairID: userLockParamsTemp.tokenPairID,
-                value: value,
-                fee: global.chains[1].approach.origLockFee,
-                userAccount: userLockParamsTemp.shadowUserAccount.toLowerCase(),
-            }
-        });
-        // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
-        // console.log("after crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
-
-        let afterMintQuotaValue = await global.chains[1].approach.parnters.quota.getUserMintQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-        let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
-        assert.equal(value === difference, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it("Chain[1] -> Asset -> srcDebtLock  ==> There are asset_receivable or asset_payable in src storeman", async () => {
-    try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.chain1DebtRedeem.hash;
-
-        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
-        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
-
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
-
-        let srcDebtLockReceipt = await global.chains[1].approach.instance.srcDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
 
         assert.fail(ERROR_INFO);
     } catch (err) {
-        assert.include(err.toString(), "There are asset_receivable or asset_payable in src storeman");
+        assert.include(err.toString(), "Signature verification failed");
     }
 });
 
-it('Asset -> Original[1] -> Token1 -> smgMintRedeem  ==> Redeem timeout', async () => {
-    try {
-        let lockedTime = 2 * htlcLockedTime * 1000 + 1;
-        console.log("await", lockedTime, "ms");
-        await sleep(lockedTime); // ms
-        await global.chains[1].approach.instance.smgMintRedeem(xInfo.chain1DebtMintLock.x, {from: global.storemanGroups[1].account});
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Redeem timeout");
+// WAN
+it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( wanchain => ethereum )> -> userLock  ==>  success', async () => {
+    const wanUserAccount = global.aliceAccount.WAN;
+    const ethUserAccount = global.aliceAccount.ETH;
+    const currentChainType = chainTypes.WAN;
+    const buddyChainType = chainTypes.ETH;
+    const smgID = global.storemanGroups.src.ID
+    const crossValueToWei = web3.utils.toWei(crossValue.toString());
+    const userAccount = ethUserAccount;
+    const senderAccount = wanUserAccount;
+    const serviceFee = global.crossFees[currentChainType][currentChainType][buddyChainType].lockFee;
+
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
+
+    // tokenAccount
+    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, global.chains[currentChainType].coin.symbol);
+    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
+    const tokenPairID = tokenPair.tokenPairID;
+
+    const totalValue = new web3.utils.BN(crossValueToWei).add(new web3.utils.BN(serviceFee)).toString();
+
+    // exec
+    let funcParams = {
+        smgID: smgID,
+        tokenPairID: tokenPairID,
+        crossValue: crossValueToWei,
+        userAccount: userAccount
+    };
+    let receipt = await cross.userLock(...Object.values(funcParams), {from: senderAccount, value: totalValue});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'UserLockLogger',
+        args: {
+            smgID: web3.utils.padRight(funcParams.smgID, 64),
+            tokenPairID: funcParams.tokenPairID,
+            tokenAccount: tokenAccount,
+            value: funcParams.crossValue,
+            serviceFee: serviceFee,
+            userAccount: funcParams.userAccount.toLowerCase(),
+        }
+    });
 });
 
-it('Asset -> Original[1] -> Token1 -> userMintRevoke  ==> success', async () => {
-    try {
-        let beforeMintQuotaValue = await global.chains[1].approach.parnters.quota.getUserMintQuota(global.chains[1].token.tokenPairID, global.storemanGroups[1].ID);
+it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( wanchain => ethereum )> -> smgMint  ==>  success', async () => {
+    const wanUserAccount = global.aliceAccount.WAN;
+    const ethUserAccount = global.aliceAccount.ETH;
+    const currentChainType = chainTypes.ETH;
+    const buddyChainType = chainTypes.WAN;
+    const uniqueID = uniqueInfo.userDebtLockWAN;
+    const smgID = global.storemanGroups.src.ID
+    const crossValueToWei = web3.utils.toWei(crossValue.toString());
+    const userAccount = ethUserAccount;
+    const senderAccount = global.smgAccount.src[currentChainType];
 
-        let origUserAccount = global.accounts[7];
-        let value = web3.utils.toWei(userLockParams.value.toString());
-        let userMintRevokeReceipt = await global.chains[1].approach.instance.userMintRevoke(xInfo.chain1DebtMintLock.hash, {from: origUserAccount, value: global.chains[1].approach.origRevokeFee});
-        await global.chains[1].token.tokenCreator.burnToken(global.chains[1].token.name, global.chains[1].token.symbol,
-            origUserAccount, value);
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
 
-        assert.checkWeb3Event(userMintRevokeReceipt, {
-            event: 'UserMintRevokeLogger',
-            args: {
-                xHash: xInfo.chain1DebtMintLock.hash,
-                smgID: web3.utils.padRight(global.storemanGroups[1].ID, 64),
-                tokenPairID:global.chains[1].token.tokenPairID,
-                fee: global.chains[1].approach.origRevokeFee,
-            }
-        });
+    // tokenAccount
+    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, global.chains[buddyChainType].coin.symbol);
+    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
+    const tokenPairID = tokenPair.tokenPairID;
 
-        let afterMintQuotaValue = await global.chains[1].approach.parnters.quota.getUserMintQuota(global.chains[1].token.tokenPairID, global.storemanGroups[1].ID);
-        let difference = new BN(afterMintQuotaValue).sub(beforeMintQuotaValue).toString();
-        assert.equal(value === difference, true);
+    let funcParams = {
+        uniqueID: uniqueID,
+        smgID: smgID,
+        tokenPairID: tokenPairID,
+        crossValue: crossValueToWei,
+        tokenAccount: tokenAccount,
+        userAccount: userAccount
+    };
 
-        let leftTime = await global.chains[1].approach.instance.getLeftLockedTime(xInfo.chain1DebtMintLock.hash);
-        assert.equal(leftTime.toNumber() === 0, true);
-    } catch (err) {
-        assert.fail(err);
+    let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+    let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.smgID);
+    let curveID = smgConfig.curve1;
+    let sk = skInfo.src[currentChainType];
+
+    // sign
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgMint, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
+    funcParams = {...funcParams, R: R, s: s};
+
+    let receipt = await cross.smgMint(...Object.values(funcParams), {from: senderAccount});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLib, receipt.tx);
     }
-});
-*/
 
-// ready for debt
-it('Asset -> Original[2] -> Coin2 -> userFastMint  ==> success', async () => {
-    try {
-        // global.accounts[7] is the chain1 original address of the user.
-        // global.accounts[8] is the chain2 shadow address of the user.
-        let fastMintParamsTemp = Object.assign({}, userFastParams);
-        fastMintParamsTemp.origUserAccount = global.accounts[7];
-        fastMintParamsTemp.shadowUserAccount = global.accounts[8];
-        fastMintParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
-
-        // console.log(fastMintParamsTemp);
-
-        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(fastMintParamsTemp.smgID, storemanGroupStatus.ready);
-        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(fastMintParamsTemp.smgID, storemanGroupStatus.ready);
-
-        let beforeMintQuotaValue = await global.chains[2].approach.parnters.quota.getUserMintQuota(fastMintParamsTemp.tokenPairID, fastMintParamsTemp.smgID);
-
-        let value = web3.utils.toWei(fastMintParamsTemp.value.toString());
-        let totalValue = new BN(value).add(new BN(global.chains[2].approach.origLockFee)).toString();
-
-        // console.log("1 balance global.accounts[7]", await getBalance(fastMintParamsTemp.origUserAccount));
-        // console.log("value global.accounts[7]", value);
-        // user mint lock
-        let userFastMintReceipt = await global.chains[2].approach.instance.userFastMint(
-            fastMintParamsTemp.smgID,
-            fastMintParamsTemp.tokenPairID,
-            value,
-            fastMintParamsTemp.shadowUserAccount,
-            {from: fastMintParamsTemp.origUserAccount, value: totalValue}
-        );
-
-        // console.log("2 balance global.accounts[7]", await getBalance(fastMintParamsTemp.origUserAccount));
-
-        // console.log("userFastMint receipt", userFastMintReceipt.logs);
-        assert.checkWeb3Event(userFastMintReceipt, {
-            event: 'UserFastMintLogger',
-            args: {
-                smgID: web3.utils.padRight(fastMintParamsTemp.smgID, 64),
-                tokenPairID: fastMintParamsTemp.tokenPairID,
-                value: value,
-                fee: global.chains[2].approach.origLockFee,
-                userAccount: fastMintParamsTemp.shadowUserAccount.toLowerCase(),
-            }
-        });
-
-        let afterMintQuotaValue = await global.chains[2].approach.parnters.quota.getUserMintQuota(fastMintParamsTemp.tokenPairID, fastMintParamsTemp.smgID);
-        let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
-        assert.equal(value === difference, true);
-    } catch (err) {
-        assert.fail(err);
-    }
+    assert.checkWeb3Event(receipt, {
+        event: 'SmgMintLogger',
+        args: {
+            uniqueID: funcParams.uniqueID,
+            smgID: web3.utils.padRight(funcParams.smgID, 64),
+            tokenPairID: funcParams.tokenPairID,
+            value: funcParams.crossValue,
+            tokenAccount: funcParams.tokenAccount,
+            userAccount: funcParams.userAccount
+        }
+    });
 });
 
-it('Debt -> Shadow[1] -> Coin2 -> smgFastMint  ==> success', async () => {
-    try {
-        // global.accounts[7] is the chain1 original address of the user.
-        // global.accounts[8] is the chain2 shadow address of the user.
-        let fastMintParamsTemp = Object.assign({}, smgFastParams);
-        fastMintParamsTemp.origUserAccount = global.accounts[7];
-        fastMintParamsTemp.shadowUserAccount = global.accounts[8];
-        fastMintParamsTemp.uniqueID = uniqueInfo.coin2DebtFastMint;
-        fastMintParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
+// ETH
+it('Chain [ETH] <=> Chain [WAN] -> COIN [ETH @ethereum] <( ethereum => wanchain )> -> userLock  ==>  success', async () => {
+    const wanUserAccount = global.aliceAccount.WAN;
+    const ethUserAccount = global.aliceAccount.ETH;
+    const currentChainType = chainTypes.ETH;
+    const buddyChainType = chainTypes.WAN;
+    const smgID = global.storemanGroups.src.ID
+    const crossValueToWei = web3.utils.toWei(crossValue.toString());
+    const userAccount = wanUserAccount;
+    const senderAccount = ethUserAccount;
+    const serviceFee = global.crossFees[currentChainType][currentChainType][buddyChainType].lockFee;
 
-        let beforeMintQuotaValue = await global.chains[1].approach.parnters.quota.getSmgMintQuota(fastMintParamsTemp.tokenPairID, fastMintParamsTemp.smgID);
-        // console.log("beforeMintQuotaValue", beforeMintQuotaValue)
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
 
-        let value = web3.utils.toWei(fastMintParamsTemp.value.toString());
+    // tokenAccount
+    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, global.chains[currentChainType].coin.symbol);
+    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
+    const tokenPairID = tokenPair.tokenPairID;
 
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve1, sk, typesArrayList.smgFastMint, fastMintParamsTemp.uniqueID,
-            fastMintParamsTemp.tokenPairID, value, fastMintParamsTemp.shadowUserAccount);
+    const totalValue = new web3.utils.BN(crossValueToWei).add(new web3.utils.BN(serviceFee)).toString();
 
-        // user fast mint
-        let userFastMintReceipt = await global.chains[1].approach.instance.smgFastMint(
-            fastMintParamsTemp.uniqueID,
-            fastMintParamsTemp.smgID,
-            fastMintParamsTemp.tokenPairID,
-            value,
-            fastMintParamsTemp.shadowUserAccount,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
-        // console.log("smgFastMint receipt", userFastMintReceipt.logs);
-
-        assert.checkWeb3Event(userFastMintReceipt, {
-            event: 'SmgFastMintLogger',
-            args: {
-                uniqueID: fastMintParamsTemp.uniqueID,
-                smgID: web3.utils.padRight(fastMintParamsTemp.smgID, 64),
-                tokenPairID: fastMintParamsTemp.tokenPairID,
-                value: value,
-                userAccount: fastMintParamsTemp.shadowUserAccount,
-            }
-        });
-
-        let afterMintQuotaValue = await global.chains[1].approach.parnters.quota.getSmgMintQuota(fastMintParamsTemp.tokenPairID, fastMintParamsTemp.smgID);
-        // console.log("afterMintQuotaValue", afterMintQuotaValue)
-        // console.log("value", value);
-        let difference = new BN(beforeMintQuotaValue).sub(afterMintQuotaValue).toString();
-        // console.log("difference", difference);
-        assert.equal(value === difference, true);
-    } catch (err) {
-        assert.fail(err);
+    // exec
+    let funcParams = {
+        smgID: smgID,
+        tokenPairID: tokenPairID,
+        crossValue: crossValueToWei,
+        userAccount: userAccount
+    };
+    let receipt = await cross.userLock(...Object.values(funcParams), {from: senderAccount, value: totalValue});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'UserLockLogger',
+        args: {
+            smgID: web3.utils.padRight(funcParams.smgID, 64),
+            tokenPairID: funcParams.tokenPairID,
+            tokenAccount: tokenAccount,
+            value: funcParams.crossValue,
+            serviceFee: serviceFee,
+            userAccount: funcParams.userAccount.toLowerCase(),
+        }
+    });
 });
 
-// chain 1 debt clean
-it("Chain[1] -> Asset -> srcDebtLock  ==> success", async () => {
-    try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.chain1DebtRedeem.hash;
+it('Chain [WAN] <=> Chain [ETH] -> Unregister @wanchain @ethereum <( wanchain <=> ethereum )> -> setStoremanGroupStatus  ==> unregister source storeman group', async () => {
+    const wanchain = chainTypes.WAN;
+    const ethereum = chainTypes.ETH;
+    const srcSmgID = global.storemanGroups.src.ID;
+    const destSmgID = global.storemanGroups.dest.ID;
 
-        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
-        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
+    // wanchain
+    const wanCross = await CrossDelegate.at(global.chains[wanchain].scAddr.CrossProxy);
+    const wanPartners = await wanCross.getPartners();
+    const wanSmg = await global.getSmgProxy(wanchain, wanPartners.smgAdminProxy);
+    // source storeman group is unregistered
+    await wanSmg.setStoremanGroupStatus(srcSmgID, storemanGroupStatus.unregistered);
+    const wanSrcSmgConfig = await wanSmg.getStoremanGroupConfig.call(srcSmgID);
+    assert.equal(wanSrcSmgConfig.status, storemanGroupStatus.unregistered, `check source storeman group status at ${wanchain} failed`);
 
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
+    // destination storeman group is ready
+    await wanSmg.setStoremanGroupStatus(destSmgID, storemanGroupStatus.ready);
+    const wanDestSmgConfig = await wanSmg.getStoremanGroupConfig.call(destSmgID);
+    assert.equal(wanDestSmgConfig.status, storemanGroupStatus.ready, `check destination storeman group status at ${wanchain} failed`);
 
-        let srcDebtLockReceipt = await global.chains[1].approach.instance.srcDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
+    // ethereum
+    const ethCross = await CrossDelegate.at(global.chains[ethereum].scAddr.CrossProxy);
+    const ethPartners = await ethCross.getPartners();
+    const ethSmg = await global.getSmgProxy(ethereum, ethPartners.smgAdminProxy);
+    // source storeman group is unregistered
+    await ethSmg.setStoremanGroupStatus(srcSmgID, storemanGroupStatus.unregistered);
+    const ethSrcSmgConfig = await ethSmg.getStoremanGroupConfig.call(srcSmgID);
+    assert.equal(ethSrcSmgConfig.status, storemanGroupStatus.unregistered, `check source storeman group status at ${ethereum} failed`);
 
-        // console.log(srcDebtLockReceipt.logs);
-        assert.checkWeb3Event(srcDebtLockReceipt, {
-            event: 'SrcDebtLockLogger',
-            args: {
-                xHash: debtLockParamsTemp.xHash,
-                srcSmgID: web3.utils.padRight(debtLockParamsTemp.srcSmgID, 64),
-                destSmgID: web3.utils.padRight(debtLockParamsTemp.destSmgID, 64),
-            }
-        });
-    } catch (err) {
-        assert.fail(err);
-    }
+    // destination storeman group is ready
+    await ethSmg.setStoremanGroupStatus(destSmgID, storemanGroupStatus.ready);
+    const ethDestSmgConfig = await ethSmg.getStoremanGroupConfig.call(destSmgID);
+    assert.equal(ethDestSmgConfig.status, storemanGroupStatus.ready, `check destination storeman group status at ${ethereum} failed`);
+
 });
 
-it("Chain[1] -> Asset -> srcDebtLock  ==> Lock twice, Debt tx exists", async () => {
-    try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.chain1DebtRedeem.hash;
+it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> -> transferAsset  ==>  success', async () => {
+    const currentChainType = chainTypes.WAN;
+    const buddyChainType = chainTypes.ETH;
+    const srcSmgID = global.storemanGroups.src.ID;
+    const destSmgID = global.storemanGroups.dest.ID;
+    const uniqueID = uniqueInfo.wanAssetDebt;
+    const senderAccount = global.smgAccount.src[currentChainType];
 
-        await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
-        await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.srcSmgID, storemanGroupStatus.unregistered);
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
 
-        let pkId = 1;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
+    let funcParams = {
+        uniqueID: uniqueID,
+        srcSmgID: srcSmgID,
+        destSmgID: destSmgID,
+    };
 
-        let srcDebtLockReceipt = await global.chains[1].approach.instance.srcDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
+    // curveID
+    let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+    let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.srcSmgID);
+    let curveID = smgConfig.curve1;
+    let sk = skInfo.src[currentChainType];
 
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Debt tx exists");
+    // sign
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+    funcParams = {...funcParams, R: R, s: s};
+
+    let receipt = await cross.transferAsset(...Object.values(funcParams), {from: senderAccount});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'TransferAssetLogger',
+        args: {
+            uniqueID: funcParams.uniqueID,
+            srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+            destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
+        }
+    });
 });
 
-it("Chain[2] -> Debt -> destDebtLock  ==> success", async () => {
-    try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.chain1DebtRedeem.hash;
+it('Chain [WAN] <=> Chain [ETH] -> Debt @ethereum <( wanchain => ethereum )> -> receiveDebt  ==>  success', async () => {
+    const currentChainType = chainTypes.ETH;
+    const buddyChainType = chainTypes.WAN;
+    const srcSmgID = global.storemanGroups.src.ID;
+    const destSmgID = global.storemanGroups.dest.ID;
+    const uniqueID = uniqueInfo.wanAssetDebt;
+    const senderAccount = global.smgAccount.dest[currentChainType];
 
-        // await global.chains[1].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.destSmgID, storemanGroupStatus.ready);
-        // await global.chains[2].approach.parnters.smgAdminProxy.setStoremanGroupStatus(debtLockParamsTemp.destSmgID, storemanGroupStatus.ready);
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
 
-        let pkId = 2;
-        let sk = skInfo.smg2[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.destDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.srcSmgID);
+    let funcParams = {
+        uniqueID: uniqueID,
+        srcSmgID: srcSmgID,
+        destSmgID: destSmgID,
+    };
 
-        let srcDebtLockReceipt = await global.chains[2].approach.instance.destDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[2].account}
-        );
+    // curveID
+    let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+    let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.destSmgID);
+    let curveID = smgConfig.curve1;
+    let sk = skInfo.dest[currentChainType];
 
-        // console.log(srcDebtLockReceipt.logs);
-        assert.checkWeb3Event(srcDebtLockReceipt, {
-            event: 'DestDebtLockLogger',
-            args: {
-                xHash: debtLockParamsTemp.xHash,
-                srcSmgID: web3.utils.padRight(debtLockParamsTemp.srcSmgID, 64),
-                destSmgID: web3.utils.padRight(debtLockParamsTemp.destSmgID, 64),
-            }
-        });
-    } catch (err) {
-        assert.fail(err);
+    // sign
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.srcSmgID);
+    funcParams = {...funcParams, R: R, s: s};
+
+    // receiveDebt
+    let receipt = await cross.receiveDebt(...Object.values(funcParams), {from: senderAccount});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'ReceiveDebtLogger',
+        args: {
+            uniqueID: funcParams.uniqueID,
+            srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+            destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
+        }
+    });
 });
 
-it("Chain[2] -> Debt -> destDebtLock  ==> Lock twice, Debt tx exists", async () => {
-    try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.chain1DebtRedeem.hash;
+it('Chain [ETH] <=> Chain [WAN] -> Asset @ethereum <( ethereum => wanchain )> -> transferAsset  ==>  success', async () => {
+    const currentChainType = chainTypes.ETH;
+    const buddyChainType = chainTypes.WAN;
+    const srcSmgID = global.storemanGroups.src.ID;
+    const destSmgID = global.storemanGroups.dest.ID;
+    const uniqueID = uniqueInfo.ethAssetDebt;
+    const senderAccount = global.smgAccount.src[currentChainType];
 
-        let pkId = 2;
-        let sk = skInfo.smg2[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.destDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.srcSmgID);
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
 
-        let srcDebtLockReceipt = await global.chains[2].approach.instance.destDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[2].account}
-        );
+    let funcParams = {
+        uniqueID: uniqueID,
+        srcSmgID: srcSmgID,
+        destSmgID: destSmgID,
+    };
 
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Debt tx exists");
+    // curveID
+    let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+    let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.srcSmgID);
+    let curveID = smgConfig.curve1;
+    let sk = skInfo.src[currentChainType];
+
+    // sign
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+    funcParams = {...funcParams, R: R, s: s};
+
+    let receipt = await cross.transferAsset(...Object.values(funcParams), {from: senderAccount});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'TransferAssetLogger',
+        args: {
+            uniqueID: funcParams.uniqueID,
+            srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+            destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
+        }
+    });
 });
 
-it('Chain[2] -> Debt -> srcDebtRedeem  ==> success', async () => {
-    try {
+it('Chain [ETH] <=> Chain [WAN] -> Debt @wanchain <( ethereum => wanchain )> -> receiveDebt  ==>  success', async () => {
+    const currentChainType = chainTypes.WAN;
+    const buddyChainType = chainTypes.ETH;
+    const srcSmgID = global.storemanGroups.src.ID;
+    const destSmgID = global.storemanGroups.dest.ID;
+    const uniqueID = uniqueInfo.ethAssetDebt;
+    const senderAccount = global.smgAccount.dest[currentChainType];
 
-        let srcDebtRedeemReceipt = await global.chains[2].approach.instance.srcDebtRedeem(xInfo.chain1DebtRedeem.x, {from: global.storemanGroups[1].account});
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
 
-        // console.log(srcDebtRedeemReceipt.logs);
-        assert.checkWeb3Event(srcDebtRedeemReceipt, {
-            event: 'SrcDebtRedeemLogger',
-            args: {
-                x: xInfo.chain1DebtRedeem.x,
-                srcSmgID: web3.utils.padRight(global.storemanGroups[1].ID, 64),
-                destSmgID: web3.utils.padRight(global.storemanGroups[2].ID, 64),
-            }
-        });
+    let funcParams = {
+        uniqueID: uniqueID,
+        srcSmgID: srcSmgID,
+        destSmgID: destSmgID,
+    };
 
-        // let leftTime = await global.chains[2].approach.instance.getLeftLockedTime(xInfo.chain1DebtRedeem.hash);
-        // assert.equal(Number(leftTime) === 0, true);
-    } catch (err) {
-        assert.fail(err);
+    // curveID
+    let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+    let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.destSmgID);
+    let curveID = smgConfig.curve1;
+    let sk = skInfo.dest[currentChainType];
+
+    // sign
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.srcSmgID);
+    funcParams = {...funcParams, R: R, s: s};
+
+    // receiveDebt
+    let receipt = await cross.receiveDebt(...Object.values(funcParams), {from: senderAccount});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].HTLCDebtLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'ReceiveDebtLogger',
+        args: {
+            uniqueID: funcParams.uniqueID,
+            srcSmgID: web3.utils.padRight(funcParams.srcSmgID, 64),
+            destSmgID: web3.utils.padRight(funcParams.destSmgID, 64),
+        }
+    });
 });
 
-it('Chain[2] -> Debt -> srcDebtRedeem  ==> Redeem twice, Status is not locked', async () => {
-    try {
-        let srcDebtRedeemReceipt = await global.chains[2].approach.instance.srcDebtRedeem(xInfo.chain1DebtRedeem.x, {from: global.storemanGroups[1].account});
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Status is not locked");
+// ETH
+it('Chain [ETH] <=> Chain [WAN] -> COIN [ETH @wanchain] <( ethereum => wanchain )> -> smgMint  ==>  success', async () => {
+    const wanUserAccount = global.aliceAccount.WAN;
+    const ethUserAccount = global.aliceAccount.ETH;
+    const currentChainType = chainTypes.WAN;
+    const buddyChainType = chainTypes.ETH;
+    const uniqueID = uniqueInfo.userLockETH;
+    const smgID = global.storemanGroups.dest.ID
+    const crossValueToWei = web3.utils.toWei(crossValue.toString());
+    const userAccount = wanUserAccount;
+    const senderAccount = global.smgAccount.dest[currentChainType];
+
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
+
+    // tokenAccount
+    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, global.chains[buddyChainType].coin.symbol);
+    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
+    const tokenPairID = tokenPair.tokenPairID;
+
+    let funcParams = {
+        uniqueID: uniqueID,
+        smgID: smgID,
+        tokenPairID: tokenPairID,
+        crossValue: crossValueToWei,
+        tokenAccount: tokenAccount,
+        userAccount: userAccount
+    };
+
+    let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+    let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.smgID);
+    let curveID = smgConfig.curve1;
+    let sk = skInfo.dest[currentChainType];
+
+    // sign
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgMint, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
+    funcParams = {...funcParams, R: R, s: s};
+
+    let receipt = await cross.smgMint(...Object.values(funcParams), {from: senderAccount});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'SmgMintLogger',
+        args: {
+            uniqueID: funcParams.uniqueID,
+            smgID: web3.utils.padRight(funcParams.smgID, 64),
+            tokenPairID: funcParams.tokenPairID,
+            value: funcParams.crossValue,
+            tokenAccount: funcParams.tokenAccount,
+            userAccount: funcParams.userAccount
+        }
+    });
 });
 
-it('Chain[2] -> Debt -> destDebtRevoke  ==> Revoke the redeemed Debt, Status is not locked', async () => {
-    try {
-        let destDebtRevokeReceipt = await global.chains[2].approach.instance.destDebtRevoke(xInfo.chain1DebtRedeem.hash, {from: global.storemanGroups[2].account});
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Status is not locked");
+it('Chain [ETH] <=> Chain [WAN] -> COIN [ETH @wanchain] <( wanchain => ethereum )> -> userBurn ==>  success', async () => {
+    const wanUserAccount = global.aliceAccount.WAN;
+    const ethUserAccount = global.aliceAccount.ETH;
+    const currentChainType = chainTypes.WAN;
+    const buddyChainType = chainTypes.ETH;
+    const smgID = global.storemanGroups.dest.ID
+    const crossValueToWei = web3.utils.toWei(crossValue.toString());
+    const minerFeeToWei = web3.utils.toWei(minerFee.toString());
+    const userAccount = ethUserAccount;
+    const senderAccount = wanUserAccount;
+    const serviceFee = global.crossFees[currentChainType][buddyChainType][currentChainType].lockFee;
+
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
+
+    // tokenAccount
+    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, global.chains[buddyChainType].coin.symbol);
+    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
+    const tokenPairID = tokenPair.tokenPairID;
+
+    // approve
+    let funcParams = {
+        smgID: smgID,
+        tokenPairID: tokenPairID,
+        crossValue: crossValueToWei,
+        minerFee: minerFeeToWei,
+        tokenAccount: tokenAccount,
+        userAccount: userAccount
+    };
+
+    // get token instance
+    let tokenInstance = await getRC20TokenInstance(funcParams.tokenAccount);
+    let balance = await tokenInstance.balanceOf(senderAccount);
+    assert.equal(crossValueToWei, balance.toString(), "balance of sender account error");
+
+    // exec
+    let receipt = await cross.userBurn(...Object.values(funcParams), {from: senderAccount, value: global.crossFees[currentChainType][buddyChainType][currentChainType].lockFee});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'UserBurnLogger',
+        args: {
+            smgID: web3.utils.padRight(funcParams.smgID, 64),
+            tokenPairID: funcParams.tokenPairID,
+            tokenAccount: funcParams.tokenAccount,
+            value: funcParams.crossValue,
+            serviceFee: serviceFee,
+            fee: minerFeeToWei,
+            userAccount: funcParams.userAccount.toLowerCase(),
+        }
+    });
 });
 
-it('Chain[1] -> Asset -> destDebtRedeem  ==> success', async () => {
-    try {
+it('Chain [ETH] <=> Chain [WAN] -> COIN [ETH @ethereum] <( wanchain => ethereum )> -> smgRelease  ==>  success', async () => {
+    const wanUserAccount = global.aliceAccount.WAN;
+    const ethUserAccount = global.aliceAccount.ETH;
+    const currentChainType = chainTypes.ETH;
+    const buddyChainType = chainTypes.WAN;
+    const uniqueID = uniqueInfo.userReleaseETH;
+    const smgID = global.storemanGroups.dest.ID
+    const crossValueToWei = web3.utils.toWei(crossValue.toString());
+    const userAccount = ethUserAccount;
+    const senderAccount = global.smgAccount.dest[currentChainType];
 
-        let destDebtRedeemReceipt = await global.chains[1].approach.instance.destDebtRedeem(xInfo.chain1DebtRedeem.x, {from: global.storemanGroups[2].account});
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
 
-        // console.log(destDebtRedeemReceipt.logs);
-        assert.checkWeb3Event(destDebtRedeemReceipt, {
-            event: 'DestDebtRedeemLogger',
-            args: {
-                x: xInfo.chain1DebtRedeem.x,
-                srcSmgID: web3.utils.padRight(global.storemanGroups[1].ID, 64),
-                destSmgID: web3.utils.padRight(global.storemanGroups[2].ID, 64),
-            }
-        });
+    // tokenAccount
+    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, global.chains[currentChainType].coin.symbol);
+    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
+    const tokenPairID = tokenPair.tokenPairID;
 
-        // let leftTime = await global.chains[1].approach.instance.getLeftLockedTime(xInfo.chain1DebtRedeem.hash);
-        // assert.equal(Number(leftTime) === 0, true);
-    } catch (err) {
-        assert.fail(err);
+    funcParams = {
+        uniqueID: uniqueID,
+        smgID: smgID,
+        tokenPairID: tokenPairID,
+        crossValue: crossValueToWei,
+        tokenAccount: tokenAccount,
+        userAccount: userAccount
+    };
+
+    // curveID
+    let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+    let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.smgID);
+    let curveID = smgConfig.curve1;
+    let sk = skInfo.dest[currentChainType];
+
+    // sign
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgRelease, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
+    funcParams = {...funcParams, R: R, s: s};
+
+    let receipt = await cross.smgRelease(...Object.values(funcParams), {from: senderAccount});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'SmgReleaseLogger',
+        args: {
+            uniqueID: funcParams.uniqueID,
+            smgID: web3.utils.padRight(funcParams.smgID, 64),
+            tokenPairID: funcParams.tokenPairID,
+            value: funcParams.crossValue,
+            tokenAccount: funcParams.tokenAccount,
+            userAccount: funcParams.userAccount
+        }
+    });
 });
 
-it('Chain[1] -> Asset -> destDebtRedeem  ==> Redeem twice, Status is not locked', async () => {
-    try {
+// WAN
+it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( ethereum => wanchain )> -> userBurn ==>  success', async () => {
+    const wanUserAccount = global.aliceAccount.WAN;
+    const ethUserAccount = global.aliceAccount.ETH;
+    const currentChainType = chainTypes.ETH;
+    const buddyChainType = chainTypes.WAN;
+    const smgID = global.storemanGroups.dest.ID
+    const crossValueToWei = web3.utils.toWei(crossValue.toString());
+    const minerFeeToWei = web3.utils.toWei(minerFee.toString());
+    const userAccount = wanUserAccount;
+    const senderAccount = ethUserAccount;
+    const serviceFee = global.crossFees[currentChainType][buddyChainType][currentChainType].lockFee;
 
-        let destDebtRedeemReceipt = await global.chains[1].approach.instance.destDebtRedeem(xInfo.chain1DebtRedeem.x, {from: global.storemanGroups[2].account});
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Status is not locked");
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
+
+    // tokenAccount
+    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, global.chains[buddyChainType].coin.symbol);
+    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
+    const tokenPairID = tokenPair.tokenPairID;
+
+    // approve
+    let funcParams = {
+        smgID: smgID,
+        tokenPairID: tokenPairID,
+        crossValue: crossValueToWei,
+        minerFee: minerFeeToWei,
+        tokenAccount: tokenAccount,
+        userAccount: userAccount
+    };
+
+    // get token instance
+    let tokenInstance = await getRC20TokenInstance(funcParams.tokenAccount);
+    let balance = await tokenInstance.balanceOf(senderAccount);
+    assert.equal(crossValueToWei, balance.toString(), "balance of sender account error");
+
+    // await tokenInstance.approve(cross.address, 0, {from: senderAccount});
+    // await tokenInstance.approve(cross.address, crossValueToWei, {from: senderAccount});
+    // let allowance = await tokenInstance.allowance(senderAccount, cross.address);
+    // assert.equal(crossValueToWei, allowance.toString(), "approve token failed");
+
+    // exec
+    let receipt = await cross.userBurn(...Object.values(funcParams), {from: senderAccount, value: global.crossFees[currentChainType][buddyChainType][currentChainType].lockFee});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'UserBurnLogger',
+        args: {
+            smgID: web3.utils.padRight(funcParams.smgID, 64),
+            tokenPairID: funcParams.tokenPairID,
+            tokenAccount: funcParams.tokenAccount,
+            value: funcParams.crossValue,
+            serviceFee: serviceFee,
+            fee: minerFeeToWei,
+            userAccount: funcParams.userAccount.toLowerCase(),
+        }
+    });
 });
 
-it('Chain[1] -> Asset -> srcDebtRevoke  ==> Revoke the redeemed Debt, Status is not locked', async () => {
-    try {
-        let destDebtRedeemReceipt = await global.chains[1].approach.instance.destDebtRedeem(xInfo.chain1DebtRedeem.hash, {from: global.storemanGroups[2].account});
-        assert.fail(ERROR_INFO);
-    } catch (err) {
-        assert.include(err.toString(), "Status is not locked");
+it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( ethereum => wanchain )> -> smgRelease  ==>  success', async () => {
+    const wanUserAccount = global.aliceAccount.WAN;
+    const ethUserAccount = global.aliceAccount.ETH;
+    const currentChainType = chainTypes.WAN;
+    const buddyChainType = chainTypes.ETH;
+    const uniqueID = uniqueInfo.userDebtReleaseWAN;
+    const smgID = global.storemanGroups.dest.ID
+    const crossValueToWei = web3.utils.toWei(crossValue.toString());
+    const userAccount = wanUserAccount;
+    const senderAccount = global.smgAccount.dest[currentChainType];
+
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const parnters = await cross.getPartners();
+
+    // tokenAccount
+    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, global.chains[currentChainType].coin.symbol);
+    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
+    const tokenPairID = tokenPair.tokenPairID;
+
+    funcParams = {
+        uniqueID: uniqueID,
+        smgID: smgID,
+        tokenPairID: tokenPairID,
+        crossValue: crossValueToWei,
+        tokenAccount: tokenAccount,
+        userAccount: userAccount
+    };
+
+    // curveID
+    let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+    let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.smgID);
+    let curveID = smgConfig.curve1;
+    let sk = skInfo.dest[currentChainType];
+
+    // sign
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgRelease, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
+    funcParams = {...funcParams, R: R, s: s};
+
+    let receipt = await cross.smgRelease(...Object.values(funcParams), {from: senderAccount});
+    if (!receipt.logs.length) {
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLib, receipt.tx);
     }
+
+    assert.checkWeb3Event(receipt, {
+        event: 'SmgReleaseLogger',
+        args: {
+            uniqueID: funcParams.uniqueID,
+            smgID: web3.utils.padRight(funcParams.smgID, 64),
+            tokenPairID: funcParams.tokenPairID,
+            value: funcParams.crossValue,
+            tokenAccount: funcParams.tokenAccount,
+            userAccount: funcParams.userAccount
+        }
+    });
 });
 
-// chain 2 debt clean
-it("Chain[2] -> Asset -> srcDebtLock  ==> success", async () => {
-    try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.chain2DebtRedeem.hash;
-
-        let pkId = 2;
-        let sk = skInfo.smg1[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.srcDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.destSmgID);
-
-        let srcDebtLockReceipt = await global.chains[2].approach.instance.srcDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[1].account}
-        );
-
-        // console.log(srcDebtLockReceipt.logs);
-        assert.checkWeb3Event(srcDebtLockReceipt, {
-            event: 'SrcDebtLockLogger',
-            args: {
-                xHash: debtLockParamsTemp.xHash,
-                srcSmgID: web3.utils.padRight(debtLockParamsTemp.srcSmgID, 64),
-                destSmgID: web3.utils.padRight(debtLockParamsTemp.destSmgID, 64),
-            }
-        });
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it("Chain[1] -> Debt -> destDebtLock  ==> success", async () => {
-    try {
-        let debtLockParamsTemp = Object.assign({}, debtLockParams);
-        debtLockParamsTemp.srcSmgID = global.storemanGroups[1].ID;
-        debtLockParamsTemp.destSmgID = global.storemanGroups[2].ID;
-        debtLockParamsTemp.xHash = xInfo.chain2DebtRedeem.hash;
-
-        let pkId = 1;
-        let sk = skInfo.smg2[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve1, sk, typesArrayList.destDebtLock, debtLockParamsTemp.xHash, debtLockParamsTemp.srcSmgID);
-
-        let srcDebtLockReceipt = await global.chains[1].approach.instance.destDebtLock(
-            debtLockParamsTemp.xHash,
-            debtLockParamsTemp.srcSmgID,
-            debtLockParamsTemp.destSmgID,
-            R,
-            s,
-            {from: global.storemanGroups[2].account}
-        );
-
-        // console.log(srcDebtLockReceipt.logs);
-        assert.checkWeb3Event(srcDebtLockReceipt, {
-            event: 'DestDebtLockLogger',
-            args: {
-                xHash: debtLockParamsTemp.xHash,
-                srcSmgID: web3.utils.padRight(debtLockParamsTemp.srcSmgID, 64),
-                destSmgID: web3.utils.padRight(debtLockParamsTemp.destSmgID, 64),
-            }
-        });
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it('Chain[1] -> Debt -> srcDebtRedeem  ==> success', async () => {
-    try {
-
-        let srcDebtRedeemReceipt = await global.chains[1].approach.instance.srcDebtRedeem(xInfo.chain2DebtRedeem.x, {from: global.storemanGroups[1].account});
-
-        // console.log(destDebtRedeemReceipt.logs);
-        assert.checkWeb3Event(srcDebtRedeemReceipt, {
-            event: 'SrcDebtRedeemLogger',
-            args: {
-                x: xInfo.chain2DebtRedeem.x,
-                srcSmgID: web3.utils.padRight(global.storemanGroups[1].ID, 64),
-                destSmgID: web3.utils.padRight(global.storemanGroups[2].ID, 64),
-            }
-        });
-
-        // let leftTime = await global.chains[2].approach.instance.getLeftLockedTime(xInfo.chain2DebtRedeem.hash);
-        // assert.equal(Number(leftTime) === 0, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it('Chain[2] -> Asset -> destDebtRedeem  ==> success', async () => {
-    try {
-
-        let destDebtRedeemReceipt = await global.chains[2].approach.instance.destDebtRedeem(xInfo.chain2DebtRedeem.x, {from: global.storemanGroups[2].account});
-
-        // console.log(destDebtRedeemReceipt.logs);
-        assert.checkWeb3Event(destDebtRedeemReceipt, {
-            event: 'DestDebtRedeemLogger',
-            args: {
-                x: xInfo.chain2DebtRedeem.x,
-                srcSmgID: web3.utils.padRight(global.storemanGroups[1].ID, 64),
-                destSmgID: web3.utils.padRight(global.storemanGroups[2].ID, 64),
-            }
-        });
-
-        // let leftTime = await global.chains[1].approach.instance.getLeftLockedTime(xInfo.chain2DebtRedeem.hash);
-        // assert.equal(Number(leftTime) === 0, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-// chain1 BurnBridge
-
-it('Shadow[2] -> Token1 -> userFastBurn  ==>  success', async () => {
-    try {
-        // global.accounts[7] is the chain1 original address of the user.
-        // global.accounts[8] is the chain2 shadow address of the user.
-        let userFastParamsTemp = Object.assign({}, userFastParams);
-        userFastParamsTemp.origUserAccount = global.accounts[7];
-        userFastParamsTemp.shadowUserAccount = global.accounts[8];
-        userFastParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
-        userFastParamsTemp.smgID = global.storemanGroups[2].ID;
-
-        // let mintOracleValue = await global.chains[2].approach.parnters.oracle.getDeposit(userFastParamsTemp.smgID);
-        // console.log("mintOracleValue", mintOracleValue);
-
-        let beforeBurnQuotaValue = await global.chains[1].approach.parnters.quota.getUserBurnQuota(userFastParamsTemp.tokenPairID, userFastParamsTemp.smgID);
-        // console.log("chain1 beforeBurnQuotaValue", beforeBurnQuotaValue);
-
-        let value = web3.utils.toWei(userFastParamsTemp.value.toString());
-        // get token instance
-        let tokenInstance = await getRC20TokenInstance(global.chains[2].coin.shadowTokenAccount);
-        let balance = await tokenInstance.balanceOf(userFastParamsTemp.shadowUserAccount);
-        assert.equal(value, balance.toString());
-
-        // approve value
-        await tokenInstance.approve(global.chains[1].approach.instance.address, 0, {from: userFastParamsTemp.shadowUserAccount});
-        await tokenInstance.approve(global.chains[1].approach.instance.address, value, {from: userFastParamsTemp.shadowUserAccount});
-        let allowance = await tokenInstance.allowance(userFastParamsTemp.shadowUserAccount, global.chains[1].approach.instance.address);
-        assert.equal(value, allowance.toString());
-
-        // console.log("before origUserAccount", await web3.eth.getBalance(userFastParamsTemp.origUserAccount));
-        // console.log("before crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
-        // user mint lock
-        let userFastBurnReceipt = await global.chains[1].approach.instance.userFastBurn(
-            userFastParamsTemp.smgID,
-            userFastParamsTemp.tokenPairID,
-            value,
-            userFastParamsTemp.origUserAccount,
-            {from: userFastParamsTemp.shadowUserAccount, value: global.chains[1].approach.shadowLockFee}
-        );
-
-            // console.log("userBurnLock receipt", userFastBurnReceipt.logs);
-        assert.checkWeb3Event(userFastBurnReceipt, {
-            event: 'UserFastBurnLogger',
-            args: {
-                smgID: web3.utils.padRight(userFastParamsTemp.smgID, 64),
-                tokenPairID: userFastParamsTemp.tokenPairID,
-                value: value,
-                fee: global.chains[1].approach.shadowLockFee,
-                userAccount: userFastParamsTemp.origUserAccount.toLowerCase(),
-            }
-        });
-        // console.log("after origUserAccount", await web3.eth.getBalance(userFastParamsTemp.origUserAccount));
-        // console.log("after crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
-
-        let afterBurnQuotaValue = await global.chains[1].approach.parnters.quota.getUserBurnQuota(userFastParamsTemp.tokenPairID, userFastParamsTemp.smgID);
-        // console.log("chain1 getUserBurnQuota OK");
-        // console.log("chain1 afterBurnQuotaValue", afterBurnQuotaValue);
-        // console.log("chain1 value", value);
-        let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
-        // console.log("chain1 difference", difference);
-        assert.equal(value === difference, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it('Original[1] -> Token1 -> smgFastBurn  ==>  success', async () => {
-    try {
-        // global.accounts[7] is the chain1 original address of the user.
-        // global.accounts[8] is the chain2 shadow address of the user.
-        let smgFastParamsTemp = Object.assign({}, userFastParams);
-        smgFastParamsTemp.origUserAccount = global.accounts[7];
-        smgFastParamsTemp.shadowUserAccount = global.accounts[8];
-        smgFastParamsTemp.uniqueID = uniqueInfo.coin2DebtFastBurn;
-        smgFastParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
-        smgFastParamsTemp.smgID = global.storemanGroups[2].ID;
-
-        let beforeBurnQuotaValue = await global.chains[2].approach.parnters.quota.getSmgBurnQuota(smgFastParamsTemp.tokenPairID, smgFastParamsTemp.smgID);
-        // console.log("chain2 beforeBurnQuotaValue", beforeBurnQuotaValue);
-
-        let value = web3.utils.toWei(smgFastParamsTemp.value.toString());
-
-        let pkId = 2;
-        let sk = skInfo.smg2[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.smgFastBurn, smgFastParamsTemp.uniqueID,
-            smgFastParamsTemp.tokenPairID, value, smgFastParamsTemp.origUserAccount);
-
-        // console.log("pk1:", global.storemanGroups[1].gpk1);
-        // console.log("pk2:", global.storemanGroups[1].gpk2);
-        // user mint lock
-        let smgFastBurnReceipt = await global.chains[2].approach.instance.smgFastBurn(
-            smgFastParamsTemp.uniqueID,
-            smgFastParamsTemp.smgID,
-            smgFastParamsTemp.tokenPairID,
-            value,
-            smgFastParamsTemp.origUserAccount,
-            R,
-            s,
-            {from: global.storemanGroups[2].account}
-        );
-
-        // console.log("smgBurnLock receipt", smgFastBurnReceipt);
-        // console.log("smgBurnLock receipt logs", smgFastBurnReceipt.logs);
-        assert.checkWeb3Event(smgFastBurnReceipt, {
-            event: 'SmgFastBurnLogger',
-            args: {
-                uniqueID: smgFastParamsTemp.uniqueID,
-                smgID: web3.utils.padRight(smgFastParamsTemp.smgID, 64),
-                tokenPairID: smgFastParamsTemp.tokenPairID,
-                value: value,
-                userAccount: smgFastParamsTemp.origUserAccount
-            }
-        });
-
-        // console.log("chain2 check SmgBurnLockLogger OK");
-        let afterBurnQuotaValue = await global.chains[2].approach.parnters.quota.getSmgBurnQuota(smgFastParamsTemp.tokenPairID, smgFastParamsTemp.smgID);
-        // console.log("chain2 getSmgBurnQuota OK");
-        // console.log("chain2 afterBurnQuotaValue", afterBurnQuotaValue);
-        // console.log("chain2 value", value);
-        let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
-        // console.log("chain2 difference", difference);
-        assert.equal(value === difference, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-/*
-it('Debt -> Shadow[1] -> Coin2 -> userBurnLock  ==> success', async () => {
-    try {
-        // global.accounts[7] is the chain1 original address of the user.
-        // global.accounts[8] is the chain2 shadow address of the user.
-        let userLockParamsTemp = Object.assign({}, userLockParams);
-        userLockParamsTemp.origUserAccount = global.accounts[7];
-        userLockParamsTemp.shadowUserAccount = global.accounts[8];
-        userLockParamsTemp.xHash = xInfo.chain2DebtBurnLock.hash;
-        userLockParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
-        userLockParamsTemp.smgID = global.storemanGroups[2].ID;
-
-        // let mintOracleValue = await global.chains[1].approach.parnters.oracle.getDeposit(userLockParamsTemp.smgID);
-        // console.log("mintOracleValue", mintOracleValue);
-
-        let beforeBurnQuotaValue = await global.chains[1].approach.parnters.quota.getUserBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-        // console.log("chain1 beforeBurnQuotaValue", beforeBurnQuotaValue);
-
-        let value = web3.utils.toWei(userLockParamsTemp.value.toString());
-        // get token instance
-        let tokenInstance = await getRC20TokenInstance(global.chains[2].coin.shadowTokenAccount);
-        let balance = await tokenInstance.balanceOf(userLockParamsTemp.shadowUserAccount);
-        assert.equal(value, balance.toString());
-
-        // approve value
-        await tokenInstance.approve(global.chains[1].approach.instance.address, 0, {from: userLockParamsTemp.shadowUserAccount});
-        await tokenInstance.approve(global.chains[1].approach.instance.address, value, {from: userLockParamsTemp.shadowUserAccount});
-        let allowance = await tokenInstance.allowance(userLockParamsTemp.shadowUserAccount, global.chains[1].approach.instance.address);
-        assert.equal(value, allowance.toString());
-
-        // console.log("before origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
-        // console.log("before crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
-        // user mint lock
-        let userBurnLockReceipt = await global.chains[1].approach.instance.userBurnLock(
-            userLockParamsTemp.xHash,
-            userLockParamsTemp.smgID,
-            userLockParamsTemp.tokenPairID,
-            value,
-            userLockParamsTemp.origUserAccount,
-            {from: userLockParamsTemp.shadowUserAccount, value: global.chains[1].approach.shadowLockFee}
-        );
-
-            // console.log("userBurnLock receipt", userBurnLockReceipt.logs);
-        assert.checkWeb3Event(userBurnLockReceipt, {
-            event: 'UserBurnLockLogger',
-            args: {
-                xHash: userLockParamsTemp.xHash,
-                smgID: web3.utils.padRight(userLockParamsTemp.smgID, 64),
-                tokenPairID: userLockParamsTemp.tokenPairID,
-                value: value,
-                fee: global.chains[1].approach.shadowLockFee,
-                userAccount: userLockParamsTemp.origUserAccount.toLowerCase(),
-            }
-        });
-        // console.log("after origUserAccount", await web3.eth.getBalance(userLockParamsTemp.origUserAccount));
-        // console.log("after crossApproach", await web3.eth.getBalance(global.chains[1].approach.instance.address));
-
-        let afterBurnQuotaValue = await global.chains[1].approach.parnters.quota.getUserBurnQuota(userLockParamsTemp.tokenPairID, userLockParamsTemp.smgID);
-        // console.log("chain1 getUserBurnQuota OK");
-        // console.log("chain1 afterBurnQuotaValue", afterBurnQuotaValue);
-        // console.log("chain1 value", value);
-        let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
-        // console.log("chain1 difference", difference);
-        assert.equal(value === difference, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it('Debt -> Original[2] -> Coin2 -> smgBurnLock  ==> success', async () => {
-    try {
-        // global.accounts[7] is the chain1 original address of the user.
-        // global.accounts[8] is the chain2 shadow address of the user.
-        let smgLockParamsTemp = Object.assign({}, smgLockParams);
-        smgLockParamsTemp.origUserAccount = global.accounts[7];
-        smgLockParamsTemp.shadowUserAccount = global.accounts[8];
-        smgLockParamsTemp.xHash = xInfo.chain2DebtBurnLock.hash;
-        smgLockParamsTemp.tokenPairID = global.chains[2].coin.tokenPairID;
-        smgLockParamsTemp.smgID = global.storemanGroups[2].ID;
-
-        let beforeBurnQuotaValue = await global.chains[2].approach.parnters.quota.getSmgBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
-        // console.log("chain2 beforeBurnQuotaValue", beforeBurnQuotaValue);
-
-        let value = web3.utils.toWei(smgLockParamsTemp.value.toString());
-
-        let pkId = 2;
-        let sk = skInfo.smg2[pkId];
-        let {R, s} = buildMpcSign(global.schnorr.curve2, sk, typesArrayList.smgBurnLock, smgLockParamsTemp.xHash,
-            smgLockParamsTemp.tokenPairID, value, smgLockParamsTemp.origUserAccount);
-
-        // console.log("pk1:", global.storemanGroups[1].gpk1);
-        // console.log("pk2:", global.storemanGroups[1].gpk2);
-        // user mint lock
-        let smgBurnLockReceipt = await global.chains[2].approach.instance.smgBurnLock(
-            smgLockParamsTemp.xHash,
-            smgLockParamsTemp.smgID,
-            smgLockParamsTemp.tokenPairID,
-            value,
-            smgLockParamsTemp.origUserAccount,
-            R,
-            s,
-            {from: global.storemanGroups[2].account}
-        );
-
-        // console.log("smgBurnLock receipt", smgBurnLockReceipt);
-        // console.log("smgBurnLock receipt logs", smgBurnLockReceipt.logs);
-        assert.checkWeb3Event(smgBurnLockReceipt, {
-            event: 'SmgBurnLockLogger',
-            args: {
-                xHash: smgLockParamsTemp.xHash,
-                smgID: web3.utils.padRight(smgLockParamsTemp.smgID, 64),
-                tokenPairID: smgLockParamsTemp.tokenPairID,
-                value: value,
-                userAccount: smgLockParamsTemp.origUserAccount
-            }
-        });
-
-        // console.log("chain2 check SmgBurnLockLogger OK");
-        let afterBurnQuotaValue = await global.chains[2].approach.parnters.quota.getSmgBurnQuota(smgLockParamsTemp.tokenPairID, smgLockParamsTemp.smgID);
-        // console.log("chain2 getSmgBurnQuota OK");
-        // console.log("chain2 afterBurnQuotaValue", afterBurnQuotaValue);
-        // console.log("chain2 value", value);
-        let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
-        // console.log("chain2 difference", difference);
-        assert.equal(value === difference, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it('Debt -> Original[2] -> Coin2 -> userBurnRedeem  ==> success', async () => {
-    try {
-        let beforeBurnQuotaValue = await global.chains[2].approach.parnters.quota.getSmgBurnQuota(global.chains[2].coin.tokenPairID, global.storemanGroups[2].ID);
-        // console.log("chain2 beforeBurnQuotaValue", beforeBurnQuotaValue);
-
-        let origUserAccount = global.accounts[7];
-        let userBurnRedeemReceipt = await global.chains[2].approach.instance.userBurnRedeem(xInfo.chain2DebtBurnLock.x, {from: origUserAccount});
-        // let balance2 = await getBalance(origUserAccount);
-
-        assert.checkWeb3Event(userBurnRedeemReceipt, {
-            event: 'UserBurnRedeemLogger',
-            args: {
-                x: xInfo.chain2DebtBurnLock.x,
-                smgID: web3.utils.padRight(global.storemanGroups[2].ID, 64),
-                tokenPairID: global.chains[2].coin.tokenPairID
-            }
-        });
-
-        let afterBurnQuotaValue = await global.chains[2].approach.parnters.quota.getSmgBurnQuota(global.chains[2].coin.tokenPairID, global.storemanGroups[2].ID);
-        // console.log("chain2 afterBurnQuotaValue", afterBurnQuotaValue);
-        let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
-        // console.log("chain2 difference", difference);
-        assert.equal(new BN(0).toString() === difference, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-
-it('Debt -> Shadow[1] -> Coin2 -> smgBurnRedeem  ==> success', async () => {
-    try {
-        let beforeBurnQuotaValue = await global.chains[1].approach.parnters.quota.getUserBurnQuota(global.chains[2].coin.tokenPairID, global.storemanGroups[2].ID);
-
-        let smgBurnRedeemReceipt = await global.chains[1].approach.instance.smgBurnRedeem(xInfo.chain2DebtBurnLock.x, {from: global.storemanGroups[2].account});
-
-        assert.checkWeb3Event(smgBurnRedeemReceipt, {
-            event: 'SmgBurnRedeemLogger',
-            args: {
-                x: xInfo.chain2DebtBurnLock.x,
-                smgID: web3.utils.padRight(global.storemanGroups[2].ID, 64),
-                tokenPairID: global.chains[2].coin.tokenPairID,
-                fee: global.chains[1].approach.shadowLockFee,
-            }
-        });
-
-        let afterBurnQuotaValue = await global.chains[1].approach.parnters.quota.getUserBurnQuota(global.chains[2].coin.tokenPairID, global.storemanGroups[2].ID);
-        let difference = new BN(beforeBurnQuotaValue).sub(afterBurnQuotaValue).toString();
-        assert.equal(new BN(0).toString() === difference, true);
-    } catch (err) {
-        assert.fail(err);
-    }
-});
-*/
 it('Debt Cleaned -> Cross Cleaned  ==> success', async () => {
-    try {
-        let chain1Smg1AssetQuotaValue = await global.chains[1].approach.parnters.quota.getAsset(global.chains[2].coin.tokenPairID, global.storemanGroups[1].ID);
-        let chain1Smg1DebtQuotaValue = await global.chains[1].approach.parnters.quota.getDebt(global.chains[2].coin.tokenPairID, global.storemanGroups[1].ID);
-        // console.log("chain1Smg1AssetQuotaValue", chain1Smg1AssetQuotaValue);
-        // console.log("chain1Smg1DebtQuotaValue", chain1Smg1DebtQuotaValue);
+    const wanchain = chainTypes.WAN;
+    const ethereum = chainTypes.ETH;
+    const wanCross = await CrossDelegate.at(global.chains[wanchain].scAddr.CrossProxy);
+    const ethCross = await CrossDelegate.at(global.chains[ethereum].scAddr.CrossProxy);
+    const wanPartners = await wanCross.getPartners();
+    const ethPartners = await ethCross.getPartners();
+    const wanQuota = await QuotaDelegate.at(wanPartners.quota);
+    const ethQuota = await QuotaDelegate.at(ethPartners.quota);
+    const wanSrcSmgTokenCount = await wanQuota.getTokenCount(global.storemanGroups.src.ID);
+    const ethSrcSmgTokenCount = await ethQuota.getTokenCount(global.storemanGroups.src.ID);
+    const wanDestSmgTokenCount = await wanQuota.getTokenCount(global.storemanGroups.dest.ID);
+    const ethDestSmgTokenCount = await ethQuota.getTokenCount(global.storemanGroups.dest.ID);
 
-        let chain2Smg1AssetQuotaValue = await global.chains[2].approach.parnters.quota.getAsset(global.chains[2].coin.tokenPairID, global.storemanGroups[1].ID);
-        let chain2Smg1DebtQuotaValue = await global.chains[2].approach.parnters.quota.getDebt(global.chains[2].coin.tokenPairID, global.storemanGroups[1].ID);
-        // console.log("chain2Smg1AssetQuotaValue", chain2Smg1AssetQuotaValue);
-        // console.log("chain2Smg1DebtQuotaValue", chain2Smg1DebtQuotaValue);
+    // assert.equal(wanSrcSmgTokenCount.add(new web3.utils.BN(1)).eq(ethSrcSmgTokenCount), true, `check source storeman group token count about ${wanchain} and ${ethereum} failed: wanchain(${wanSrcSmgTokenCount}) ethereum(${ethSrcSmgTokenCount})`);
+    assert.equal(wanSrcSmgTokenCount.eq(ethSrcSmgTokenCount), false, `check source storeman group token count about ${wanchain} and ${ethereum} failed: wanchain(${wanSrcSmgTokenCount}) ethereum(${ethSrcSmgTokenCount})`);
+    assert.equal(wanDestSmgTokenCount.eq(ethDestSmgTokenCount), true, `check destination storeman group token count about ${wanchain} and ${ethereum} failed: wanchain(${wanDestSmgTokenCount}) ethereum(${ethDestSmgTokenCount})`);
 
-        let chain1Smg2AssetQuotaValue = await global.chains[1].approach.parnters.quota.getAsset(global.chains[2].coin.tokenPairID, global.storemanGroups[2].ID);
-        let chain1Smg2DebtQuotaValue = await global.chains[1].approach.parnters.quota.getDebt(global.chains[2].coin.tokenPairID, global.storemanGroups[2].ID);
-        // console.log("chain1Smg2AssetQuotaValue", chain1Smg2AssetQuotaValue);
-        // console.log("chain1Smg2DebtQuotaValue", chain1Smg2DebtQuotaValue);
+    for (let i = 0; i < Number(wanSrcSmgTokenCount); ++i) {
+        const tokenPairID = await wanQuota.getTokenId(global.storemanGroups.src.ID, i);
 
-        let chain2Smg2AssetQuotaValue = await global.chains[2].approach.parnters.quota.getAsset(global.chains[2].coin.tokenPairID, global.storemanGroups[2].ID);
-        let chain2Smg2DebtQuotaValue = await global.chains[2].approach.parnters.quota.getDebt(global.chains[2].coin.tokenPairID, global.storemanGroups[2].ID);
-        // console.log("chain2Smg2AssetQuotaValue", chain2Smg2AssetQuotaValue);
-        // console.log("chain2Smg2DebtQuotaValue", chain2Smg2DebtQuotaValue);
+        const wanAsset = await wanQuota.getAsset(tokenPairID, global.storemanGroups.src.ID);
+        const ethDebt = await ethQuota.getDebt(tokenPairID, global.storemanGroups.src.ID);
+        assert.equal(wanAsset.asset.eq(ethDebt.debt) && wanAsset.asset_receivable.eq(ethDebt.debt_payable)
+            && wanAsset.asset_payable.eq(ethDebt.debt_receivable), true,
+            `check source storeman group asset at ${wanchain} and debt at ${ethereum} failed: wanchain(${JSON.stringify(wanAsset)}) ethereum(${JSON.stringify(ethDebt)})`
+        );
 
-        assert.equal(chain1Smg1AssetQuotaValue.asset.eq(chain1Smg2AssetQuotaValue.asset), true);
-        assert.equal(chain1Smg1AssetQuotaValue.asset_receivable.eq(chain1Smg2AssetQuotaValue.asset_receivable), true);
-        assert.equal(chain1Smg1AssetQuotaValue.asset_payable.eq(chain1Smg2AssetQuotaValue.asset_payable), true);
+        const ethAsset = await wanQuota.getAsset(tokenPairID, global.storemanGroups.src.ID);
+        const wanDebt = await ethQuota.getDebt(tokenPairID, global.storemanGroups.src.ID);
+        // assert.equal(ethAsset, wanDebt, `check source storeman group asset at ${ethereum} and debt at ${wanchain} failed: wanchain(${JSON.stringify(ethAsset)}) ethereum(${JSON.stringify(wanDebt)})`);
+        assert.equal(ethAsset.asset.eq(wanDebt.debt) && ethAsset.asset_receivable.eq(wanDebt.debt_payable)
+            && ethAsset.asset_payable.eq(wanDebt.debt_receivable), true,
+            `check source storeman group asset at ${ethereum} and debt at ${wanchain} failed: wanchain(${JSON.stringify(ethAsset)}) ethereum(${JSON.stringify(wanDebt)})`
+        );
+    }
 
-        assert.equal(chain1Smg1DebtQuotaValue.debt.eq(chain1Smg2DebtQuotaValue.debt), true);
-        assert.equal(chain1Smg1DebtQuotaValue.debt_receivable.eq(chain1Smg2DebtQuotaValue.debt_receivable), true);
-        assert.equal(chain1Smg1DebtQuotaValue.debt_payable.eq(chain1Smg2DebtQuotaValue.debt_payable), true);
+    for (let i = 0; i < Number(wanDestSmgTokenCount); ++i) {
+        const tokenPairID = await wanQuota.getTokenId(global.storemanGroups.src.ID, i);
 
-        assert.equal(chain2Smg1AssetQuotaValue.asset.eq(chain2Smg2AssetQuotaValue.asset), true);
-        assert.equal(chain2Smg1AssetQuotaValue.asset_receivable.eq(chain2Smg2AssetQuotaValue.asset_receivable), true);
-        assert.equal(chain2Smg1AssetQuotaValue.asset_payable.eq(chain2Smg2AssetQuotaValue.asset_payable), true);
+        const wanAsset = await wanQuota.getAsset(tokenPairID, global.storemanGroups.src.ID);
+        const ethDebt = await ethQuota.getDebt(tokenPairID, global.storemanGroups.src.ID);
+        // assert.equal(wanAsset, ethDebt, `check destination storeman group asset at ${wanchain} and debt at ${ethereum} failed: wanchain(${JSON.stringify(wanAsset)}) ethereum(${JSON.stringify(ethDebt)})`);
+        assert.equal(wanAsset.asset.eq(ethDebt.debt) && wanAsset.asset_receivable.eq(ethDebt.debt_payable)
+            && wanAsset.asset_payable.eq(ethDebt.debt_receivable), true,
+            `check destination storeman group asset at ${wanchain} and debt at ${ethereum} failed: wanchain(${JSON.stringify(wanAsset)}) ethereum(${JSON.stringify(ethDebt)})`
+        );
 
-        assert.equal(chain2Smg1DebtQuotaValue.debt.eq(chain2Smg2DebtQuotaValue.debt), true);
-        assert.equal(chain2Smg1DebtQuotaValue.debt_receivable.eq(chain2Smg2DebtQuotaValue.debt_receivable), true);
-        assert.equal(chain2Smg1DebtQuotaValue.debt_payable.eq(chain2Smg2DebtQuotaValue.debt_payable), true);
-    } catch (err) {
-        assert.fail(err);
+        const ethAsset = await wanQuota.getAsset(tokenPairID, global.storemanGroups.src.ID);
+        const wanDebt = await ethQuota.getDebt(tokenPairID, global.storemanGroups.src.ID);
+        // assert.equal(ethAsset, wanDebt, `check destination storeman group asset at ${ethereum} and debt at ${wanchain} failed: wanchain(${JSON.stringify(ethAsset)}) ethereum(${JSON.stringify(wanDebt)})`);
+        assert.equal(ethAsset.asset.eq(wanDebt.debt) && ethAsset.asset_receivable.eq(wanDebt.debt_payable)
+            && ethAsset.asset_payable.eq(wanDebt.debt_receivable), true,
+            `check destination storeman group asset at ${ethereum} and debt at ${wanchain} failed: wanchain(${JSON.stringify(ethAsset)}) ethereum(${JSON.stringify(wanDebt)})`
+        );
     }
 });
