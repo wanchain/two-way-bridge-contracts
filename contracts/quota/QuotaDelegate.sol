@@ -223,6 +223,12 @@ contract QuotaDelegate is QuotaStorageV2 {
         quota._debt = quota._debt.add(value);
     }
 
+    function adjustSmgQuota(bytes32 storemanGroupId, uint tokenKey, uint asset, uint debt) external onlyOwner {
+        Quota storage quota = v2QuotaMap[tokenKey][storemanGroupId];
+        quota._asset = asset;
+        quota._debt = debt;
+    }
+
     function upgrade(bytes32[] storemanGroupIdArray) external onlyOwner {
         require(version < 2, "Can upgrade again.");
         version = 2; //upgraded v2
