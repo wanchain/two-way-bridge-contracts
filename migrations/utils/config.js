@@ -89,7 +89,8 @@ const contractLoad = "contract.js";
 const deployScript = {
   clean: "deploy_clean.js",
   update: "deploy_update.js",
-  wanchainSc: "wanchain_sc_deploy.js",
+  // wanchainSc: "wanchain_sc_deploy.js",
+  wanchainSc: "wanchain_sc_deploy_update_btc.js",
   wanchainScUpdate: "wanchain_sc_deploy_update.js"
 };
 
