@@ -5,7 +5,8 @@ const ethUtil = require('ethereumjs-util');
 const ethCommon = require('ethereumjs-common').default;
 const ethTx = require('ethereumjs-tx').Transaction
 const wallet = require('ethereumjs-wallet');
-const hdkey = require('ethereumjs-wallet/hdkey');
+// const hdkey = require('ethereumjs-wallet/hdkey');
+const hdkey = wallet.hdkey;
 
 const wanUtil = require('wanchain-util');
 const wanTx = wanUtil.wanchainTx;
