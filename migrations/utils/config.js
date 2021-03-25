@@ -3,6 +3,7 @@ const chainDict = {
   ETH: "ETH",
   ETC: "ETC",
   EOS: "EOS",
+  BSC: "BSC",
   TEST: "TEST"
 };
 
@@ -11,6 +12,7 @@ const chainIndexDict = {
   ETH: 0x3c,
   ETC: 0x3d,
   EOS: 0xc2,
+  BSC: 0x2ca,
 };
 
 const chainNature = {
@@ -28,6 +30,8 @@ const networkDict = {
   rinkeby: {name:"rinkeby", chainId: 4,chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH,nature: chainNature.system},
   // goerli: {name:"goerli", chainId: 6284, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system},
   // kovan: {name:"kovan", chainId: 42, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system},
+  bscMainnet: {name:"bscMainnet", chainId: 56,chainType: chainDict.BSC, chainIndex:chainIndexDict.BSC,nature: chainNature.custom},
+  bscTestnet: {name:"bscTestnet", chainId: 97,chainType: chainDict.BSC, chainIndex:chainIndexDict.BSC,nature: chainNature.custom},
 }
 
 const networks = Object.values(networkDict).map(v => v.name);
@@ -42,6 +46,8 @@ const defaultNodeUrlDict = {
   testnet: 'http://gwan-testnet.wandevs.org:36891', // http or wss,
   ethereum: 'http://geth-mainnet.wandevs.org:26892', // http or wss,
   rinkeby: 'http://geth-testnet.wandevs.org:36892', // http or wss
+  bscMainnet: 'https://bsc-dataseed1.binance.org:443', // http or wss,
+  bscTestnet: 'https://data-seed-prebsc-1-s1.binance.org:8545', // http or wss
 }
 
 const defaultHadrfork = "byzantium";
@@ -89,8 +95,9 @@ const contractLoad = "contract.js";
 const deployScript = {
   clean: "deploy_clean.js",
   update: "deploy_update.js",
-  // wanchainSc: "wanchain_sc_deploy.js",
-  wanchainSc: "wanchain_sc_deploy_update_btc.js",
+  wanchainSc: "wanchain_sc_deploy.js",
+  // wanchainSc: "wanchain_sc_deploy_update_btc.js",
+  // wanchainSc: "wanchain_sc_deploy_bsc.js",
   wanchainScUpdate: "wanchain_sc_deploy_update.js"
 };
 
