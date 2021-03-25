@@ -28,12 +28,37 @@ function exit(error) {
 function parseNetwork(network) {
   let chainType = chainDict.WAN;
   let isMainnet = false;
-  if (network !== networkDict.mainnet.name && network !== networkDict.testnet.name) {
-    chainType = chainDict.ETH;
+  switch (network) {
+    case networkDict.mainnet.name:
+    case networkDict.testnet.name: {
+      chainType = chainDict.ETH;
+      isMainnet = network === networkDict.mainnet.name;
+      break;
+    }
+    case networkDict.ethereum.name:
+    case networkDict.rinkeby.name: {
+      chainType = chainDict.ETH;
+      isMainnet = network === networkDict.ethereum.name;
+      break;
+    }
+    case networkDict.bscMainnet.name:
+    case networkDict.bscTestnet.name: {
+      chainType = chainDict.BSC;
+      isMainnet = network === networkDict.bscMainnet.name;
+      break;
+    }
+    default: {
+      chainType = chainDict.WAN;
+      isMainnet = false;
+      break;
+    }
   }
-  if (network !== networkDict.mainnet.name || network !== networkDict.ethereum.name) {
-    isMainnet = true;
-  }
+  // if (network !== networkDict.mainnet.name && network !== networkDict.testnet.name) {
+  //   chainType = chainDict.ETH;
+  // }
+  // if (network !== networkDict.mainnet.name || network !== networkDict.ethereum.name) {
+  //   isMainnet = true;
+  // }
   return {
     chainType: chainType,
     isMainnet: isMainnet,
@@ -70,6 +95,10 @@ function getWorkspace(root, contractLoad, deployScriptFileName) {
     TEST: {
       contract: path.join(root, chainDict.TEST.toLowerCase(), contractLoad),
       deploy: path.join(root, chainDict.TEST.toLowerCase(), deployScriptFileName)
+    },
+    BSC: {
+      contract: path.join(root, chainDict.BSC.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.BSC.toLowerCase(), deployScriptFileName)
     },
   }
   return workspace;
