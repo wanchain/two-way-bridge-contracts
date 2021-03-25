@@ -159,22 +159,57 @@ class ContractWrapper {
     // console.log(this.chainType, "rawTx: ", rawTx);
 
     let tx
-    if (this.chainType === chainDict.ETH) {
-      let chainParams = {
-        name: networkDict.mainnet.name,
-        chainId: networkDict[this.cfg.network].chainId,
-        url: this.cfg.nodeURL,
-      };
-      if (this.cfg.network !== networkDict.ethereum.name) {
-        options.name = networkDict[this.cfg.network].name;
+    switch (this.chainType) {
+      case chainDict.ETH: {
+        let chainParams = {
+          name: networkDict.mainnet.name,
+          chainId: networkDict[this.cfg.network].chainId,
+          url: this.cfg.nodeURL,
+        };
+        if (this.cfg.network !== networkDict.ethereum.name) {
+          options.name = networkDict[this.cfg.network].name;
+        }
+        const customCommon = ethCommon.forCustomChain(chainParams.name, chainParams, this.cfg.hardfork);
+  
+        tx = new ethTx(rawTx, {common: customCommon});
+        break;
       }
-      const customCommon = ethCommon.forCustomChain(chainParams.name, chainParams, this.cfg.hardfork);
-
-      tx = new ethTx(rawTx, {common: customCommon});
-    } else {
-      rawTx.Txtype = 0x01;
-      tx = new wanTx(rawTx);
+      case chainDict.BSC: {
+        let chainParams = {
+          name: networkDict.bscMainnet.name,
+          chainId: networkDict[this.cfg.network].chainId,
+          url: this.cfg.nodeURL,
+        };
+        if (this.cfg.network !== networkDict.bscMainnet.name) {
+          options.name = networkDict[this.cfg.network].name;
+        }
+        const customCommon = ethCommon.forCustomChain(chainParams.name, chainParams, this.cfg.hardfork);
+  
+        tx = new ethTx(rawTx, {common: customCommon});
+        break;
+      }
+      default: {
+        rawTx.Txtype = 0x01;
+        tx = new wanTx(rawTx);
+        break;
+      }
     }
+    // if (this.chainType === chainDict.ETH) {
+    //   let chainParams = {
+    //     name: networkDict.mainnet.name,
+    //     chainId: networkDict[this.cfg.network].chainId,
+    //     url: this.cfg.nodeURL,
+    //   };
+    //   if (this.cfg.network !== networkDict.ethereum.name) {
+    //     options.name = networkDict[this.cfg.network].name;
+    //   }
+    //   const customCommon = ethCommon.forCustomChain(chainParams.name, chainParams, this.cfg.hardfork);
+
+    //   tx = new ethTx(rawTx, {common: customCommon});
+    // } else {
+    //   rawTx.Txtype = 0x01;
+    //   tx = new wanTx(rawTx);
+    // }
     tx.sign(currPrivateKey);
     // console.log("getSenderAddress", tx.getSenderAddress().toString('hex'))
     // console.log("signedTx: %O", tx);
