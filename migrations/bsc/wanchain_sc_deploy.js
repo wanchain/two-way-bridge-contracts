@@ -59,7 +59,7 @@ async function deploy(cfg, isMainnet) {
     // signature verifier
     await deployer.deploy(scDict.SignatureVerifier);
     await deployer.deploy(scDict.Bn128SchnorrVerifier);
-    await deployer.deploy(scDict.Secp256k1SchnorrVerifier);
+    // await deployer.deploy(scDict.Secp256k1SchnorrVerifier);
 
     // cross approach smart contracts
     await deployer.deploy(scDict.HTLCTxLib);
@@ -96,16 +96,16 @@ async function deploy(cfg, isMainnet) {
     // config SignatureVerifier
     let signatureVerifier = await deployer.deployed(scDict.SignatureVerifier);
     let bn128 = await deployer.deployed(scDict.Bn128SchnorrVerifier);
-    let secp256K1 = await deployer.deployed(scDict.Secp256k1SchnorrVerifier);
+    // let secp256K1 = await deployer.deployed(scDict.Secp256k1SchnorrVerifier);
 
     txData = await signatureVerifier.methods.register(curveMap.get('bn256'), bn128.address).encodeABI();
     await deployer.sendTx(signatureVerifier.address, txData);
-    txData = await signatureVerifier.methods.register(curveMap.get('secp256k1'), secp256K1.address).encodeABI();
-    await deployer.sendTx(signatureVerifier.address, txData);
+    // txData = await signatureVerifier.methods.register(curveMap.get('secp256k1'), secp256K1.address).encodeABI();
+    // await deployer.sendTx(signatureVerifier.address, txData);
 
     contract[scDict.SignatureVerifier] = signatureVerifier.address;
     contract[scDict.Bn128SchnorrVerifier] = bn128.address;
-    contract[scDict.Secp256k1SchnorrVerifier] = secp256K1.address;
+    // contract[scDict.Secp256k1SchnorrVerifier] = secp256K1.address;
     abi[scDict.SignatureVerifier] = signatureVerifier.abi;
 
     // config crossApproach
