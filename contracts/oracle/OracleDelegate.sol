@@ -5,9 +5,9 @@ pragma solidity 0.4.26;
  */
 
 import "../components/Owned.sol";
-import "./OracleStorage.sol";
+import "./OracleStorageV2.sol";
 
-contract OracleDelegate is OracleStorage, Owned {
+contract OracleDelegate is OracleStorageV2 {
   /**
     *
     * EVENTS
@@ -160,6 +160,30 @@ contract OracleDelegate is OracleStorage, Owned {
     gpk2 = mapStoremanGroupConfig[id].gpk2;
     startTime = mapStoremanGroupConfig[id].startTime;
     endTime = mapStoremanGroupConfig[id].endTime;
+  }
+
+  function setCurrentStoremanGroupID(
+    bytes32 id
+  )
+    external
+    onlyAdmin
+  {
+    if (currentStoremanIDs[0] != id && currentStoremanIDs[1] != id) {
+      currentStoremanIDs[1] = currentStoremanIDs[0];
+      currentStoremanIDs[0] = id;
+    }
+  }
+
+  function getCurrentStoremanGroupID() external view returns(bytes32 groupId) {
+    bytes32 id = currentStoremanIDs[0];
+
+    StoremanGroupConfig s1 = mapStoremanGroupConfig[currentStoremanIDs[1]];
+
+    if (s1.startTime <= block.timestamp && s1.endTime >= block.timestamp) {
+      id = currentStoremanIDs[1];
+    }
+
+    groupId = id;
   }
 
   function getStoremanGroupStatus(bytes32 id)

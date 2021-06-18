@@ -4,7 +4,7 @@ const OracleDelegate = artifacts.require('OracleDelegate');
 const assert = require('assert');
 const { sendAndGetReason } = require('./helper.js');
 const { waitForDebugger } = require('inspector');
-const netConfig = require('../truffle-config').networks[global.network];
+const netConfig = require('../truffle').networks[global.network];
 const from = netConfig? netConfig.from : null;
 
 const newOracle = async (accounts) => {
@@ -37,13 +37,16 @@ contract('Oracle', function(accounts) {
   const tokenBTC = web3.utils.hexToBytes(web3.utils.toHex("BTC"));
 
   const smgID = web3.utils.hexToBytes("0x6b175474e89094c44da98b954eedeac495271d0f");
+  const smgIDPadding = web3.utils.padRight(web3.utils.bytesToHex(smgID), 64);
+  const smgID2 = web3.utils.hexToBytes("0x7b175474e89094c44da98b954eedeac495271d0f");
+  const smgID2Padding = web3.utils.padRight(web3.utils.bytesToHex(smgID2), 64);
   const v = 100000;
 
   before('init', async function() {})
   after('end', async function() {});
 
   describe('normal', function() {
-    it('good quick oracle example', async function() {
+    it.only('good quick oracle example', async function() {
       const { oracleDelegate } = await newOracle(accounts);
 
       const gas = await oracleDelegate.updatePrice.estimateGas([tokenDAI], [v], { from: owner });
@@ -116,6 +119,29 @@ contract('Oracle', function(accounts) {
       // check storage
       obj = await oracleDelegate.getStoremanGroupConfig(smgID);
       assert.equal(obj.status.toNumber(), 8);
+      
+      receipt = await oracleDelegate.setCurrentStoremanGroupID(smgID2);
+      let groupId = await oracleDelegate.getCurrentStoremanGroupID();
+      assert.equal(groupId, smgID2Padding);
+      let obj0 = await oracleDelegate.currentStoremanIDs(0);
+      assert.equal(obj0, smgID2Padding);
+
+      receipt = await oracleDelegate.setCurrentStoremanGroupID(smgID);
+      groupId = await oracleDelegate.getCurrentStoremanGroupID();
+      assert.equal(groupId, smgIDPadding);
+      obj0 = await oracleDelegate.currentStoremanIDs(0);
+      assert.equal(obj0, smgIDPadding);
+      let obj1 = await oracleDelegate.currentStoremanIDs(1);
+      assert.equal(obj1, smgID2Padding);
+
+      receipt = await oracleDelegate.setCurrentStoremanGroupID(smgID2);
+      groupId = await oracleDelegate.getCurrentStoremanGroupID();
+      assert.equal(groupId, smgIDPadding);
+      obj0 = await oracleDelegate.currentStoremanIDs(0);
+      assert.equal(obj0, smgIDPadding);
+      obj1 = await oracleDelegate.currentStoremanIDs(1);
+      assert.equal(obj1, smgID2Padding);
+
 
       receipt = await oracleDelegate.setAdmin(white);
       // check SetAdmin event log
