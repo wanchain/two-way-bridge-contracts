@@ -4,6 +4,7 @@ const chainDict = {
   ETC: "ETC",
   EOS: "EOS",
   BSC: "BSC",
+  AVAX: "AVAX",
   TEST: "TEST"
 };
 
@@ -13,6 +14,7 @@ const chainIndexDict = {
   ETC: 0x3d,
   EOS: 0xc2,
   BSC: 0x2ca,
+  AVAX: 0x2328,
 };
 
 const chainNature = {
@@ -32,6 +34,9 @@ const networkDict = {
   // kovan: {name:"kovan", chainId: 42, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system},
   bscMainnet: {name:"bscMainnet", chainId: 56,chainType: chainDict.BSC, chainIndex:chainIndexDict.BSC,nature: chainNature.custom},
   bscTestnet: {name:"bscTestnet", chainId: 97,chainType: chainDict.BSC, chainIndex:chainIndexDict.BSC,nature: chainNature.custom},
+
+  avalancheMainnet: {name:"avalancheMainnet", chainId: 43114,chainType: chainDict.AVAX, chainIndex:chainIndexDict.AVAX,nature: chainNature.custom},
+  avalancheTestnet: {name:"avalancheTestnet", chainId: 43113,chainType: chainDict.AVAX, chainIndex:chainIndexDict.AVAX,nature: chainNature.custom},
 }
 
 const networks = Object.values(networkDict).map(v => v.name);
@@ -48,6 +53,8 @@ const defaultNodeUrlDict = {
   rinkeby: 'http://geth-testnet.wandevs.org:36892', // http or wss
   bscMainnet: 'https://bsc-dataseed1.binance.org:443', // http or wss,
   bscTestnet: 'https://data-seed-prebsc-1-s1.binance.org:8545', // http or wss
+  avalancheMainnet: "https://api.avax.network/ext/bc/C/rpc",
+  avalancheTestnet: "https://api.avax-test.network/ext/bc/C/rpc",
 }
 
 const defaultHadrfork = "byzantium";

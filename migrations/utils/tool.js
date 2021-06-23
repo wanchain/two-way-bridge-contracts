@@ -47,6 +47,12 @@ function parseNetwork(network) {
       isMainnet = network === networkDict.bscMainnet.name;
       break;
     }
+    case networkDict.avalancheMainnet.name:
+    case networkDict.avalancheTestnet.name: {
+      chainType = chainDict.AVAX;
+      isMainnet = network === networkDict.avalancheMainnet.name;
+      break;
+    }
     default: {
       chainType = chainDict.WAN;
       isMainnet = false;
@@ -99,6 +105,10 @@ function getWorkspace(root, contractLoad, deployScriptFileName) {
     BSC: {
       contract: path.join(root, chainDict.BSC.toLowerCase(), contractLoad),
       deploy: path.join(root, chainDict.BSC.toLowerCase(), deployScriptFileName)
+    },
+    AVAX: {
+      contract: path.join(root, chainDict.AVAX.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.AVAX.toLowerCase(), deployScriptFileName)
     },
   }
   return workspace;
