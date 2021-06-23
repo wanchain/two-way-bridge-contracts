@@ -1,0 +1,50 @@
+{
+     "TokenManagerProxy": {
+          "address": "0xaFd25d2696b94d6020037cB8942d72b012Bf0846",
+          "abi": "abi.TokenManagerDelegate.json"
+     },
+     "TokenManagerDelegate": {
+          "address": "0x1F2eFf6E4060025754a931296BDd42e75441a9af",
+          "abi": "abi.TokenManagerDelegate.json"
+     },
+     "QuotaProxy": {
+          "address": "0x07Ac8aadB7c3Acf7f9f566107313ebA13Cc9d8e7",
+          "abi": "abi.QuotaDelegate.json"
+     },
+     "QuotaDelegate": {
+          "address": "0xdc82A39C82eE483573b982f0Fa2841CFC56b19c1",
+          "abi": "abi.QuotaDelegate.json"
+     },
+     "OracleProxy": {
+          "address": "0x302554D20C92461f4c57baD481797B6D5F422c45",
+          "abi": "abi.OracleDelegate.json"
+     },
+     "OracleDelegate": {
+          "address": "0x80f3eBCe03689F0eceb9633054b5F57DA68D41b9",
+          "abi": "abi.OracleDelegate.json"
+     },
+     "HTLCTxLib": {
+          "address": "0xa64864E34f8ba30c0cBbF18b6230E4d2Ab3fD95D"
+     },
+     "HTLCDebtLib": {
+          "address": "0x59ba8f584d9293a8F2ceEEF76760Ef534afDD716"
+     },
+     "RapidityLib": {
+          "address": "0x2ec3a9Ae007F9DeFaD309cD5CB799D8720E19b9a"
+     },
+     "CrossProxy": {
+          "address": "0x4c200A0867753454Db78AF84d147Bd03e567f234",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "CrossDelegate": {
+          "address": "0x0b55EED74782B6dEbA2DFceA6aa1071375E64055",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "SignatureVerifier": {
+          "address": "0x0a5b5eA60930cCa901BcE3E3AD1772EBDd5065B8",
+          "abi": "abi.SignatureVerifier.json"
+     },
+     "Bn128SchnorrVerifier": {
+          "address": "0x44a63a65F8B6a1AA7CB3DF666d6583e3050C7930"
+     }
+}
