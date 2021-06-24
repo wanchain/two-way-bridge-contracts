@@ -23,6 +23,7 @@
     "js-sha256": "^0.9.0",
     "keccak256": "^1.0.0",
     "keythereum": "^1.0.4",
+    "ko-sleep": "^1.0.3",
     "optimist": "^0.6.1",
     "promisefy-util": "^1.2.0",
     "solidity-coverage": "^0.7.4",
