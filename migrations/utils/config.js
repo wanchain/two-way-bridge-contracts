@@ -5,7 +5,8 @@ const chainDict = {
   EOS: "EOS",
   BSC: "BSC",
   AVAX: "AVAX",
-  TEST: "TEST"
+  TEST: "TEST",
+  MOONBEAM: "MOONBEAM"
 };
 
 const chainIndexDict = {
@@ -15,6 +16,7 @@ const chainIndexDict = {
   EOS: 0xc2,
   BSC: 0x2ca,
   AVAX: 0x2328,
+  MOONBEAM: 0x2330, // TODO: NEED UPDATE
 };
 
 const chainNature = {
@@ -37,6 +39,9 @@ const networkDict = {
 
   avalancheMainnet: {name:"avalancheMainnet", chainId: 43114,chainType: chainDict.AVAX, chainIndex:chainIndexDict.AVAX,nature: chainNature.custom},
   avalancheTestnet: {name:"avalancheTestnet", chainId: 43113,chainType: chainDict.AVAX, chainIndex:chainIndexDict.AVAX,nature: chainNature.custom},
+
+  moonbeamMainnet: {name:"moonbeamMainnet", chainId: 1284,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM,nature: chainNature.custom},
+  moonbeamTestnet: {name:"moonbeamTestnet", chainId: 1287,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM,nature: chainNature.custom},
 }
 
 const networks = Object.values(networkDict).map(v => v.name);
@@ -55,6 +60,7 @@ const defaultNodeUrlDict = {
   bscTestnet: 'https://data-seed-prebsc-1-s1.binance.org:8545', // http or wss
   avalancheMainnet: "https://api.avax.network/ext/bc/C/rpc",
   avalancheTestnet: "https://api.avax-test.network/ext/bc/C/rpc",
+  moonbeamTestnet: "https://rpc.testnet.moonbeam.network",
 }
 
 const defaultHadrfork = "byzantium";
