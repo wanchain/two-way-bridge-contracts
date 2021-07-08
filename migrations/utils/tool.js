@@ -59,6 +59,12 @@ function parseNetwork(network) {
       isMainnet = network === networkDict.moonbeamMainnet.name;
       break;
     }
+    case networkDict.maticMainnet.name:
+    case networkDict.maticTestnet.name: {
+      chainType = chainDict.MATIC;
+      isMainnet = network === networkDict.maticMainnet.name;
+      break;
+    }
     default: {
       chainType = chainDict.WAN;
       isMainnet = false;
@@ -119,6 +125,10 @@ function getWorkspace(root, contractLoad, deployScriptFileName) {
     MOONBEAM: {
       contract: path.join(root, chainDict.MOONBEAM.toLowerCase(), contractLoad),
       deploy: path.join(root, chainDict.MOONBEAM.toLowerCase(), deployScriptFileName)
+    },
+    MATIC: {
+      contract: path.join(root, chainDict.MATIC.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.MATIC.toLowerCase(), deployScriptFileName)
     },
   }
   return workspace;
