@@ -6,7 +6,8 @@ const chainDict = {
   BSC: "BSC",
   AVAX: "AVAX",
   TEST: "TEST",
-  MOONBEAM: "MOONBEAM"
+  MOONBEAM: "MOONBEAM",
+  MATIC: "MATIC",
 };
 
 const chainIndexDict = {
@@ -16,7 +17,8 @@ const chainIndexDict = {
   EOS: 0xc2,
   BSC: 0x2ca,
   AVAX: 0x2328,
-  MOONBEAM: 0x2330, // TODO: NEED UPDATE
+  MOONBEAM: 0x2330, // TODO: NEED UPDATE,
+  MATIC: 0x3c6,
 };
 
 const chainNature = {
@@ -42,6 +44,9 @@ const networkDict = {
 
   moonbeamMainnet: {name:"moonbeamMainnet", chainId: 1284,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM,nature: chainNature.custom},
   moonbeamTestnet: {name:"moonbeamTestnet", chainId: 1287,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM,nature: chainNature.custom},
+
+  maticMainnet: {name:"maticMainnet", chainId: 137,chainType: chainDict.MATIC, chainIndex:chainIndexDict.MATIC,nature: chainNature.custom},
+  maticTestnet: {name:"maticTestnet", chainId: 80001,chainType: chainDict.MATIC, chainIndex:chainIndexDict.MATIC,nature: chainNature.custom},
 }
 
 const networks = Object.values(networkDict).map(v => v.name);
@@ -61,6 +66,8 @@ const defaultNodeUrlDict = {
   avalancheMainnet: "https://api.avax.network/ext/bc/C/rpc",
   avalancheTestnet: "https://api.avax-test.network/ext/bc/C/rpc",
   moonbeamTestnet: "https://rpc.testnet.moonbeam.network",
+  maticTestnet: "https://rpc-mumbai.matic.today",
+  maticMainnet: "https://rpc-mainnet.matic.network",
 }
 
 const defaultHadrfork = "byzantium";
