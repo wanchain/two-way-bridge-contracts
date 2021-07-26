@@ -8,6 +8,7 @@ const chainDict = {
   TEST: "TEST",
   MOONBEAM: "MOONBEAM",
   MATIC: "MATIC",
+  ADA: "ADA",
 };
 
 const chainIndexDict = {
@@ -19,6 +20,7 @@ const chainIndexDict = {
   AVAX: 0x2328,
   MOONBEAM: 0x2330, // TODO: NEED UPDATE,
   MATIC: 0x3c6,
+  ADA: 0x2331,// TODO: NEED UPDATE,
 };
 
 const chainNature = {
@@ -47,6 +49,9 @@ const networkDict = {
 
   maticMainnet: {name:"maticMainnet", chainId: 137,chainType: chainDict.MATIC, chainIndex:chainIndexDict.MATIC,nature: chainNature.custom},
   maticTestnet: {name:"maticTestnet", chainId: 80001,chainType: chainDict.MATIC, chainIndex:chainIndexDict.MATIC,nature: chainNature.custom},
+
+  adaMainnet: {name:"adaMainnet", chainId: 103,chainType: chainDict.ADA, chainIndex:chainIndexDict.ADA,nature: chainNature.custom},
+  adaTestnet: {name:"adaTestnet", chainId: 103,chainType: chainDict.ADA, chainIndex:chainIndexDict.ADA,nature: chainNature.custom},
 }
 
 const networks = Object.values(networkDict).map(v => v.name);
@@ -68,6 +73,8 @@ const defaultNodeUrlDict = {
   moonbeamTestnet: "https://rpc.testnet.moonbeam.network",
   maticTestnet: "https://rpc-mumbai.matic.today",
   maticMainnet: "https://rpc-mainnet.matic.network",
+  adaTestnet: "https://rpc-evm.portal.dev.cardano.org",
+  // adaMainnet: "https://rpc-evm.portal.dev.cardano.org",
 }
 
 const defaultHadrfork = "byzantium";

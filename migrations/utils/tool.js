@@ -65,6 +65,12 @@ function parseNetwork(network) {
       isMainnet = network === networkDict.maticMainnet.name;
       break;
     }
+    case networkDict.adaMainnet.name:
+    case networkDict.adaTestnet.name: {
+      chainType = chainDict.ADA;
+      isMainnet = network === networkDict.maticMainnet.name;
+      break;
+    }
     default: {
       chainType = chainDict.WAN;
       isMainnet = false;
@@ -129,6 +135,10 @@ function getWorkspace(root, contractLoad, deployScriptFileName) {
     MATIC: {
       contract: path.join(root, chainDict.MATIC.toLowerCase(), contractLoad),
       deploy: path.join(root, chainDict.MATIC.toLowerCase(), deployScriptFileName)
+    },
+    ADA: {
+      contract: path.join(root, chainDict.ADA.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.ADA.toLowerCase(), deployScriptFileName)
     },
   }
   return workspace;
