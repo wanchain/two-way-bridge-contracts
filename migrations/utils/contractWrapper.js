@@ -184,17 +184,32 @@ class ContractWrapper {
       case chainDict.BSC: {
         let chainParams = {};
         chainParams = {
-          networkId: await this.getChainId(),
-          chainId: await this.getChainId(),
-          genesis: {},
-          hardforks: [],
-          bootstrapNodes: []
+            networkId: await this.getChainId(),
+            chainId: await this.getChainId(),
+            genesis: {},
+            hardforks: [],
+            bootstrapNodes: []
         };
         const customCommon = new ethCommon(chainParams, this.cfg.hardfork);
-  
+
         tx = new ethTx(rawTx, {common: customCommon});
         break;
-      }
+    }
+    case chainDict.AVAX: {
+        let chainParams = {};
+        chainParams = {
+            networkId: await this.getChainId(),
+            chainId: await this.getChainId(),
+            genesis: {},
+            hardforks: [],
+            bootstrapNodes: []
+        };
+        const customCommon = new ethCommon(chainParams, this.cfg.hardfork);
+
+        tx = new ethTx(rawTx, {common: customCommon});
+        break;
+    }
+
       default: {
         rawTx.Txtype = 0x01;
         tx = new wanTx(rawTx);
