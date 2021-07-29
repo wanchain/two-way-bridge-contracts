@@ -55,8 +55,8 @@ const networkDict = {
   adaMainnet: {name:"adaMainnet", chainId: 103,chainType: chainDict.ADA, chainIndex:chainIndexDict.ADA,nature: chainNature.custom},
   adaTestnet: {name:"adaTestnet", chainId: 103,chainType: chainDict.ADA, chainIndex:chainIndexDict.ADA,nature: chainNature.custom},
 
-    adaMainnet: {name:"arbMainnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB,nature: chainNature.custom},//todo : need update chainId
-    adaTestnet: {name:"arbTestnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB,,nature: chainNature.custom},
+    arbMainnet: {name:"arbMainnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB,nature: chainNature.custom},//todo : need update chainId
+    arbTestnet: {name:"arbTestnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB,nature: chainNature.custom},
 }
 
 const networks = Object.values(networkDict).map(v => v.name);
