@@ -9,6 +9,7 @@ const chainDict = {
   MOONBEAM: "MOONBEAM",
   MATIC: "MATIC",
   ADA: "ADA",
+    ARB:"ARB",
 };
 
 const chainIndexDict = {
@@ -21,6 +22,7 @@ const chainIndexDict = {
   MOONBEAM: 0x2330, // TODO: NEED UPDATE,
   MATIC: 0x3c6,
   ADA: 0x2331,// TODO: NEED UPDATE,
+    ARB:0x2332, // TODO: NEED UPDATE,
 };
 
 const chainNature = {
@@ -52,6 +54,9 @@ const networkDict = {
 
   adaMainnet: {name:"adaMainnet", chainId: 103,chainType: chainDict.ADA, chainIndex:chainIndexDict.ADA,nature: chainNature.custom},
   adaTestnet: {name:"adaTestnet", chainId: 103,chainType: chainDict.ADA, chainIndex:chainIndexDict.ADA,nature: chainNature.custom},
+
+    adaMainnet: {name:"arbMainnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB,nature: chainNature.custom},//todo : need update chainId
+    adaTestnet: {name:"arbTestnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB,,nature: chainNature.custom},
 }
 
 const networks = Object.values(networkDict).map(v => v.name);
@@ -75,6 +80,8 @@ const defaultNodeUrlDict = {
   maticMainnet: "https://rpc-mainnet.matic.network",
   adaTestnet: "https://rpc-evm.portal.dev.cardano.org",
   // adaMainnet: "https://rpc-evm.portal.dev.cardano.org",
+    arbMainnet: "https://rinkeby.arbitrum.io/rpc", // todo : need update
+    arbTestnet: "https://rinkeby.arbitrum.io/rpc",
 }
 
 const defaultHadrfork = "byzantium";

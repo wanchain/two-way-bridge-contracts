@@ -71,6 +71,13 @@ function parseNetwork(network) {
       isMainnet = network === networkDict.maticMainnet.name;
       break;
     }
+      case networkDict.arbMainnet.name:
+      case networkDict.arbTestnet.name: {
+          chainType = chainDict.ARB;
+          isMainnet = network === networkDict.arbMainnet.name;
+          break;
+      }
+
     default: {
       chainType = chainDict.WAN;
       isMainnet = false;
@@ -140,6 +147,10 @@ function getWorkspace(root, contractLoad, deployScriptFileName) {
       contract: path.join(root, chainDict.ADA.toLowerCase(), contractLoad),
       deploy: path.join(root, chainDict.ADA.toLowerCase(), deployScriptFileName)
     },
+      ARB: {
+          contract: path.join(root, chainDict.ARB.toLowerCase(), contractLoad),
+          deploy: path.join(root, chainDict.ARB.toLowerCase(), deployScriptFileName)
+      },
   }
   return workspace;
 }
