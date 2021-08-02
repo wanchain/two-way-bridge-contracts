@@ -31,7 +31,7 @@ function parseNetwork(network) {
   switch (network) {
     case networkDict.mainnet.name:
     case networkDict.testnet.name: {
-      chainType = chainDict.ETH;
+      chainType = chainDict.WAN;
       isMainnet = network === networkDict.mainnet.name;
       break;
     }
