@@ -1,0 +1,122 @@
+{
+     "HTLCTxLib": {
+          "address": "0x14396796836D0E9E27827E2E9ba7749741a5e3df",
+          "abi": "abi.HTLCTxLib.json"
+     },
+     "HTLCDebtLib": {
+          "address": "0x30f4e23A7d722434C37C87CB79aAB86b3fAC99a9",
+          "abi": "abi.HTLCDebtLib.json"
+     },
+     "RapidityLib": {
+          "address": "0xbD53Ba94B08b03C165DE37380c0C552ce02C6144",
+          "abi": "abi.RapidityLib.json"
+     },
+     "CrossProxy": {
+          "address": "0x62dE27e16f6f31d9Aa5B02F4599Fc6E21B339e79",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "CrossDelegate": {
+          "address": "0x87137EAdC0C35E23E86e5304D681Cd99a22122AB",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "TokenManagerDelegate": {
+          "address": "0x52C5Fefe8e38DFa722905Ce5f8ff6Fc7e96c6c1d",
+          "abi": "abi.TokenManagerDelegate.json"
+     },
+     "QuotaDelegate": {
+          "address": "0x9a1B526802DD18b2658F04Cd2DE8aD4cE4b41729",
+          "abi": "abi.QuotaDelegate.json"
+     },
+     "OracleDelegate": {
+          "address": "0x2816b45155c3A897893ea90f83C0026de1882f13",
+          "abi": "abi.OracleDelegate.json"
+     },
+     "QuotaProxy": {
+          "address": "0x7585c2ae6a3F3B2998103cB7040F811B550C9930",
+          "abi": "abi.QuotaDelegate.json"
+     },
+     "TokenManagerProxy": {
+          "address": "0x017aB6485fF91C1A0a16B90E71f92B935B7213d3",
+          "abi": "abi.TokenManagerDelegate.json"
+     },
+     "OracleProxy": {
+          "address": "0x27933A9b0A5c21B838843d7601B6e0b488122AE9",
+          "abi": "abi.OracleDelegate.json"
+     },
+     "ListGroup": {
+          "address": "0x83C4F86124329040dDdb936bffa211Ce460aCb9E",
+          "abi": "abi.ListGroup.json"
+     },
+     "SignatureVerifier": {
+          "address": "0x5dcAB781bD5E1e7af64EEC0686f6d618554F6340",
+          "abi": "abi.SignatureVerifier.json"
+     },
+     "Bn128SchnorrVerifier": {
+          "address": "0xe3036987Fd8d0b4FC317610E96Ed7D477F9a3e3b"
+     },
+     "Secp256k1SchnorrVerifier": {
+          "address": "0xa742E9f65856738052bcBd303232b04816745D58"
+     },
+     "PosLib": {
+          "address": "0x83A15a7976B5aB97D423f87678CC93f0757B2a92"
+     },
+     "CommonTool": {
+          "address": "0xd6A6Ddee99bf0e4c6c69C24006Af62Eda0Da1b11"
+     },
+     "StoremanUtil": {
+          "address": "0xF891FD543cDC36DBFa9b67b7b8de0C9C6Ec36c09"
+     },
+     "StoremanLib": {
+          "address": "0xd9B514360b818eDa08C208eF8Fd20193737a5836"
+     },
+     "IncentiveLib": {
+          "address": "0xd324D20796d51600e5f9C4fDaFAB9d1Bc43D9717"
+     },
+     "Deposit": {
+          "address": "0xcd2C7272B91c08cd9A6B1e3C092A5e16Ff01a4d5"
+     },
+     "StoremanGroupProxy": {
+          "address": "0xaA5A0f7F99FA841F410aafD97E8C435c75c22821",
+          "abi": "abi.StoremanGroupDelegate.json"
+     },
+     "StoremanGroupDelegate": {
+          "address": "0xd324D20796d51600e5f9C4fDaFAB9d1Bc43D9717",
+          "abi": "abi.StoremanGroupDelegate.json"
+     },
+     "MetricLib": {
+          "address": "0xA3840403C699185B1f572448df70Ae9AA6401590"
+     },
+     "MetricProxy": {
+          "address": "0x869276043812B459Cc9d11E255Fb0097D51846EF",
+          "abi": "abi.MetricDelegate.json"
+     },
+     "MetricDelegate": {
+          "address": "0xeC08bb9f4cD69e4b32378D9EEabE3f01217f5285",
+          "abi": "abi.MetricDelegate.json"
+     },
+     "GpkLib": {
+          "address": "0xE9583549Cd6E484aa234625662CDf45F47a9D539"
+     },
+     "GpkProxy": {
+          "address": "0xf0bFfF373EEF7b787f5aecb808A59dF714e2a6E7",
+          "abi": "abi.GpkDelegate.json"
+     },
+     "GpkDelegate": {
+          "address": "0x5ebfC0B1E959FCB1c0820e97411E62c2e79f8A99",
+          "abi": "abi.GpkDelegate.json"
+     },
+     "ConfigProxy": {
+          "address": "0xc59a6E80E387bdeFa89Efb032aA4EE922Ca78036",
+          "abi": "abi.ConfigDelegate.json"
+     },
+     "ConfigDelegate": {
+          "address": "0x8b98982d607f98F64FDE163dFBaE58f99f84C984",
+          "abi": "abi.ConfigDelegate.json"
+     },
+     "Secp256k1Curve": {
+          "address": "0xfe9c853345331DBD2e34281c83F60E1B37DEc760"
+     },
+     "Bn256Curve": {
+          "address": "0x808a9f4634222898514922Cd0c16708C894C539A"
+     }
+}
