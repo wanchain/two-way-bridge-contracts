@@ -331,7 +331,9 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         external
         onlyOwner
     {
-        require(tokenManager != address(0) && smgAdminProxy != address(0) && quota != address(0) && sigVerifier != address(0),
+        // require(tokenManager != address(0) && smgAdminProxy != address(0) && quota != address(0) && sigVerifier != address(0),
+        //     "Parameter is invalid");
+        require(tokenManager != address(0) && smgAdminProxy != address(0) && sigVerifier != address(0),
             "Parameter is invalid");
 
         storageData.smgAdminProxy = IStoremanGroup(smgAdminProxy);
