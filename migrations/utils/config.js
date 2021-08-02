@@ -9,7 +9,8 @@ const chainDict = {
   MOONBEAM: "MOONBEAM",
   MATIC: "MATIC",
   ADA: "ADA",
-    ARB:"ARB",
+  ARB:"ARB",
+  OPM:"OPM",
 };
 
 const chainIndexDict = {
@@ -22,7 +23,8 @@ const chainIndexDict = {
   MOONBEAM: 0x2330, // TODO: NEED UPDATE,
   MATIC: 0x3c6,
   ADA: 0x2331,// TODO: NEED UPDATE,
-    ARB:0x2332, // TODO: NEED UPDATE,
+  ARB:0x2332, // TODO: NEED UPDATE,
+  OPM:0xa,
 };
 
 const chainNature = {
@@ -55,8 +57,11 @@ const networkDict = {
   adaMainnet: {name:"adaMainnet", chainId: 103,chainType: chainDict.ADA, chainIndex:chainIndexDict.ADA,nature: chainNature.custom},
   adaTestnet: {name:"adaTestnet", chainId: 103,chainType: chainDict.ADA, chainIndex:chainIndexDict.ADA,nature: chainNature.custom},
 
-    arbMainnet: {name:"arbMainnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB,nature: chainNature.custom},//todo : need update chainId
-    arbTestnet: {name:"arbTestnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB,nature: chainNature.custom},
+  arbMainnet: {name:"arbMainnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB,nature: chainNature.custom},//todo : need update chainId
+  arbTestnet: {name:"arbTestnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB,nature: chainNature.custom},
+
+  opmMainnet: {name:"opmMainnet", chainId: 10,chainType: chainDict.OPM, chainIndex:chainIndexDict.OPM,nature: chainNature.custom},//todo : need update chainId
+  opmTestnet: {name:"opmTestnet", chainId: 69,chainType: chainDict.OPM, chainIndex:chainIndexDict.OPM,nature: chainNature.custom},
 }
 
 const networks = Object.values(networkDict).map(v => v.name);
@@ -80,8 +85,10 @@ const defaultNodeUrlDict = {
   maticMainnet: "https://rpc-mainnet.matic.network",
   adaTestnet: "https://rpc-evm.portal.dev.cardano.org",
   // adaMainnet: "https://rpc-evm.portal.dev.cardano.org",
-    arbMainnet: "https://rinkeby.arbitrum.io/rpc", // todo : need update
-    arbTestnet: "https://rinkeby.arbitrum.io/rpc",
+  arbMainnet: "https://rinkeby.arbitrum.io/rpc", // todo : need update
+  arbTestnet: "https://rinkeby.arbitrum.io/rpc",
+  opmMainnet: "https://mainnet.optimism.io", // todo : need update
+  opmTestnet: "https://kovan.optimism.io",
 }
 
 const defaultHadrfork = "byzantium";

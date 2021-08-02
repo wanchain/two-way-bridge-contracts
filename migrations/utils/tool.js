@@ -71,12 +71,18 @@ function parseNetwork(network) {
       isMainnet = network === networkDict.maticMainnet.name;
       break;
     }
-      case networkDict.arbMainnet.name:
-      case networkDict.arbTestnet.name: {
-          chainType = chainDict.ARB;
-          isMainnet = network === networkDict.arbMainnet.name;
-          break;
-      }
+    case networkDict.arbMainnet.name:
+    case networkDict.arbTestnet.name: {
+        chainType = chainDict.ARB;
+        isMainnet = network === networkDict.arbMainnet.name;
+        break;
+    }
+    case networkDict.opmMainnet.name:
+    case networkDict.opmTestnet.name: {
+        chainType = chainDict.OPM;
+        isMainnet = network === networkDict.opmMainnet.name;
+        break;
+    }
 
     default: {
       chainType = chainDict.WAN;
@@ -147,10 +153,14 @@ function getWorkspace(root, contractLoad, deployScriptFileName) {
       contract: path.join(root, chainDict.ADA.toLowerCase(), contractLoad),
       deploy: path.join(root, chainDict.ADA.toLowerCase(), deployScriptFileName)
     },
-      ARB: {
-          contract: path.join(root, chainDict.ARB.toLowerCase(), contractLoad),
-          deploy: path.join(root, chainDict.ARB.toLowerCase(), deployScriptFileName)
-      },
+    ARB: {
+        contract: path.join(root, chainDict.ARB.toLowerCase(), contractLoad),
+        deploy: path.join(root, chainDict.ARB.toLowerCase(), deployScriptFileName)
+    },
+    OPM: {
+        contract: path.join(root, chainDict.OPM.toLowerCase(), contractLoad),
+        deploy: path.join(root, chainDict.OPM.toLowerCase(), deployScriptFileName)
+    },
   }
   return workspace;
 }
