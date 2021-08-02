@@ -77,7 +77,9 @@ library HTLCDebtLib {
     function transferAsset(CrossTypes.Data storage storageData, DebtAssetParams memory params)
         public
     {
-        storageData.quota.transferAsset(params.srcSmgID, params.destSmgID);
+        if (address(storageData.quota) != address(0)) {
+            storageData.quota.transferAsset(params.srcSmgID, params.destSmgID);
+        }
         emit TransferAssetLogger(params.uniqueID, params.srcSmgID, params.destSmgID);
     }
 
@@ -87,7 +89,9 @@ library HTLCDebtLib {
     function receiveDebt(CrossTypes.Data storage storageData, DebtAssetParams memory params)
         public
     {
-        storageData.quota.receiveDebt(params.srcSmgID, params.destSmgID);
+        if (address(storageData.quota) != address(0)) {
+            storageData.quota.receiveDebt(params.srcSmgID, params.destSmgID);
+        }
         emit ReceiveDebtLogger(params.uniqueID, params.srcSmgID, params.destSmgID);
     }
 }

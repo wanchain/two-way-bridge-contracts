@@ -148,7 +148,9 @@ library RapidityLib {
 
         uint serviceFee = storageData.mapLockFee[fromChainID][toChainID];
 
-        storageData.quota.userLock(params.tokenPairID, params.smgID, params.value);
+        if (address(storageData.quota) != address(0)) {
+            storageData.quota.userLock(params.tokenPairID, params.smgID, params.value);
+        }
 
         if (serviceFee > 0) {
             if (storageData.smgFeeProxy == address(0)) {
@@ -203,7 +205,9 @@ library RapidityLib {
             }
         }
 
-        storageData.quota.userBurn(params.tokenPairID, params.smgID, params.value);
+        if (address(storageData.quota) != address(0)) {
+            storageData.quota.userBurn(params.tokenPairID, params.smgID, params.value);
+        }
 
         tokenManager.burnToken(params.shadowTokenAccount, msg.sender, params.value);
 
@@ -232,7 +236,9 @@ library RapidityLib {
     {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
 
-        storageData.quota.smgMint(params.tokenPairID, params.smgID, params.value);
+        if (address(storageData.quota) != address(0)) {
+            storageData.quota.smgMint(params.tokenPairID, params.smgID, params.value);
+        }
 
         storageData.tokenManager.mintToken(params.shadowTokenAccount, params.userShadowAccount, params.value);
 
@@ -248,7 +254,9 @@ library RapidityLib {
     {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
 
-        storageData.quota.smgRelease(params.tokenPairID, params.smgID, params.value);
+        if (address(storageData.quota) != address(0)) {
+            storageData.quota.smgRelease(params.tokenPairID, params.smgID, params.value);
+        }
 
         if (params.origTokenAccount == address(0)) {
             (params.userOrigAccount).transfer(params.value);
