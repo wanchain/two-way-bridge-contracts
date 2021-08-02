@@ -33,8 +33,11 @@ import "./CrossStorage.sol";
 import "./lib/HTLCDebtLib.sol";
 import "./lib/RapidityLib.sol";
 
+
 contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     using SafeMath for uint;
+    bytes constant currentChainIDKey = "current";
+    bytes constant currentChainIDInnerKey = "chainID";
 
     /**
      *
@@ -176,7 +179,8 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         });
         RapidityLib.smgMint(storageData, params);
 
-        bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, tokenAccount, userAccount));
+        uint currentChainID = getUintValue(currentChainIDKey, currentChainIDInnerKey);
+        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, value, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
@@ -206,7 +210,8 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         });
         RapidityLib.smgRelease(storageData, params);
 
-        bytes32 mHash = sha256(abi.encode(uniqueID, tokenPairID, value, tokenAccount, userAccount));
+        uint currentChainID = getUintValue(currentChainIDKey, currentChainIDInnerKey);
+        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, value, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
@@ -232,7 +237,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         });
         HTLCDebtLib.transferAsset(storageData, params);
 
-        bytes32 mHash = sha256(abi.encode(uniqueID, destSmgID));
+        bytes32 mHash = sha256(abi.encode(getUintValue(currentChainIDKey, currentChainIDInnerKey), uniqueID, destSmgID));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
@@ -257,7 +262,8 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         });
         HTLCDebtLib.receiveDebt(storageData, params);
 
-        bytes32 mHash = sha256(abi.encode(uniqueID, srcSmgID));
+        uint currentChainID = getUintValue(currentChainIDKey, currentChainIDInnerKey);
+        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, srcSmgID));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
@@ -325,7 +331,9 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         external
         onlyOwner
     {
-        require(tokenManager != address(0) && smgAdminProxy != address(0) && quota != address(0) && sigVerifier != address(0),
+        // require(tokenManager != address(0) && smgAdminProxy != address(0) && quota != address(0) && sigVerifier != address(0),
+        //     "Parameter is invalid");
+        require(tokenManager != address(0) && smgAdminProxy != address(0) && sigVerifier != address(0),
             "Parameter is invalid");
 
         storageData.smgAdminProxy = IStoremanGroup(smgAdminProxy);
@@ -383,7 +391,8 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         uint curveID;
         bytes memory PK;
         (,,,,,curveID,,PK,,,) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
-        verifySignature(curveID, sha256(abi.encode(timeStamp, receiver)), PK, r, s);
+        uint currentChainID = getUintValue(currentChainIDKey, currentChainIDInnerKey);
+        verifySignature(curveID, sha256(abi.encode(currentChainID, timeStamp, receiver)), PK, r, s);
 
         emit SmgWithdrawFeeLogger(smgID, now, receiver, fee);
     }
@@ -413,6 +422,29 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         bytes32 Ry = bytesToBytes32(r, 32);
 
         require(storageData.sigVerifier.verify(curveID, s, PKx, PKy, Rx, Ry, message), "Signature verification failed");
+    }
+
+    /* uintData */
+    function setUintValue(bytes key, bytes innerKey, uint value)
+        external
+        onlyOwner
+    {
+        return uintData.setStorage(key, innerKey, value);
+    }
+
+    function getUintValue(bytes key, bytes innerKey)
+        public
+        view
+        returns (uint)
+    {
+        return uintData.getStorage(key, innerKey);
+    }
+
+    function delUintValue(bytes key, bytes innerKey)
+        external
+        onlyOwner
+    {
+        return uintData.delStorage(key, innerKey);
     }
 
 }
