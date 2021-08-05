@@ -24,7 +24,12 @@
     "optimist": "^0.6.1",
     "promisefy-util": "^1.2.0",
     "solidity-coverage": "^0.7.4",
-    "truffle": "^5.1.42",
+    "truffle": "^5.4.3",
+    "@truffle/hdwallet-provider": "^1.4.1",
+    "@eth-optimism/core-utils": "^0.4.4",
+    "@eth-optimism/plugins": "^0.0.20",
+    "@eth-optimism/solc": "0.7.6-alpha.1",
+    "dotenv": "^8.2.0",
     "truffle-hdwallet-provider": "^1.0.17",
     "truffle-privatekey-provider": "^0.1.0",
     "wanchain-truffle-sdk": "^1.0.0",
@@ -43,7 +48,10 @@
     "compile": "truffle compile",
     "coverage": "truffle run coverage --network coverage",
     "migrate": "rm -rf build && truffle migrate --network testnet",
-    "my_coverage": "node --max_old_space_size=8000 ./node_modules/.bin/truffle run coverage --network coverage"
+    "my_coverage": "node --max_old_space_size=8000 ./node_modules/.bin/truffle run coverage --network coverage",
+    "compile-op": "npx truffle compile --config truffle-config.ovm.js --network optimistic_ethereum",
+    "console-op": "npx truffle console --config truffle-config.ovm.js --network optimistic_ethereum",
+    "migrate-op": "npx truffle migrate --config truffle-config.ovm.js --network optimistic_ethereum"
   },
   "author": "",
   "license": "ISC"

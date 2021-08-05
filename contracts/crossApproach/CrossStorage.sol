@@ -25,7 +25,7 @@
 //
 
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.0;
+pragma solidity 0.7.6;
 
 import "../components/BasicStorage.sol";
 import "./lib/CrossTypes.sol";

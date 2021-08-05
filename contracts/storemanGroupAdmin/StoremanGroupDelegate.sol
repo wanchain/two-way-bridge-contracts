@@ -25,7 +25,7 @@
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.0;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../lib/SafeMath.sol";

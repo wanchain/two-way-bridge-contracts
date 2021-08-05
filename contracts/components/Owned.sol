@@ -25,11 +25,13 @@
 //
 
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.0;
+pragma solidity 0.7.6;
 
 /// @dev `Owned` is a base level contract that assigns an `owner` that can be
 ///  later changed
 contract Owned {
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /// @dev `owner` is the only address that can call a function with this
     /// modifier
@@ -41,11 +43,17 @@ contract Owned {
     address public owner;
 
     /// @notice The Constructor assigns the message sender to be `owner`
-    constructor() {
+    constructor() public {
         owner = msg.sender;
     }
 
     address public newOwner;
+
+    function transferOwner(address _newOwner) public onlyOwner {
+        require(_newOwner != address(0), "New owner is the zero address");
+        emit OwnershipTransferred(owner, _newOwner);
+        owner = _newOwner;
+    }
 
     /// @notice `owner` can step down and assign some other address to this role
     /// @param _newOwner The address of the new owner. 0x0 can be used to create

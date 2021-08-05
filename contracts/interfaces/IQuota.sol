@@ -25,7 +25,7 @@
 //
 
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.0;
+pragma solidity 0.7.6;
 
 interface IQuota {
   function userMintLock(uint tokenId, bytes32 storemanGroupId, uint value) external;

@@ -25,7 +25,7 @@
 //
 
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.0;
+pragma solidity 0.7.6;
 
 interface IGPK {
     function getGpkShare(bytes32 groupId, uint index) external view returns(bytes memory gpkShare1, bytes memory gpkShare2);
