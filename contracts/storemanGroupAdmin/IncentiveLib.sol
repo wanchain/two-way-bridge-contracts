@@ -62,9 +62,10 @@ library IncentiveLib {
                 sk.groupId = sk.nextGroupId;
                 sk.nextGroupId = bytes32(0x00);
             } else {
-                // if  whitelist, set groupId = 0
+                // if  whitelist, set groupId = 0. because we do not inherit whitlist
                 if(sk.isWhite){
                     sk.groupId = bytes32(0x00);
+                    sk.incentivedDay = 0;
                 }
             }
         }
@@ -223,14 +224,16 @@ library IncentiveLib {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(group.status == StoremanType.GroupStatus.curveSeted,"Wrong status");
         require(now > group.registerTime + group.registerDuration, "Wrong time");
-        if(group.memberCount < group.memberCountDesign){
-            group.status = StoremanType.GroupStatus.failed;
-            for(uint k=0; k<group.whiteCountAll; k++){
-                StoremanType.Candidate storage skt = data.candidates[0][group.whiteMap[k]];
-                cleanSmNode(skt, groupId);
-            }
-            return;
-        }
+        require(group.memberCount >= group.memberCountDesign,"Not enough member");
+        // Don't select until memberCount is enough
+        // if(group.memberCount < group.memberCountDesign){
+        //     group.status = StoremanType.GroupStatus.failed;
+        //     for(uint k=0; k<group.whiteCountAll; k++){
+        //         StoremanType.Candidate storage skt = data.candidates[0][group.whiteMap[k]];
+        //         cleanSmNode(skt, groupId);
+        //     }
+        //     return;
+        // }
         address[] memory members = new address[](group.memberCountDesign);
         for(uint i = 0; i<group.memberCountDesign; i++){
             members[i] = group.selectedNode[i];

@@ -48,7 +48,7 @@ library StoremanLib {
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(group.status == StoremanType.GroupStatus.curveSeted,"invalid group");
-        require(now <= group.registerTime+group.registerDuration,"Registration closed");
+        //require(now <= group.registerTime+group.registerDuration,"Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         require(StoremanUtil.onCurve(PK), "invalid PK");
         require(StoremanUtil.onCurve(enodeID), "invalid enodeID");
