@@ -48,7 +48,7 @@ const networkDict = {
   avalancheMainnet: {name:"avalancheMainnet", chainId: 43114,chainType: chainDict.AVAX, chainIndex:chainIndexDict.AVAX,nature: chainNature.custom},
   avalancheTestnet: {name:"avalancheTestnet", chainId: 43113,chainType: chainDict.AVAX, chainIndex:chainIndexDict.AVAX,nature: chainNature.custom},
 
-  moonbeamMainnet: {name:"moonbeamMainnet", chainId: 1284,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM,nature: chainNature.custom},
+  moonbeamMainnet: {name:"moonbeamMainnet", chainId: 1285,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM,nature: chainNature.custom},
   moonbeamTestnet: {name:"moonbeamTestnet", chainId: 1287,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM,nature: chainNature.custom},
 
   maticMainnet: {name:"maticMainnet", chainId: 137,chainType: chainDict.MATIC, chainIndex:chainIndexDict.MATIC,nature: chainNature.custom},
