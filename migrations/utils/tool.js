@@ -84,6 +84,13 @@ function parseNetwork(network) {
         break;
     }
 
+      case networkDict.ftmMainnet.name:
+      case networkDict.ftmTestnet.name: {
+          chainType = chainDict.FTM;
+          isMainnet = network === networkDict.ftmMainnet.name;
+          break;
+      }
+
     default: {
       chainType = chainDict.WAN;
       isMainnet = false;
@@ -160,6 +167,10 @@ function getWorkspace(root, contractLoad, deployScriptFileName) {
     OPM: {
         contract: path.join(root, chainDict.OPM.toLowerCase(), contractLoad),
         deploy: path.join(root, chainDict.OPM.toLowerCase(), deployScriptFileName)
+    },
+    FTM: {
+        contract: path.join(root, chainDict.FTM.toLowerCase(), contractLoad),
+        deploy: path.join(root, chainDict.FTM.toLowerCase(), deployScriptFileName)
     },
   }
   return workspace;
