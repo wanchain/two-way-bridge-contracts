@@ -11,6 +11,7 @@ const chainDict = {
   ADA: "ADA",
   ARB:"ARB",
   OPM:"OPM",
+  FTM:"FTM",
 };
 
 const chainIndexDict = {
@@ -25,6 +26,7 @@ const chainIndexDict = {
   ADA: 0x2331,// TODO: NEED UPDATE,
   ARB:0x2332, // TODO: NEED UPDATE,
   OPM:0xa,
+  FTM:0xb,
 };
 
 const chainNature = {
@@ -62,6 +64,9 @@ const networkDict = {
 
   opmMainnet: {name:"opmMainnet", chainId: 10,chainType: chainDict.OPM, chainIndex:chainIndexDict.OPM,nature: chainNature.custom},//todo : need update chainId
   opmTestnet: {name:"opmTestnet", chainId: 69,chainType: chainDict.OPM, chainIndex:chainIndexDict.OPM,nature: chainNature.custom},
+
+    ftmMainnet: {name:"ftmMainnet", chainId: 250,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM,nature: chainNature.custom},
+    ftmTestnet: {name:"ftmTestnet", chainId: 4002,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM,nature: chainNature.custom},
 }
 
 const networks = Object.values(networkDict).map(v => v.name);
@@ -89,6 +94,9 @@ const defaultNodeUrlDict = {
   arbTestnet: "https://rinkeby.arbitrum.io/rpc",
   opmMainnet: "https://mainnet.optimism.io", // todo : need update
   opmTestnet: "https://kovan.optimism.io",
+
+    ftmMainnet: "https://rpc.ftm.tools",
+    ftmTestnet: "https://rpc.testnet.fantom.network",
 }
 
 const defaultHadrfork = "byzantium";
