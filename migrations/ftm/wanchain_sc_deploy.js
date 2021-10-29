@@ -9,7 +9,7 @@ const {
 } = require('../utils/config');
 const sleep = require('ko-sleep');
 
-const SLEEPTIME = 20000; // 20s
+const SLEEPTIME = 2000; // 20s
 async function deploy(cfg, isMainnet) {
     let contract = {};
     let abi = {};
