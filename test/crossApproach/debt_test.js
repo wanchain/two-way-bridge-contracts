@@ -72,7 +72,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> ->
         let sk = skInfo.src[currentChainType];
 
         // sign
-        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, 0, funcParams.uniqueID, funcParams.destSmgID);
         funcParams = {...funcParams, R: R, s: s};
 
         // crossProxy halted
@@ -130,7 +130,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> ->
         let sk = skInfo.src[currentChainType];
 
         // sign
-        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, 0, funcParams.uniqueID, funcParams.destSmgID);
         funcParams = {...funcParams, R: R, s: s};
 
         // transferAsset
@@ -182,7 +182,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> ->
         let sk = skInfo.src[currentChainType];
 
         // sign
-        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, 0, funcParams.uniqueID, funcParams.destSmgID);
         funcParams = {...funcParams, R: R, s: s};
 
         // destination storeman group is ready
@@ -244,7 +244,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> ->
         let sk = skInfo.src[currentChainType];
 
         // sign
-        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, 0, funcParams.uniqueID, funcParams.destSmgID);
         funcParams = {...funcParams, R: R, s: s};
 
         // destination storeman group is unregistered
@@ -305,7 +305,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> ->
         let sk = skInfo.src[currentChainType];
 
         // sign
-        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.srcSmgID);
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, 0, funcParams.uniqueID, funcParams.srcSmgID);
         funcParams = {...funcParams, R: R, s: s};
 
         let receipt = await cross.transferAsset(...Object.values(funcParams), {from: senderAccount});
@@ -355,7 +355,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Debt @ethereum <( wanchain => ethereum )> -> 
         let sk = skInfo.dest[currentChainType];
 
         // sign
-        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.srcSmgID);
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, 0, funcParams.uniqueID, funcParams.srcSmgID);
         funcParams = {...funcParams, R: R, s: s};
 
         // crossProxy halted
@@ -413,7 +413,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Debt @ethereum <( wanchain => ethereum )> -> 
         let sk = skInfo.dest[currentChainType];
 
         // sign
-        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.srcSmgID);
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, 0, funcParams.uniqueID, funcParams.srcSmgID);
         funcParams = {...funcParams, R: R, s: s};
 
         // receiveDebt
@@ -465,7 +465,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Debt @ethereum <( wanchain => ethereum )> -> 
         let sk = skInfo.dest[currentChainType];
 
         // sign
-        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.srcSmgID);
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, 0, funcParams.uniqueID, funcParams.srcSmgID);
         funcParams = {...funcParams, R: R, s: s};
 
         // destination storeman group is ready
@@ -526,7 +526,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Debt @ethereum <( wanchain => ethereum )> -> 
         let sk = skInfo.dest[currentChainType];
 
         // sign
-        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.destSmgID);
+        let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, 0, funcParams.uniqueID, funcParams.destSmgID);
         funcParams = {...funcParams, R: R, s: s};
 
         // receiveDebt
@@ -637,7 +637,7 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( wanchain => ethereum 
     let sk = skInfo.src[currentChainType];
 
     // sign
-    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgMint, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgMint, 0, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
     funcParams = {...funcParams, R: R, s: s};
 
     let receipt = await cross.smgMint(...Object.values(funcParams), {from: senderAccount});
@@ -769,7 +769,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Asset @wanchain <( wanchain => ethereum )> ->
     let sk = skInfo.src[currentChainType];
 
     // sign
-    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, 0, funcParams.uniqueID, funcParams.destSmgID);
     funcParams = {...funcParams, R: R, s: s};
 
     let receipt = await cross.transferAsset(...Object.values(funcParams), {from: senderAccount});
@@ -812,7 +812,7 @@ it('Chain [WAN] <=> Chain [ETH] -> Debt @ethereum <( wanchain => ethereum )> -> 
     let sk = skInfo.dest[currentChainType];
 
     // sign
-    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.srcSmgID);
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, 0, funcParams.uniqueID, funcParams.srcSmgID);
     funcParams = {...funcParams, R: R, s: s};
 
     // receiveDebt
@@ -856,7 +856,7 @@ it('Chain [ETH] <=> Chain [WAN] -> Asset @ethereum <( ethereum => wanchain )> ->
     let sk = skInfo.src[currentChainType];
 
     // sign
-    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, funcParams.uniqueID, funcParams.destSmgID);
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.transferAsset, 0, funcParams.uniqueID, funcParams.destSmgID);
     funcParams = {...funcParams, R: R, s: s};
 
     let receipt = await cross.transferAsset(...Object.values(funcParams), {from: senderAccount});
@@ -899,7 +899,7 @@ it('Chain [ETH] <=> Chain [WAN] -> Debt @wanchain <( ethereum => wanchain )> -> 
     let sk = skInfo.dest[currentChainType];
 
     // sign
-    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, funcParams.uniqueID, funcParams.srcSmgID);
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.receiveDebt, 0, funcParams.uniqueID, funcParams.srcSmgID);
     funcParams = {...funcParams, R: R, s: s};
 
     // receiveDebt
@@ -956,7 +956,7 @@ it('Chain [ETH] <=> Chain [WAN] -> COIN [ETH @wanchain] <( ethereum => wanchain 
     let sk = skInfo.dest[currentChainType];
 
     // sign
-    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgMint, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgMint, 0, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
     funcParams = {...funcParams, R: R, s: s};
 
     let receipt = await cross.smgMint(...Object.values(funcParams), {from: senderAccount});
@@ -1073,7 +1073,7 @@ it('Chain [ETH] <=> Chain [WAN] -> COIN [ETH @ethereum] <( wanchain => ethereum 
     let sk = skInfo.dest[currentChainType];
 
     // sign
-    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgRelease, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgRelease, 0, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
     funcParams = {...funcParams, R: R, s: s};
 
     let receipt = await cross.smgRelease(...Object.values(funcParams), {from: senderAccount});
@@ -1196,7 +1196,7 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( ethereum => wanchain 
     let sk = skInfo.dest[currentChainType];
 
     // sign
-    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgRelease, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
+    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgRelease, 0, funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.tokenAccount, funcParams.userAccount);
     funcParams = {...funcParams, R: R, s: s};
 
     let receipt = await cross.smgRelease(...Object.values(funcParams), {from: senderAccount});
