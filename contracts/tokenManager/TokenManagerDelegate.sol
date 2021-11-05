@@ -38,6 +38,9 @@ import "./IMappingToken.sol";
 
 contract TokenManagerDelegate is TokenManagerStorage, Admin {
     using SafeMath for uint;
+
+    bytes firstKeyForNFT = "TokenManager_NFT";
+
     /************************************************************
      **
      ** EVENTS
@@ -48,6 +51,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
      event AddTokenPair(uint indexed id, uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount);
      event UpdateTokenPair(uint indexed id, AncestorInfo aInfo, uint fromChainID, bytes fromAccount, uint toChainID, bytes toAccount);
      event RemoveTokenPair(uint indexed id);
+     event SetTokenPairAsNFT(uint indexed id);
      event UpdateToken(address tokenAddress, string name, string symbol);
 
     /**
@@ -71,11 +75,16 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
     * MANIPULATIONS
     *
     */
-    
+
     function bytesToAddress(bytes b) internal pure returns (address addr) {
         assembly {
             addr := mload(add(b,20))
         }
+    }
+
+    function uintToBytes(uint256 x) pure returns (bytes b) {
+        b = new bytes(32);
+        assembly { mstore(add(b, 32), x) }
     }
 
     function mintToken(
@@ -109,7 +118,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         onlyOwner
     {
         address tokenAddress = new MappingToken(name, symbol, decimals);
-        
+
         emit AddToken(tokenAddress, name, symbol, decimals);
     }
 
@@ -186,7 +195,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
                 if (i != totalTokenPairs - 1) {
                     mapTokenPairIndex[i] = mapTokenPairIndex[totalTokenPairs - 1];
                 }
- 
+
                 delete mapTokenPairIndex[totalTokenPairs - 1];
                 totalTokenPairs--;
                 delete mapTokenPairInfo[id];
@@ -195,6 +204,42 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
             }
         }
     }
+
+    function setTokenPairAsNFT(uint id)
+        external
+        onlyOwner
+    {
+        bytes memory innerKey;
+        innerKey = uintToBytes(id);
+        setUintValue(firstKeyForNFT, innerKey, 1);
+        emit SetTokenPairAsNFT(id);
+    }
+
+    function isTokenPairNFT(uint id)
+        external
+        returns(bool isNFTPair)
+    {
+        bytes memory innerKey;
+        innerKey = uintToBytes(id);
+        isNFTPair = getUintValue(firstKeyForNFT, innerKey) == 1;
+    }
+
+    /// @notice    return 1/0 value array, alike to bool array.
+    function isTokenPairNFT(uint[] tokenPairIds) // TODO:
+    external
+    returns(uint[] isNFTPairArr)
+    {
+        bytes memory innerKey;
+        uint i;
+        i = 0;
+        isNFTPairArr = new uint[](tokenPairIds.length);
+
+        for (; i < tokenPairIds.length; i++) {
+            innerKey = uintToBytes(tokenPairIds[i]);
+            isNFTPairArr[i] = getUintValue(firstKeyForNFT, innerKey);
+        }
+    }
+
 
     function updateToken(address tokenAddress, string name, string symbol)
         external
@@ -409,10 +454,34 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
 
             ancestorSymbol[i] = mapTokenPairInfo[theId].aInfo.symbol;
             ancestorDecimals[i] = mapTokenPairInfo[theId].aInfo.decimals;
-            
+
             ancestorAccount[i] = mapTokenPairInfo[theId].aInfo.account;
             ancestorName[i] = mapTokenPairInfo[theId].aInfo.name;
             ancestorChainID[i] = mapTokenPairInfo[theId].aInfo.chainID;
         }
+    }
+
+
+    /* uintData */
+    function setUintValue(bytes key, bytes innerKey, uint value)
+    public
+    onlyOwner
+    {
+        return uintData.setStorage(key, innerKey, value);
+    }
+
+    function getUintValue(bytes key, bytes innerKey)
+    public
+    view
+    returns (uint)
+    {
+        return uintData.getStorage(key, innerKey);
+    }
+
+    function delUintValue(bytes key, bytes innerKey)
+    public
+    onlyOwner
+    {
+        return uintData.delStorage(key, innerKey);
     }
 }

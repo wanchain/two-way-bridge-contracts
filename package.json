@@ -24,6 +24,7 @@
     "keccak256": "^1.0.0",
     "keythereum": "^1.0.4",
     "ko-sleep": "^1.0.3",
+    "openzeppelin-eth": "2.0.2-standalone",
     "optimist": "^0.6.1",
     "promisefy-util": "^1.2.0",
     "solidity-coverage": "^0.7.4",
@@ -46,7 +47,8 @@
     "console": "truffle console",
     "compile": "truffle compile",
     "coverage": "truffle run coverage --network coverage",
-    "migrate": "rm -rf build && truffle migrate --network testnet"
+    "migrate": "rm -rf build && truffle migrate --network testnet",
+    "wyh_test": "npx truffle test  --network myClound  ./test/cross_approach_test.js"
   },
   "author": "",
   "license": "ISC"

@@ -19,7 +19,7 @@
  */
 
 const HDWalletProvider = require("truffle-hdwallet-provider");
-const mnemonic = "skill level pulse dune pattern rival used syrup inner first balance sad"; 
+const mnemonic = "skill level pulse dune pattern rival used syrup inner first balance sad";
 
 
 //const WanProvider = require('wanchain-truffle-sdk').WanProvider;
@@ -79,6 +79,20 @@ module.exports = {
       skipDryRun:true,
     },
 
+      // Useful for deploying to a public network.
+      myClound: {
+          //provider: () => new HDWalletProvider(mnemonic, "http://localhost:8545",0,10),
+          port:8545,
+          mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
+          // host:"47.105.129.51",
+          // host:"192.168.1.46",
+          host:"127.0.0.1",
+          from:"0xbf59C743A13cff1fF5280B7AfD94fB10A626aF6D",
+          admin: "0xe1517f2C9ad21a3826cFA791F78e8AcBDFFFA804",
+          network_id: "*",
+          skipDryRun:true,
+      },
+
       testnet: {
           host: "192.168.1.2",     // Localhost (default: none)
           port: 8545,            // Standard Ethereum port (default: none)
@@ -115,7 +129,7 @@ module.exports = {
 	  enableTimeouts:false,
      	timeout: 300000000
   },
-  plugins: ["solidity-coverage"],      
+  plugins: ["solidity-coverage"],
 
   // Configure your compilers
     compilers: {

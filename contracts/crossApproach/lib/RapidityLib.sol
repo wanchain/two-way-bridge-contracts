@@ -149,7 +149,11 @@ library RapidityLib {
         uint serviceFee = storageData.mapLockFee[fromChainID][toChainID];
 
         if (address(storageData.quota) != address(0)) {
+            if(storageData.tokenManager.isTokenPairNFT(params.tokenPairID)) {
+                storageData.quota.userLock(params.tokenPairID, params.smgID, 1);
+            } else {
             storageData.quota.userLock(params.tokenPairID, params.smgID, params.value);
+        }
         }
 
         if (serviceFee > 0) {
@@ -168,7 +172,11 @@ library RapidityLib {
         } else {
             left = (msg.value).sub(serviceFee);
 
+            if(storageData.tokenManager.isTokenPairNFT(params.tokenPairID)) {
+                require(CrossTypes.transferFrom_Erc721(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
+            }else {
             require(CrossTypes.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
+        }
         }
         if (left != 0) {
             (msg.sender).transfer(left);
@@ -206,7 +214,11 @@ library RapidityLib {
         }
 
         if (address(storageData.quota) != address(0)) {
+            if(storageData.tokenManager.isTokenPairNFT(params.tokenPairID)) {
+                storageData.quota.userBurn(params.tokenPairID, params.smgID, 1);
+            } else {
             storageData.quota.userBurn(params.tokenPairID, params.smgID, params.value);
+        }
         }
 
         tokenManager.burnToken(params.shadowTokenAccount, msg.sender, params.value);
@@ -237,7 +249,11 @@ library RapidityLib {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
 
         if (address(storageData.quota) != address(0)) {
+            if(storageData.tokenManager.isTokenPairNFT(params.tokenPairID)) {
+                storageData.quota.smgMint(params.tokenPairID, params.smgID, 1);
+            } else {
             storageData.quota.smgMint(params.tokenPairID, params.smgID, params.value);
+        }
         }
 
         storageData.tokenManager.mintToken(params.shadowTokenAccount, params.userShadowAccount, params.value);
@@ -255,13 +271,21 @@ library RapidityLib {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
 
         if (address(storageData.quota) != address(0)) {
+            if(storageData.tokenManager.isTokenPairNFT(params.tokenPairID)) {
+                storageData.quota.smgRelease(params.tokenPairID, params.smgID, 1);
+            }else{
             storageData.quota.smgRelease(params.tokenPairID, params.smgID, params.value);
+        }
         }
 
         if (params.origTokenAccount == address(0)) {
             (params.userOrigAccount).transfer(params.value);
         } else {
+            if(storageData.tokenManager.isTokenPairNFT(params.tokenPairID)) {
+                require(CrossTypes.transferFrom_Erc721(params.origTokenAccount, msg.sender, params.userOrigAccount, params.value), "Transfer token failed");
+        } else {
             require(CrossTypes.transfer(params.origTokenAccount, params.userOrigAccount, params.value), "Transfer token failed");
+        }
         }
 
         emit SmgReleaseLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.origTokenAccount, params.userOrigAccount);

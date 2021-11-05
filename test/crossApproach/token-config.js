@@ -70,6 +70,16 @@ let tokens               = {
       symbol                : 'FNX',
       price                 : 1e-17,
       ancestorChainID       : defaultChainIDs.WAN
+    },
+    {
+      chainID               : defaultChainIDs.WAN,
+      tokenCreator          : null,
+      tokenAccount          : "",
+      decimals              : 0,
+      name                  : 'ToyNFT',
+      symbol                : 'TNT',
+      price                 : 1,
+      ancestorChainID       : defaultChainIDs.WAN
     }
   ],
   ETH: [
@@ -92,6 +102,16 @@ let tokens               = {
       symbol                : 'LINK',
       price                 : 2e-17,
       ancestorChainID       : defaultChainIDs.ETH
+    },
+    {
+      chainID               : defaultChainIDs.WAN,
+      tokenCreator          : null,
+      tokenAccount          : "",
+      decimals              : 0,
+      name                  : 'ToyNFT',
+      symbol                : 'TNT',
+      price                 : 1,
+      ancestorChainID       : defaultChainIDs.WAN
     }
   ],
   ETC: [

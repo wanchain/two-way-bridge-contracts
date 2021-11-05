@@ -122,4 +122,17 @@ library CrossTypes {
         afterBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
         return afterBalance == beforeBalance.add(value);
     }
+
+    function transferFrom_Erc721(address tokenScAddr, address from, address to, uint nftId)
+    internal
+    returns(bool)
+    {
+        uint beforeBalance;
+        uint afterBalance;
+        beforeBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
+        // IRC20Protocol(tokenScAddr).transferFrom(from, to, value);
+        tokenScAddr.call(bytes4(keccak256("transferFrom(address,address,uint256)")), from, to, nftId);
+        afterBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
+        return afterBalance == beforeBalance.add(1);
+    }
 }
