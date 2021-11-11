@@ -52,6 +52,14 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param fee                      shadow coin of the fee which the storeman group pk got it
     event SmgWithdrawFeeLogger(bytes32 indexed smgID, uint timeStamp, address indexed receiver, uint fee);
 
+
+
+    /// @param operator The address which called `safeTransferFrom` function
+    /// @param from The address which previously owned the token
+    /// @param tokenId The NFT identifier which is being transferred
+    event ERC721ReceivedLogger(address operator, address from, uint256 tokenId);
+
+
     /**
      *
      * MODIFIERS
@@ -249,7 +257,7 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
     /// @param  s                               signature
     function receiveDebt(bytes32 uniqueID, bytes32 srcSmgID, bytes32 destSmgID, bytes r, bytes32 s)
         external
-        notHalted 
+        notHalted
     {
         uint curveID;
         bytes memory PK;
@@ -447,4 +455,27 @@ contract CrossDelegate is CrossStorage, ReentrancyGuard, Halt {
         return uintData.delStorage(key, innerKey);
     }
 
+    /**
+     * @notice Handle the receipt of an NFT
+     * @dev The ERC721 smart contract calls this function on the recipient
+     * after a `safeTransfer`. This function MUST return the function selector,
+     * otherwise the caller will revert the transaction. The selector to be
+     * returned can be obtained as `this.onERC721Received.selector`. This
+     * function MAY throw to revert and reject the transfer.
+
+     * Note: the ERC721 contract address is always the message sender.
+
+     * @param operator The address which called `safeTransferFrom` function
+     * @param from The address which previously owned the token
+     * @param tokenId The NFT identifier which is being transferred
+     * @param data Additional data with no specified format
+     * @return `bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))`
+     */
+    function onERC721Received(address operator, address from, uint256 tokenId, bytes data)
+        public
+        returns(bytes4)
+    {
+        emit ERC721ReceivedLogger(operator, from, tokenId);
+        return this.onERC721Received.selector;
+    }
 }
