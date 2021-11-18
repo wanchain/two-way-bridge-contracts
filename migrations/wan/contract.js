@@ -41,11 +41,13 @@ const scDict = {
   Secp256k1SchnorrVerifier: "Secp256k1SchnorrVerifier",
   HTLCTxLib: "HTLCTxLib",
   HTLCDebtLib: "HTLCDebtLib",
-  // HTLCBurnLib: "HTLCBurnLib",
-  // HTLCMintLib: "HTLCMintLib",
   RapidityLib: "RapidityLib",
   CrossDelegate: "CrossDelegate",
   CrossProxy: "CrossProxy",
+
+  HTLCDebtLibV2: "HTLCDebtLibV2",
+  RapidityLibV2: "RapidityLibV2",
+  CrossDelegateV2: "CrossDelegateV2",
 };
 
 module.exports = scDict;
