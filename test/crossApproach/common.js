@@ -110,6 +110,29 @@ let crossFees            = {
   }
 };
 
+let crossFeesV2 = {
+  WAN: {
+    ETH: {
+      contractFee: 20,
+      agentFee: 0,
+    },
+    BTC: {
+      contractFee: 0,
+      agentFee: 30
+    },
+  },
+  ETH: {
+    WAN: {
+      contractFee: 5,
+      agentFee: 0,
+    },
+    BTC: {
+      contractFee: 0,
+      agentFee: 15
+    },
+  },
+};
+
 module.exports = {
   ADDRESS_0,
   ADDRESS_CROSS_PROXY_IMPL,
@@ -123,5 +146,6 @@ module.exports = {
   defaultCurve,
   defaultCurve2Schnorr,
   crossFees,
+  crossFeesV2,
   userBTCAccount
 }
