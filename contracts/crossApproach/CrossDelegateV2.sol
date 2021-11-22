@@ -312,6 +312,9 @@ contract CrossDelegateV2 is CrossStorageV2 {
         uint fee;
         uint currentFee;
         address smgFeeProxy = storageData.smgFeeProxy;
+        if (smgFeeProxy == address(0)) {
+            smgFeeProxy = owner;
+        }
         require(smgFeeProxy != address(0), "invalid smgFeeProxy");
 
         for (uint i = 0; i < smgIDs.length; ++i) {
@@ -325,8 +328,9 @@ contract CrossDelegateV2 is CrossStorageV2 {
             delete storageData.mapStoremanFee[bytes32(0)];
             fee = fee.add(currentFee);
         }
-        require(fee > 0 && smgFeeProxy != address(0), "Fee or smgFeeProxy is null");
-        storageData.smgFeeProxy.transfer(fee);
+        require(fee > 0, "Fee is null");
+
+        smgFeeProxy.transfer(fee);
         emit WithdrawContractFeeLogger(block.number, block.timestamp, smgFeeProxy, fee);
     }
 
