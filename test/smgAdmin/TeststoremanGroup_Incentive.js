@@ -32,10 +32,6 @@ const threshold = 3;
 // let leftStakeCount = memberCountDesign + g.whiteCountAll;
 let leftStakeCount = memberCountDesign;
 
-/*
-奖励与时间相关．
-假定ｈｔｌｃ工作９０天，　提前１４天开放ｓｔａｋｉｎｇ．　开放１０天．　然后ｓｅｌｅｃｔ，　然后４天用于产生ｇｐｋ．
-*/
 contract.skip('Test Storeman Group Incentive', async (accounts) => {
     let smgInstance;
     let groupId;

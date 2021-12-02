@@ -4,6 +4,10 @@ const {
   defaultChainID2Types
 } = require("./common");
 
+// const erc721 = artifacts.require("ERC721.sol")
+const MappingNftToken = artifacts.require("MappingNftToken");
+const erc721 = MappingNftToken;
+const MappingToken = artifacts.require("MappingToken");
 let crossTypes          = {
   coin                    : 1 << 0,
   token                   : 1 << 1,
@@ -118,6 +122,24 @@ let tokens               = {
     }
   ]
 };
+let nftTokens = {
+    WAN: [
+    ],
+    ETH: [
+        {
+            chainID: defaultChainIDs.ETH,
+            tokenCreator: null,
+            tokenAccount: "",
+            decimals: 0,
+            name: 'NFT',
+            symbol: 'NFT',
+            price: 1,
+            ancestorChainID: defaultChainIDs.ETH
+        }
+    ],
+    ETC: [
+    ]
+};
 
 let startTokenPairID     = 1;
 
@@ -128,7 +150,6 @@ async function deployOrigToken(tokenCreator, tokens) {
       console.log("deployOrigToken skip mapping token", token.symbol);
       continue;
     }
-    console.log("deployOrigToken current original token", token.symbol);
     await tokenCreator.createToken(token.name, token.symbol, token.decimals);
     token.tokenCreator = tokenCreator;
     token.tokenAccount = await tokenCreator.getTokenAddr.call(token.name, token.symbol);
@@ -144,13 +165,38 @@ async function transferOrigToken(tokenCreator, tokens, alice) {
       continue;
     }
     let mintValue = "1000000000"
-    console.log(`mintToken(${token.name}, ${token.symbol}, ${alice}, ${mintValue})`)
+    //console.log(`mintToken(${token.name}, ${token.symbol}, ${alice}, ${mintValue})`)
     await tokenCreator.mintToken(token.name, token.symbol, alice, mintValue);
     let value = await tokenCreator.tokenBalance.call(token.name, token.symbol, alice);
     if (String(value) !== mintValue) {
       console.log("check failed about transfer original token", name, symbol, alice);
     }
   }
+}
+
+async function transferNftToken(tokenCreator, nftTokens, alice) {
+    for (let nftToken of nftTokens) {
+        if (nftToken.chainID !== nftToken.ancestorChainID) {
+            // mapping nftToken
+            console.log("deployOrigToken skip mapping nftToken", nftToken.symbol);
+            continue;
+        }
+        let mintValue = 12345
+
+        await tokenCreator.mintToken(nftToken.name, nftToken.symbol, alice, mintValue);
+        let value = await tokenCreator.tokenBalance.call(nftToken.name, nftToken.symbol, alice);
+        if (value.toString() !== "1") {
+            console.log("check failed about transfer original nftToken", nftToken.name, nftToken.symbol, alice);
+        }
+        //console.log("transferNftToken nftToken.tokenAccount:", nftToken.tokenAccount);
+        let nftInst = await erc721.at(nftToken.tokenAccount);
+        let ownerOf = await nftInst.ownerOf(mintValue);
+        console.log("nftToken.tokenAccount :", nftToken.tokenAccount, ",nft:", mintValue, ",ownerOf:", ownerOf);
+        if (ownerOf !== alice) {
+            console.log("check failed about ownerOf:", ownerOf);
+        }
+    }
+
 }
 
 function getWeb3Log(receipt, expectedEvent) {
@@ -169,64 +215,94 @@ async function addToken(tokenManager, name, symbol, decimals) {
   return mappingTokenLogger.args.tokenAddress;
 }
 
-async function addMappingToken(tokenManager, tokenPairs, currChainType) {
-  // config mapping to token account in current chain first
-  for (let origChainType in tokenPairs) {
-    for (let mappingChainType in tokenPairs[origChainType]) {
-      if (mappingChainType !== currChainType) {
-        continue;
-      }
-      let mappingPairs = tokenPairs[origChainType][mappingChainType];
+async function addNftToken(tokenManager, name, symbol, decimals) {
+    let receipt = await tokenManager.addNftToken(name, symbol, decimals);
+    let mappingTokenLogger = getWeb3Log(receipt, {
+        event: 'AddToken'
+    });
+    return mappingTokenLogger.args.tokenAddress;
+}
 
-      // config other chain to current chain mapping token pair
-      for (let token of mappingPairs) {
-        if (token.origChainToken.chainID === token.ancestorChainToken.chainID) {
-          if (!token.shadowChainToken.tokenAccount) {
-            token.shadowChainToken.tokenAccount = await addToken(tokenManager, token.shadowChainToken.name, token.shadowChainToken.symbol, token.ancestorChainToken.decimals);
-          }
-        } else {
-          if (!token.shadowChainToken.tokenAccount) {
-            let ancestorChainType = defaultChainID2Types[token.ancestorChainToken.chainID];
-            let ancestorMappingTokenPair = tokenPairs[ancestorChainType][currChainType].filter(ancestorTokenPair => ancestorTokenPair.shadowChainToken.symbol === token.shadowChainToken.symbol)[0];
-            if (!ancestorMappingTokenPair.shadowChainToken.tokenAccount) {
-              // add the mapping token from ancestor chain to current chain
-              console.log("add ancestor chain mapping token", token.origChainToken.symbol);
-              ancestorMappingTokenPair.shadowChainToken.tokenAccount = await addToken(tokenManager, token.origChainToken.name, token.origChainToken.symbol, token.ancestorChainToken.decimals);
+async function addMappingToken(tokenManager, tokenPairs, currChainType, testNftTokenCreator, owner) {
+    // config mapping to token account in current chain first
+    for (let origChainType in tokenPairs) {
+        for (let mappingChainType in tokenPairs[origChainType]) {
+            if (mappingChainType !== currChainType) {
+                continue;
             }
-            token.shadowChainToken.tokenAccount = ancestorMappingTokenPair.shadowChainToken.tokenAccount;
-          }
-        }
-      }
-    }
-  }
+            let mappingPairs = tokenPairs[origChainType][mappingChainType];
 
-  // config mapping from token account in current chain second
-  for (let origChainType in tokenPairs) {
-    if (origChainType !== currChainType) {
-      continue;
-    }
-    for (let mappingChainType in tokenPairs[origChainType]) {
-      for (let token of tokenPairs[origChainType][mappingChainType]) {
-        // each token {currChainType:{mappingChainType:[{token}]}}
-        if (token.origChainToken.chainID !== token.ancestorChainToken.chainID) {
-          if (!token.origChainToken.tokenAccount) {
-            // token pair is not original token pair, it is consist of mapping token pair
-            // get ancestor chain
-            let ancestorChainType = defaultChainID2Types[token.ancestorChainToken.chainID];
-            let ancestorTokenPair = tokenPairs[ancestorChainType][currChainType].filter(ancestorTokenPair => ancestorTokenPair.shadowChainToken.symbol === token.origChainToken.symbol)[0];
-            if (!ancestorTokenPair.shadowChainToken.tokenAccount) {
-              // add the mapping token from ancestor chain to current chain
-              console.log("add ancestor chain mapping token", token.origChainToken.symbol);
-              ancestorTokenPair.shadowChainToken.tokenAccount = await addToken(tokenManager, token.origChainToken.name, token.origChainToken.symbol, token.ancestorChainToken.decimals);
+            // config other chain to current chain mapping token pair
+            for (let token of mappingPairs) {
+                if (token.origChainToken.chainID === token.ancestorChainToken.chainID) {
+                    if (!token.shadowChainToken.tokenAccount) {
+                        if (token.shadowChainToken.name === "wanNFT") {
+                            //console.log("addMappingToken 1 token:", token);
+                            //await testNftTokenCreator.createToken(token.shadowChainToken.name, token.shadowChainToken.symbol, token.ancestorChainToken.decimals);
+                            //token.shadowChainToken.tokenAccount = await testNftTokenCreator.getTokenAddr.call(token.shadowChainToken.name, token.shadowChainToken.symbol);
+                            let nftInst = await MappingNftToken.new(token.shadowChainToken.name, token.shadowChainToken.symbol, { from: owner });
+                            token.shadowChainToken.tokenAccount = nftInst.address;
+                            await nftInst.transferOwnership(tokenManager.address);
+                            ownerAddr = await nftInst.owner();
+                            //console.log("token.shadowChainToken.name:", token.shadowChainToken.name);
+                            //console.log("MappingNftToken.owner:", ownerAddr);
+                            //console.log("tokenManager.address:", tokenManager.address);
+                            // token.shadowChainToken.tokenAccount = await addNftToken(token.shadowChainToken.name, token.shadowChainToken.symbol, token.ancestorChainToken.decimals);
+                        }
+                        else {
+                            token.shadowChainToken.tokenAccount = await addToken(tokenManager, token.shadowChainToken.name, token.shadowChainToken.symbol, token.ancestorChainToken.decimals);
+
+                            let mapInst = await MappingToken.at(token.shadowChainToken.tokenAccount);
+                            let ownerAddr = await mapInst.owner();
+                            //console.log("token.shadowChainToken.name:", token.shadowChainToken.name);
+                            //console.log("MappingToken.owner:", ownerAddr);
+                            //console.log("tokenManager.address:", tokenManager.address);
+                        }
+                    }
+                } else {
+                    if (!token.shadowChainToken.tokenAccount) {
+                        let ancestorChainType = defaultChainID2Types[token.ancestorChainToken.chainID];
+                        let ancestorMappingTokenPair = tokenPairs[ancestorChainType][currChainType].filter(ancestorTokenPair => ancestorTokenPair.shadowChainToken.symbol === token.shadowChainToken.symbol)[0];
+                        if (!ancestorMappingTokenPair.shadowChainToken.tokenAccount) {
+                            // add the mapping token from ancestor chain to current chain
+                            //console.log("add ancestor chain mapping token", token.origChainToken.symbol);
+                            ancestorMappingTokenPair.shadowChainToken.tokenAccount = await addToken(tokenManager, token.origChainToken.name, token.origChainToken.symbol, token.ancestorChainToken.decimals);
+                        }
+                        token.shadowChainToken.tokenAccount = ancestorMappingTokenPair.shadowChainToken.tokenAccount;
+                    }
+                }
             }
-            token.origChainToken.tokenAccount = ancestorTokenPair.shadowChainToken.tokenAccount;
-          }
         }
-      }
     }
-  }
 
-  return tokenPairs;
+    // config mapping from token account in current chain second
+    for (let origChainType in tokenPairs) {
+        if (origChainType !== currChainType) {
+            continue;
+        }
+        for (let mappingChainType in tokenPairs[origChainType]) {
+            for (let token of tokenPairs[origChainType][mappingChainType]) {
+                // each token {currChainType:{mappingChainType:[{token}]}}
+                if (token.origChainToken.chainID !== token.ancestorChainToken.chainID) {
+                    if (!token.origChainToken.tokenAccount) {
+                        // token pair is not original token pair, it is consist of mapping token pair
+                        // get ancestor chain
+                        let ancestorChainType = defaultChainID2Types[token.ancestorChainToken.chainID];
+                        let ancestorTokenPair = tokenPairs[ancestorChainType][currChainType].filter(ancestorTokenPair => ancestorTokenPair.shadowChainToken.symbol === token.origChainToken.symbol)[0];
+                        if (!ancestorTokenPair.shadowChainToken.tokenAccount) {
+                            // add the mapping token from ancestor chain to current chain
+                            //console.log("add ancestor chain mapping token", token.origChainToken.symbol);
+                            console.log("addMappingToken 2 token:", token);
+                            ancestorTokenPair.shadowChainToken.tokenAccount = await addToken(tokenManager, token.origChainToken.name, token.origChainToken.symbol, token.ancestorChainToken.decimals);
+                        }
+                        token.origChainToken.tokenAccount = ancestorTokenPair.shadowChainToken.tokenAccount;
+                    }
+                }
+            }
+        }
+    }
+
+    return tokenPairs;
 }
 
 function initOrigTokenPairs(coins, tokens, chainTypes, defaultChainIDs, startTokenPairID) {
@@ -234,12 +310,16 @@ function initOrigTokenPairs(coins, tokens, chainTypes, defaultChainIDs, startTok
     WAN: { ETH: [], BTC: [] },
     ETH: { WAN: [], BTC: [] },
     BTC: { WAN: [], ETH: [] },
-  };
+    };
+  //  let tokenPairs = {
+  //      WAN: { ETH: []},
+  //      ETH: { WAN: [] },
+  //  };
   // [["WAN", "ETH"], ["WAN", "BTC"], ["ETH", "WAN"], ["ETH", "BTC"], ["BTC", "WAN"], ["BTC", "ETH"]]
-  let chainTypeBounds = Object.keys(tokenPairs).map(origChainType=>Object.keys(tokenPairs[origChainType]).map(otherChainType=>[origChainType, otherChainType])).reduce((acc, val) => acc.concat(val), []);
-
+    let chainTypeBounds = Object.keys(tokenPairs).map(origChainType => Object.keys(tokenPairs[origChainType]).map(otherChainType => [origChainType, otherChainType])).reduce((acc, val) => acc.concat(val), []);
+    //console.log("initOrigTokenPairs chainTypeBounds:", chainTypeBounds);
   // add coin pair first second
-  chainTypeBounds.forEach(([origChainType, shadowChainType]) => {
+    chainTypeBounds.forEach(([origChainType, shadowChainType]) => {
     // add coin pair
     if ((coins[shadowChainType].crossType & crossTypes.token)) {
       tokenPairs[origChainType][shadowChainType].push({
@@ -254,12 +334,13 @@ function initOrigTokenPairs(coins, tokens, chainTypes, defaultChainIDs, startTok
       });
     }
   });
-
+    //console.log("before add token tokenPairs:", tokenPairs);
   // add token pair
-  chainTypeBounds.forEach(([origChainType, shadowChainType]) => {
-    tokens[origChainType] && tokens[origChainType].forEach(token => {
+    chainTypeBounds.forEach(([origChainType, shadowChainType]) => {
+      tokens[origChainType] && tokens[origChainType].forEach(token => {
       let a = token.symbol.split("wan");
-      ancestorSymbol = a[a.length - 1];
+          ancestorSymbol = a[a.length - 1];
+          //console.log("ancestorSymbol:", ancestorSymbol);
       if (!(coins[shadowChainType].crossType & crossTypes.token)) {
         return;
       }
@@ -298,7 +379,56 @@ function initOrigTokenPairs(coins, tokens, chainTypes, defaultChainIDs, startTok
           tokenAccount:""},
       });
     });
-  });
+    });
+    //console.log("after add token tokenPairs:", tokenPairs);
+
+    // add NFT token pair
+    chainTypeBounds.forEach(([origChainType, shadowChainType]) => {
+        nftTokens[origChainType] && nftTokens[origChainType].forEach(token => {
+            let a = token.symbol.split("wan");
+            ancestorSymbol = a[a.length - 1];
+            //console.log("ancestorSymbol:", ancestorSymbol);
+            if (!(coins[shadowChainType].crossType & crossTypes.token)) {
+                return;
+            }
+
+            let shadowTokenName = token.symbol.startsWith('wan') ? token.name : `wan${token.name}`;
+            let shadowTokenSymbol = token.symbol.startsWith('wan') ? token.symbol : `wan${token.symbol}`;
+
+            let foundArray = tokenPairs[origChainType][shadowChainType].filter(tokenPair => {
+                let check1 = tokenPair.origChainToken.name === token.name && tokenPair.origChainToken.symbol === token.symbol
+                    && tokenPair.shadowChainToken.name === shadowTokenName && tokenPair.shadowChainToken.symbol === shadowTokenSymbol
+                let check2 = tokenPair.origChainToken.name === shadowTokenName && tokenPair.origChainToken.symbol === shadowTokenSymbol
+                    && tokenPair.shadowChainToken.name === token.name && tokenPair.shadowChainToken.symbol === token.symbol
+                return check1 || check2;
+            });
+            if (!foundArray.length) {
+                foundArray = tokenPairs[shadowChainType][origChainType].filter(tokenPair => {
+                    let check1 = tokenPair.origChainToken.name === token.name && tokenPair.origChainToken.symbol === token.symbol
+                        && tokenPair.shadowChainToken.name === shadowTokenName && tokenPair.shadowChainToken.symbol === shadowTokenSymbol
+                    let check2 = tokenPair.origChainToken.name === shadowTokenName && tokenPair.origChainToken.symbol === shadowTokenSymbol
+                        && tokenPair.shadowChainToken.name === token.name && tokenPair.shadowChainToken.symbol === token.symbol
+                    return check1 || check2;
+                });
+            }
+            if (foundArray.length) {
+                return;
+            }
+
+            tokenPairs[origChainType][shadowChainType].push({
+                tokenPairID: startTokenPairID++,
+                ancestorChainToken: (token.symbol === `wan${coins.BTC.symbol}`) ? coins.BTC : token,
+                origChainToken: { name: token.name, symbol: token.symbol, chainID: token.chainID, tokenAccount: token.tokenAccount },
+                shadowChainToken: {
+                    name: token.symbol.startsWith('wan') ? token.name : `wan${token.name}`,
+                    symbol: token.symbol.startsWith('wan') ? token.symbol : `wan${token.symbol}`,
+                    chainID: defaultChainIDs[shadowChainType],
+                    tokenAccount: ""
+                },
+            });
+        });
+    });
+    //console.log("after add nft tokenPairs:", tokenPairs);
   return tokenPairs;
 }
 
@@ -413,8 +543,14 @@ function mergeTokenPairs(oldTokenPairs, tokenPairs, eqFunc) {
 async function addTokenPairs(tokenManager, tokenPairs) {
   for (let origChainToken in tokenPairs) {
     for (let mappingChainType in tokenPairs[origChainToken]) {
-      for (let tokenPair of tokenPairs[origChainToken][mappingChainType]) {
-        let tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+        for (let tokenPair of tokenPairs[origChainToken][mappingChainType]) {
+            if (tokenPair.ancestorChainToken.name === "NFT") {
+                //console.log("addTokenPairs tokenPair:", tokenPair);
+            }
+            let tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+            if (tokenPair.ancestorChainToken.name === "NFT") {
+                // console.log("addTokenPairs tokenPairInfo:", tokenPairInfo);
+            }
 
         if (!tokenPairInfo.fromAccount) {
           await tokenManager.addTokenPair(tokenPair.tokenPairID,
@@ -430,7 +566,9 @@ async function addTokenPairs(tokenManager, tokenPairs) {
             [tokenPair.ancestorChainToken.tokenAccount, tokenPair.ancestorChainToken.name, tokenPair.ancestorChainToken.symbol, tokenPair.ancestorChainToken.decimals, tokenPair.ancestorChainToken.chainID],
             tokenPair.origChainToken.chainID, tokenPair.origChainToken.tokenAccount, tokenPair.shadowChainToken.chainID, tokenPair.shadowChainToken.tokenAccount
           );
-        }
+          }
+
+          // console.log("addTokenPairs tokenPairInfo:", tokenPairInfo);
 
         let newTokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
         if (newTokenPairInfo.fromAccount.toLowerCase() !== tokenPair.origChainToken.tokenAccount.toLowerCase()
@@ -487,6 +625,7 @@ module.exports = {
   startTokenPairID,
   deployOrigToken,
   transferOrigToken,
+  transferNftToken,
   addMappingToken,
   getTokenPairFileName,
   cleanTokenPairs,
@@ -495,5 +634,6 @@ module.exports = {
   initOrigTokenPairs,
   addTokenPairs,
   filterTokenPair,
-  getTokenAccount
+  getTokenAccount,
+  nftTokens
 }
