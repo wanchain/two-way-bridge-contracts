@@ -30,7 +30,7 @@ interface ITokenManager {
     function getTokenPairInfo(uint id) external view
       returns (uint origChainID, bytes tokenOrigAccount, uint shadowChainID, bytes tokenShadowAccount);
 
-    function getTokenPairInfoSlim(uint id) external view 
+    function getTokenPairInfoSlim(uint id) external view
       returns (uint origChainID, bytes tokenOrigAccount, uint shadowChainID);
 
     function getAncestorInfo(uint id) external view
@@ -39,4 +39,7 @@ interface ITokenManager {
     function mintToken(address tokenAddress, address to, uint value) external;
 
     function burnToken(address tokenAddress, address from, uint value) external;
+
+    function isNFT(address tokenAddress) external
+        returns (bool isNFTPair);
 }
