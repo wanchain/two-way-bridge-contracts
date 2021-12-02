@@ -47,6 +47,13 @@ const abiFiles = [
         '../build/contracts/CrossDelegateV2.json',
         '../build/contracts/HTLCDebtLibV2.json',
         '../build/contracts/RapidityLibV2.json',
+    ],
+    [
+        '../build/contracts/TokenManagerDelegateV2.json',
+    ],
+    [
+        '../build/contracts/CrossDelegateV3.json',
+        '../build/contracts/RapidityLibV3.json',
     ]
 ];
 
