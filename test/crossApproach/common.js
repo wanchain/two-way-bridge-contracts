@@ -28,6 +28,11 @@ const uniqueInfo         = {
   userDebtReleaseWAN:    '0x0000000000000000000000000000000000000000000000000000000000000012',
   wanAssetDebt:          '0x00000000000000000000000000000000000000000000000000000000000000f1',
   ethAssetDebt:          '0x00000000000000000000000000000000000000000000000000000000000000f2',
+  userLockTnT:           '0x00000000000000000000000000000000000000000000000000000000000000f7',
+  userReleaseTnT:        '0x00000000000000000000000000000000000000000000000000000000000000f8',
+
+  userLockNFT:           '0x00000000000000000000000000000000000000000000000000000000000000f9',
+  userReleaseNFT:        '0x00000000000000000000000000000000000000000000000000000000000000fa',
   fastException:         '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
 };
 
@@ -133,6 +138,29 @@ let crossFeesV2 = {
   },
 };
 
+let crossFeesV3 = {
+  WAN: {
+    ETH: {
+      contractFee: 20,
+      agentFee: 10,
+    },
+    BTC: {
+      contractFee: 0,
+      agentFee: 30
+    },
+  },
+  ETH: {
+    WAN: {
+      contractFee: 5,
+      agentFee: 10,
+    },
+    BTC: {
+      contractFee: 0,
+      agentFee: 15
+    },
+  },
+};
+
 module.exports = {
   ADDRESS_0,
   ADDRESS_CROSS_PROXY_IMPL,
@@ -147,5 +175,6 @@ module.exports = {
   defaultCurve2Schnorr,
   crossFees,
   crossFeesV2,
+  crossFeesV3,
   userBTCAccount
 }

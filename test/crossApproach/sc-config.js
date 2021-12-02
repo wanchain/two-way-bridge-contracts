@@ -1,8 +1,8 @@
 // types array list
 const typesArrayList       = {
-  //uniqueID   destSmgID
+  // currentChainID   uniqueID   destSmgID
   transferAsset: ['uint', 'bytes32', 'bytes32'],
-  //uniqueID   srcSmgID
+  // currentChainID   uniqueID   srcSmgID
   receiveDebt: ['uint', 'bytes32', 'bytes32'],
   //uniqueID   tokenPairID   value   userAccount
   smgFastMint: ['bytes32', 'uint', 'uint', 'address'],
@@ -10,10 +10,10 @@ const typesArrayList       = {
   smgFastBurn: ['bytes32', 'uint', 'uint', 'address'],
    // timeout receiver
   smgWithdrawFee: ['uint', 'uint','address'],
-  //   uniqueID   tokenPairID   value   tokenAccount   userAccount
-  smgRelease: ['uint', 'bytes32', 'uint', 'uint', 'address', 'address'],
-  //   uniqueID   tokenPairID   value   tokenAccount   userAccount
-  smgMint: ['uint', 'bytes32', 'uint', 'uint', 'address', 'address'],
+  // currentChainID   uniqueID   tokenPairID   value   fee   tokenAccount   userAccount
+  smgRelease: ['uint', 'bytes32', 'uint', 'uint', 'uint', 'address', 'address'],
+  // currentChainID   uniqueID   tokenPairID   value   fee   tokenAccount   userAccount
+  smgMint: ['uint', 'bytes32', 'uint', 'uint', 'uint', 'address', 'address'],
 };
 
 function buildMpcSign (schnorr, sk, typesArray, ...args) {
