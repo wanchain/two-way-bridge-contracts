@@ -253,8 +253,9 @@ library RapidityLibV3 {
             if (params.fee > 0) {
                 if (storageData.smgFeeProxy == address(0)) {
                     storageData.mapStoremanFee[addressToBytes32(params.destTokenAccount)] = storageData.mapStoremanFee[addressToBytes32(params.destTokenAccount)].add(params.fee);
+                    require(mintShadowToken(storageData.tokenManager, params.destTokenAccount, address(this), params.fee), "mint fee failed");
                 } else {
-                    require(mintShadowToken(storageData.tokenManager, params.destTokenAccount, storageData.smgFeeProxy, params.fee), "mint fee failed");
+                    require(mintShadowToken(storageData.tokenManager, params.destTokenAccount, storageData.smgFeeProxy, params.fee), "mint foundation fee failed");
                 }
             }
             require(mintShadowToken(storageData.tokenManager, params.destTokenAccount, params.destUserAccount, params.value), "mint failed");
