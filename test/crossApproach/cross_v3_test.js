@@ -1219,6 +1219,25 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( ethereum <=> wancha
     // current chain
     await cross.setPartners(partners.tokenManager, partners.smgAdminProxy, ADDRESS_0, ADDRESS_0, partners.sigVerifier, {from: origOwner});
 
+    let totalValues = [new web3.utils.BN(lockParams.crossValue), new web3.utils.BN(releaseParams.crossValue)];
+    let totalFees = [new web3.utils.BN(contractFee), new web3.utils.BN(releaseParams.crossFee)];
+    let tokenAccounts = [ADDRESS_0, releaseParams.tokenAccount];
+    let beforeCrossBalances = [];
+    for (let i = 0; i < tokenAccounts.length; ++i) {
+        let fee = new web3.utils.BN(await cross.getStoremanFee(web3.utils.padLeft(tokenAccounts[i], 64)));
+        let beforeCrossBalance;
+        if (tokenAccounts[i] === ADDRESS_0) {
+            beforeCrossBalance = new web3.utils.BN(await web3.eth.getBalance(cross.address));
+            console.log("balance:", beforeCrossBalance.toString());
+        } else {
+            beforeCrossBalance = new web3.utils.BN(await tokenInstance.balanceOf(cross.address));
+            console.log("token balance:", beforeCrossBalance.toString());
+        }
+        assert.equal(totalFees[i].eq(fee), true, `check storeman fee at ${i} failed`);
+        assert.equal(beforeCrossBalance.lte(fee.add(totalValues[i])), true, `check storeman fee balance at ${i} failed`);
+        beforeCrossBalances.push(beforeCrossBalance);
+    }
+
     let withdrawReceipt = await cross.smgWithdrawFee([ADDRESS_0, releaseParams.tokenAccount]);
     let withdrawLogs = withdrawReceipt.logs.filter(log => log.event === 'SmgWithdrawFeeLogger');
     for (let log of withdrawLogs) {
@@ -1228,6 +1247,16 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( ethereum <=> wancha
             assert.equal(new web3.utils.BN(log.args.fee).eq(new web3.utils.BN(releaseParams.crossFee)), true, "withdraw agent fee failed");
         }
         assert.equal(log.args.receiver, origOwner, "withdraw fee receiver failed");
+    }
+
+    for (let i = 0; i < tokenAccounts.length; ++i) {
+        let afterFeeBalance;
+        if (tokenAccounts[i] === ADDRESS_0) {
+            afterFeeBalance = new web3.utils.BN(await web3.eth.getBalance(cross.address));
+        } else {
+            afterFeeBalance = new web3.utils.BN(await tokenInstance.balanceOf(cross.address));
+        }
+        assert.equal(beforeCrossBalances[i].sub(afterFeeBalance).eq(totalFees[i]), true, `check withdraw storeman fee balance at ${i} failed`);
     }
 });
 
@@ -1353,9 +1382,28 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( ethereum <=> wancha
 
     // current chain
     await cross.setPartners(partners.tokenManager, partners.smgAdminProxy, partners.smgFeeProxy, ADDRESS_0, partners.sigVerifier, {from: origOwner});
+    let totalValues = [new web3.utils.BN(lockParams.crossValue), new web3.utils.BN(releaseParams.crossValue)];
+    let totalFees = [new web3.utils.BN(contractFee), new web3.utils.BN(releaseParams.crossFee)];
+    let tokenAccounts = [ADDRESS_0, releaseParams.tokenAccount];
+    let beforeCrossBalances = [];
+    for (let i = 0; i < tokenAccounts.length; ++i) {
+        let fee = new web3.utils.BN(await cross.getStoremanFee(web3.utils.padLeft(tokenAccounts[i], 64)));
+        let beforeCrossBalance;
+        if (tokenAccounts[i] === ADDRESS_0) {
+            beforeCrossBalance = new web3.utils.BN(await web3.eth.getBalance(cross.address));
+            console.log("balance:", beforeCrossBalance.toString());
+        } else {
+            beforeCrossBalance = new web3.utils.BN(await tokenInstance.balanceOf(cross.address));
+            console.log("token balance:", beforeCrossBalance.toString());
+        }
+        assert.equal(totalFees[i].eq(fee), true, `check storeman fee at ${i} failed`);
+        assert.equal(beforeCrossBalance.lte(fee.add(totalValues[i])), true, `check storeman fee balance at ${i} failed`);
+        beforeCrossBalances.push(beforeCrossBalance);
+    }
 
     let withdrawReceipt = await cross.smgWithdrawFee([ADDRESS_0, releaseParams.tokenAccount]);
     let withdrawLogs = withdrawReceipt.logs.filter(log => log.event === 'SmgWithdrawFeeLogger');
+    assert.equal(withdrawLogs.length > 0, true, "invalid logs");
     for (let log of withdrawLogs) {
         if (log.args.tokenAccount === ADDRESS_0) {
             assert.equal(new web3.utils.BN(log.args.fee).eq(new web3.utils.BN(contractFee)), true, "withdraw contract fee failed");
@@ -1363,6 +1411,16 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( ethereum <=> wancha
             assert.equal(new web3.utils.BN(log.args.fee).eq(new web3.utils.BN(releaseParams.crossFee)), true, "withdraw agent fee failed");
         }
         assert.equal(log.args.receiver, origOwner, "withdraw fee receiver failed");
+    }
+
+    for (let i = 0; i < tokenAccounts.length; ++i) {
+        let afterFeeBalance;
+        if (tokenAccounts[i] === ADDRESS_0) {
+            afterFeeBalance = new web3.utils.BN(await web3.eth.getBalance(cross.address));
+        } else {
+            afterFeeBalance = new web3.utils.BN(await tokenInstance.balanceOf(cross.address));
+        }
+        assert.equal(beforeCrossBalances[i].sub(afterFeeBalance).eq(totalFees[i]), true, `check withdraw storeman fee balance at ${i} failed`);
     }
 });
 
@@ -1441,10 +1499,18 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( ethereum <=> wancha
     await crossProxy.upgradeTo(global.chains[currentChainType].scAddr.CrossDelegateV3);
     var cross = await CrossDelegateV3.at(global.chains[currentChainType].scAddr.CrossProxy);
 
+    let fee = new web3.utils.BN(await cross.getStoremanFee(web3.utils.padRight(smgID, 64)));
+    let beforeCrossBalance = new web3.utils.BN(await tokenInstance.balanceOf(cross.address));
+    assert.equal(new web3.utils.BN(contractFee).eq(fee), true, `check storeman fee failed`);
+    assert.equal(beforeCrossBalance.lte(fee.add(new web3.utils.BN(lockParams.crossValue))), true, `check storeman fee balance failed`);
+
     let withdrawReceipt = await cross.smgWithdrawHistoryFee([web3.utils.padRight(smgID, 64)]);
     let withdrawLogs = withdrawReceipt.logs.filter(log => log.event === 'WithdrawHistoryFeeLogger');
     if (withdrawLogs[0].args.tokenAccount === ADDRESS_0) {
         assert.equal(new web3.utils.BN(withdrawLogs[0].args.fee).eq(contractFee), true, "withdraw history contract fee failed");
     }
     assert.equal(withdrawLogs[0].args.receiver, origOwner, "withdraw fee receiver failed");
+
+    let afterFeeBalance = new web3.utils.BN(await tokenInstance.balanceOf(cross.address));
+    assert.equal(beforeCrossBalance.sub(afterFeeBalance).lte(fee), true, `check withdraw storeman fee balance failed`);
 });
