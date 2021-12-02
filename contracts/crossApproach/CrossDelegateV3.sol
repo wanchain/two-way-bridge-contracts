@@ -277,12 +277,22 @@ contract CrossDelegateV3  is CrossStorageV2 {
         for (uint i = 0; i < tokens.length; ++i) {
             bytes32 tokenBytes32 = addressToBytes32(tokens[i]);
             currentFee = storageData.mapStoremanFee[tokenBytes32];
+
+            uint balance;
             if (currentFee > 0) {
                 delete storageData.mapStoremanFee[tokenBytes32];
                 if (tokens[i] == address(0)) {
+                    balance = address(this).balance;
+                    if (balance < currentFee) {
+                        currentFee = balance;
+                    }
                     smgFeeProxy.transfer(currentFee);
                 } else {
-                    require(CrossTypesV1.transfer(tokens[i], smgFeeProxy, currentFee), "Withdrasw token fee failed");
+                    balance = IRC20Protocol(tokens[i]).balanceOf(address(this));
+                    if (balance < currentFee) {
+                        currentFee = balance;
+                    }
+                    require(CrossTypesV1.transfer(tokens[i], smgFeeProxy, currentFee), "Withdraw token fee failed");
                 }
                 emit SmgWithdrawFeeLogger(tokens[i], block.timestamp, smgFeeProxy, currentFee);
             }
