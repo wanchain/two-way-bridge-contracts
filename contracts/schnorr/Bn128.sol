@@ -1,10 +1,10 @@
 pragma solidity ^0.4.24;
 
-import '../lib/SafeMath.sol';
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 
 contract Bn128 {
     using SafeMath for uint;
-    
+
     uint256 constant gx = 0x1;
     uint256 constant gy = 0x2;
 

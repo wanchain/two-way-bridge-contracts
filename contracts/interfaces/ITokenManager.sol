@@ -40,6 +40,6 @@ interface ITokenManager {
 
     function burnToken(address tokenAddress, address from, uint value) external;
 
-    function isNFT(address tokenAddress) external
-        returns (bool isNFTPair);
+    function mapTokenPairType(uint tokenPairID) external view
+      returns (uint8 tokenPairType);
 }

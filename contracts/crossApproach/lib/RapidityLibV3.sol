@@ -28,16 +28,17 @@ pragma solidity ^0.4.26;
 pragma experimental ABIEncoderV2;
 
 
+import 'openzeppelin-eth/contracts/token/ERC721/IERC721.sol';
 import "./RapidityTxLib.sol";
 import "./CrossTypesV1.sol";
 import "../../interfaces/ITokenManager.sol";
 import "../../interfaces/IRC20Protocol.sol";
-import "../../interfaces/IERC721.sol";
-import "../../interfaces/ISmgFeeProxy.sol";
 
 library RapidityLibV3 {
     using SafeMath for uint;
     using RapidityTxLib for RapidityTxLib.Data;
+
+    enum TokenCrossType {ERC20, ERC721}
 
     /**
     *
@@ -46,18 +47,13 @@ library RapidityLibV3 {
     */
 
     /// @notice struct of Rapidity storeman mint lock parameters
-    struct CrossFeeParams {
-        uint contractFee;                 /// token pair id on cross chain
-        uint agentFee;                    /// exchange token value
-    }
-
-    /// @notice struct of Rapidity storeman mint lock parameters
     struct RapidityUserLockParams {
         bytes32 smgID;                    /// ID of storeman group which user has selected
         uint tokenPairID;                 /// token pair id on cross chain
         uint value;                       /// exchange token value
         uint currentChainID;              /// current chain ID
         bytes destUserAccount;            /// account of shadow chain, used to receive token
+        address smgFeeProxy;              /// address of the proxy to store fee for storeman group
     }
 
     /// @notice struct of Rapidity storeman mint lock parameters
@@ -69,6 +65,7 @@ library RapidityLibV3 {
         uint fee;                         /// exchange token fee
         address destTokenAccount;         /// shadow token account
         address destUserAccount;          /// account of shadow chain, used to receive token
+        address smgFeeProxy;              /// address of the proxy to store fee for storeman group
     }
 
     /// @notice struct of Rapidity user burn lock parameters
@@ -80,6 +77,7 @@ library RapidityLibV3 {
         uint fee;                       /// exchange token fee
         address srcTokenAccount;        /// shadow token account
         bytes destUserAccount;          /// account of token destination chain, used to receive token
+        address smgFeeProxy;            /// address of the proxy to store fee for storeman group
     }
 
     /// @notice struct of Rapidity user burn lock parameters
@@ -91,6 +89,7 @@ library RapidityLibV3 {
         uint fee;                       /// exchange token fee
         address destTokenAccount;       /// original token/coin account
         address destUserAccount;        /// account of token original chain, used to receive token
+        address smgFeeProxy;            /// address of the proxy to store fee for storeman group
     }
 
     /**
@@ -161,11 +160,7 @@ library RapidityLibV3 {
 
         uint contractFee = storageData.mapContractFee[fromChainID][toChainID];
         if (contractFee > 0) {
-            if (storageData.smgFeeProxy == address(0)) {
-                storageData.mapStoremanFee[bytes32(0)] = storageData.mapStoremanFee[bytes32(0)].add(contractFee);
-            } else {
-                (storageData.smgFeeProxy).transfer(contractFee);
-            }
+            params.smgFeeProxy.transfer(contractFee);
         }
 
         address tokenScAddr = CrossTypesV1.bytesToAddress(fromTokenAccount);
@@ -176,10 +171,13 @@ library RapidityLibV3 {
         } else {
             left = (msg.value).sub(contractFee);
 
-            if(storageData.tokenManager.isNFT(tokenScAddr)) {
-                IERC721(tokenScAddr).safeTransferFrom(msg.sender, this, params.value);
+            uint8 tokenCrossType = storageData.tokenManager.mapTokenPairType(params.tokenPairID);
+            if (tokenCrossType == uint8(TokenCrossType.ERC20)) {
+                require(CrossTypesV1.transferFrom(tokenScAddr, msg.sender, address(this), params.value), "Lock token failed");
+            } else if (tokenCrossType == uint8(TokenCrossType.ERC721)) {
+                IERC721(tokenScAddr).safeTransferFrom(msg.sender, address(this), params.value);
             } else {
-                require(CrossTypesV1.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
+                require(false, "Not support");
             }
         }
         if (left != 0) {
@@ -214,20 +212,20 @@ library RapidityLibV3 {
         } else {
             require(false, "Invalid token pair");
         }
-        require(params.srcTokenAccount == tokenScAddr, "invalid token account");
+        require(params.srcTokenAccount == tokenScAddr, "Invalid token account");
 
-        if(storageData.tokenManager.isNFT(tokenScAddr)) {
-            require(burnShadowNftToken(tokenManager, tokenScAddr, msg.sender, params.value), "burn NFT failed");
-        }else {
-            require(burnShadowToken(tokenManager, tokenScAddr, msg.sender, params.value), "burn failed");
+        // Reuse variable fromChainID as tokenCrossType; burn token by tokenCrossType
+        fromChainID = tokenManager.mapTokenPairType(params.tokenPairID);
+        if (fromChainID == uint8(TokenCrossType.ERC20)) {
+            require(burnShadowToken(tokenManager, tokenScAddr, msg.sender, params.value), "Burn failed");
+        } else if (fromChainID == uint8(TokenCrossType.ERC721)) {
+            require(burnShadowNftToken(tokenManager, tokenScAddr, msg.sender, params.value), "Burn NFT failed");
+        } else {
+            require(false, "Not support");
         }
 
         if (contractFee > 0) {
-            if (storageData.smgFeeProxy == address(0)) {
-                storageData.mapStoremanFee[bytes32(0)] = storageData.mapStoremanFee[bytes32(0)].add(contractFee);
-            } else {
-                (storageData.smgFeeProxy).transfer(contractFee);
-            }
+            params.smgFeeProxy.transfer(contractFee);
         }
 
         uint left = (msg.value).sub(contractFee);
@@ -247,18 +245,17 @@ library RapidityLibV3 {
     {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
 
-        if(storageData.tokenManager.isNFT(params.destTokenAccount)) {
-            require(mintShadowNftToken(storageData.tokenManager, params.destTokenAccount, params.destUserAccount, params.value), "mint NFT failed");
-        } else {
+        ITokenManager tokenManager = storageData.tokenManager;
+        uint8 tokenCrossType = tokenManager.mapTokenPairType(params.tokenPairID);
+        if (tokenCrossType == uint8(TokenCrossType.ERC20)) {
             if (params.fee > 0) {
-                if (storageData.smgFeeProxy == address(0)) {
-                    storageData.mapStoremanFee[addressToBytes32(params.destTokenAccount)] = storageData.mapStoremanFee[addressToBytes32(params.destTokenAccount)].add(params.fee);
-                    require(mintShadowToken(storageData.tokenManager, params.destTokenAccount, address(this), params.fee), "mint fee failed");
-                } else {
-                    require(mintShadowToken(storageData.tokenManager, params.destTokenAccount, storageData.smgFeeProxy, params.fee), "mint foundation fee failed");
-                }
+                require(mintShadowToken(tokenManager, params.destTokenAccount, params.smgFeeProxy, params.fee), "Mint fee failed");
             }
-            require(mintShadowToken(storageData.tokenManager, params.destTokenAccount, params.destUserAccount, params.value), "mint failed");
+            require(mintShadowToken(tokenManager, params.destTokenAccount, params.destUserAccount, params.value), "Mint failed");
+        } else if (tokenCrossType == uint8(TokenCrossType.ERC721)) {
+            require(mintShadowNftToken(tokenManager, params.destTokenAccount, params.destUserAccount, params.value), "Mint NFT failed");
+        } else {
+            require(false, "Not support");
         }
 
         emit SmgMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.fee, params.destTokenAccount, params.destUserAccount);
@@ -276,24 +273,19 @@ library RapidityLibV3 {
         if (params.destTokenAccount == address(0)) {
             (params.destUserAccount).transfer(params.value);
             if (params.fee > 0) {
-                if (storageData.smgFeeProxy == address(0)) {
-                    storageData.mapStoremanFee[bytes32(0)] = storageData.mapStoremanFee[bytes32(0)].add(params.fee);
-                } else {
-                    (storageData.smgFeeProxy).transfer(params.fee);
-                }
+                params.smgFeeProxy.transfer(params.fee);
             }
         } else {
-            if(storageData.tokenManager.isNFT(params.destTokenAccount)) {
-                IERC721(params.destTokenAccount).safeTransferFrom(address(this), params.destUserAccount, params.value);
-            } else {
+            uint8 tokenCrossType = storageData.tokenManager.mapTokenPairType(params.tokenPairID);
+            if (tokenCrossType == uint8(TokenCrossType.ERC20)) {
                 if (params.fee > 0) {
-                    if (storageData.smgFeeProxy == address(0)) {
-                        storageData.mapStoremanFee[addressToBytes32(params.destTokenAccount)] = storageData.mapStoremanFee[addressToBytes32(params.destTokenAccount)].add(params.fee);
-                    } else {
-                        require(CrossTypesV1.transfer(params.destTokenAccount, storageData.smgFeeProxy, params.fee), "Transfer token fee failed");
-                    }
+                    require(CrossTypesV1.transfer(params.destTokenAccount, params.smgFeeProxy, params.fee), "Transfer token fee failed");
                 }
                 require(CrossTypesV1.transfer(params.destTokenAccount, params.destUserAccount, params.value), "Transfer token failed");
+            } else if (tokenCrossType == uint8(TokenCrossType.ERC721)) {
+                IERC721(params.destTokenAccount).safeTransferFrom(address(this), params.destUserAccount, params.value);
+            } else {
+                require(false, "Not support");
             }
         }
 
@@ -345,8 +337,7 @@ library RapidityLibV3 {
     }
 
     function addressToBytes32(address a) private pure returns (bytes32) {
-        return bytes32(uint256(uint160(a))); // low
-        // return bytes32(bytes20(uint160(a))); // high
+        return bytes32(uint256(uint160(a)));
     }
 
 }

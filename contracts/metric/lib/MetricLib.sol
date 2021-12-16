@@ -27,12 +27,12 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 import "./MetricTypes.sol";
 import "../../lib/CommonTool.sol";
 import "../../interfaces/IPosLib.sol";
 import "../../interfaces/IStoremanGroup.sol";
 import "../../interfaces/ICurve.sol";
-import "../../lib/SafeMath.sol";
 
 library MetricLib {
     using SafeMath for uint;

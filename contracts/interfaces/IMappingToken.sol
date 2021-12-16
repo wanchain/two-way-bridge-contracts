@@ -25,7 +25,6 @@
 //
 
 pragma solidity 0.4.26;
-import '../components/StandardToken.sol';
 
 interface IMappingToken {
     function changeOwner(address _newOwner) external;

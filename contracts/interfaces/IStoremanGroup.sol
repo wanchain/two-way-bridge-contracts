@@ -35,5 +35,5 @@ interface IStoremanGroup {
     function setInvalidSm(bytes32 groupId, uint[] indexs, uint8[] slashTypes) external returns(bool isContinue);
     function getThresholdByGrpId(bytes32 groupId) external view returns (uint);
     function getSelectedSmInfo(bytes32 groupId, uint index) external view returns(address wkAddr, bytes PK, bytes enodeId);
-    function recordSmSlash(address wk) public;
+    function recordSmSlash(address wk) external;
 }

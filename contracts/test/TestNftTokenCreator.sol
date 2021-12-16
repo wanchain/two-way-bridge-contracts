@@ -1,21 +1,9 @@
 pragma solidity ^0.4.24;
 
-import "../tokenManager/MappingNftToken.sol";
-
+import "../interfaces/IMappingToken.sol";
 import "../components/BasicStorage.sol";
+import "./MappingNftToken.sol";
 import "./TestIOwned.sol";
-
-interface IMappingToken {
-    function changeOwner(address _newOwner) external;
-    function acceptOwnership() external;
-    function transferOwner(address) external;
-    function name() external view returns (string);
-    function symbol() external view returns (string);
-    function decimals() external view returns (uint8);
-    function mint(address, uint) external;
-    function burn(address, uint) external;
-    function update(string, string) external;
-}
 
 contract TestNftTokenCreator is BasicStorage {
     address _admin;

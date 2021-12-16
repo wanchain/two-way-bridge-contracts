@@ -28,7 +28,7 @@
 pragma solidity 0.4.26;
 
 import "./WRC20Protocol.sol";
-import "../lib/SafeMath.sol";
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 
 contract StandardToken is WRC20Protocol {
     using SafeMath for uint;

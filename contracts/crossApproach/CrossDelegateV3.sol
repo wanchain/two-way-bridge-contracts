@@ -51,12 +51,6 @@ contract CrossDelegateV3  is CrossStorageV2 {
     /// @param agentFee                 agent fee
     event SetFee(uint srcChainID, uint destChainID, uint contractFee, uint agentFee);
 
-    /// @notice                         event of storeman group ID withdraw fee to receiver
-    /// @param tokenAccount             address of token account
-    /// @param timeStamp                timestamp of the withdraw
-    /// @param receiver                 receiver address
-    /// @param fee                      shadow coin of the fee which the storeman group pk got it
-    event SmgWithdrawFeeLogger(address indexed tokenAccount, uint indexed timeStamp, address indexed receiver, uint fee);
     /// @notice                         event of storeman group ID withdraw the original coin to receiver
     /// @param smgID                    ID of storeman group
     /// @param timeStamp                timestamp of the withdraw
@@ -104,12 +98,15 @@ contract CrossDelegateV3  is CrossStorageV2 {
     notHalted
     onlyReadySmg(smgID)
     {
+        address smgFeeProxy = getSmgFeeProxy();
+
         RapidityLibV3.RapidityUserLockParams memory params = RapidityLibV3.RapidityUserLockParams({
         smgID: smgID,
         tokenPairID: tokenPairID,
         value: value,
         currentChainID: currentChainID,
-        destUserAccount: userAccount
+        destUserAccount: userAccount,
+        smgFeeProxy: smgFeeProxy
         });
         RapidityLibV3.userLock(storageData, params);
     }
@@ -125,6 +122,8 @@ contract CrossDelegateV3  is CrossStorageV2 {
     notHalted
     onlyReadySmg(smgID)
     {
+        address smgFeeProxy = getSmgFeeProxy();
+
         RapidityLibV3.RapidityUserBurnParams memory params = RapidityLibV3.RapidityUserBurnParams({
         smgID: smgID,
         tokenPairID: tokenPairID,
@@ -132,7 +131,8 @@ contract CrossDelegateV3  is CrossStorageV2 {
         fee: fee,
         currentChainID: currentChainID,
         srcTokenAccount: tokenAccount,
-        destUserAccount: userAccount
+        destUserAccount: userAccount,
+        smgFeeProxy: smgFeeProxy
         });
         RapidityLibV3.userBurn(storageData, params);
     }
@@ -161,7 +161,8 @@ contract CrossDelegateV3  is CrossStorageV2 {
         value: value,
         fee: fee,
         destTokenAccount: tokenAccount,
-        destUserAccount: userAccount
+        destUserAccount: userAccount,
+        smgFeeProxy: (storageData.smgFeeProxy == address(0)) ? owner : storageData.smgFeeProxy // fix: Stack too deep
         });
         RapidityLibV3.smgMint(storageData, params);
 
@@ -193,7 +194,8 @@ contract CrossDelegateV3  is CrossStorageV2 {
         value: value,
         fee: fee,
         destTokenAccount: tokenAccount,
-        destUserAccount: userAccount
+        destUserAccount: userAccount,
+        smgFeeProxy: (storageData.smgFeeProxy == address(0)) ? owner : storageData.smgFeeProxy // fix: Stack too deep
         });
         RapidityLibV3.smgRelease(storageData, params);
 
@@ -264,40 +266,6 @@ contract CrossDelegateV3  is CrossStorageV2 {
         storageData.sigVerifier = ISignatureVerifier(sigVerifier);
     }
 
-    /// @notice                             withdraw the fee to foundation account
-    /// @param tokens                       array of token address
-    function smgWithdrawFee(address [] tokens) external {
-        uint currentFee;
-        address smgFeeProxy = storageData.smgFeeProxy;
-        if (smgFeeProxy == address(0)) {
-            smgFeeProxy = owner;
-        }
-        require(smgFeeProxy != address(0), "invalid smgFeeProxy");
-
-        for (uint i = 0; i < tokens.length; ++i) {
-            bytes32 tokenBytes32 = addressToBytes32(tokens[i]);
-            currentFee = storageData.mapStoremanFee[tokenBytes32];
-
-            uint balance;
-            if (currentFee > 0) {
-                delete storageData.mapStoremanFee[tokenBytes32];
-                if (tokens[i] == address(0)) {
-                    balance = address(this).balance;
-                    if (balance < currentFee) {
-                        currentFee = balance;
-                    }
-                    smgFeeProxy.transfer(currentFee);
-                } else {
-                    balance = IRC20Protocol(tokens[i]).balanceOf(address(this));
-                    if (balance < currentFee) {
-                        currentFee = balance;
-                    }
-                    require(CrossTypesV1.transfer(tokens[i], smgFeeProxy, currentFee), "Withdraw token fee failed");
-                }
-                emit SmgWithdrawFeeLogger(tokens[i], block.timestamp, smgFeeProxy, currentFee);
-            }
-        }
-    }
 
     /// @notice                             withdraw the history fee to foundation account
     /// @param smgIDs                       array of storemanGroup ID
@@ -433,8 +401,9 @@ contract CrossDelegateV3  is CrossStorageV2 {
         require(storageData.sigVerifier.verify(curveID, s, PKx, PKy, Rx, Ry, message), "Signature verification failed");
     }
 
-    function addressToBytes32(address a) private pure returns (bytes32) {
-        return bytes32(uint256(uint160(a)));
+    function getSmgFeeProxy() internal view returns (address) {
+        address smgFeeProxy = storageData.smgFeeProxy;
+        return (smgFeeProxy == address(0)) ? owner : smgFeeProxy;
     }
 
     /**
@@ -455,6 +424,7 @@ contract CrossDelegateV3  is CrossStorageV2 {
      */
     function onERC721Received(address operator, address from, uint256 tokenId, bytes data)
     public
+    pure
     returns(bytes4)
     {
         return this.onERC721Received.selector;

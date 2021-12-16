@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 /**
  * Math operations with safety checks
  */
-library SafeMath {
+library SafeMathDeprecated {
 
     /**
     * @dev Multiplies two numbers, reverts on overflow.
