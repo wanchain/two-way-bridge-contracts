@@ -77,7 +77,7 @@ library FakeCommonTool {
 
     function enc(bytes32 rbpri, bytes32 iv, uint256 mes, bytes pub)
     public
-    view
+    pure
     returns(bytes, bool success)
     {
         return (encValue, mes != 0);

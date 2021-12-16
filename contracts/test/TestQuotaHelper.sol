@@ -32,7 +32,7 @@ contract TestQuotaHelper {
 
     function getStoremanGroupConfig(bytes32 storemanGroupId)
         external
-        view
+        pure
         returns (
             bytes32 groupId,
             uint256 status,
@@ -66,7 +66,7 @@ contract TestQuotaHelper {
 
     function getDeposit(bytes32 storemanGroupId)
         public
-        view
+        pure
         returns (uint256 deposit)
     {
         if (storemanGroupId == keccak256("storeman1")) {
@@ -90,7 +90,7 @@ contract TestQuotaHelper {
 
     function getAncestorInfo(uint256 id)
         external
-        view
+        pure
         returns (
             bytes account,
             string name,
@@ -118,7 +118,7 @@ contract TestQuotaHelper {
         return ("", "", "", 0, 1);
     }
 
-    function getAncestorSymbol(uint id) external view returns (string symbol, uint8 decimals) {
+    function getAncestorSymbol(uint id) external pure returns (string symbol, uint8 decimals) {
         if (id == 0) {
             return ("WAN", 18);
         }
@@ -138,7 +138,7 @@ contract TestQuotaHelper {
         return ("", 0);
     }
 
-    function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {
+    function isDebtClean(bytes32 storemanGroupId) external pure returns (bool) {
         return false;
     }
 }
