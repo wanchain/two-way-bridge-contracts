@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../lib/SafeMath.sol";
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 import "./StoremanType.sol";
 import "../interfaces/IPosLib.sol";
 import "../lib/CommonTool.sol";

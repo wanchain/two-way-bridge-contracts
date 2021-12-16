@@ -27,7 +27,7 @@
 pragma solidity ^0.4.26;
 pragma experimental ABIEncoderV2;
 
-import "../lib/SafeMath.sol";
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 import "../components/Halt.sol";
 import "../components/Admin.sol";
 import "./StoremanGroupStorage.sol";

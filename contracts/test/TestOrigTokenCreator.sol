@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
+import "../interfaces/IMappingToken.sol";
 import "../tokenManager/MappingToken.sol";
-import "../tokenManager/IMappingToken.sol";
 import "../components/WRC20Protocol.sol";
 import "../components/BasicStorage.sol";
 import "./TestIOwned.sol";
@@ -18,7 +18,7 @@ contract TestOrigTokenCreator is BasicStorage {
         _admin = admin;
     }
 
-    function getAdmin() external returns (address) {
+    function getAdmin() external view returns (address) {
         return _admin;
     }
 

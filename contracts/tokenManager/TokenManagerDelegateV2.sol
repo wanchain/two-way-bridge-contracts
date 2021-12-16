@@ -27,14 +27,63 @@
 pragma solidity 0.4.26;
 pragma experimental ABIEncoderV2;
 
-/**
- * Math operations with safety checks
- */
-
+import "../interfaces/IMappingToken.sol";
+import "./MappingToken.sol";
 import "./TokenManagerDelegate.sol";
+import "../components/Proxy.sol";
 
-contract TokenManagerDelegateV2 is TokenManagerDelegate {
+contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
 
+    /************************************************************
+     **
+     ** STATE VARIABLES
+     **
+     ************************************************************/
+    address operator;
+
+    /// tokenPairID => type; type: 0 is ERC20, 1 is ERC721, ...
+    mapping(uint => uint8) public mapTokenPairType;
+
+
+    /************************************************************
+     **
+     ** EVENTS
+     **
+     ************************************************************/
+     event SetOperator(address indexed oldOperator, address indexed newOperator);
+     event SetTokenPairType(uint indexed tokenPairId, uint indexed tokenPairType);
+
+    /**
+     *
+     * MODIFIERS
+     *
+     */
+
+    modifier onlyOperator() {
+        require(msg.sender == operator, "not operator");
+        _;
+    }
+
+    /************************************************************
+     **
+     ** MANIPULATIONS
+     **
+     ************************************************************/
+    function setTokenPairType(uint tokenPairId, uint8 tokenPairType)
+        external
+        onlyOperator
+    {
+       mapTokenPairType[tokenPairId] = tokenPairType;
+       emit SetTokenPairType(tokenPairId, tokenPairType);
+    }
+
+    function setOperator(address account)
+        external
+        onlyOwner
+    {
+       emit SetOperator(operator, account);
+       operator = account;
+    }
 
     function getNftInfo(uint tokenPairId) external view returns (address addr, string name, string symbol) {
         if (mapTokenPairInfo[tokenPairId].fromChainID == 0) {
@@ -47,28 +96,6 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate {
             symbol = IMappingToken(instance).symbol();
             addr = instance;
         }
-    }
-
-    function isNFT(address _tokenAddr) external returns (bool isNft) {
-
-        bytes4 ERC721_FLAG_FUNC = bytes4(keccak256("isApprovedForAll(address,address)"));
-        bytes memory data = abi.encodeWithSelector(ERC721_FLAG_FUNC, 0x0,0x0);
-
-        bool success;
-
-        assembly {
-            success := call(
-            gas(),            // gas remaining
-            _tokenAddr,       // destination address
-            0,              // no ether
-            add(data, 32),  // input buffer (starts after the first 32 bytes in the `data` array)
-            mload(data),    // input length (loaded from the first 32 bytes in the `data` array)
-            0,              // output buffer
-            0               // output length
-            )
-        }
-
-        return success;
     }
 
 }

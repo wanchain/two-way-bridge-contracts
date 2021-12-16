@@ -2,8 +2,6 @@
 
 pragma solidity ^0.4.26;
 
-//import "openzeppelin-eth/contracts/math/SafeMath.sol";
-//import "../lib/SafeMath.sol";
 import 'openzeppelin-eth/contracts/ownership/Ownable.sol';
 import 'openzeppelin-eth/contracts/token/ERC721/ERC721Full.sol';
 
@@ -41,10 +39,6 @@ contract MappingNftToken is ERC721Full, Ownable {
         ERC721.initialize();
         ERC721Enumerable.initialize();
         ERC721Metadata.initialize(name_, symbol_);
-    }
-
-    function decimals() public pure returns (uint8) {
-        return 0; // For NFT, decimal set to 0.
     }
 
     /**
@@ -85,7 +79,7 @@ contract MappingNftToken is ERC721Full, Ownable {
     /// @param account Initiator address
     /// @param nftID ID of NFT to be burnt
     /// @param totalSupply Total amount of NFT after token burn
-    event TokenBurntLogger(
+    event TokenBurnLogger(
         address indexed account,
         uint indexed nftID,
         uint indexed totalSupply
@@ -125,7 +119,7 @@ contract MappingNftToken is ERC721Full, Ownable {
         _burn(account_, nftID);
 
         totalSupply = totalSupply.sub(1);
-        emit TokenBurntLogger(account_, nftID, totalSupply);
+        emit TokenBurnLogger(account_, nftID, totalSupply);
     }
 
     /// @notice update token name, symbol

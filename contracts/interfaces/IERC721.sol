@@ -5,7 +5,7 @@ pragma solidity ^0.4.26;
 /**
  * @dev Required interface of an ERC721 compliant contract.
  */
-interface IERC721 {
+interface IERC721Deprecated {
 
     /**
      * @dev Returns the number of tokens in ``owner``'s account.

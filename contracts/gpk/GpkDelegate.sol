@@ -26,7 +26,7 @@
 
 pragma solidity ^0.4.24;
 
-import "../lib/SafeMath.sol";
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 import "../components/Admin.sol";
 import "./GpkStorage.sol";
 import "./lib/GpkLib.sol";
