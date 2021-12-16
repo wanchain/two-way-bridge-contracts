@@ -39,7 +39,7 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
      ** STATE VARIABLES
      **
      ************************************************************/
-    address operator;
+    address public operator;
 
     /// tokenPairID => type; type: 0 is ERC20, 1 is ERC721, ...
     mapping(uint => uint8) public mapTokenPairType;
