@@ -1,16 +1,5 @@
-const CrossDelegateV2 = artifacts.require('CrossDelegateV3');
-const CrossProxy = artifacts.require('CrossProxy');
-
+const CrossDelegateV3 = artifacts.require('CrossDelegateV3');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegateV2');
-
-const QuotaDelegate = artifacts.require('QuotaDelegate');
-const QuotaProxy = artifacts.require('QuotaProxy');
-
-const OracleDelegate = artifacts.require('OracleDelegate');
-
-const TestStoremanAdmin = artifacts.require('TestStoremanAdmin.sol');
-const TestOrigTokenCreator = artifacts.require("TestOrigTokenCreator.sol");
-const MappingNftToken = artifacts.require("MappingNftToken");
 
 const {
     ADDRESS_0,
@@ -46,9 +35,9 @@ const {
     typesArrayList,
 } = require("./sc-config");
 
-//const crossValue = 10;
 const minerFee = 5;
-
+const tokenCrossType = 1;
+const tokenID = 12345;
 
 before("init...   -> success", () => {
     testInit();
@@ -62,11 +51,8 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( ethereum => wanchain
     const currentChainType = chainTypes.ETH;
     const buddyChainType = chainTypes.WAN;
     const smgID = global.storemanGroups.src.ID
-    let nftCrossValue = 12345;// token-config.js::transferNftToken mintValue="12345"
-    const crossValueToWei = nftCrossValue;
     const userAccount = wanUserAccount;
     const senderAccount = ethUserAccount;
-
 
     const currentToken = global.chains[currentChainType].nftTokens.filter(token => token.symbol === "NFT")[0];
     //console.log("NFT_CrossChain userLock currentToken:", currentToken);
@@ -75,23 +61,35 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( ethereum => wanchain
     const moreServiceFee = new web3.utils.BN(contractFee).toString();
     //console.log("NFT_CrossChain userLock moreServiceFee:", moreServiceFee);
     // cross
-    const cross = await CrossDelegateV2.at(global.chains[currentChainType].scAddr.CrossProxy);
-    const parnters = await cross.getPartners();
+    const cross = await CrossDelegateV3.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const partners = await cross.getPartners();
 
     // tokenAccount
     const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, currentToken.symbol);
     //console.log("NFT_CrossChain userLock tokenPair:", tokenPair);
 
-    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
     const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
     const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
     const tokenPairID = tokenPair.tokenPairID;
+    console.log("tokenAccount:", tokenAccount)
+
+    const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
+    if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
+        await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(tokenCrossType), {from: global.operatorAccount[currentChainType]});
+    }
+
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeFeeProxyBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
 
     // exec
     let funcParams = {
         smgID: smgID,
         tokenPairID: tokenPairID,
-        crossValue: crossValueToWei,
+        tokenID: tokenID,
         userAccount: userAccount
     };
     // get token instance
@@ -100,12 +98,11 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( ethereum => wanchain
     // console.log("NFT_CrossChain userLock balance:", balance.toString());
 
     // approve
-    //console.log("NFT_CrossChain userLock approve crossValueToWei:", crossValueToWei);
-    await tokenInstance.approve(cross.address, crossValueToWei, {from: senderAccount});
-    let approved = await tokenInstance.getApproved(crossValueToWei);
+    //console.log("NFT_CrossChain userLock approve tokenID:", tokenID);
+    await tokenInstance.approve(cross.address, tokenID, {from: senderAccount});
+    let approved = await tokenInstance.getApproved(tokenID);
     //console.log("userLock approved:", approved);
-    
-    
+
     let receipt = await cross.userLock(...Object.values(funcParams), { from: senderAccount, value: moreServiceFee });
     //console.log("nft userlock receipt:", receipt);
     if (!receipt.logs.length) {
@@ -118,7 +115,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( ethereum => wanchain
             smgID: web3.utils.padRight(funcParams.smgID, 64),
             tokenPairID: funcParams.tokenPairID,
             tokenAccount: tokenAccount,
-            value: funcParams.crossValue,
+            value: funcParams.tokenID,
             contractFee: contractFee,
             userAccount: funcParams.userAccount.toLowerCase(),
         }
@@ -127,9 +124,12 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( ethereum => wanchain
     balance = await tokenInstance.balanceOf(senderAccount);
     balance = balance.toString();
     assert.equal(0, balance, "after check userLock balanceOf error:", balance);
-    let ownerOf = await tokenInstance.ownerOf(nftCrossValue);
-    //console.log("after check userLock nft:", nftCrossValue, ",ownerOf:", ownerOf, ",cross.address:", cross.address);
-    assert.equal(ownerOf, cross.address, "after check userLock nft:", nftCrossValue, ",ownerOf:", ownerOf, ",cross.address:", cross.address);
+    let ownerOf = await tokenInstance.ownerOf(tokenID);
+    //console.log("after check userLock nft:", tokenID, ",ownerOf:", ownerOf, ",cross.address:", cross.address);
+    assert.equal(ownerOf, cross.address, "after check userLock nft:", tokenID, ",ownerOf:", ownerOf, ",cross.address:", cross.address);
+
+    const afterFeeProxyBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+    assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @wanchain] <( ethereum => wanchain )> -> smgMint  ==>  success', async () => {
@@ -139,43 +139,55 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @wanchain] <( ethereum => wanchain
     const buddyChainType = chainTypes.ETH;
     const uniqueID = uniqueInfo.userLockNFT;
     const smgID = global.storemanGroups.src.ID
-    let crossValue = 12345;
     const userAccount = wanUserAccount;
     const senderAccount = global.smgAccount.src[currentChainType];
     const currentToken = global.chains[buddyChainType].nftTokens.filter(token => token.symbol === "NFT")[0];
 
     // cross
-    const cross = await CrossDelegateV2.at(global.chains[currentChainType].scAddr.CrossProxy);
-    const parnters = await cross.getPartners();
+    const cross = await CrossDelegateV3.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const partners = await cross.getPartners();
 
     // tokenAccount
     const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, currentToken.symbol);
     //console.log("nft smgMint tokenPair:", tokenPair);
-    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
     const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
     const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
     const tokenPairID = tokenPair.tokenPairID;
+    console.log("tokenAccount:", tokenAccount)
 
     //const fee = await cross.getFee({ srcChainID: global.chains[currentChainType].ID, destChainID: global.chains[buddyChainType].ID });
     const crossFee = new web3.utils.BN(0);
+
+    const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
+    if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
+        await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(tokenCrossType), {from: global.operatorAccount[currentChainType]});
+    }
+
+    let tokenInstance = await getNftTokenInstance(tokenAccount);
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeFeeProxyBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
 
     let funcParams = {
         uniqueID: uniqueID,
         smgID: smgID,
         tokenPairID: tokenPairID,
-        crossValue: crossValue,
+        tokenID: tokenID,
         crossFee: crossFee,
         tokenAccount: tokenAccount,
         userAccount: userAccount
     };
     //console.log("nft smgMint funcParams:", funcParams);
-    let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+    let smg = await global.getSmgProxy(currentChainType, partners.smgAdminProxy);
     let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.smgID);
     let curveID = smgConfig.curve1;
     let sk = skInfo.src[currentChainType];
 
     // sign
-    let { R, s } = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgMint, (await cross.currentChainID()), funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.crossFee, funcParams.tokenAccount, funcParams.userAccount);
+    let { R, s } = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgMint, (await cross.currentChainID()), funcParams.uniqueID, funcParams.tokenPairID, funcParams.tokenID, funcParams.crossFee, funcParams.tokenAccount, funcParams.userAccount);
     funcParams = {...funcParams, R: R, s: s};
 
 
@@ -196,7 +208,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @wanchain] <( ethereum => wanchain
             uniqueID: funcParams.uniqueID,
             smgID: web3.utils.padRight(funcParams.smgID, 64),
             tokenPairID: funcParams.tokenPairID,
-            value: funcParams.crossValue,
+            value: funcParams.tokenID,
             tokenAccount: funcParams.tokenAccount,
             userAccount: funcParams.userAccount
         }
@@ -205,10 +217,15 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @wanchain] <( ethereum => wanchain
         //console.log("\n after check **********************************:");
         //console.log("after check nft smgMint tokenPair.shadowChainToken.tokenAccount:", tokenPair.shadowChainToken.tokenAccount);
         //console.log("after check nft smgMint wanUserAccount:", wanUserAccount);
-        let tokenInstance = await getNftTokenInstance(tokenPair.shadowChainToken.tokenAccount);
         let balance = await tokenInstance.balanceOf(wanUserAccount);
         balance = balance.toString();
         assert.equal(1, balance, "after check smgMint balanceOf error:", balance);
+
+        let ownerOf = await tokenInstance.ownerOf(tokenID);
+        assert.equal(ownerOf, wanUserAccount, "owner of nft error");
+
+        const afterFeeProxyBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
+        assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN("0")), true, "balance of storeman fee error");
     }
 });
 
@@ -218,7 +235,6 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @wanchain] <( wanchain => ethereum
     const currentChainType = chainTypes.WAN;
     const buddyChainType = chainTypes.ETH;
     const smgID = global.storemanGroups.src.ID
-    const crossValue = 12345;
     const minerFeeToWei = web3.utils.toWei(minerFee.toString());
     const userAccount = ethUserAccount;
     const senderAccount = wanUserAccount;
@@ -227,22 +243,34 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @wanchain] <( wanchain => ethereum
     const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
     // cross
-    const cross = await CrossDelegateV2.at(global.chains[currentChainType].scAddr.CrossProxy);
-    const parnters = await cross.getPartners();
+    const cross = await CrossDelegateV3.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const partners = await cross.getPartners();
 
     // tokenAccount
     const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, currentToken.symbol);
     // console.log("nft userBurn tokenPair:", tokenPair);
-    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
     const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
     const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
     const tokenPairID = tokenPair.tokenPairID;
+    console.log("tokenAccount:", tokenAccount)
+
+    // const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
+    // if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
+    //     await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(tokenCrossType), {from: global.operatorAccount[currentChainType]});
+    // }
+
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeFeeProxyBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
 
     // approve
     let funcParams = {
         smgID: smgID,
         tokenPairID: tokenPairID,
-        crossValue: crossValue,
+        tokenID: tokenID,
         crossFee: minerFeeToWei,
         tokenAccount: tokenAccount,
         userAccount: userAccount
@@ -254,14 +282,14 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @wanchain] <( wanchain => ethereum
     balance = balance.toString()
     assert.equal(1, balance, "before userBurn check balance:", balance);
 
-    let ownerOf = await tokenInstance.ownerOf(crossValue);
+    let ownerOf = await tokenInstance.ownerOf(tokenID);
     //console.log("nft userBurn ownerOf:", ownerOf);
     //console.log("nft userBurn userAccount:", userAccount);
     //console.log("nft userBurn senderAccount:", senderAccount);
 
     // approve
-    await tokenInstance.approve(cross.address, crossValue, { from: senderAccount });
-    let approved = await tokenInstance.getApproved(crossValue);
+    await tokenInstance.approve(cross.address, tokenID, { from: senderAccount });
+    let approved = await tokenInstance.getApproved(tokenID);
     //console.log("nft userBurn approved:", approved);
 
     // exec
@@ -277,7 +305,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @wanchain] <( wanchain => ethereum
             smgID: web3.utils.padRight(funcParams.smgID, 64),
             tokenPairID: funcParams.tokenPairID,
             tokenAccount: funcParams.tokenAccount,
-            value: funcParams.crossValue,
+            value: funcParams.tokenID,
             contractFee: contractFee,
             fee: minerFeeToWei,
             userAccount: funcParams.userAccount.toLowerCase(),
@@ -289,6 +317,9 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @wanchain] <( wanchain => ethereum
         balance = balance.toString();
         assert.equal(0, balance, "after check userBurn balanceOf account error:", balance);
     }
+
+    const afterFeeProxyBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+    assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( wanchain => ethereum )> -> smgRelease  ==>  success', async () => {
@@ -298,60 +329,76 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( wanchain => ethereum
     const buddyChainType = chainTypes.WAN;
     const uniqueID = uniqueInfo.userReleaseNFT;
     const smgID = global.storemanGroups.src.ID
-    const crossValue = 12345;
     const userAccount = ethUserAccount;
     const senderAccount = global.smgAccount.src[currentChainType];
     const currentToken = global.chains[currentChainType].nftTokens.filter(token => token.symbol === "NFT")[0];
 
     // cross
-    const cross = await CrossDelegateV2.at(global.chains[currentChainType].scAddr.CrossProxy);
-    const parnters = await cross.getPartners();
+    const cross = await CrossDelegateV3.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const partners = await cross.getPartners();
 
     // tokenAccount
     const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, currentToken.symbol);
-    const tokenManager = await TokenManagerDelegate.at(parnters.tokenManager);
+    const tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
     const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
     const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
     const tokenPairID = tokenPair.tokenPairID;
-
+    console.log("tokenAccount:", tokenAccount)
 
     //const fee = await cross.getFee({ srcChainID: global.chains[currentChainType].ID, destChainID: global.chains[buddyChainType].ID });
     //const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
     const crossFee = new web3.utils.BN(0);
     //const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
 
+    // const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
+    // if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
+    //     await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(tokenCrossType), {from: global.operatorAccount[currentChainType]});
+    // }
+
+    let tokenInstance = await getNftTokenInstance(tokenAccount);
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeFeeProxyBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
+
     //console.log("nft smgRelease tokenPair:", tokenPair);
-    funcParams = {
+    let funcParams = {
         uniqueID: uniqueID,
         smgID: smgID,
         tokenPairID: tokenPairID,
-        crossValue: crossValue,
+        tokenID: tokenID,
         crossFee: crossFee,
         tokenAccount: tokenAccount,
         userAccount: userAccount
     };
     //console.log("nft smgRelease funcParams:", funcParams);
 
+    let totalSupply = await tokenInstance.totalSupply();
+    assert.equal(new web3.utils.BN(totalSupply).eq(0), false, "nft smgRelease totalSupply error");
     // before check
-    let tokenInstance = await getNftTokenInstance(funcParams.tokenAccount);
     let balance = await tokenInstance.balanceOf(userAccount);
     balance = balance.toString();
     assert.equal(0, balance, "nft smgRelease before check balance error");
-    let ownerOf = await tokenInstance.ownerOf(crossValue);
-    assert.equal(ownerOf, cross.address, "before check smgRelease ownerOf nft:", crossValue, ",ownerOf:", ownerOf, ",cross.address:", cross.address);
+
+    let crossBalance = await tokenInstance.balanceOf(cross.address);
+    assert.equal(new web3.utils.BN(crossBalance).eq((new web3.utils.BN(0))), false, "check cross nft balance error");
+
+    let ownerOf = await tokenInstance.ownerOf(tokenID);
+    assert.equal(ownerOf, cross.address, "before check smgRelease ownerOf nft:", tokenID, ",ownerOf:", ownerOf, ",cross.address:", cross.address);
 
     balance = await tokenInstance.balanceOf(cross.address);
     balance = balance.toString();
     assert.equal(balance, 1, "before check smgRelease cross.address:", cross.address,",balance:",balance);
 
     // curveID
-    let smg = await global.getSmgProxy(currentChainType, parnters.smgAdminProxy);
+    let smg = await global.getSmgProxy(currentChainType, partners.smgAdminProxy);
     let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.smgID);
     let curveID = smgConfig.curve1;
     let sk = skInfo.src[currentChainType];
 
     // sign
-    let { R, s } = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgRelease, (await cross.currentChainID()), funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.crossFee, funcParams.tokenAccount, funcParams.userAccount);
+    let { R, s } = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgRelease, (await cross.currentChainID()), funcParams.uniqueID, funcParams.tokenPairID, funcParams.tokenID, funcParams.crossFee, funcParams.tokenAccount, funcParams.userAccount);
     funcParams = {...funcParams, R: R, s: s};
 
     let receipt = await cross.smgRelease(...Object.values(funcParams), { from: senderAccount });
@@ -367,7 +414,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( wanchain => ethereum
             uniqueID: funcParams.uniqueID,
             smgID: web3.utils.padRight(funcParams.smgID, 64),
             tokenPairID: funcParams.tokenPairID,
-            value: funcParams.crossValue,
+            value: funcParams.tokenID,
             tokenAccount: funcParams.tokenAccount,
             userAccount: funcParams.userAccount
         }
@@ -382,7 +429,10 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( wanchain => ethereum
     balance = balance.toString();
     assert.equal(balance, 0, "nft: after smgRelease crossDelegate:", cross.address, ",balance:", balance);
 
-    ownerOf = await tokenInstance.ownerOf(crossValue);
+    ownerOf = await tokenInstance.ownerOf(tokenID);
     //console.log("nft: after smgRelease ownerOf:", ownerOf);
-    assert.equal(ownerOf, userAccount, "after check smgRelease ownerOf nft:", crossValue, ",ownerOf:", ownerOf, ",userAccount:", userAccount);
+    assert.equal(ownerOf, userAccount, "after check smgRelease ownerOf nft:", tokenID, ",ownerOf:", ownerOf, ",userAccount:", userAccount);
+
+    const afterFeeProxyBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
+    assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN("0")), true, "balance of storeman fee error");
 });

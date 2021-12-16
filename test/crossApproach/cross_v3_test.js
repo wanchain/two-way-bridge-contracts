@@ -316,6 +316,12 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( wanchain => ethereum 
 
     const totalValue = new web3.utils.BN(crossValueToWei).add(new web3.utils.BN(contractFee)).toString();
 
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+
     // exec
     let funcParams = {
         smgID: smgID,
@@ -339,6 +345,8 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( wanchain => ethereum 
             userAccount: funcParams.userAccount.toLowerCase(),
         }
     });
+    const afterBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( wanchain => ethereum )> -> smgMint  ==>  success', async () => {
@@ -366,6 +374,13 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( wanchain => ethereum 
     const fee = await cross.getFee({srcChainID:global.chains[currentChainType].ID, destChainID:global.chains[buddyChainType].ID});
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
+
+    let tokenInstance = await getRC20TokenInstance(tokenAccount);
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
 
     let funcParams = {
         uniqueID: uniqueID,
@@ -404,9 +419,11 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( wanchain => ethereum 
         }
     });
     // get token instance
-    let tokenInstance = await getRC20TokenInstance(funcParams.tokenAccount);
     let balance = await tokenInstance.balanceOf(funcParams.userAccount);
     assert.equal(funcParams.crossValue.toString(), balance.toString(), "balance of receiver account error");
+
+    const afterBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(funcParams.crossFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( ethereum => wanchain )> -> userBurn ==>  success', async () => {
@@ -440,7 +457,12 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( ethereum => wanchain 
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(balance)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = balance; // new web3.utils.BN(crossValueToWei).sub(crossFee);
 
-    // approve
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+
     let funcParams = {
         smgID: smgID,
         tokenPairID: tokenPairID,
@@ -479,6 +501,9 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( ethereum => wanchain 
             userAccount: funcParams.userAccount.toLowerCase(),
         }
     });
+
+    const afterBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( ethereum => wanchain )> -> smgRelease  ==>  success', async () => {
@@ -506,6 +531,12 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( ethereum => wanchain 
     const fee = await cross.getFee({srcChainID:global.chains[currentChainType].ID, destChainID:global.chains[buddyChainType].ID});
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
+
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
 
     funcParams = {
         uniqueID: uniqueID,
@@ -544,6 +575,9 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( ethereum => wanchain 
             userAccount: funcParams.userAccount
         }
     });
+
+    const afterBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(funcParams.crossFee)), true, "balance of storeman fee error");
 });
 
 // LINK
@@ -570,6 +604,12 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( ethereum => wanchai
     const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
     const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
     const tokenPairID = tokenPair.tokenPairID;
+
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
 
     // exec
     let funcParams = {
@@ -612,6 +652,9 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( ethereum => wanchai
             userAccount: funcParams.userAccount.toLowerCase(),
         }
     });
+
+    const afterBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
 });
 it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @wanchain] <( ethereum => wanchain )> -> smgMint  ==>  success', async () => {
     const wanUserAccount = global.aliceAccount.WAN;
@@ -639,6 +682,13 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @wanchain] <( ethereum => wanchai
     const fee = await cross.getFee({srcChainID:global.chains[currentChainType].ID, destChainID:global.chains[buddyChainType].ID});
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
+
+    let tokenInstance = await getRC20TokenInstance(tokenAccount);
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
 
     let funcParams = {
         uniqueID: uniqueID,
@@ -677,9 +727,11 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @wanchain] <( ethereum => wanchai
         }
     });
     // get token instance
-    let tokenInstance = await getRC20TokenInstance(funcParams.tokenAccount);
     let balance = await tokenInstance.balanceOf(funcParams.userAccount);
     assert.equal(funcParams.crossValue.toString(), balance.toString(), "balance of receiver account error");
+
+    const afterBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(funcParams.crossFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @wanchain] <( wanchain => ethereum )> -> userBurn ==>  success', async () => {
@@ -715,6 +767,12 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @wanchain] <( wanchain => ethereu
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(balance)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = balance; // new web3.utils.BN(crossValueToWei).sub(crossFee);
 
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+
     // approve
     let funcParams = {
         smgID: smgID,
@@ -748,6 +806,9 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @wanchain] <( wanchain => ethereu
             userAccount: funcParams.userAccount.toLowerCase(),
         }
     });
+
+    const afterBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( wanchain => ethereum )> -> smgRelease  ==>  success', async () => {
@@ -776,6 +837,13 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( wanchain => ethereu
     const fee = await cross.getFee({srcChainID:global.chains[currentChainType].ID, destChainID:global.chains[buddyChainType].ID});
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
+
+    let tokenInstance = await getRC20TokenInstance(tokenAccount);
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
 
     funcParams = {
         uniqueID: uniqueID,
@@ -814,6 +882,9 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( wanchain => ethereu
             userAccount: funcParams.userAccount
         }
     });
+
+    const afterBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(funcParams.crossFee)), true, "balance of storeman fee error");
 });
 
 // BTC
@@ -844,6 +915,13 @@ it('Chain [BTC] <=> Chain [WAN] -> COIN [BTC @wanchain] <( bitcoin => wanchain )
     const fee = await cross.getFee({srcChainID:global.chains[currentChainType].ID, destChainID:global.chains[buddyChainType].ID});
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
+
+    let tokenInstance = await getRC20TokenInstance(tokenAccount);
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
 
     let funcParams = {
         uniqueID: uniqueID,
@@ -882,9 +960,11 @@ it('Chain [BTC] <=> Chain [WAN] -> COIN [BTC @wanchain] <( bitcoin => wanchain )
         }
     });
     // get token instance
-    let tokenInstance = await getRC20TokenInstance(funcParams.tokenAccount);
     let balance = await tokenInstance.balanceOf(funcParams.userAccount);
     assert.equal(funcParams.crossValue.toString(), balance.toString(), "balance of receiver account error");
+
+    const afterBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(funcParams.crossFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [WAN] <=> Chain [ETH] -> COIN [BTC @wanchain] <( wanchain => ethereum )> -> userBurn ==>  success', async () => {
@@ -921,6 +1001,12 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [BTC @wanchain] <( wanchain => ethereum 
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(balance)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = balance; // new web3.utils.BN(crossValueToWei).sub(crossFee);
 
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+
     // approve
     let funcParams = {
         smgID: smgID,
@@ -954,6 +1040,9 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [BTC @wanchain] <( wanchain => ethereum 
             userAccount: funcParams.userAccount.toLowerCase(),
         }
     });
+
+    const afterBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [WAN] <=> Chain [ETH] -> COIN [BTC @ethereum] <( wanchain => ethereum )> -> smgMint  ==>  success', async () => {
@@ -983,6 +1072,13 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [BTC @ethereum] <( wanchain => ethereum 
     const fee = await cross.getFee({srcChainID:global.chains[currentChainType].ID, destChainID:global.chains[buddyChainType].ID});
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
+
+    let tokenInstance = await getRC20TokenInstance(tokenAccount);
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
 
     let funcParams = {
         uniqueID: uniqueID,
@@ -1021,9 +1117,11 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [BTC @ethereum] <( wanchain => ethereum 
         }
     });
     // get token instance
-    let tokenInstance = await getRC20TokenInstance(funcParams.tokenAccount);
     let balance = await tokenInstance.balanceOf(funcParams.userAccount);
     assert.equal(funcParams.crossValue.toString(), balance.toString(), "balance of receiver account error");
+
+    const afterBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(funcParams.crossFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [ETH] <=> Chain [BTC] -> COIN [BTC @ethereum] <( ethereum => bitcoin )> -> userBurn ==>  success', async () => {
@@ -1060,7 +1158,12 @@ it('Chain [ETH] <=> Chain [BTC] -> COIN [BTC @ethereum] <( ethereum => bitcoin )
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(balance)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = balance; // new web3.utils.BN(crossValueToWei).sub(crossFee);
 
-    // approve
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+    const beforeBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+
     let funcParams = {
         smgID: smgID,
         tokenPairID: tokenPairID,
@@ -1094,334 +1197,8 @@ it('Chain [ETH] <=> Chain [BTC] -> COIN [BTC @ethereum] <( ethereum => bitcoin )
         }
     });
 
-});
-
-// smgWithdrawFee
-it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( ethereum <=> wanchain )> -> smgWithdrawFee lock in Cross, withdraw for owner  ==> success', async () => {
-    const wanUserAccount = global.aliceAccount.WAN;
-    const ethUserAccount = global.aliceAccount.ETH;
-    const currentChainType = chainTypes.ETH;
-    const buddyChainType = chainTypes.WAN;
-    const smgID = global.storemanGroups.src.ID
-    const crossValueToWei = web3.utils.toWei(crossValue.toString());
-    const userAccount = wanUserAccount;
-    const senderAccount = ethUserAccount;
-    const currentToken = global.chains[currentChainType].tokens.filter(token => token.symbol === "LINK")[0];
-    const contractFee = global.crossFeesV3[currentChainType][buddyChainType].contractFee;
-    const moreServiceFee = new web3.utils.BN(crossValueToWei).add(new web3.utils.BN(contractFee)).toString();
-
-    // cross
-    const cross = await CrossDelegateV3.at(global.chains[currentChainType].scAddr.CrossProxy);
-    const partners = await cross.getPartners();
-    const crossProxy = await CrossProxy.at(global.chains[currentChainType].scAddr.CrossProxy);
-    const origOwner = await crossProxy.owner();
-    await cross.setPartners(partners.tokenManager, partners.smgAdminProxy, ADDRESS_0, ADDRESS_0, partners.sigVerifier, {from: origOwner});
-
-    // tokenAccount
-    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, currentToken.symbol);
-    const tokenManager = await TokenManagerDelegateV2.at(partners.tokenManager);
-    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
-    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
-    const tokenPairID = tokenPair.tokenPairID;
-
-    // exec
-    let lockParams = {
-        smgID: smgID,
-        tokenPairID: tokenPairID,
-        crossValue: crossValueToWei,
-        userAccount: userAccount
-    };
-
-    // get token instance
-    let tokenInstance = await getRC20TokenInstance(tokenAccount);
-    let balance = await tokenInstance.balanceOf(senderAccount);
-    if (balance.lt(new web3.utils.BN(crossValueToWei))) {
-        // mint token: LINK
-        let mintValue = new web3.utils.BN(crossValueToWei).sub(balance);
-        const tokenCreator = await TestOrigTokenCreator.at(global.chains[currentChainType].scAddr.TestOrigTokenCreator);
-        await tokenCreator.mintToken(currentToken.name, currentToken.symbol, senderAccount, mintValue.toString());
-    }
-    balance = await tokenInstance.balanceOf(senderAccount);
-    assert.equal(crossValueToWei, balance.toString(), "balance of sender account error");
-
-    // const crossBalance = await tokenInstance.balanceOf(cross.address);
-    // approve
-    await tokenInstance.approve(cross.address, 0, {from: senderAccount});
-    await tokenInstance.approve(cross.address, crossValueToWei, {from: senderAccount});
-    let allowance = await tokenInstance.allowance(senderAccount, cross.address);
-    assert.equal(crossValueToWei, allowance.toString(), "approve token failed");
-
-    let receipt = await cross.userLock(...Object.values(lockParams), {from: senderAccount, value: moreServiceFee});
-    if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV3, receipt.tx);
-    }
-
-    assert.checkWeb3Event(receipt, {
-        event: 'UserLockLogger',
-        args: {
-            smgID: web3.utils.padRight(lockParams.smgID, 64),
-            tokenPairID: lockParams.tokenPairID,
-            tokenAccount: tokenAccount,
-            value: lockParams.crossValue,
-            contractFee: contractFee,
-            userAccount: lockParams.userAccount.toLowerCase(),
-        }
-    });
-
-    const fee = await cross.getFee({srcChainID:global.chains[currentChainType].ID, destChainID:global.chains[buddyChainType].ID});
-    const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
-    const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
-
-    // buddy chain
-    let releaseParams = {
-        uniqueID: receipt.tx,
-        smgID: smgID,
-        tokenPairID: tokenPairID,
-        crossValue: crossValueActually,
-        crossFee: crossFee,
-        tokenAccount: tokenAccount,
-        userAccount: senderAccount
-    };
-
-    // curveID
-    const buddyPartners = await cross.getPartners();
-    let smg = await global.getSmgProxy(currentChainType, buddyPartners.smgAdminProxy);
-    let smgConfig = await smg.getStoremanGroupConfig.call(releaseParams.smgID);
-    let curveID = smgConfig.curve1;
-    let sk = skInfo.src[currentChainType];
-
-    // sign
-    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgRelease, (await cross.currentChainID()), releaseParams.uniqueID, releaseParams.tokenPairID, releaseParams.crossValue, releaseParams.crossFee, releaseParams.tokenAccount, releaseParams.userAccount);
-    releaseParams = {...releaseParams, R: R, s: s};
-
-    let releaseReceipt = await cross.smgRelease(...Object.values(releaseParams), {from: userAccount});
-    if (!releaseReceipt.logs.length) {
-        releaseReceipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV3, releaseReceipt.tx);
-    }
-
-    assert.checkWeb3Event(releaseReceipt, {
-        event: 'SmgReleaseLogger',
-        args: {
-            uniqueID: releaseParams.uniqueID,
-            smgID: web3.utils.padRight(releaseParams.smgID, 64),
-            tokenPairID: releaseParams.tokenPairID,
-            value: releaseParams.crossValue,
-            fee: releaseParams.crossFee,
-            tokenAccount: releaseParams.tokenAccount,
-            userAccount: releaseParams.userAccount
-        }
-    });
-
-    // console.log("check UserLockLogger ok");
-    // const crossBalanceDelta = new web3.utils.BN(crossBalance).sub(new web3.utils.BN(await tokenInstance.balanceOf(cross.address)));
-    // console.log("crossBalanceDelta:", crossBalanceDelta.toString(10));
-
-    // current chain
-    await cross.setPartners(partners.tokenManager, partners.smgAdminProxy, ADDRESS_0, ADDRESS_0, partners.sigVerifier, {from: origOwner});
-
-    let totalValues = [new web3.utils.BN(lockParams.crossValue), new web3.utils.BN(releaseParams.crossValue)];
-    let totalFees = [new web3.utils.BN(contractFee), new web3.utils.BN(releaseParams.crossFee)];
-    let tokenAccounts = [ADDRESS_0, releaseParams.tokenAccount];
-    let beforeCrossBalances = [];
-    for (let i = 0; i < tokenAccounts.length; ++i) {
-        let fee = new web3.utils.BN(await cross.getStoremanFee(web3.utils.padLeft(tokenAccounts[i], 64)));
-        let beforeCrossBalance;
-        if (tokenAccounts[i] === ADDRESS_0) {
-            beforeCrossBalance = new web3.utils.BN(await web3.eth.getBalance(cross.address));
-            console.log("balance:", beforeCrossBalance.toString());
-        } else {
-            beforeCrossBalance = new web3.utils.BN(await tokenInstance.balanceOf(cross.address));
-            console.log("token balance:", beforeCrossBalance.toString());
-        }
-        assert.equal(totalFees[i].eq(fee), true, `check storeman fee at ${i} failed`);
-        assert.equal(beforeCrossBalance.lte(fee.add(totalValues[i])), true, `check storeman fee balance at ${i} failed`);
-        beforeCrossBalances.push(beforeCrossBalance);
-    }
-
-    let withdrawReceipt = await cross.smgWithdrawFee([ADDRESS_0, releaseParams.tokenAccount]);
-    let withdrawLogs = withdrawReceipt.logs.filter(log => log.event === 'SmgWithdrawFeeLogger');
-    for (let log of withdrawLogs) {
-        if (log.args.tokenAccount === ADDRESS_0) {
-            assert.equal(new web3.utils.BN(log.args.fee).eq(new web3.utils.BN(contractFee)), true, "withdraw contract fee failed");
-        } else {
-            assert.equal(new web3.utils.BN(log.args.fee).eq(new web3.utils.BN(releaseParams.crossFee)), true, "withdraw agent fee failed");
-        }
-        assert.equal(log.args.receiver, origOwner, "withdraw fee receiver failed");
-    }
-
-    for (let i = 0; i < tokenAccounts.length; ++i) {
-        let afterFeeBalance;
-        if (tokenAccounts[i] === ADDRESS_0) {
-            afterFeeBalance = new web3.utils.BN(await web3.eth.getBalance(cross.address));
-        } else {
-            afterFeeBalance = new web3.utils.BN(await tokenInstance.balanceOf(cross.address));
-        }
-        assert.equal(beforeCrossBalances[i].sub(afterFeeBalance).eq(totalFees[i]), true, `check withdraw storeman fee balance at ${i} failed`);
-    }
-});
-
-// smgWithdrawFee
-it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( ethereum <=> wanchain )> -> smgWithdrawFee foundation account  ==> success', async () => {
-    const wanUserAccount = global.aliceAccount.WAN;
-    const ethUserAccount = global.aliceAccount.ETH;
-    const currentChainType = chainTypes.ETH;
-    const buddyChainType = chainTypes.WAN;
-    const smgID = global.storemanGroups.src.ID
-    const crossValueToWei = web3.utils.toWei(crossValue.toString());
-    const userAccount = wanUserAccount;
-    const senderAccount = ethUserAccount;
-    const currentToken = global.chains[currentChainType].tokens.filter(token => token.symbol === "LINK")[0];
-    const contractFee = global.crossFeesV3[currentChainType][buddyChainType].contractFee;
-    const moreServiceFee = new web3.utils.BN(crossValueToWei).add(new web3.utils.BN(contractFee)).toString();
-
-    // cross
-    const cross = await CrossDelegateV3.at(global.chains[currentChainType].scAddr.CrossProxy);
-    const partners = await cross.getPartners();
-    const crossProxy = await CrossProxy.at(global.chains[currentChainType].scAddr.CrossProxy);
-    const origOwner = await crossProxy.owner();
-    await cross.setPartners(partners.tokenManager, partners.smgAdminProxy, ADDRESS_0, ADDRESS_0, partners.sigVerifier, {from: origOwner});
-
-    // tokenAccount
-    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, currentToken.symbol);
-    const tokenManager = await TokenManagerDelegateV2.at(partners.tokenManager);
-    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
-    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
-    const tokenPairID = tokenPair.tokenPairID;
-
-    // exec
-    let lockParams = {
-        smgID: smgID,
-        tokenPairID: tokenPairID,
-        crossValue: crossValueToWei,
-        userAccount: userAccount
-    };
-
-    // get token instance
-    let tokenInstance = await getRC20TokenInstance(tokenAccount);
-    let balance = await tokenInstance.balanceOf(senderAccount);
-    if (balance.lt(new web3.utils.BN(crossValueToWei))) {
-        // mint token: LINK
-        let mintValue = new web3.utils.BN(crossValueToWei).sub(balance);
-        const tokenCreator = await TestOrigTokenCreator.at(global.chains[currentChainType].scAddr.TestOrigTokenCreator);
-        await tokenCreator.mintToken(currentToken.name, currentToken.symbol, senderAccount, mintValue.toString());
-    }
-    balance = await tokenInstance.balanceOf(senderAccount);
-    assert.equal(crossValueToWei, balance.toString(), "balance of sender account error");
-
-    // const crossBalance = await tokenInstance.balanceOf(cross.address);
-    // approve
-    await tokenInstance.approve(cross.address, 0, {from: senderAccount});
-    await tokenInstance.approve(cross.address, crossValueToWei, {from: senderAccount});
-    let allowance = await tokenInstance.allowance(senderAccount, cross.address);
-    assert.equal(crossValueToWei, allowance.toString(), "approve token failed");
-
-    let receipt = await cross.userLock(...Object.values(lockParams), {from: senderAccount, value: moreServiceFee});
-    if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV3, receipt.tx);
-    }
-
-    assert.checkWeb3Event(receipt, {
-        event: 'UserLockLogger',
-        args: {
-            smgID: web3.utils.padRight(lockParams.smgID, 64),
-            tokenPairID: lockParams.tokenPairID,
-            tokenAccount: tokenAccount,
-            value: lockParams.crossValue,
-            contractFee: contractFee,
-            userAccount: lockParams.userAccount.toLowerCase(),
-        }
-    });
-
-    const fee = await cross.getFee({srcChainID:global.chains[currentChainType].ID, destChainID:global.chains[buddyChainType].ID});
-    const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
-    const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
-
-    // buddy chain
-    let releaseParams = {
-        uniqueID: receipt.tx,
-        smgID: smgID,
-        tokenPairID: tokenPairID,
-        crossValue: crossValueActually,
-        crossFee: crossFee,
-        tokenAccount: tokenAccount,
-        userAccount: senderAccount
-    };
-
-    // curveID
-    const buddyPartners = await cross.getPartners();
-    let smg = await global.getSmgProxy(currentChainType, buddyPartners.smgAdminProxy);
-    let smgConfig = await smg.getStoremanGroupConfig.call(releaseParams.smgID);
-    let curveID = smgConfig.curve1;
-    let sk = skInfo.src[currentChainType];
-
-    // sign
-    let {R, s} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgRelease, (await cross.currentChainID()), releaseParams.uniqueID, releaseParams.tokenPairID, releaseParams.crossValue, releaseParams.crossFee, releaseParams.tokenAccount, releaseParams.userAccount);
-    releaseParams = {...releaseParams, R: R, s: s};
-
-    let releaseReceipt = await cross.smgRelease(...Object.values(releaseParams), {from: userAccount});
-    if (!releaseReceipt.logs.length) {
-        releaseReceipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV3, releaseReceipt.tx);
-    }
-
-    assert.checkWeb3Event(releaseReceipt, {
-        event: 'SmgReleaseLogger',
-        args: {
-            uniqueID: releaseParams.uniqueID,
-            smgID: web3.utils.padRight(releaseParams.smgID, 64),
-            tokenPairID: releaseParams.tokenPairID,
-            value: releaseParams.crossValue,
-            fee: releaseParams.crossFee,
-            tokenAccount: releaseParams.tokenAccount,
-            userAccount: releaseParams.userAccount
-        }
-    });
-
-    // console.log("check UserLockLogger ok");
-    // const crossBalanceDelta = new web3.utils.BN(crossBalance).sub(new web3.utils.BN(await tokenInstance.balanceOf(cross.address)));
-    // console.log("crossBalanceDelta:", crossBalanceDelta.toString(10));
-
-    // current chain
-    await cross.setPartners(partners.tokenManager, partners.smgAdminProxy, partners.smgFeeProxy, ADDRESS_0, partners.sigVerifier, {from: origOwner});
-    let totalValues = [new web3.utils.BN(lockParams.crossValue), new web3.utils.BN(releaseParams.crossValue)];
-    let totalFees = [new web3.utils.BN(contractFee), new web3.utils.BN(releaseParams.crossFee)];
-    let tokenAccounts = [ADDRESS_0, releaseParams.tokenAccount];
-    let beforeCrossBalances = [];
-    for (let i = 0; i < tokenAccounts.length; ++i) {
-        let fee = new web3.utils.BN(await cross.getStoremanFee(web3.utils.padLeft(tokenAccounts[i], 64)));
-        let beforeCrossBalance;
-        if (tokenAccounts[i] === ADDRESS_0) {
-            beforeCrossBalance = new web3.utils.BN(await web3.eth.getBalance(cross.address));
-            console.log("balance:", beforeCrossBalance.toString());
-        } else {
-            beforeCrossBalance = new web3.utils.BN(await tokenInstance.balanceOf(cross.address));
-            console.log("token balance:", beforeCrossBalance.toString());
-        }
-        assert.equal(totalFees[i].eq(fee), true, `check storeman fee at ${i} failed`);
-        assert.equal(beforeCrossBalance.lte(fee.add(totalValues[i])), true, `check storeman fee balance at ${i} failed`);
-        beforeCrossBalances.push(beforeCrossBalance);
-    }
-
-    let withdrawReceipt = await cross.smgWithdrawFee([ADDRESS_0, releaseParams.tokenAccount]);
-    let withdrawLogs = withdrawReceipt.logs.filter(log => log.event === 'SmgWithdrawFeeLogger');
-    assert.equal(withdrawLogs.length > 0, true, "invalid logs");
-    for (let log of withdrawLogs) {
-        if (log.args.tokenAccount === ADDRESS_0) {
-            assert.equal(new web3.utils.BN(log.args.fee).eq(new web3.utils.BN(contractFee)), true, "withdraw contract fee failed");
-        } else {
-            assert.equal(new web3.utils.BN(log.args.fee).eq(new web3.utils.BN(releaseParams.crossFee)), true, "withdraw agent fee failed");
-        }
-        assert.equal(log.args.receiver, origOwner, "withdraw fee receiver failed");
-    }
-
-    for (let i = 0; i < tokenAccounts.length; ++i) {
-        let afterFeeBalance;
-        if (tokenAccounts[i] === ADDRESS_0) {
-            afterFeeBalance = new web3.utils.BN(await web3.eth.getBalance(cross.address));
-        } else {
-            afterFeeBalance = new web3.utils.BN(await tokenInstance.balanceOf(cross.address));
-        }
-        assert.equal(beforeCrossBalances[i].sub(afterFeeBalance).eq(totalFees[i]), true, `check withdraw storeman fee balance at ${i} failed`);
-    }
+    const afterBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+    assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
 });
 
 // smgWithdrawHistoryFee

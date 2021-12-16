@@ -215,12 +215,10 @@ async function addToken(tokenManager, name, symbol, decimals) {
   return mappingTokenLogger.args.tokenAddress;
 }
 
-async function addNftToken(tokenManager, name, symbol, decimals) {
-    let receipt = await tokenManager.addNftToken(name, symbol, decimals);
-    let mappingTokenLogger = getWeb3Log(receipt, {
-        event: 'AddToken'
-    });
-    return mappingTokenLogger.args.tokenAddress;
+async function addNftMappingToken(tokenManager, name, symbol, owner) {
+  let nftInst = await MappingNftToken.new(name, symbol, { from: owner });
+  await nftInst.transferOwnership(tokenManager.address);
+  return nftInst.address;
 }
 
 async function addMappingToken(tokenManager, tokenPairs, currChainType, testNftTokenCreator, owner) {
@@ -237,17 +235,7 @@ async function addMappingToken(tokenManager, tokenPairs, currChainType, testNftT
                 if (token.origChainToken.chainID === token.ancestorChainToken.chainID) {
                     if (!token.shadowChainToken.tokenAccount) {
                         if (token.shadowChainToken.name === "wanNFT") {
-                            //console.log("addMappingToken 1 token:", token);
-                            //await testNftTokenCreator.createToken(token.shadowChainToken.name, token.shadowChainToken.symbol, token.ancestorChainToken.decimals);
-                            //token.shadowChainToken.tokenAccount = await testNftTokenCreator.getTokenAddr.call(token.shadowChainToken.name, token.shadowChainToken.symbol);
-                            let nftInst = await MappingNftToken.new(token.shadowChainToken.name, token.shadowChainToken.symbol, { from: owner });
-                            token.shadowChainToken.tokenAccount = nftInst.address;
-                            await nftInst.transferOwnership(tokenManager.address);
-                            ownerAddr = await nftInst.owner();
-                            //console.log("token.shadowChainToken.name:", token.shadowChainToken.name);
-                            //console.log("MappingNftToken.owner:", ownerAddr);
-                            //console.log("tokenManager.address:", tokenManager.address);
-                            // token.shadowChainToken.tokenAccount = await addNftToken(token.shadowChainToken.name, token.shadowChainToken.symbol, token.ancestorChainToken.decimals);
+                            token.shadowChainToken.tokenAccount = await addNftMappingToken(tokenManager, token.shadowChainToken.name, token.shadowChainToken.symbol, owner);
                         }
                         else {
                             token.shadowChainToken.tokenAccount = await addToken(tokenManager, token.shadowChainToken.name, token.shadowChainToken.symbol, token.ancestorChainToken.decimals);
