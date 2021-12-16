@@ -92,6 +92,7 @@ contract('Test Cross Approach', (accounts) => {
         const foundationAccounts = {WAN: accounts[3], ETH: accounts[4]};
         const aliceAccounts = {WAN: accounts[5], ETH: accounts[6], BTC: userBTCAccount};
         const smgAccounts = { src: {WAN: accounts[7], ETH: accounts[8]}, dest: {WAN: accounts[7], ETH: accounts[8]} }
+        const operatorAccounts = {WAN: accounts[9], ETH: accounts[9]};
         // const curveIDs = {WAN: defaultCurve.secp256K1, ETH: defaultCurve.bn128};
         const curveIDs = {WAN: defaultCurve.bn128, ETH: defaultCurve.bn128};
 
@@ -99,11 +100,11 @@ contract('Test Cross Approach', (accounts) => {
         let tokenPairs = {};
         let knownEvents = {};
         let deployed = {};
-        deployed[chainTypes.WAN] = await deployCrossContracts(owner, {chainType: chainTypes.WAN, tokenPairs, curveIDs, alice:aliceAccounts.WAN, foundation: foundationAccounts.WAN, admin: adminAccounts.WAN});
+        deployed[chainTypes.WAN] = await deployCrossContracts(owner, {chainType: chainTypes.WAN, tokenPairs, curveIDs, alice:aliceAccounts.WAN, foundation: foundationAccounts.WAN, admin: adminAccounts.WAN, operator:operatorAccounts.WAN});
         console.log("contracts:", chainTypes.WAN, JSON.stringify(deployed[chainTypes.WAN].scAddr));
         tokenPairs = deployed[chainTypes.WAN].tokenPairs;
         knownEvents[chainTypes.WAN] = deployed[chainTypes.WAN].knownEvents;
-        deployed[chainTypes.ETH] = await deployCrossContracts(owner, {chainType: chainTypes.ETH, tokenPairs, curveIDs, alice:aliceAccounts.ETH, foundation: foundationAccounts.ETH, admin: adminAccounts.ETH});
+        deployed[chainTypes.ETH] = await deployCrossContracts(owner, {chainType: chainTypes.ETH, tokenPairs, curveIDs, alice:aliceAccounts.ETH, foundation: foundationAccounts.ETH, admin: adminAccounts.ETH, operator:operatorAccounts.ETH});
         console.log("contracts:", chainTypes.ETH, JSON.stringify(deployed[chainTypes.ETH].scAddr));
         tokenPairs = deployed[chainTypes.ETH].tokenPairs;
         knownEvents[chainTypes.ETH] = deployed[chainTypes.ETH].knownEvents;
@@ -126,6 +127,7 @@ contract('Test Cross Approach', (accounts) => {
         // console.log("===tokens:", JSON.stringify(tokens, null, 2));
 
         // setGlobal("accounts", accounts);
+        setGlobal("operatorAccount", operatorAccounts);
         setGlobal("adminAccount", adminAccounts);
         setGlobal("foundationAccount", foundationAccounts);
         setGlobal("aliceAccount", aliceAccounts);
@@ -150,6 +152,7 @@ contract('Test Cross Approach', (accounts) => {
     importMochaTest("Test NFT Cross V3", './crossApproach/nft_v3_cross_test');
 
     after("finish...   -> success", function () {
+        clearGlobal("operatorAccount");
         clearGlobal("adminAccount");
         clearGlobal("foundationAccount");
         clearGlobal("aliceAccount");
@@ -201,7 +204,8 @@ async function deployCrossContracts(owner, options) {
         curveIDs:{ WAN:defaultCurve.secp256K1, ETH:defaultCurve.bn128 },
         alice: null,
         admin: null,
-        foundation: null
+        foundation: null,
+        operator: null,
     }, options);
     let isWAN = opts.chainType === chainTypes.WAN;
     let scAddr = {};
@@ -312,6 +316,9 @@ async function deployCrossContracts(owner, options) {
 
     if (!(await tokenManager.mapAdmin(cross.address))) {
         await tokenManager.addAdmin(cross.address);
+    }
+    if (!(await tokenManager.operator === ADDRESS_0)) {
+        await tokenManager.setOperator(opts.operator);
     }
 
     // TestOrigTokenCreator
