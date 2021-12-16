@@ -62,20 +62,20 @@ contract FakeSmg {
     *
     */
 
-    function getSelectedSmNumber(bytes32 groupId) external returns (uint number){
+    function getSelectedSmNumber(bytes32 groupId) external pure returns (uint number){
         return SelectedSMNumber;
     }
 
-    function getThresholdByGrpId(bytes32 grpId) external returns (uint){
+    function getThresholdByGrpId(bytes32 groupId) external pure returns (uint){
         return ThresholdNumber;
     }
 
-    function getSelectedSmInfo(bytes32 grpId, uint index) external returns (address txAddress, bytes pk, bytes enodeId){
-        (txAddress,pk,enodeId) = (leaderAdd, mapSmgInfo[grpId][uint8(index)], fromHex(EnodeIdStr));
+    function getSelectedSmInfo(bytes32 groupId, uint index) external view returns (address txAddress, bytes pk, bytes enodeId){
+        (txAddress,pk,enodeId) = (leaderAdd, mapSmgInfo[groupId][uint8(index)], fromHex(EnodeIdStr));
     }
 
 
-    function getStoremanInfo(address wkAddress) external view  returns(
+    function getStoremanInfo(address wkAddress) external pure  returns(
         bytes32 groupId,
         bytes32 nextGroupId)
     {
@@ -84,19 +84,19 @@ contract FakeSmg {
 
     function getStoremanGroupInfo(bytes32 id)
     external
-    view
+    pure
     returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint whiteCount,  uint memberCount,  uint startTime, uint endTime){
         return (bytesToBytes32(fromHex(GroupIdStr),0),StoremanType.GroupStatus.ready,uint(0),uint(0),uint(0),uint(0),uint(0));
     }
 
 
-    function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2,
+    function getStoremanGroupConfig(bytes32 id) external pure returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2,
         uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime){
         return (bytesToBytes32(fromHex(GroupIdStr),0),0,0,0,0,0x00,0x01,fromHex(gpk1Str),fromHex(gpk2Str),0,0);
     }
 
 
-    function getGpkShare(bytes32 groupId, uint index) external view returns(bytes gpkShare1, bytes gpkShare2){
+    function getGpkShare(bytes32 groupId, uint index) external pure returns(bytes gpkShare1, bytes gpkShare2){
         return (fromHex(gpkShare1Str),fromHex(gpkShare2Str));
     }
 

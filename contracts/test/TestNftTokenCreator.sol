@@ -17,7 +17,7 @@ contract TestNftTokenCreator is BasicStorage {
         _admin = admin;
     }
 
-    function getAdmin() external returns (address) {
+    function getAdmin() external view returns (address) {
         return _admin;
     }
 

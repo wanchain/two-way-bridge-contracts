@@ -29,7 +29,7 @@ pragma solidity ^0.4.24;
 
 contract FakeMetric {
     uint[4] c;
-    function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId) external returns(uint[]){
+    function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId) external view returns(uint[]){
       uint[] memory c2 = new uint[](4);
       for(uint i=0; i<c.length; i++){
         c2[i] = c[i];
