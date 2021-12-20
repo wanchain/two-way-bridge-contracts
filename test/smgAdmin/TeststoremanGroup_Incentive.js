@@ -607,6 +607,57 @@ contract('incentive rotate', async () => {
 
 })
 
+contract.only('incentive rotate calFromEndDay', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+
+
+    before("init contracts", async() => {
+        let smgProxy = await StoremanGroupProxy.deployed();
+        smg = await StoremanGroupDelegate.at(smgProxy.address)
+        await setupNetwork();
+        let now = parseInt(Date.now()/1000);
+        console.log("now:", now)
+        groupId = await registerStart(smg, 0, {htlcDuration:1000, startTime: now+10});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+        console.log("groupInfo:", groupInfo)
+    })
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+    }) 
+
+    it('stakeIn 2', async ()=>{
+        let groupInfo = await smg.getStoremanGroupInfo(groupId)
+        if(groupInfo.status < g.storemanGroupStatus.selected){
+            await timeWaitSelect(groupInfo)
+            await toSelect(smg, groupId);
+        }
+        await toSetGpk(smg, groupId);
+        let second =   6+parseInt(groupInfo.startTime)
+        await utils.sleepUntil(second*1000)
+        // await registerStart(smg, 0, {preGroupId:groupId});
+        // await smg.storemanGroupDismiss(groupId, {from:g.admin});
+
+        let tx = await smg.incentiveCandidator(wk.addr);
+        expectEvent(tx, "incentiveEvent")
+        console.log("tx1:", tx.logs[0].args.from.toString(10),tx.logs[0].args.end.toString(10))
+
+        second =  17+parseInt(groupInfo.startTime)
+        await utils.sleepUntil(second*1000)
+        tx = await smg.incentiveCandidator(wk.addr);
+        expectEvent(tx, "incentiveEvent")
+        console.log("tx2:", tx.logs[0].args.from.toString(10),tx.logs[0].args.end.toString(10))
+    })
+
+
+
+})
+
+
 contract('incentive rotate rotateSkGroup white', async () => {
 
     let  smg
