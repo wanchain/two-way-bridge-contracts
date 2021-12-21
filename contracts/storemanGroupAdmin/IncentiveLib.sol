@@ -71,7 +71,7 @@ library IncentiveLib {
     }
     function calFromEndDay(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns(uint,uint) {
         uint fromDay = StoremanUtil.getDaybyTime(posLib, group.workTime);
-        if ((sk.incentivedDay + 1) > fromDay) {
+        if (fromDay <= sk.incentivedDay){
             fromDay = sk.incentivedDay + 1;
         }
         uint endDay = now;
