@@ -1,61 +1,15 @@
-
-
-//const QuotaLib = artifacts.require('QuotaLib');
-let PosLib = artifacts.require('PosLib');
 const StoremanUtil = artifacts.require('StoremanUtil');
 
 
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-
 const CommonTool = artifacts.require('CommonTool');
-const MetricProxy = artifacts.require('MetricProxy');
-const MetricDelegate = artifacts.require('MetricDelegate');
-const MetricLib = artifacts.require('MetricLib');
-const FakeSmg = artifacts.require('FakeSmg');
-const FakeSkCurve = artifacts.require('FakeSkCurve');
-const FakeBnCurve = artifacts.require('FakeBnCurve');
-const FakePosLib = artifacts.require('FakePosLib');
-const FakeCommonTool = artifacts.require('FakeCommonTool');
-
-const Secp256k1Curve = artifacts.require('Secp256k1Curve');
-const Bn256Curve = artifacts.require('Bn256Curve');
 const GpkLib = artifacts.require('GpkLib');
-const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
 const Deposit = artifacts.require('Deposit');
-const TestDeposit = artifacts.require('TestDeposit');
+
 const StoremanLib = artifacts.require('StoremanLib');
 const IncentiveLib = artifacts.require('IncentiveLib');
 const ListGroup = artifacts.require('ListGroup');
-
-const fakeQuota = artifacts.require('fakeQuota');
-
-const HTLCTxLib = artifacts.require('HTLCTxLib');
-const HTLCBurnLib = artifacts.require('HTLCBurnLib');
-const HTLCDebtLib = artifacts.require('HTLCDebtLib');
-const HTLCMintLib = artifacts.require('HTLCMintLib');
-const RapidityLib = artifacts.require('RapidityLib');
-const CrossDelegate = artifacts.require('CrossDelegate');
-const CrossProxy = artifacts.require('CrossProxy');
-
-const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
-const TokenManagerProxy = artifacts.require('TokenManagerProxy');
-
-const QuotaDelegate = artifacts.require('QuotaDelegate');
-const QuotaProxy = artifacts.require('QuotaProxy');
-
-const OracleDelegate = artifacts.require('OracleDelegate');
-const OracleProxy = artifacts.require('OracleProxy');
-
-const Bn128SchnorrVerifier = artifacts.require('Bn128SchnorrVerifier');
-const Secp256k1SchnorrVerifier = artifacts.require('Secp256k1SchnorrVerifier');
-const SignatureVerifier = artifacts.require('SignatureVerifier');
-
-const ConfigDelegate = artifacts.require('ConfigDelegate');
-const ConfigProxy = artifacts.require('ConfigProxy');
-
-const config = require("../truffle-config");
 
 const curveMap = new Map([
     ['secp256k1', 0],
