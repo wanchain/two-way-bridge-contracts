@@ -58,16 +58,16 @@
           "address": "0x83A15a7976B5aB97D423f87678CC93f0757B2a92"
      },
      "CommonTool": {
-          "address": "0xd6A6Ddee99bf0e4c6c69C24006Af62Eda0Da1b11"
+          "address": "0xd76f54df8dBF214CdA15310076837504fc635FAD"
      },
      "StoremanUtil": {
-          "address": "0xF891FD543cDC36DBFa9b67b7b8de0C9C6Ec36c09"
+          "address": "0x3eDA25fEB7Ab2fc58E0BCf23737ac7d9a5c75Dd5"
      },
      "StoremanLib": {
-          "address": "0xd9B514360b818eDa08C208eF8Fd20193737a5836"
+          "address": "0x6cff5551bA19301150856C1192F75a0F7Cfef012"
      },
      "IncentiveLib": {
-          "address": "0xd324D20796d51600e5f9C4fDaFAB9d1Bc43D9717"
+          "address": "0x99ab3D7E391D08aebB6BDe3505F1D7ff4AB3a1eF"
      },
      "Deposit": {
           "address": "0xcd2C7272B91c08cd9A6B1e3C092A5e16Ff01a4d5"
@@ -77,7 +77,7 @@
           "abi": "abi.StoremanGroupDelegate.json"
      },
      "StoremanGroupDelegate": {
-          "address": "0xd324D20796d51600e5f9C4fDaFAB9d1Bc43D9717",
+          "address": "0xf16085f929A51DC16c34D48863cB2a351c75aff3",
           "abi": "abi.StoremanGroupDelegate.json"
      },
      "MetricLib": {
