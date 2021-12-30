@@ -52,6 +52,7 @@ library RapidityLibV3 {
         uint tokenPairID;                 /// token pair id on cross chain
         uint value;                       /// exchange token value
         uint currentChainID;              /// current chain ID
+        uint tokenPairContractFee;        /// fee of token pair
         bytes destUserAccount;            /// account of shadow chain, used to receive token
         address smgFeeProxy;              /// address of the proxy to store fee for storeman group
     }
@@ -75,6 +76,7 @@ library RapidityLibV3 {
         uint value;                     /// exchange token value
         uint currentChainID;            /// current chain ID
         uint fee;                       /// exchange token fee
+        uint tokenPairContractFee;      /// fee of token pair
         address srcTokenAccount;        /// shadow token account
         bytes destUserAccount;          /// account of token destination chain, used to receive token
         address smgFeeProxy;            /// address of the proxy to store fee for storeman group
@@ -158,7 +160,10 @@ library RapidityLibV3 {
         (fromChainID,fromTokenAccount,toChainID) = storageData.tokenManager.getTokenPairInfoSlim(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
-        uint contractFee = storageData.mapContractFee[fromChainID][toChainID];
+        uint contractFee = params.tokenPairContractFee;
+        if (contractFee == 0) {
+            contractFee = storageData.mapContractFee[fromChainID][toChainID];
+        }
         if (contractFee > 0) {
             params.smgFeeProxy.transfer(contractFee);
         }
@@ -201,13 +206,17 @@ library RapidityLibV3 {
         (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
-        uint256 contractFee;
+        uint256 contractFee = params.tokenPairContractFee;
         address tokenScAddr;
         if (params.currentChainID == toChainID) {
-            contractFee = storageData.mapContractFee[toChainID][fromChainID];
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[toChainID][fromChainID];
+            }
             tokenScAddr = CrossTypesV1.bytesToAddress(toTokenAccount);
         } else if (params.currentChainID == fromChainID) {
-            contractFee = storageData.mapContractFee[fromChainID][toChainID];
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[fromChainID][toChainID];
+            }
             tokenScAddr = CrossTypesV1.bytesToAddress(fromTokenAccount);
         } else {
             require(false, "Invalid token pair");
