@@ -301,7 +301,9 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( wanchain => ethereum 
     const crossValueToWei = web3.utils.toWei(crossValue.toString());
     const userAccount = ethUserAccount;
     const senderAccount = wanUserAccount;
-    const contractFee = global.crossFeesV3[currentChainType][buddyChainType].contractFee;
+    // const contractFee = global.crossFeesV3[currentChainType][buddyChainType].contractFee;
+    const contractFee = new web3.utils.BN(global.crossFeesV3[currentChainType][buddyChainType].contractFee).div(new web3.utils.BN(2));
+    const currentChainAdmin = global.adminAccount[currentChainType];
 
     // cross
     const cross = await CrossDelegateV3.at(global.chains[currentChainType].scAddr.CrossProxy);
@@ -321,6 +323,10 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( wanchain => ethereum 
         smgFeeProxy = await cross.owner();
     }
     const beforeBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
+
+    // token pair contract fee
+    await cross.setTokenPairFees([[tokenPairID, contractFee]], {from: currentChainAdmin});
+    assert.equal(contractFee.eq(new web3.utils.BN(await cross.getTokenPairFee(tokenPairID))), true, "fee of token pair error");
 
     // exec
     let funcParams = {
@@ -435,7 +441,9 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( ethereum => wanchain 
     const crossValueToWei = web3.utils.toWei(crossValue.toString());
     const userAccount = wanUserAccount;
     const senderAccount = ethUserAccount;
-    const contractFee = global.crossFeesV3[currentChainType][buddyChainType].contractFee;
+    // const contractFee = global.crossFeesV3[currentChainType][buddyChainType].contractFee;
+    const contractFee = new web3.utils.BN(global.crossFeesV3[currentChainType][buddyChainType].contractFee).div(new web3.utils.BN(2));
+    const currentChainAdmin = global.adminAccount[currentChainType];
 
     // cross
     const cross = await CrossDelegateV3.at(global.chains[currentChainType].scAddr.CrossProxy);
@@ -456,6 +464,10 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( ethereum => wanchain 
     // const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
     const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(balance)).div(new web3.utils.BN(DENOMINATOR));
     const crossValueActually = balance; // new web3.utils.BN(crossValueToWei).sub(crossFee);
+
+    // token pair contract fee
+    await cross.setTokenPairFees([[tokenPairID, contractFee]], {from: currentChainAdmin});
+    assert.equal(contractFee.eq(new web3.utils.BN(await cross.getTokenPairFee(tokenPairID))), true, "fee of token pair error");
 
     let smgFeeProxy = partners.smgFeeProxy;
     if (smgFeeProxy === ADDRESS_0) {

@@ -131,6 +131,23 @@ it('Others getFees @wanchain and @ethereum  ==> The config value', async () => {
     assert.equal(fees.agentFee, ret.agentFee, `check agentFee from ${ethereum} to ${wanchain} at ${ethereum} failed`);
 });
 
+it('Others getTokenPairFees and getTokenPairFee  ==> The default value', async () => {
+    const wanchain = chainTypes.WAN;
+    let ret;
+
+    // wanchain
+    let wanCross = await CrossDelegateV3.at(global.chains[wanchain].scAddr.CrossProxy);
+
+    const tokenPairIDs = ["0", "1"];
+    ret = await wanCross.getTokenPairFees(tokenPairIDs);
+    for (let i = 0; i < tokenPairIDs.length; ++i) {
+        assert.equal(ret[i].eq(new web3.utils.BN(0)), true, `check token pair ${tokenPairIDs[i]} default contractFee failed`);
+    }
+
+    ret = await wanCross.getTokenPairFee(tokenPairIDs[0]);
+    assert.equal(ret.eq(new web3.utils.BN(0)), true, `check token pair fee about ${tokenPairIDs[0]} default contractFee failed`);
+});
+
 it('Proxy @wanchain   -> get the implementation address', async () => {
     let crossProxy = await CrossProxy.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
     let address = await crossProxy.implementation();

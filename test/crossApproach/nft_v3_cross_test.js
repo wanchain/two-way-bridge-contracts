@@ -53,10 +53,11 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( ethereum => wanchain
     const smgID = global.storemanGroups.src.ID
     const userAccount = wanUserAccount;
     const senderAccount = ethUserAccount;
+    const currentChainAdmin = global.adminAccount[currentChainType];
 
     const currentToken = global.chains[currentChainType].nftTokens.filter(token => token.symbol === "NFT")[0];
     //console.log("NFT_CrossChain userLock currentToken:", currentToken);
-    const contractFee = global.crossFeesV3[currentChainType][buddyChainType].contractFee;
+    const contractFee = new web3.utils.BN(global.crossFeesV3[currentChainType][buddyChainType].contractFee).div(new web3.utils.BN(2));
     //console.log("NFT_CrossChain userLock serviceFee:", serviceFee);
     const moreServiceFee = new web3.utils.BN(contractFee).toString();
     //console.log("NFT_CrossChain userLock moreServiceFee:", moreServiceFee);
@@ -72,7 +73,9 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( ethereum => wanchain
     const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
     const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
     const tokenPairID = tokenPair.tokenPairID;
-    console.log("tokenAccount:", tokenAccount)
+
+    await cross.setTokenPairFees([[tokenPairID, contractFee]], {from: currentChainAdmin});
+    assert.equal(contractFee.eq(new web3.utils.BN(await cross.getTokenPairFee(tokenPairID))), true, "fee of token pair error");
 
     const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
     if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
