@@ -27,11 +27,11 @@
 pragma solidity ^0.4.26;
 pragma experimental ABIEncoderV2;
 
-import "./CrossStorageV2.sol";
+import "./CrossStorageV3.sol";
 import "./lib/RapidityLibV3.sol";
 
 
-contract CrossDelegateV3  is CrossStorageV2 {
+contract CrossDelegateV3  is CrossStorageV3 {
     using SafeMath for uint;
 
     /**
@@ -49,7 +49,12 @@ contract CrossDelegateV3  is CrossStorageV2 {
     /// @param destChainID              destination of cross chain
     /// @param contractFee              contract fee
     /// @param agentFee                 agent fee
-    event SetFee(uint srcChainID, uint destChainID, uint contractFee, uint agentFee);
+    event SetFee(uint indexed srcChainID, uint indexed destChainID, uint contractFee, uint agentFee);
+
+    /// @notice                         event of setFee or setFees
+    /// @param tokenPairID              ID of token pair
+    /// @param contractFee              contract fee
+    event SetTokenPairFee(uint indexed tokenPairID, uint contractFee);
 
     /// @notice                         event of storeman group ID withdraw the original coin to receiver
     /// @param smgID                    ID of storeman group
@@ -105,6 +110,7 @@ contract CrossDelegateV3  is CrossStorageV2 {
         tokenPairID: tokenPairID,
         value: value,
         currentChainID: currentChainID,
+        tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
         destUserAccount: userAccount,
         smgFeeProxy: smgFeeProxy
         });
@@ -130,6 +136,7 @@ contract CrossDelegateV3  is CrossStorageV2 {
         value: value,
         fee: fee,
         currentChainID: currentChainID,
+        tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
         srcTokenAccount: tokenAccount,
         destUserAccount: userAccount,
         smgFeeProxy: smgFeeProxy
@@ -204,24 +211,38 @@ contract CrossDelegateV3  is CrossStorageV2 {
     }
 
 
-    /// @notice                             get the fee of the storeman group should get
+    /// @notice                             set the fee of the storeman group should get
     /// @param param                        struct of setFee parameter
-    function setFee(SetFeesParam param)
-    public
-    onlyAdmin
-    {
+    function setFee(SetFeesParam param) public onlyAdmin {
         storageData.mapContractFee[param.srcChainID][param.destChainID] = param.contractFee;
         storageData.mapAgentFee[param.srcChainID][param.destChainID] = param.agentFee;
         emit SetFee(param.srcChainID, param.destChainID, param.contractFee, param.agentFee);
     }
 
-    /// @notice                             get the fee of the storeman group should get
+    /// @notice                             set the fee of the storeman group should get
     /// @param params                        struct of setFees parameter
     function setFees(SetFeesParam [] params) public onlyAdmin {
         for (uint i = 0; i < params.length; ++i) {
             storageData.mapContractFee[params[i].srcChainID][params[i].destChainID] = params[i].contractFee;
             storageData.mapAgentFee[params[i].srcChainID][params[i].destChainID] = params[i].agentFee;
             emit SetFee(params[i].srcChainID, params[i].destChainID, params[i].contractFee, params[i].agentFee);
+        }
+    }
+
+    /// @notice                             set the fee of the storeman group should get
+    /// @param tokenPairID                  ID of token pair
+    /// @param contractFee                  contractFee of token pair
+    function setTokenPairFee(uint256 tokenPairID, uint256 contractFee) external onlyAdmin {
+        mapTokenPairContractFee[tokenPairID] = contractFee;
+        emit SetTokenPairFee(tokenPairID, contractFee);
+    }
+
+    /// @notice                             set the fee of the storeman group should get
+    /// @param params                       struct of setTokenPairFees parameter
+    function setTokenPairFees(SetTokenPairFeesParam [] params) public onlyAdmin {
+        for (uint i = 0; i < params.length; ++i) {
+            mapTokenPairContractFee[params[i].tokenPairID] = params[i].contractFee;
+            emit SetTokenPairFee(params[i].tokenPairID, params[i].contractFee);
         }
     }
 
@@ -319,6 +340,23 @@ contract CrossDelegateV3  is CrossStorageV2 {
         for (uint i = 0; i < params.length; ++i) {
             fees[i].contractFee = storageData.mapContractFee[params[i].srcChainID][params[i].destChainID];
             fees[i].agentFee = storageData.mapAgentFee[params[i].srcChainID][params[i].destChainID];
+        }
+    }
+
+    /// @notice                             get the token pair fee of the storeman group should get
+    /// @param tokenPairID                  ID of token pair
+    /// @return contractFee                 contractFee of token pair
+    function getTokenPairFee(uint256 tokenPairID) external view returns(uint256 contractFee) {
+        contractFee = mapTokenPairContractFee[tokenPairID];
+    }
+
+    /// @notice                             get the token pair fees of the storeman group should get
+    /// @param tokenPairIDs                 array of tokenPairID
+    /// @return contractFees                array of tokenPair contractFee
+    function getTokenPairFees(uint256[] tokenPairIDs) external view returns(uint256 [] contractFees) {
+        contractFees = new uint256[](tokenPairIDs.length);
+        for (uint i = 0; i < tokenPairIDs.length; ++i) {
+            contractFees[i] = mapTokenPairContractFee[tokenPairIDs[i]];
         }
     }
 
