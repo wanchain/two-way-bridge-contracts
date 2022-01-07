@@ -12,14 +12,14 @@
 
 // You should deploy the 8 sc in remix first and then fill the address below
 // -----------Fill sc addresses ---------------
-const tokenManagerDelegateAddr = '';
-const tokenManagerProxyAddr = '';
-const oracleDelegateAddr = '';
-const oracleProxyAddr = '';
-const signatureVerifierAddr = '';
-const bn128SchnorrVerifierAddr = '';
-const crossDelegateAddr = '';
-const crossProxyAddr = '';
+const tokenManagerDelegateAddr = '0x59d7a0895941100a432dCE67A3588D326f75A5fF';
+const tokenManagerProxyAddr = '0x0b55dC6D5823166933196E5dD96A2b427779aE2a';
+const oracleDelegateAddr = '0xB5bf1013898a93f0BD902F6e346Ed6cBB627b791';
+const oracleProxyAddr = '0x2Ee304e160431fA02661AA6bD16549e77a009246';
+const signatureVerifierAddr = '0xD7d6e016B5aE221609e464682704931fbD257963';
+const bn128SchnorrVerifierAddr = '0x5F17368007cF6C90e0bf8C58bd9b39F896b514Fa';
+const crossDelegateAddr = '0x513E3659a614Cf136F6225B7fE9D859ab4e443F9';
+const crossProxyAddr = '0x0467bF248BdDb10e4465214E9baf404Ff8e93332';
 const isMainnet = false;
 const smgFeeProxy = "0x0000000000000000000000000000000000000000";
 const quotaProxy = '0x0000000000000000000000000000000000000000';
