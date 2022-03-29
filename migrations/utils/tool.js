@@ -213,6 +213,33 @@ function parseOwnerArgs() {
   return argv;
 }
 
+function parseTokenPairArgs() {
+  const optimist = require('optimist');
+  let argv = optimist
+  .usage("Usage: nodejs $0 --network [network] --id [id] --nodeURL [nodeURL] --ownerPk [ownerPrivateKey] --mnemonic [mnemonic] --ownerIdx [ownerIdx] --gasPrice [gasPrice] --gasLimit [gasLimit]")
+  .alias('h', 'help')
+  .describe('h', 'display the usage')
+  .describe('network', `identify chain network, support ${networks}, mainnet means Wanchain mainnet, testnet means Wanchain testnet`)
+  .describe('nodeURL', `identify node url`)
+  .describe('id', `identify token pair id`)
+  .describe('gasPrice', `identify gasPrice, using ${defaultGas.gasPrice} as default`)
+  .describe('gasLimit', `identify gasLimit, using ${defaultGas.gasLimit} as default`)
+  .describe('mnemonic', `identify mnemonic`)
+  .describe('ownerIdx', `identify owner index in the hd wallet, start with 0, using mix "--mnemonic" and "--ownerIdx"`)
+  .describe('ownerPk', `identify owner private key`)
+  .default('gasPrice', defaultGas.gasPrice)
+  .default('gasLimit', defaultGas.gasLimit)
+  .string(["network", "mnemonic", "ownerPk"])
+  .demand(['network', 'id'])
+  .argv;
+
+  if (argv.help) {
+    optimist.showHelp();
+    process.exit(0);
+  }
+  return argv;
+}
+
 function hideObject(obj, keys = [], hide = "******") {
   let showObj = {...obj};
   keys.forEach(key => {
@@ -236,6 +263,17 @@ const showTxInfo = (receipt, name = "") => {
   console.log("   > status:              %s", receipt.status);
 }
 
+const concatObject = (dest, src) => {
+  let result = Object.assign({}, dest);
+  for (let k in src) {
+    let v = src[k];
+    if (v !== undefined) {
+      result[k] = v;
+    }
+  }
+  return result;
+}
+
 module.exports = {
   mkdir,
   exit,
@@ -245,6 +283,8 @@ module.exports = {
   getWorkspace,
   parseScArgs,
   parseOwnerArgs,
+  parseTokenPairArgs,
   hideObject,
-  showTxInfo
+  showTxInfo,
+  concatObject
 };

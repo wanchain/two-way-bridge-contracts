@@ -9,9 +9,10 @@ const chainDict = {
   MOONBEAM: "MOONBEAM",
   MATIC: "MATIC",
   ADA: "ADA",
-  ARB:"ARB",
-  OPM:"OPM",
-  FTM:"FTM",
+  ARB: "ARB",
+  OPM: "OPM",
+  FTM: "FTM",
+  XDC: "XDC"
 };
 
 const operationDict = {
@@ -29,9 +30,10 @@ const chainIndexDict = {
   MOONBEAM: 0x2330, // TODO: NEED UPDATE,
   MATIC: 0x3c6,
   ADA: 0x2331,// TODO: NEED UPDATE,
-  ARB:0x2332, // TODO: NEED UPDATE,
-  OPM:0xa,
-  FTM:0xb,
+  ARB: 0x2332, // TODO: NEED UPDATE,
+  OPM: 0xa,
+  FTM: 0xb,
+  XDC: 0x226,
 };
 
 const chainNature = {
@@ -84,6 +86,9 @@ const networkInfo = [
   {name:"ftmMainnet", chainId: 250,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM, isMainnet: true, nature: chainNature.system.id},
   // {name:"ftmTestnet", chainId: 4002,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM, isMainnet: false, nature: chainNature.system.id},
   {name:"ftmTestnet", chainId: 4002,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM, isMainnet: false, nature: chainNature.custom.id},
+
+  {name:"xdcMainnet", chainId: 50,chainType: chainDict.XDC, chainIndex:chainIndexDict.XDC, isMainnet: true, nature: chainNature.system.id},//todo : need update chainId
+  {name:"xdcTestnet", chainId: 51,chainType: chainDict.XDC, chainIndex:chainIndexDict.XDC, isMainnet: false, nature: chainNature.system.id},
 ];
 
 const networkDict = networkInfo.reduce((reduced, next) => {
@@ -120,9 +125,10 @@ const defaultNodeUrlDict = {
   arbTestnet: "https://rinkeby.arbitrum.io/rpc",
   opmMainnet: "https://mainnet.optimism.io", // todo : need update
   opmTestnet: "https://kovan.optimism.io",
-
   ftmMainnet: "https://rpc.ftm.tools",
   ftmTestnet: "https://rpc.testnet.fantom.network",
+  xdcMainnet: "https://rpc.xinfin.network",
+  xdcTestnet: "https://rpc.apothem.network",
 }
 
 const defaultHadrfork = "byzantium";
@@ -216,9 +222,10 @@ const bipChainIdDict = {
   MOONBEAM: 0x40000001,
   MATIC: 0x800003c6,
   ADA: 0x80000717,// TODO: NEED UPDATE,
-  ARB:0x40000002,
-  OPM:0xa, // TODO: NEED UPDATE,
-  FTM:0x800003ef,
+  ARB: 0x40000002,
+  OPM: 0xa, // TODO: NEED UPDATE,
+  FTM: 0x800003ef,
+  XDC: 0x80000226,
 };
 
 const hideKeys = [
