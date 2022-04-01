@@ -35,7 +35,7 @@ async function deploy(argv) {
     error = `Need identify ownerPk or (mnemonic and ownerIdx)`;
   }
 
-  const {chainType, isMainnet} = parseNetwork(argv.network);
+  const {chainType, chainId, isMainnet} = parseNetwork(argv.network);
   if (chainType === chainDict.WAN) {
     if (!argv.adminPk && (!argv.mnemonic || Number.isNaN(Number(argv.adminIdx)))) {
       error = `Need identify adminPk or (mnemonic and adminIdx)`;
@@ -67,6 +67,7 @@ async function deploy(argv) {
 
   let cfg = {
     network: argv.network, // 'mainnet' or 'testnet' or 'ethereum' or 'rinkeby'
+    chainId,
     nodeURL: argv.nodeURL,
     privateKey: ownerPrivateKey,
     adminPrivateKey: adminPrivateKey,
