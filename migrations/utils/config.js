@@ -87,7 +87,7 @@ const networkInfo = [
   // {name:"ftmTestnet", chainId: 4002,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM, isMainnet: false, nature: chainNature.system.id},
   {name:"ftmTestnet", chainId: 4002,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM, isMainnet: false, nature: chainNature.custom.id},
 
-  {name:"xdcMainnet", chainId: 50,chainType: chainDict.XDC, chainIndex:chainIndexDict.XDC, isMainnet: true, nature: chainNature.system.id},//todo : need update chainId
+  {name:"xdcMainnet", chainId: 50,chainType: chainDict.XDC, chainIndex:chainIndexDict.XDC, isMainnet: true, nature: chainNature.system.id},
   {name:"xdcTestnet", chainId: 51,chainType: chainDict.XDC, chainIndex:chainIndexDict.XDC, isMainnet: false, nature: chainNature.system.id},
 ];
 
