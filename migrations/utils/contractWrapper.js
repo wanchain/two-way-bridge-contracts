@@ -88,7 +88,11 @@ class ContractWrapper {
   }
 
   getNonce(address) {
-    return this.web3.eth.getTransactionCount(address, 'pending');
+    if (this.chainType === chainDict.XDC) { // pending will return 0
+      return this.web3.eth.getTransactionCount(address);
+    } else {
+      return this.web3.eth.getTransactionCount(address, 'pending');
+    }
   }
 
   readContract(contract, func, ...args) {
@@ -181,7 +185,11 @@ class ContractWrapper {
         tx = new ethTx(rawTx, {common: customCommon});
         break;
       }
-      case chainDict.BSC: {
+      // case chainDict.BSC:
+      // case chainDict.AVAX:
+      // case chainDict.XDC:
+      default:
+      {
         let chainParams = {};
         chainParams = {
             networkId: await this.getChainId(),
@@ -191,30 +199,14 @@ class ContractWrapper {
             bootstrapNodes: []
         };
         const customCommon = new ethCommon(chainParams, this.cfg.hardfork);
-
         tx = new ethTx(rawTx, {common: customCommon});
-        break;
-    }
-    case chainDict.AVAX: {
-        let chainParams = {};
-        chainParams = {
-            networkId: await this.getChainId(),
-            chainId: await this.getChainId(),
-            genesis: {},
-            hardforks: [],
-            bootstrapNodes: []
-        };
-        const customCommon = new ethCommon(chainParams, this.cfg.hardfork);
-
-        tx = new ethTx(rawTx, {common: customCommon});
-        break;
-    }
-
-      default: {
-        rawTx.Txtype = 0x01;
-        tx = new wanTx(rawTx);
         break;
       }
+      // default: {
+      //   rawTx.Txtype = 0x01;
+      //   tx = new wanTx(rawTx);
+      //   break;
+      // }
     }
     tx.sign(currPrivateKey);
     // console.log("getSenderAddress", tx.getSenderAddress().toString('hex'))
