@@ -2,14 +2,13 @@ const deployer = require('wanchain-sc-sdk');
 const scDict = require('./contract');
 const {
     curveMap,
-    priceSymbol,
-    quotaDepositRate,
     htlcTimeTestnet,
     ADDRESS_0
 } = require('../utils/config');
 const sleep = require('ko-sleep');
 
-const SLEEPTIME = 2000; // 20s
+const SLEEPTIME = 1000; // 1s
+
 async function deploy(cfg, isMainnet) {
     let contract = {};
     let abi = {};
@@ -46,25 +45,25 @@ async function deploy(cfg, isMainnet) {
 
 
     // quota
-    await deployer.deploy(scDict.QuotaDelegate);
-    await sleep(SLEEPTIME);
+    // await deployer.deploy(scDict.QuotaDelegate);
+    // await sleep(SLEEPTIME);
 
-    await deployer.deploy(scDict.QuotaProxy);
-    await sleep(SLEEPTIME);
+    // await deployer.deploy(scDict.QuotaProxy);
+    // await sleep(SLEEPTIME);
 
-    let quotaProxy = await deployer.deployed(scDict.QuotaProxy);
-    let quotaDelegate = await deployer.deployed(scDict.QuotaDelegate);
-    txData = await quotaProxy.methods.upgradeTo(quotaDelegate.address).encodeABI();
-    await deployer.sendTx(quotaProxy.address, txData);
-    await sleep(SLEEPTIME);
+    // let quotaProxy = await deployer.deployed(scDict.QuotaProxy);
+    // let quotaDelegate = await deployer.deployed(scDict.QuotaDelegate);
+    // txData = await quotaProxy.methods.upgradeTo(quotaDelegate.address).encodeABI();
+    // await deployer.sendTx(quotaProxy.address, txData);
+    // await sleep(SLEEPTIME);
 
-    let quota = await deployer.at(scDict.QuotaDelegate, quotaProxy.address);
+    // let quota = await deployer.at(scDict.QuotaDelegate, quotaProxy.address);
 
-    contract[scDict.QuotaProxy] = quotaProxy.address;
-    contract[scDict.QuotaDelegate] = quotaDelegate.address;
-    abi[scDict.QuotaDelegate] = quotaDelegate.abi;
+    // contract[scDict.QuotaProxy] = quotaProxy.address;
+    // contract[scDict.QuotaDelegate] = quotaDelegate.address;
+    // abi[scDict.QuotaDelegate] = quotaDelegate.abi;
 
-    await sleep(SLEEPTIME);
+    // await sleep(SLEEPTIME);
 
 
     // oracle
@@ -191,7 +190,7 @@ async function deploy(cfg, isMainnet) {
     console.log("TokenManagerProxy", tokenManager.address);
     console.log("StoremanGroupProxy", oracle.address);
     console.log("smgFeeProxyAddr", ADDRESS_0);
-    console.log("QuotaProxy", quota.address);
+    // console.log("QuotaProxy", quota.address);
     console.log("SignatureVerifier", signatureVerifier.address);
     console.log("OracleProxy", oracle.address);
     console.log("CrossProxy", crossApproach.address);
@@ -199,7 +198,7 @@ async function deploy(cfg, isMainnet) {
         tokenManager.address, // tokenManager
         oracle.address, // smgAdminProxy
         ADDRESS_0, // smgFeeProxy
-        quota.address, // quota
+        ADDRESS_0, // no quota
         signatureVerifier.address // sigVerifier
     ).encodeABI();
     await deployer.sendTx(crossApproach.address, txData);
@@ -213,16 +212,16 @@ async function deploy(cfg, isMainnet) {
     await sleep(SLEEPTIME);
 
     // config quota
-    txData = await quota.methods.config(
-        oracle.address,
-        crossApproach.address,
-        crossApproach.address,
-        oracle.address,
-        tokenManager.address,
-        quotaDepositRate,
-        priceSymbol
-    ).encodeABI();
-    await deployer.sendTx(quota.address, txData);
+    // txData = await quota.methods.config(
+    //     oracle.address,
+    //     crossApproach.address,
+    //     crossApproach.address,
+    //     oracle.address,
+    //     tokenManager.address,
+    //     quotaDepositRate,
+    //     priceSymbol
+    // ).encodeABI();
+    // await deployer.sendTx(quota.address, txData);
 
     return {address:contract, abi:abi};
 }
