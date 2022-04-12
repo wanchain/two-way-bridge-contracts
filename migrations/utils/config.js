@@ -165,6 +165,21 @@ const wanchainScScript = deployScript.wanchainSc;
 // const wanchainScScript = "wanchain_sc_deploy_update_value.js";
 // const wanchainScScript = "wanchain_sc_deploy_owner.js";
 
+const bipChainIdDict = {
+  WAN: 0x8057414e,
+  ETH: 0x8000003c,
+  ETC: 0x8000003d,
+  EOS: 0x800000c2,
+  BSC: 0x800002ca,
+  AVAX: 0x80002328,
+  MOONBEAM: 0x40000001,
+  MATIC: 0x800003c6,
+  ADA: 0x80000717,// TODO: NEED UPDATE,
+  ARB: 0x40000002,
+  OPM: 0xa, // TODO: NEED UPDATE,
+  FTM: 0x800003ef,
+  XDC: 0x80000226,
+};
 module.exports = {
   chainDict,
   chainIndexDict,
@@ -187,4 +202,5 @@ module.exports = {
   htlcTimeTestnet,
   fastCrossMinValue,
   ADDRESS_0,
+  bipChainIdDict,
 };
