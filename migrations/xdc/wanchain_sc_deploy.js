@@ -7,7 +7,7 @@ const {
 } = require('../utils/config');
 const sleep = require('ko-sleep');
 
-const SLEEPTIME = 2000; // 2s
+const SLEEPTIME = 1000; // 1s
 
 async function deploy(cfg, isMainnet) {
     let contract = {};
@@ -103,9 +103,9 @@ async function deploy(cfg, isMainnet) {
     await deployer.link(scDict.CrossDelegateV2, scDict.RapidityLibV2);
 
 
-    console.log('CrossDelegate linked finished, waiting 20 seconds...');
+    console.log('CrossDelegate linked finished, waiting 5 seconds...');
 
-    await sleep(20000);
+    await sleep(5000);
 
     await deployer.deploy(scDict.CrossDelegateV2);
     console.log('CrossDelegate deployed finished');
@@ -125,7 +125,7 @@ async function deploy(cfg, isMainnet) {
     await deployer.sendTx(crossProxy.address, txData);
     await sleep(SLEEPTIME);
 
-    let crossApproach = await deployer.at(scDict.CrossDelegate, crossProxy.address);
+    let crossApproach = await deployer.at(scDict.CrossDelegateV2, crossProxy.address);
 
     await sleep(SLEEPTIME);
 
