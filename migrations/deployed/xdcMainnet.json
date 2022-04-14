@@ -1,1 +1,42 @@
-[["TokenManagerDelegate","0x5a06dea503a9310421685b77703c56b702a13024"],["TokenManagerProxy","0x8d9c4df30e1e12f3da47a28d17173282cbe1c3ae"],["QuotaDelegate","0x92dff635e6e813d8662a697141c5d36a4a77a3d3"],["QuotaProxy","0xe1a06d6e934dfc0a606cecd5393b55f7a7b1644d"],["OracleDelegate","0x41e878001a0a76dbef241be5940050fc21aef3a5"],["OracleProxy","0x1ec877203c0d6895e332f884739b13958649033e"],["SignatureVerifier","0xf9f141c4d907de901a0fa78158a3e86a829fb9d4"],["Bn128SchnorrVerifier","0x046ad71050d4e773020ab2b3d2e42f6282eaa8d4"],["HTLCTxLib","0x09077eb35ac80acd9a85c84d1301761c170e788e"],["HTLCDebtLib","0x58d180accc9b35d8ddd89facb1d5fb7b0c0e828d"],["RapidityLib","0xa015ad839d258267e8df2d8cc2036144d226b8b3"],["CrossDelegate","0x31e91d3ac749d5966f7bfd696f9248d2e513955a"],["CrossProxy","0x33e346520ddba8389ceb6ad21162a2da3babceb8"],["Multicall2","0x711bC8Dc6BF017958470c6A25f77D05Db2DCe65B"]]
+{
+     "TokenManagerProxy": {
+          "address": "0x4e999d5d9b810ea7fcdb93b0d37b24c423736066",
+          "abi": "abi.TokenManagerDelegate.json"
+     },
+     "TokenManagerDelegate": {
+          "address": "0xc0025b626de7747d3f3d26f8858df25034cbcc00",
+          "abi": "abi.TokenManagerDelegate.json"
+     },
+     "OracleProxy": {
+          "address": "0xf7d69e8ecb2d413ba92453286971c8c80e6588e4",
+          "abi": "abi.OracleDelegate.json"
+     },
+     "OracleDelegate": {
+          "address": "0x7f7725ddba8b409399be6d8522d0557487bb6887",
+          "abi": "abi.OracleDelegate.json"
+     },
+     "HTLCTxLib": {
+          "address": "0xdaef70e5d95f6b8d71bde1e88800f3fcff9483b4"
+     },
+     "HTLCDebtLib": {
+          "address": "0xa16c86bc975b9f862a60ecefd9d4f72cbeca60b8"
+     },
+     "RapidityLib": {
+          "address": "0x38076cb1648454c905bc0c5f9dc51c62c824160d"
+     },
+     "CrossProxy": {
+          "address": "0x1c82d59fa4be21e6a4ad323351bbea69db9fca0e",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "CrossDelegate": {
+          "address": "0x27f70caa132173c725bc1996913f5a47884e40fe",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "SignatureVerifier": {
+          "address": "0x92e1288fbbc8a2f6d782a8e1c677f0bcefccbd0c",
+          "abi": "abi.SignatureVerifier.json"
+     },
+     "Bn128SchnorrVerifier": {
+          "address": "0xbe66429c9d842561a0f7a730f366e78c507c3c7d"
+     }
+}
