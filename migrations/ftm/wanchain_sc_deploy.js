@@ -2,8 +2,6 @@ const deployer = require('wanchain-sc-sdk');
 const scDict = require('./contract');
 const {
     curveMap,
-    priceSymbol,
-    quotaDepositRate,
     htlcTimeTestnet,
     ADDRESS_0
 } = require('../utils/config');
@@ -179,7 +177,7 @@ async function deploy(cfg, isMainnet) {
     console.log("TokenManagerProxy", tokenManager.address);
     console.log("StoremanGroupProxy", oracle.address);
     console.log("smgFeeProxyAddr", ADDRESS_0);
-    console.log("QuotaProxy", quota.address);
+    console.log("QuotaProxy", ADDRESS_0);
     console.log("SignatureVerifier", signatureVerifier.address);
     console.log("OracleProxy", oracle.address);
     console.log("CrossProxy", crossApproach.address);
@@ -187,7 +185,7 @@ async function deploy(cfg, isMainnet) {
         tokenManager.address, // tokenManager
         oracle.address, // smgAdminProxy
         ADDRESS_0, // smgFeeProxy
-        quota.address, // quota
+        ADDRESS_0, // quota
         signatureVerifier.address // sigVerifier
     ).encodeABI();
     await deployer.sendTx(crossApproach.address, txData);
@@ -199,18 +197,6 @@ async function deploy(cfg, isMainnet) {
     txData = await tokenManager.methods.addAdmin(crossApproach.address).encodeABI();
     await deployer.sendTx(tokenManager.address, txData);
     await sleep(SLEEPTIME);
-
-    // config quota
-    txData = await quota.methods.config(
-        oracle.address,
-        crossApproach.address,
-        crossApproach.address,
-        oracle.address,
-        tokenManager.address,
-        quotaDepositRate,
-        priceSymbol
-    ).encodeABI();
-    await deployer.sendTx(quota.address, txData);
 
     return {address:contract, abi:abi};
 }
