@@ -16,9 +16,10 @@ async function deploy(cfg, isMainnet) {
     let txData;
 
     await deployer.config(cfg);
+    // const admin = deployer.getAddressString(cfg.adminPrivateKey);
+    // console.log("admin", admin);
 
     // ***********two-way-bridge*****************
-
     // token manager
     await deployer.deploy(scDict.TokenManagerDelegate);
     await sleep(SLEEPTIME);
@@ -43,30 +44,6 @@ async function deploy(cfg, isMainnet) {
     abi[scDict.TokenManagerDelegate] = tokenManagerDelegate.abi;
 
     await sleep(SLEEPTIME);
-
-
-    // quota
-    await deployer.deploy(scDict.QuotaDelegate);
-    await sleep(SLEEPTIME);
-
-    await deployer.deploy(scDict.QuotaProxy);
-    await sleep(SLEEPTIME);
-
-    let quotaProxy = await deployer.deployed(scDict.QuotaProxy);
-    let quotaDelegate = await deployer.deployed(scDict.QuotaDelegate);
-    txData = await quotaProxy.methods.upgradeTo(quotaDelegate.address).encodeABI();
-    await deployer.sendTx(quotaProxy.address, txData);
-    await sleep(SLEEPTIME);
-
-    let quota = await deployer.at(scDict.QuotaDelegate, quotaProxy.address);
-
-    contract[scDict.QuotaProxy] = quotaProxy.address;
-    contract[scDict.QuotaDelegate] = quotaDelegate.address;
-    abi[scDict.QuotaDelegate] = quotaDelegate.abi;
-
-    await sleep(SLEEPTIME);
-
-
     // oracle
     await deployer.deploy(scDict.OracleDelegate);
     await sleep(SLEEPTIME);
@@ -104,38 +81,38 @@ async function deploy(cfg, isMainnet) {
     let htlcTxLib = await deployer.deployed(scDict.HTLCTxLib);
     contract[scDict.HTLCTxLib] = htlcTxLib.address;
 
-    await deployer.link(scDict.HTLCDebtLib, scDict.HTLCTxLib);
-    await deployer.deploy(scDict.HTLCDebtLib);
-    await sleep(SLEEPTIME);
-
-    let htlcDebtLib = await deployer.deployed(scDict.HTLCDebtLib);
+    await deployer.link(scDict.HTLCDebtLibV2, scDict.HTLCTxLib);
+    await deployer.deploy(scDict.HTLCDebtLibV2);
+    let htlcDebtLib = await deployer.deployed(scDict.HTLCDebtLibV2);
+    // let htlcDebtLib = await deployer.at(scDict.HTLCDebtLibV2, "0xc928c8e48647c8b0ce550C2352087B1cF5c6111e");
     contract[scDict.HTLCDebtLib] = htlcDebtLib.address;
 
     await sleep(SLEEPTIME);
 
 
-    await deployer.deploy(scDict.RapidityLib);
-    let rapidityLib = await deployer.deployed(scDict.RapidityLib);
+    await deployer.deploy(scDict.RapidityLibV2);
+    let rapidityLib = await deployer.deployed(scDict.RapidityLibV2);
+    // let rapidityLib = await deployer.deployed(scDict.RapidityLibV2, "0x97Ce40AeB600F3A1e2Cac32208FC58C937676688");
     contract[scDict.RapidityLib] = rapidityLib.address;
 
     await sleep(SLEEPTIME);
 
 
-    await deployer.link(scDict.CrossDelegate, scDict.HTLCTxLib);
-    await deployer.link(scDict.CrossDelegate, scDict.HTLCDebtLib);
+    await deployer.link(scDict.CrossDelegateV2, scDict.HTLCTxLib);
+    await deployer.link(scDict.CrossDelegateV2, scDict.HTLCDebtLibV2);
 
     await sleep(SLEEPTIME);
 
     console.log('Linking: RapidityLib');
 
-    await deployer.link(scDict.CrossDelegate, scDict.RapidityLib);
+    await deployer.link(scDict.CrossDelegateV2, scDict.RapidityLibV2);
 
 
     console.log('CrossDelegate linked finished, waiting 20 seconds...');
 
     await sleep(20000);
 
-    await deployer.deploy(scDict.CrossDelegate);
+    await deployer.deploy(scDict.CrossDelegateV2);
     console.log('CrossDelegate deployed finished');
 
 
@@ -156,6 +133,17 @@ async function deploy(cfg, isMainnet) {
     let crossApproach = await deployer.at(scDict.CrossDelegate, crossProxy.address);
 
     await sleep(SLEEPTIME);
+
+    // const chainID = 2153201998;
+    // try {
+    //   txData = await crossApproach.methods.setAdmin(admin).encodeABI();
+    //   await deployer.sendTx(crossApproach.address, txData);
+
+    //   txData = await crossApproach.methods.setChainID(chainID).encodeABI();
+    //   await deployer.sendTx(crossApproach.address, txData);
+    // } catch (err) {
+    //   console.log("setChainID error", err, chainID);
+    // }
 
 
     contract[scDict.CrossProxy] = crossProxy.address;
