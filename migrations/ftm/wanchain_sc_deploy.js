@@ -123,7 +123,7 @@ async function deploy(cfg, isMainnet) {
 
 
     let crossProxy = await deployer.deployed(scDict.CrossProxy);
-    let crossDelegate = await deployer.deployed(scDict.CrossDelegate);
+    let crossDelegate = await deployer.deployed(scDict.CrossDelegateV2);
     txData = await crossProxy.methods.upgradeTo(crossDelegate.address).encodeABI();
     await deployer.sendTx(crossProxy.address, txData);
     await sleep(SLEEPTIME);
