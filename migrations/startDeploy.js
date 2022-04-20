@@ -9,4 +9,4 @@ console.log("argv", hideObject(argv, hideKeys));
 deploy(argv);
 
 // XDC
-// node startDeploy --action deploy --network xdcTestnet --ownerPk <private-key> --gasPrice 250000000 --gasLimit 10000000
+// node startDeploy --action deploy --version V3 --network xdcTestnet --ownerPk <private-key> --gasPrice 250000000 --gasLimit 10000000
