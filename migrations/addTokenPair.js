@@ -61,6 +61,20 @@ const tokenPairInfo = [
     toChainID: bipChainIdDict.MATIC,
     toAccount: "0x7e76Ae3b4791A3c36233655d1e37Ec82F666bEFf"
   },
+  {
+    id: 129,
+    aInfo: {
+      account: ADDRESS_0,
+      name: "TRX",
+      symbol: "TRX",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: ADDRESS_0,
+    toChainID: bipChainIdDict.WAN,
+    toAccount: "0x2B6Bae71dBB0860A705D11A8604FaE228b1F5a7e"
+  }
 ]
 
 async function addTokenPair(argv) {
