@@ -74,6 +74,20 @@ const tokenPairInfo = [
     fromAccount: ADDRESS_0,
     toChainID: bipChainIdDict.WAN,
     toAccount: "0x2B6Bae71dBB0860A705D11A8604FaE228b1F5a7e"
+  },
+  {
+    id: 132,
+    aInfo: {
+      account: "0x3736db8ba90e2013fba678d003b8626883037826",
+      name: "Tether USD",
+      symbol: "USDT",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0x3736db8ba90e2013fba678d003b8626883037826",
+    toChainID: bipChainIdDict.WAN,
+    toAccount: "0xeDB7350E005D9A09A8a4E78F62C3d1f09663bC6B"
   }
 ]
 
