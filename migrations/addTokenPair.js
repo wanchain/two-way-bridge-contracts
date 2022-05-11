@@ -87,8 +87,22 @@ const tokenPairInfo = [
     fromChainID: bipChainIdDict.TRX,
     fromAccount: "0x3736db8ba90e2013fba678d003b8626883037826",
     toChainID: bipChainIdDict.WAN,
-    toAccount: "0xeDB7350E005D9A09A8a4E78F62C3d1f09663bC6B"
-  }
+    toAccount: "0x3D5950287b45F361774E5fB6e50d70eEA06Bc167"
+  },
+  {
+    id: 133,
+    aInfo: {
+      account: "0x28c96b26f6df3cf57a0a4e8fef02e9295e9ca458",
+      name: "USDT",
+      symbol: "USDT",
+      decimals: 6,
+      chainID: bipChainIdDict.ETH
+    },
+    fromChainID: bipChainIdDict.ETH,
+    fromAccount: "0x28c96b26f6df3cf57a0a4e8fef02e9295e9ca458",
+    toChainID: bipChainIdDict.XDC,
+    toAccount: "0xD4B5f10D61916Bd6E0860144a91Ac658dE8a1437"
+  },
 ]
 
 async function addTokenPair(argv) {
@@ -112,8 +126,10 @@ async function addTokenPair(argv) {
     gasLimit: argv.gasLimit
   });
   let contract = new Contract(cfg, abi, deployed["TokenManagerProxy"].address);
-  let receipt = await contract.send("addTokenPair", tp.id, tp.aInfo, tp.fromChainID, tp.fromAccount, tp.toChainID, tp.toAccount);
-  showTxInfo(receipt, "TokenManagerProxy");
+  // let receipt = await contract.send("updateTokenPair", tp.id, tp.aInfo, tp.fromChainID, tp.fromAccount, tp.toChainID, tp.toAccount);
+  // showTxInfo(receipt, "TokenManagerProxy");
+  let receipt = await contract.call("getTokenPairInfo", tp.id);
+  console.log({receipt})
 }
 
 module.exports = addTokenPair;
