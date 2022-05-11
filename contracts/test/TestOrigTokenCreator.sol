@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 
 import "../tokenManager/MappingToken.sol";
 import "../tokenManager/IMappingToken.sol";
+import "../components/WRC20Protocol.sol";
 import "../components/BasicStorage.sol";
 import "./TestIOwned.sol";
 
@@ -50,6 +51,11 @@ contract TestOrigTokenCreator is BasicStorage {
     function burnToken(string tokenName, string tokenSymbol, address from, uint value) external {
         address tokenInst = addressData.getStorage(bytes(tokenName), bytes(tokenSymbol));
         IMappingToken(tokenInst).burn(from, value);
+    }
+
+    function tokenBalance(string tokenName, string tokenSymbol, address owner) external view returns (uint balance) {
+        address tokenInst = addressData.getStorage(bytes(tokenName), bytes(tokenSymbol));
+        balance = WRC20Protocol(tokenInst).balanceOf(owner);
     }
 
     function getTokenDecimal(string tokenName, string tokenSymbol) external view returns (uint8) {

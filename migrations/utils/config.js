@@ -3,7 +3,16 @@ const chainDict = {
   ETH: "ETH",
   ETC: "ETC",
   EOS: "EOS",
-  TEST: "TEST"
+  BSC: "BSC",
+  AVAX: "AVAX",
+  TEST: "TEST",
+  MOONBEAM: "MOONBEAM",
+  MATIC: "MATIC",
+  ADA: "ADA",
+  ARB: "ARB",
+  OPM: "OPM",
+  FTM: "FTM",
+  XDC: "XDC"
 };
 
 const chainIndexDict = {
@@ -11,6 +20,15 @@ const chainIndexDict = {
   ETH: 0x3c,
   ETC: 0x3d,
   EOS: 0xc2,
+  BSC: 0x2ca,
+  AVAX: 0x2328,
+  MOONBEAM: 0x2330, // TODO: NEED UPDATE,
+  MATIC: 0x3c6,
+  ADA: 0x2331,// TODO: NEED UPDATE,
+  ARB: 0x2332, // TODO: NEED UPDATE,
+  OPM: 0xa,
+  FTM: 0xb,
+  XDC: 0x226,
 };
 
 const chainNature = {
@@ -20,14 +38,41 @@ const chainNature = {
 
 const networkDict = {
   // WAN
-  mainnet: {name:"mainnet", chainId: 1, chainType: chainDict.WAN, chainIndex:chainIndexDict.WAN, nature: chainNature.system},
+  mainnet: {name:"mainnet", chainId: 1, chainType: chainDict.WAN, chainIndex:chainIndexDict.WAN, isMainnet: true, nature: chainNature.system},
   testnet: {name:"testnet", chainId: 3, chainType: chainDict.WAN, chainIndex:chainIndexDict.WAN, nature: chainNature.system},
   // ETH
-  ethereum: {name:"ethereum", chainId: 1, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system},
+  ethereum: {name:"ethereum", chainId: 1, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, isMainnet: true, nature: chainNature.system},
   // ropsten: {name:"ropsten", chainId: 3, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system},
-  rinkeby: {name:"rinkeby", chainId: 4,chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH,nature: chainNature.system},
+  rinkeby: {name:"rinkeby", chainId: 4,chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system},
   // goerli: {name:"goerli", chainId: 6284, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system},
   // kovan: {name:"kovan", chainId: 42, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system},
+
+  bscMainnet: {name:"bscMainnet", chainId: 56,chainType: chainDict.BSC, chainIndex:chainIndexDict.BSC, isMainnet: true, nature: chainNature.custom},
+  bscTestnet: {name:"bscTestnet", chainId: 97,chainType: chainDict.BSC, chainIndex:chainIndexDict.BSC, nature: chainNature.custom},
+
+  avalancheMainnet: {name:"avalancheMainnet", chainId: 43114,chainType: chainDict.AVAX, chainIndex:chainIndexDict.AVAX, isMainnet: true, nature: chainNature.custom},
+  avalancheTestnet: {name:"avalancheTestnet", chainId: 43113,chainType: chainDict.AVAX, chainIndex:chainIndexDict.AVAX, nature: chainNature.custom},
+
+  moonbeamMainnet: {name:"moonbeamMainnet", chainId: 1285,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM, isMainnet: true, nature: chainNature.custom},
+  moonbeamTestnet: {name:"moonbeamTestnet", chainId: 1287,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM, nature: chainNature.custom},
+
+  maticMainnet: {name:"maticMainnet", chainId: 137,chainType: chainDict.MATIC, chainIndex:chainIndexDict.MATIC, isMainnet: true, nature: chainNature.custom},
+  maticTestnet: {name:"maticTestnet", chainId: 80001,chainType: chainDict.MATIC, chainIndex:chainIndexDict.MATIC, nature: chainNature.custom},
+
+  adaMainnet: {name:"adaMainnet", chainId: 103,chainType: chainDict.ADA, chainIndex:chainIndexDict.ADA, isMainnet: true,  nature: chainNature.custom},
+  adaTestnet: {name:"adaTestnet", chainId: 103,chainType: chainDict.ADA, chainIndex:chainIndexDict.ADA, nature: chainNature.custom},
+
+  arbMainnet: {name:"arbMainnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB, isMainnet: true, nature: chainNature.custom},//todo : need update chainId
+  arbTestnet: {name:"arbTestnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB, nature: chainNature.custom},
+
+  opmMainnet: {name:"opmMainnet", chainId: 10,chainType: chainDict.OPM, chainIndex:chainIndexDict.OPM, isMainnet: true, nature: chainNature.custom},//todo : need update chainId
+  opmTestnet: {name:"opmTestnet", chainId: 69,chainType: chainDict.OPM, chainIndex:chainIndexDict.OPM, nature: chainNature.custom},
+
+  ftmMainnet: {name:"ftmMainnet", chainId: 250,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM, isMainnet: true, nature: chainNature.custom},
+  ftmTestnet: {name:"ftmTestnet", chainId: 4002,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM,nature: chainNature.custom},
+
+  xdcMainnet: {name:"xdcMainnet", chainId: 50,chainType: chainDict.XDC, chainIndex:chainIndexDict.XDC, isMainnet: true, nature: chainNature.system},
+  xdcTestnet: {name:"xdcTestnet", chainId: 51,chainType: chainDict.XDC, chainIndex:chainIndexDict.XDC, nature: chainNature.system},
 }
 
 const networks = Object.values(networkDict).map(v => v.name);
@@ -42,6 +87,25 @@ const defaultNodeUrlDict = {
   testnet: 'http://gwan-testnet.wandevs.org:36891', // http or wss,
   ethereum: 'http://geth-mainnet.wandevs.org:26892', // http or wss,
   rinkeby: 'http://geth-testnet.wandevs.org:36892', // http or wss
+  bscMainnet: 'https://bsc-dataseed1.binance.org:443', // http or wss,
+  bscTestnet: 'https://data-seed-prebsc-1-s1.binance.org:8545', // http or wss
+  avalancheMainnet: "https://api.avax.network/ext/bc/C/rpc",
+  avalancheTestnet: "https://api.avax-test.network/ext/bc/C/rpc",
+  moonbeamTestnet: "https://rpc.testnet.moonbeam.network",
+  maticTestnet: "https://rpc-mumbai.matic.today",
+  maticMainnet: "https://rpc-mainnet.matic.network",
+  adaTestnet: "https://rpc-evm.portal.dev.cardano.org",
+  // adaMainnet: "https://rpc-evm.portal.dev.cardano.org",
+  arbMainnet: "https://rinkeby.arbitrum.io/rpc", // todo : need update
+  arbTestnet: "https://rinkeby.arbitrum.io/rpc",
+  opmMainnet: "https://mainnet.optimism.io", // todo : need update
+  opmTestnet: "https://kovan.optimism.io",
+
+  ftmMainnet: "https://rpc.ftm.tools",
+  ftmTestnet: "https://rpc.testnet.fantom.network",
+
+  xdcMainnet: "https://rpc.xinfin.network",
+  xdcTestnet: "https://rpc.apothem.network",
 }
 
 const defaultHadrfork = "byzantium";
@@ -90,6 +154,8 @@ const deployScript = {
   clean: "deploy_clean.js",
   update: "deploy_update.js",
   wanchainSc: "wanchain_sc_deploy.js",
+  // wanchainSc: "wanchain_sc_deploy_update_btc.js",
+  // wanchainSc: "wanchain_sc_deploy_bsc.js",
   wanchainScUpdate: "wanchain_sc_deploy_update.js"
 };
 
@@ -99,6 +165,21 @@ const wanchainScScript = deployScript.wanchainSc;
 // const wanchainScScript = "wanchain_sc_deploy_update_value.js";
 // const wanchainScScript = "wanchain_sc_deploy_owner.js";
 
+const bipChainIdDict = {
+  WAN: 0x8057414e,
+  ETH: 0x8000003c,
+  ETC: 0x8000003d,
+  EOS: 0x800000c2,
+  BSC: 0x800002ca,
+  AVAX: 0x80002328,
+  MOONBEAM: 0x40000001,
+  MATIC: 0x800003c6,
+  ADA: 0x80000717,// TODO: NEED UPDATE,
+  ARB: 0x40000002,
+  OPM: 0xa, // TODO: NEED UPDATE,
+  FTM: 0x800003ef,
+  XDC: 0x80000226,
+};
 module.exports = {
   chainDict,
   chainIndexDict,
@@ -121,4 +202,5 @@ module.exports = {
   htlcTimeTestnet,
   fastCrossMinValue,
   ADDRESS_0,
+  bipChainIdDict,
 };

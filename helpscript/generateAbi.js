@@ -18,8 +18,6 @@ const abiFiles = [
     ],
     [
         '../build/contracts/CrossDelegate.json',
-        '../build/contracts/HTLCBurnLib.json',
-        '../build/contracts/HTLCMintLib.json',
         '../build/contracts/HTLCDebtLib.json',
         '../build/contracts/RapidityLib.json',
     ],
@@ -45,6 +43,11 @@ const abiFiles = [
     [
         '../build/contracts/ListGroup.json',
     ],
+    [
+        '../build/contracts/CrossDelegateV2.json',
+        '../build/contracts/HTLCDebtLibV2.json',
+        '../build/contracts/RapidityLibV2.json',
+    ]
 ];
 
 function generateAbi(abiFile) {

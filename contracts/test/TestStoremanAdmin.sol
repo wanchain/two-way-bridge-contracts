@@ -37,7 +37,8 @@ contract TestStoremanAdmin {
     //     totalChainPairID += 1;
     // }
 
-    function addChainInfo(uint chain1, uint chain2, uint curve1, uint curve2) public {
+    function addChainInfo(uint chain1, uint chain2, uint curve1, uint curve2) public returns (uint chainPairID) {
+        chainPairID = totalChainPairID;
         ChainData memory chainData = ChainData({
             chain1: chain1,
             chain2: chain2,
@@ -45,7 +46,7 @@ contract TestStoremanAdmin {
             curve2: curve2,
             active: true
         });
-        mapChainPair[totalChainPairID] = chainData;
+        mapChainPair[chainPairID] = chainData;
         totalChainPairID += 1;
     }
 
@@ -66,6 +67,31 @@ contract TestStoremanAdmin {
                               bytes gpk1, bytes gpk2, uint startTime, uint endTime) public {
         ChainData memory chainData = mapChainPair[chainPairID];
         require(chainData.active, "Invalid chain pair");
+
+        SmgData memory smgData = SmgData({
+            chainPairID: chainPairID,
+            deposit: deposit,
+            startTime: startTime,
+            endTime: endTime,
+            status: status,
+            gpk1: gpk1,
+            gpk2: gpk2
+        });
+        mapStoreman[groupId] = smgData;
+    }
+
+    function setStoremanGroupConfig(
+        bytes32 groupId,
+        uint8   status,
+        uint    deposit,
+        uint[2] chain,
+        uint[2] curve,
+        bytes   gpk1,
+        bytes   gpk2,
+        uint    startTime,
+        uint    endTime
+    ) external {
+        uint chainPairID = addChainInfo(chain[0], chain[1], curve[0], curve[1]);
 
         SmgData memory smgData = SmgData({
             chainPairID: chainPairID,

@@ -26,19 +26,12 @@ function exit(error) {
 }
 
 function parseNetwork(network) {
-  let chainType = chainDict.WAN;
-  let isMainnet = false;
-  if (network !== networkDict.mainnet.name && network !== networkDict.testnet.name) {
-    chainType = chainDict.ETH;
+  let info = networkDict[network];
+  if (info) {
+    return {chainType: info.chainType, chainId: info.chainId, isMainnet: !!info.isMainnet};
+  } else {
+    throw new Error("invalid network: " + network);
   }
-  if (network !== networkDict.mainnet.name || network !== networkDict.ethereum.name) {
-    isMainnet = true;
-  }
-  return {
-    chainType: chainType,
-    isMainnet: isMainnet,
-    chainId: networkDict[network].chainId
-  };
 }
 
 function getProxyDelegate(string) {
@@ -70,6 +63,42 @@ function getWorkspace(root, contractLoad, deployScriptFileName) {
     TEST: {
       contract: path.join(root, chainDict.TEST.toLowerCase(), contractLoad),
       deploy: path.join(root, chainDict.TEST.toLowerCase(), deployScriptFileName)
+    },
+    BSC: {
+      contract: path.join(root, chainDict.BSC.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.BSC.toLowerCase(), deployScriptFileName)
+    },
+    AVAX: {
+      contract: path.join(root, chainDict.AVAX.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.AVAX.toLowerCase(), deployScriptFileName)
+    },
+    MOONBEAM: {
+      contract: path.join(root, chainDict.MOONBEAM.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.MOONBEAM.toLowerCase(), deployScriptFileName)
+    },
+    MATIC: {
+      contract: path.join(root, chainDict.MATIC.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.MATIC.toLowerCase(), deployScriptFileName)
+    },
+    ADA: {
+      contract: path.join(root, chainDict.ADA.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.ADA.toLowerCase(), deployScriptFileName)
+    },
+    ARB: {
+        contract: path.join(root, chainDict.ARB.toLowerCase(), contractLoad),
+        deploy: path.join(root, chainDict.ARB.toLowerCase(), deployScriptFileName)
+    },
+    OPM: {
+        contract: path.join(root, chainDict.OPM.toLowerCase(), contractLoad),
+        deploy: path.join(root, chainDict.OPM.toLowerCase(), deployScriptFileName)
+    },
+    FTM: {
+        contract: path.join(root, chainDict.FTM.toLowerCase(), contractLoad),
+        deploy: path.join(root, chainDict.FTM.toLowerCase(), deployScriptFileName)
+    },
+    XDC: {
+      contract: path.join(root, chainDict.XDC.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.XDC.toLowerCase(), deployScriptFileName)
     },
   }
   return workspace;
@@ -140,6 +169,33 @@ function parseOwnerArgs() {
   return argv;
 }
 
+function parseTokenPairArgs() {
+  const optimist = require('optimist');
+  let argv = optimist
+  .usage("Usage: nodejs $0 --network [network] --id [id] --nodeURL [nodeURL] --ownerPk [ownerPrivateKey] --mnemonic [mnemonic] --ownerIdx [ownerIdx] --gasPrice [gasPrice] --gasLimit [gasLimit]")
+  .alias('h', 'help')
+  .describe('h', 'display the usage')
+  .describe('network', `identify chain network, support ${networks}, mainnet means Wanchain mainnet, testnet means Wanchain testnet`)
+  .describe('nodeURL', `identify node url`)
+  .describe('id', `identify token pair id`)
+  .describe('gasPrice', `identify gasPrice, using ${defaultGas.gasPrice} as default`)
+  .describe('gasLimit', `identify gasLimit, using ${defaultGas.gasLimit} as default`)
+  .describe('mnemonic', `identify mnemonic`)
+  .describe('ownerIdx', `identify owner index in the hd wallet, start with 0, using mix "--mnemonic" and "--ownerIdx"`)
+  .describe('ownerPk', `identify owner private key`)
+  .default('gasPrice', defaultGas.gasPrice)
+  .default('gasLimit', defaultGas.gasLimit)
+  .string(["network", "mnemonic", "ownerPk"])
+  .demand(['network', 'id'])
+  .argv;
+
+  if (argv.help) {
+    optimist.showHelp();
+    process.exit(0);
+  }
+  return argv;
+}
+
 function hideObject(obj, keys = [], hide = "******") {
   let showObj = {...obj};
   keys.forEach(key => {
@@ -163,6 +219,17 @@ const showTxInfo = (receipt, name = "") => {
   console.log("   > status:              %s", receipt.status);
 }
 
+const concatObject = (dest, src) => {
+  let result = Object.assign({}, dest);
+  for (let k in src) {
+    let v = src[k];
+    if (v !== undefined) {
+      result[k] = v;
+    }
+  }
+  return result;
+}
+
 module.exports = {
   mkdir,
   exit,
@@ -172,6 +239,8 @@ module.exports = {
   getWorkspace,
   parseScArgs,
   parseOwnerArgs,
+  parseTokenPairArgs,
   hideObject,
-  showTxInfo
+  showTxInfo,
+  concatObject
 };

@@ -5,7 +5,8 @@ const ethUtil = require('ethereumjs-util');
 const ethCommon = require('ethereumjs-common').default;
 const ethTx = require('ethereumjs-tx').Transaction
 const wallet = require('ethereumjs-wallet');
-const hdkey = require('ethereumjs-wallet/hdkey');
+// const hdkey = require('ethereumjs-wallet/hdkey');
+const hdkey = wallet.hdkey;
 
 const wanUtil = require('wanchain-util');
 const wanTx = wanUtil.wanchainTx;
@@ -31,13 +32,7 @@ class ContractWrapper {
     if (!this.cfg.nodeURL) {
       throw new Error("nodeURL is required");
     }
-    if (this.cfg.nodeURL.indexOf('http:') == 0) {
-      this.web3 = new Web3(new Web3.providers.HttpProvider(this.cfg.nodeURL));
-    } else if (this.cfg.nodeURL.indexOf('wss:') == 0) {
-      this.web3 = new Web3(new Web3.providers.WebsocketProvider(this.cfg.nodeURL));
-    } else {
-      throw new Error("invalid protocol, can only be http or wss");
-    }
+    this.web3 = new Web3(this.cfg.nodeURL);
 
     if (!this.cfg.network || !networkDict[this.cfg.network]) {
       throw new Error(`invalid network, can only be in ${networks}`);
@@ -93,7 +88,11 @@ class ContractWrapper {
   }
 
   getNonce(address) {
-    return this.web3.eth.getTransactionCount(address, 'pending');
+    if (this.chainType === chainDict.XDC) { // pending will return 0
+      return this.web3.eth.getTransactionCount(address);
+    } else {
+      return this.web3.eth.getTransactionCount(address, 'pending');
+    }
   }
 
   readContract(contract, func, ...args) {
@@ -158,21 +157,56 @@ class ContractWrapper {
     // console.log(this.chainType, "rawTx: ", rawTx);
 
     let tx
-    if (this.chainType === chainDict.ETH) {
-      let chainParams = {
-        name: networkDict.mainnet.name,
-        chainId: networkDict[this.cfg.network].chainId,
-        url: this.cfg.nodeURL,
-      };
-      if (this.cfg.network !== networkDict.ethereum.name) {
-        options.name = networkDict[this.cfg.network].name;
-      }
-      const customCommon = ethCommon.forCustomChain(chainParams.name, chainParams, this.cfg.hardfork);
+    switch (this.chainType) {
+      case chainDict.ETH: {
+        let customCommon;
+        try {
+          let chainParams = {
+            name: (this.cfg.network === networkDict.ethereum.name) ? networkDict.mainnet.name : networkDict[this.cfg.network].name,
+            chainId: networkDict[this.cfg.network].chainId,
+            url: this.cfg.nodeURL,
+          };
+          customCommon = ethCommon.forCustomChain(chainParams.name, chainParams, this.cfg.hardfork);
+        } catch (err) {
+          if (!err.message || !/Chain with name .*? not supported/.test(err.message)) {
+            throw new Error(err);
+          }
 
-      tx = new ethTx(rawTx, {common: customCommon});
-    } else {
-      rawTx.Txtype = 0x01;
-      tx = new wanTx(rawTx);
+          let chainParams = {
+            networkId: await this.getChainId(),
+            chainId: await this.getChainId(),
+            genesis: {},
+            hardforks: [],
+            bootstrapNodes: []
+          };
+          customCommon = new ethCommon(chainParams, this.cfg.hardfork);
+        }
+
+        tx = new ethTx(rawTx, {common: customCommon});
+        break;
+      }
+      // case chainDict.BSC:
+      // case chainDict.AVAX:
+      // case chainDict.XDC:
+      default:
+      {
+        let chainParams = {};
+        chainParams = {
+            networkId: await this.getChainId(),
+            chainId: await this.getChainId(),
+            genesis: {},
+            hardforks: [],
+            bootstrapNodes: []
+        };
+        const customCommon = new ethCommon(chainParams, this.cfg.hardfork);
+        tx = new ethTx(rawTx, {common: customCommon});
+        break;
+      }
+      // default: {
+      //   rawTx.Txtype = 0x01;
+      //   tx = new wanTx(rawTx);
+      //   break;
+      // }
     }
     tx.sign(currPrivateKey);
     // console.log("getSenderAddress", tx.getSenderAddress().toString('hex'))

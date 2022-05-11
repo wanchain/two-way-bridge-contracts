@@ -6,7 +6,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
-const { registerStart,stakeInPre, setupNetwork,toSelect, toSetGpk,g } = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork, g } = require('../base.js');
 
 
 
@@ -130,7 +130,6 @@ contract('TestSmg', async () => {
     
     
     it('T7 recordSmSlash', async ()=>{
-      let dep = await smg.getDependence();
       await smg.setDependence(g.owner, g.owner, g.owner,g.leader);
       let tx = await smg.recordSmSlash(g.leader);
       console.log("tx:", tx);
@@ -142,13 +141,12 @@ contract('TestSmg', async () => {
       sk = await smg.getStoremanInfo(g.leader);
       console.log("sk:", sk);
       assert(sk.slashedCount, 1, "recordSmSlash failed")
-      await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
-
     })
 
     it('T7 setGpk', async ()=>{
-      await toSelect(smg, groupId);
-      await toSetGpk(smg, groupId)
+      await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+      await smg.updateGroupStatus(groupId, g.storemanGroupStatus.selected, {from:g.admin})
+      await smg.setGpk(groupId, g.leader, g.leader, {from:g.admin});
       groupInfo = await smg.getStoremanGroupInfo(groupId);
       assert.equal(groupInfo.status, g.storemanGroupStatus.ready,"setGpk")
 

@@ -31,7 +31,7 @@ pragma experimental ABIEncoderV2;
 import "./RapidityTxLib.sol";
 import "./CrossTypes.sol";
 import "../../interfaces/ITokenManager.sol";
-// import "../../interfaces/IRC20Protocol.sol";
+import "../../interfaces/IRC20Protocol.sol";
 import "../../interfaces/ISmgFeeProxy.sol";
 
 library RapidityLib {
@@ -45,7 +45,7 @@ library RapidityLib {
     */
 
     /// @notice struct of Rapidity storeman mint lock parameters
-    struct RapidityUserMintParams {
+    struct RapidityUserLockParams {
         bytes32 smgID;                      /// ID of storeman group which user has selected
         uint tokenPairID;                   /// token pair id on cross chain
         uint value;                         /// exchange token value
@@ -58,6 +58,7 @@ library RapidityLib {
         bytes32 smgID;                      /// ID of storeman group which user has selected
         uint tokenPairID;                   /// token pair id on cross chain
         uint value;                         /// exchange token value
+        address shadowTokenAccount;         /// shadow token account
         address userShadowAccount;          /// account of shadow chain, used to receive token
     }
 
@@ -66,16 +67,19 @@ library RapidityLib {
         bytes32 smgID;                  /// ID of storeman group which user has selected
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
+        uint fee;                       /// exchange token fee
+        address shadowTokenAccount;     /// shadow token account
         bytes userOrigAccount;          /// account of token original chain, used to receive token
     }
 
     /// @notice struct of Rapidity user burn lock parameters
-    struct RapiditySmgBurnParams {
+    struct RapiditySmgReleaseParams {
         bytes32 uniqueID;               /// Rapidity random number
         bytes32 smgID;                  /// ID of storeman group which user has selected
         uint tokenPairID;               /// token pair id on cross chain
         uint value;                     /// exchange token value
-        address userOrigAccount;          /// account of token original chain, used to receive token
+        address origTokenAccount;       /// original token/coin account
+        address userOrigAccount;        /// account of token original chain, used to receive token
     }
 
     /**
@@ -89,9 +93,19 @@ library RapidityLib {
     /// @notice                         event invoked by storeman group
     /// @param smgID                    ID of storemanGroup
     /// @param tokenPairID              token pair ID of cross chain token
+    /// @param tokenAccount             Rapidity original token account
     /// @param value                    Rapidity value
     /// @param userAccount              account of shadow chain, used to receive token
-    event UserFastMintLogger(bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
+    event UserLockLogger(bytes32 indexed smgID, uint indexed tokenPairID, address indexed tokenAccount, uint value, uint serviceFee, bytes userAccount);
+
+    /// @notice                         event of exchange WRC-20 token with original chain token request
+    /// @notice                         event invoked by storeman group
+    /// @param smgID                    ID of storemanGroup
+    /// @param tokenPairID              token pair ID of cross chain token
+    /// @param tokenAccount             Rapidity shadow token account
+    /// @param value                    Rapidity value
+    /// @param userAccount              account of shadow chain, used to receive token
+    event UserBurnLogger(bytes32 indexed smgID, uint indexed tokenPairID, address indexed tokenAccount, uint value, uint serviceFee, uint fee, bytes userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -99,16 +113,9 @@ library RapidityLib {
     /// @param smgID                    ID of storemanGroup
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    Rapidity value
+    /// @param tokenAccount             Rapidity shadow token account
     /// @param userAccount              account of original chain, used to receive token
-    event SmgFastMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address userAccount);
-
-    /// @notice                         event of exchange WRC-20 token with original chain token request
-    /// @notice                         event invoked by storeman group
-    /// @param smgID                    ID of storemanGroup
-    /// @param tokenPairID              token pair ID of cross chain token
-    /// @param value                    Rapidity value
-    /// @param userAccount              account of shadow chain, used to receive token
-    event UserFastBurnLogger(bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, bytes userAccount);
+    event SmgMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -116,8 +123,9 @@ library RapidityLib {
     /// @param smgID                    ID of storemanGroup
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    Rapidity value
+    /// @param tokenAccount             Rapidity original token account
     /// @param userAccount              account of original chain, used to receive token
-    event SmgFastBurnLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address userAccount);
+    event SmgReleaseLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
 
     /**
     *
@@ -129,125 +137,156 @@ library RapidityLib {
     /// @notice                         event invoked by user mint lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for user mint lock token on token original chain
-    function userFastMint(CrossTypes.Data storage storageData, RapidityUserMintParams memory params)
+    function userLock(CrossTypes.Data storage storageData, RapidityUserLockParams memory params)
         public
     {
-        uint origChainID;
-        uint shadowChainID;
-        bytes memory tokenOrigAccount;
-        (origChainID,tokenOrigAccount,shadowChainID) = storageData.tokenManager.getTokenPairInfoSlim(params.tokenPairID);
-        require(origChainID != 0, "Token does not exist");
+        uint fromChainID;
+        uint toChainID;
+        bytes memory fromTokenAccount;
+        (fromChainID,fromTokenAccount,toChainID) = storageData.tokenManager.getTokenPairInfoSlim(params.tokenPairID);
+        require(fromChainID != 0, "Token does not exist");
 
-        uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
+        uint serviceFee = storageData.mapLockFee[fromChainID][toChainID];
 
-        storageData.quota.userFastMint(params.tokenPairID, params.smgID, params.value);
+        if (address(storageData.quota) != address(0)) {
+            storageData.quota.userLock(params.tokenPairID, params.smgID, params.value);
+        }
 
-        if (lockFee > 0) {
+        if (serviceFee > 0) {
             if (storageData.smgFeeProxy == address(0)) {
-                storageData.mapStoremanFee[params.smgID] = storageData.mapStoremanFee[params.smgID].add(lockFee);
+                storageData.mapStoremanFee[params.smgID] = storageData.mapStoremanFee[params.smgID].add(serviceFee);
             } else {
-                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(params.smgID);
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(serviceFee)(params.smgID);
             }
         }
 
-        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
+        address tokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
 
         uint left;
         if (tokenScAddr == address(0)) {
-            left = (msg.value).sub(params.value).sub(lockFee);
+            left = (msg.value).sub(params.value).sub(serviceFee);
         } else {
-            left = (msg.value).sub(lockFee);
+            left = (msg.value).sub(serviceFee);
 
-            // require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
             require(CrossTypes.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
         }
         if (left != 0) {
             (msg.sender).transfer(left);
         }
-        emit UserFastMintLogger(params.smgID, params.tokenPairID, params.value, lockFee, params.userShadowAccount);
-    }
-
-    /// @notice                         mintBridge, storeman mint lock token on token shadow chain
-    /// @notice                         event invoked by user mint lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman mint lock token on token shadow chain
-    function smgFastMint(CrossTypes.Data storage storageData, RapiditySmgMintParams memory params)
-        public
-    {
-        storageData.rapidityTxData.addRapidityTx(params.uniqueID);
-
-        storageData.quota.smgFastMint(params.tokenPairID, params.smgID, params.value);
-
-        storageData.tokenManager.mintToken(params.tokenPairID, params.userShadowAccount, params.value);
-
-        emit SmgFastMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.userShadowAccount);
+        emit UserLockLogger(params.smgID, params.tokenPairID, tokenScAddr, params.value, serviceFee, params.userShadowAccount);
     }
 
     /// @notice                         burnBridge, user lock token on token original chain
     /// @notice                         event invoked by user burn lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for user burn lock token on token original chain
-    function userFastBurn(CrossTypes.Data storage storageData, RapidityUserBurnParams memory params)
+    function userBurn(CrossTypes.Data storage storageData, RapidityUserBurnParams memory params)
         public
     {
-        uint origChainID;
-        uint shadowChainID;
-        bytes memory tokenShadowAccount;
-        (origChainID,,shadowChainID,tokenShadowAccount) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
-        require(origChainID != 0, "Token does not exist");
+        ITokenManager tokenManager = storageData.tokenManager;
+        uint fromChainID;
+        uint toChainID;
+        bytes memory fromTokenAccount;
+        bytes memory toTokenAccount;
+        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
+        require(fromChainID != 0, "Token does not exist");
 
-        uint lockFee = storageData.mapLockFee[origChainID][shadowChainID];
+        address tokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
 
-        storageData.quota.userFastBurn(params.tokenPairID, params.smgID, params.value);
-
-        address tokenScAddr = CrossTypes.bytesToAddress(tokenShadowAccount);
-        // require(IRC20Protocol(tokenScAddr).transferFrom(msg.sender, this, params.value), "Lock token failed");
-        require(CrossTypes.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
-
-        storageData.tokenManager.burnToken(params.tokenPairID, params.value);
-
-        if (lockFee > 0) {
-            if (storageData.smgFeeProxy == address(0)) {
-                storageData.mapStoremanFee[params.smgID] = storageData.mapStoremanFee[params.smgID].add(lockFee);
+        uint serviceFee;
+        if (tokenScAddr == params.shadowTokenAccount) {
+            serviceFee = storageData.mapLockFee[fromChainID][toChainID];
+        } else {
+            tokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
+            if (tokenScAddr == params.shadowTokenAccount) {
+                serviceFee = storageData.mapLockFee[toChainID][fromChainID];
             } else {
-                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(lockFee)(params.smgID);
+                require(false, "Invalid Token account");
             }
         }
 
-        uint left = (msg.value).sub(lockFee);
+        if (address(storageData.quota) != address(0)) {
+            storageData.quota.userBurn(params.tokenPairID, params.smgID, params.value);
+        }
+
+        require(burnShadowToken(tokenManager, tokenScAddr, msg.sender, params.value), "burn failed");
+
+        if (serviceFee > 0) {
+            if (storageData.smgFeeProxy == address(0)) {
+                storageData.mapStoremanFee[params.smgID] = storageData.mapStoremanFee[params.smgID].add(serviceFee);
+            } else {
+                ISmgFeeProxy(storageData.smgFeeProxy).smgTransfer.value(serviceFee)(params.smgID);
+            }
+        }
+
+        uint left = (msg.value).sub(serviceFee);
         if (left != 0) {
             (msg.sender).transfer(left);
         }
 
-        emit UserFastBurnLogger(params.smgID, params.tokenPairID, params.value, lockFee, params.userOrigAccount);
+        emit UserBurnLogger(params.smgID, params.tokenPairID, params.shadowTokenAccount, params.value, serviceFee, params.fee, params.userOrigAccount);
+    }
+
+    /// @notice                         mintBridge, storeman mint lock token on token shadow chain
+    /// @notice                         event invoked by user mint lock
+    /// @param storageData              Cross storage data
+    /// @param params                   parameters for storeman mint lock token on token shadow chain
+    function smgMint(CrossTypes.Data storage storageData, RapiditySmgMintParams memory params)
+        public
+    {
+        storageData.rapidityTxData.addRapidityTx(params.uniqueID);
+
+        if (address(storageData.quota) != address(0)) {
+            storageData.quota.smgMint(params.tokenPairID, params.smgID, params.value);
+        }
+
+        require(mintShadowToken(storageData.tokenManager, params.shadowTokenAccount, params.userShadowAccount, params.value), "mint failed");
+
+        emit SmgMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.shadowTokenAccount, params.userShadowAccount);
     }
 
     /// @notice                         burnBridge, storeman burn lock token on token shadow chain
     /// @notice                         event invoked by user burn lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for storeman burn lock token on token shadow chain
-    function smgFastBurn(CrossTypes.Data storage storageData, RapiditySmgBurnParams memory params)
+    function smgRelease(CrossTypes.Data storage storageData, RapiditySmgReleaseParams memory params)
         public
     {
-        uint origChainID;
-        bytes memory tokenOrigAccount;
-        (origChainID,tokenOrigAccount,) = storageData.tokenManager.getTokenPairInfoSlim(params.tokenPairID);
-        require(origChainID != 0, "Token does not exist");
-
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
 
-        storageData.quota.smgFastBurn(params.tokenPairID, params.smgID, params.value);
-
-        address tokenScAddr = CrossTypes.bytesToAddress(tokenOrigAccount);
-
-        if (tokenScAddr == address(0)) {
-            (params.userOrigAccount).transfer(params.value);
-        } else {
-            // require(IRC20Protocol(tokenScAddr).transfer(params.userOrigAccount, params.value), "Transfer token failed");
-            require(CrossTypes.transfer(tokenScAddr, params.userOrigAccount, params.value), "Transfer token failed");
+        if (address(storageData.quota) != address(0)) {
+            storageData.quota.smgRelease(params.tokenPairID, params.smgID, params.value);
         }
 
-        emit SmgFastBurnLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.userOrigAccount);
+        if (params.origTokenAccount == address(0)) {
+            (params.userOrigAccount).transfer(params.value);
+        } else {
+            require(CrossTypes.transfer(params.origTokenAccount, params.userOrigAccount, params.value), "Transfer token failed");
+        }
+
+        emit SmgReleaseLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.origTokenAccount, params.userOrigAccount);
+    }
+
+    function burnShadowToken(address tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
+        uint beforeBalance;
+        uint afterBalance;
+        beforeBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
+
+        ITokenManager(tokenManager).burnToken(tokenAddress, userAccount, value);
+
+        afterBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
+        return afterBalance == beforeBalance.sub(value);
+    }
+
+    function mintShadowToken(address tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
+        uint beforeBalance;
+        uint afterBalance;
+        beforeBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
+
+        ITokenManager(tokenManager).mintToken(tokenAddress, userAccount, value);
+
+        afterBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
+        return afterBalance == beforeBalance.add(value);
     }
 
 }

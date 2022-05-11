@@ -214,6 +214,10 @@ function setGlobal(key, value) {
     global[key] = value;
 }
 
+function clearGlobal(key) {
+    delete global[key];
+}
+
 const pu = require('promisefy-util')
 
 function sha256(message) {
@@ -345,4 +349,5 @@ module.exports = {
     buildMpcSign,
     importMochaTest,
     setGlobal,
+    clearGlobal
 };
