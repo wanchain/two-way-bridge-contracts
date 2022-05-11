@@ -126,10 +126,12 @@ async function addTokenPair(argv) {
     gasLimit: argv.gasLimit
   });
   let contract = new Contract(cfg, abi, deployed["TokenManagerProxy"].address);
-  // let receipt = await contract.send("updateTokenPair", tp.id, tp.aInfo, tp.fromChainID, tp.fromAccount, tp.toChainID, tp.toAccount);
-  // showTxInfo(receipt, "TokenManagerProxy");
-  let receipt = await contract.call("getTokenPairInfo", tp.id);
-  console.log({receipt})
+  // add
+  let receipt = await contract.send("addTokenPair", tp.id, tp.aInfo, tp.fromChainID, tp.fromAccount, tp.toChainID, tp.toAccount);
+  showTxInfo(receipt, "TokenManagerProxy");
+  // get
+  let tpInfo = await contract.call("getTokenPairInfo", tp.id);
+  console.log({tpInfo});
 }
 
 module.exports = addTokenPair;
