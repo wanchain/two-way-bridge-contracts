@@ -103,6 +103,20 @@ const tokenPairInfo = [
     toChainID: bipChainIdDict.XDC,
     toAccount: "0xD4B5f10D61916Bd6E0860144a91Ac658dE8a1437"
   },
+  {
+    id: 134,
+    aInfo: {
+      account: ADDRESS_0,
+      name: "XRP",
+      symbol: "XRP",
+      decimals: 6,
+      chainID: bipChainIdDict.XRP
+    },
+    fromChainID: bipChainIdDict.XRP,
+    fromAccount: ADDRESS_0,
+    toChainID: bipChainIdDict.TRX,
+    toAccount: "0x10b69a397a27e6faef2b5e82075b6caca643a096"
+  }
 ]
 
 async function addTokenPair(argv) {
