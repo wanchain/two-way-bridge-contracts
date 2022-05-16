@@ -226,7 +226,8 @@ const bipChainIdDict = {
   OPM: 0xa, // TODO: NEED UPDATE,
   FTM: 0x800003ef,
   XDC: 0x80000226,
-  TRX: 0x800000c3, // 2147483843
+  TRX: 0x800000c3, // 2147483843,
+  XRP: 0x80000090, // 2147483792
 };
 
 const hideKeys = [
