@@ -26,12 +26,11 @@ function exit(error) {
 }
 
 function parseNetwork(network) {
-  let info = networkDict[network];
-  if (info) {
-    return {chainType: info.chainType, chainId: info.chainId, isMainnet: !!info.isMainnet};
-  } else {
-    throw new Error("invalid network: " + network);
+  if (!Object.keys(networkDict).includes(network)) {
+    throw new Error(`invalid network: ${network}`);
   }
+
+  return networkDict[network];
 }
 
 function getProxyDelegate(string) {
@@ -99,6 +98,10 @@ function getWorkspace(root, contractLoad, deployScriptFileName) {
     XDC: {
       contract: path.join(root, chainDict.XDC.toLowerCase(), contractLoad),
       deploy: path.join(root, chainDict.XDC.toLowerCase(), deployScriptFileName)
+    },
+    OKT: {
+      contract: path.join(root, chainDict.OKT.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.OKT.toLowerCase(), deployScriptFileName)
     },
   }
   return workspace;

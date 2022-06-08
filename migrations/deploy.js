@@ -45,6 +45,10 @@ async function deploy(argv) {
     exit(error);
   }
 
+  argv.name = argv.network;
+  argv.network = defaultArgv[argv.name].network;
+  argv = Object.assign({}, defaultArgv[argv.name], argv);
+
   if (!path.isAbsolute(argv.outputDir)) {
     deployedPath = path.join(__dirname, argv.outputDir);
   } else {
@@ -101,7 +105,7 @@ async function deploy(argv) {
 
   if (Object.keys(deployed).length > 0) {
     // merge
-    const outputFile = path.join(deployedPath,`${argv.network}.json`);
+    const outputFile = path.join(deployedPath,`${argv.name}.json`);
     if (fs.existsSync(outputFile)) {
       const preDeployed = require(outputFile);
       for (let key in preDeployed) {
