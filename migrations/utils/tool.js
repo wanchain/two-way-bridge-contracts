@@ -103,6 +103,10 @@ function getWorkspace(root, contractLoad, deployScriptFileName) {
       contract: path.join(root, chainDict.OKT.toLowerCase(), contractLoad),
       deploy: path.join(root, chainDict.OKT.toLowerCase(), deployScriptFileName)
     },
+    CLV: {
+      contract: path.join(root, chainDict.CLV.toLowerCase(), contractLoad),
+      deploy: path.join(root, chainDict.CLV.toLowerCase(), deployScriptFileName)
+    },
   }
   return workspace;
 }

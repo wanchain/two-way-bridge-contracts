@@ -14,6 +14,7 @@ const chainDict = {
   FTM: "FTM",
   XDC: "XDC",
   OKT: "OKT",
+  CLV: "CLV",
 };
 
 const chainIndexDict = {
@@ -31,6 +32,7 @@ const chainIndexDict = {
   FTM: 0xb,
   XDC: 0x226,
   OKT: 0x3e4,
+  CLV: 0x2335,
 };
 
 const chainNature = {
@@ -90,6 +92,11 @@ const networkInfo = [
   // Okex
   {name:"oktMainnet", chainId: 66,chainType: chainDict.OKT, chainIndex:chainIndexDict.OKT, isMainnet: true, nature: chainNature.custom.id},
   {name:"oktTestnet", chainId: 65,chainType: chainDict.OKT, chainIndex:chainIndexDict.OKT, isMainnet: false, nature: chainNature.custom.id},
+
+  // Clover
+  {name:"clvMainnet", chainId: 1024,chainType: chainDict.CLV, chainIndex:chainIndexDict.CLV, isMainnet: true, nature: chainNature.custom.id},
+  // {name:"clvTestnet", chainId: 1023,chainType: chainDict.CLV, chainIndex:chainIndexDict.CLV, isMainnet: false, nature: chainNature.custom.id},
+  {name:"clvTestnet", chainId: 1337,chainType: chainDict.CLV, chainIndex:chainIndexDict.CLV, isMainnet: false, nature: chainNature.custom.id},
 ];
 
 const networkDict = networkInfo.reduce((reduced, next) => {
@@ -135,6 +142,9 @@ const defaultNodeUrlDict = {
 
   oktMainnet: "https://exchainrpc.okex.org",
   oktTestnet: "https://exchaintestrpc.okex.org",
+
+  clvMainnet: "https://api-para.clover.finance",
+  clvTestnet: "https://api-para.clover.finance",
 }
 
 const defaultHadrfork = "byzantium";
@@ -211,6 +221,7 @@ const bipChainIdDict = {
   FTM: 0x800003ef,
   XDC: 0x80000226,
   OKT: 0x800003e4,
+  CLV: 0x40000005,
 };
 module.exports = {
   chainDict,
