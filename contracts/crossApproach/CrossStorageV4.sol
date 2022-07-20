@@ -24,19 +24,15 @@
 //
 //
 
-pragma solidity 0.4.26;
+pragma solidity ^0.4.26;
 
-interface IMappingToken {
-    function changeOwner(address _newOwner) external;
-    function acceptOwnership() external;
-    function transferOwner(address) external;
-    function name() external view returns (string);
-    function symbol() external view returns (string);
-    function decimals() external view returns (uint8);
-    function mint(address, uint) external;
-    function burn(address, uint) external;
-    function update(string, string) external;
+import "./CrossStorageV3.sol";
 
-    function burnErc1155(address,uint,uint) external;// ERC1155
-    function mintErc1155(address,uint,uint,bytes) external;// ERC1155
+contract CrossStorageV4 is CrossStorageV3 {
+
+    /************************************************************
+     **
+     ** VARIABLES
+     **
+     ************************************************************/
 }
