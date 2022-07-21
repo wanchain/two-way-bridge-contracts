@@ -571,15 +571,15 @@ contract CrossDelegateV4  is CrossStorageV4 {
         });
         RapidityLibV4.smgMintErc1155(storageData, params);
 
-        verifySignatureEx(smgID, currentChainID, uniqueID, tokenPairID, value, fee, tokenAccount, userAccount, r, s);
+        verifySignatureErc1155(smgID, currentChainID, uniqueID, tokenPairID, tokenID, value, fee, tokenAccount, userAccount, r, s);
     }
 
-    function verifySignatureEx(bytes32 smgID, uint currentChainID, bytes32 uniqueID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes r, bytes32 s)
+    function verifySignatureErc1155(bytes32 smgID, uint currentChainID, bytes32 uniqueID, uint tokenPairID, uint tokenID, uint value, uint fee, address tokenAccount, address userAccount, bytes r, bytes32 s)
     private{
         uint curveID;
         bytes memory PK;
         (curveID, PK) = acquireReadySmgInfo(smgID);
-        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, value, fee, tokenAccount, userAccount));
+        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenID, value, fee, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
@@ -613,7 +613,7 @@ contract CrossDelegateV4  is CrossStorageV4 {
         });
         RapidityLibV4.smgReleaseErc1155(storageData, params);
 
-        verifySignatureEx(smgID, currentChainID, uniqueID, tokenPairID, value, fee, tokenAccount, userAccount, r, s);
+        verifySignatureErc1155(smgID, currentChainID, uniqueID, tokenPairID, tokenID, value, fee, tokenAccount, userAccount, r, s);
     }
 
     function onERC1155Received(address, address, uint256, uint256, bytes memory) 
