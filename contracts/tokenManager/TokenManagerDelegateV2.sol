@@ -98,4 +98,34 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
         }
     }
 
+    //*****************************************************************************
+    //*****************************************************************************
+    // ERC1155
+    //*****************************************************************************
+    //*****************************************************************************
+     function mintToken(
+        address tokenAddress,
+        address to,
+        uint    tokenID,
+        uint    value,
+        bytes   data
+    )
+        external
+        onlyAdmin
+    {
+        IMappingToken(tokenAddress).mint(to, tokenID, value, data);
+    }
+
+    function burnToken(
+        address tokenAddress,
+        address from,
+        uint    tokenID,
+        uint    value
+    )
+        external
+        onlyAdmin
+    {
+        IMappingToken(tokenAddress).burn(from, tokenID, value);
+    }
+
 }

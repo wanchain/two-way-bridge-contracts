@@ -37,6 +37,6 @@ interface IMappingToken {
     function burn(address, uint) external;
     function update(string, string) external;
 
-    function burnErc1155(address,uint,uint) external;// ERC1155
-    function mintErc1155(address,uint,uint,bytes) external;// ERC1155
+    function burn(address,uint,uint) external;// ERC1155
+    function mint(address,uint,uint,bytes) external;// ERC1155
 }
