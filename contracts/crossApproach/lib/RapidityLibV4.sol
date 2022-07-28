@@ -160,9 +160,11 @@ library RapidityLibV4 {
     function userLock(CrossTypesV1.Data storage storageData, RapidityUserLockParams memory params)
     public
     {
+        ITokenManager tokenManager = storageData.tokenManager;
         uint fromChainID;
         uint toChainID;
         bytes memory fromTokenAccount;
+        bytes memory toTokenAccount;
         (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
