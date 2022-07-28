@@ -132,7 +132,8 @@ library RapidityLibV4 {
     /// @param fee                      Rapidity fee
     /// @param tokenAccount             Rapidity shadow token account
     /// @param userAccount              account of original chain, used to receive token
-    event SmgMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, address tokenAccount, address userAccount);
+    event SmgMint(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, address tokenAccount, address userAccount);
+    event SmgMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -143,7 +144,8 @@ library RapidityLibV4 {
     /// @param fee                      Rapidity fee
     /// @param tokenAccount             Rapidity original token account
     /// @param userAccount              account of original chain, used to receive token
-    event SmgReleaseLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, address tokenAccount, address userAccount);
+    event SmgRelease(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, address tokenAccount, address userAccount);
+    event SmgReleaseLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
 
     /**
     *
@@ -161,18 +163,24 @@ library RapidityLibV4 {
         uint fromChainID;
         uint toChainID;
         bytes memory fromTokenAccount;
-        (fromChainID,fromTokenAccount,toChainID) = storageData.tokenManager.getTokenPairInfoSlim(params.tokenPairID);
+        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
         uint contractFee = params.tokenPairContractFee;
-        if (contractFee == 0) {
-            contractFee = storageData.mapContractFee[fromChainID][toChainID];
+        address tokenScAddr;
+        if (params.currentChainID == fromChainID) {
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[fromChainID][toChainID];
+            }
+            tokenScAddr = CrossTypesV1.bytesToAddress(fromTokenAccount);
+        } else if (params.currentChainID == toChainID) {
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[toChainID][fromChainID];
+            }
+            tokenScAddr = CrossTypesV1.bytesToAddress(toTokenAccount);
+        } else {
+            require(false, "Invalid token pair");
         }
-        if (contractFee > 0) {
-            params.smgFeeProxy.transfer(contractFee);
-        }
-
-        address tokenScAddr = CrossTypesV1.bytesToAddress(fromTokenAccount);
 
         uint left;
         if (tokenScAddr == address(0)) {
@@ -271,7 +279,8 @@ library RapidityLibV4 {
             require(false, "Not support");
         }
 
-        emit SmgMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.fee, params.destTokenAccount, params.destUserAccount);
+        emit SmgMint(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.fee, params.destTokenAccount, params.destUserAccount);
+        emit SmgMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
 
     /// @notice                         burnBridge, storeman burn lock token on token shadow chain
@@ -302,7 +311,8 @@ library RapidityLibV4 {
             }
         }
 
-        emit SmgReleaseLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.fee, params.destTokenAccount, params.destUserAccount);
+        emit SmgRelease(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.fee, params.destTokenAccount, params.destUserAccount);
+        emit SmgReleaseLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
 
     function burnShadowToken(address tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
