@@ -14,3 +14,4 @@ allFiredEvents
 .idea
 .vscode
 package-lock.json
+migrations/deployed
