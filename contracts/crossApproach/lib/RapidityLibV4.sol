@@ -158,11 +158,12 @@ library RapidityLibV4 {
     function userLock(CrossTypesV1.Data storage storageData, RapidityUserLockParams memory params)
     public
     {
+        ITokenManager tokenManager = storageData.tokenManager;
         uint fromChainID;
         uint toChainID;
         bytes memory fromTokenAccount;
         bytes memory toTokenAccount;
-        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
+        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
         uint contractFee = params.tokenPairContractFee;
@@ -187,7 +188,7 @@ library RapidityLibV4 {
         } else {
             left = (msg.value).sub(contractFee);
 
-            uint8 tokenCrossType = storageData.tokenManager.mapTokenPairType(params.tokenPairID);
+            uint8 tokenCrossType = tokenManager.mapTokenPairType(params.tokenPairID);
             if (tokenCrossType == uint8(TokenCrossType.ERC20)) {
                 require(CrossTypesV1.transferFrom(tokenScAddr, msg.sender, address(this), params.value), "Lock token failed");
             } else if (tokenCrossType == uint8(TokenCrossType.ERC721)) {
@@ -283,7 +284,6 @@ library RapidityLibV4 {
         keys[0] = "fee:uint256";
         values[0] = abi.encodePacked(params.fee);
         emit SmgMint(params.uniqueID, params.smgID, params.tokenPairID, keys, values);
-        // emit SmgMint(params.uniqueID, params.smgID, params.tokenPairID, params.fee);
         emit SmgMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
 
