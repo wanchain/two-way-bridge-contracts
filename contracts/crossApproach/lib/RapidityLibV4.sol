@@ -129,11 +129,10 @@ library RapidityLibV4 {
     /// @param smgID                    ID of storemanGroup
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    Rapidity value
-    /// @param fee                      Rapidity fee
     /// @param tokenAccount             Rapidity shadow token account
     /// @param userAccount              account of original chain, used to receive token
-    event SmgMint(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, address tokenAccount, address userAccount);
     event SmgMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
+    event SmgMint(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
 
     /// @notice                         event of exchange WRC-20 token with original chain token request
     /// @notice                         event invoked by storeman group
@@ -141,11 +140,10 @@ library RapidityLibV4 {
     /// @param smgID                    ID of storemanGroup
     /// @param tokenPairID              token pair ID of cross chain token
     /// @param value                    Rapidity value
-    /// @param fee                      Rapidity fee
     /// @param tokenAccount             Rapidity original token account
     /// @param userAccount              account of original chain, used to receive token
-    event SmgRelease(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, uint fee, address tokenAccount, address userAccount);
     event SmgReleaseLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
+    event SmgRelease(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
 
     /**
     *
@@ -163,7 +161,8 @@ library RapidityLibV4 {
         uint fromChainID;
         uint toChainID;
         bytes memory fromTokenAccount;
-        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
+        bytes memory toTokenAccount;
+        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = storageData.tokenManager.getTokenPairInfo(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
         uint contractFee = params.tokenPairContractFee;
@@ -279,7 +278,12 @@ library RapidityLibV4 {
             require(false, "Not support");
         }
 
-        emit SmgMint(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.fee, params.destTokenAccount, params.destUserAccount);
+        string[] memory keys = new string[](1);
+        bytes[] memory values = new bytes[](1);
+        keys[0] = "fee:uint256";
+        values[0] = abi.encodePacked(params.fee);
+        emit SmgMint(params.uniqueID, params.smgID, params.tokenPairID, keys, values);
+        // emit SmgMint(params.uniqueID, params.smgID, params.tokenPairID, params.fee);
         emit SmgMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
 
@@ -311,7 +315,11 @@ library RapidityLibV4 {
             }
         }
 
-        emit SmgRelease(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.fee, params.destTokenAccount, params.destUserAccount);
+        string[] memory keys = new string[](1);
+        bytes[] memory values = new bytes[](1);
+        keys[0] = "fee:uint256";
+        values[0] = abi.encodePacked(params.fee);
+        emit SmgRelease(params.uniqueID, params.smgID, params.tokenPairID, keys, values);
         emit SmgReleaseLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
 
