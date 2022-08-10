@@ -181,6 +181,9 @@ library RapidityLibV4 {
         } else {
             require(false, "Invalid token pair");
         }
+        if (contractFee > 0) {
+            params.smgFeeProxy.transfer(contractFee);
+        }
 
         uint left;
         if (tokenScAddr == address(0)) {
