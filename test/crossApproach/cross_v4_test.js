@@ -319,11 +319,9 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( wanchain => ethereum 
     const totalValue = new web3.utils.BN(crossValueToWei).add(new web3.utils.BN(contractFee)).toString();
 
     let smgFeeProxy = partners.smgFeeProxy;
-    console.log("v4 smgFeeProxy 1:", smgFeeProxy);
     if (smgFeeProxy === ADDRESS_0) {
         smgFeeProxy = await cross.owner();
     }
-    console.log("v4 smgFeeProxy 2:", smgFeeProxy);
     const beforeBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
 
     // token pair contract fee
@@ -354,14 +352,9 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( wanchain => ethereum 
         }
     });
     const afterBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
-    console.log("cross_v4_test 1 beforeBalance:", beforeBalance, "\nafterBalance:", afterBalance, "\ncontractFee:", contractFee);
-    console.log("cross_v4_test 2 beforeBalance:", beforeBalance.toString(), "\nafterBalance:", afterBalance.toString(), "\ncontractFee:", contractFee.toString());
     assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
-    console.log("cross_v4_test 3");
 });
 
-console.log("temp end gsy 20220810");
-return ;
 it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( wanchain => ethereum )> -> smgMint  ==>  success', async () => {
     const wanUserAccount = global.aliceAccount.WAN;
     const ethUserAccount = global.aliceAccount.ETH;
@@ -418,6 +411,20 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( wanchain => ethereum 
     if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
     }
+    const eventSmgMint = assert.getWeb3Log(receipt, {event:'SmgMint'});
+    assert.equal(!!eventSmgMint === true, true, "get event SmgMint error");
+    assert.equal(eventSmgMint.args.uniqueID, funcParams.uniqueID, "event SmgMint uniqueID error");
+    assert.equal(eventSmgMint.args.smgID, web3.utils.padRight(funcParams.smgID, 64), "event SmgMint smgID error");
+    assert.equal(eventSmgMint.args.keys.length, eventSmgMint.args.values.length, "invalid SmgMint keys and values length");
+    const eventSmgMintParams = eventSmgMint.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventSmgMint.args.values[index];
+        return reduced;
+    }, {});
+    assert.equal(eventSmgMintParams.fee.type, "uint256", "invalid SmgMint fee type");
+    assert.equal(web3.utils.toBN(eventSmgMintParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgMint fee value");
 
     assert.checkWeb3Event(receipt, {
         event: 'SmgMintLogger',
@@ -426,7 +433,6 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( wanchain => ethereum 
             smgID: web3.utils.padRight(funcParams.smgID, 64),
             tokenPairID: funcParams.tokenPairID,
             value: funcParams.crossValue,
-            fee: funcParams.crossFee,
             tokenAccount: funcParams.tokenAccount,
             userAccount: funcParams.userAccount
         }
@@ -581,6 +587,20 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( ethereum => wanchain 
     if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
     }
+    const eventSmgRelease = assert.getWeb3Log(receipt, {event:'SmgRelease'});
+    assert.equal(!!eventSmgRelease === true, true, "get event SmgRelease error");
+    assert.equal(eventSmgRelease.args.uniqueID, funcParams.uniqueID, "event SmgRelease uniqueID error");
+    assert.equal(eventSmgRelease.args.smgID, funcParams.smgID, "event SmgRelease smgID error");
+    assert.equal(eventSmgRelease.args.keys.length, eventSmgRelease.args.values.length, "invalid SmgRelease keys and values length");
+    const eventSmgReleaseParams = eventSmgRelease.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventSmgRelease.args.values[index];
+        return reduced;
+    }, {});
+    assert.equal(eventSmgReleaseParams.fee.type, "uint256", "invalid SmgRelease fee type");
+    assert.equal(web3.utils.toBN(eventSmgReleaseParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgRelease fee value");
 
     assert.checkWeb3Event(receipt, {
         event: 'SmgReleaseLogger',
@@ -589,7 +609,6 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( ethereum => wanchain 
             smgID: web3.utils.padRight(funcParams.smgID, 64),
             tokenPairID: funcParams.tokenPairID,
             value: funcParams.crossValue,
-            fee: funcParams.crossFee,
             tokenAccount: funcParams.tokenAccount,
             userAccount: funcParams.userAccount
         }
@@ -732,6 +751,20 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @wanchain] <( ethereum => wanchai
     if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
     }
+    const eventSmgMint = assert.getWeb3Log(receipt, {event:'SmgMint'});
+    assert.equal(!!eventSmgMint === true, true, "get event SmgMint error");
+    assert.equal(eventSmgMint.args.uniqueID, funcParams.uniqueID, "event SmgMint uniqueID error");
+    assert.equal(eventSmgMint.args.smgID, funcParams.smgID, "event SmgMint smgID error");
+    assert.equal(eventSmgMint.args.keys.length, eventSmgMint.args.values.length, "invalid SmgMint keys and values length");
+    const eventSmgMintParams = eventSmgMint.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventSmgMint.args.values[index];
+        return reduced;
+    }, {});
+    assert.equal(eventSmgMintParams.fee.type, "uint256", "invalid SmgMint fee type");
+    assert.equal(web3.utils.toBN(eventSmgMintParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgMint fee value");
 
     assert.checkWeb3Event(receipt, {
         event: 'SmgMintLogger',
@@ -740,7 +773,6 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @wanchain] <( ethereum => wanchai
             smgID: web3.utils.padRight(funcParams.smgID, 64),
             tokenPairID: funcParams.tokenPairID,
             value: funcParams.crossValue,
-            fee: funcParams.crossFee,
             tokenAccount: funcParams.tokenAccount,
             userAccount: funcParams.userAccount
         }
@@ -888,6 +920,20 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( wanchain => ethereu
     if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
     }
+    const eventSmgRelease = assert.getWeb3Log(receipt, {event:'SmgRelease'});
+    assert.equal(!!eventSmgRelease === true, true, "get event SmgRelease error");
+    assert.equal(eventSmgRelease.args.uniqueID, funcParams.uniqueID, "event SmgRelease uniqueID error");
+    assert.equal(eventSmgRelease.args.smgID, funcParams.smgID, "event SmgRelease smgID error");
+    assert.equal(eventSmgRelease.args.keys.length, eventSmgRelease.args.values.length, "invalid SmgRelease keys and values length");
+    const eventSmgReleaseParams = eventSmgRelease.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventSmgRelease.args.values[index];
+        return reduced;
+    }, {});
+    assert.equal(eventSmgReleaseParams.fee.type, "uint256", "invalid SmgRelease fee type");
+    assert.equal(web3.utils.toBN(eventSmgReleaseParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgRelease fee value");
 
     assert.checkWeb3Event(receipt, {
         event: 'SmgReleaseLogger',
@@ -896,7 +942,6 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( wanchain => ethereu
             smgID: web3.utils.padRight(funcParams.smgID, 64),
             tokenPairID: funcParams.tokenPairID,
             value: funcParams.crossValue,
-            fee: funcParams.crossFee,
             tokenAccount: funcParams.tokenAccount,
             userAccount: funcParams.userAccount
         }
@@ -965,6 +1010,20 @@ it('Chain [BTC] <=> Chain [WAN] -> COIN [BTC @wanchain] <( bitcoin => wanchain )
     if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
     }
+    const eventSmgMint = assert.getWeb3Log(receipt, {event:'SmgMint'});
+    assert.equal(!!eventSmgMint === true, true, "get event SmgMint error");
+    assert.equal(eventSmgMint.args.uniqueID, funcParams.uniqueID, "event SmgMint uniqueID error");
+    assert.equal(eventSmgMint.args.smgID, funcParams.smgID, "event SmgMint smgID error");
+    assert.equal(eventSmgMint.args.keys.length, eventSmgMint.args.values.length, "invalid SmgMint keys and values length");
+    const eventSmgMintParams = eventSmgMint.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventSmgMint.args.values[index];
+        return reduced;
+    }, {});
+    assert.equal(eventSmgMintParams.fee.type, "uint256", "invalid SmgMint fee type");
+    assert.equal(web3.utils.toBN(eventSmgMintParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgMint fee value");
 
     assert.checkWeb3Event(receipt, {
         event: 'SmgMintLogger',
@@ -973,7 +1032,6 @@ it('Chain [BTC] <=> Chain [WAN] -> COIN [BTC @wanchain] <( bitcoin => wanchain )
             smgID: web3.utils.padRight(funcParams.smgID, 64),
             tokenPairID: funcParams.tokenPairID,
             value: funcParams.crossValue,
-            fee: funcParams.crossFee,
             tokenAccount: funcParams.tokenAccount,
             userAccount: funcParams.userAccount
         }
@@ -1122,6 +1180,20 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [BTC @ethereum] <( wanchain => ethereum 
     if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
     }
+    const eventSmgMint = assert.getWeb3Log(receipt, {event:'SmgMint'});
+    assert.equal(!!eventSmgMint === true, true, "get event SmgMint error");
+    assert.equal(eventSmgMint.args.uniqueID, funcParams.uniqueID, "event SmgMint uniqueID error");
+    assert.equal(eventSmgMint.args.smgID, funcParams.smgID, "event SmgMint smgID error");
+    assert.equal(eventSmgMint.args.keys.length, eventSmgMint.args.values.length, "invalid SmgMint keys and values length");
+    const eventSmgMintParams = eventSmgMint.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventSmgMint.args.values[index];
+        return reduced;
+    }, {});
+    assert.equal(eventSmgMintParams.fee.type, "uint256", "invalid SmgMint fee type");
+    assert.equal(web3.utils.toBN(eventSmgMintParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgMint fee value");
 
     assert.checkWeb3Event(receipt, {
         event: 'SmgMintLogger',
@@ -1130,7 +1202,6 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [BTC @ethereum] <( wanchain => ethereum 
             smgID: web3.utils.padRight(funcParams.smgID, 64),
             tokenPairID: funcParams.tokenPairID,
             value: funcParams.crossValue,
-            fee: funcParams.crossFee,
             tokenAccount: funcParams.tokenAccount,
             userAccount: funcParams.userAccount
         }

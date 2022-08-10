@@ -202,9 +202,21 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @wanchain] <( ethereum => wanchain
         receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
     }
 
-    //receipt.logs.forEach(function (logEntry) {
-    //    console.log("logEntry:", logEntry);
-    //});
+    const eventSmgMint = assert.getWeb3Log(receipt, {event:'SmgMint'});
+    assert.equal(!!eventSmgMint === true, true, "get event SmgMint error");
+    assert.equal(eventSmgMint.args.uniqueID, funcParams.uniqueID, "event SmgMint uniqueID error");
+    assert.equal(eventSmgMint.args.smgID, funcParams.smgID, "event SmgMint smgID error");
+    assert.equal(eventSmgMint.args.keys.length, eventSmgMint.args.values.length, "invalid SmgMint keys and values length");
+    const eventSmgMintParams = eventSmgMint.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventSmgMint.args.values[index];
+        return reduced;
+    }, {});
+    assert.equal(eventSmgMintParams.fee.type, "uint256", "invalid SmgMint fee type");
+    assert.equal(web3.utils.toBN(eventSmgMintParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgMint fee value");
+
     assert.checkWeb3Event(receipt, {
         event: 'SmgMintLogger',
         args: {
@@ -410,6 +422,20 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [NFT @ethereum] <( wanchain => ethereum
         receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
     }
     //console.log("nft smgRelease receipt logs:", receipt.logs);
+    const eventSmgRelease = assert.getWeb3Log(receipt, {event:'SmgRelease'});
+    assert.equal(!!eventSmgRelease === true, true, "get event SmgRelease error");
+    assert.equal(eventSmgRelease.args.uniqueID, funcParams.uniqueID, "event SmgRelease uniqueID error");
+    assert.equal(eventSmgRelease.args.smgID, funcParams.smgID, "event SmgRelease smgID error");
+    assert.equal(eventSmgRelease.args.keys.length, eventSmgRelease.args.values.length, "invalid SmgRelease keys and values length");
+    const eventSmgReleaseParams = eventSmgRelease.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventSmgRelease.args.values[index];
+        return reduced;
+    }, {});
+    assert.equal(eventSmgReleaseParams.fee.type, "uint256", "invalid SmgRelease fee type");
+    assert.equal(web3.utils.toBN(eventSmgReleaseParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgRelease fee value");
 
     assert.checkWeb3Event(receipt, {
         event: 'SmgReleaseLogger',
