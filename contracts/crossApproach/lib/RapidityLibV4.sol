@@ -552,7 +552,7 @@ library RapidityLibV4 {
     function mintShadowTokenErc1155(address tokenManager, address tokenAddress, address userAccount, uint tokenID, uint value) 
     private 
     returns (bool) {
-        uint beforeBalance = IERC1155(tokenManager).balanceOf(userAccount, tokenID);
+        uint beforeBalance = IERC1155(tokenAddress).balanceOf(userAccount, tokenID);
         ITokenManager(tokenManager).mintToken(tokenAddress, userAccount, tokenID, value, '0x0');
         uint afterBalance = IERC1155(tokenAddress).balanceOf(userAccount, tokenID);
         return afterBalance == beforeBalance.add(value);
