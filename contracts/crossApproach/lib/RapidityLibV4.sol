@@ -474,7 +474,8 @@ library RapidityLibV4 {
     {
         ITokenManager tokenManager = storageData.tokenManager;
         uint256 contractFee = params.tokenPairContractFee;
-        address tokenScAddr = getTokenScAddr(storageData, params);
+        address tokenScAddr;
+        (tokenScAddr, contractFee) = getTokenScAddr(storageData, params);
 
         uint tokenCrossType = tokenManager.mapTokenPairType(params.tokenPairID);
         require(tokenCrossType == uint8(TokenCrossType.ERC1155), "Not ERC1155");
@@ -494,7 +495,7 @@ library RapidityLibV4 {
 
     function getTokenScAddr(CrossTypesV1.Data storage storageData, RapidityUserBurnParams memory params) 
     private 
-    returns (address) {
+    returns (address, uint256) {
         ITokenManager tokenManager = storageData.tokenManager;
         uint fromChainID;
         uint toChainID;
@@ -519,7 +520,7 @@ library RapidityLibV4 {
             require(false, "Invalid token pair");
         }
         require(params.srcTokenAccount == tokenScAddr, "Invalid token account");
-        return tokenScAddr;
+        return (tokenScAddr,contractFee);
     }
 
     function burnShadowTokenErc1155(address tokenManager, address tokenAddress, uint tokenID, address userAccount, uint value) 
