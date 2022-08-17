@@ -59,7 +59,8 @@ const {
     mergeTokenPairs,
     initOrigTokenPairs,
     addTokenPairs,
-    nftTokens
+    nftTokens,
+    erc1155Tokens
 } = require("./crossApproach/token-config");
 
 const {
@@ -116,9 +117,9 @@ contract('Test Cross Approach', (accounts) => {
         let chainType;
         let chains = {};
         chainType = chainTypes.WAN;
-        chains[chainType] = makeChainInfo(chainType, deployed[chainType].scAddr, coins[chainType], tokens[chainType], nftTokens[chainType])
+        chains[chainType] = makeChainInfo(chainType, deployed[chainType].scAddr, coins[chainType], tokens[chainType], nftTokens[chainType], erc1155Tokens[chainType])
         chainType = chainTypes.ETH;
-        chains[chainType] = makeChainInfo(chainType, deployed[chainType].scAddr, coins[chainType], tokens[chainType], nftTokens[chainType])
+        chains[chainType] = makeChainInfo(chainType, deployed[chainType].scAddr, coins[chainType], tokens[chainType], nftTokens[chainType], erc1155Tokens[chainType])
         chainType = chainTypes.BTC;
         chains[chainType] = makeChainInfo(chainType, null, coins[chainType], null)
 
@@ -147,11 +148,13 @@ contract('Test Cross Approach', (accounts) => {
 
     });
 
-    //importMochaTest("Test Common V4", './crossApproach/common_v4_test');
+    importMochaTest("Test Common V4", './crossApproach/common_v4_test');
 
     importMochaTest("Test Cross V4", './crossApproach/cross_v4_test');
 
-    // importMochaTest("Test NFT Cross V4", './crossApproach/nft_v4_cross_test');
+    importMochaTest("Test NFT Cross V4", './crossApproach/nft_v4_cross_test');
+
+    importMochaTest("Test ERC1155 Cross V4", './crossApproach/erc1155_v4_cross_test');
 
     after("finish...   -> success", function () {
         clearGlobal("operatorAccount");
@@ -173,13 +176,14 @@ contract('Test Cross Approach', (accounts) => {
     });
 });
 
-function makeChainInfo(chainType, scAddr, coin, token, ntfToken) {
+function makeChainInfo(chainType, scAddr, coin, token, ntfToken, erc1155Tokens) {
     let chain = {};
     chain.ID = defaultChainIDs[chainType];
     chain.scAddr = scAddr;
     chain.coin = coin;
     chain.tokens = token;
     chain.nftTokens = ntfToken;
+    chain.erc1155Tokens = erc1155Tokens;
     return chain;
 }
 
@@ -355,13 +359,23 @@ async function deployCrossContracts(owner, options) {
     nftOrigTokens[opts.chainType] = await deployOrigToken(testNftTokenCreator, nftOrigTokens[opts.chainType]);
     await transferNftToken(testNftTokenCreator, nftOrigTokens[opts.chainType], opts.alice);
 
+    // Erc1155 begin *************************************************************************
+    {
+        const {
+            deployErc1155OrigToken,
+            transferErc1155Token
+        } = require("./erc1155/erc1155_utils.js");
 
+        let OriginErc1155Tokens = erc1155Tokens;
+        OriginErc1155Tokens[opts.chainType] = await deployErc1155OrigToken(owner, OriginErc1155Tokens[opts.chainType]);
+        // console.log("chainType:", opts.chainType, ",OriginErc1155Tokens[opts.chainType]:", OriginErc1155Tokens[opts.chainType])
+        await transferErc1155Token(owner, OriginErc1155Tokens[opts.chainType], opts.alice);
+    }
+    // Erc1155 end *************************************************************************
     let currTokenPairs = initOrigTokenPairs(coins, origTokens, chainTypes, defaultChainIDs, startTokenPairID);
     currTokenPairs = await addMappingToken(tokenManager, currTokenPairs, opts.chainType, testNftTokenCreator, owner);
-
     currTokenPairs = cleanTokenPairs(currTokenPairs);
     currTokenPairs = mergeTokenPairs(currTokenPairs, opts.tokenPairs);
-
     await cross.setPartners(
         tokenManager.address,
         isWAN ? smgAdminProxy.address : oracle.address,
