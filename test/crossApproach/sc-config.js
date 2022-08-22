@@ -14,6 +14,11 @@ const typesArrayList       = {
   smgRelease: ['uint', 'bytes32', 'uint', 'uint', 'uint', 'address', 'address'],
   // currentChainID   uniqueID   tokenPairID   value   fee   tokenAccount   userAccount
   smgMint: ['uint', 'bytes32', 'uint', 'uint', 'uint', 'address', 'address'],
+
+  // currentChainID   uniqueID   tokenPairID   tokenID value   fee   tokenAccount   userAccount
+  smgMintErc1155: ['uint', 'bytes32', 'uint', 'uint', 'uint', 'uint', 'address', 'address'],
+  // currentChainID,  uniqueID,  tokenPairID,  tokenID, value, fee,  tokenAccount,  userAccount
+  smgReleaseErc1155: ['uint', 'bytes32', 'uint', 'uint', 'uint', 'uint', 'address', 'address']
 };
 
 function buildMpcSign (schnorr, sk, typesArray, ...args) {

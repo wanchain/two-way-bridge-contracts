@@ -141,6 +141,23 @@ let nftTokens = {
     ]
 };
 
+let erc1155Tokens = {
+    WAN: [
+    ],
+    ETH: [
+        {
+            chainID: defaultChainIDs.ETH,
+            tokenCreator: null,
+            tokenAccount: "",
+            decimals: 0,
+            name: 'Erc1155Token',
+            symbol: 'Erc1155Symbol',
+            price: 1,
+            ancestorChainID: defaultChainIDs.ETH
+        }
+    ]
+};
+
 let startTokenPairID     = 1;
 
 async function deployOrigToken(tokenCreator, tokens) {
@@ -236,6 +253,23 @@ async function addMappingToken(tokenManager, tokenPairs, currChainType, testNftT
                     if (!token.shadowChainToken.tokenAccount) {
                         if (token.shadowChainToken.name === "wanNFT") {
                             token.shadowChainToken.tokenAccount = await addNftMappingToken(tokenManager, token.shadowChainToken.name, token.shadowChainToken.symbol, owner);
+                        }
+                        else if (token.shadowChainToken.name === "wanErc1155Token") {
+                            //console.log("token-config.js erc1155 token:", token);
+                            const {
+                                getErc1155Token
+                            } = require("../erc1155/erc1155_utils.js");
+
+                            let erc1155TokenInst = await getErc1155Token(owner, token.shadowChainToken.name, token.shadowChainToken.symbol);
+                            // console.log("erc1155TokenInst:", erc1155TokenInst);
+                            let transferOwnershipReceipt = await erc1155TokenInst.methods.transferOwner(tokenManager.address).send(
+                                {
+                                    from: owner,
+                                    gasPrice: '20000000000',// ganacle-cli default value
+                                    gas: 6721975            // ganache-cli default value 
+                                });
+                            // console.log("erc1155TokenInst transferOwnershipReceipt:", transferOwnershipReceipt);
+                            token.shadowChainToken.tokenAccount = erc1155TokenInst._address;
                         }
                         else {
                             token.shadowChainToken.tokenAccount = await addToken(tokenManager, token.shadowChainToken.name, token.shadowChainToken.symbol, token.ancestorChainToken.decimals);
@@ -417,6 +451,53 @@ function initOrigTokenPairs(coins, tokens, chainTypes, defaultChainIDs, startTok
         });
     });
     //console.log("after add nft tokenPairs:", tokenPairs);
+
+    // add Erc1155 token pair
+    chainTypeBounds.forEach(([origChainType, shadowChainType]) => {
+        erc1155Tokens[origChainType] && erc1155Tokens[origChainType].forEach(token => {
+            let a = token.symbol.split("wan");
+            ancestorSymbol = a[a.length - 1];
+            //console.log("ancestorSymbol:", ancestorSymbol);
+            if (!(coins[shadowChainType].crossType & crossTypes.token)) {
+                return;
+            }
+
+            let shadowTokenName = token.symbol.startsWith('wan') ? token.name : `wan${token.name}`;
+            let shadowTokenSymbol = token.symbol.startsWith('wan') ? token.symbol : `wan${token.symbol}`;
+
+            let foundArray = tokenPairs[origChainType][shadowChainType].filter(tokenPair => {
+                let check1 = tokenPair.origChainToken.name === token.name && tokenPair.origChainToken.symbol === token.symbol
+                    && tokenPair.shadowChainToken.name === shadowTokenName && tokenPair.shadowChainToken.symbol === shadowTokenSymbol
+                let check2 = tokenPair.origChainToken.name === shadowTokenName && tokenPair.origChainToken.symbol === shadowTokenSymbol
+                    && tokenPair.shadowChainToken.name === token.name && tokenPair.shadowChainToken.symbol === token.symbol
+                return check1 || check2;
+            });
+            if (!foundArray.length) {
+                foundArray = tokenPairs[shadowChainType][origChainType].filter(tokenPair => {
+                    let check1 = tokenPair.origChainToken.name === token.name && tokenPair.origChainToken.symbol === token.symbol
+                        && tokenPair.shadowChainToken.name === shadowTokenName && tokenPair.shadowChainToken.symbol === shadowTokenSymbol
+                    let check2 = tokenPair.origChainToken.name === shadowTokenName && tokenPair.origChainToken.symbol === shadowTokenSymbol
+                        && tokenPair.shadowChainToken.name === token.name && tokenPair.shadowChainToken.symbol === token.symbol
+                    return check1 || check2;
+                });
+            }
+            if (foundArray.length) {
+                return;
+            }
+
+            tokenPairs[origChainType][shadowChainType].push({
+                tokenPairID: startTokenPairID++,
+                ancestorChainToken: (token.symbol === `wan${coins.BTC.symbol}`) ? coins.BTC : token,
+                origChainToken: { name: token.name, symbol: token.symbol, chainID: token.chainID, tokenAccount: token.tokenAccount },
+                shadowChainToken: {
+                    name: token.symbol.startsWith('wan') ? token.name : `wan${token.name}`,
+                    symbol: token.symbol.startsWith('wan') ? token.symbol : `wan${token.symbol}`,
+                    chainID: defaultChainIDs[shadowChainType],
+                    tokenAccount: ""
+                },
+            });
+        });
+    });
   return tokenPairs;
 }
 
@@ -533,11 +614,11 @@ async function addTokenPairs(tokenManager, tokenPairs) {
     for (let mappingChainType in tokenPairs[origChainToken]) {
         for (let tokenPair of tokenPairs[origChainToken][mappingChainType]) {
             if (tokenPair.ancestorChainToken.name === "NFT") {
-                //console.log("addTokenPairs tokenPair:", tokenPair);
+                //console.log("1 addTokenPairs NFT tokenPair:", tokenPair);
             }
             let tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
             if (tokenPair.ancestorChainToken.name === "NFT") {
-                // console.log("addTokenPairs tokenPairInfo:", tokenPairInfo);
+                //console.log("2 addTokenPairs NFT tokenPairInfo:", tokenPairInfo);
             }
 
         if (!tokenPairInfo.fromAccount) {
@@ -623,5 +704,6 @@ module.exports = {
   addTokenPairs,
   filterTokenPair,
   getTokenAccount,
-  nftTokens
+  nftTokens,
+  erc1155Tokens
 }
