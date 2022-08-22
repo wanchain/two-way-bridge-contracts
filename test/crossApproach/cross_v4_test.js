@@ -423,6 +423,12 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( wanchain => ethereum 
         reduced[paramName].value = eventSmgMint.args.values[index];
         return reduced;
     }, {});
+    assert.equal(eventSmgMintParams.value.type, "uint256", "invalid SmgMint value type");
+    assert.equal(web3.utils.toBN(eventSmgMintParams.value.value).eq(funcParams.crossValue), true, "invalid SmgMint crossValue value");
+    assert.equal(eventSmgMintParams.tokenAccount.type, "address", "invalid SmgMint tokenAccount type");
+    assert.equal(eventSmgMintParams.tokenAccount.value.toLowerCase(), funcParams.tokenAccount.toLowerCase(), "invalid SmgMint tokenAccount value");
+    assert.equal(eventSmgMintParams.userAccount.type, "address", "invalid SmgMint userAccount type");
+    assert.equal(eventSmgMintParams.userAccount.value.toLowerCase(), funcParams.userAccount.toLowerCase(), "invalid SmgMint userAccount value");
     assert.equal(eventSmgMintParams.fee.type, "uint256", "invalid SmgMint fee type");
     assert.equal(web3.utils.toBN(eventSmgMintParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgMint fee value");
 
@@ -599,6 +605,12 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @wanchain] <( ethereum => wanchain 
         reduced[paramName].value = eventSmgRelease.args.values[index];
         return reduced;
     }, {});
+    assert.equal(eventSmgReleaseParams.value.type, "uint256", "invalid SmgRelease value type");
+    assert.equal(web3.utils.toBN(eventSmgReleaseParams.value.value).eq(funcParams.crossValue), true, "invalid SmgRelease crossValue value");
+    assert.equal(eventSmgReleaseParams.tokenAccount.type, "address", "invalid SmgMint tokenAccount type");
+    assert.equal(eventSmgReleaseParams.tokenAccount.value.toLowerCase(), funcParams.tokenAccount.toLowerCase(), "invalid SmgMint tokenAccount value");
+    assert.equal(eventSmgReleaseParams.userAccount.type, "address", "invalid SmgMint userAccount type");
+    assert.equal(eventSmgReleaseParams.userAccount.value.toLowerCase(), funcParams.userAccount.toLowerCase(), "invalid SmgMint userAccount value");
     assert.equal(eventSmgReleaseParams.fee.type, "uint256", "invalid SmgRelease fee type");
     assert.equal(web3.utils.toBN(eventSmgReleaseParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgRelease fee value");
 
@@ -763,6 +775,12 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @wanchain] <( ethereum => wanchai
         reduced[paramName].value = eventSmgMint.args.values[index];
         return reduced;
     }, {});
+    assert.equal(eventSmgMintParams.value.type, "uint256", "invalid SmgMint value type");
+    assert.equal(web3.utils.toBN(eventSmgMintParams.value.value).eq(funcParams.crossValue), true, "invalid SmgMint crossValue value");
+    assert.equal(eventSmgMintParams.tokenAccount.type, "address", "invalid SmgMint tokenAccount type");
+    assert.equal(eventSmgMintParams.tokenAccount.value.toLowerCase(), funcParams.tokenAccount.toLowerCase(), "invalid SmgMint tokenAccount value");
+    assert.equal(eventSmgMintParams.userAccount.type, "address", "invalid SmgMint userAccount type");
+    assert.equal(eventSmgMintParams.userAccount.value.toLowerCase(), funcParams.userAccount.toLowerCase(), "invalid SmgMint userAccount value");
     assert.equal(eventSmgMintParams.fee.type, "uint256", "invalid SmgMint fee type");
     assert.equal(web3.utils.toBN(eventSmgMintParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgMint fee value");
 
@@ -932,6 +950,12 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @ethereum] <( wanchain => ethereu
         reduced[paramName].value = eventSmgRelease.args.values[index];
         return reduced;
     }, {});
+    assert.equal(eventSmgReleaseParams.value.type, "uint256", "invalid SmgRelease value type");
+    assert.equal(web3.utils.toBN(eventSmgReleaseParams.value.value).eq(funcParams.crossValue), true, "invalid SmgRelease crossValue value");
+    assert.equal(eventSmgReleaseParams.tokenAccount.type, "address", "invalid SmgMint tokenAccount type");
+    assert.equal(eventSmgReleaseParams.tokenAccount.value.toLowerCase(), funcParams.tokenAccount.toLowerCase(), "invalid SmgMint tokenAccount value");
+    assert.equal(eventSmgReleaseParams.userAccount.type, "address", "invalid SmgMint userAccount type");
+    assert.equal(eventSmgReleaseParams.userAccount.value.toLowerCase(), funcParams.userAccount.toLowerCase(), "invalid SmgMint userAccount value");
     assert.equal(eventSmgReleaseParams.fee.type, "uint256", "invalid SmgRelease fee type");
     assert.equal(web3.utils.toBN(eventSmgReleaseParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgRelease fee value");
 
@@ -1022,6 +1046,12 @@ it('Chain [BTC] <=> Chain [WAN] -> COIN [BTC @wanchain] <( bitcoin => wanchain )
         reduced[paramName].value = eventSmgMint.args.values[index];
         return reduced;
     }, {});
+    assert.equal(eventSmgMintParams.value.type, "uint256", "invalid SmgMint value type");
+    assert.equal(web3.utils.toBN(eventSmgMintParams.value.value).eq(funcParams.crossValue), true, "invalid SmgMint crossValue value");
+    assert.equal(eventSmgMintParams.tokenAccount.type, "address", "invalid SmgMint tokenAccount type");
+    assert.equal(eventSmgMintParams.tokenAccount.value.toLowerCase(), funcParams.tokenAccount.toLowerCase(), "invalid SmgMint tokenAccount value");
+    assert.equal(eventSmgMintParams.userAccount.type, "address", "invalid SmgMint userAccount type");
+    assert.equal(eventSmgMintParams.userAccount.value.toLowerCase(), funcParams.userAccount.toLowerCase(), "invalid SmgMint userAccount value");
     assert.equal(eventSmgMintParams.fee.type, "uint256", "invalid SmgMint fee type");
     assert.equal(web3.utils.toBN(eventSmgMintParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgMint fee value");
 
@@ -1192,6 +1222,12 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [BTC @ethereum] <( wanchain => ethereum 
         reduced[paramName].value = eventSmgMint.args.values[index];
         return reduced;
     }, {});
+    assert.equal(eventSmgMintParams.value.type, "uint256", "invalid SmgMint value type");
+    assert.equal(web3.utils.toBN(eventSmgMintParams.value.value).eq(funcParams.crossValue), true, "invalid SmgMint crossValue value");
+    assert.equal(eventSmgMintParams.tokenAccount.type, "address", "invalid SmgMint tokenAccount type");
+    assert.equal(eventSmgMintParams.tokenAccount.value.toLowerCase(), funcParams.tokenAccount.toLowerCase(), "invalid SmgMint tokenAccount value");
+    assert.equal(eventSmgMintParams.userAccount.type, "address", "invalid SmgMint userAccount type");
+    assert.equal(eventSmgMintParams.userAccount.value.toLowerCase(), funcParams.userAccount.toLowerCase(), "invalid SmgMint userAccount value");
     assert.equal(eventSmgMintParams.fee.type, "uint256", "invalid SmgMint fee type");
     assert.equal(web3.utils.toBN(eventSmgMintParams.fee.value).eq(funcParams.crossFee), true, "invalid SmgMint fee value");
 
