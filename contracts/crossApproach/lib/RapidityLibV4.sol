@@ -282,10 +282,16 @@ library RapidityLibV4 {
             require(false, "Not support");
         }
 
-        string[] memory keys = new string[](1);
-        bytes[] memory values = new bytes[](1);
-        keys[0] = "fee:uint256";
-        values[0] = abi.encodePacked(params.fee);
+        string[] memory keys = new string[](4);
+        bytes[] memory values = new bytes[](4);
+        keys[0] = "value:uint256";
+        values[0] = abi.encodePacked(params.value);
+        keys[1] = "tokenAccount:address";
+        values[1] = abi.encodePacked(params.destTokenAccount);
+        keys[2] = "userAccount:address";
+        values[2] = abi.encodePacked(params.destUserAccount);
+        keys[3] = "fee:uint256";
+        values[3] = abi.encodePacked(params.fee);
         emit SmgMint(params.uniqueID, params.smgID, params.tokenPairID, keys, values);
         emit SmgMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
@@ -318,10 +324,16 @@ library RapidityLibV4 {
             }
         }
 
-        string[] memory keys = new string[](1);
-        bytes[] memory values = new bytes[](1);
-        keys[0] = "fee:uint256";
-        values[0] = abi.encodePacked(params.fee);
+        string[] memory keys = new string[](4);
+        bytes[] memory values = new bytes[](4);
+        keys[0] = "value:uint256";
+        values[0] = abi.encodePacked(params.value);
+        keys[1] = "tokenAccount:address";
+        values[1] = abi.encodePacked(params.destTokenAccount);
+        keys[2] = "userAccount:address";
+        values[2] = abi.encodePacked(params.destUserAccount);
+        keys[3] = "fee:uint256";
+        values[3] = abi.encodePacked(params.fee);
         emit SmgRelease(params.uniqueID, params.smgID, params.tokenPairID, keys, values);
         emit SmgReleaseLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
