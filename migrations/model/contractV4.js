@@ -52,6 +52,7 @@ const scDict = {
   CrossDelegateV3: "CrossDelegateV3",
 
   RapidityLibV4: "RapidityLibV4",
+  RapidityLibV4_NFT: "RapidityLibV4_NFT",
   CrossDelegateV4: "CrossDelegateV4",
 };
 

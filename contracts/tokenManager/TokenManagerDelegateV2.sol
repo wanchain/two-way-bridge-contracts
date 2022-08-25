@@ -42,6 +42,7 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
     address public operator;
 
     /// tokenPairID => type; type: 0 is ERC20, 1 is ERC721, ...
+    enum TokenCrossType {ERC20, ERC721, ERC1155}
     mapping(uint => uint8) public mapTokenPairType;
 
 
@@ -103,29 +104,50 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
     // ERC1155
     //*****************************************************************************
     //*****************************************************************************
-     function mintToken(
+    function mintNFT(
+        uint    tokenCrossType,
         address tokenAddress,
         address to,
-        uint    tokenID,
-        uint    value,
+        uint[]  tokenIDs,
+        uint[]  values,
         bytes   data
     )
-        external
+        public
         onlyAdmin
     {
-        IMappingToken(tokenAddress).mint(to, tokenID, value, data);
+        if(tokenCrossType == uint(TokenCrossType.ERC721)) {
+            for(uint idx = 0; idx < tokenIDs.length; ++idx) {
+                IMappingToken(tokenAddress).mint(to, tokenIDs[idx], data);
+            }
+        }
+        else if(tokenCrossType == uint(TokenCrossType.ERC1155)) {
+            IMappingToken(tokenAddress).mintBatch(to, tokenIDs, values, data);
+        }
+        else {
+            require(false, "Not support");
+        }
     }
 
-    function burnToken(
+    function burnNFT(
+        uint    tokenCrossType,
         address tokenAddress,
         address from,
-        uint    tokenID,
-        uint    value
+        uint[]  tokenIDs,
+        uint[]  values
     )
-        external
+        public
         onlyAdmin
     {
-        IMappingToken(tokenAddress).burn(from, tokenID, value);
+        if(tokenCrossType == uint(TokenCrossType.ERC721)) {
+            for(uint idx = 0; idx < tokenIDs.length; ++idx) {
+                IMappingToken(tokenAddress).burn(from, tokenIDs[idx]);
+            }
+        }
+        else if(tokenCrossType == uint(TokenCrossType.ERC1155)) {
+            IMappingToken(tokenAddress).burnBatch(from, tokenIDs, values);
+        }
+        else {
+            require(false, "Not support");
+        }
     }
-
 }

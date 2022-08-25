@@ -37,6 +37,8 @@ interface IMappingToken {
     function burn(address, uint) external;
     function update(string, string) external;
 
-    function burn(address,uint,uint) external;// ERC1155
-    function mint(address,uint,uint,bytes) external;// ERC1155
+    function burnBatch(address , uint256[] , uint256[] ) public;        // ERC1155
+    function mintBatch(address , uint256[] , uint256[] , bytes) public; // ERC1155
+
+    function mint(address, uint, bytes) external;  // ERC721 mint support data
 }
