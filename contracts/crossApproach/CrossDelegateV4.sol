@@ -29,9 +29,10 @@ pragma experimental ABIEncoderV2;
 
 import "./CrossStorageV4.sol";
 import "./lib/RapidityLibV4.sol";
+import "./lib/RapidityLibV4_NFT.sol";
 
 
-contract CrossDelegateV4  is CrossStorageV4 {
+contract CrossDelegateV4 is CrossStorageV4 {
     using SafeMath for uint;
 
     /**
@@ -108,7 +109,6 @@ contract CrossDelegateV4  is CrossStorageV4 {
         RapidityLibV4.RapidityUserLockParams memory params = RapidityLibV4.RapidityUserLockParams({
         smgID: smgID,
         tokenPairID: tokenPairID,
-        tokenID: 0,
         value: value,
         currentChainID: currentChainID,
         tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
@@ -134,7 +134,6 @@ contract CrossDelegateV4  is CrossStorageV4 {
         RapidityLibV4.RapidityUserBurnParams memory params = RapidityLibV4.RapidityUserBurnParams({
         smgID: smgID,
         tokenPairID: tokenPairID,
-        tokenID: 0,
         value: value,
         fee: fee,
         currentChainID: currentChainID,
@@ -167,7 +166,6 @@ contract CrossDelegateV4  is CrossStorageV4 {
         uniqueID: uniqueID,
         smgID: smgID,
         tokenPairID: tokenPairID,
-        tokenID: 0,
         value: value,
         fee: fee,
         destTokenAccount: tokenAccount,
@@ -201,7 +199,6 @@ contract CrossDelegateV4  is CrossStorageV4 {
         uniqueID: uniqueID,
         smgID: smgID,
         tokenPairID: tokenPairID,
-        tokenID: 0,
         value: value,
         fee: fee,
         destTokenAccount: tokenAccount,
@@ -213,7 +210,6 @@ contract CrossDelegateV4  is CrossStorageV4 {
         bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, value, fee, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
-
 
     /// @notice                             set the fee of the storeman group should get
     /// @param param                        struct of setFee parameter
@@ -465,168 +461,92 @@ contract CrossDelegateV4  is CrossStorageV4 {
      * @return `bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))`
      */
     function onERC721Received(address operator, address from, uint256 tokenId, bytes data)
-    public
-    pure
-    returns(bytes4)
+        public
+        pure
+        returns(bytes4)
     {
         return this.onERC721Received.selector;
     }
 
-    //****************************************************************************************************************************************
-    //****************************************************************************************************************************************
-    // ERC1155
-    //****************************************************************************************************************************************
-    //****************************************************************************************************************************************
-
-
-     /**
-     *
-     * MANIPULATIONS
-     *
-     */
-    /// @notice                                 request exchange orignal coin or token with WRC20 on wanchain
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain coin/token
-    /// @param  tokenID                         ERC1155 token id
-    /// @param  value                           exchange value
-    /// @param  userAccount                     account of user, used to receive shadow chain token
-    function userLockErc1155(bytes32 smgID, uint tokenPairID, uint tokenID, uint value, bytes userAccount)
-    external
-    payable
-    notHalted
-    onlyReadySmg(smgID)
-    {
-        address smgFeeProxy = getSmgFeeProxy();
-
-        RapidityLibV4.RapidityUserLockParams memory params = RapidityLibV4.RapidityUserLockParams({
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            tokenID: tokenID,
-            value: value,
-            currentChainID: currentChainID,
-            tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
-            destUserAccount: userAccount,
-            smgFeeProxy: smgFeeProxy
-        });
-        RapidityLibV4.userLockErc1155(storageData, params);
-    }
-
-    //************************************************************************************************
-    //************************************************************************************************
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  tokenID                         ERC1155 token id
-    /// @param  value                           exchange value
-    /// @param  userAccount                     account of user, used to receive original chain token
-    function userBurnErc1155(bytes32 smgID, uint tokenPairID, uint tokenID, uint value, uint fee, address tokenAccount, bytes userAccount)
-    external
-    payable
-    notHalted
-    onlyReadySmg(smgID)
-    {
-        RapidityLibV4.RapidityUserBurnParams memory params = RapidityLibV4.RapidityUserBurnParams({
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            tokenID: tokenID,
-            value: value,
-            fee: fee,
-            currentChainID: currentChainID,
-            tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
-            srcTokenAccount: tokenAccount,
-            destUserAccount: userAccount,
-            smgFeeProxy: getSmgFeeProxy()
-        });
-        RapidityLibV4.userBurnErc1155(storageData, params);
-    }
-
-    //************************************************************************************************
-    //************************************************************************************************
-    
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  uniqueID                        fast cross chain random number
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  tokenID                         ERC1155 token id
-    /// @param  value                           exchange value
-    /// @param  fee                             exchange fee
-    /// @param  userAccount                     address of user, used to receive WRC20 token
-    /// @param  r                               signature
-    /// @param  s                               signature
-    function smgMintErc1155(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint tokenID, uint value, uint fee, address tokenAccount, address userAccount, bytes r, bytes32 s)
-    external
-    notHalted
-    {
-        RapidityLibV4.RapiditySmgMintParams memory params = RapidityLibV4.RapiditySmgMintParams({
-            uniqueID: uniqueID,
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            tokenID: tokenID,
-            value: value,
-            fee: fee,
-            destTokenAccount: tokenAccount,
-            destUserAccount: userAccount,
-            smgFeeProxy: (storageData.smgFeeProxy == address(0)) ? owner : storageData.smgFeeProxy // fix: Stack too deep
-        });
-        RapidityLibV4.smgMintErc1155(storageData, params);
-
-        verifySignatureErc1155(smgID, currentChainID, uniqueID, tokenPairID, tokenID, value, fee, tokenAccount, userAccount, r, s);
-    }
-
-    function verifySignatureErc1155(bytes32 smgID, uint currentChainID, bytes32 uniqueID, uint tokenPairID, uint tokenID, uint value, uint fee, address tokenAccount, address userAccount, bytes r, bytes32 s)
-    private{
-        uint curveID;
-        bytes memory PK;
-        (curveID, PK) = acquireReadySmgInfo(smgID);
-        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenID, value, fee, tokenAccount, userAccount));
-        verifySignature(curveID, mHash, PK, r, s);
-    }
-
-    //************************************************************************************************
-    //************************************************************************************************
-
-    /// @notice                                 request exchange RC20 token with WRC20 on wanchain
-    /// @param  uniqueID                        fast cross chain random number
-    /// @param  smgID                           ID of storeman
-    /// @param  tokenPairID                     token pair ID of cross chain token
-    /// @param  tokenID                         ERC1155 token id
-    /// @param  value                           exchange value
-    /// @param  fee                             exchange fee
-    /// @param  userAccount                     address of user, used to receive original token/coin
-    /// @param  r                               signature
-    /// @param  s                               signature
-    function smgReleaseErc1155(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint tokenID, uint value, uint fee, address tokenAccount, address userAccount, bytes r, bytes32 s)
-    external
-    notHalted
-    {
-        RapidityLibV4.RapiditySmgReleaseParams memory params = RapidityLibV4.RapiditySmgReleaseParams({
-            uniqueID: uniqueID,
-            smgID: smgID,
-            tokenPairID: tokenPairID,
-            tokenID: tokenID,
-            value: value,
-            fee: fee,
-            destTokenAccount: tokenAccount,
-            destUserAccount: userAccount,
-            smgFeeProxy: (storageData.smgFeeProxy == address(0)) ? owner : storageData.smgFeeProxy // fix: Stack too deep
-        });
-        RapidityLibV4.smgReleaseErc1155(storageData, params);
-
-        verifySignatureErc1155(smgID, currentChainID, uniqueID, tokenPairID, tokenID, value, fee, tokenAccount, userAccount, r, s);
-    }
-
     function onERC1155Received(address, address, uint256, uint256, bytes memory) 
-    public 
-    pure 
-    returns (bytes4) {
+        public 
+        pure 
+        returns (bytes4)
+    {
         return this.onERC1155Received.selector;
     }
 
     function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory) 
-    public
-    pure
-    returns (bytes4) {
+        public
+        pure
+        returns (bytes4)
+    {
         return this.onERC1155BatchReceived.selector;
+    }
+
+
+    //*********************************************************************************************
+    //*********************************************************************************************
+    // NFT
+    function userLockNFT(RapidityLibV4_NFT.NFTUserLockParams nftParams)
+        public
+        payable
+        notHalted
+        onlyReadySmg(nftParams.smgID)
+    {
+        address smgFeeProxy = getSmgFeeProxy();
+
+        RapidityLibV4_NFT.RapidityUserLockNFTParams memory params = RapidityLibV4_NFT.RapidityUserLockNFTParams({
+            nftParams: nftParams,
+            currentChainID: currentChainID,
+            tokenPairContractFee: mapTokenPairContractFee[nftParams.tokenPairID],
+            smgFeeProxy: smgFeeProxy
+        });
+        RapidityLibV4_NFT.userLockNFT(storageData, params);
+    }
+    
+    function userBurnNFT(RapidityLibV4_NFT.NFTUserBurnParams nftParams)
+        public
+        payable
+        notHalted
+        onlyReadySmg(nftParams.smgID)
+    {
+        RapidityLibV4_NFT.RapidityUserBurnNFTParams memory params = RapidityLibV4_NFT.RapidityUserBurnNFTParams({
+            nftParams: nftParams,
+            currentChainID: currentChainID,
+            tokenPairContractFee: mapTokenPairContractFee[nftParams.tokenPairID],
+            smgFeeProxy: getSmgFeeProxy()
+        });
+        RapidityLibV4_NFT.userBurnNFT(storageData, params);
+    }
+
+    function smgMintNFT(RapidityLibV4_NFT.NFTSmgMintParams nftParams, bytes r, bytes32 s)
+        public
+        notHalted
+    {
+        address smgFeeProxy = getSmgFeeProxy();
+        RapidityLibV4_NFT.smgMintNFT(storageData, nftParams, smgFeeProxy);
+
+        verifySignatureNFT(nftParams.smgID, currentChainID, nftParams.uniqueID, nftParams.tokenPairID, nftParams.tokenIDs, nftParams.values, nftParams.fee, nftParams.tokenAccount, nftParams.userAccount, r, s);
+    }
+
+    function verifySignatureNFT(bytes32 smgID, uint currentChainID, bytes32 uniqueID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory values, uint fee, address tokenAccount, address userAccount, bytes r, bytes32 s)
+        private
+    {
+        uint curveID;
+        bytes memory PK;
+        (curveID, PK) = acquireReadySmgInfo(smgID);
+        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, values, fee, tokenAccount, userAccount));
+        verifySignature(curveID, mHash, PK, r, s);
+    }
+
+    function smgReleaseNFT(RapidityLibV4_NFT.NFTSmgReleaseParams nftParams, bytes r, bytes32 s)
+        public
+        notHalted
+    {
+        address smgFeeProxy = getSmgFeeProxy();
+        RapidityLibV4_NFT.smgReleaseNFT(storageData, nftParams, smgFeeProxy);
+
+        verifySignatureNFT(nftParams.smgID, currentChainID, nftParams.uniqueID, nftParams.tokenPairID, nftParams.tokenIDs, nftParams.values, nftParams.fee, nftParams.tokenAccount, nftParams.userAccount, r, s);
     }
 }

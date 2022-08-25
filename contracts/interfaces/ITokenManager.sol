@@ -44,6 +44,6 @@ interface ITokenManager {
       returns (uint8 tokenPairType);
 
     // erc1155
-    function mintToken(address tokenAddress, address to, uint tokenID, uint value, bytes data) external;
-    function burnToken(address tokenAddress, address from, uint tokenID, uint value) external;
+    function mintNFT(uint tokenCrossType, address tokenAddress, address to, uint[] ids, uint[] values, bytes data) public;
+    function burnNFT(uint tokenCrossType, address tokenAddress, address from, uint[] ids, uint[] values) public;
 }
