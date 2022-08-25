@@ -25,6 +25,7 @@
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
 pragma solidity ^0.4.24;
+pragma experimental ABIEncoderV2;
 
 import "../lib/SafeMath.sol";
 import "../components/Admin.sol";
@@ -33,7 +34,8 @@ import "./lib/GpkLib.sol";
 
 contract GpkDelegate is GpkStorage, Admin {
     using SafeMath for uint;
-
+    bytes keyGpkCount = "gpkCount";
+    bytes keyCurveCfg = "gpkCurveCfg";
     /**
      *
      * EVENTS
@@ -71,6 +73,10 @@ contract GpkDelegate is GpkStorage, Admin {
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     event RevealSijLogger(bytes32 indexed groupId, uint16 indexed round, uint8 indexed curveIndex, address src, address dest);
+
+
+    event GpkCreatedLogger(bytes32 indexed groupId, uint16 indexed round, bytes[] gpk);
+    event setGpkCfgEvent(bytes32 indexed groupId, uint indexed count);
 
     /**
     *
@@ -210,7 +216,7 @@ contract GpkDelegate is GpkStorage, Admin {
             if (round.checkValidCount >= group.smNumber ** 2) {
                 round.status = GpkTypes.GpkStatus.Complete;
                 round.statusTime = now;
-                GpkLib.tryComplete(group, smg);
+                tryComplete(groupId, smg);
             }
         } else {
             d.checkStatus = GpkTypes.CheckStatus.Invalid;
@@ -339,7 +345,8 @@ contract GpkDelegate is GpkStorage, Admin {
         view
     {
         require(roundIndex == group.round, "Invalid round"); // must be current round
-        require(curveIndex <= 1, "Invalid curve"); // curve only can be 0 or 1
+        uint gpkCount = getGpkCount(group.groupId);
+        require(curveIndex < gpkCount, "Invalid curve"); // curve only can be 0 or 1, 2
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         require((round.status == status) && (round.statusTime > 0), "Invalid status");
         if (checkSender) {
@@ -350,58 +357,118 @@ contract GpkDelegate is GpkStorage, Admin {
         }
     }
 
-    function getGroupInfo(bytes32 groupId, int32 roundIndex)
-        external
-        view
-        returns(uint16 queriedRound, address curve1, uint8 curve1Status, uint curve1StatusTime, address curve2, uint8 curve2Status, uint curve2StatusTime)
-    {
-        GpkTypes.Group storage group = groupMap[groupId];
-        queriedRound = (roundIndex >= 0)? uint16(roundIndex) : group.round;
-        GpkTypes.Round storage round1 = group.roundMap[queriedRound][0];
-        GpkTypes.Round storage round2 = group.roundMap[queriedRound][1];
-        return (queriedRound, round1.curve, uint8(round1.status), round1.statusTime, round2.curve, uint8(round2.status), round2.statusTime);
-    }
 
-    function getPolyCommit(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src)
+
+    function getPolyCommit(bytes32 groupId, uint16 roundIndex, uint8 gpkIndex, address src)
         external
         view
         returns(bytes polyCommit)
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
+        GpkTypes.Round storage round = group.roundMap[roundIndex][gpkIndex];
         return round.srcMap[src].polyCommit;
     }
 
-    function getSijInfo(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src, address dest)
+    function getSijInfo(bytes32 groupId, uint16 roundIndex, uint8 gpkIndex, address src, address dest)
         external
         view
         returns(bytes encSij, uint8 checkStatus, uint setTime, uint checkTime, uint sij, uint ephemPrivateKey)
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
+        GpkTypes.Round storage round = group.roundMap[roundIndex][gpkIndex];
         GpkTypes.Dest storage d = round.srcMap[src].destMap[dest];
         return (d.encSij, uint8(d.checkStatus), d.setTime, d.checkTime, d.sij, d.ephemPrivateKey);
     }
 
-    function getGpkShare(bytes32 groupId, uint16 index)
+    function getGpkbyIndex(bytes32 groupId, uint8 gpkIndex)
         external
         view
-        returns(bytes gpkShare1, bytes gpkShare2)
+        returns(bytes gpk)
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        address src = group.addrMap[index];
         mapping(uint8 => GpkTypes.Round) roundMap = groupMap[groupId].roundMap[group.round];
-        return (roundMap[0].srcMap[src].gpkShare, roundMap[1].srcMap[src].gpkShare);
+        return roundMap[gpkIndex].gpk;
     }
 
-    function getGpk(bytes32 groupId)
+    function getGpkSharebyIndex(bytes32 groupId, uint16 smIndex, uint8 gpkIndex)
         external
         view
-        returns(bytes gpk1, bytes gpk2)
+        returns(bytes gpkShare)
     {
         GpkTypes.Group storage group = groupMap[groupId];
+        address src = group.addrMap[smIndex];
         mapping(uint8 => GpkTypes.Round) roundMap = groupMap[groupId].roundMap[group.round];
-        return (roundMap[0].gpk, roundMap[1].gpk);
+        return roundMap[gpkIndex].srcMap[src].gpkShare;
+    }
+    function getGroupInfobyRoundCurve(bytes32 groupId, int32 roundIndex, uint8 gpkIndex)
+        external
+        view
+        returns(uint16 queriedRound, address curve, uint8 curveStatus, uint curveStatusTime)
+    {
+        GpkTypes.Group storage group = groupMap[groupId];
+        queriedRound = (roundIndex >= 0)? uint16(roundIndex) : group.round;
+        GpkTypes.Round storage round = group.roundMap[queriedRound][gpkIndex];
+        return (queriedRound, round.curve, uint8(round.status), round.statusTime);
+    }
+    function getGpkCount(bytes32 groupId) public view returns(uint count) {
+        return uintData.getStorage(keyGpkCount, abi.encode(groupId));
+    }
+    function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algo) {
+        bytes memory b = new bytes(32);
+        assembly { mstore(add(b, 32),index)}
+        uint cfg = uintData.getStorage(keyCurveCfg, abi.encode(groupId, b));
+        return getGpkCfgbyId(cfg);
+    }
+    function getGpkCfgbyId(uint id) public view returns(uint curveIndex, uint algo) {
+        curveIndex = id >> 128;
+        algo = id << 128 >> 128;
+        return ;
+    }
+
+    function calcPolyLength(uint algo, uint threshold) public returns (uint length){
+        if(algo == 0) { // 0: ecdsa   1: schnorr
+            return threshold/2;
+        } else {
+            return threshold;
+        }
+    }
+
+    function setGpkCfg(bytes32 groupId, uint[] curIndex, uint[] algoIndex) external onlyAdmin {
+        require(curIndex.length != 0, "empty curve");
+        require(curIndex.length == algoIndex.length, "invalid length");
+        uint256 length = curIndex.length;
+        uintData.setStorage(keyGpkCount, abi.encode(groupId), length);
+        for(uint8 i=0; i<length; i++) {
+            uint gpkCfg = curIndex[i] << 128 + algoIndex[i];
+            bytes memory b = new bytes(32);
+            assembly { mstore(add(b, 32),i)}
+            uintData.setStorage(keyCurveCfg, abi.encode(groupId, b), gpkCfg);
+        }
+        emit setGpkCfgEvent(groupId, length);
+    }
+
+
+    function tryComplete(bytes32 groupId, address smg)
+        public
+    {
+        GpkTypes.Group storage group = groupMap[groupId];
+        uint gpkCount = getGpkCount(groupId);
+        uint8 i;
+        for(i=0; i<gpkCount; i++) {
+            if(group.roundMap[group.round][i].status != GpkTypes.GpkStatus.Complete) {
+                return;
+            }
+        }
+
+        bytes[] memory gpks = new  bytes[](gpkCount);
+        
+        for(i=0; i<gpkCount; i++) { 
+            gpks[i] = group.roundMap[group.round][i].gpk;
+        }
+        emit GpkCreatedLogger(groupId, group.round, gpks );
+        GpkTypes.Round storage round1 = group.roundMap[group.round][0];
+        GpkTypes.Round storage round2 = group.roundMap[group.round][1];
+        IStoremanGroup(smg).setGpk(groupId, round1.gpk, round2.gpk); // only set 2 gpk for compatible 
     }
 
     /// @notice fallback function

@@ -8,6 +8,9 @@ const { GpkStatus, CheckStatus, Data } = require('./Data');
 const utils = require('../utils.js');
 const optimist = require("optimist");
 
+const assert = require('chai').assert;
+const { expectRevert, expectEvent} = require('@openzeppelin/test-helpers');
+
 const fakeSc = ['local', 'coverage'].includes(optimist.argv.network);
 
 // common
@@ -384,4 +387,29 @@ contract('Gpk_UT_gpk', async() => {
     }
     assert.notEqual(result, null)
   })  
+
+  it('[GpkDelegate_setGpkCfgN] should fail 1: invalid length', async (accounts) => {
+    console.log("GpkDelegate_setGpkCfgN")
+    let curves = []
+    let algos = []
+    let tx =  gpkSc.setGpkCfg(groupId, curves, algos,{from:accounts[11]})
+    await expectRevert(tx, "not admin")
+
+    tx =  gpkSc.setGpkCfg(groupId, curves, algos,{from:admin})
+    await expectRevert(tx, "empty curve")
+
+    curves = [1,0]
+    tx =  gpkSc.setGpkCfg(groupId, curves, algos,{from:admin})
+    await expectRevert(tx, "invalid length")
+
+    curves = [1,0,1]
+    algos  = [1, 1, 0]
+    tx = await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin})
+    expectEvent(tx, "setGpkCfgEvent",{count:algos.length+1})
+
+
+    console.log("end")
+
+  })  
+
 })

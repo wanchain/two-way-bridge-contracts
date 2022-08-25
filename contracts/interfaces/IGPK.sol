@@ -27,6 +27,11 @@
 pragma solidity ^0.4.24;
 
 interface IGPK {
-    function getGpkShare(bytes32 groupId, uint index) external view returns(bytes gpkShare1, bytes gpkShare2);
-    function getGpk(bytes32 groupId) external view returns(bytes gpk1, bytes gpk2);
+    // function getGpkShare(bytes32 groupId, uint index) external view returns(bytes gpkShare1, bytes gpkShare2);
+    // function getGpk(bytes32 groupId) external view returns(bytes gpk1, bytes gpk2);
+    function getGpkCount(bytes32 groupId) public view returns(uint count);
+    function getGpkbyIndex(bytes32 groupId, uint8 gpkIndex) external view returns(bytes gpk);
+    function getGpkSharebyIndex(bytes32 groupId, uint16 smIndex, uint8 gpkIndex) external view returns(bytes gpkShare);
+    function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algo);
+    function setGpkCfg(bytes32 groupId, uint[] curIndex, uint[] algoIndex) external;
 }
