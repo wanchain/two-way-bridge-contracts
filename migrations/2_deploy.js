@@ -26,6 +26,7 @@ const Bn256Curve = artifacts.require('Bn256Curve');
 const GpkLib = artifacts.require('GpkLib');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
+const GpkDelegateV2 = artifacts.require('GpkDelegateV2');
 const Deposit = artifacts.require('Deposit');
 const TestDeposit = artifacts.require('TestDeposit');
 const StoremanLib = artifacts.require('StoremanLib');
@@ -209,6 +210,8 @@ module.exports = async function (deployer, network) {
 
     await deployer.link(GpkLib, GpkDelegate);
     await deployer.deploy(GpkDelegate);
+    await deployer.link(GpkLib, GpkDelegateV2);
+    await deployer.deploy(GpkDelegateV2);
 
     await deployer.deploy(GpkProxy);
     let gpkProxy = await GpkProxy.deployed();

@@ -47,6 +47,12 @@ library GpkLib {
      *
      */
 
+    /// @notice                           event for gpk created
+    /// @param groupId                    storeman group id
+    /// @param round                      group negotiate round
+    /// @param gpk1                       group public key for chain1
+    /// @param gpk2                       group public key for chain2
+    event GpkCreatedLogger(bytes32 indexed groupId, uint16 indexed round, bytes gpk1, bytes gpk2);
 
     /// @notice                           event for contract slash storeman
     /// @param groupId                    storeman group id
@@ -112,6 +118,18 @@ library GpkLib {
         }
     }
 
+    /// @notice                           function for try to complete
+    /// @param group                      storeman group
+    function tryComplete(GpkTypes.Group storage group, address smg)
+        public
+    {
+        GpkTypes.Round storage round1 = group.roundMap[group.round][0];
+        GpkTypes.Round storage round2 = group.roundMap[group.round][1];
+        if (round1.status == round2.status) {
+            IStoremanGroup(smg).setGpk(group.groupId, round1.gpk, round2.gpk);
+            emit GpkCreatedLogger(group.groupId, group.round, round1.gpk, round2.gpk);
+        }
+    }
 
     /// @notice                           function for update gpk
     /// @param round                      round

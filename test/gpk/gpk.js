@@ -3,13 +3,14 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
+const GpkDelegateV2 = artifacts.require('GpkDelegateV2');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, Data } = require('./Data');
 const utils = require('../utils.js');
 const optimist = require("optimist");
 
 const assert = require('chai').assert;
-const { expectRevert, expectEvent} = require('@openzeppelin/test-helpers');
+const { expectRevert, expectEvent, BN} = require('@openzeppelin/test-helpers');
 
 const fakeSc = ['local', 'coverage'].includes(optimist.argv.network);
 
@@ -20,10 +21,10 @@ const ADDRESS_0 = '0x0000000000000000000000000000000000000000';
 let groupId = '';
 
 // contract
-let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
+let smgSc, gpkProxy, gpkDelegate,gpkDelegateV2, gpkSc, configProxy;
 let data;
 
-contract('Gpk_UT_gpk', async() => {
+contract('Gpk_UT_gpk', async(accounts) => {
   let owner, admin;
 
   before("should do all preparations", async() => {
@@ -37,8 +38,10 @@ contract('Gpk_UT_gpk', async() => {
 
     // gpk
     gpkProxy = await GpkProxy.deployed();
-    gpkDelegate = await GpkDelegate.deployed();
-    gpkSc = await GpkDelegate.at(gpkProxy.address);
+
+    gpkDelegate = await GpkDelegateV2.deployed();
+    await gpkProxy.upgradeTo(gpkDelegate.address)
+    gpkSc = await GpkDelegateV2.at(gpkProxy.address);
     console.log("Gpk contract address: %s", gpkProxy.address);
 
     // network
@@ -58,6 +61,9 @@ contract('Gpk_UT_gpk', async() => {
 
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
+    let curves = [1,0,1]
+    let algos  = [1,1,0]
+    await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin}) 
     // console.log("gpk ut data: %O", data);
   })
 
@@ -199,7 +205,7 @@ contract('Gpk_UT_gpk', async() => {
   it('[GpkDelegate_setPolyCommit] should fail: Invalid curve', async () => {
     let result = {};
     try {
-      await data.setPolyCommit(0, 2, 0);
+      await data.setPolyCommit(0, 3, 0);
     } catch (e) {
       result = e;
     }
@@ -388,11 +394,11 @@ contract('Gpk_UT_gpk', async() => {
     assert.notEqual(result, null)
   })  
 
-  it('[GpkDelegate_setGpkCfgN] should fail 1: invalid length', async (accounts) => {
-    console.log("GpkDelegate_setGpkCfgN")
+  it('[GpkDelegate_setGpkCfgN] should fail 1: invalid length', async () => {
+    console.log("GpkDelegate_setGpkCfgN:", accounts.length)
     let curves = []
     let algos = []
-    let tx =  gpkSc.setGpkCfg(groupId, curves, algos,{from:accounts[11]})
+    let tx =  gpkSc.setGpkCfg(groupId, curves, algos,{from:accounts[3]})
     await expectRevert(tx, "not admin")
 
     tx =  gpkSc.setGpkCfg(groupId, curves, algos,{from:admin})
@@ -402,12 +408,21 @@ contract('Gpk_UT_gpk', async() => {
     tx =  gpkSc.setGpkCfg(groupId, curves, algos,{from:admin})
     await expectRevert(tx, "invalid length")
 
-    curves = [1,0,1]
-    algos  = [1, 1, 0]
+    curves = [1,0,1,8,37]
+    algos  = [1, 1, 0,9,46]
     tx = await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin})
-    expectEvent(tx, "setGpkCfgEvent",{count:algos.length+1})
 
+    expectEvent(tx, "setGpkCfgEvent",{count: new BN(algos.length)})
 
+    let count1 = await gpkSc.getGpkCount(groupId);
+    assert.equal(count1, algos.length, "getGpkCount failed")
+
+    for(let i=0; i<count1; i++) {
+      let cfg = await gpkSc.getGpkCfgbyGroup(groupId, i);
+      console.log("cfg:", i, cfg.curveIndex.toString(10), cfg.algo.toString(10))
+      // assert.equal(cfg.curveIndex.toString(10), curves[i].toString(10), "curve error")
+      // assert.equal(cfg.algo.toString(10), algos[i].toString(10), "algo error")
+    }
     console.log("end")
 
   })  
