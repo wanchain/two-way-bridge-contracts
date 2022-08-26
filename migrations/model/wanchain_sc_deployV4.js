@@ -97,10 +97,10 @@ async function deploy(cfg, isMainnet, options = {}) {
 
     // ***********************************************************
     // NFT begin
-    await deployer.deploy(scDict.RapidityLibV4_NFT);
-    let rapidityLibV4_NFT = await deployer.deployed(scDict.RapidityLibV4_NFT);
-    contract[scDict.RapidityLibV4_NFT] = rapidityLibV4_NFT.address;
-    await deployer.link(scDict.CrossDelegateV4, scDict.RapidityLibV4_NFT);
+    await deployer.deploy(scDict.NFTLibV1);
+    let nftLibV1 = await deployer.deployed(scDict.NFTLibV1);
+    contract[scDict.NFTLibV1] = nftLibV1.address;
+    await deployer.link(scDict.CrossDelegateV4, scDict.NFTLibV1);
     // NFT end
     // ***********************************************************
 
