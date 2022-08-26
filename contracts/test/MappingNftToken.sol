@@ -19,6 +19,7 @@ contract MappingNftToken is ERC721Full, Ownable {
     uint8 private _decimal;
     string private _name;
     string private _symbol;
+    mapping(uint => bytes) public mapTokenData;
 
     /**
      * @dev Sets the values for {name} and {symbol}.
@@ -141,4 +142,20 @@ contract MappingNftToken is ERC721Full, Ownable {
     function _beforeTokenTransfer(address from, address to, uint256 amount)  view internal {
         require(to != address(this), "to address incorrect");
     }
+
+    // mint supprt data
+    function mint(address account_, uint256 nftID, bytes data)
+        external
+        onlyOwner
+    {
+        //_safeMint(account_, nftID, data);
+        _mint(account_, nftID);
+        mapTokenData[nftID] = data;
+    }
+
+    // function safeTransferFrom(address from, address to, uint256 tokenId, bytes _data) public {
+    //     require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+    //     _safeTransfer(from, to, tokenId, _data);
+    //     mapTokenData[tokenId] = _data;
+    // }
 }

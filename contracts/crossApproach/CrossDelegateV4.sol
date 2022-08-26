@@ -29,7 +29,7 @@ pragma experimental ABIEncoderV2;
 
 import "./CrossStorageV4.sol";
 import "./lib/RapidityLibV4.sol";
-import "./lib/RapidityLibV4_NFT.sol";
+import "./lib/NFTLibV1.sol";
 
 
 contract CrossDelegateV4 is CrossStorageV4 {
@@ -488,65 +488,90 @@ contract CrossDelegateV4 is CrossStorageV4 {
     //*********************************************************************************************
     //*********************************************************************************************
     // NFT
-    function userLockNFT(RapidityLibV4_NFT.NFTUserLockParams nftParams)
+    function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, bytes userAccount)
         public
         payable
         notHalted
-        onlyReadySmg(nftParams.smgID)
+        onlyReadySmg(smgID)
     {
         address smgFeeProxy = getSmgFeeProxy();
 
-        RapidityLibV4_NFT.RapidityUserLockNFTParams memory params = RapidityLibV4_NFT.RapidityUserLockNFTParams({
-            nftParams: nftParams,
+        NFTLibV1.RapidityUserLockNFTParams memory params = NFTLibV1.RapidityUserLockNFTParams({
+            smgID: smgID,
+            tokenPairID: tokenPairID,
+            tokenIDs: tokenIDs,
+            tokenValues: tokenValues,
+            userAccount: userAccount,
             currentChainID: currentChainID,
-            tokenPairContractFee: mapTokenPairContractFee[nftParams.tokenPairID],
+            tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
             smgFeeProxy: smgFeeProxy
         });
-        RapidityLibV4_NFT.userLockNFT(storageData, params);
+        NFTLibV1.userLockNFT(storageData, params);
     }
     
-    function userBurnNFT(RapidityLibV4_NFT.NFTUserBurnParams nftParams)
+    function userBurnNFT(bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, uint fee, address tokenAccount, bytes userAccount)
         public
         payable
         notHalted
-        onlyReadySmg(nftParams.smgID)
+        onlyReadySmg(smgID)
     {
-        RapidityLibV4_NFT.RapidityUserBurnNFTParams memory params = RapidityLibV4_NFT.RapidityUserBurnNFTParams({
-            nftParams: nftParams,
+        NFTLibV1.RapidityUserBurnNFTParams memory params = NFTLibV1.RapidityUserBurnNFTParams({
+            smgID: smgID,
+            tokenPairID: tokenPairID,
+            tokenIDs: tokenIDs,
+            tokenValues: tokenValues,
+            tokenAccount: tokenAccount,
+            userAccount: userAccount,
             currentChainID: currentChainID,
-            tokenPairContractFee: mapTokenPairContractFee[nftParams.tokenPairID],
+            tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
             smgFeeProxy: getSmgFeeProxy()
         });
-        RapidityLibV4_NFT.userBurnNFT(storageData, params);
+        NFTLibV1.userBurnNFT(storageData, params);
     }
 
-    function smgMintNFT(RapidityLibV4_NFT.NFTSmgMintParams nftParams, bytes r, bytes32 s)
+    function smgMintNFT(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, bytes extData, address tokenAccount, address userAccount, bytes r, bytes32 s)
         public
         notHalted
     {
-        address smgFeeProxy = getSmgFeeProxy();
-        RapidityLibV4_NFT.smgMintNFT(storageData, nftParams, smgFeeProxy);
+        NFTLibV1.NFTSmgMintParams memory params = NFTLibV1.NFTSmgMintParams({
+            uniqueID: uniqueID,
+            smgID: smgID,
+            tokenPairID: tokenPairID,
+            tokenIDs: tokenIDs,
+            tokenValues: tokenValues,
+            extData: extData,
+            tokenAccount: tokenAccount,
+            userAccount: userAccount
+        });
 
-        verifySignatureNFT(nftParams.smgID, currentChainID, nftParams.uniqueID, nftParams.tokenPairID, nftParams.tokenIDs, nftParams.values, nftParams.fee, nftParams.tokenAccount, nftParams.userAccount, r, s);
+        verifySignatureNFT(smgID, currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount, r, s);
     }
 
-    function verifySignatureNFT(bytes32 smgID, uint currentChainID, bytes32 uniqueID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory values, uint fee, address tokenAccount, address userAccount, bytes r, bytes32 s)
+    function verifySignatureNFT(bytes32 smgID, uint currentChainID, bytes32 uniqueID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, address tokenAccount, address userAccount, bytes r, bytes32 s)
         private
     {
         uint curveID;
         bytes memory PK;
         (curveID, PK) = acquireReadySmgInfo(smgID);
-        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, values, fee, tokenAccount, userAccount));
+        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
-    function smgReleaseNFT(RapidityLibV4_NFT.NFTSmgReleaseParams nftParams, bytes r, bytes32 s)
+    function smgReleaseNFT(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, address tokenAccount, address userAccount, bytes r, bytes32 s)
         public
         notHalted
     {
-        address smgFeeProxy = getSmgFeeProxy();
-        RapidityLibV4_NFT.smgReleaseNFT(storageData, nftParams, smgFeeProxy);
+        NFTLibV1.NFTSmgReleaseParams memory params = NFTLibV1.NFTSmgReleaseParams({
+            uniqueID: uniqueID,
+            smgID: smgID,
+            tokenPairID: tokenPairID,
+            tokenIDs: tokenIDs,
+            tokenValues: tokenValues,
+            tokenAccount: tokenAccount,
+            userAccount: userAccount
+        });
+        NFTLibV1.smgReleaseNFT(storageData, params);
 
-        verifySignatureNFT(nftParams.smgID, currentChainID, nftParams.uniqueID, nftParams.tokenPairID, nftParams.tokenIDs, nftParams.values, nftParams.fee, nftParams.tokenAccount, nftParams.userAccount, r, s);
+        verifySignatureNFT(smgID, currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount, r, s);
     }
 }
