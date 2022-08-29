@@ -444,6 +444,9 @@ contract CrossDelegateV4 is CrossStorageV4 {
         return (smgFeeProxy == address(0)) ? owner : smgFeeProxy;
     }
 
+    //*********************************************************************************************
+    //*********************************************************************************************
+    // NFT
     /**
      * @notice Handle the receipt of an NFT
      * @dev The ERC721 smart contract calls this function on the recipient
@@ -485,9 +488,6 @@ contract CrossDelegateV4 is CrossStorageV4 {
     }
 
 
-    //*********************************************************************************************
-    //*********************************************************************************************
-    // NFT
     function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, bytes userAccount)
         public
         payable
@@ -501,30 +501,32 @@ contract CrossDelegateV4 is CrossStorageV4 {
             tokenPairID: tokenPairID,
             tokenIDs: tokenIDs,
             tokenValues: tokenValues,
-            userAccount: userAccount,
             currentChainID: currentChainID,
             tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
+            destUserAccount: userAccount,
             smgFeeProxy: smgFeeProxy
         });
         NFTLibV1.userLockNFT(storageData, params);
     }
     
-    function userBurnNFT(bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, uint fee, address tokenAccount, bytes userAccount)
+    function userBurnNFT(bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, address tokenAccount, bytes userAccount)
         public
         payable
         notHalted
         onlyReadySmg(smgID)
     {
+        address smgFeeProxy = getSmgFeeProxy();
+
         NFTLibV1.RapidityUserBurnNFTParams memory params = NFTLibV1.RapidityUserBurnNFTParams({
             smgID: smgID,
             tokenPairID: tokenPairID,
             tokenIDs: tokenIDs,
             tokenValues: tokenValues,
-            tokenAccount: tokenAccount,
-            userAccount: userAccount,
             currentChainID: currentChainID,
             tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
-            smgFeeProxy: getSmgFeeProxy()
+            srcTokenAccount: tokenAccount,
+            destUserAccount: userAccount,
+            smgFeeProxy: smgFeeProxy
         });
         NFTLibV1.userBurnNFT(storageData, params);
     }
@@ -533,27 +535,22 @@ contract CrossDelegateV4 is CrossStorageV4 {
         public
         notHalted
     {
-        NFTLibV1.NFTSmgMintParams memory params = NFTLibV1.NFTSmgMintParams({
+        uint curveID;
+        bytes memory PK;
+        (curveID, PK) = acquireReadySmgInfo(smgID);
+
+        NFTLibV1.RapiditySmgMintNFTParams memory params = NFTLibV1.RapiditySmgMintNFTParams({
             uniqueID: uniqueID,
             smgID: smgID,
             tokenPairID: tokenPairID,
             tokenIDs: tokenIDs,
             tokenValues: tokenValues,
             extData: extData,
-            tokenAccount: tokenAccount,
-            userAccount: userAccount
+            destTokenAccount: tokenAccount,
+            destUserAccount: userAccount
         });
 
-        verifySignatureNFT(smgID, currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount, r, s);
-    }
-
-    function verifySignatureNFT(bytes32 smgID, uint currentChainID, bytes32 uniqueID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, address tokenAccount, address userAccount, bytes r, bytes32 s)
-        private
-    {
-        uint curveID;
-        bytes memory PK;
-        (curveID, PK) = acquireReadySmgInfo(smgID);
-        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount));
+        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, extData, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
@@ -561,17 +558,22 @@ contract CrossDelegateV4 is CrossStorageV4 {
         public
         notHalted
     {
-        NFTLibV1.NFTSmgReleaseParams memory params = NFTLibV1.NFTSmgReleaseParams({
+        uint curveID;
+        bytes memory PK;
+        (curveID, PK) = acquireReadySmgInfo(smgID);
+
+        NFTLibV1.RapiditySmgReleaseNFTParams memory params = NFTLibV1.RapiditySmgReleaseNFTParams({
             uniqueID: uniqueID,
             smgID: smgID,
             tokenPairID: tokenPairID,
             tokenIDs: tokenIDs,
             tokenValues: tokenValues,
-            tokenAccount: tokenAccount,
-            userAccount: userAccount
+            destTokenAccount: tokenAccount,
+            destUserAccount: userAccount
         });
         NFTLibV1.smgReleaseNFT(storageData, params);
 
-        verifySignatureNFT(smgID, currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount, r, s);
+        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount));
+        verifySignature(curveID, mHash, PK, r, s);
     }
 }
