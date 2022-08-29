@@ -39,56 +39,52 @@ library NFTLibV1 {
 
     enum TokenCrossType {ERC20, ERC721, ERC1155}
 
-    //**************************************************************
-    //**************************************************************
+    /// @notice struct of Rapidity storeman mint lock parameters
     struct RapidityUserLockNFTParams {
-        bytes32                 smgID;
-        uint                    tokenPairID;
-        uint[]                  tokenIDs;
-        uint[]                  tokenValues;
-        bytes                   userAccount;
+        bytes32                 smgID;                  /// ID of storeman group which user has selected
+        uint                    tokenPairID;            /// token pair id on cross chain
+        uint[]                  tokenIDs;               /// NFT token Ids
+        uint[]                  tokenValues;            /// NFT token values
         uint                    currentChainID;         /// current chain ID
         uint                    tokenPairContractFee;   /// fee of token pair
+        bytes                   destUserAccount;        /// account of shadow chain, used to receive token
         address                 smgFeeProxy;            /// address of the proxy to store fee for storeman group
     }
 
-    //**************************************************************
-    //**************************************************************
+    /// @notice struct of Rapidity storeman mint lock parameters
+    struct RapiditySmgMintNFTParams {
+        bytes32                 uniqueID;               /// Rapidity random number
+        bytes32                 smgID;                  /// ID of storeman group which user has selected
+        uint                    tokenPairID;            /// token pair id on cross chain
+        uint[]                  tokenIDs;               /// NFT token Ids
+        uint[]                  tokenValues;            /// NFT token values
+        bytes                   extData;                /// storeman data
+        address                 destTokenAccount;       /// shadow token account
+        address                 destUserAccount;        /// account of shadow chain, used to receive token
+    }
+
+    /// @notice struct of Rapidity user burn lock parameters
     struct RapidityUserBurnNFTParams {
-        bytes32                 smgID;
-        uint                    tokenPairID;
-        uint[]                  tokenIDs;
-        uint[]                  tokenValues;
-        address                 tokenAccount;
-        bytes                   userAccount;
+        bytes32                 smgID;                  /// ID of storeman group which user has selected
+        uint                    tokenPairID;            /// token pair id on cross chain
+        uint[]                  tokenIDs;               /// NFT token Ids
+        uint[]                  tokenValues;            /// NFT token values
         uint                    currentChainID;         /// current chain ID
         uint                    tokenPairContractFee;   /// fee of token pair
+        address                 srcTokenAccount;        /// shadow token account
+        bytes                   destUserAccount;        /// account of token destination chain, used to receive token
         address                 smgFeeProxy;            /// address of the proxy to store fee for storeman group
     }
 
-    //**************************************************************
-    //**************************************************************
-    struct NFTSmgMintParams {
-        bytes32                 uniqueID;
-        bytes32                 smgID;
-        uint                    tokenPairID;
-        uint[]                  tokenIDs;
-        uint[]                  tokenValues;
-        bytes                   extData;                // storeman data
-        address                 tokenAccount;
-        address                 userAccount;
-    }
-
-    //**************************************************************
-    //**************************************************************
-    struct NFTSmgReleaseParams {
-        bytes32                 uniqueID;
-        bytes32                 smgID;
-        uint                    tokenPairID;
-        uint[]                  tokenIDs;
-        uint[]                  tokenValues;
-        address                 tokenAccount;
-        address                 userAccount;
+    /// @notice struct of Rapidity user burn lock parameters
+    struct RapiditySmgReleaseNFTParams {
+        bytes32                 uniqueID;               /// Rapidity random number
+        bytes32                 smgID;                  /// ID of storeman group which user has selected
+        uint                    tokenPairID;            /// token pair id on cross chain
+        uint[]                  tokenIDs;               /// NFT token Ids
+        uint[]                  tokenValues;            /// NFT token values
+        address                 destTokenAccount;       /// original token/coin account
+        address                 destUserAccount;        /// account of token original chain, used to receive token
     }
 
     event UserLockNFT(bytes32 indexed smgID, uint indexed tokenPairID, address indexed tokenAccount, string[] keys, bytes[] values);
@@ -99,25 +95,26 @@ library NFTLibV1 {
 
     event SmgReleaseNFT(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
 
-    function getTokenAddrAndContractFee(CrossTypesV1.Data storage storageData, uint tokenPairID, uint tokenPairContractFee, uint currentChainID) 
-        private 
+    function userLockNFT_getTokenScAddrAndContractFee(CrossTypesV1.Data storage storageData, RapidityUserLockNFTParams memory params)
+        private
         returns (address, uint)
     {
+        ITokenManager tokenManager = storageData.tokenManager;
         uint fromChainID;
         uint toChainID;
         bytes memory fromTokenAccount;
         bytes memory toTokenAccount;
-        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = storageData.tokenManager.getTokenPairInfo(tokenPairID);
+        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
-        uint contractFee = tokenPairContractFee;
+        uint contractFee = params.tokenPairContractFee;
         address tokenScAddr;
-        if (currentChainID == fromChainID) {
+        if (params.currentChainID == fromChainID) {
             if (contractFee == 0) {
                 contractFee = storageData.mapContractFee[fromChainID][toChainID];
             }
             tokenScAddr = CrossTypesV1.bytesToAddress(fromTokenAccount);
-        } else if (currentChainID == toChainID) {
+        } else if (params.currentChainID == toChainID) {
             if (contractFee == 0) {
                 contractFee = storageData.mapContractFee[toChainID][fromChainID];
             }
@@ -125,6 +122,7 @@ library NFTLibV1 {
         } else {
             require(false, "Invalid token pair");
         }
+
         return (tokenScAddr, contractFee);
     }
 
@@ -137,20 +135,21 @@ library NFTLibV1 {
     {
         address tokenScAddr;
         uint contractFee;
-        (tokenScAddr, contractFee) = getTokenAddrAndContractFee(storageData, params.tokenPairID, params.tokenPairContractFee, params.currentChainID);
+        (tokenScAddr, contractFee) = userLockNFT_getTokenScAddrAndContractFee(storageData, params);
+
         if (contractFee > 0) {
             params.smgFeeProxy.transfer(contractFee);
         }
 
         uint left = (msg.value).sub(contractFee);
 
-        uint tokenCrossType = storageData.tokenManager.mapTokenPairType(params.tokenPairID);
-        if (tokenCrossType == uint(TokenCrossType.ERC721)) {
+        uint8 tokenCrossType = storageData.tokenManager.mapTokenPairType(params.tokenPairID);
+        if (tokenCrossType == uint8(TokenCrossType.ERC721)) {
             for(uint idx = 0; idx < params.tokenIDs.length; ++idx) {
-                IERC721(tokenScAddr).safeTransferFrom(msg.sender, address(this), params.tokenIDs[idx], '');
+                IERC721(tokenScAddr).safeTransferFrom(msg.sender, address(this), params.tokenIDs[idx], "");
             }
         } else if(tokenCrossType == uint8(TokenCrossType.ERC1155)) {
-            IERC1155(tokenScAddr).safeBatchTransferFrom(msg.sender, address(this), params.tokenIDs, params.tokenValues, '');
+            IERC1155(tokenScAddr).safeBatchTransferFrom(msg.sender, address(this), params.tokenIDs, params.tokenValues, "");
         }
         else{
             require(false, "Not support tokenCrossType");
@@ -163,18 +162,51 @@ library NFTLibV1 {
         string[] memory keys = new string[](4);
         bytes[] memory values = new bytes[](4);
 
-        keys[0] = "userAccount:address";
-        values[0] = abi.encodePacked(params.userAccount);
+        keys[0] = "tokenIDs:uint256[]";
+        values[0] = abi.encode(params.tokenIDs);
 
-        keys[1] = "contractFee:uint256";
-        values[1] = abi.encodePacked(contractFee);
+        keys[1] = "tokenValues:uint256[]";
+        values[1] = abi.encode(params.tokenValues);
 
-        keys[2] = "tokenIDs:uint256[]";
-        values[2] = abi.encode(params.tokenIDs);
+        keys[2] = "userAccount:address";
+        values[2] = abi.encodePacked(params.destUserAccount);
 
-        keys[3] = "tokenValues:uint256[]";
-        values[3] = abi.encode(params.tokenValues);
+        keys[3] = "contractFee:uint256";
+        values[3] = abi.encodePacked(contractFee);
+
         emit UserLockNFT(params.smgID, params.tokenPairID, tokenScAddr, keys, values);
+    }
+
+    function userBurnNFT_getScAddrAndContractFee(CrossTypesV1.Data storage storageData, RapidityUserBurnNFTParams memory params)
+        private
+        returns (address, uint)
+    {
+        ITokenManager tokenManager = storageData.tokenManager;
+        uint fromChainID;
+        uint toChainID;
+        bytes memory fromTokenAccount;
+        bytes memory toTokenAccount;
+        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
+        require(fromChainID != 0, "Token does not exist");
+
+        uint256 contractFee = params.tokenPairContractFee;
+        address tokenScAddr;
+        if (params.currentChainID == toChainID) {
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[toChainID][fromChainID];
+            }
+            tokenScAddr = CrossTypesV1.bytesToAddress(toTokenAccount);
+        } else if (params.currentChainID == fromChainID) {
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[fromChainID][toChainID];
+            }
+            tokenScAddr = CrossTypesV1.bytesToAddress(fromTokenAccount);
+        } else {
+            require(false, "Invalid token pair");
+        }
+        require(params.srcTokenAccount == tokenScAddr, "Invalid token account");
+
+        return (tokenScAddr, contractFee);
     }
 
     /// @notice                         burnBridge, user lock token on token original chain
@@ -184,15 +216,14 @@ library NFTLibV1 {
     function userBurnNFT(CrossTypesV1.Data storage storageData, RapidityUserBurnNFTParams memory params)
         public
     {
-        ITokenManager tokenManager = storageData.tokenManager;
-        uint256 contractFee;
         address tokenScAddr;
-        (tokenScAddr, contractFee) = getTokenAddrAndContractFee(storageData, params.tokenPairID, params.tokenPairContractFee, params.currentChainID);
-        require(params.tokenAccount == tokenScAddr, "Invalid token account");
+        uint contractFee;
+        (tokenScAddr, contractFee) = userBurnNFT_getScAddrAndContractFee(storageData, params);
 
-        uint tokenCrossType = tokenManager.mapTokenPairType(params.tokenPairID);
-        require((tokenCrossType == uint(TokenCrossType.ERC721) || tokenCrossType == uint8(TokenCrossType.ERC1155)), "Not support");
-        ITokenManager(tokenManager).burnNFT(tokenCrossType, tokenScAddr, msg.sender, params.tokenIDs, params.tokenValues);
+        ITokenManager tokenManager = storageData.tokenManager;
+        uint8 tokenCrossType = tokenManager.mapTokenPairType(params.tokenPairID);
+        require((tokenCrossType == uint8(TokenCrossType.ERC721) || tokenCrossType == uint8(TokenCrossType.ERC1155)), "Not support");
+        require(burnShadowNFT(tokenCrossType, tokenManager, tokenScAddr, msg.sender, params.tokenIDs, params.tokenValues), "Burn failed");
 
         if (contractFee > 0) {
             params.smgFeeProxy.transfer(contractFee);
@@ -203,51 +234,52 @@ library NFTLibV1 {
             (msg.sender).transfer(left);
         }
 
-        string[] memory keys = new string[](5);
-        bytes[] memory values = new bytes[](5);
+        string[] memory keys = new string[](4);
+        bytes[] memory values = new bytes[](4);
 
-        keys[0] = "userAccount:address";
-        values[0] = abi.encodePacked(params.userAccount);
+        keys[0] = "tokenIDs:uint256[]";
+        values[0] = abi.encode(params.tokenIDs);
 
-        keys[1] = "contractFee:uint256";
-        values[1] = abi.encodePacked(contractFee);
+        keys[1] = "tokenValues:uint256[]";
+        values[1] = abi.encode(params.tokenValues);
 
-        keys[2] = "tokenIDs:uint256[]";
-        values[2] = abi.encode(params.tokenIDs);
+        keys[2] = "userAccount:address";
+        values[2] = abi.encodePacked(params.destUserAccount);
 
-        keys[3] = "tokenValues:uint256[]";
-        values[3] = abi.encode(params.tokenValues);
-        emit UserLockNFT(params.smgID, params.tokenPairID, params.tokenAccount, keys, values);
+        keys[3] = "contractFee:uint256";
+        values[3] = abi.encodePacked(contractFee);
+        emit UserLockNFT(params.smgID, params.tokenPairID, tokenScAddr, keys, values);
     }
 
     /// @notice                         mintBridge, storeman mint lock token on token shadow chain
     /// @notice                         event invoked by user mint lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for storeman mint lock token on token shadow chain
-    function smgMintNFT(CrossTypesV1.Data storage storageData, NFTSmgMintParams memory params)
+    function smgMintNFT(CrossTypesV1.Data storage storageData, RapiditySmgMintNFTParams memory params)
         public
     {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
+
         ITokenManager tokenManager = storageData.tokenManager;
+        uint8 tokenCrossType = tokenManager.mapTokenPairType(params.tokenPairID);
+        require((tokenCrossType == uint8(TokenCrossType.ERC721) || tokenCrossType == uint8(TokenCrossType.ERC1155)), "Not support");
 
-        uint tokenCrossType = tokenManager.mapTokenPairType(params.tokenPairID);
-        require((tokenCrossType == uint(TokenCrossType.ERC721) || tokenCrossType == uint8(TokenCrossType.ERC1155)), "Not support");
-
-        ITokenManager(tokenManager).mintNFT(tokenCrossType, params.tokenAccount, params.userAccount, params.tokenIDs, params.tokenValues, params.extData);
+        require(mintShadowNFT(tokenCrossType, tokenManager, params.destTokenAccount, params.destUserAccount, params.tokenIDs, params.tokenValues, params.extData), "Mint failed");
 
         string[] memory keys = new string[](5);
         bytes[] memory values = new bytes[](5);
-        keys[0] = "tokenAccount:address";
-        values[0] = abi.encodePacked(params.tokenAccount);
 
-        keys[1] = "userAccount:address";
-        values[1] = abi.encodePacked(params.userAccount);
+        keys[0] = "tokenIDs:uint256[]";
+        values[0] = abi.encode(params.tokenIDs);
 
-        keys[2] = "tokenIDs:uint256[]";
-        values[2] = abi.encode(params.tokenIDs);
+        keys[1] = "tokenValues:uint256[]";
+        values[1] = abi.encode(params.tokenValues);
 
-        keys[3] = "tokenValues:uint256[]";
-        values[3] = abi.encode(params.tokenValues);
+        keys[2] = "tokenAccount:address";
+        values[2] = abi.encodePacked(params.destTokenAccount);
+
+        keys[3] = "userAccount:address";
+        values[3] = abi.encodePacked(params.destUserAccount);
 
         keys[4] = "extData:bytes";
         values[4] = params.extData;
@@ -259,7 +291,7 @@ library NFTLibV1 {
     /// @notice                         event invoked by user burn lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for storeman burn lock token on token shadow chain
-    function smgReleaseNFT(CrossTypesV1.Data storage storageData, NFTSmgReleaseParams memory params)
+    function smgReleaseNFT(CrossTypesV1.Data storage storageData, RapiditySmgReleaseNFTParams memory params)
         public
     {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
@@ -267,30 +299,41 @@ library NFTLibV1 {
         uint8 tokenCrossType = storageData.tokenManager.mapTokenPairType(params.tokenPairID);
         if (tokenCrossType == uint8(TokenCrossType.ERC721)) {
             for(uint idx = 0; idx < params.tokenIDs.length; ++idx) {
-                IERC721(params.tokenAccount).safeTransferFrom(address(this), params.userAccount, params.tokenIDs[idx], '');
+                IERC721(params.destTokenAccount).safeTransferFrom(address(this), params.destUserAccount, params.tokenIDs[idx], "");
             }
         }
         else if(tokenCrossType == uint8(TokenCrossType.ERC1155)) {
-            IERC1155(params.tokenAccount).safeBatchTransferFrom(address(this), params.userAccount, params.tokenIDs, params.tokenValues, '');
+            IERC1155(params.destTokenAccount).safeBatchTransferFrom(address(this), params.destUserAccount, params.tokenIDs, params.tokenValues, "");
         }
         else {
             require(false, "Not support tokenCrossType");
         }
 
-        // 
         string[] memory keys = new string[](4);
         bytes[] memory values = new bytes[](4);
-        keys[0] = "tokenAccount:address";
-        values[0] = abi.encodePacked(params.tokenAccount);
-        keys[1] = "userAccount:address";
-        values[1] = abi.encodePacked(params.userAccount);
 
-        keys[2] = "tokenIDs:uint256[]";
-        values[2] = abi.encode(params.tokenIDs);
+        keys[0] = "tokenIDs:uint256[]";
+        values[0] = abi.encode(params.tokenIDs);
 
-        keys[3] = "tokenValues:uint256[]";
-        values[3] = abi.encode(params.tokenValues);
+        keys[1] = "tokenValues:uint256[]";
+        values[1] = abi.encode(params.tokenValues);
 
-        emit SmgMintNFT(params.uniqueID, params.smgID, params.tokenPairID, keys, values);
+        keys[2] = "tokenAccount:address";
+        values[2] = abi.encodePacked(params.destTokenAccount);
+
+        keys[3] = "userAccount:address";
+        values[3] = abi.encodePacked(params.destUserAccount);
+
+        emit SmgReleaseNFT(params.uniqueID, params.smgID, params.tokenPairID, keys, values);
+    }
+
+    function burnShadowNFT(uint tokenCrossType, address tokenManager, address tokenAddress, address userAccount, uint[] tokenIDs, uint[] tokenValues) private returns (bool) {
+        ITokenManager(tokenManager).burnNFT(tokenCrossType, tokenAddress, userAccount, tokenIDs, tokenValues);
+        return true;
+    }
+
+    function mintShadowNFT(uint tokenCrossType, address tokenManager, address tokenAddress, address userAccount, uint[] tokenIDs, uint[] tokenValues, bytes memory extData) private returns (bool) {
+        ITokenManager(tokenManager).mintNFT(tokenCrossType, tokenAddress, userAccount, tokenIDs, tokenValues, extData);
+        return true;
     }
 }

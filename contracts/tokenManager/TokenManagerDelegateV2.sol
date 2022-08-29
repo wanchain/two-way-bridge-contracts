@@ -27,6 +27,8 @@
 pragma solidity 0.4.26;
 pragma experimental ABIEncoderV2;
 
+import "../interfaces/IWrappedNFT721.sol";
+import "../interfaces/IWrappedNFT1155.sol";
 import "../interfaces/IMappingToken.sol";
 import "./MappingToken.sol";
 import "./TokenManagerDelegate.sol";
@@ -117,11 +119,11 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
     {
         if(tokenCrossType == uint(TokenCrossType.ERC721)) {
             for(uint idx = 0; idx < tokenIDs.length; ++idx) {
-                IMappingToken(tokenAddress).mint(to, tokenIDs[idx], data);
+                IWrappedNFT721(tokenAddress).mint(to, tokenIDs[idx], data);
             }
         }
         else if(tokenCrossType == uint(TokenCrossType.ERC1155)) {
-            IMappingToken(tokenAddress).mintBatch(to, tokenIDs, values, data);
+            IWrappedNFT1155(tokenAddress).mintBatch(to, tokenIDs, values, data);
         }
         else {
             require(false, "Not support");
@@ -140,11 +142,11 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
     {
         if(tokenCrossType == uint(TokenCrossType.ERC721)) {
             for(uint idx = 0; idx < tokenIDs.length; ++idx) {
-                IMappingToken(tokenAddress).burn(from, tokenIDs[idx]);
+                IWrappedNFT721(tokenAddress).burn(from, tokenIDs[idx]);
             }
         }
         else if(tokenCrossType == uint(TokenCrossType.ERC1155)) {
-            IMappingToken(tokenAddress).burnBatch(from, tokenIDs, values);
+            IWrappedNFT1155(tokenAddress).burnBatch(from, tokenIDs, values);
         }
         else {
             require(false, "Not support");
