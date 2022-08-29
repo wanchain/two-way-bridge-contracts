@@ -168,8 +168,8 @@ library NFTLibV1 {
         keys[1] = "tokenValues:uint256[]";
         values[1] = abi.encode(params.tokenValues);
 
-        keys[2] = "userAccount:address";
-        values[2] = abi.encodePacked(params.destUserAccount);
+        keys[2] = "userAccount:bytes";
+        values[2] = params.destUserAccount;
 
         keys[3] = "contractFee:uint256";
         values[3] = abi.encodePacked(contractFee);
@@ -243,12 +243,12 @@ library NFTLibV1 {
         keys[1] = "tokenValues:uint256[]";
         values[1] = abi.encode(params.tokenValues);
 
-        keys[2] = "userAccount:address";
-        values[2] = abi.encodePacked(params.destUserAccount);
+        keys[2] = "userAccount:bytes";
+        values[2] = params.destUserAccount;
 
         keys[3] = "contractFee:uint256";
         values[3] = abi.encodePacked(contractFee);
-        emit UserLockNFT(params.smgID, params.tokenPairID, tokenScAddr, keys, values);
+        emit UserBurnNFT(params.smgID, params.tokenPairID, tokenScAddr, keys, values);
     }
 
     /// @notice                         mintBridge, storeman mint lock token on token shadow chain

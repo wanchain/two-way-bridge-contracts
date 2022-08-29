@@ -550,6 +550,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
             destUserAccount: userAccount
         });
 
+        NFTLibV1.smgMintNFT(storageData, params);
         bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, extData, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
