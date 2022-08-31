@@ -18,6 +18,7 @@ const CrossDelegateV2           = artifacts.require('CrossDelegateV2.sol');
 const RapidityLibV3             = artifacts.require('RapidityLibV3');
 const CrossDelegateV3           = artifacts.require('CrossDelegateV3.sol');
 const RapidityLibV4             = artifacts.require('RapidityLibV4');
+const NFTLibV1                  = artifacts.require('NFTLibV1');
 const CrossDelegateV4           = artifacts.require('CrossDelegateV4.sol');
 const CrossProxy                = artifacts.require('CrossProxy.sol');
 
@@ -152,7 +153,7 @@ contract('Test Cross Approach', (accounts) => {
 
     importMochaTest("Test Cross V4", './crossApproach/cross_v4_test');
 
-    importMochaTest("Test NFT Cross V4", './crossApproach/nft_v4_cross_test');
+    importMochaTest("Test ERC751 Cross V4", './crossApproach/nft_v4_cross_test');
 
     importMochaTest("Test ERC1155 Cross V4", './crossApproach/erc1155_v4_cross_test');
 
@@ -294,8 +295,14 @@ async function deployCrossContracts(owner, options) {
     let htlcTxLibV4 = await HTLCTxLib.new({ from: owner });
     await RapidityLibV4.link("HTLCTxLib", htlcTxLibV4.address);
     let rapidityLibV4 = await RapidityLibV4.new({ from: owner });
+
+    await NFTLibV1.link("HTLCTxLib", htlcTxLibV4.address);
+    let nftLibV1 = await NFTLibV1.new({ from: owner });
+
     await CrossDelegateV4.link("HTLCTxLib", htlcTxLibV4.address);
     await CrossDelegateV4.link("RapidityLibV4", rapidityLibV4.address);
+    await CrossDelegateV4.link("NFTLibV1", nftLibV1.address);
+
     let crossDelegateV4 = await CrossDelegateV4.new({ from: owner });
 
     let crossProxy = await CrossProxy.new({from: owner});
@@ -308,6 +315,7 @@ async function deployCrossContracts(owner, options) {
     scAddr["RapidityLibV3"] = rapidityLibV3.address;
     scAddr["CrossDelegateV3"] = crossDelegateV3.address;
     scAddr["RapidityLibV4"] = rapidityLibV4.address;
+    scAddr["NFTLibV1"] = nftLibV1.address;
     scAddr["CrossDelegateV4"] = crossDelegateV4.address;
     knownEvents["RapidityLib"] = getEventSignature(rapidityLib.abi);
     knownEvents["HTLCDebtLib"] = getEventSignature(htlcDebtLib.abi);
@@ -318,6 +326,7 @@ async function deployCrossContracts(owner, options) {
     knownEvents["RapidityLibV3"] = getEventSignature(rapidityLibV3.abi);
     knownEvents["CrossDelegateV3"] = getEventSignature(crossDelegateV3.abi);
     knownEvents["RapidityLibV4"] = getEventSignature(rapidityLibV4.abi);
+    knownEvents["NFTLibV1"] = getEventSignature(nftLibV1.abi);
     knownEvents["CrossDelegateV4"] = getEventSignature(crossDelegateV4.abi);
 
     for (let theChainType in crossFees[opts.chainType]) {
@@ -368,7 +377,6 @@ async function deployCrossContracts(owner, options) {
 
         let OriginErc1155Tokens = erc1155Tokens;
         OriginErc1155Tokens[opts.chainType] = await deployErc1155OrigToken(owner, OriginErc1155Tokens[opts.chainType]);
-        // console.log("chainType:", opts.chainType, ",OriginErc1155Tokens[opts.chainType]:", OriginErc1155Tokens[opts.chainType])
         await transferErc1155Token(owner, OriginErc1155Tokens[opts.chainType], opts.alice);
     }
     // Erc1155 end *************************************************************************

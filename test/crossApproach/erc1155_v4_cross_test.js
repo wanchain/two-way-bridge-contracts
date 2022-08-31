@@ -36,14 +36,17 @@ const {
 } = require("./sc-config");
 
 const {
-    tokenID,
+    tokenIDs,
     minerFee,
     erc1155TokenCrossType,
-    mintValue
+    tokenValues,
+    stringToBytes
 } = require("../erc1155/erc1155_utils.js");
 
 const WrappedErc1155Json = require("../erc1155/WrappedErc1155.json");
 
+
+//[48,48,48,48,48,48]
 before("init...   -> success", () => {
     testInit();
 });
@@ -54,7 +57,7 @@ async function getErc1155TokenInstance(tokenAccount) {
 }
 
 // NFT ...
-it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( ethereum => wanchain )> -> userLock  ==> success', async () => {
+it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( ethereum => wanchain )> -> userLockNFT  ==> success', async () => {
     const wanUserAccount = global.aliceAccount.WAN;
     const ethUserAccount = global.aliceAccount.ETH;
     const currentChainType = chainTypes.ETH;
@@ -81,30 +84,32 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( ethereum => wanc
 
     await cross.setTokenPairFees([[tokenPairID, contractFee]], { from: currentChainAdmin });
     assert.equal(contractFee.eq(new web3.utils.BN(await cross.getTokenPairFee(tokenPairID))), true, "fee of token pair error");
-
     const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
     if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(erc1155TokenCrossType))) {
         await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(erc1155TokenCrossType), { from: global.operatorAccount[currentChainType] });
     }
-
     let smgFeeProxy = partners.smgFeeProxy;
     if (smgFeeProxy === ADDRESS_0) {
         smgFeeProxy = await cross.owner();
     }
     const beforeFeeProxyBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
-
     // exec
     let funcParams = {
         smgID: smgID,
         tokenPairID: tokenPairID,
-        tokenID: tokenID,
-        value: mintValue,
+        tokenIDs: tokenIDs,
+        tokenValues: tokenValues,
         userAccount: userAccount
     };
 
     // get token instance
     let tokenInstance = await getErc1155TokenInstance(tokenAccount);
-    let balance = await tokenInstance.methods.balanceOf(senderAccount, tokenID).call();
+    let senderAccounts = [senderAccount, senderAccount, senderAccount, senderAccount, senderAccount];
+    let balances = await tokenInstance.methods.balanceOfBatch(senderAccounts, tokenIDs).call();
+    let idx;
+    for (idx = 0; idx < tokenIDs.length; ++idx) {
+        assert.equal(parseInt(balances[idx]), parseInt(balances[idx]), "before userLockNFT check balances:", balances);
+    }
 
     // approve
     let setApprovalForAllReceipt = await tokenInstance.methods.setApprovalForAll(cross.address, true)
@@ -114,37 +119,61 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( ethereum => wanc
                 gasPrice: '20000000000',// ganacle-cli default value
                 gas: 6721975            // ganache-cli default value
             });
-    //console.log("setApprovalForAllReceipt:", setApprovalForAllReceipt);
+
     let approved = await tokenInstance.methods.isApprovedForAll(senderAccount, cross.address).call();
     assert.equal(approved, true, "check isApprovedForAll");
 
-    let receipt = await cross.userLockErc1155(...Object.values(funcParams), { from: senderAccount, value: moreServiceFee });
+    let receipt = await cross.userLockNFT(...Object.values(funcParams), { from: senderAccount, value: moreServiceFee });
     if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLibV1, receipt.tx);
     }
 
-    assert.checkWeb3Event(receipt, {
-        event: 'UserLockLoggerErc1155',
-        args: {
-            smgID: web3.utils.padRight(funcParams.smgID, 64),
-            tokenPairID: funcParams.tokenPairID,
-            tokenAccount: tokenAccount,
-            tokenID: funcParams.tokenID,
-            value: funcParams.value,
-            contractFee: contractFee,
-            userAccount: funcParams.userAccount.toLowerCase(),
-        }
-    });
+    const eventUserLockNFT = assert.getWeb3Log(receipt, { event: 'UserLockNFT' });
+    assert.equal(!!eventUserLockNFT === true, true, "get event UserLockNFT error");
+    assert.equal(eventUserLockNFT.args.smgID, funcParams.smgID, "event UserLockNFT smgID error");
+    assert.equal(eventUserLockNFT.args.tokenPairID, funcParams.tokenPairID, "event UserLockNFT tokenPairID error");
+    assert.equal(eventUserLockNFT.args.keys.length, eventUserLockNFT.args.values.length, "invalid UserLockNFT keys and values length");
 
-    balance = await tokenInstance.methods.balanceOf(senderAccount,tokenID).call();
-    balance = balance.toString();
-    assert.equal(0, balance, "after check userLockErc1155 balanceOf error:", balance);
+    const eventUserLockNFTParams = eventUserLockNFT.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventUserLockNFT.args.values[index];
+        return reduced;
+    }, {});
 
+    assert.equal(eventUserLockNFTParams.userAccount.type, "bytes", "invalid UserLockNFT userAccount type");
+    assert.equal(eventUserLockNFTParams.userAccount.value.toLowerCase(), funcParams.userAccount.toLowerCase(), "invalid UserLockNFT userAccount value");
+    assert.equal(eventUserLockNFTParams.contractFee.type, "uint256", "invalid UserLockNFT contractFee type");
+    assert.equal(eventUserLockNFTParams.tokenIDs.type, "uint256[]", "invalid UserLockNFT tokenIDs type");
+    assert.equal(eventUserLockNFTParams.tokenValues.type, "uint256[]", "invalid UserLockNFT tokenValues type");
+
+    let decodeTokenIDs = web3.eth.abi.decodeParameters(['uint256[]'], eventUserLockNFTParams.tokenIDs.value);
+    assert.equal(!!decodeTokenIDs[0] === true, true, "UserLockNFT tokenIDs error");
+    decodeTokenIDs = decodeTokenIDs[0];
+    assert.equal(decodeTokenIDs.length, tokenIDs.length, "invalid UserLockNFT tokenIDs length");
+    for (idx = 0; idx < decodeTokenIDs.length; ++idx) {
+        assert.equal(parseInt(decodeTokenIDs[idx]), tokenIDs[idx], "invalid UserLockNFT tokenIDs value!");
+    }
+
+    let decodeTokenValues = web3.eth.abi.decodeParameters(['uint256[]'], eventUserLockNFTParams.tokenValues.value);
+    assert.equal(!!decodeTokenValues[0] === true, true, "UserLockNFT tokenValues error");
+    decodeTokenValues = decodeTokenValues[0];
+    assert.equal(decodeTokenValues.length, tokenValues.length, "invalid UserLockNFT tokenValues length");
+    for (idx = 0; idx < decodeTokenValues.length; ++idx) {
+        assert.equal(parseInt(decodeTokenValues[idx]), tokenValues[idx], "invalid UserLockNFT tokenValues value!");
+    }
+
+    balances = await tokenInstance.methods.balanceOfBatch(senderAccounts, tokenIDs).call();
+    for (idx = 0; idx < balances.length; ++idx) {
+        assert.equal(0, parseInt(balances[idx]), "after check userLockErc1155 balanceOf error idx:", idx, ",balance:", balances[idx]);
+    }
+    
     const afterFeeProxyBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
     assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
 });
 
-it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( ethereum => wanchain )> -> smgMint  ==>  success', async () => {
+it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( ethereum => wanchain )> -> smgMintNFT  ==>  success', async () => {
     const wanUserAccount = global.aliceAccount.WAN;
     const ethUserAccount = global.aliceAccount.ETH;
     const currentChainType = chainTypes.WAN;
@@ -161,15 +190,10 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( ethereum => wanc
 
     // tokenAccount
     const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, currentToken.symbol);
-    //console.log("Erc1155 smgMint tokenPair:", tokenPair);
     const tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
     const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
     const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
     const tokenPairID = tokenPair.tokenPairID;
-    // console.log("tokenAccount:", tokenAccount)
-
-    //const fee = await cross.getFee({ srcChainID: global.chains[currentChainType].ID, destChainID: global.chains[buddyChainType].ID });
-    const crossFee = new web3.utils.BN(0);
 
     const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
     if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(erc1155TokenCrossType))) {
@@ -177,76 +201,92 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( ethereum => wanc
     }
 
     let tokenInstance = await getErc1155TokenInstance(tokenAccount);
-    let smgFeeProxy = partners.smgFeeProxy;
-    if (smgFeeProxy === ADDRESS_0) {
-        smgFeeProxy = await cross.owner();
-    }
-    const beforeFeeProxyBalance = new web3.utils.BN(await tokenInstance.methods.balanceOf(smgFeeProxy, tokenID).call());
 
     let funcParams = {
         uniqueID: uniqueID,
         smgID: smgID,
         tokenPairID: tokenPairID,
-        tokenID: tokenID,
-        value: mintValue,
-        fee: crossFee,
+        tokenIDs: tokenIDs,
+        tokenValues: tokenValues,
+        extData: "0x00",
         tokenAccount: tokenAccount,
         userAccount: userAccount
     };
-    // console.log("erc1155 smgMint funcParams:", funcParams);
+
     let smg = await global.getSmgProxy(currentChainType, partners.smgAdminProxy);
     let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.smgID);
     let curveID = smgConfig.curve1;
     let sk = skInfo.src[currentChainType];
-    // console.log("smgMintErc1155 funcParams:", funcParams);
+
     // sign
-    let { R, s } = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgMintErc1155,
+    let { R, s } = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgMintNFT,
         (await cross.currentChainID()),
         funcParams.uniqueID,
         funcParams.tokenPairID,
-        funcParams.tokenID,
-        funcParams.value,
-        funcParams.fee,
+        funcParams.tokenIDs,
+        funcParams.tokenValues,
+        funcParams.extData,
         funcParams.tokenAccount,
         funcParams.userAccount);
     funcParams = { ...funcParams, R: R, s: s };
-    
-    //console.log("Erc1155 smgMintErc1155 ************************************")
-    //console.log("Erc1155 smgMintErc1155 tokenAccount:", tokenAccount);
-    let receipt = await cross.smgMintErc1155(...Object.values(funcParams), { from: senderAccount });
+
+    let receipt = await cross.smgMintNFT(...Object.values(funcParams), { from: senderAccount });
     if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLibV1, receipt.tx);
     }
 
-    const eventSmgMint = assert.getWeb3Log(receipt, { event: 'SmgMintLoggerErc1155' });
-    assert.equal(!!eventSmgMint === true, true, "get event SmgMint error");
-    assert.equal(eventSmgMint.args.uniqueID, funcParams.uniqueID, "event SmgMint uniqueID error");
-    assert.equal(eventSmgMint.args.smgID, funcParams.smgID, "event SmgMint smgID error");
-    assert.equal(web3.utils.toBN(eventSmgMint.args.fee).eq(funcParams.fee), true, "invalid SmgMint fee value");
+    const eventSmgMintNFT = assert.getWeb3Log(receipt, { event: 'SmgMintNFT' });
+    assert.equal(!!eventSmgMintNFT === true, true, "get event SmgMintNFT error");
+    assert.equal(eventSmgMintNFT.args.uniqueID, funcParams.uniqueID, "event SmgMintNFT uniqueID error");
+    assert.equal(eventSmgMintNFT.args.smgID, funcParams.smgID, "event SmgMintNFT smgID error");
+    assert.equal(eventSmgMintNFT.args.tokenPairID, funcParams.tokenPairID, "event SmgMintNFT tokenPairID error");
+    assert.equal(eventSmgMintNFT.args.keys.length, eventSmgMintNFT.args.values.length, "invalid SmgMintNFT keys and values length");
 
-    assert.checkWeb3Event(receipt, {
-        event: 'SmgMintLoggerErc1155',
-        args: {
-            uniqueID: funcParams.uniqueID,
-            smgID: web3.utils.padRight(funcParams.smgID, 64),
-            tokenPairID: funcParams.tokenPairID,
-            tokenID: funcParams.tokenID,
-            value: funcParams.value,
-            fee: funcParams.fee,
-            tokenAccount: funcParams.tokenAccount,
-            userAccount: funcParams.userAccount
-        }
-    });
-    {
-        let balance = await tokenInstance.methods.balanceOf(wanUserAccount,tokenID).call();
-        assert.equal(Number(mintValue), Number(balance), "after check smgMint balanceOf error:", balance);
+    const eventSmgMintNFTParams = eventSmgMintNFT.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventSmgMintNFT.args.values[index];
+        return reduced;
+    }, {});
 
-        const afterFeeProxyBalance = new web3.utils.BN(await tokenInstance.methods.balanceOf(smgFeeProxy, tokenID).call());
-        assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN("0")), true, "balance of storeman fee error");
+    assert.equal(eventSmgMintNFTParams.userAccount.type, "address", "invalid SmgMintNFT userAccount type");
+    assert.equal(eventSmgMintNFTParams.userAccount.value.toLowerCase(), funcParams.userAccount.toLowerCase(), "invalid SmgMintNFT userAccount value");
+
+    assert.equal(eventSmgMintNFTParams.tokenAccount.type, "address", "invalid SmgMintNFT tokenAccount type");
+    assert.equal(eventSmgMintNFTParams.tokenAccount.value.toLowerCase(), funcParams.tokenAccount.toLowerCase(), "invalid SmgMintNFT tokenAccount value");
+
+    assert.equal(eventSmgMintNFTParams.extData.type, "bytes", "invalid SmgMintNFT extData type");
+    assert.equal(eventSmgMintNFTParams.extData.value.toLowerCase(), funcParams.extData.toLowerCase(), "invalid SmgMintNFT extData value");
+
+    assert.equal(eventSmgMintNFTParams.tokenIDs.type, "uint256[]", "invalid SmgMintNFT tokenIDs type");
+    assert.equal(eventSmgMintNFTParams.tokenValues.type, "uint256[]", "invalid SmgMintNFT tokenValues type");
+
+    let idx = 0;
+    let decodeTokenIDs = web3.eth.abi.decodeParameters(['uint256[]'], eventSmgMintNFTParams.tokenIDs.value);
+    assert.equal(!!decodeTokenIDs[0] === true, true, "SmgMintNFT tokenIDs error");
+    decodeTokenIDs = decodeTokenIDs[0];
+    assert.equal(decodeTokenIDs.length, tokenIDs.length, "invalid SmgMintNFT tokenIDs length");
+    for (idx = 0; idx < decodeTokenIDs.length; ++idx) {
+        assert.equal(parseInt(decodeTokenIDs[idx]), tokenIDs[idx], "invalid SmgMintNFT tokenIDs value!");
+    }
+    
+    let decodeTokenValues = web3.eth.abi.decodeParameters(['uint256[]'], eventSmgMintNFTParams.tokenValues.value);
+    assert.equal(!!decodeTokenValues[0] === true, true, "SmgMintNFT tokenValues error");
+    decodeTokenValues = decodeTokenValues[0];
+    assert.equal(decodeTokenValues.length, tokenValues.length, "invalid SmgMintNFT tokenValues length");
+    for (idx = 0; idx < decodeTokenValues.length; ++idx) {
+        assert.equal(parseInt(decodeTokenValues[idx]), tokenValues[idx], "invalid SmgMintNFT tokenValues value!");
+    }
+
+    let wanUserAccounts = [wanUserAccount, wanUserAccount, wanUserAccount, wanUserAccount, wanUserAccount];
+    let balances = await tokenInstance.methods.balanceOfBatch(wanUserAccounts, tokenIDs).call();
+    for (idx = 0; idx < balances.length; ++idx) {
+        assert.equal(Number(balances[idx]), Number(tokenValues[idx]), "after check smgMintNFT balanceOfBatch error:", balances);
     }
 });
 
-it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( wanchain => ethereum )> -> userBurn ==>  success', async () => {
+it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( wanchain => ethereum )> -> userBurnNFT ==>  success', async () => {
     const wanUserAccount = global.aliceAccount.WAN;
     const ethUserAccount = global.aliceAccount.ETH;
     const currentChainType = chainTypes.WAN;
@@ -271,10 +311,10 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( wanchain => ethe
     const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
     const tokenPairID = tokenPair.tokenPairID;
 
-//    // const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
-//    // if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
-//    //     await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(tokenCrossType), {from: global.operatorAccount[currentChainType]});
-//    // }
+    const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
+    if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(erc1155TokenCrossType))) {
+        await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(erc1155TokenCrossType), { from: global.operatorAccount[currentChainType] });
+    }
 
     let smgFeeProxy = partners.smgFeeProxy;
     if (smgFeeProxy === ADDRESS_0) {
@@ -286,18 +326,20 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( wanchain => ethe
     let funcParams = {
         smgID: smgID,
         tokenPairID: tokenPairID,
-        tokenID: tokenID,
-        value: mintValue,
-        crossFee: minerFeeToWei,
+        tokenIDs: tokenIDs,
+        tokenValues: tokenValues,
         tokenAccount: tokenAccount,
         userAccount: userAccount
     };
-    
+
+    let idx;
     // get token instance
     let tokenInstance = await getErc1155TokenInstance(funcParams.tokenAccount);
-    let balance = await tokenInstance.methods.balanceOf(senderAccount, tokenID).call();
-    balance = balance.toString()
-    assert.equal(mintValue, balance, "before userBurnErc1155 check balance:", balance);
+    let senderAccounts = [senderAccount, senderAccount, senderAccount, senderAccount, senderAccount];
+    let balances = await tokenInstance.methods.balanceOfBatch(senderAccounts, tokenIDs).call();
+    for (idx = 0; idx < tokenIDs.length; ++idx) {
+        assert.equal(tokenValues[idx], parseInt(balances[idx]), "before userBurnNFT check balance:", balances);
+    }
 
     // approve
     await tokenInstance.methods.setApprovalForAll(cross.address, true)
@@ -311,38 +353,57 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( wanchain => ethe
     assert.equal(approved, true, "check isApprovedForAll");
 
     // exec
-    let receipt = await cross.userBurnErc1155(...Object.values(funcParams), { from: senderAccount, value: moreServiceFee });
-    // console.log("Erc1155 1 userBurn receipt:", receipt);
+    let receipt = await cross.userBurnNFT(...Object.values(funcParams), { from: senderAccount, value: moreServiceFee });
     if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLibV1, receipt.tx);
     }
 
-    let args = {
-        smgID: web3.utils.padRight(funcParams.smgID, 64),
-        tokenPairID: funcParams.tokenPairID,
-        tokenAccount: funcParams.tokenAccount,
-        tokenID: funcParams.tokenID,
-        value: funcParams.value,
-        contractFee: contractFee,
-        fee: funcParams.crossFee,
-        userAccount: funcParams.userAccount.toLowerCase(),
-    };
+    const eventUserBurnNFT = assert.getWeb3Log(receipt, { event: 'UserBurnNFT' });
+    assert.equal(!!eventUserBurnNFT === true, true, "get event UserBurnNFT error");
+    assert.equal(eventUserBurnNFT.args.smgID, funcParams.smgID, "event UserBurnNFT smgID error");
+    assert.equal(eventUserBurnNFT.args.tokenPairID, funcParams.tokenPairID, "event UserBurnNFT tokenPairID error");
+    assert.equal(eventUserBurnNFT.args.keys.length, eventUserBurnNFT.args.values.length, "invalid UserBurnNFT keys and values length");
 
-    assert.checkWeb3Event(receipt, {
-        event: 'UserBurnLoggerErc1155',
-        args: args
-    });
+    const eventUserBurnNFTParams = eventUserBurnNFT.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventUserBurnNFT.args.values[index];
+        return reduced;
+    }, {});
 
-   {
-       let balance = await tokenInstance.methods.balanceOf(senderAccount,tokenID).call();
-       assert.equal(Number(0), Number(balance), "after check userBurn balanceOf account error:", balance);
+    assert.equal(eventUserBurnNFTParams.userAccount.type, "bytes", "invalid UserBurnNFT userAccount type");
+    assert.equal(eventUserBurnNFTParams.userAccount.value.toLowerCase(), funcParams.userAccount.toLowerCase(), "invalid UserBurnNFT userAccount value");
+    assert.equal(eventUserBurnNFTParams.contractFee.type, "uint256", "invalid UserBurnNFT contractFee type");
+    assert.equal(eventUserBurnNFTParams.tokenIDs.type, "uint256[]", "invalid UserBurnNFT tokenIDs type");
+    assert.equal(eventUserBurnNFTParams.tokenValues.type, "uint256[]", "invalid UserBurnNFT tokenValues type");
+
+    let decodeTokenIDs = web3.eth.abi.decodeParameters(['uint256[]'], eventUserBurnNFTParams.tokenIDs.value);
+    assert.equal(!!decodeTokenIDs[0] === true, true, "UserBurnNFT tokenIDs error");
+    decodeTokenIDs = decodeTokenIDs[0];
+    assert.equal(decodeTokenIDs.length, tokenIDs.length, "invalid UserBurnNFT tokenIDs length");
+    for (idx = 0; idx < decodeTokenIDs.length; ++idx) {
+        assert.equal(parseInt(decodeTokenIDs[idx]), tokenIDs[idx], "invalid UserBurnNFT tokenIDs value!");
+    }
+
+    let decodeTokenValues = web3.eth.abi.decodeParameters(['uint256[]'], eventUserBurnNFTParams.tokenValues.value);
+    assert.equal(!!decodeTokenValues[0] === true, true, "UserBurnNFT tokenValues error");
+    decodeTokenValues = decodeTokenValues[0];
+    assert.equal(decodeTokenValues.length, tokenValues.length, "invalid UserBurnNFT tokenValues length");
+    for (idx = 0; idx < decodeTokenValues.length; ++idx) {
+        assert.equal(parseInt(decodeTokenValues[idx]), tokenValues[idx], "invalid UserBurnNFT tokenValues value!");
+    }
+
+    balances = await tokenInstance.methods.balanceOfBatch(senderAccounts, tokenIDs).call();
+    for (idx = 0; idx < balances.length; ++idx) {
+        assert.equal(0, parseInt(balances[idx]), "after check userBurnNFT balanceOf error idx:", idx, ",balance:", balances[idx]);
     }
 
     const afterFeeProxyBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
     assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
 });
 
-it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( wanchain => ethereum )> -> smgRelease  ==>  success', async () => {
+it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( wanchain => ethereum )> -> smgReleaseNFT  ==>  success', async () => {
     const wanUserAccount = global.aliceAccount.WAN;
     const ethUserAccount = global.aliceAccount.ETH;
     const currentChainType = chainTypes.ETH;
@@ -375,34 +436,29 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( wanchain => ethe
     // }
 
     let tokenInstance = await getErc1155TokenInstance(tokenAccount);
-    let smgFeeProxy = partners.smgFeeProxy;
-    if (smgFeeProxy === ADDRESS_0) {
-        smgFeeProxy = await cross.owner();
-    }
-    const beforeFeeProxyBalance = new web3.utils.BN(await tokenInstance.methods.balanceOf(smgFeeProxy,tokenID).call());
-
     let funcParams = {
         uniqueID: uniqueID,
         smgID: smgID,
         tokenPairID: tokenPairID,
-        tokenID: tokenID,
-        value: mintValue,
-        crossFee: crossFee,
+        tokenIDs: tokenIDs,
+        tokenValues: tokenValues,
         tokenAccount: tokenAccount,
         userAccount: userAccount
     };
 
+    let idx = 0;
     // before check
-    let balance = await tokenInstance.methods.balanceOf(userAccount, tokenID).call();
-    balance = balance.toString();
-    assert.equal(0, balance, "erc1155 smgRelease before check balance error");
+    let userAccounts = [userAccount, userAccount, userAccount, userAccount, userAccount];
+    let balances = await tokenInstance.methods.balanceOfBatch(userAccounts, tokenIDs).call();
+    for (idx = 0; idx < tokenIDs.length; ++idx) {
+        assert.equal(0, parseInt(balances[idx]), "before smgReleaseNFT check balances:", balances);
+    }
 
-    let crossBalance = await tokenInstance.methods.balanceOf(cross.address, tokenID).call();
-    assert.equal(new web3.utils.BN(crossBalance).eq((new web3.utils.BN(0))), false, "check cross nft balance error");
-
-    balance = await tokenInstance.methods.balanceOf(cross.address, tokenID).call();
-    balance = balance.toString();
-    assert.equal(balance, mintValue, "erc1155 before check smgRelease cross.address:", cross.address, ",balance:", balance);
+    let crossAddresses = [cross.address, cross.address, cross.address, cross.address, cross.address];
+    let crossBalances = await tokenInstance.methods.balanceOfBatch(crossAddresses, tokenIDs).call();
+    for (idx = 0; idx < tokenIDs.length; ++idx) {
+        assert.equal(new web3.utils.BN(crossBalances[idx]).eq((new web3.utils.BN(tokenValues[idx]))), true, "before userReleaseNFT check cross balance error");
+    }
 
     // curveID
     let smg = await global.getSmgProxy(currentChainType, partners.smgAdminProxy);
@@ -411,50 +467,70 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( wanchain => ethe
     let sk = skInfo.src[currentChainType];
 
     // sign
-    let { R, s } = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgReleaseErc1155,
+    let { R, s } = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(curveID)]], sk, typesArrayList.smgReleaseNFT,
         (await cross.currentChainID()),
         funcParams.uniqueID,
         funcParams.tokenPairID,
-        funcParams.tokenID,
-        funcParams.value,
-        funcParams.crossFee,
+        funcParams.tokenIDs,
+        funcParams.tokenValues,
         funcParams.tokenAccount,
         funcParams.userAccount);
     funcParams = { ...funcParams, R: R, s: s };
 
-    let receipt = await cross.smgReleaseErc1155(...Object.values(funcParams), { from: senderAccount });
+    let receipt = await cross.smgReleaseNFT(...Object.values(funcParams), { from: senderAccount });
     if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].RapidityLibV4, receipt.tx);
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLibV1, receipt.tx);
     }
-    //console.log("nft smgRelease receipt logs:", receipt.logs);
-    const eventSmgRelease = assert.getWeb3Log(receipt, { event: 'SmgReleaseLoggerErc1155' });
-    assert.equal(!!eventSmgRelease === true, true, "get event SmgRelease error");
-    assert.equal(eventSmgRelease.args.uniqueID, funcParams.uniqueID, "event SmgRelease uniqueID error");
-    assert.equal(eventSmgRelease.args.smgID, funcParams.smgID, "event SmgRelease smgID error");
 
-    assert.checkWeb3Event(receipt, {
-        event: 'SmgReleaseLoggerErc1155',
-        args: {
-            uniqueID: funcParams.uniqueID,
-            smgID: web3.utils.padRight(funcParams.smgID, 64),
-            tokenPairID: funcParams.tokenPairID,
-            tokenID: funcParams.tokenID,
-            value: funcParams.value,
-            fee: funcParams.crossFee,
-            tokenAccount: funcParams.tokenAccount,
-            userAccount: funcParams.userAccount
-        }
-    });
+    const eventSmgReleaseNFT = assert.getWeb3Log(receipt, { event: 'SmgReleaseNFT' });
+    assert.equal(!!eventSmgReleaseNFT === true, true, "get event SmgReleaseNFT error");
+    assert.equal(eventSmgReleaseNFT.args.uniqueID, funcParams.uniqueID, "event SmgReleaseNFT uniqueID error");
+    assert.equal(eventSmgReleaseNFT.args.smgID, funcParams.smgID, "event SmgReleaseNFT smgID error");
+    assert.equal(eventSmgReleaseNFT.args.tokenPairID, funcParams.tokenPairID, "event SmgReleaseNFT tokenPairID error");
+    assert.equal(eventSmgReleaseNFT.args.keys.length, eventSmgReleaseNFT.args.values.length, "invalid SmgReleaseNFT keys and values length");
+
+    const eventSmgReleaseNFTParams = eventSmgReleaseNFT.args.keys.reduce((reduced, next, index) => {
+        const [paramName, paramType] = next.split(":");
+        reduced[paramName] = {};
+        reduced[paramName].type = paramType;
+        reduced[paramName].value = eventSmgReleaseNFT.args.values[index];
+        return reduced;
+    }, {});
+
+    assert.equal(eventSmgReleaseNFTParams.userAccount.type, "address", "invalid SmgReleaseNFT userAccount type");
+    assert.equal(eventSmgReleaseNFTParams.userAccount.value.toLowerCase(), funcParams.userAccount.toLowerCase(), "invalid SmgReleaseNFT userAccount value");
+
+    assert.equal(eventSmgReleaseNFTParams.tokenAccount.type, "address", "invalid SmgMintNFT tokenAccount type");
+    assert.equal(eventSmgReleaseNFTParams.tokenAccount.value.toLowerCase(), funcParams.tokenAccount.toLowerCase(), "invalid SmgReleaseNFT tokenAccount value");
+
+    assert.equal(eventSmgReleaseNFTParams.tokenIDs.type, "uint256[]", "invalid SmgReleaseNFT tokenIDs type");
+    assert.equal(eventSmgReleaseNFTParams.tokenValues.type, "uint256[]", "invalid SmgReleaseNFT tokenValues type");
+
+    idx = 0;
+    let decodeTokenIDs = web3.eth.abi.decodeParameters(['uint256[]'], eventSmgReleaseNFTParams.tokenIDs.value);
+    assert.equal(!!decodeTokenIDs[0] === true, true, "SmgReleaseNFT tokenIDs error");
+    decodeTokenIDs = decodeTokenIDs[0];
+    assert.equal(decodeTokenIDs.length, tokenIDs.length, "invalid SmgReleaseNFT tokenIDs length");
+    for (idx = 0; idx < decodeTokenIDs.length; ++idx) {
+        assert.equal(parseInt(decodeTokenIDs[idx]), tokenIDs[idx], "invalid SmgReleaseNFT tokenIDs value!");
+    }
+
+    let decodeTokenValues = web3.eth.abi.decodeParameters(['uint256[]'], eventSmgReleaseNFTParams.tokenValues.value);
+    assert.equal(!!decodeTokenValues[0] === true, true, "SmgReleaseNFT tokenValues error");
+    decodeTokenValues = decodeTokenValues[0];
+    assert.equal(decodeTokenValues.length, tokenValues.length, "invalid SmgReleaseNFT tokenValues length");
+    for (idx = 0; idx < decodeTokenValues.length; ++idx) {
+        assert.equal(parseInt(decodeTokenValues[idx]), tokenValues[idx], "invalid SmgReleaseNFT tokenValues value!");
+    }
 
     // after check
-    balance = await tokenInstance.methods.balanceOf(userAccount, tokenID).call();
-    balance = balance.toString();
-    assert.equal(balance, mintValue, "erc1155: after smgRelease userAccount:", userAccount, ",balance:", balance);
+    balances = await tokenInstance.methods.balanceOfBatch(userAccounts, tokenIDs).call();
+    for (idx = 0; idx < tokenIDs.length; ++idx) {
+        assert.equal(tokenValues[idx], parseInt(balances[idx]), "after userReleaseNFT check balances:", balances);
+    }
 
-    balance = await tokenInstance.methods.balanceOf(cross.address, tokenID).call();
-    balance = balance.toString();
-    assert.equal(balance, 0, "erc1155: after smgRelease crossDelegate:", cross.address, ",balance:", balance);
-
-    const afterFeeProxyBalance = new web3.utils.BN(await tokenInstance.methods.balanceOf(smgFeeProxy, tokenID).call());
-    assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN("0")), true, "balance of storeman fee error");
+    crossBalances = await tokenInstance.methods.balanceOfBatch(crossAddresses, tokenIDs).call();
+    for (idx = 0; idx < tokenIDs.length; ++idx) {
+        assert.equal(new web3.utils.BN(crossBalances[idx]).eq((new web3.utils.BN(0))), true, "after userReleaseNFT check cross balance error");
+    }
 });
