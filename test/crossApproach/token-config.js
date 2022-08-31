@@ -192,28 +192,28 @@ async function transferOrigToken(tokenCreator, tokens, alice) {
 }
 
 async function transferNftToken(tokenCreator, nftTokens, alice) {
+    const tokenIDs = [1, 2, 3, 4, 5];
+
     for (let nftToken of nftTokens) {
         if (nftToken.chainID !== nftToken.ancestorChainID) {
             // mapping nftToken
             console.log("deployOrigToken skip mapping nftToken", nftToken.symbol);
             continue;
         }
-        let mintValue = 12345
 
-        await tokenCreator.mintToken(nftToken.name, nftToken.symbol, alice, mintValue);
-        let value = await tokenCreator.tokenBalance.call(nftToken.name, nftToken.symbol, alice);
-        if (value.toString() !== "1") {
-            console.log("check failed about transfer original nftToken", nftToken.name, nftToken.symbol, alice);
+        let idx;
+        for (idx = 0; idx < tokenIDs.length; ++idx) {
+            await tokenCreator.mintToken(nftToken.name, nftToken.symbol, alice, tokenIDs[idx]);
         }
-        //console.log("transferNftToken nftToken.tokenAccount:", nftToken.tokenAccount);
+        let balance = await tokenCreator.tokenBalance.call(nftToken.name, nftToken.symbol, alice);
+        assert.equal(parseInt(balance.toString()), tokenIDs.length, "erc721 check balance");
+
         let nftInst = await erc721.at(nftToken.tokenAccount);
-        let ownerOf = await nftInst.ownerOf(mintValue);
-        console.log("nftToken.tokenAccount :", nftToken.tokenAccount, ",nft:", mintValue, ",ownerOf:", ownerOf);
-        if (ownerOf !== alice) {
-            console.log("check failed about ownerOf:", ownerOf);
+        for (idx = 0; idx < tokenIDs.length; ++idx) {
+            let ownerOf = await nftInst.ownerOf(tokenIDs[idx]);
+            assert.equal(ownerOf, alice, "check failed ownerOf");
         }
     }
-
 }
 
 function getWeb3Log(receipt, expectedEvent) {
