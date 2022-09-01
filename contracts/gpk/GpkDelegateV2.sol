@@ -431,14 +431,6 @@ contract GpkDelegateV2 is GpkStorageV2 {
         return ;
     }
 
-    function calcPolyLength(uint algo, uint threshold) public returns (uint length){
-        if(algo == 0) { // 0: ecdsa   1: schnorr
-            return threshold/2;
-        } else {
-            return threshold;
-        }
-    }
-
     function setGpkCfg(bytes32 groupId, uint[] curIndex, uint[] algoIndex) external onlyAdmin {
         require(curIndex.length != 0, "empty curve");
         require(curIndex.length == algoIndex.length, "invalid length");
