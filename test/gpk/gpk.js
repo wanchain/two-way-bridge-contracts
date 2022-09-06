@@ -2,7 +2,6 @@ const ConfigProxy = artifacts.require('ConfigProxy');
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
 const GpkDelegateV2 = artifacts.require('GpkDelegateV2');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, Data } = require('./Data');
@@ -40,7 +39,7 @@ contract('Gpk_UT_gpk', async(accounts) => {
     gpkProxy = await GpkProxy.deployed();
 
     gpkDelegate = await GpkDelegateV2.deployed();
-    await gpkProxy.upgradeTo(gpkDelegate.address)
+    //await gpkProxy.upgradeTo(gpkDelegate.address)
     gpkSc = await GpkDelegateV2.at(gpkProxy.address);
     console.log("Gpk contract address: %s", gpkProxy.address);
 
@@ -157,10 +156,11 @@ contract('Gpk_UT_gpk', async(accounts) => {
     let defaultPeroid = 5 * 60;
     let negotiatePeroid = 15 * 60;
     try {
-      await gpkSc.setPeriod(groupId, ployCommitPeroid, defaultPeroid, negotiatePeroid, {from: owner});
+      await   gpkSc.setPeriod(groupId, ployCommitPeroid, defaultPeroid, negotiatePeroid, {from: owner});
+      //await expectRevert(tx, "not admin")
     } catch (e) {
       result = e;
-      console.log("setPeriod not admin: %O", e)
+      //console.log("setPeriod not admin: %O", e)
     }
     assert.equal(result.reason, 'not admin');
   })
@@ -218,7 +218,7 @@ contract('Gpk_UT_gpk', async(accounts) => {
       await data.setPolyCommit(0, 0, 0, owner);
     } catch (e) {
       result = e;
-      console.log("setPolyCommit Invalid sender: %O", e)
+      //console.log("setPolyCommit Invalid sender: %O", e)
     }
     assert.equal(result.reason, 'Invalid sender');
   })
@@ -376,6 +376,7 @@ contract('Gpk_UT_gpk', async(accounts) => {
     }
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve2Status, GpkStatus.Complete);
+    console.log("fakeSc:", fakeSc)
     if (!fakeSc) {
       data.genGpk(1);
       let gpk = await gpkSc.getGpk(groupId);

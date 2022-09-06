@@ -1,7 +1,7 @@
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
+const GpkDelegate = artifacts.require('GpkDelegateV2');
 const FakeSkCurve = artifacts.require('FakeSkCurve');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, Data } = require('./Data');
@@ -58,6 +58,9 @@ contract('Gpk_UT_encsij_timeout', async () => {
     // console.log("gpk ut data: %O", data);
 
     await gpkSc.setPeriod(groupId, 10, 10, 10, {from: g.admin});
+    let curves = [1,0,1]
+    let algos  = [1,1,0]
+    await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin}) 
   })
 
   // setPolyCommit

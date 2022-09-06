@@ -44,13 +44,13 @@ class Data {
     }
     this.smList = await Promise.all(ps);
     this.threshold = await this.smgSc.getThresholdByGrpId(this.groupId);
-    console.log('gpk ut get smList: %O', this.smList);
-    console.log('gpk ut get threshold: %d/%d', this.threshold, smNumber);
+    //console.log('gpk ut get smList: %O', this.smList);
+    //console.log('gpk ut get threshold: %d/%d', this.threshold, smNumber);
   }
 
   async initCurve() {
     let info = await this.smgSc.getStoremanGroupConfig(this.groupId);
-    console.log('gpk ut get curves: %O', info);
+    //console.log('gpk ut get curves: %O', info);
     let round = new Round(parseInt(info.curve1));
     await round.init(this.smList, this.threshold);
     this.round[0] = round;

@@ -1,7 +1,7 @@
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
+const GpkDelegate = artifacts.require('GpkDelegateV2');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, SlashType, Data } = require('./Data');
 const utils = require('../utils.js');
@@ -51,6 +51,9 @@ contract('Gpk_UT_checksij_invalid', async () => {
     // console.log("gpk ut data: %O", data);
 
     await gpkSc.setPeriod(groupId, 10, 10, 10, {from: g.admin});
+    let curves = [1,0,1]
+    let algos  = [1,1,0]
+    await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin}) 
   })
 
   // setPolyCommit
@@ -61,6 +64,7 @@ contract('Gpk_UT_checksij_invalid', async () => {
         await data.setPolyCommit(0, 0, i);
       }
     } catch (e) {
+      console.log("GpkDelegate_setPolyCommit:", e); throw(e)
       result = e;
     }
     let info = await gpkSc.getGroupInfo(groupId, 0);
@@ -78,6 +82,7 @@ contract('Gpk_UT_checksij_invalid', async () => {
       await data.setEncSij(0, 0, 1, 0);
       await data.setCheckStatus(0, 0, 0, false, 1);
     } catch (e) {
+      console.log("GpkDelegate_setEncSij:", e)
       result = e;
     }
     let src = data.smList[0].address;

@@ -216,7 +216,8 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(GpkProxy);
     let gpkProxy = await GpkProxy.deployed();
     let gpkDelegate = await GpkDelegate.deployed();
-    await gpkProxy.upgradeTo(gpkDelegate.address);
+    let gpkDelegateV2 = await GpkDelegateV2.deployed();
+    await gpkProxy.upgradeTo(gpkDelegateV2.address);
     console.log("gpk address:", gpkProxy.address);
     let gpk = await GpkDelegate.at(GpkProxy.address);
     await gpk.addAdmin(config.networks[network].admin);
