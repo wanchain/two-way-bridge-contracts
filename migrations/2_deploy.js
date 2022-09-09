@@ -23,7 +23,7 @@ const FakeCommonTool = artifacts.require('FakeCommonTool');
 
 const Secp256k1Curve = artifacts.require('Secp256k1Curve');
 const Bn256Curve = artifacts.require('Bn256Curve');
-const GpkLib = artifacts.require('GpkLib');
+const GpkLib = artifacts.require('GpkLibV2');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
 const GpkDelegateV2 = artifacts.require('GpkDelegateV2');
@@ -208,14 +208,14 @@ module.exports = async function (deployer, network) {
     }
     await deployer.deploy(GpkLib);
 
-    await deployer.link(GpkLib, GpkDelegate);
-    await deployer.deploy(GpkDelegate);
+    // await deployer.link(GpkLib, GpkDelegate);
+    // await deployer.deploy(GpkDelegate);
     await deployer.link(GpkLib, GpkDelegateV2);
     await deployer.deploy(GpkDelegateV2);
 
     await deployer.deploy(GpkProxy);
     let gpkProxy = await GpkProxy.deployed();
-    let gpkDelegate = await GpkDelegate.deployed();
+    // let gpkDelegate = await GpkDelegate.deployed();
     let gpkDelegateV2 = await GpkDelegateV2.deployed();
     await gpkProxy.upgradeTo(gpkDelegateV2.address);
     console.log("gpk address:", gpkProxy.address);

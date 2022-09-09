@@ -44,14 +44,17 @@ contract('Gpk_UT_sij_timeout', async () => {
     await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
+    let curves = [1,0,1]
+    let algos  = [1,1,0]
+    await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin}) 
+
+
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
     // console.log("gpk ut data: %O", data);
 
     await gpkSc.setPeriod(groupId, 10, 10, 10, {from: g.admin});
-    let curves = [1,0,1]
-    let algos  = [1,1,0]
-    await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin}) 
+
   })
 
   // setPolyCommit
@@ -64,8 +67,8 @@ contract('Gpk_UT_sij_timeout', async () => {
     } catch (e) {
       result = e;
     }
-    let info = await gpkSc.getGroupInfo(groupId, 0);
-    assert.equal(info.curve1Status, GpkStatus.Negotiate);
+    let info = await gpkSc.getGroupInfobyIndex(groupId, 0, 0);
+    assert.equal(info.curveStatus, GpkStatus.Negotiate);
   })
 
   // SijTimeout
@@ -100,8 +103,10 @@ contract('Gpk_UT_sij_timeout', async () => {
       result = e;
       console.log("polyCommitTimeout should success: %O", e);
     }
-    let info = await gpkSc.getGroupInfo(groupId, 0);
-    assert.equal(info.curve1Status, GpkStatus.Close);
-    assert.equal(info.curve2Status, GpkStatus.Close);
+    for(let i=0; i<data.gpkCount; i++) {
+      let info = await gpkSc.getGroupInfobyIndex(groupId, 0, i);
+      assert.equal(info.curveStatus, GpkStatus.Close);
+    }
+
   })
 })

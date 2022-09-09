@@ -30,7 +30,7 @@ pragma experimental ABIEncoderV2;
 import "../lib/SafeMath.sol";
 import "../components/Admin.sol";
 import "./GpkStorageV2.sol";
-import "./lib/GpkLib.sol";
+import "./lib/GpkLibV2.sol";
 
 contract GpkDelegateV2 is GpkStorageV2 {
     using SafeMath for uint;
@@ -121,12 +121,18 @@ contract GpkDelegateV2 is GpkStorageV2 {
         external
     {
         require(polyCommit.length > 0, "Invalid polyCommit");
+        require(gpkCount[groupId] != 0, "Invalid gpk count");
 
         GpkTypes.Group storage group = groupMap[groupId];
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
+        uint[] memory curves = new uint[](gpkCount[groupId]);
+        for(uint8 i=0; i<gpkCount[groupId];  i++) {
+            curves[i] = curve[groupId][i];
+        }
+
         if (group.smNumber == 0) {
             // init group when the first node submit to start every round
-            GpkLib.initGroup(groupId, group, cfg, smg);
+            GpkLibV2.initGroup(groupId, group, cfg, smg, curves);
         }
         if (round.statusTime == 0) {
             round.statusTime = now;
@@ -135,8 +141,8 @@ contract GpkDelegateV2 is GpkStorageV2 {
         require(round.srcMap[msg.sender].polyCommit.length == 0, "Duplicate");
         round.srcMap[msg.sender].polyCommit = polyCommit;
         round.polyCommitCount++;
-        GpkLib.updateGpk(round, polyCommit);
-        GpkLib.updateGpkShare(group, round, polyCommit);
+        GpkLibV2.updateGpk(round, polyCommit);
+        GpkLibV2.updateGpkShare(group, round, polyCommit);
         if (round.polyCommitCount >= group.smNumber) {
             round.status = GpkTypes.GpkStatus.Negotiate;
             round.statusTime = now;
@@ -160,11 +166,11 @@ contract GpkDelegateV2 is GpkStorageV2 {
         for (uint i = 0; (i < group.smNumber) && (slashCount + round.polyCommitCount < group.smNumber); i++) {
             address src = group.addrMap[i];
             if (round.srcMap[src].polyCommit.length == 0) {
-                GpkLib.slash(group, curveIndex, GpkTypes.SlashType.PolyCommitTimeout, src, address(0), false, smg);
+                GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.PolyCommitTimeout, src, address(0), false, smg);
                 slashCount++;
             }
         }
-        GpkLib.slashMulti(group, curveIndex, smg);
+        GpkLibV2.slashMulti(group, curveIndex, smg);
     }
 
     /// @notice                           function for src storeman submit encSij
@@ -234,7 +240,7 @@ contract GpkDelegateV2 is GpkStorageV2 {
         GpkTypes.Dest storage d = round.srcMap[src].destMap[msg.sender];
         require(d.encSij.length == 0, "Outdated");
         require(now.sub(round.statusTime) > group.defaultPeriod, "Not late");
-        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijTimout, src, msg.sender, true, smg);
+        GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.EncSijTimout, src, msg.sender, true, smg);
     }
 
     /// @notice                           function for src storeman reveal sij
@@ -256,10 +262,10 @@ contract GpkDelegateV2 is GpkStorageV2 {
         d.sij = sij;
         d.ephemPrivateKey = ephemPrivateKey;
         emit RevealSijLogger(groupId, roundIndex, curveIndex, msg.sender, dest);
-        if (GpkLib.verifySij(d, group.pkMap[dest], src.polyCommit, round.curve)) {
-          GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckInvalid, dest, msg.sender, true, smg);
+        if (GpkLibV2.verifySij(d, group.pkMap[dest], src.polyCommit, round.curve)) {
+          GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.CheckInvalid, dest, msg.sender, true, smg);
         } else {
-          GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijInvalid, msg.sender, dest, true, smg);
+          GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.SijInvalid, msg.sender, dest, true, smg);
         }
     }
 
@@ -277,7 +283,7 @@ contract GpkDelegateV2 is GpkStorageV2 {
         require(d.checkStatus == GpkTypes.CheckStatus.Init, "Checked");
         require(d.encSij.length != 0, "Not ready");
         require(now.sub(d.setTime) > group.defaultPeriod, "Not late");
-        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckTimeout, dest, msg.sender, true, smg);
+        GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.CheckTimeout, dest, msg.sender, true, smg);
     }
 
     /// @notice                           function for report srcPk submit sij timeout
@@ -293,7 +299,7 @@ contract GpkDelegateV2 is GpkStorageV2 {
         GpkTypes.Dest storage d = round.srcMap[src].destMap[msg.sender];
         require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Not need");
         require(now.sub(d.checkTime) > group.defaultPeriod, "Not late");
-        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijTimeout, src, msg.sender, true, smg);
+        GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.SijTimeout, src, msg.sender, true, smg);
     }
 
     /// @notice                           function for terminate protocol
@@ -314,20 +320,20 @@ contract GpkDelegateV2 is GpkStorageV2 {
                 GpkTypes.Dest storage d = round.srcMap[src].destMap[dest];
                 if (d.checkStatus != GpkTypes.CheckStatus.Valid) {
                     if (d.encSij.length == 0) {
-                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijTimout, src, dest, false, smg);
-                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.Connive, dest, src, false, smg);
+                        GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.EncSijTimout, src, dest, false, smg);
+                        GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.Connive, dest, src, false, smg);
                     } else if (d.checkStatus == GpkTypes.CheckStatus.Init) {
-                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.Connive, src, dest, false, smg);
-                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckTimeout, dest, src, false, smg);
+                        GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.Connive, src, dest, false, smg);
+                        GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.CheckTimeout, dest, src, false, smg);
                     } else { // GpkTypes.CheckStatus.Invalid
-                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijTimeout, src, dest, false, smg);
-                        GpkLib.slash(group, curveIndex, GpkTypes.SlashType.Connive, dest, src, false, smg);
+                        GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.SijTimeout, src, dest, false, smg);
+                        GpkLibV2.slash(group, curveIndex, GpkTypes.SlashType.Connive, dest, src, false, smg);
                     }
                     slashPair--;
                 }
             }
         }
-        GpkLib.slashMulti(group, curveIndex, smg);
+        GpkLibV2.slashMulti(group, curveIndex, smg);
     }
 
     /// @notice                           function for check paras
@@ -343,8 +349,7 @@ contract GpkDelegateV2 is GpkStorageV2 {
         view
     {
         require(roundIndex == group.round, "Invalid round"); // must be current round
-        uint gpkCount = getGpkCount(group.groupId);
-        require(curveIndex < gpkCount, "Invalid curve"); // curve only can be 0 or 1, 2
+        require(curveIndex < gpkCount[group.groupId], "Invalid curve"); 
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         require((round.status == status) && (round.statusTime > 0), "Invalid status");
         if (checkSender) {
@@ -355,16 +360,15 @@ contract GpkDelegateV2 is GpkStorageV2 {
         }
     }
 
-    function getGroupInfo(bytes32 groupId, int32 roundIndex)
+    function getGroupInfobyIndex(bytes32 groupId, int32 roundIndex, uint8 gpkIndex)
         external
         view
-        returns(uint16 queriedRound, address curve1, uint8 curve1Status, uint curve1StatusTime, address curve2, uint8 curve2Status, uint curve2StatusTime)
+        returns(uint16 queriedRound, address curve, uint8 curveStatus, uint curveStatusTime)
     {
         GpkTypes.Group storage group = groupMap[groupId];
         queriedRound = (roundIndex >= 0)? uint16(roundIndex) : group.round;
-        GpkTypes.Round storage round1 = group.roundMap[queriedRound][0];
-        GpkTypes.Round storage round2 = group.roundMap[queriedRound][1];
-        return (queriedRound, round1.curve, uint8(round1.status), round1.statusTime, round2.curve, uint8(round2.status), round2.statusTime);
+        GpkTypes.Round storage round = group.roundMap[queriedRound][gpkIndex];
+        return (queriedRound, round.curve, uint8(round.status), round.statusTime);
     }
 
     function getPolyCommit(bytes32 groupId, uint16 roundIndex, uint8 gpkIndex, address src)
@@ -418,28 +422,22 @@ contract GpkDelegateV2 is GpkStorageV2 {
         GpkTypes.Round storage round = group.roundMap[queriedRound][gpkIndex];
         return (queriedRound, round.curve, uint8(round.status), round.statusTime);
     }
-    function getGpkCount(bytes32 groupId) public view returns(uint count) {
-        return gpkCount;
-    }
-    function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algo) {
-        uint cfg = gpkCfg[groupId][index];
-        return getGpkCfgbyId(cfg);
-    }
-    function getGpkCfgbyId(uint id) public view returns(uint curveIndex, uint algo) {
-        curveIndex = id >> 128;
-        algo = id << 128 >> 128;
-        return ;
-    }
+    // function getGpkCount(bytes32 groupId) public view returns(uint count) {
+    //     return gpkCount[groupId];
+    // }
+    // function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algo) {
+    //     return(curve[groupId][index], algo[groupId][index]);
+    // }
 
     function setGpkCfg(bytes32 groupId, uint[] curIndex, uint[] algoIndex) external onlyAdmin {
         require(curIndex.length != 0, "empty curve");
         require(curIndex.length == algoIndex.length, "invalid length");
-        gpkCount = curIndex.length;
-        for(uint i=0; i<gpkCount; i++) {
-            uint cfg = (curIndex[i] << 128) + algoIndex[i];
-            gpkCfg[groupId][i] = cfg;
+        gpkCount[groupId] = curIndex.length;
+        for(uint i=0; i<gpkCount[groupId]; i++) {
+            algo[groupId][i] = algoIndex[i];
+            curve[groupId][i] = curIndex[i];
         }
-        emit setGpkCfgEvent(groupId, gpkCount);
+        emit setGpkCfgEvent(groupId, gpkCount[groupId]);
     }
 
 
@@ -447,17 +445,16 @@ contract GpkDelegateV2 is GpkStorageV2 {
         public
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        uint gpkCount = getGpkCount(groupId);
         uint8 i;
-        for(i=0; i<gpkCount; i++) {
+        for(i=0; i<gpkCount[groupId]; i++) {
             if(group.roundMap[group.round][i].status != GpkTypes.GpkStatus.Complete) {
                 return;
             }
         }
 
-        bytes[] memory gpks = new  bytes[](gpkCount);
+        bytes[] memory gpks = new  bytes[](gpkCount[groupId]);
         
-        for(i=0; i<gpkCount; i++) { 
+        for(i=0; i<gpkCount[groupId]; i++) { 
             gpks[i] = group.roundMap[group.round][i].gpk;
         }
         emit GpkCreatedLogger(groupId, group.round, gpks );
@@ -465,7 +462,5 @@ contract GpkDelegateV2 is GpkStorageV2 {
         GpkTypes.Round storage round2 = group.roundMap[group.round][1];
         IStoremanGroup(smg).setGpk(groupId, round1.gpk, round2.gpk); // only set 2 gpk for compatible 
     }
-
-
 }
 

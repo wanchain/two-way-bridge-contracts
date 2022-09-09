@@ -34,7 +34,9 @@ import "../components/Proxy.sol";
 
 
 contract GpkStorageV2 is GpkStorage, Admin, Proxy {
-    uint gpkCount;
-    // groupId=>gpkIndex=>gpkCfg
-    mapping(bytes32=>mapping(uint=>uint)) gpkCfg;
+    //groupId=>gpkCount
+    mapping(bytes32=>uint) public gpkCount;
+    // groupId=>gpkIndex=>curves
+    mapping(bytes32=>mapping(uint=>uint)) public curve;
+    mapping(bytes32=>mapping(uint=>uint)) public algo;
 }

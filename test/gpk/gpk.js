@@ -58,11 +58,14 @@ contract('Gpk_UT_gpk', async(accounts) => {
     await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
-    data = new Data(smgSc, gpkSc, groupId);
-    await data.init();
     let curves = [1,0,1]
     let algos  = [1,1,0]
-    await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin}) 
+    let tx = await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin}) 
+    let count = await gpkSc.gpkCount(groupId);
+    console.log("gpk count:", count.toString(10))
+
+    data = new Data(smgSc, gpkSc, groupId);
+    await data.init();
     // console.log("gpk ut data: %O", data);
   })
 
@@ -195,7 +198,8 @@ contract('Gpk_UT_gpk', async(accounts) => {
   it('[GpkDelegate_setPolyCommit] should fail: Invalid round', async () => {
     let result = {};
     try {
-      await data.setPolyCommit(1, 0, 0);
+      let tx = await data.setPolyCommit(1, 0, 0);
+      console.log("tx:", tx)
     } catch (e) {
       result = e;
     }
@@ -246,8 +250,8 @@ contract('Gpk_UT_gpk', async(accounts) => {
     } catch (e) {
       result = e;
     }
-    let info = await gpkSc.getGroupInfo(groupId, 0);
-    assert.equal(info.curve1Status, GpkStatus.Negotiate);
+    let info = await gpkSc.getGroupInfobyIndex(groupId, 0, 0);
+    assert.equal(info.curveStatus, GpkStatus.Negotiate);
   })
 
   // setEncSij
@@ -340,8 +344,8 @@ contract('Gpk_UT_gpk', async(accounts) => {
     } catch (e) {
       result = e;
     }
-    let info = await gpkSc.getGroupInfo(groupId, 0);
-    assert.equal(info.curve1Status, GpkStatus.Complete);
+    let info = await gpkSc.getGroupInfobyIndex(groupId, 0,0);
+    assert.equal(info.curveStatus, GpkStatus.Complete);
     if (!fakeSc) {
       data.genGpk(0);
       let gpk = await gpkSc.getGpk(groupId);
@@ -351,31 +355,21 @@ contract('Gpk_UT_gpk', async(accounts) => {
 
   it('[GpkDelegate_curve_2] should success', async () => {
     let result = {};
-    try {
-      // polyCommit
-      for (let i = 0; i < data.smList.length; i++) {
-        await data.setPolyCommit(0, 1, i);
-      }
-      let info = await gpkSc.getGroupInfo(groupId, 0);
-      assert.equal(info.curve2Status, GpkStatus.Negotiate);
-      // sij
-      for (let s = 0; s < data.smList.length; s++) {
-        for (let d = 0; d < data.smList.length; d++) {
-          await data.setEncSij(0, 1, d, s);
-          await data.setCheckStatus(0, 1, s, true, d);
-        }
-      }
-      info = await gpkSc.getGpkShare(groupId, 0);
-      assert.notEqual(info.gpkShare1, '');
-      assert.notEqual(info.gpkShare2, '');
-      info = await gpkSc.getGpk(groupId);
-      assert.notEqual(info.gpk1, '');
-      assert.notEqual(info.gpk2, '');
-    } catch (e) {
-      result = e;
+    // polyCommit
+    for (let i = 0; i < data.smList.length; i++) {
+      await data.setPolyCommit(0, 1, i);
     }
-    let info = await gpkSc.getGroupInfo(groupId, 0);
-    assert.equal(info.curve2Status, GpkStatus.Complete);
+    let info = await gpkSc.getGroupInfobyIndex(groupId, 0, 1);
+    assert.equal(info.curveStatus, GpkStatus.Negotiate);
+    // sij
+    for (let s = 0; s < data.smList.length; s++) {
+      for (let d = 0; d < data.smList.length; d++) {
+        await data.setEncSij(0, 1, d, s);
+        await data.setCheckStatus(0, 1, s, true, d);
+      }
+    }
+    info = await gpkSc.getGroupInfobyIndex(groupId, 0, 1);
+    assert.equal(info.curveStatus, GpkStatus.Complete);
     console.log("fakeSc:", fakeSc)
     if (!fakeSc) {
       data.genGpk(1);
@@ -384,6 +378,37 @@ contract('Gpk_UT_gpk', async(accounts) => {
     }
   })
 
+  it('[GpkDelegate_curve_3] should success', async () => {
+    let result = {};
+    // polyCommit
+    for (let i = 0; i < data.smList.length; i++) {
+      await data.setPolyCommit(0, 2, i);
+    }
+    let info = await gpkSc.getGroupInfobyIndex(groupId, 0, 2);
+    assert.equal(info.curveStatus, GpkStatus.Negotiate);
+    // sij
+    for (let s = 0; s < data.smList.length; s++) {
+      for (let d = 0; d < data.smList.length; d++) {
+        await data.setEncSij(0, 2, d, s);
+        await data.setCheckStatus(0, 2, s, true, d);
+      }
+    }
+    for (let i = 0; i < data.smList.length; i++) {
+      gpkShare = await gpkSc.getGpkSharebyIndex(groupId, 0, i);
+      assert.notEqual(gpkShare, '');
+      gpk = await gpkSc.getGpkbyIndex(groupId, i);
+      assert.notEqual(gpk, '');
+    }
+    info = await gpkSc.getGroupInfobyRoundCurve(groupId, 0, 2);
+    assert.equal(info.curveStatus, GpkStatus.Complete);
+
+    console.log("fakeSc:", fakeSc)
+    if (!fakeSc) {
+      data.genGpk(1);
+      let gpk = await gpkSc.getGpk(groupId);
+      assert.equal(gpk.gpk2, data.round[1].gpk);
+    }
+  })
   it('[GpkDelegate_payable] should fail: Not support', async () => {
     let result = null;
     try {
@@ -415,12 +440,12 @@ contract('Gpk_UT_gpk', async(accounts) => {
 
     expectEvent(tx, "setGpkCfgEvent",{count: new BN(algos.length)})
 
-    let count1 = await gpkSc.getGpkCount(groupId);
+    let count1 = await gpkSc.gpkCount(groupId);
     assert.equal(count1, algos.length, "getGpkCount failed")
 
     for(let i=0; i<count1; i++) {
-      let cfg = await gpkSc.getGpkCfgbyGroup(groupId, i);
-      console.log("cfg:", i, cfg.curveIndex.toString(10), cfg.algo.toString(10))
+      // let cfg = await gpkSc.getGpkCfgbyGroup(groupId, i);
+      // console.log("cfg:", i, cfg.curveIndex.toString(10), cfg.algo.toString(10))
       // assert.equal(cfg.curveIndex.toString(10), curves[i].toString(10), "curve error")
       // assert.equal(cfg.algo.toString(10), algos[i].toString(10), "algo error")
     }
