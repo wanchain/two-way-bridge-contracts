@@ -55,6 +55,21 @@ contract('Gpk_UT_gpk', async(accounts) => {
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
+
+
+
+    // console.log("gpk ut data: %O", data);
+
+    let result = {};
+    try {
+      await gpkSc.setPolyCommit(groupId, 1, 0, Buffer.from("FFFF", 'hex'));
+      console.log("OK")
+    } catch (e) {
+      console.log("xxx:e", e)
+      result = e;
+    }
+    assert.equal(result.reason, 'Invalid gpk count');
+
     await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
