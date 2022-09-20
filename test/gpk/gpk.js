@@ -76,9 +76,14 @@ contract('Gpk_UT_gpk', async(accounts) => {
     let curves = [1,0,1]
     let algos  = [1,1,0]
     let tx = await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin}) 
-    let count = await gpkSc.gpkCount(groupId);
+    let count = await gpkSc.getGpkCount(groupId);
     console.log("gpk count:", count.toString(10))
-
+    assert.equal(count, curves.length)
+    for(let i=0; i<curves.length; i++) {
+      let cfg = await gpkSc.getGpkCfgbyGroup(groupId, i)
+      assert.equal(cfg.curveIndex, curves[i])
+      assert.equal(cfg.algoIndex, algos[i])
+    }
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
     // console.log("gpk ut data: %O", data);
@@ -455,14 +460,13 @@ contract('Gpk_UT_gpk', async(accounts) => {
 
     expectEvent(tx, "setGpkCfgEvent",{count: new BN(algos.length)})
 
-    let count1 = await gpkSc.gpkCount(groupId);
+    let count1 = await gpkSc.getGpkCount(groupId);
     assert.equal(count1, algos.length, "getGpkCount failed")
 
     for(let i=0; i<count1; i++) {
-      // let cfg = await gpkSc.getGpkCfgbyGroup(groupId, i);
-      // console.log("cfg:", i, cfg.curveIndex.toString(10), cfg.algo.toString(10))
-      // assert.equal(cfg.curveIndex.toString(10), curves[i].toString(10), "curve error")
-      // assert.equal(cfg.algo.toString(10), algos[i].toString(10), "algo error")
+      let cfg = await gpkSc.getGpkCfgbyGroup(groupId, i);
+      assert.equal(cfg.curveIndex.toString(10), curves[i].toString(10), "curve error")
+      assert.equal(cfg.algoIndex.toString(10), algos[i].toString(10), "algo error")
     }
     console.log("end")
 

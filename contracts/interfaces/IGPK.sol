@@ -32,6 +32,6 @@ interface IGPK {
     function getGpkCount(bytes32 groupId) public view returns(uint count);
     function getGpkbyIndex(bytes32 groupId, uint8 gpkIndex) external view returns(bytes gpk);
     function getGpkSharebyIndex(bytes32 groupId, uint16 smIndex, uint8 gpkIndex) external view returns(bytes gpkShare);
-    function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algo);
+    function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algoIndex);
     function setGpkCfg(bytes32 groupId, uint[] curIndex, uint[] algoIndex) external;
 }

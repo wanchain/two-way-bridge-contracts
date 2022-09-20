@@ -53,11 +53,12 @@ class Data {
     let info = await this.smgSc.getStoremanGroupConfig(this.groupId);
     //console.log('gpk ut get curves: %O', info);
 
-    let gpkCount = await this.gpkSc.gpkCount(this.groupId);
+    let gpkCount = await this.gpkSc.getGpkCount(this.groupId);
     console.log("gpkCount:", gpkCount.toString(10))
     this.gpkCount = gpkCount;
     for(let i=0; i<gpkCount; i++) {
-      let curve = await this.gpkSc.curve(this.groupId,i)
+      let cfg = await this.gpkSc.getGpkCfgbyGroup(this.groupId, i)
+      let curve = cfg.curveIndex
       let round = new Round(parseInt(curve));
       await round.init(this.smList, this.threshold);
       this.round[i] = round;

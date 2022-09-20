@@ -72,7 +72,7 @@ contract('Gpk_UT_pc_timeout', async () => {
     let result = {};
     try {
       await toSelect(smgSc, groupId);
-      let count = await gpkSc.gpkCount(groupId);
+      let count = await gpkSc.getGpkCount(groupId);
       console.log("count:", count.toString())
       await gpkSc.polyCommitTimeout(groupId, 0);
     } catch (e) {

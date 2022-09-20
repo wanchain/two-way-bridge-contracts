@@ -422,12 +422,12 @@ contract GpkDelegateV2 is GpkStorageV2 {
         GpkTypes.Round storage round = group.roundMap[queriedRound][gpkIndex];
         return (queriedRound, round.curve, uint8(round.status), round.statusTime);
     }
-    // function getGpkCount(bytes32 groupId) public view returns(uint count) {
-    //     return gpkCount[groupId];
-    // }
-    // function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algo) {
-    //     return(curve[groupId][index], algo[groupId][index]);
-    // }
+    function getGpkCount(bytes32 groupId) public view returns(uint count) {
+        return gpkCount[groupId];
+    }
+    function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algoIndex) {
+        return (curve[groupId][index], algo[groupId][index]);
+    }
 
     function setGpkCfg(bytes32 groupId, uint[] curIndex, uint[] algoIndex) external onlyAdmin {
         require(curIndex.length != 0, "empty curve");

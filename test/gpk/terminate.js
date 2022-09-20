@@ -53,7 +53,7 @@ contract('Gpk_UT_terminate', async () => {
     await data.init();
     // console.log("gpk ut data: %O", data);
 
-    await gpkSc.setPeriod(groupId, 10, 10, 10, {from: g.admin});
+    await gpkSc.setPeriod(groupId, 10, 10, 15, {from: g.admin});
 
   })
 
