@@ -37,7 +37,7 @@ contract('Gpk_UT_sij_timeout', async () => {
     console.log("onwer address: %s", owner);
     console.log("admin address: %s", admin);
 
-    groupId = await registerStart(smgSc);
+    groupId = await registerStart(smgSc, 0, {registerDuration:8});
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
