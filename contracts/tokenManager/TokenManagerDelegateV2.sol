@@ -72,12 +72,15 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
      ** MANIPULATIONS
      **
      ************************************************************/
-    function setTokenPairType(uint tokenPairId, uint8 tokenPairType)
+    function setTokenPairTypes(uint[] tokenPairIds, uint8[] tokenPairTypes)
         external
         onlyOperator
     {
-       mapTokenPairType[tokenPairId] = tokenPairType;
-       emit SetTokenPairType(tokenPairId, tokenPairType);
+       require(tokenPairIds.length == tokenPairTypes.length, "length mismatch");
+       for(uint idx = 0; idx < tokenPairIds.length; ++idx) {
+          mapTokenPairType[tokenPairIds[idx]] = tokenPairTypes[idx];
+          emit SetTokenPairType(tokenPairIds[idx], tokenPairTypes[idx]);
+       }
     }
 
     function setOperator(address account)
@@ -126,7 +129,7 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
             IWrappedNFT1155(tokenAddress).mintBatch(to, tokenIDs, values, data);
         }
         else {
-            require(false, "Not support");
+            require(false, "Invalid NFT type");
         }
     }
 
@@ -149,7 +152,7 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
             IWrappedNFT1155(tokenAddress).burnBatch(from, tokenIDs, values);
         }
         else {
-            require(false, "Not support");
+            require(false, "Invalid NFT type");
         }
     }
 }

@@ -494,7 +494,8 @@ contract CrossDelegateV4 is CrossStorageV4 {
         notHalted
         onlyReadySmg(smgID)
     {
-        address smgFeeProxy = getSmgFeeProxy();
+        require(tokenIDs.length > 0, "Invalid length");
+        require(tokenIDs.length == tokenValues.length, "Length mismatch");
 
         NFTLibV1.RapidityUserLockNFTParams memory params = NFTLibV1.RapidityUserLockNFTParams({
             smgID: smgID,
@@ -504,7 +505,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
             currentChainID: currentChainID,
             tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
             destUserAccount: userAccount,
-            smgFeeProxy: smgFeeProxy
+            smgFeeProxy: getSmgFeeProxy()
         });
         NFTLibV1.userLockNFT(storageData, params);
     }
@@ -515,7 +516,8 @@ contract CrossDelegateV4 is CrossStorageV4 {
         notHalted
         onlyReadySmg(smgID)
     {
-        address smgFeeProxy = getSmgFeeProxy();
+        require(tokenIDs.length > 0, "Invalid length");
+        require(tokenIDs.length == tokenValues.length, "Length mismatch");
 
         NFTLibV1.RapidityUserBurnNFTParams memory params = NFTLibV1.RapidityUserBurnNFTParams({
             smgID: smgID,
@@ -526,7 +528,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
             tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
             srcTokenAccount: tokenAccount,
             destUserAccount: userAccount,
-            smgFeeProxy: smgFeeProxy
+            smgFeeProxy: getSmgFeeProxy()
         });
         NFTLibV1.userBurnNFT(storageData, params);
     }
@@ -576,5 +578,23 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
         bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
+    }
+
+    function setMaxBatchSize(uint _maxBatchSize) 
+      external
+      onlyAdmin
+    {
+      maxBatchSize = _maxBatchSize;
+    }
+
+    function getBatchFee(uint tokenPairID, uint batchLength) 
+      external
+      view
+      returns (uint)
+    {
+      address tokenScAddr;
+      uint contractFee;
+      (tokenScAddr, contractFee) = NFTLibV1.getTokenScAddrAndContractFee(storageData, tokenPairID, mapTokenPairContractFee[tokenPairID], currentChainID, batchLength);
+      return contractFee;
     }
 }
