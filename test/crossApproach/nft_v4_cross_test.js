@@ -79,7 +79,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @ethereum] <( ethereum => wanch
 
     const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
     if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
-        await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(tokenCrossType), {from: global.operatorAccount[currentChainType]});
+        await tokenManager.setTokenPairTypes([tokenPairID], [new web3.utils.BN(tokenCrossType)], {from: global.operatorAccount[currentChainType]});
     }
 
     let smgFeeProxy = partners.smgFeeProxy;
@@ -185,7 +185,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @wanchain] <( ethereum => wanch
 
     const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
     if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
-        await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(tokenCrossType), {from: global.operatorAccount[currentChainType]});
+        await tokenManager.setTokenPairTypes([tokenPairID], [new web3.utils.BN(tokenCrossType)], {from: global.operatorAccount[currentChainType]});
     }
 
     let tokenInstance = await getNftTokenInstance(tokenAccount);
@@ -304,7 +304,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @wanchain] <( wanchain => ether
 
     const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
     if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
-        await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(tokenCrossType), { from: global.operatorAccount[currentChainType] });
+        await tokenManager.setTokenPairTypes([tokenPairID], [new web3.utils.BN(tokenCrossType)], { from: global.operatorAccount[currentChainType] });
     }
 
     let smgFeeProxy = partners.smgFeeProxy;
@@ -337,9 +337,10 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @wanchain] <( wanchain => ether
         let approved = await tokenInstance.getApproved(tokenIDs[idx]);
         assert.equal(approved, cross.address, "check approved fail");
     }
+    let batchFee = await cross.getBatchFee(tokenPairID, tokenIDs.length);
 
     // exec
-    let receipt = await cross.userBurnNFT(...Object.values(funcParams), { from: senderAccount, value: moreServiceFee });
+    let receipt = await cross.userBurnNFT(...Object.values(funcParams), { from: senderAccount, value: batchFee });
     if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLibV1, receipt.tx);
     }
@@ -364,6 +365,8 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @wanchain] <( wanchain => ether
     assert.equal(eventUserBurnNFTParams.tokenIDs.type, "uint256[]", "invalid UserBurnNFT tokenIDs type");
     assert.equal(eventUserBurnNFTParams.tokenValues.type, "uint256[]", "invalid UserBurnNFT tokenValues type");
 
+    console.log("eventUserBurnNFTParams.contractFee.value:", eventUserBurnNFTParams.contractFee.value);
+
     let decodeTokenIDs = web3.eth.abi.decodeParameters(['uint256[]'], eventUserBurnNFTParams.tokenIDs.value);
     assert.equal(!!decodeTokenIDs[0] === true, true, "UserBurnNFT tokenIDs error");
     decodeTokenIDs = decodeTokenIDs[0];
@@ -384,7 +387,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @wanchain] <( wanchain => ether
     assert.equal(0, parseInt(balance), "after check userBurnNFT balanceOf error idx:", idx, ",balance:", balance);
 
     const afterFeeProxyBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
-    assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
+    assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN(batchFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @ethereum] <( wanchain => ethereum )> -> smgRelease  ==>  success', async () => {
@@ -416,7 +419,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @ethereum] <( wanchain => ether
 
     // const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
     // if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
-    //     await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(tokenCrossType), {from: global.operatorAccount[currentChainType]});
+    //     await tokenManager.setTokenPairTypes([tokenPairID], [new web3.utils.BN(tokenCrossType)], {from: global.operatorAccount[currentChainType]});
     // }
 
     let tokenInstance = await getNftTokenInstance(tokenAccount);

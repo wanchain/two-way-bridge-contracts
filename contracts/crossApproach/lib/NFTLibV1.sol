@@ -95,8 +95,8 @@ library NFTLibV1 {
 
     event SmgReleaseNFT(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
 
-    function userLockNFT_getTokenScAddrAndContractFee(CrossTypesV1.Data storage storageData, RapidityUserLockNFTParams memory params)
-        private
+    function getTokenScAddrAndContractFee(CrossTypesV1.Data storage storageData, uint tokenPairID, uint tokenPairContractFee, uint currentChainID, uint batchLength)
+        public
         returns (address, uint)
     {
         ITokenManager tokenManager = storageData.tokenManager;
@@ -104,17 +104,17 @@ library NFTLibV1 {
         uint toChainID;
         bytes memory fromTokenAccount;
         bytes memory toTokenAccount;
-        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
+        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
-        uint contractFee = params.tokenPairContractFee;
+        uint contractFee = tokenPairContractFee;
         address tokenScAddr;
-        if (params.currentChainID == fromChainID) {
+        if (currentChainID == fromChainID) {
             if (contractFee == 0) {
                 contractFee = storageData.mapContractFee[fromChainID][toChainID];
             }
             tokenScAddr = CrossTypesV1.bytesToAddress(fromTokenAccount);
-        } else if (params.currentChainID == toChainID) {
+        } else if (currentChainID == toChainID) {
             if (contractFee == 0) {
                 contractFee = storageData.mapContractFee[toChainID][fromChainID];
             }
@@ -122,7 +122,9 @@ library NFTLibV1 {
         } else {
             require(false, "Invalid token pair");
         }
-
+        if (contractFee > 0) {
+            contractFee = contractFee.mul(9 + batchLength).div(10);
+        }
         return (tokenScAddr, contractFee);
     }
 
@@ -135,7 +137,7 @@ library NFTLibV1 {
     {
         address tokenScAddr;
         uint contractFee;
-        (tokenScAddr, contractFee) = userLockNFT_getTokenScAddrAndContractFee(storageData, params);
+        (tokenScAddr, contractFee) = getTokenScAddrAndContractFee(storageData, params.tokenPairID, params.tokenPairContractFee, params.currentChainID, params.tokenIDs.length);
 
         if (contractFee > 0) {
             params.smgFeeProxy.transfer(contractFee);
@@ -152,7 +154,7 @@ library NFTLibV1 {
             IERC1155(tokenScAddr).safeBatchTransferFrom(msg.sender, address(this), params.tokenIDs, params.tokenValues, "");
         }
         else{
-            require(false, "Not support tokenCrossType");
+            require(false, "Invalid NFT type");
         }
 
         if (left != 0) {
@@ -177,38 +179,6 @@ library NFTLibV1 {
         emit UserLockNFT(params.smgID, params.tokenPairID, tokenScAddr, keys, values);
     }
 
-    function userBurnNFT_getScAddrAndContractFee(CrossTypesV1.Data storage storageData, RapidityUserBurnNFTParams memory params)
-        private
-        returns (address, uint)
-    {
-        ITokenManager tokenManager = storageData.tokenManager;
-        uint fromChainID;
-        uint toChainID;
-        bytes memory fromTokenAccount;
-        bytes memory toTokenAccount;
-        (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
-        require(fromChainID != 0, "Token does not exist");
-
-        uint256 contractFee = params.tokenPairContractFee;
-        address tokenScAddr;
-        if (params.currentChainID == toChainID) {
-            if (contractFee == 0) {
-                contractFee = storageData.mapContractFee[toChainID][fromChainID];
-            }
-            tokenScAddr = CrossTypesV1.bytesToAddress(toTokenAccount);
-        } else if (params.currentChainID == fromChainID) {
-            if (contractFee == 0) {
-                contractFee = storageData.mapContractFee[fromChainID][toChainID];
-            }
-            tokenScAddr = CrossTypesV1.bytesToAddress(fromTokenAccount);
-        } else {
-            require(false, "Invalid token pair");
-        }
-        require(params.srcTokenAccount == tokenScAddr, "Invalid token account");
-
-        return (tokenScAddr, contractFee);
-    }
-
     /// @notice                         burnBridge, user lock token on token original chain
     /// @notice                         event invoked by user burn lock
     /// @param storageData              Cross storage data
@@ -218,12 +188,12 @@ library NFTLibV1 {
     {
         address tokenScAddr;
         uint contractFee;
-        (tokenScAddr, contractFee) = userBurnNFT_getScAddrAndContractFee(storageData, params);
+        (tokenScAddr, contractFee) = getTokenScAddrAndContractFee(storageData, params.tokenPairID, params.tokenPairContractFee, params.currentChainID, params.tokenIDs.length);
 
         ITokenManager tokenManager = storageData.tokenManager;
         uint8 tokenCrossType = tokenManager.mapTokenPairType(params.tokenPairID);
-        require((tokenCrossType == uint8(TokenCrossType.ERC721) || tokenCrossType == uint8(TokenCrossType.ERC1155)), "Not support");
-        require(burnShadowNFT(tokenCrossType, tokenManager, tokenScAddr, msg.sender, params.tokenIDs, params.tokenValues), "Burn failed");
+        require((tokenCrossType == uint8(TokenCrossType.ERC721) || tokenCrossType == uint8(TokenCrossType.ERC1155)), "Invalid NFT type");
+        ITokenManager(tokenManager).burnNFT(uint(tokenCrossType), tokenScAddr, msg.sender, params.tokenIDs, params.tokenValues);
 
         if (contractFee > 0) {
             params.smgFeeProxy.transfer(contractFee);
@@ -262,9 +232,8 @@ library NFTLibV1 {
 
         ITokenManager tokenManager = storageData.tokenManager;
         uint8 tokenCrossType = tokenManager.mapTokenPairType(params.tokenPairID);
-        require((tokenCrossType == uint8(TokenCrossType.ERC721) || tokenCrossType == uint8(TokenCrossType.ERC1155)), "Not support");
-
-        require(mintShadowNFT(tokenCrossType, tokenManager, params.destTokenAccount, params.destUserAccount, params.tokenIDs, params.tokenValues, params.extData), "Mint failed");
+        require((tokenCrossType == uint8(TokenCrossType.ERC721) || tokenCrossType == uint8(TokenCrossType.ERC1155)), "Invalid NFT type");
+        ITokenManager(tokenManager).mintNFT(uint(tokenCrossType), params.destTokenAccount, params.destUserAccount, params.tokenIDs, params.tokenValues, params.extData);
 
         string[] memory keys = new string[](5);
         bytes[] memory values = new bytes[](5);
@@ -306,7 +275,7 @@ library NFTLibV1 {
             IERC1155(params.destTokenAccount).safeBatchTransferFrom(address(this), params.destUserAccount, params.tokenIDs, params.tokenValues, "");
         }
         else {
-            require(false, "Not support tokenCrossType");
+            require(false, "Invalid NFT type");
         }
 
         string[] memory keys = new string[](4);
@@ -325,15 +294,5 @@ library NFTLibV1 {
         values[3] = abi.encodePacked(params.destUserAccount);
 
         emit SmgReleaseNFT(params.uniqueID, params.smgID, params.tokenPairID, keys, values);
-    }
-
-    function burnShadowNFT(uint tokenCrossType, address tokenManager, address tokenAddress, address userAccount, uint[] tokenIDs, uint[] tokenValues) private returns (bool) {
-        ITokenManager(tokenManager).burnNFT(tokenCrossType, tokenAddress, userAccount, tokenIDs, tokenValues);
-        return true;
-    }
-
-    function mintShadowNFT(uint tokenCrossType, address tokenManager, address tokenAddress, address userAccount, uint[] tokenIDs, uint[] tokenValues, bytes memory extData) private returns (bool) {
-        ITokenManager(tokenManager).mintNFT(tokenCrossType, tokenAddress, userAccount, tokenIDs, tokenValues, extData);
-        return true;
     }
 }

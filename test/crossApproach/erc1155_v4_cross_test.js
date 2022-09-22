@@ -86,7 +86,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( ethereum => wanc
     assert.equal(contractFee.eq(new web3.utils.BN(await cross.getTokenPairFee(tokenPairID))), true, "fee of token pair error");
     const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
     if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(erc1155TokenCrossType))) {
-        await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(erc1155TokenCrossType), { from: global.operatorAccount[currentChainType] });
+        await tokenManager.setTokenPairTypes([tokenPairID], [new web3.utils.BN(erc1155TokenCrossType)], { from: global.operatorAccount[currentChainType] });
     }
     let smgFeeProxy = partners.smgFeeProxy;
     if (smgFeeProxy === ADDRESS_0) {
@@ -197,7 +197,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( ethereum => wanc
 
     const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
     if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(erc1155TokenCrossType))) {
-        await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(erc1155TokenCrossType), { from: global.operatorAccount[currentChainType] });
+        await tokenManager.setTokenPairTypes([tokenPairID], [new web3.utils.BN(erc1155TokenCrossType)], { from: global.operatorAccount[currentChainType] });
     }
 
     let tokenInstance = await getErc1155TokenInstance(tokenAccount);
@@ -313,7 +313,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( wanchain => ethe
 
     const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
     if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(erc1155TokenCrossType))) {
-        await tokenManager.setTokenPairType(tokenPairID, new web3.utils.BN(erc1155TokenCrossType), { from: global.operatorAccount[currentChainType] });
+        await tokenManager.setTokenPairTypes([tokenPairID], [new web3.utils.BN(erc1155TokenCrossType)], { from: global.operatorAccount[currentChainType] });
     }
 
     let smgFeeProxy = partners.smgFeeProxy;
@@ -351,9 +351,10 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( wanchain => ethe
             });
     let approved = await tokenInstance.methods.isApprovedForAll(senderAccount, cross.address).call();
     assert.equal(approved, true, "check isApprovedForAll");
-
+    
+    let batchFee = await cross.getBatchFee(tokenPairID, tokenIDs.length);
     // exec
-    let receipt = await cross.userBurnNFT(...Object.values(funcParams), { from: senderAccount, value: moreServiceFee });
+    let receipt = await cross.userBurnNFT(...Object.values(funcParams), { from: senderAccount, value: batchFee });
     if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLibV1, receipt.tx);
     }
@@ -400,7 +401,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( wanchain => ethe
     }
 
     const afterFeeProxyBalance = new web3.utils.BN(await web3.eth.getBalance(smgFeeProxy));
-    assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN(contractFee)), true, "balance of storeman fee error");
+    assert.equal(afterFeeProxyBalance.sub(beforeFeeProxyBalance).eq(new web3.utils.BN(batchFee)), true, "balance of storeman fee error");
 });
 
 it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( wanchain => ethereum )> -> smgReleaseNFT  ==>  success', async () => {
