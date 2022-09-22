@@ -365,7 +365,6 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @wanchain] <( wanchain => ether
     assert.equal(eventUserBurnNFTParams.tokenIDs.type, "uint256[]", "invalid UserBurnNFT tokenIDs type");
     assert.equal(eventUserBurnNFTParams.tokenValues.type, "uint256[]", "invalid UserBurnNFT tokenValues type");
 
-    console.log("eventUserBurnNFTParams.contractFee.value:", eventUserBurnNFTParams.contractFee.value);
 
     let decodeTokenIDs = web3.eth.abi.decodeParameters(['uint256[]'], eventUserBurnNFTParams.tokenIDs.value);
     assert.equal(!!decodeTokenIDs[0] === true, true, "UserBurnNFT tokenIDs error");

@@ -494,7 +494,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         notHalted
         onlyReadySmg(smgID)
     {
-        require(tokenIDs.length > 0, "Invalid length");
+        require(tokenIDs.length > 0 && tokenIDs.length <= maxBatchSize, "Invalid length");
         require(tokenIDs.length == tokenValues.length, "Length mismatch");
 
         NFTLibV1.RapidityUserLockNFTParams memory params = NFTLibV1.RapidityUserLockNFTParams({
@@ -516,7 +516,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         notHalted
         onlyReadySmg(smgID)
     {
-        require(tokenIDs.length > 0, "Invalid length");
+        require(tokenIDs.length > 0 && tokenIDs.length <= maxBatchSize, "Invalid length");
         require(tokenIDs.length == tokenValues.length, "Length mismatch");
 
         NFTLibV1.RapidityUserBurnNFTParams memory params = NFTLibV1.RapidityUserBurnNFTParams({
