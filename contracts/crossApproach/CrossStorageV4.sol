@@ -35,5 +35,5 @@ contract CrossStorageV4 is CrossStorageV3 {
      ** VARIABLES
      **
      ************************************************************/
-     uint public maxBatchSize = 20;
+     uint internal maxBatchSize;
 }
