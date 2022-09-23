@@ -494,7 +494,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         notHalted
         onlyReadySmg(smgID)
     {
-        require(tokenIDs.length > 0 && tokenIDs.length <= maxBatchSize, "Invalid length");
+        require(tokenIDs.length > 0 && tokenIDs.length <= getMaxBatchSize(), "Invalid length");
         require(tokenIDs.length == tokenValues.length, "Length mismatch");
 
         NFTLibV1.RapidityUserLockNFTParams memory params = NFTLibV1.RapidityUserLockNFTParams({
@@ -516,7 +516,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         notHalted
         onlyReadySmg(smgID)
     {
-        require(tokenIDs.length > 0 && tokenIDs.length <= maxBatchSize, "Invalid length");
+        require(tokenIDs.length > 0 && tokenIDs.length <= getMaxBatchSize(), "Invalid length");
         require(tokenIDs.length == tokenValues.length, "Length mismatch");
 
         NFTLibV1.RapidityUserBurnNFTParams memory params = NFTLibV1.RapidityUserBurnNFTParams({
@@ -585,6 +585,17 @@ contract CrossDelegateV4 is CrossStorageV4 {
       onlyAdmin
     {
       maxBatchSize = _maxBatchSize;
+    }
+
+    function getMaxBatchSize() 
+      public
+      view
+      returns (uint)
+    {
+      if(maxBatchSize == 0) {
+        return 20;
+      }
+      return maxBatchSize;
     }
 
     function getBatchFee(uint tokenPairID, uint batchLength) 

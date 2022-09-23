@@ -409,7 +409,6 @@ async function deployCrossContracts(owner, options) {
 
     await crossProxy.upgradeTo(crossDelegateV4.address, {from: owner});
     let crossV4 = await CrossDelegateV4.at(crossProxy.address);
-    await crossV4.setMaxBatchSize(20, { from: opts.admin });
 
     await crossV4.setPartners(partners.tokenManager, partners.smgAdminProxy, opts.foundation, partners.quota, partners.sigVerifier, {from: owner});
     assert.equal((await crossV4.getPartners()).smgFeeProxy, opts.foundation, `v2's smgFeeProxy is not the foundation account`);
