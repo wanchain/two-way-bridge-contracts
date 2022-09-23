@@ -121,9 +121,7 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
         onlyAdmin
     {
         if(tokenCrossType == uint(TokenCrossType.ERC721)) {
-            for(uint idx = 0; idx < tokenIDs.length; ++idx) {
-                IWrappedNFT721(tokenAddress).mint(to, tokenIDs[idx], data);
-            }
+            IWrappedNFT721(tokenAddress).mintBatch(to, tokenIDs, data);
         }
         else if(tokenCrossType == uint(TokenCrossType.ERC1155)) {
             IWrappedNFT1155(tokenAddress).mintBatch(to, tokenIDs, values, data);
@@ -144,9 +142,7 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
         onlyAdmin
     {
         if(tokenCrossType == uint(TokenCrossType.ERC721)) {
-            for(uint idx = 0; idx < tokenIDs.length; ++idx) {
-                IWrappedNFT721(tokenAddress).burn(from, tokenIDs[idx]);
-            }
+            IWrappedNFT721(tokenAddress).burnBatch(from, tokenIDs);
         }
         else if(tokenCrossType == uint(TokenCrossType.ERC1155)) {
             IWrappedNFT1155(tokenAddress).burnBatch(from, tokenIDs, values);
