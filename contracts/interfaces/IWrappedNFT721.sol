@@ -36,4 +36,7 @@ interface IWrappedNFT721 {
     function burn(address, uint) external;
     function update(string, string) external;
     function mint(address, uint, bytes) external;
+
+    function burnBatch(address , uint256[]) public;
+    function mintBatch(address , uint256[] , bytes) public;
 }

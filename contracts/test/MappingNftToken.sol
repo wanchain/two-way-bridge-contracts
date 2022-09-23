@@ -88,4 +88,22 @@ contract MappingNftToken is ERC721Full, Ownable {
     {
         _mint(account_, nftID);
     }
+
+    function burnBatch(address account_, uint256[] nftIDs)
+        external
+        onlyOwner
+    {
+        for(uint i = 0; i < nftIDs.length; ++i) {
+            _burn(account_, nftIDs[i]);
+        }
+    }
+
+    function mintBatch(address account_, uint256[] nftIDs, bytes data)
+        external
+        onlyOwner
+    {
+         for(uint i = 0; i < nftIDs.length; ++i) {
+             _mint(account_, nftIDs[i]);
+         }
+    }
 }
