@@ -6,6 +6,7 @@ const chainDict = {
   BSC: "BSC",
   AVAX: "AVAX",
   TEST: "TEST",
+  MOVR: "MOVR",
   MOONBEAM: "MOONBEAM",
   MATIC: "MATIC",
   ADA: "ADA",
@@ -29,7 +30,8 @@ const chainIndexDict = {
   EOS: 0xc2,
   BSC: 0x2ca,
   AVAX: 0x2328,
-  MOONBEAM: 0x2330, // TODO: NEED UPDATE,
+  MOVR: 0x3ffffffc, // TODO: NEED UPDATE,
+  MOONBEAM: 0x3ffffffc, // TODO: NEED UPDATE,
   MATIC: 0x3c6,
   ADA: 0x2331,// TODO: NEED UPDATE,
   ARB: 0x2332, // TODO: NEED UPDATE,
@@ -66,10 +68,13 @@ const networkInfo = [
   {name:"avalancheMainnet", chainId: 43114,chainType: chainDict.AVAX, chainIndex:chainIndexDict.AVAX, isMainnet: true, nature: chainNature.system.id},
   {name:"avalancheTestnet", chainId: 43113,chainType: chainDict.AVAX, chainIndex:chainIndexDict.AVAX, isMainnet: false, nature: chainNature.custom.id},
 
+  // Moonbeam
+  {name:"moonbeamMainnet", chainId: 1284,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM, isMainnet: true, nature: chainNature.custom.id},
+  {name:"moonbeamTestnet", chainId: 1287,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM, isMainnet: false, nature: chainNature.custom.id},
+
   // Moonriver
-  {name:"moonbeamMainnet", chainId: 1285,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM, isMainnet: true, nature: chainNature.system.id},
-  {name:"moonbeamTestnet", chainId: 1287,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM, isMainnet: false, nature: chainNature.system.id},
-  {name:"moonriverTestnet", chainId: 1287,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM, isMainnet: false, nature: chainNature.system.id},
+  {name:"moonriverMainnet", chainId: 1285,chainType: chainDict.MOVR, chainIndex:chainIndexDict.MOVR, isMainnet: true, nature: chainNature.custom.id},
+  {name:"moonriverTestnet", chainId: 1287,chainType: chainDict.MOVR, chainIndex:chainIndexDict.MOVR, isMainnet: false, nature: chainNature.custom.id},
 
   // Polygon
   {name:"maticMainnet", chainId: 137,chainType: chainDict.MATIC, chainIndex:chainIndexDict.MATIC, isMainnet: true, nature: chainNature.system.id},
@@ -133,8 +138,10 @@ const defaultNodeUrlDict = {
   bscTestnet: 'https://data-seed-prebsc-1-s1.binance.org:8545', // http or wss
   avalancheMainnet: "https://api.avax.network/ext/bc/C/rpc",
   avalancheTestnet: "https://api.avax-test.network/ext/bc/C/rpc",
-  moonbeamMainnet: "https://rpc.moonriver.moonbeam.network",
+  moonbeamMainnet: "https://rpc.api.moonbeam.network",
   moonbeamTestnet: "https://rpc.testnet.moonbeam.network",
+  moonriverMainnet: "https://rpc.api.moonriver.moonbeam.network", // "https://rpc.moonriver.moonbeam.network"
+  moonriverTestnet: "https://moonbeam-alpha.api.onfinality.io/public",
   maticTestnet: "https://rpc-mumbai.matic.today",
   maticMainnet: "https://rpc-mainnet.matic.network",
   adaTestnet: "https://rpc-evm.portal.dev.cardano.org",
@@ -244,7 +251,8 @@ const bipChainIdDict = {
   EOS: 0x800000c2,
   BSC: 0x800002ca,
   AVAX: 0x80002328,
-  MOONBEAM: 0x40000001,
+  MOVR: 0x40000001,
+  MOONBEAM: 0x40000004,
   MATIC: 0x800003c6,
   ADA: 0x80000717,// TODO: NEED UPDATE,
   ARB: 0x40000002,
