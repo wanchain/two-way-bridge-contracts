@@ -8,8 +8,8 @@ const wallet = require('ethereumjs-wallet');
 // const hdkey = require('ethereumjs-wallet/hdkey');
 const hdkey = wallet.hdkey;
 
-const wanUtil = require('wanchain-util');
-const wanTx = wanUtil.wanchainTx;
+// const wanUtil = require('wanchain-util');
+// const wanTx = wanUtil.wanchainTx;
 
 const {
   chainDict,
