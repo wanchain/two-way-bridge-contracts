@@ -24,7 +24,7 @@
 //
 //
 
-pragma solidity ^0.4.26;
+pragma solidity ^0.4.25;
 
 interface IRC20Protocol {
     function transfer(address, uint) external returns (bool);

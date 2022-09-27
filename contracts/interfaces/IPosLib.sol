@@ -1,4 +1,4 @@
-pragma solidity 0.4.26;
+pragma solidity 0.4.25;
 
 interface IPosLib {
     function getEpochId(uint256 blockTime) external view returns (uint256);

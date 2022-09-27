@@ -24,7 +24,7 @@
 //
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
-pragma solidity ^0.4.26;
+pragma solidity ^0.4.25;
 pragma experimental ABIEncoderV2;
 
 import 'openzeppelin-eth/contracts/math/SafeMath.sol';

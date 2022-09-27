@@ -25,7 +25,7 @@
 //
 
 
-pragma solidity 0.4.26;
+pragma solidity 0.4.25;
 
 import "./WRC20Protocol.sol";
 import 'openzeppelin-eth/contracts/math/SafeMath.sol';

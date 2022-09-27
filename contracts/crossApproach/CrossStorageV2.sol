@@ -24,7 +24,7 @@
 //
 //
 
-pragma solidity ^0.4.26;
+pragma solidity ^0.4.25;
 
 import "../components/Proxy.sol";
 import "../components/Halt.sol";

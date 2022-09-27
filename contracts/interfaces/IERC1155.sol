@@ -24,7 +24,7 @@
 //
 //
 
-pragma solidity ^0.4.26;
+pragma solidity ^0.4.25;
 
 //interface IERC1155 is IERC165 {
 interface IERC1155  {

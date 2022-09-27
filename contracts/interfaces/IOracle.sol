@@ -1,4 +1,4 @@
-pragma solidity 0.4.26;
+pragma solidity 0.4.25;
 
 interface IOracle {
   function getDeposit(bytes32 smgID) external view returns (uint);

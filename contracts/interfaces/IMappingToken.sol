@@ -24,7 +24,7 @@
 //
 //
 
-pragma solidity 0.4.26;
+pragma solidity 0.4.25;
 
 interface IMappingToken {
     function changeOwner(address _newOwner) external;
