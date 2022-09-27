@@ -52,7 +52,7 @@ const networkInfo = [
   // {name:"mainnet", chainId: 1, chainType: chainDict.WAN, chainIndex:chainIndexDict.WAN, isMainnet: true, nature: chainNature.system.id}, // Txtype = 0x01;
   // {name:"testnet", chainId: 3, chainType: chainDict.WAN, chainIndex:chainIndexDict.WAN, isMainnet: false, nature: chainNature.custom.id}, // Txtype = 0x01;
   {name:"mainnet", chainId: 888, chainType: chainDict.WAN, chainIndex:chainIndexDict.WAN, isMainnet: true, nature: chainNature.system.id},
-  {name:"testnet", chainId: 999, chainType: chainDict.WAN, chainIndex:chainIndexDict.WAN, isMainnet: false, nature: chainNature.system.id},
+  {name:"testnet", chainId: 999, chainType: chainDict.WAN, chainIndex:chainIndexDict.WAN, isMainnet: false, nature: chainNature.custom.id},
   // ETH
   {name:"ethereum", chainId: 1, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, isMainnet: true, nature: chainNature.system.id},
   {name:"ropsten", chainId: 3, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system.id},
