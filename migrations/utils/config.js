@@ -12,7 +12,9 @@ const chainDict = {
   ARB: "ARB",
   OPM: "OPM",
   FTM: "FTM",
-  XDC: "XDC"
+  XDC: "XDC",
+  OKT: "OKT",
+  CLV: "CLV",
 };
 
 const operationDict = {
@@ -34,6 +36,8 @@ const chainIndexDict = {
   OPM: 0xa,
   FTM: 0xb,
   XDC: 0x226,
+  OKT: 0x3e4,
+  CLV:0x2335, // TODO: NEED UPDATE,
 };
 
 const chainNature = {
@@ -51,7 +55,7 @@ const networkInfo = [
   {name:"ethereum", chainId: 1, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, isMainnet: true, nature: chainNature.system.id},
   {name:"ropsten", chainId: 3, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system.id},
   {name:"rinkeby", chainId: 4,chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, isMainnet: false, nature: chainNature.system.id},
-  {name:"goerli", chainId: 6284, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system.id},
+  {name:"goerli", chainId: 5, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.custom.id},
   {name:"kovan", chainId: 42, chainType: chainDict.ETH, chainIndex:chainIndexDict.ETH, nature: chainNature.system.id},
 
   // BSC
@@ -65,6 +69,7 @@ const networkInfo = [
   // Moonriver
   {name:"moonbeamMainnet", chainId: 1285,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM, isMainnet: true, nature: chainNature.system.id},
   {name:"moonbeamTestnet", chainId: 1287,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM, isMainnet: false, nature: chainNature.system.id},
+  {name:"moonriverTestnet", chainId: 1287,chainType: chainDict.MOONBEAM, chainIndex:chainIndexDict.MOONBEAM, isMainnet: false, nature: chainNature.system.id},
 
   // Polygon
   {name:"maticMainnet", chainId: 137,chainType: chainDict.MATIC, chainIndex:chainIndexDict.MATIC, isMainnet: true, nature: chainNature.system.id},
@@ -77,18 +82,30 @@ const networkInfo = [
   // Arbitrum
   {name:"arbMainnet", chainId: 42161,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB, isMainnet: true, nature: chainNature.system.id},//todo : need update chainId
   {name:"arbTestnet", chainId: 421611,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB, isMainnet: false, nature: chainNature.system.id},
+  {name:"arbGoerli", chainId: 421613,chainType: chainDict.ARB, chainIndex:chainIndexDict.ARB, isMainnet: false, nature: chainNature.custom.id},
 
   // OPM
   {name:"opmMainnet", chainId: 10,chainType: chainDict.OPM, chainIndex:chainIndexDict.OPM, isMainnet: true, nature: chainNature.system.id},//todo : need update chainId
   {name:"opmTestnet", chainId: 69,chainType: chainDict.OPM, chainIndex:chainIndexDict.OPM, isMainnet: false, nature: chainNature.system.id},
+  {name:"opmGoerli", chainId: 420,chainType: chainDict.OPM, chainIndex:chainIndexDict.OPM, isMainnet: false, nature: chainNature.custom.id},
 
   // Fantom
   {name:"ftmMainnet", chainId: 250,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM, isMainnet: true, nature: chainNature.system.id},
   // {name:"ftmTestnet", chainId: 4002,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM, isMainnet: false, nature: chainNature.system.id},
   {name:"ftmTestnet", chainId: 4002,chainType: chainDict.FTM, chainIndex:chainIndexDict.FTM, isMainnet: false, nature: chainNature.custom.id},
 
+  // XinFin
   {name:"xdcMainnet", chainId: 50,chainType: chainDict.XDC, chainIndex:chainIndexDict.XDC, isMainnet: true, nature: chainNature.system.id},
   {name:"xdcTestnet", chainId: 51,chainType: chainDict.XDC, chainIndex:chainIndexDict.XDC, isMainnet: false, nature: chainNature.system.id},
+
+  // Okex
+  {name:"oktMainnet", chainId: 66,chainType: chainDict.OKT, chainIndex:chainIndexDict.OKT, isMainnet: true, nature: chainNature.system.id},
+  {name:"oktTestnet", chainId: 65,chainType: chainDict.OKT, chainIndex:chainIndexDict.OKT, isMainnet: false, nature: chainNature.custom.id},
+
+  // Clover
+  {name:"clvMainnet", chainId: 1024,chainType: chainDict.CLV, chainIndex:chainIndexDict.CLV, isMainnet: true, nature: chainNature.custom.id},
+  // {name:"clvTestnet", chainId: 1023,chainType: chainDict.CLV, chainIndex:chainIndexDict.CLV, isMainnet: false, nature: chainNature.custom.id},
+  {name:"clvTestnet", chainId: 1024,chainType: chainDict.CLV, chainIndex:chainIndexDict.CLV, isMainnet: false, nature: chainNature.custom.id},
 ];
 
 const networkDict = networkInfo.reduce((reduced, next) => {
@@ -111,6 +128,7 @@ const defaultNodeUrlDict = {
   testnet: 'http://gwan-testnet.wandevs.org:36891', // http or wss,
   ethereum: 'http://geth-mainnet.wandevs.org:26892', // http or wss,
   rinkeby: 'http://geth-testnet.wandevs.org:36892', // http or wss
+  goerli: 'https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161', // http or wss
   bscMainnet: 'https://bsc-dataseed1.binance.org:443', // http or wss,
   bscTestnet: 'https://data-seed-prebsc-1-s1.binance.org:8545', // http or wss
   avalancheMainnet: "https://api.avax.network/ext/bc/C/rpc",
@@ -123,12 +141,18 @@ const defaultNodeUrlDict = {
   // adaMainnet: "https://rpc-evm.portal.dev.cardano.org",
   arbMainnet: "https://arb1.arbitrum.io/rpc", // todo : need update
   arbTestnet: "https://rinkeby.arbitrum.io/rpc",
+  arbGoerli: "https://goerli-rollup.arbitrum.io/rpc",
   opmMainnet: "https://mainnet.optimism.io", // todo : need update
   opmTestnet: "https://kovan.optimism.io",
+  opmGoerli: "https://goerli.optimism.io/",
   ftmMainnet: "https://rpc.ftm.tools",
   ftmTestnet: "https://rpc.testnet.fantom.network",
   xdcMainnet: "https://rpc.xinfin.network",
   xdcTestnet: "https://rpc.apothem.network",
+  oktMainnet: "https://exchainrpc.okex.org",
+  oktTestnet: "https://exchaintestrpc.okex.org",
+  clvMainnet: "https://api-para.clover.finance",
+  clvTestnet: "https://api-para.clover.finance",
 }
 
 const defaultHadrfork = "byzantium";
@@ -213,6 +237,7 @@ const wanchainScScript = (action) => {
 }
 
 const bipChainIdDict = {
+  BTC: 0x80000000,
   WAN: 0x8057414e,
   ETH: 0x8000003c,
   ETC: 0x8000003d,
@@ -228,6 +253,9 @@ const bipChainIdDict = {
   XDC: 0x80000226,
   TRX: 0x800000c3, // 2147483843,
   XRP: 0x80000090, // 2147483792
+  OKT: 0x800003e4,
+  CLV: 0x40000005,
+  PHA: 0x40000007,
 };
 
 const hideKeys = [
