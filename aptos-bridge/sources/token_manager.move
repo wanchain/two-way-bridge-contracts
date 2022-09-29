@@ -229,6 +229,13 @@ module bridge_root::token_manager {
         manager.operator = op;
     }
 
+    public entry fun set_admin(account: &signer, admin: address) acquires TokenManager {
+        only_admin(account);
+        
+        let manager = borrow_global_mut<TokenManager>(@bridge_root);
+        manager.admin = admin;
+    }
+
     public entry fun set_token_pair_type(account: &signer, id: u64, type: u8) acquires TokenManager {
         only_operator(account);
         
