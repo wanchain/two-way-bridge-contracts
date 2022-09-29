@@ -77,6 +77,7 @@ module bridge_root::oracle {
         mapPrices: table::Table<address, u128>,
         mapStoremanGroupConfig: table::Table<address, StoremanGroupConfig>,
         admin: address,
+        owner: address,
         eventSetAdmin: EventHandle<SetAdminEvent>,
         eventUpdatePrice: EventHandle<UpdatePriceEvent>,
         eventSetDebtClean: EventHandle<SetDebtCleanEvent>,
@@ -97,6 +98,7 @@ module bridge_root::oracle {
                 mapPrices: table::new<address, u128>(), 
                 mapStoremanGroupConfig: table::new<address, StoremanGroupConfig>(), 
                 admin: account_addr,
+                owner: account_addr,
                 eventSetAdmin: account::new_event_handle<SetAdminEvent>(sender),
                 eventUpdatePrice: account::new_event_handle<UpdatePriceEvent>(sender),
                 eventSetDebtClean: account::new_event_handle<SetDebtCleanEvent>(sender),
@@ -110,7 +112,13 @@ module bridge_root::oracle {
     fun only_admin(account: &signer) acquires Oracle {
         let account_addr = signer::address_of(account);
         let data = borrow_global<Oracle>(@bridge_root);
-        assert!(account_addr == data.admin, error::permission_denied(ENO_CAPABILITIES));
+        assert!((account_addr == data.admin) || (account_addr == data.owner), error::permission_denied(ENO_CAPABILITIES));
+    }
+
+    fun only_owner(account: &signer) acquires Oracle {
+        let account_addr = signer::address_of(account);
+        let data = borrow_global<Oracle>(@bridge_root);
+        assert!(account_addr == data.owner, error::permission_denied(ENO_CAPABILITIES));
     }
 
     public entry fun update_price(account: &signer, keys: vector<address>, prices: vector<u128>) acquires Oracle {
@@ -215,7 +223,7 @@ module bridge_root::oracle {
     }
 
     public entry fun set_admin(account: &signer, admin: address) acquires Oracle {
-        only_admin(account);
+        only_owner(account);
         let data = borrow_global_mut<Oracle>(@bridge_root);
         data.admin = admin;
 
@@ -225,6 +233,12 @@ module bridge_root::oracle {
                 admin: admin,
             },
         );
+    }
+
+    public entry fun transfer_owner(account: &signer, owner: address) acquires Oracle {
+        only_owner(account);
+        let data = borrow_global_mut<Oracle>(@bridge_root);
+        data.owner = owner;
     }
 
     public fun get_value(key: address): u128 acquires Oracle {
