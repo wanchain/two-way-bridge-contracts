@@ -110,7 +110,6 @@ module bridge_root::oracle {
     fun only_admin(account: &signer) acquires Oracle {
         let account_addr = signer::address_of(account);
         let data = borrow_global<Oracle>(@bridge_root);
-        data.admin == account_addr;
         assert!(account_addr == data.admin, error::permission_denied(ENO_CAPABILITIES));
     }
 

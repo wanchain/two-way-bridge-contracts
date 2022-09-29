@@ -26,7 +26,7 @@
 
 module bridge_root::token_manager {
     use std::signer;
-    use bridge_root::iterable_table;
+    use aptos_std::table;
     use std::error;
     use aptos_framework::account;
     use aptos_std::event::{Self, EventHandle};
@@ -47,15 +47,13 @@ module bridge_root::token_manager {
         toAccount: address,
     }
 
-    /// admin access
-    struct AdminCapability has key, drop, store { account: address }
-
     /// Account has no capabilities (admin/burn/mint).
     const ENO_CAPABILITIES: u64 = 1;
 
     struct TokenManager has key, store {
-        tokenPairs: iterable_table::IterableTable<u64, TokenPairInfo>,
-        tokenPairsType: iterable_table::IterableTable<u64, u8>,
+        tokenPairs: table::Table<u64, TokenPairInfo>,
+        tokenPairsType: table::Table<u64, u8>,
+        admin: address,
         operator: address,
         add_token_pair_events: EventHandle<AddTokenPairEvent>,
         update_token_pair_events: EventHandle<UpdateTokenPairEvent>,
@@ -75,20 +73,31 @@ module bridge_root::token_manager {
     }
 
     fun init_module(sender: &signer) {
+        let account_addr = signer::address_of(sender);
         move_to<TokenManager>(
             sender,
             TokenManager { 
-                tokenPairs: iterable_table::new<u64, TokenPairInfo>(), 
-                tokenPairsType: iterable_table::new<u64, u8>(), 
+                tokenPairs: table::new<u64, TokenPairInfo>(), 
+                tokenPairsType: table::new<u64, u8>(), 
+                admin: account_addr,
                 operator: @0x0,
                 add_token_pair_events: account::new_event_handle<AddTokenPairEvent>(sender),
                 update_token_pair_events: account::new_event_handle<UpdateTokenPairEvent>(sender),
                 remove_token_pair_events: account::new_event_handle<RemoveTokenPairEvent>(sender),
             },
         );
+    }
 
-        let account_addr = signer::address_of(sender);
-        move_to<AdminCapability>(sender, AdminCapability { account: account_addr });
+    fun only_admin(account: &signer) acquires TokenManager {
+        let account_addr = signer::address_of(account);
+        let data = borrow_global<TokenManager>(@bridge_root);
+        assert!(account_addr == data.admin, error::permission_denied(ENO_CAPABILITIES));
+    }
+
+    fun only_operator(account: &signer) acquires TokenManager {
+        let account_addr = signer::address_of(account);
+        let data = borrow_global<TokenManager>(@bridge_root);
+        assert!(account_addr == data.operator, error::permission_denied(ENO_CAPABILITIES));
     }
 
     public entry fun add_token_pair(
@@ -104,10 +113,11 @@ module bridge_root::token_manager {
         toChainID: u64, 
         toAccount: address
     ) acquires TokenManager {
-        let account_addr = signer::address_of(account);
-        let manager = borrow_global_mut<TokenManager>(account_addr);
+        only_admin(account);
+        
+        let manager = borrow_global_mut<TokenManager>(@bridge_root);
 
-        iterable_table::add<u64, TokenPairInfo>(&mut manager.tokenPairs, id, TokenPairInfo {
+        table::add<u64, TokenPairInfo>(&mut manager.tokenPairs, id, TokenPairInfo {
             aInfo: AncestorInfo {
                 account: ancestor_account,
                 name: ancestor_name,
@@ -154,10 +164,11 @@ module bridge_root::token_manager {
         toChainID: u64, 
         toAccount: address
     ) acquires TokenManager {
-        let account_addr = signer::address_of(account);
-        let manager = borrow_global_mut<TokenManager>(account_addr);
+        only_admin(account);
 
-        let val = iterable_table::borrow_mut<u64, TokenPairInfo>(&mut manager.tokenPairs, id);
+        let manager = borrow_global_mut<TokenManager>(@bridge_root);
+
+        let val = table::borrow_mut<u64, TokenPairInfo>(&mut manager.tokenPairs, id);
         val.aInfo = AncestorInfo {
             account: ancestor_account,
             name: ancestor_name,
@@ -191,10 +202,11 @@ module bridge_root::token_manager {
     }
 
     public entry fun remove_token_pair(account: &signer, id: u64) acquires TokenManager {
-        let account_addr = signer::address_of(account);
-        let manager = borrow_global_mut<TokenManager>(account_addr);
+        only_admin(account);
 
-        let info = iterable_table::remove<u64, TokenPairInfo>(&mut manager.tokenPairs, id);
+        let manager = borrow_global_mut<TokenManager>(@bridge_root);
+
+        let info = table::remove<u64, TokenPairInfo>(&mut manager.tokenPairs, id);
         
         event::emit_event<RemoveTokenPairEvent>(
             &mut manager.remove_token_pair_events,
@@ -206,22 +218,23 @@ module bridge_root::token_manager {
 
     public fun get_token_pair(id: u64): TokenPairInfo acquires TokenManager {
         let manager = borrow_global<TokenManager>(@bridge_root);
-        let val = iterable_table::borrow<u64, TokenPairInfo>(&manager.tokenPairs, id);
+        let val = table::borrow<u64, TokenPairInfo>(&manager.tokenPairs, id);
         *val
     }
 
     public entry fun set_operator(account: &signer, op: address) acquires TokenManager {
-        let account_addr = signer::address_of(account);
-        let manager = borrow_global_mut<TokenManager>(account_addr);
+        only_admin(account);
+        
+        let manager = borrow_global_mut<TokenManager>(@bridge_root);
         manager.operator = op;
     }
 
     public entry fun set_token_pair_type(account: &signer, id: u64, type: u8) acquires TokenManager {
-        let account_addr = signer::address_of(account);
+        only_operator(account);
+        
         let manager = borrow_global_mut<TokenManager>(@bridge_root);
-        assert!(account_addr == manager.operator, error::permission_denied(ENO_CAPABILITIES));
 
-        iterable_table::add<u64, u8>(&mut manager.tokenPairsType, id, type);
+        table::add<u64, u8>(&mut manager.tokenPairsType, id, type);
     }
 
     public entry fun destory(account: &signer) : TokenManager acquires TokenManager {
@@ -229,55 +242,8 @@ module bridge_root::token_manager {
         move_from<TokenManager>(account_addr)
     }
 
-    #[test(account = @0x666)]
-    public entry fun token_manager_test(account: signer) acquires TokenManager {
-        use aptos_std::debug;
-
-        let addr = signer::address_of(&account);
-        debug::print<address>(&addr);
-        init_module(&account);
-        let ret = exists<AdminCapability>(addr);
-        debug::print<bool>(&ret);
-
-        add_token_pair(&account, 1, AncestorInfo {
-            account: @0x123,
-            name: b"test",
-            symbol: b"test",
-            decimals: 0,
-            chainID: 0,
-        }, 123, @0x123, 321, @0x321);
-
-        add_token_pair(&account, 2, AncestorInfo {
-            account: @0x123,
-            name: b"test",
-            symbol: b"test",
-            decimals: 0,
-            chainID: 0,
-        }, 123, @0x123, 321, @0x321);
-
-        add_token_pair(&account, 3, AncestorInfo {
-            account: @0x123,
-            name: b"test",
-            symbol: b"test",
-            decimals: 0,
-            chainID: 0,
-        }, 123, @0x123, 321, @0x321);
-
-        let val = get_token_pair(1);
-        debug::print<TokenPairInfo>(&val);
-
-        let val = get_token_pair(2);
-        debug::print<TokenPairInfo>(&val);
-
-        let val = get_token_pair(3);
-        debug::print<TokenPairInfo>(&val);
-
-        set_operator(&account, @0x666);
-        set_token_pair_type(&account, 1, 1);
-
-        remove_token_pair(&account, 1);
-        remove_token_pair(&account, 2);
-        remove_token_pair(&account, 3);
-        
+    #[test_only]
+    public fun initialize_for_test(tester: &signer) {
+        init_module(tester);
     }
 }
