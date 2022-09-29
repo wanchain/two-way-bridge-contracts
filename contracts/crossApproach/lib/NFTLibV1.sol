@@ -97,6 +97,7 @@ library NFTLibV1 {
 
     function getTokenScAddrAndContractFee(CrossTypesV1.Data storage storageData, uint tokenPairID, uint tokenPairContractFee, uint currentChainID, uint batchLength)
         public
+        view
         returns (address, uint)
     {
         ITokenManager tokenManager = storageData.tokenManager;
