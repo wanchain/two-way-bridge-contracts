@@ -24,7 +24,7 @@
 //
 //
 
-module BridgeRoot::Cross {
+module bridge_root::Cross {
 
 }
 

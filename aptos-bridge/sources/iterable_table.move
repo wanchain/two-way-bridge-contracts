@@ -1,4 +1,4 @@
-module BridgeRoot::iterable_table {
+module bridge_root::iterable_table {
     use std::option::{Self, Option};
     use aptos_std::table_with_length::{Self, TableWithLength};
 

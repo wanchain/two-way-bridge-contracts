@@ -24,9 +24,9 @@
 //
 //
 
-module BridgeRoot::TokenManager {
+module bridge_root::token_manager {
     use std::signer;
-    use BridgeRoot::iterable_table;
+    use bridge_root::iterable_table;
     use std::error;
     use aptos_framework::account;
     use aptos_std::event::{Self, EventHandle};
@@ -205,7 +205,7 @@ module BridgeRoot::TokenManager {
     }
 
     public fun get_token_pair(id: u64): TokenPairInfo acquires TokenManager {
-        let manager = borrow_global<TokenManager>(@BridgeRoot);
+        let manager = borrow_global<TokenManager>(@bridge_root);
         let val = iterable_table::borrow<u64, TokenPairInfo>(&manager.tokenPairs, id);
         *val
     }
@@ -218,7 +218,7 @@ module BridgeRoot::TokenManager {
 
     public entry fun set_token_pair_type(account: &signer, id: u64, type: u8) acquires TokenManager {
         let account_addr = signer::address_of(account);
-        let manager = borrow_global_mut<TokenManager>(@BridgeRoot);
+        let manager = borrow_global_mut<TokenManager>(@bridge_root);
         assert!(account_addr == manager.operator, error::permission_denied(ENO_CAPABILITIES));
 
         iterable_table::add<u64, u8>(&mut manager.tokenPairsType, id, type);

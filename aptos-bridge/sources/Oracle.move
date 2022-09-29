@@ -24,7 +24,7 @@
 //
 //
 
-module BridgeRoot::Oracle {
+module bridge_root::oracle {
     use std::signer;
     use std::error;
     use std::vector;
@@ -107,19 +107,19 @@ module BridgeRoot::Oracle {
         );
     }
 
-    fun onlyAdmin(account: &signer) acquires Oracle {
+    fun only_admin(account: &signer) acquires Oracle {
         let account_addr = signer::address_of(account);
-        let data = borrow_global<Oracle>(@BridgeRoot);
+        let data = borrow_global<Oracle>(@bridge_root);
         data.admin == account_addr;
         assert!(account_addr == data.admin, error::permission_denied(ENO_CAPABILITIES));
     }
 
-    public entry fun updatePrice(account: &signer, keys: vector<address>, prices: vector<u128>) acquires Oracle {
+    public entry fun update_price(account: &signer, keys: vector<address>, prices: vector<u128>) acquires Oracle {
         assert!(vector::length<address>(&keys) == vector::length<u128>(&prices), error::invalid_argument(ENO_INPUT_ERROR));
 
-        onlyAdmin(account);
+        only_admin(account);
 
-        let data = borrow_global_mut<Oracle>(@BridgeRoot);
+        let data = borrow_global_mut<Oracle>(@bridge_root);
         let length = vector::length<address>(&keys);
         let i = 0;
         while ( i < length) {
@@ -138,9 +138,9 @@ module BridgeRoot::Oracle {
         );
     }
 
-    public entry fun updateDeposit(account: &signer, smgID: address, amount: u128) acquires Oracle {
-        onlyAdmin(account);
-        let data = borrow_global_mut<Oracle>(@BridgeRoot);
+    public entry fun update_deposit(account: &signer, smgID: address, amount: u128) acquires Oracle {
+        only_admin(account);
+        let data = borrow_global_mut<Oracle>(@bridge_root);
         table::borrow_mut<address, StoremanGroupConfig>(&mut data.mapStoremanGroupConfig, smgID).deposit = amount;
 
         event::emit_event<UpdateDepositEvent>(
@@ -152,9 +152,9 @@ module BridgeRoot::Oracle {
         );
     }
 
-    public entry fun setStoremanGroupStatus(account: &signer, smgID: address, status: u8) acquires Oracle {
-        onlyAdmin(account);
-        let data = borrow_global_mut<Oracle>(@BridgeRoot);
+    public entry fun set_storeman_group_status(account: &signer, smgID: address, status: u8) acquires Oracle {
+        only_admin(account);
+        let data = borrow_global_mut<Oracle>(@bridge_root);
         table::borrow_mut<address, StoremanGroupConfig>(&mut data.mapStoremanGroupConfig, smgID).status = status;
 
         event::emit_event<SetStoremanGroupStatusEvent>(
@@ -166,9 +166,9 @@ module BridgeRoot::Oracle {
         );
     }
 
-    public entry fun setDebtClean(account: &signer, smgID: address, isClean: bool) acquires Oracle {
-        onlyAdmin(account);
-        let data = borrow_global_mut<Oracle>(@BridgeRoot);
+    public entry fun set_debt_clean(account: &signer, smgID: address, isClean: bool) acquires Oracle {
+        only_admin(account);
+        let data = borrow_global_mut<Oracle>(@bridge_root);
         table::borrow_mut<address, StoremanGroupConfig>(&mut data.mapStoremanGroupConfig, smgID).isDebtClean = isClean;
 
         event::emit_event<SetDebtCleanEvent>(
@@ -180,7 +180,7 @@ module BridgeRoot::Oracle {
         );
     }
 
-    public entry fun setStoremanGroupConfig(
+    public entry fun set_storeman_group_config(
         account: &signer,
         id: address,
         status: u8,
@@ -192,8 +192,8 @@ module BridgeRoot::Oracle {
         startTime: u64,
         endTime: u64,
     ) acquires Oracle {
-        onlyAdmin(account);
-        let data = borrow_global_mut<Oracle>(@BridgeRoot);
+        only_admin(account);
+        let data = borrow_global_mut<Oracle>(@bridge_root);
         table::upsert<address, StoremanGroupConfig>(&mut data.mapStoremanGroupConfig, id, StoremanGroupConfig {
             deposit: deposit,
             chain: chain,
@@ -215,9 +215,9 @@ module BridgeRoot::Oracle {
         );
     }
 
-    public entry fun setAdmin(account: &signer, admin: address) acquires Oracle {
-        onlyAdmin(account);
-        let data = borrow_global_mut<Oracle>(@BridgeRoot);
+    public entry fun set_admin(account: &signer, admin: address) acquires Oracle {
+        only_admin(account);
+        let data = borrow_global_mut<Oracle>(@bridge_root);
         data.admin = admin;
 
         event::emit_event<SetAdminEvent>(
@@ -228,13 +228,13 @@ module BridgeRoot::Oracle {
         );
     }
 
-    public fun getValue(key: address): u128 acquires Oracle {
-        let data = borrow_global<Oracle>(@BridgeRoot);
+    public fun get_value(key: address): u128 acquires Oracle {
+        let data = borrow_global<Oracle>(@bridge_root);
         *table::borrow<address, u128>(&data.mapPrices, key)
     }
 
-    public fun getValues(keys: vector<address>): vector<u128> acquires Oracle {
-        let data = borrow_global<Oracle>(@BridgeRoot);
+    public fun get_values(keys: vector<address>): vector<u128> acquires Oracle {
+        let data = borrow_global<Oracle>(@bridge_root);
         let length = vector::length<address>(&keys);
         let i = 0;
         let prices: vector<u128> = vector::empty();
@@ -247,23 +247,28 @@ module BridgeRoot::Oracle {
         prices
     }
 
-    public fun getDeposit(smgID: address): u128 acquires Oracle {
-        let data = borrow_global<Oracle>(@BridgeRoot);
+    public fun get_deposit(smgID: address): u128 acquires Oracle {
+        let data = borrow_global<Oracle>(@bridge_root);
         table::borrow<address, StoremanGroupConfig>(&data.mapStoremanGroupConfig, smgID).deposit
     }
 
-    public fun getStoremanGroupConfig(smgID: address): StoremanGroupConfig acquires Oracle {
-        let data = borrow_global<Oracle>(@BridgeRoot);
+    public fun get_storeman_group_config(smgID: address): StoremanGroupConfig acquires Oracle {
+        let data = borrow_global<Oracle>(@bridge_root);
         *table::borrow<address, StoremanGroupConfig>(&data.mapStoremanGroupConfig, smgID)
     }
 
-    public fun getStoremanGroupStatus(smgID: address): u8 acquires Oracle {
-        let data = borrow_global<Oracle>(@BridgeRoot);
+    public fun get_storeman_group_status(smgID: address): u8 acquires Oracle {
+        let data = borrow_global<Oracle>(@bridge_root);
         table::borrow<address, StoremanGroupConfig>(&data.mapStoremanGroupConfig, smgID).status
     }
 
-    public fun isDebtClean(smgID: address): bool acquires Oracle {
-        let data = borrow_global<Oracle>(@BridgeRoot);
+    public fun is_debt_clean(smgID: address): bool acquires Oracle {
+        let data = borrow_global<Oracle>(@bridge_root);
         table::borrow<address, StoremanGroupConfig>(&data.mapStoremanGroupConfig, smgID).isDebtClean
+    }
+
+    #[test_only]
+    public fun initialize_for_test(tester: &signer) {
+        init_module(tester);
     }
 }

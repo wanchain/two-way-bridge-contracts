@@ -1,6 +1,6 @@
 script {
   use std::signer;
-  // use BridgeRoot::TokenManager;
+  // use bridge_root::TokenManager;
   use std::debug;
 
   fun main(account: signer) {
