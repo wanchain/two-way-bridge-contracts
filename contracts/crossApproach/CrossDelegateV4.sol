@@ -603,9 +603,8 @@ contract CrossDelegateV4 is CrossStorageV4 {
       view
       returns (uint)
     {
-      address tokenScAddr;
       uint contractFee;
-      (tokenScAddr, contractFee) = NFTLibV1.getTokenScAddrAndContractFee(storageData, tokenPairID, mapTokenPairContractFee[tokenPairID], currentChainID, batchLength);
+      (, contractFee) = NFTLibV1.getTokenScAddrAndContractFee(storageData, tokenPairID, mapTokenPairContractFee[tokenPairID], currentChainID, batchLength);
       return contractFee;
     }
 }

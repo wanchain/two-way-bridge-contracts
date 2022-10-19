@@ -91,19 +91,6 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
        operator = account;
     }
 
-    function getNftInfo(uint tokenPairId) external view returns (address addr, string name, string symbol) {
-        if (mapTokenPairInfo[tokenPairId].fromChainID == 0) {
-            name = '';
-            symbol = '';
-            addr = address(0);
-        } else {
-            address instance = bytesToAddress(mapTokenPairInfo[tokenPairId].toAccount);
-            name = IMappingToken(instance).name();
-            symbol = IMappingToken(instance).symbol();
-            addr = instance;
-        }
-    }
-
     //*****************************************************************************
     //*****************************************************************************
     // ERC1155
