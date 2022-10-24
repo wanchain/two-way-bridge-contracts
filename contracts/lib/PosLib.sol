@@ -83,12 +83,12 @@ library PosLib {
 
 
     //  function getMinIncentive1 ()  public view returns(uint256,uint256) {
-    //      return (getMinIncentive(100000 ether,now - 86400 * 4),0);
+    //      return (getMinIncentive(100000 trx,now - 86400 * 4),0);
     //  }
 
 
     //  function getMinIncentive2 ()  public view returns(uint256,uint256) {
-    //      return (getMinIncentive(10000000 ether,now - 86400 * 4),0);
+    //      return (getMinIncentive(10000000 trx,now - 86400 * 4),0);
     //  }
 
     function getMinIncentive (uint256 smgDeposit,uint256 day, uint256 totalDeposit) public view returns(uint256) {
@@ -107,7 +107,7 @@ library PosLib {
             return 0;
         }
 
-        uint256 hardcapReturn = hardcap.mul(1 ether).div(DIVISOR).mul(smgDeposit).div(totalDeposit);
+        uint256 hardcapReturn = hardcap.mul(1 trx).div(DIVISOR).mul(smgDeposit).div(totalDeposit);
 
         return hardcapReturn<=p1Return?hardcapReturn:p1Return;
     }

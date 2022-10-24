@@ -48,19 +48,19 @@ contract TestQuotaHelper {
         )
     {
         if (storemanGroupId == keccak256("storeman1")) {
-            deposit = 1000 ether;
+            deposit = 1000 trx;
         }
 
         if (storemanGroupId == keccak256("storeman2")) {
-            deposit = 1000 ether;
+            deposit = 1000 trx;
         }
 
         if (storemanGroupId == keccak256("storeman3")) {
-            deposit = 1000 ether;
+            deposit = 1000 trx;
         }
 
         if (storemanGroupId == keccak256("storeman4")) {
-            deposit = 1000 ether;
+            deposit = 1000 trx;
         }
     }
 
@@ -70,19 +70,19 @@ contract TestQuotaHelper {
         returns (uint256 deposit)
     {
         if (storemanGroupId == keccak256("storeman1")) {
-            return 1000 ether;
+            return 1000 trx;
         }
 
         if (storemanGroupId == keccak256("storeman2")) {
-            return 1000 ether;
+            return 1000 trx;
         }
 
         if (storemanGroupId == keccak256("storeman3")) {
-            return 1000 ether;
+            return 1000 trx;
         }
 
         if (storemanGroupId == keccak256("storeman4")) {
-            return 100 ether;
+            return 100 trx;
         }
 
         return 0;
