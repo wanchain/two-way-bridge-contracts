@@ -116,7 +116,177 @@ const tokenPairInfo = [
     fromAccount: ADDRESS_0,
     toChainID: bipChainIdDict.TRX,
     toAccount: "0x10b69a397a27e6faef2b5e82075b6caca643a096"
-  }
+  },
+  // tron usdt
+  {
+    id: 273,
+    aInfo: {
+      account: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+      name: "Tether USD",
+      symbol: "USDT",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+    toChainID: bipChainIdDict.ETH,
+    toAccount: "0x8331595fb5d64466a6877276337782a94e647005"
+  },
+  {
+    id: 274,
+    aInfo: {
+      account: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+      name: "Tether USD",
+      symbol: "USDT",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+    toChainID: bipChainIdDict.OKT,
+    toAccount: "0x418dd07e73253948839272efbc9c080a1b299b62"
+  },
+  {
+    id: 275,
+    aInfo: {
+      account: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+      name: "Tether USD",
+      symbol: "USDT",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+    toChainID: bipChainIdDict.BSC,
+    toAccount: "0x337610d27c682e347c9cd60bd4b3b107c9d34ddd"
+  },
+  {
+    id: 276,
+    aInfo: {
+      account: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+      name: "Tether USD",
+      symbol: "USDT",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+    toChainID: bipChainIdDict.MATIC,
+    toAccount: "0x5b0b9d1a58cacb8e3f7cb72225996fc535530f6b"
+  },
+  {
+    id: 277,
+    aInfo: {
+      account: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+      name: "Tether USD",
+      symbol: "USDT",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+    toChainID: bipChainIdDict.ARB,
+    toAccount: "0x9b281146a04a67948f4601abda704016296017c5"
+  },
+  {
+    id: 278,
+    aInfo: {
+      account: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+      name: "Tether USD",
+      symbol: "USDT",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+    toChainID: bipChainIdDict.XDC,
+    toAccount: "0xd4b5f10d61916bd6e0860144a91ac658de8a1437"
+  },
+  {
+    id: 279,
+    aInfo: {
+      account: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+      name: "Tether USD",
+      symbol: "USDT",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0xEA51342DABBB928AE1E576BD39EFF8AAF070A8C6",
+    toChainID: bipChainIdDict.AVAX,
+    toAccount: "0x1f6515c5e45c7d572fbb5d18ce613332c17ab288"
+  },
+  // tron usdc
+  {
+    id: 280,
+    aInfo: {
+      account: "0x3017D3AAE03A8934E3482632D9C13B292F06898A",
+      name: "USD Coin",
+      symbol: "USDC",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0x3017D3AAE03A8934E3482632D9C13B292F06898A",
+    toChainID: bipChainIdDict.ETH,
+    toAccount: "0x4a8359b4fce6f6e01180a6bf74fdb3545ab1cd07"
+  },
+  {
+    id: 281,
+    aInfo: {
+      account: "0x3017D3AAE03A8934E3482632D9C13B292F06898A",
+      name: "USD Coin",
+      symbol: "USDC",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0x3017D3AAE03A8934E3482632D9C13B292F06898A",
+    toChainID: bipChainIdDict.WAN,
+    toAccount: "0x7fF465746e4F47e1CbBb80c864CD7DE9F13337fE"
+  },
+  {
+    id: 282,
+    aInfo: {
+      account: "0x3017D3AAE03A8934E3482632D9C13B292F06898A",
+      name: "USD Coin",
+      symbol: "USDC",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0x3017D3AAE03A8934E3482632D9C13B292F06898A",
+    toChainID: bipChainIdDict.BSC,
+    toAccount: "0x64544969ed7ebf5f083679233325356ebe738930"
+  },
+  {
+    id: 283,
+    aInfo: {
+      account: "0x3017D3AAE03A8934E3482632D9C13B292F06898A",
+      name: "USD Coin",
+      symbol: "USDC",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0x3017D3AAE03A8934E3482632D9C13B292F06898A",
+    toChainID: bipChainIdDict.MATIC,
+    toAccount: "0x07d307bd7dcbf34932efd1593484ee75a83eb7e1"
+  },
+  {
+    id: 284,
+    aInfo: {
+      account: "0x3017D3AAE03A8934E3482632D9C13B292F06898A",
+      name: "USD Coin",
+      symbol: "USDC",
+      decimals: 6,
+      chainID: bipChainIdDict.TRX
+    },
+    fromChainID: bipChainIdDict.TRX,
+    fromAccount: "0x3017D3AAE03A8934E3482632D9C13B292F06898A",
+    toChainID: bipChainIdDict.AVAX,
+    toAccount: "0x80aa952fa7e752cb0f3d0b6f62ea1ec8b783a3da"
+  },
 ]
 
 async function addTokenPair(argv) {
