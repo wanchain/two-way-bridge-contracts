@@ -226,7 +226,7 @@ echo '*********** use mongocontainer name ***********:  '$mongocontainer
 # echo "Please ignore the error 'Error: No such container: $mongocontainer' if your first start the script"
 `sudo docker rm -f $mongocontainer > /dev/null 2>&1`
 
-sudo docker run -itd --name $mongocontainer --network $dockernet -v $dbdir:/data/db --restart=always mongo
+sudo docker run -itd --name $mongocontainer --network $dockernet -v $dbdir:/data/db --restart=always mongo:5.0
 
 # ************************************************************************************************************ 
 # storeman agent start 

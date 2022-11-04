@@ -22,7 +22,7 @@ else
 fi
 
 # Download docker image
-output=`sudo docker pull mongo 1>&2`
+output=`sudo docker pull mongo:5.0 1>&2`
 echo '*********** open-storeman init Env *********** Download mongo docker image done!'
 
 output=`sudo docker pull wanchain/openstoremanagent_mainnet:latest 1>&2`
