@@ -27,6 +27,8 @@
 pragma solidity 0.4.26;
 pragma experimental ABIEncoderV2;
 
+import "../interfaces/IWrappedNFT721.sol";
+import "../interfaces/IWrappedNFT1155.sol";
 import "../interfaces/IMappingToken.sol";
 import "./MappingToken.sol";
 import "./TokenManagerDelegate.sol";
@@ -42,6 +44,7 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
     address public operator;
 
     /// tokenPairID => type; type: 0 is ERC20, 1 is ERC721, ...
+    enum TokenCrossType {ERC20, ERC721, ERC1155}
     mapping(uint => uint8) public mapTokenPairType;
 
 
@@ -69,12 +72,15 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
      ** MANIPULATIONS
      **
      ************************************************************/
-    function setTokenPairType(uint tokenPairId, uint8 tokenPairType)
+    function setTokenPairTypes(uint[] tokenPairIds, uint8[] tokenPairTypes)
         external
         onlyOperator
     {
-       mapTokenPairType[tokenPairId] = tokenPairType;
-       emit SetTokenPairType(tokenPairId, tokenPairType);
+       require(tokenPairIds.length == tokenPairTypes.length, "length mismatch");
+       for(uint idx = 0; idx < tokenPairIds.length; ++idx) {
+          mapTokenPairType[tokenPairIds[idx]] = tokenPairTypes[idx];
+          emit SetTokenPairType(tokenPairIds[idx], tokenPairTypes[idx]);
+       }
     }
 
     function setOperator(address account)
@@ -85,17 +91,51 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
        operator = account;
     }
 
-    function getNftInfo(uint tokenPairId) external view returns (address addr, string name, string symbol) {
-        if (mapTokenPairInfo[tokenPairId].fromChainID == 0) {
-            name = '';
-            symbol = '';
-            addr = address(0);
-        } else {
-            address instance = bytesToAddress(mapTokenPairInfo[tokenPairId].toAccount);
-            name = IMappingToken(instance).name();
-            symbol = IMappingToken(instance).symbol();
-            addr = instance;
+    //*****************************************************************************
+    //*****************************************************************************
+    // ERC1155
+    //*****************************************************************************
+    //*****************************************************************************
+    function mintNFT(
+        uint    tokenCrossType,
+        address tokenAddress,
+        address to,
+        uint[]  tokenIDs,
+        uint[]  values,
+        bytes   data
+    )
+        public
+        onlyAdmin
+    {
+        if(tokenCrossType == uint(TokenCrossType.ERC721)) {
+            IWrappedNFT721(tokenAddress).mintBatch(to, tokenIDs, data);
+        }
+        else if(tokenCrossType == uint(TokenCrossType.ERC1155)) {
+            IWrappedNFT1155(tokenAddress).mintBatch(to, tokenIDs, values, data);
+        }
+        else {
+            require(false, "Invalid NFT type");
         }
     }
 
+    function burnNFT(
+        uint    tokenCrossType,
+        address tokenAddress,
+        address from,
+        uint[]  tokenIDs,
+        uint[]  values
+    )
+        public
+        onlyAdmin
+    {
+        if(tokenCrossType == uint(TokenCrossType.ERC721)) {
+            IWrappedNFT721(tokenAddress).burnBatch(from, tokenIDs);
+        }
+        else if(tokenCrossType == uint(TokenCrossType.ERC1155)) {
+            IWrappedNFT1155(tokenAddress).burnBatch(from, tokenIDs, values);
+        }
+        else {
+            require(false, "Invalid NFT type");
+        }
+    }
 }

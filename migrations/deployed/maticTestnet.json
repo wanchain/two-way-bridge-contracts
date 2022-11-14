@@ -1,24 +1,27 @@
 {
      "HTLCTxLib": {
-          "address": "0xF2cF8359e7483A7D0D4791dAEC9F876D0cAa6F50"
+          "address": "0x1c5d87e074eb05168402ccae2b8214a8cc7a81bb"
      },
      "RapidityLib": {
-          "address": "0xc9F3C04Ac3C36c294FD3FC8ba1a495240852b756"
+          "address": "0x71ea9d13b48cfde861e648ac2cc4955c3447371e"
+     },
+     "NFTLibV1": {
+          "address": "0x6d119182ffdc5387455f2c3e0e593eb8908a0935"
+     },
+     "CrossDelegate": {
+          "address": "0x61263bd242db2658f9f94f5d2558a9a0cbcc54d7",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "TokenManagerDelegate": {
+          "address": "0x12e12e446773008345bf39223b0da0b9df69e9ad",
+          "abi": "abi.TokenManagerDelegate.json"
      },
      "CrossProxy": {
           "address": "0xB5bf1013898a93f0BD902F6e346Ed6cBB627b791",
           "abi": "abi.CrossDelegate.json"
      },
-     "CrossDelegate": {
-          "address": "0x33632f86D62286940A8952FdA4c0557fF7247205",
-          "abi": "abi.CrossDelegate.json"
-     },
      "TokenManagerProxy": {
           "address": "0x15Ad86ebE92EccE4347E65DA59122E2F495D6a48",
-          "abi": "abi.TokenManagerDelegate.json"
-     },
-     "TokenManagerDelegate": {
-          "address": "0x3fB3A082C288448459CFf482Fbd9d19F6e087348",
           "abi": "abi.TokenManagerDelegate.json"
      },
      "HTLCDebtLib": {

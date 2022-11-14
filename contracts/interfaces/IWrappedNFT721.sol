@@ -26,14 +26,17 @@
 
 pragma solidity 0.4.26;
 
-interface IMappingToken {
+interface IWrappedNFT721 {
     function changeOwner(address _newOwner) external;
     function acceptOwnership() external;
     function transferOwner(address) external;
     function name() external view returns (string);
     function symbol() external view returns (string);
     function decimals() external view returns (uint8);
-    function mint(address, uint) external;
     function burn(address, uint) external;
     function update(string, string) external;
+    function mint(address, uint, bytes) external;
+
+    function burnBatch(address , uint256[]) public;
+    function mintBatch(address , uint256[] , bytes) public;
 }

@@ -24,16 +24,34 @@
 //
 //
 
-pragma solidity 0.4.26;
+pragma solidity ^0.4.26;
+pragma experimental ABIEncoderV2;
 
-interface IMappingToken {
-    function changeOwner(address _newOwner) external;
-    function acceptOwnership() external;
-    function transferOwner(address) external;
-    function name() external view returns (string);
-    function symbol() external view returns (string);
-    function decimals() external view returns (uint8);
-    function mint(address, uint) external;
-    function burn(address, uint) external;
-    function update(string, string) external;
+import "./CrossDelegateV4.sol";
+
+
+contract CrossDelegateXinFin is CrossDelegateV4 {
+    function onXRC721Received(address operator, address from, uint256 tokenId, bytes data)
+        external
+        pure
+        returns (bytes4)
+    {
+        return this.onXRC721Received.selector;
+    }
+
+    function onXRC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes _data)
+        external
+        pure
+        returns(bytes4)
+    {
+        return this.onXRC1155Received.selector;
+    }
+
+    function onXRC1155BatchReceived(address _operator, address _from, uint256[] _ids, uint256[] _values, bytes _data)
+        external
+        pure
+        returns(bytes4)
+    {
+        return this.onXRC1155BatchReceived.selector;
+    }
 }

@@ -42,4 +42,8 @@ interface ITokenManager {
 
     function mapTokenPairType(uint tokenPairID) external view
       returns (uint8 tokenPairType);
+
+    // erc1155
+    function mintNFT(uint tokenCrossType, address tokenAddress, address to, uint[] ids, uint[] values, bytes data) public;
+    function burnNFT(uint tokenCrossType, address tokenAddress, address from, uint[] ids, uint[] values) public;
 }

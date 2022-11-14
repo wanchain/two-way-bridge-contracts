@@ -13,10 +13,6 @@ contract MappingNftToken is ERC721Full, Ownable {
 
     using SafeMath for uint;
 
-    /// total number of NFT
-    uint public totalSupply;
-
-    uint8 private _decimal;
     string private _name;
     string private _symbol;
 
@@ -41,51 +37,6 @@ contract MappingNftToken is ERC721Full, Ownable {
         ERC721Metadata.initialize(name_, symbol_);
     }
 
-    /**
-     * ============================================================================
-     * code for mapping token
-     * ============================================================================
-     */
-
-    /****************************************************************************
-     **
-     ** MODIFIERS
-     **
-     ****************************************************************************/
-    modifier onlyMeaningfulValue(uint256 nftID) {
-        require(nftID > 0, "Value is null");
-        _;
-    }
-
-
-    /****************************************************************************
-     **
-     ** EVENTS
-     **
-     ****************************************************************************/
-    /// @notice Logger for token mint
-    /// @dev Logger for token mint
-    /// @param account Whom these token will be minted to
-    /// @param nftID ID of NFT to be minted
-    /// @param totalSupply Total amount of NFT after token mint
-    event TokenMintedLogger(
-        address indexed account,
-        uint indexed nftID,
-        uint indexed totalSupply
-    );
-
-    /// @notice Logger for token burn
-    /// @dev Logger for token burn
-    /// @param account Initiator address
-    /// @param nftID ID of NFT to be burnt
-    /// @param totalSupply Total amount of NFT after token burn
-    event TokenBurnLogger(
-        address indexed account,
-        uint indexed nftID,
-        uint indexed totalSupply
-    );
-
-
     /****************************************************************************
      **
      ** MANIPULATIONS of mapping token
@@ -99,12 +50,8 @@ contract MappingNftToken is ERC721Full, Ownable {
     function mint(address account_, uint256 nftID)
     external
     onlyOwner
-    onlyMeaningfulValue(nftID)
     {
         _mint(account_, nftID);
-
-        totalSupply = totalSupply.add(1);
-        emit TokenMintedLogger(account_, nftID, totalSupply);
     }
 
     /// @notice Burn token
@@ -112,14 +59,10 @@ contract MappingNftToken is ERC721Full, Ownable {
     /// @param account_ Address of whose token will be burnt
     /// @param nftID   ID of token to be burnt
     function burn(address account_, uint256 nftID)
-    external
-    onlyOwner
-    onlyMeaningfulValue(nftID)
+        external
+        onlyOwner
     {
         _burn(account_, nftID);
-
-        totalSupply = totalSupply.sub(1);
-        emit TokenBurnLogger(account_, nftID, totalSupply);
     }
 
     /// @notice update token name, symbol
@@ -138,7 +81,29 @@ contract MappingNftToken is ERC721Full, Ownable {
         Ownable.transferOwnership(newOwner_);
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount)  view internal {
-        require(to != address(this), "to address incorrect");
+    // mint supprt data
+    function mint(address account_, uint256 nftID, bytes data)
+        external
+        onlyOwner
+    {
+        _mint(account_, nftID);
+    }
+
+    function burnBatch(address account_, uint256[] nftIDs)
+        external
+        onlyOwner
+    {
+        for(uint i = 0; i < nftIDs.length; ++i) {
+            _burn(account_, nftIDs[i]);
+        }
+    }
+
+    function mintBatch(address account_, uint256[] nftIDs, bytes data)
+        external
+        onlyOwner
+    {
+         for(uint i = 0; i < nftIDs.length; ++i) {
+             _mint(account_, nftIDs[i]);
+         }
     }
 }
