@@ -270,9 +270,10 @@ module bridge_root::oracle {
         *table::borrow<address, StoremanGroupConfig>(&data.mapStoremanGroupConfig, smgID)
     }
 
-    public fun get_storeman_group_status(smgID: address): u8 acquires Oracle {
+    public fun get_storeman_group_status(smgID: address): (u8, u64, u64) acquires Oracle {
         let data = borrow_global<Oracle>(@bridge_root);
-        table::borrow<address, StoremanGroupConfig>(&data.mapStoremanGroupConfig, smgID).status
+        let config = table::borrow<address, StoremanGroupConfig>(&data.mapStoremanGroupConfig, smgID);
+        (config.status, config.startTime, config.endTime)
     }
 
     public fun is_debt_clean(smgID: address): bool acquires Oracle {

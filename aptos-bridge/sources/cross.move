@@ -25,6 +25,63 @@
 //
 
 module bridge_root::cross {
+    use std::signer;
+    use std::error;
+    use std::vector;
+    use aptos_std::table;
+    use aptos_std::event::{Self, EventHandle};
+    use aptos_framework::account;
 
+    struct SetAdminEvent has drop, store {
+        admin: address,
+    }
+
+    struct SetFeeEvent has drop, store {
+        srcChainID: u64,
+        destChainID: u64,
+        contractFee: u128,
+        agentFee: u128,
+    }
+
+    struct SetTokenPairFee has drop, store {
+        tokenPairID: u64,
+        contractFee: u128,
+    }
+
+    struct WithdrawHistoryFeeLogger has drop, store {
+        smgID: address,
+        timeStamp: u64,
+        receiver: address,
+        fee: u128,
+    }
+
+    struct Cross has key, store {
+        admin: address,
+        owner: address,
+    }
+
+    /// Account has no capabilities (admin).
+    const ENO_CAPABILITIES: u64 = 1;
+    const ENO_INPUT_ERROR: u64 = 2;
+
+    fun init_module(sender: &signer) {
+        let account_addr = signer::address_of(sender);
+        move_to<Cross>(sender, Cross {
+            admin: account_addr,
+            owner: account_addr,
+        });
+    }
+
+    fun only_admin(account: &signer) acquires Cross {
+        let account_addr = signer::address_of(account);
+        let data = borrow_global<Cross>(@bridge_root);
+        assert!((account_addr == data.admin) || (account_addr == data.owner), error::permission_denied(ENO_CAPABILITIES));
+    }
+
+    fun only_owner(account: &signer) acquires Cross {
+        let account_addr = signer::address_of(account);
+        let data = borrow_global<Cross>(@bridge_root);
+        assert!(account_addr == data.owner, error::permission_denied(ENO_CAPABILITIES));
+    }
 }
 
