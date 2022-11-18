@@ -80,6 +80,7 @@ module.exports = async function (deployer, network) {
     global.network = network;
     if (network === 'nodeploy') return;
     if (network === 'localTest') return;
+    if (network === 'pluto') return;
 
     const isMainnet = network.startsWith("mainnet");
 

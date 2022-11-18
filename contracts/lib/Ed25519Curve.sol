@@ -96,9 +96,9 @@ library Ed25519Curve {
             let freePtr := mload(0x40)
             mstore(freePtr, functionSelector)
 
-            mstore(add(freePtr, 4), xPk)
-            mstore(add(freePtr, 36), yPk)
-            mstore(add(freePtr, 68), scalar)
+            mstore(add(freePtr, 4), scalar)
+            mstore(add(freePtr, 36), xPk)
+            mstore(add(freePtr, 68), yPk)
 
             success := staticcall(gas, to, freePtr, 100, freePtr, 64)
 
