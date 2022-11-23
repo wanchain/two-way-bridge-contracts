@@ -19,6 +19,7 @@
  */
 
 const HDWalletProvider = require("truffle-hdwallet-provider");
+const HDWalletProvider1 = require("@truffle/hdwallet-provider");
 const mnemonic = "skill level pulse dune pattern rival used syrup inner first balance sad"; 
 
 
@@ -80,7 +81,7 @@ module.exports = {
     },
 
       pluto: {
-          provider: () => new HDWalletProvider("0xa4369e77024c2ade4994a9345af5c47598c7cfb36c65e8a4a3117519883d9014", "http://localhost:8545"),
+          provider: () => new HDWalletProvider1({privateKeys:["0xa4369e77024c2ade4994a9345af5c47598c7cfb36c65e8a4a3117519883d9014"],providerOrUrl:"http://localhost:8545",chainId:666}),
           port:8545,
           host:"127.0.0.1",
           from:"0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e",
