@@ -216,10 +216,11 @@ module bridge_root::token_manager {
         );
     }
 
-    public fun get_token_pair(id: u64): TokenPairInfo acquires TokenManager {
+    // returns: fromChainID, fromAccount, toChainID, toAccount
+    public fun get_token_pair(id: u64): (u64, address, u64, address) acquires TokenManager {
         let manager = borrow_global<TokenManager>(@bridge_root);
         let val = table::borrow<u64, TokenPairInfo>(&manager.tokenPairs, id);
-        *val
+        (val.fromChainID, val.fromAccount, val.toChainID, val.toAccount)
     }
 
     public entry fun set_operator(account: &signer, op: address) acquires TokenManager {

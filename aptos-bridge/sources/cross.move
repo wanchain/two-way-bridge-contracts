@@ -32,9 +32,11 @@ module bridge_root::cross {
     use aptos_std::simple_map;
     use aptos_std::event::{Self, EventHandle};
     use aptos_framework::account;
+    use aptos_framework::coin::{Self, Coin, MintCapability, FreezeCapability, BurnCapability};
+    use aptos_framework::timestamp;
+    
     use bridge_root::oracle;
     use bridge_root::token_manager;
-    use aptos_framework::timestamp;
 
     // events start ------------------------------------------------------------
 
@@ -46,8 +48,8 @@ module bridge_root::cross {
     struct SetFee has drop, store {
         srcChainID: u64,
         destChainID: u64,
-        contractFee: u128,
-        agentFee: u128,
+        contractFee: u64,
+        agentFee: u64,
     }
 
     // event SmgWithdrawFeeLogger(bytes32 indexed smgID, uint indexed timeStamp, address indexed receiver, uint fee);
@@ -55,21 +57,21 @@ module bridge_root::cross {
         smgID: address,
         timeStamp: u64,
         receiver: address,
-        fee: u128,
+        fee: u64,
     }
 
     // event WithdrawContractFeeLogger(uint indexed block, uint indexed timeStamp, address indexed receiver, uint fee);
     struct WithdrawContractFeeLogger has drop, store {
-        block: u128,
+        block: u64,
         timeStamp: u64,
         receiver: address,
-        fee: u128,
+        fee: u64,
     }
 
     // event SetTokenPairFee(uint indexed tokenPairID, uint contractFee);
     struct SetTokenPairFee has drop, store {
         tokenPairID: u64,
-        contractFee: u128,
+        contractFee: u64,
     }
 
     // event WithdrawHistoryFeeLogger(bytes32 indexed smgID, uint indexed timeStamp, address indexed receiver, uint fee);
@@ -77,7 +79,7 @@ module bridge_root::cross {
         smgID: address,
         timeStamp: u64,
         receiver: address,
-        fee: u128,
+        fee: u64,
     }
 
     // event TransferAssetLogger(bytes32 indexed uniqueID, bytes32 indexed srcSmgID, bytes32 indexed destSmgID);
@@ -135,8 +137,8 @@ module bridge_root::cross {
         smgID: address,
         tokenPairID: u64,
         tokenAccount: address,
-        value: u128,
-        contractFee: u128,
+        value: u64,
+        contractFee: u64,
         userAccount: vector<u8>,
     }
 
@@ -145,9 +147,9 @@ module bridge_root::cross {
         smgID: address,
         tokenPairID: u64,
         tokenAccount: address,
-        value: u128,
-        contractFee: u128,
-        fee: u128,
+        value: u64,
+        contractFee: u64,
+        fee: u64,
         userAccount: vector<u8>,
     }
 
@@ -156,7 +158,7 @@ module bridge_root::cross {
         uniqueID: address,
         smgID: address,
         tokenPairID: u64,
-        value: u128,
+        value: u64,
         tokenAccount: address,
         userAccount: address,
     }
@@ -175,7 +177,7 @@ module bridge_root::cross {
         uniqueID: address,
         smgID: address,
         tokenPairID: u64,
-        value: u128,
+        value: u64,
         tokenAccount: address,
         userAccount: address,
     }
@@ -202,9 +204,9 @@ module bridge_root::cross {
     struct RapidityUserLockParams has store, drop {
         smgID: address,
         tokenPairID: u64,
-        value: u128,
+        value: u64,
         currentChainID: u64,
-        tokenPairContractFee: u128,
+        tokenPairContractFee: u64,
         destUserAccount: address,
         smgFeeProxy: address,
     }
@@ -215,13 +217,13 @@ module bridge_root::cross {
         rapidityTxData: RapidityTxLibData,
 
         /// @notice transaction fee, smgID => fee
-        mapStoremanFee: table::Table<address, u128>,
+        mapStoremanFee: table::Table<address, u64>,
         /// @notice transaction fee, origChainID => shadowChainID => fee
-        mapContractFee: table::Table<u64, simple_map::SimpleMap<u64, u128>>,
+        mapContractFee: table::Table<u64, simple_map::SimpleMap<u64, u64>>,
         /// @notice transaction fee, origChainID => shadowChainID => fee
-        mapAgentFee: table::Table<u64, simple_map::SimpleMap<u64, u128>>,
+        mapAgentFee: table::Table<u64, simple_map::SimpleMap<u64, u64>>,
         /// @notice tokenPair fee, tokenPairID => fee
-        mapTokenPairContractFee: table::Table<u64, u128>,
+        mapTokenPairContractFee: table::Table<u64, u64>,
     }
 
     struct CrossEventHandlers has store {
@@ -271,10 +273,10 @@ module bridge_root::cross {
             data: CrossType {
                 htlcTxData: HTLCTxLibData {},
                 rapidityTxData: RapidityTxLibData {},
-                mapStoremanFee: table::new<address, u128>(),
-                mapContractFee: table::new<u64, simple_map::SimpleMap<u64, u128>>(),
-                mapAgentFee: table::new<u64, simple_map::SimpleMap<u64, u128>>(),
-                mapTokenPairContractFee: table::new<u64, u128>(),
+                mapStoremanFee: table::new<address, u64>(),
+                mapContractFee: table::new<u64, simple_map::SimpleMap<u64, u64>>(),
+                mapAgentFee: table::new<u64, simple_map::SimpleMap<u64, u64>>(),
+                mapTokenPairContractFee: table::new<u64, u64>(),
             },
             event_handler: CrossEventHandlers {
                 set_admin: account::new_event_handle<SetAdmin>(sender),
@@ -342,26 +344,26 @@ module bridge_root::cross {
         data.owner = newOwner;
     }
 
-    public entry fun set_fee(account: &signer, srcChainID: u64, destChainID: u64, contractFee: u128, agentFee: u128) acquires Cross {
+    public entry fun set_fee(account: &signer, srcChainID: u64, destChainID: u64, contractFee: u64, agentFee: u64) acquires Cross {
         only_admin(account);
         not_halted();
         let data = borrow_global_mut<Cross>(@bridge_root);
         let mapContractFee = &mut data.data.mapContractFee;
         let mapAgentFee = &mut data.data.mapAgentFee;
-        let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u128>>(mapContractFee, srcChainID, simple_map::create<u64, u128>());
-        let agentFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u128>>(mapAgentFee, srcChainID, simple_map::create<u64, u128>());
-        if (simple_map::contains_key<u64, u128>(contractFeeMap, &destChainID)) {
-            simple_map::remove<u64, u128>(contractFeeMap, &destChainID);
-            simple_map::add<u64, u128>(contractFeeMap, destChainID, contractFee);
+        let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, srcChainID, simple_map::create<u64, u64>());
+        let agentFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapAgentFee, srcChainID, simple_map::create<u64, u64>());
+        if (simple_map::contains_key<u64, u64>(contractFeeMap, &destChainID)) {
+            simple_map::remove<u64, u64>(contractFeeMap, &destChainID);
+            simple_map::add<u64, u64>(contractFeeMap, destChainID, contractFee);
         } else {
-            simple_map::add<u64, u128>(contractFeeMap, destChainID, contractFee);
+            simple_map::add<u64, u64>(contractFeeMap, destChainID, contractFee);
         };
 
-        if (simple_map::contains_key<u64, u128>(agentFeeMap, &destChainID)) {
-            simple_map::remove<u64, u128>(agentFeeMap, &destChainID);
-            simple_map::add<u64, u128>(agentFeeMap, destChainID, agentFee);
+        if (simple_map::contains_key<u64, u64>(agentFeeMap, &destChainID)) {
+            simple_map::remove<u64, u64>(agentFeeMap, &destChainID);
+            simple_map::add<u64, u64>(agentFeeMap, destChainID, agentFee);
         } else {
-            simple_map::add<u64, u128>(agentFeeMap, destChainID, agentFee);
+            simple_map::add<u64, u64>(agentFeeMap, destChainID, agentFee);
         };
         
         event::emit_event<SetFee>(&mut data.event_handler.set_fee, SetFee{
@@ -372,12 +374,12 @@ module bridge_root::cross {
         });
     }
 
-    public entry fun set_token_pair_fee(account: &signer, tokenPairID: u64, contractFee: u128) acquires Cross {
+    public entry fun set_token_pair_fee(account: &signer, tokenPairID: u64, contractFee: u64) acquires Cross {
         only_admin(account);
         not_halted();
         let data = borrow_global_mut<Cross>(@bridge_root);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
-        table::upsert<u64, u128>(mapTokenPairContractFee, tokenPairID, contractFee);
+        table::upsert<u64, u64>(mapTokenPairContractFee, tokenPairID, contractFee);
 
         event::emit_event<SetTokenPairFee>(&mut data.event_handler.set_token_pair_fee, SetTokenPairFee{
             tokenPairID: tokenPairID,
@@ -392,24 +394,63 @@ module bridge_root::cross {
         data.current_chain_id = chainID;
     }
 
-    public entry fun user_lock(smgID: address, tokenPairID: u64, value: u128, userAccount: address) acquires Cross {
+    public entry fun user_lock<CoinType>(account: &signer, smgID: address, tokenPairID: u64, value: u64, userAccount: address) acquires Cross {
         not_halted();
-        let data = borrow_global<Cross>(@bridge_root);
+        let data = borrow_global_mut<Cross>(@bridge_root);
+        let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
+        let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
         let param = RapidityUserLockParams {
             smgID: smgID,
             tokenPairID: tokenPairID,
             value: value,
             currentChainID: data.current_chain_id,
-            tokenPairContractFee: 0,
+            tokenPairContractFee: *contractFee,
             destUserAccount: userAccount,
             smgFeeProxy: data.smg_fee_proxy,
         };
 
-        user_lock_internal(param);
+        user_lock_internal<CoinType>(account, param);
     }
 
-    fun user_lock_internal(param: RapidityUserLockParams) {
-        let pairInfo = token_manager::get_token_pair(param.tokenPairID);
+    // register coin if not registered
+    public fun register_coin<CoinType>(
+        account: &signer
+    ) {
+        let account_addr = signer::address_of(account);
+        if (!coin::is_account_registered<CoinType>(account_addr)) {
+            coin::register<CoinType>(account);
+        };
+    }
+
+    fun user_lock_internal<CoinType>(account: &signer, param: RapidityUserLockParams) acquires Cross {
+        let (fromChainID, fromAccount, toChainID, toAccount) = token_manager::get_token_pair(param.tokenPairID);
+        assert!(fromChainID != 0u64, error::invalid_argument(ENO_INPUT_ERROR));
+        let contractFee = param.tokenPairContractFee;
+        let tokenScAddr;
+        if (fromChainID == param.currentChainID) {
+            tokenScAddr = fromAccount;
+            if (contractFee == 0u64) {
+                let mapContractFee = &mut borrow_global_mut<Cross>(@bridge_root).data.mapContractFee;
+                let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, fromChainID, simple_map::create<u64, u64>());
+                if (simple_map::contains_key<u64, u64>(contractFeeMap, &toChainID)) {
+                    contractFee = *simple_map::borrow<u64, u64>(contractFeeMap, &toChainID);
+                };
+            };
+        } else {
+            tokenScAddr = toAccount;
+            if (contractFee == 0u64) {
+                let mapContractFee = &mut borrow_global_mut<Cross>(@bridge_root).data.mapContractFee;
+                let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, toChainID, simple_map::create<u64, u64>());
+                if (simple_map::contains_key<u64, u64>(contractFeeMap, &fromChainID)) {
+                    contractFee = *simple_map::borrow<u64, u64>(contractFeeMap, &fromChainID);
+                };
+            };
+        };
+
+        if (contractFee > 0) {
+            let feeAccount = borrow_global<Cross>(@bridge_root).smg_fee_proxy;
+            coin::transfer<CoinType>(account, feeAccount, contractFee);
+        };
     }
 
 }
