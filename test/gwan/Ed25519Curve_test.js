@@ -21,7 +21,7 @@ contract('Ed25519Curve', () => {
         const x3 = "0x3e758e5b2af18254a885210d63c573facc2bd85edb27fdb98e3d0b0ab2dfcd1b";
         const y3 = "0x7e14602a338ed7011b8f22b4752234619011482fe8b6dcee0e2eeb96c721318c";
         let ret = await ed25519Curve.methods.add(x1, y1, x2, y2).call();
-        console.log('add', ret);
+        
 
         assert.equal(ret.success,false);
         assert.notEqual(web3.utils.padLeft(web3.utils.toHex(ret.retx),64), x3, "1");
@@ -38,14 +38,11 @@ contract('Ed25519Curve', () => {
         const x3 = "0x2074ef1ddd1376429e27da7e78c07e9680eb7fd42d212a5c5d4713dee71b7ac2";
         const y3 = "0x38ed7a5b5e4ecfe6a4421f3418fa8c29e545277a7116304c9ec6e618a771d687";
         let ret = await ed25519Curve.methods.add(x1, y1, x2, y2).call();
-        console.log('add', ret);
+        
 
         assert.equal(ret.success,true);
         assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.retx),64), x3, "1");
-        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.rety),64), y3, "2");
-
-        console.log("x3",web3.utils.toHex(ret.retx))
-        console.log("y3",web3.utils.toHex(ret.rety))
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.rety),64), y3, "2");        
     });
 
     it("add  on curve [ok][same point]", async () => {
@@ -58,14 +55,13 @@ contract('Ed25519Curve', () => {
         const x3 = "0x156a91eca6708c5ca8eb952c3e18e9504276a9fc0f5eb46f14963ee90b5ef171";
         const y3 = "0x7f697aa82517e2774a88d04b9e3a74c33265235434e3f83bc01cbd143f78b2d2";
         let ret = await ed25519Curve.methods.add(x1, y1, x2, y2).call();
-        console.log('add', ret);
+        
 
         assert.equal(ret.success,true);
         assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.retx),64), x3, "1");
         assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.rety),64), y3, "2");
 
-        console.log("x3",web3.utils.toHex(ret.retx))
-        console.log("y3",web3.utils.toHex(ret.rety))
+        
 
     });
 
@@ -79,14 +75,7 @@ contract('Ed25519Curve', () => {
 
         let x2 = "0x55a8eee57438b5a4b65d3a64154242e794a77437dd1ab1f771b62e09c1adc2df";
         let y2 = "0x0f4d90fbd1c1f976f03b0fad4e36358bacd1a62bc8c228f64d1d883ac1568152";
-        let ret = await ed25519Curve.methods.mulPk(x, x1, y1).call();
-        console.log('mulPK=>', ret);
-
-        console.log("x2",web3.utils.toHex(ret.x))
-        console.log("y2",web3.utils.toHex(ret.y))
-        
-        console.log("x2",web3.utils.padLeft(web3.utils.toHex(ret.x),64))
-        console.log("y2",web3.utils.padLeft(web3.utils.toHex(ret.y),64))
+        let ret = await ed25519Curve.methods.mulPk(x, x1, y1).call();        
 
         assert.equal(ret.success,true);
         assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.x),64), x2, "1");
@@ -102,10 +91,7 @@ contract('Ed25519Curve', () => {
 
         let x1 = "0x7b9e0bbbe2c95e505a9eaf8de693e6306415724606122e49370230872f92a3ee";
         let y1 = "0x04d351b07ee453434018da5544f93ad524db9495bb6ddf8f154f7df2b2db9c05";
-        let ret = await  ed25519Curve.methods.mulG(x).call();
-        console.log('mulG=>', ret);
-        console.log("x2",web3.utils.toHex(ret.x))
-        console.log("y2",web3.utils.toHex(ret.y))
+        let ret = await  ed25519Curve.methods.mulG(x).call();        
 
         assert.equal(ret.success,true);
         assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.x),64), x1, "1");
@@ -125,9 +111,7 @@ contract('Ed25519Curve', () => {
         let yExpect = "0x63e6099690ee8bb2529ec088313a1b59dc34bd4c8c0fe6022a8a9283c36421df"
 
         let ret = await  ed25519Curve.methods.calPolyCommit(polyPks,pk).call();
-        console.log('calPolyCommit=>', ret);
-        console.log("x2",web3.utils.toHex(ret.sx))
-        console.log("y2",web3.utils.toHex(ret.sy))
+        
 
         assert.equal(ret.success,true);
         assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.sx),64), xExpect, "1");
