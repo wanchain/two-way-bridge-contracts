@@ -11,7 +11,7 @@ contract('Ed25519Curve', () => {
         web3 = getWeb3();
     });
 
-
+/*
     // //it.skip("add", async () => {
     it("add not on curve [ko]", async () => {
         const x1 = "0x69088a1c79a78b5e66859a5e6594d70c8f12a1ff882d84a05ffdbbcff5a4abcb";
@@ -107,6 +107,28 @@ contract('Ed25519Curve', () => {
         assert.equal(ret.success,true);
         assert.equal(web3.utils.toHex(ret.x), x1, "1");
         assert.equal(web3.utils.toHex(ret.y), y1, "2");
+
+
+    });
+*/
+
+    it("calPolyCommit [ok]", async () => {
+
+        let polyPks = "0x5b39b85426ea41f0c59dd7d2ab88892ee1c5e3bc2c3d31eaacbf967d3e68217c72fc8262b264154798e9310fcbce6d0bb18775e7956050cbcc0bcc97470415a114a95e3e6be2fb58349b75191f2ea1e5ebd0cbbb32383853d553832e9c77cdf84e0248518c54a334bcc94861737f6749fedcf08deeecfaeeab40f0dda9b47d20351d10d6e21f73d886a0b9d69155b3b8c448dcd0ea0968f322da469f80a6dbe673d2ca2fa93d8cae4e11747af264098540c24419f4a1b3b9d32bfcf404bf7e3e711c500fc2d768da233f279a1bb37a04925ced8929b2cea3a899bc156b59dc9e3533fdf63bfe080d5b4e0e695a22321cd9723d5545883545b55039702ce333fd5aed34ded8aefd7f34bc44daa6e4023d38f3868047c923b12953eada52bf6bb255e7fff47b95300c5d37004a6a67493888914002b6153e44a11418a59ffaf0351ed3b754a6d4a41da061c9a1e5e222e96df9b4fc9039a4e596b9d399e2261bd30b1a9f63a981ee515330dcab661da8ad7dee61a3179a93284de3046d874c5f47503585283f6389df910d69ee0eb13f8de4f811ba47ae35c500a7002de284c9ab41c10617ba58e1165fc23c4c1b8edbfc50d8a296bb054ba9972140ccfdc1d4214feb08218da8736e7b92b2db7e9372f167c0fb9365738504f8752bdf855322e5018625bd93795b3ec5629914e2a212d7fad3c00489cf5d02b321ba136dcb45967310ad3a71a75a7d5d971ba4d51b26f8fd2ce26bbd296da6de39f6cd58657a021fd6dc1e21db3b0ea233335aadc7933e7068597682c554a23087711e28ed336f380fbcd43b1a66e7a37e25bc19f64f0137afca3cba3d441c551defeb7ee529c73e2eaca216f5436cbfb19d5cd9412ba8aca6f15ab4303e6b2b11d9f7740bff690b089ffa4fbd24aeb88da1c549f5789bff763d67f9dc9b99322a046bb39e910719f9a5ab9f9577d52b25fe6273b91db13790808f0c0c334e63befd26d3aa3db16334853bc6c2412e457da2e4525db845e20d4bb4a7f5c85e10dbae272506f6500c3e35f47f34350ebd214c1426241a4ad183e56f4c6c30364ceae0cd2455edac74ff56e3d979c3eec9ff2f01e4d92be579b5915430b3b60bb5cdc07c6b7b85ef087e8b215abb6debc82e7f3d8321a676766a00cf63fdf7b7cb51edf3f1b124a50cc51cc8d2ade0b5d904367262728013f345876d4c3d07c43aedbb0721865f122424815b41394997400c806c8c7b5f8ccb4521f702ad15f8559de72037476bff775f1ae032e48f262cbba368e0d8103aa57c23ad04a9f828c72449117584ef23128f6e2a7d9a30e3efc9b1c9166308c7bf99fd420c4c61f3957860eda3454ff1";
+
+        let pk = "0x2874be184bba64221cf18492bd364b5729e6e548fd135833f09cc3f385f217dd10096b29a2606da74f26990a112c05ce278bdc4505b09000b40161670c1d4be6";
+
+        let xExpect = "0x6fb7435ff405e4f34e9b128262861a75c922e19fddb6f65eb18f535243babff5"
+        let yExpect = "0x63e6099690ee8bb2529ec088313a1b59dc34bd4c8c0fe6022a8a9283c36421df"
+
+        let ret = await  ed25519Curve.methods.calPolyCommit(polyPks,pk).call();
+        console.log('calPolyCommit=>', ret);
+        console.log("x2",web3.utils.toHex(ret.sx))
+        console.log("y2",web3.utils.toHex(ret.sy))
+
+        assert.equal(ret.success,true);
+        assert.equal(web3.utils.toHex(ret.sx), xExpect, "1");
+        assert.equal(web3.utils.toHex(ret.sy), yExpect, "2");
 
 
     });
