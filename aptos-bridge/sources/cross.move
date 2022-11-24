@@ -376,8 +376,13 @@ module bridge_root::cross {
         only_admin(account);
         not_halted();
         let data = borrow_global_mut<Cross>(@bridge_root);
-        // let mapTokenPairContractFee = &mut data.mapTokenPairContractFee;
-        
+        let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
+        table::upsert<u64, u128>(mapTokenPairContractFee, tokenPairID, contractFee);
+
+        event::emit_event<SetTokenPairFee>(&mut data.event_handler.set_token_pair_fee, SetTokenPairFee{
+            tokenPairID: tokenPairID,
+            contractFee: contractFee,
+        });
     }
 
     public entry fun set_chain_id(account: &signer, chainID: u64) acquires Cross {
@@ -394,10 +399,10 @@ module bridge_root::cross {
             smgID: smgID,
             tokenPairID: tokenPairID,
             value: value,
-            currentChainID: data.currentChainID,
+            currentChainID: data.current_chain_id,
             tokenPairContractFee: 0,
             destUserAccount: userAccount,
-            smgFeeProxy: data.smgFeeProxy,
+            smgFeeProxy: data.smg_fee_proxy,
         };
 
         user_lock_internal(param);
