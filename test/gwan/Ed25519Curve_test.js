@@ -11,7 +11,7 @@ contract('Ed25519Curve', () => {
         web3 = getWeb3();
     });
 
-/*
+
     // //it.skip("add", async () => {
     it("add not on curve [ko]", async () => {
         const x1 = "0x69088a1c79a78b5e66859a5e6594d70c8f12a1ff882d84a05ffdbbcff5a4abcb";
@@ -24,8 +24,8 @@ contract('Ed25519Curve', () => {
         console.log('add', ret);
 
         assert.equal(ret.success,false);
-        assert.notEqual(web3.utils.toHex(ret.retx), x3, "1");
-        assert.notEqual(web3.utils.toHex(ret.rety), y3, "2");
+        assert.notEqual(web3.utils.padLeft(web3.utils.toHex(ret.retx),64), x3, "1");
+        assert.notEqual(web3.utils.padLeft(web3.utils.toHex(ret.rety),64), y3, "2");
     });
 
     it("add  on curve [ok]", async () => {
@@ -41,8 +41,8 @@ contract('Ed25519Curve', () => {
         console.log('add', ret);
 
         assert.equal(ret.success,true);
-        assert.equal(web3.utils.toHex(ret.retx), x3, "1");
-        assert.equal(web3.utils.toHex(ret.rety), y3, "2");
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.retx),64), x3, "1");
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.rety),64), y3, "2");
 
         console.log("x3",web3.utils.toHex(ret.retx))
         console.log("y3",web3.utils.toHex(ret.rety))
@@ -61,8 +61,8 @@ contract('Ed25519Curve', () => {
         console.log('add', ret);
 
         assert.equal(ret.success,true);
-        assert.equal(web3.utils.toHex(ret.retx), x3, "1");
-        assert.equal(web3.utils.toHex(ret.rety), y3, "2");
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.retx),64), x3, "1");
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.rety),64), y3, "2");
 
         console.log("x3",web3.utils.toHex(ret.retx))
         console.log("y3",web3.utils.toHex(ret.rety))
@@ -84,10 +84,13 @@ contract('Ed25519Curve', () => {
 
         console.log("x2",web3.utils.toHex(ret.x))
         console.log("y2",web3.utils.toHex(ret.y))
+        
+        console.log("x2",web3.utils.padLeft(web3.utils.toHex(ret.x),64))
+        console.log("y2",web3.utils.padLeft(web3.utils.toHex(ret.y),64))
 
         assert.equal(ret.success,true);
-        assert.equal(web3.utils.toHex(ret.x), x2, "1");
-        assert.equal(web3.utils.toHex(ret.y), y2, "2");
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.x),64), x2, "1");
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.y),64), y2, "2");
 
 
     });
@@ -105,12 +108,12 @@ contract('Ed25519Curve', () => {
         console.log("y2",web3.utils.toHex(ret.y))
 
         assert.equal(ret.success,true);
-        assert.equal(web3.utils.toHex(ret.x), x1, "1");
-        assert.equal(web3.utils.toHex(ret.y), y1, "2");
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.x),64), x1, "1");
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.y),64), y1, "2");
 
 
     });
-*/
+
 
     it("calPolyCommit [ok]", async () => {
 
@@ -127,8 +130,8 @@ contract('Ed25519Curve', () => {
         console.log("y2",web3.utils.toHex(ret.sy))
 
         assert.equal(ret.success,true);
-        assert.equal(web3.utils.toHex(ret.sx), xExpect, "1");
-        assert.equal(web3.utils.toHex(ret.sy), yExpect, "2");
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.sx),64), xExpect, "1");
+        assert.equal(web3.utils.padLeft(web3.utils.toHex(ret.sy),64), yExpect, "2");
 
 
     });
