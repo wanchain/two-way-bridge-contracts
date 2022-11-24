@@ -32,7 +32,6 @@ module bridge_root::oracle {
     use aptos_std::event::{Self, EventHandle};
     use aptos_framework::account;
 
-
     struct StoremanGroupConfig has store, drop, copy {
         deposit: u128,
         chain: vector<u128>,
