@@ -34,12 +34,14 @@ module bridge_root::cross {
     use aptos_std::simple_map;
     use aptos_std::event::{Self, EventHandle};
     use aptos_framework::account;
-    use aptos_framework::coin;
+    use aptos_framework::coin::{Self, BurnCapability, MintCapability};
     use aptos_framework::timestamp;
-     use std::type_info::{Self, TypeInfo};
+    use std::type_info::{Self, TypeInfo};
+    use aptos_framework::aptos_coin::{Self, AptosCoin};
     
     use bridge_root::oracle;
     use bridge_root::token_manager;
+    
 
     // events start ------------------------------------------------------------
 
@@ -561,14 +563,16 @@ module bridge_root::cross {
 
         assert!(param.srcTokenAccount == tokenScAddr, error::invalid_argument(ENO_INPUT_ERROR));
         
-        let fromTokenType = token_manager::get_token_type(param.tokenPairID);
+        let fromTokenType = token_manager::get_token_pair_type(param.tokenPairID);
         assert!(fromTokenType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
-        let left = param.value - contractFee;
-        let type = token_manager::get_token_pair_type(param.tokenPairID);
-        assert!(type == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
+        let account_addr = signer::address_of(account);
+        let cap: BurnCapability<CoinType>; //TODO: generate and get cap
+        coin::burn_from<CoinType>(account_addr, param.value, &cap);
 
-        coin::transfer<CoinType>(account, @bridge_root, left);
+        if (contractFee > 0) {
+            coin::transfer<AptosCoin>(account, @bridge_root, contractFee);
+        };
 
         let tokenAddr = type_info::account_address(&type_info::type_of<CoinType>());
 
@@ -578,7 +582,8 @@ module bridge_root::cross {
             tokenAccount: tokenAddr,
             value: param.value,
             contractFee: contractFee,
-            user
+            userAccount: param.destUserAccount,
+            fee: contractFee,
         });
     }
 }
