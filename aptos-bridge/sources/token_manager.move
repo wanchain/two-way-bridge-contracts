@@ -245,6 +245,11 @@ module bridge_root::token_manager {
         table::add<u64, u8>(&mut manager.tokenPairsType, id, type);
     }
 
+    public fun get_token_pair_type(id: u64): u8 acquires TokenManager {
+        let manager = borrow_global<TokenManager>(@bridge_root);
+        *table::borrow<u64, u8>(&manager.tokenPairsType, id)
+    }
+
     public entry fun destory(account: &signer) : TokenManager acquires TokenManager {
         let account_addr = signer::address_of(account);
         move_from<TokenManager>(account_addr)

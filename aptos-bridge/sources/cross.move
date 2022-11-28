@@ -27,13 +27,16 @@
 module bridge_root::cross {
     use std::signer;
     use std::error;
+    use std::bcs;
     use std::vector;
+    use aptos_std::from_bcs;
     use aptos_std::table;
     use aptos_std::simple_map;
     use aptos_std::event::{Self, EventHandle};
     use aptos_framework::account;
-    use aptos_framework::coin::{Self, Coin, MintCapability, FreezeCapability, BurnCapability};
+    use aptos_framework::coin;
     use aptos_framework::timestamp;
+     use std::type_info::{Self, TypeInfo};
     
     use bridge_root::oracle;
     use bridge_root::token_manager;
@@ -160,7 +163,7 @@ module bridge_root::cross {
         tokenPairID: u64,
         value: u64,
         tokenAccount: address,
-        userAccount: address,
+        userAccount: vector<u8>,
     }
 
     // event SmgMint(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
@@ -179,7 +182,7 @@ module bridge_root::cross {
         tokenPairID: u64,
         value: u64,
         tokenAccount: address,
-        userAccount: address,
+        userAccount: vector<u8>,
     }
     
     // event SmgRelease(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
@@ -207,8 +210,42 @@ module bridge_root::cross {
         value: u64,
         currentChainID: u64,
         tokenPairContractFee: u64,
-        destUserAccount: address,
+        destUserAccount: vector<u8>,
         smgFeeProxy: address,
+    }
+
+    struct RapiditySmgMintParams has store, drop {
+        uniqueID: address,               /// Rapidity random number
+        smgID: address,                   /// ID of storeman group which user has selected
+        tokenPairID: u64,                 /// token pair id on cross chain
+        value: u64,                       /// exchange token value
+        fee: u64,                         /// exchange token fee
+        destTokenAccount: address,         /// shadow token account
+        destUserAccount: address,          /// account of shadow chain, used to receive token
+        smgFeeProxy: address,             
+    }
+
+    struct RapidityUserBurnParams has store, drop {
+        smgID: address,                  /// ID of storeman group which user has selected
+        tokenPairID: u64,               /// token pair id on cross chain
+        value: u64,                  /// exchange token value
+        currentChainID: u64,            /// current chain ID
+        fee: u64,                       /// exchange token fee
+        tokenPairContractFee: u64,      /// fee of token pair
+        srcTokenAccount: address,        /// shadow token account
+        destUserAccount: vector<u8>,          /// account of token destination chain, used to receive token
+        smgFeeProxy: address,            
+    }
+
+    struct RapiditySmgReleaseParams has store, drop {
+        uniqueID: address,               /// Rapidity random number
+        smgID: address,                  /// ID of storeman group which user has selected
+        tokenPairID: u64,               /// token pair id on cross chain
+        value: u64,                     /// exchange token value
+        fee: u64,                       /// exchange token fee
+        destTokenAccount: address,       /// original token/coin account
+        destUserAccount: address,        /// account of token original chain, used to receive token
+        smgFeeProxy: address,            
     }
 
 
@@ -261,6 +298,9 @@ module bridge_root::cross {
     const ENO_CAPABILITIES: u64 = 1;
     const ENO_INPUT_ERROR: u64 = 2;
     const GROUP_STATUS_READY: u8 = 5;
+    const TOKEN_CROSS_TYPE_ERC20: u8 = 0;
+    const TOKEN_CROSS_TYPE_ERC721: u8 = 1;
+    const TOKEN_CROSS_TYPE_ERC1155: u8 = 2;
 
     fun init_module(sender: &signer) {
         let account_addr = signer::address_of(sender);
@@ -394,7 +434,7 @@ module bridge_root::cross {
         data.current_chain_id = chainID;
     }
 
-    public entry fun user_lock<CoinType>(account: &signer, smgID: address, tokenPairID: u64, value: u64, userAccount: address) acquires Cross {
+    public entry fun user_lock<CoinType>(account: &signer, smgID: address, tokenPairID: u64, value: u64, userAccount: vector<u8>) acquires Cross {
         not_halted();
         let data = borrow_global_mut<Cross>(@bridge_root);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
@@ -426,9 +466,7 @@ module bridge_root::cross {
         let (fromChainID, fromAccount, toChainID, toAccount) = token_manager::get_token_pair(param.tokenPairID);
         assert!(fromChainID != 0u64, error::invalid_argument(ENO_INPUT_ERROR));
         let contractFee = param.tokenPairContractFee;
-        let tokenScAddr;
-        if (fromChainID == param.currentChainID) {
-            tokenScAddr = fromAccount;
+        if (param.currentChainID == fromChainID) {
             if (contractFee == 0u64) {
                 let mapContractFee = &mut borrow_global_mut<Cross>(@bridge_root).data.mapContractFee;
                 let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, fromChainID, simple_map::create<u64, u64>());
@@ -436,8 +474,7 @@ module bridge_root::cross {
                     contractFee = *simple_map::borrow<u64, u64>(contractFeeMap, &toChainID);
                 };
             };
-        } else {
-            tokenScAddr = toAccount;
+        } else if (param.currentChainID == toChainID) {
             if (contractFee == 0u64) {
                 let mapContractFee = &mut borrow_global_mut<Cross>(@bridge_root).data.mapContractFee;
                 let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, toChainID, simple_map::create<u64, u64>());
@@ -445,13 +482,104 @@ module bridge_root::cross {
                     contractFee = *simple_map::borrow<u64, u64>(contractFeeMap, &fromChainID);
                 };
             };
+        } else {
+            assert!(false, error::invalid_argument(ENO_INPUT_ERROR));
         };
 
         if (contractFee > 0) {
             let feeAccount = borrow_global<Cross>(@bridge_root).smg_fee_proxy;
             coin::transfer<CoinType>(account, feeAccount, contractFee);
         };
+
+        let left = param.value - contractFee;
+        let type = token_manager::get_token_pair_type(param.tokenPairID);
+        assert!(type == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
+
+        coin::transfer<CoinType>(account, @bridge_root, left);
+
+        let tokenAddr = type_info::account_address(&type_info::type_of<CoinType>());
+
+        event::emit_event<UserLockLogger>(&mut borrow_global_mut<Cross>(@bridge_root).event_handler.user_lock_logger, UserLockLogger {
+            smgID: param.smgID,
+            tokenPairID: param.tokenPairID,
+            tokenAccount: tokenAddr,
+            value: param.value,
+            contractFee: contractFee,
+            userAccount: param.destUserAccount,
+        });
     }
 
+    public entry fun user_burn<CoinType>(account: &signer, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: vector<u8>) acquires Cross {
+        not_halted();
+        let data = borrow_global_mut<Cross>(@bridge_root);
+        let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
+        let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
+        let tokenAddr = type_info::account_address(&type_info::type_of<CoinType>());
+
+        let param = RapidityUserBurnParams {
+            smgID,                  
+            tokenPairID,           
+            value,                  
+            currentChainID: data.current_chain_id,           
+            fee,                       
+            tokenPairContractFee: *contractFee,      
+            srcTokenAccount: tokenAddr,        
+            destUserAccount: userAccount,          
+            smgFeeProxy: data.smg_fee_proxy, 
+        };
+
+        user_burn_internal<CoinType>(account, param);
+    }
+
+    fun user_burn_internal<CoinType>(account: &signer, param: RapidityUserBurnParams) acquires Cross {
+        let (fromChainID, fromTokenAccount, toChainID, toTokenAccount) = token_manager::get_token_pair(param.tokenPairID);
+        assert!(fromChainID != 0u64, error::invalid_argument(ENO_INPUT_ERROR));
+        let contractFee = param.tokenPairContractFee;
+
+        let tokenScAddr;
+        if (param.currentChainID == fromChainID) {
+            if (contractFee == 0u64) {
+                let mapContractFee = &mut borrow_global_mut<Cross>(@bridge_root).data.mapContractFee;
+                let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, fromChainID, simple_map::create<u64, u64>());
+                if (simple_map::contains_key<u64, u64>(contractFeeMap, &toChainID)) {
+                    contractFee = *simple_map::borrow<u64, u64>(contractFeeMap, &toChainID);
+                };
+            };
+            tokenScAddr = fromTokenAccount;
+        } else if (param.currentChainID == toChainID) {
+            if (contractFee == 0u64) {
+                let mapContractFee = &mut borrow_global_mut<Cross>(@bridge_root).data.mapContractFee;
+                let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, toChainID, simple_map::create<u64, u64>());
+                if (simple_map::contains_key<u64, u64>(contractFeeMap, &fromChainID)) {
+                    contractFee = *simple_map::borrow<u64, u64>(contractFeeMap, &fromChainID);
+                };
+            };
+            tokenScAddr = toTokenAccount;
+        } else {
+            assert!(false, error::invalid_argument(ENO_INPUT_ERROR));
+        };
+
+        assert!(param.srcTokenAccount == tokenScAddr, error::invalid_argument(ENO_INPUT_ERROR));
+        
+        let fromTokenType = token_manager::get_token_type(param.tokenPairID);
+        assert!(fromTokenType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
+
+        let left = param.value - contractFee;
+        let type = token_manager::get_token_pair_type(param.tokenPairID);
+        assert!(type == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
+
+        coin::transfer<CoinType>(account, @bridge_root, left);
+
+        let tokenAddr = type_info::account_address(&type_info::type_of<CoinType>());
+
+        event::emit_event<UserBurnLogger>(&mut borrow_global_mut<Cross>(@bridge_root).event_handler.user_burn_logger, UserBurnLogger {
+            smgID: param.smgID,
+            tokenPairID: param.tokenPairID,
+            tokenAccount: tokenAddr,
+            value: param.value,
+            contractFee: contractFee,
+            user
+        });
+    }
 }
 
