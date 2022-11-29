@@ -8,4 +8,3 @@ subdir = 'aptos-move/framework/aptos-framework'
 
 [addresses]
 BridgeDeployer = '0x1'
-ResourceAccountDeployer = '0x2'
