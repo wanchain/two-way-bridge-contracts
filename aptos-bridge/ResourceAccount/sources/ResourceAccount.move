@@ -35,4 +35,24 @@ module BridgeDeployer::ResourceAccount {
         let CapabilityStorage { signer_cap } = move_from<CapabilityStorage>(signer::address_of(admin));
         signer_cap
     }
+
+    #[test_only]
+    use aptos_framework::genesis;
+    #[test_only]
+    use aptos_framework::account::create_account_for_test;
+    #[test_only]
+    use std::debug;
+    #[test_only]
+    const TEST_ERROR:u64 = 10000;
+
+    // test resource account equal
+    #[test(deployer = @BridgeDeployer)]
+    public entry fun test_resource_account(deployer: &signer) {
+        genesis::setup();
+        create_account_for_test(signer::address_of(deployer));
+        let addr = account::create_resource_address(&signer::address_of(deployer), x"30");
+        debug::print<address>(&addr);
+        debug::print<address>(&@ResourceAccountDeployer);
+        assert!(addr == @ResourceAccountDeployer, TEST_ERROR);
+    }
 }

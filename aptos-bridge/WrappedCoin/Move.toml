@@ -7,4 +7,4 @@ rev = 'main'
 subdir = 'aptos-move/framework/aptos-framework'
 
 [addresses]
-ResourceAccountDeployer = '0x2'
+ResourceAccountDeployer = '0x6ee56eb2a8e83a89df13189a87e1b9ba1c45aaf150cfc9ebb7b0dcb90431b22b'
