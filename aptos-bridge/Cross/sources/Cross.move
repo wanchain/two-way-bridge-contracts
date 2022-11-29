@@ -538,7 +538,7 @@ module BridgeDeployer::Cross {
         assert!(fromChainID != 0u64, error::invalid_argument(ENO_INPUT_ERROR));
         let contractFee = param.tokenPairContractFee;
 
-        let tokenScAddr;
+        let tokenScAddr = @0x0;
         if (param.currentChainID == fromChainID) {
             if (contractFee == 0u64) {
                 let mapContractFee = &mut borrow_global_mut<Cross>(@BridgeDeployer).data.mapContractFee;
@@ -566,9 +566,10 @@ module BridgeDeployer::Cross {
         let fromTokenType = TokenManager::get_token_pair_type(param.tokenPairID);
         assert!(fromTokenType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
-        let account_addr = signer::address_of(account);
-        let cap: BurnCapability<CoinType>; //TODO: generate and get cap
-        coin::burn_from<CoinType>(account_addr, param.value, &cap);
+        // TODO: BURN
+        // let account_addr = signer::address_of(account);
+        // let cap: BurnCapability<CoinType>; //TODO: generate and get cap
+        // coin::burn_from<CoinType>(account_addr, param.value, &cap);
 
         if (contractFee > 0) {
             coin::transfer<AptosCoin>(account, @BridgeDeployer, contractFee);

@@ -257,25 +257,25 @@ module BridgeDeployer::TokenManager {
         move_from<TokenManager>(account_addr)
     }
 
-    public entry fun create_wrapped_coin(account: &signer, name: vector<u8>, symbol: vector<u8>, decimals: u8) acquires TokenManager {
-        // TODO:
-    }
+    // public entry fun create_wrapped_coin(account: &signer, name: vector<u8>, symbol: vector<u8>, decimals: u8) acquires TokenManager {
+    //     // TODO:
+    // }
 
-    public fun mint_wrapped_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
-        // TODO:
-    }
+    // public fun mint_wrapped_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
+    //     // TODO:
+    // }
 
-    public fun burn_wrapped_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
-        // TODO:
-    }
+    // public fun burn_wrapped_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
+    //     // TODO:
+    // }
 
-    public fun lock_coin<CoinType>(account: &signer, amount: u128) acquires TokenManager {
-        // TODO:
-    }
+    // public fun lock_coin<CoinType>(account: &signer, amount: u128) acquires TokenManager {
+    //     // TODO:
+    // }
 
-    public fun release_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
-        // TODO:
-    }
+    // public fun release_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
+    //     // TODO:
+    // }
 
     #[test_only]
     public fun initialize_for_test(tester: &signer) {
