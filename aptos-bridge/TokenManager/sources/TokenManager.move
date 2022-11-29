@@ -24,12 +24,14 @@
 //
 //
 
-module bridge_root::token_manager {
+module BridgeDeployer::TokenManager {
     use std::signer;
     use aptos_std::table;
     use std::error;
     use aptos_framework::account;
     use aptos_std::event::{Self, EventHandle};
+
+    // friend BridgeDeployer::Cross;
 
     struct AncestorInfo has store, drop, copy {
         account: address,
@@ -90,13 +92,13 @@ module bridge_root::token_manager {
 
     fun only_admin(account: &signer) acquires TokenManager {
         let account_addr = signer::address_of(account);
-        let data = borrow_global<TokenManager>(@bridge_root);
+        let data = borrow_global<TokenManager>(@BridgeDeployer);
         assert!(account_addr == data.admin, error::permission_denied(ENO_CAPABILITIES));
     }
 
     fun only_operator(account: &signer) acquires TokenManager {
         let account_addr = signer::address_of(account);
-        let data = borrow_global<TokenManager>(@bridge_root);
+        let data = borrow_global<TokenManager>(@BridgeDeployer);
         assert!(account_addr == data.operator, error::permission_denied(ENO_CAPABILITIES));
     }
 
@@ -115,7 +117,7 @@ module bridge_root::token_manager {
     ) acquires TokenManager {
         only_admin(account);
         
-        let manager = borrow_global_mut<TokenManager>(@bridge_root);
+        let manager = borrow_global_mut<TokenManager>(@BridgeDeployer);
 
         table::add<u64, TokenPairInfo>(&mut manager.tokenPairs, id, TokenPairInfo {
             aInfo: AncestorInfo {
@@ -166,7 +168,7 @@ module bridge_root::token_manager {
     ) acquires TokenManager {
         only_admin(account);
 
-        let manager = borrow_global_mut<TokenManager>(@bridge_root);
+        let manager = borrow_global_mut<TokenManager>(@BridgeDeployer);
 
         let val = table::borrow_mut<u64, TokenPairInfo>(&mut manager.tokenPairs, id);
         val.aInfo = AncestorInfo {
@@ -204,7 +206,7 @@ module bridge_root::token_manager {
     public entry fun remove_token_pair(account: &signer, id: u64) acquires TokenManager {
         only_admin(account);
 
-        let manager = borrow_global_mut<TokenManager>(@bridge_root);
+        let manager = borrow_global_mut<TokenManager>(@BridgeDeployer);
 
         let info = table::remove<u64, TokenPairInfo>(&mut manager.tokenPairs, id);
         
@@ -218,7 +220,7 @@ module bridge_root::token_manager {
 
     // returns: fromChainID, fromAccount, toChainID, toAccount
     public fun get_token_pair(id: u64): (u64, address, u64, address) acquires TokenManager {
-        let manager = borrow_global<TokenManager>(@bridge_root);
+        let manager = borrow_global<TokenManager>(@BridgeDeployer);
         let val = table::borrow<u64, TokenPairInfo>(&manager.tokenPairs, id);
         (val.fromChainID, val.fromAccount, val.toChainID, val.toAccount)
     }
@@ -226,33 +228,53 @@ module bridge_root::token_manager {
     public entry fun set_operator(account: &signer, op: address) acquires TokenManager {
         only_admin(account);
         
-        let manager = borrow_global_mut<TokenManager>(@bridge_root);
+        let manager = borrow_global_mut<TokenManager>(@BridgeDeployer);
         manager.operator = op;
     }
 
     public entry fun set_admin(account: &signer, admin: address) acquires TokenManager {
         only_admin(account);
         
-        let manager = borrow_global_mut<TokenManager>(@bridge_root);
+        let manager = borrow_global_mut<TokenManager>(@BridgeDeployer);
         manager.admin = admin;
     }
 
     public entry fun set_token_pair_type(account: &signer, id: u64, type: u8) acquires TokenManager {
         only_operator(account);
         
-        let manager = borrow_global_mut<TokenManager>(@bridge_root);
+        let manager = borrow_global_mut<TokenManager>(@BridgeDeployer);
 
         table::add<u64, u8>(&mut manager.tokenPairsType, id, type);
     }
 
     public fun get_token_pair_type(id: u64): u8 acquires TokenManager {
-        let manager = borrow_global<TokenManager>(@bridge_root);
+        let manager = borrow_global<TokenManager>(@BridgeDeployer);
         *table::borrow<u64, u8>(&manager.tokenPairsType, id)
     }
 
     public entry fun destory(account: &signer) : TokenManager acquires TokenManager {
         let account_addr = signer::address_of(account);
         move_from<TokenManager>(account_addr)
+    }
+
+    public entry fun create_wrapped_coin(account: &signer, name: vector<u8>, symbol: vector<u8>, decimals: u8) acquires TokenManager {
+        // TODO:
+    }
+
+    public fun mint_wrapped_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
+        // TODO:
+    }
+
+    public fun burn_wrapped_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
+        // TODO:
+    }
+
+    public fun lock_coin<CoinType>(account: &signer, amount: u128) acquires TokenManager {
+        // TODO:
+    }
+
+    public fun release_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
+        // TODO:
     }
 
     #[test_only]

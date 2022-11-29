@@ -1,0 +1,11 @@
+[package]
+name = 'TokenManager'
+version = '1.0.0'
+[dependencies.AptosFramework]
+git = 'https://github.com/aptos-labs/aptos-core.git'
+rev = 'main'
+subdir = 'aptos-move/framework/aptos-framework'
+
+[addresses]
+BridgeDeployer = '0x1'
+ResourceAccountDeployer = '0x2'

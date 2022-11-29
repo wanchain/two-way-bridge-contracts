@@ -24,7 +24,7 @@
 //
 //
 
-module bridge_root::cross {
+module BridgeDeployer::Cross {
     use std::signer;
     use std::error;
     use std::bcs;
@@ -39,8 +39,8 @@ module bridge_root::cross {
     use std::type_info::{Self, TypeInfo};
     use aptos_framework::aptos_coin::{Self, AptosCoin};
     
-    use bridge_root::oracle;
-    use bridge_root::token_manager;
+    use BridgeDeployer::Oracle;
+    use BridgeDeployer::TokenManager;
     
 
     // events start ------------------------------------------------------------
@@ -345,35 +345,35 @@ module bridge_root::cross {
 
     fun only_admin(account: &signer) acquires Cross {
         let account_addr = signer::address_of(account);
-        let data = borrow_global<Cross>(@bridge_root);
+        let data = borrow_global<Cross>(@BridgeDeployer);
         assert!((account_addr == data.admin) || (account_addr == data.owner), error::permission_denied(ENO_CAPABILITIES));
     }
 
     fun only_owner(account: &signer) acquires Cross {
         let account_addr = signer::address_of(account);
-        let data = borrow_global<Cross>(@bridge_root);
+        let data = borrow_global<Cross>(@BridgeDeployer);
         assert!(account_addr == data.owner, error::permission_denied(ENO_CAPABILITIES));
     }
 
     fun not_halted() acquires Cross {
-        let data = borrow_global<Cross>(@bridge_root);
+        let data = borrow_global<Cross>(@BridgeDeployer);
         assert!(!data.halted, error::permission_denied(ENO_CAPABILITIES));
     }
 
     fun only_ready_smg(smgID: address): bool {
-        let (status, startTime, endTime) = oracle::get_storeman_group_status(smgID);
+        let (status, startTime, endTime) = Oracle::get_storeman_group_status(smgID);
         status == GROUP_STATUS_READY && startTime <= timestamp::now_seconds() && timestamp::now_seconds() <= endTime
     }
 
     public entry fun set_halt(account: &signer, halt: bool) acquires Cross {
         only_owner(account);
-        let data = borrow_global_mut<Cross>(@bridge_root);
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
         data.halted = halt;
     }
 
     public entry fun set_admin(account: &signer, newAdmin: address) acquires Cross {
         only_owner(account);
-        let data = borrow_global_mut<Cross>(@bridge_root);
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
         data.admin = newAdmin;
         event::emit_event<SetAdmin>(&mut data.event_handler.set_admin, SetAdmin{
             adminAccount: newAdmin,
@@ -382,14 +382,14 @@ module bridge_root::cross {
 
     public entry fun set_owner(account: &signer, newOwner: address) acquires Cross {
         only_owner(account);
-        let data = borrow_global_mut<Cross>(@bridge_root);
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
         data.owner = newOwner;
     }
 
     public entry fun set_fee(account: &signer, srcChainID: u64, destChainID: u64, contractFee: u64, agentFee: u64) acquires Cross {
         only_admin(account);
         not_halted();
-        let data = borrow_global_mut<Cross>(@bridge_root);
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapContractFee = &mut data.data.mapContractFee;
         let mapAgentFee = &mut data.data.mapAgentFee;
         let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, srcChainID, simple_map::create<u64, u64>());
@@ -419,7 +419,7 @@ module bridge_root::cross {
     public entry fun set_token_pair_fee(account: &signer, tokenPairID: u64, contractFee: u64) acquires Cross {
         only_admin(account);
         not_halted();
-        let data = borrow_global_mut<Cross>(@bridge_root);
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         table::upsert<u64, u64>(mapTokenPairContractFee, tokenPairID, contractFee);
 
@@ -432,13 +432,13 @@ module bridge_root::cross {
     public entry fun set_chain_id(account: &signer, chainID: u64) acquires Cross {
         only_admin(account);
         not_halted();
-        let data = borrow_global_mut<Cross>(@bridge_root);
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
         data.current_chain_id = chainID;
     }
 
     public entry fun user_lock<CoinType>(account: &signer, smgID: address, tokenPairID: u64, value: u64, userAccount: vector<u8>) acquires Cross {
         not_halted();
-        let data = borrow_global_mut<Cross>(@bridge_root);
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
         let param = RapidityUserLockParams {
@@ -465,12 +465,12 @@ module bridge_root::cross {
     }
 
     fun user_lock_internal<CoinType>(account: &signer, param: RapidityUserLockParams) acquires Cross {
-        let (fromChainID, fromAccount, toChainID, toAccount) = token_manager::get_token_pair(param.tokenPairID);
+        let (fromChainID, fromAccount, toChainID, toAccount) = TokenManager::get_token_pair(param.tokenPairID);
         assert!(fromChainID != 0u64, error::invalid_argument(ENO_INPUT_ERROR));
         let contractFee = param.tokenPairContractFee;
         if (param.currentChainID == fromChainID) {
             if (contractFee == 0u64) {
-                let mapContractFee = &mut borrow_global_mut<Cross>(@bridge_root).data.mapContractFee;
+                let mapContractFee = &mut borrow_global_mut<Cross>(@BridgeDeployer).data.mapContractFee;
                 let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, fromChainID, simple_map::create<u64, u64>());
                 if (simple_map::contains_key<u64, u64>(contractFeeMap, &toChainID)) {
                     contractFee = *simple_map::borrow<u64, u64>(contractFeeMap, &toChainID);
@@ -478,7 +478,7 @@ module bridge_root::cross {
             };
         } else if (param.currentChainID == toChainID) {
             if (contractFee == 0u64) {
-                let mapContractFee = &mut borrow_global_mut<Cross>(@bridge_root).data.mapContractFee;
+                let mapContractFee = &mut borrow_global_mut<Cross>(@BridgeDeployer).data.mapContractFee;
                 let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, toChainID, simple_map::create<u64, u64>());
                 if (simple_map::contains_key<u64, u64>(contractFeeMap, &fromChainID)) {
                     contractFee = *simple_map::borrow<u64, u64>(contractFeeMap, &fromChainID);
@@ -489,19 +489,19 @@ module bridge_root::cross {
         };
 
         if (contractFee > 0) {
-            let feeAccount = borrow_global<Cross>(@bridge_root).smg_fee_proxy;
+            let feeAccount = borrow_global<Cross>(@BridgeDeployer).smg_fee_proxy;
             coin::transfer<CoinType>(account, feeAccount, contractFee);
         };
 
         let left = param.value - contractFee;
-        let type = token_manager::get_token_pair_type(param.tokenPairID);
+        let type = TokenManager::get_token_pair_type(param.tokenPairID);
         assert!(type == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
-        coin::transfer<CoinType>(account, @bridge_root, left);
+        coin::transfer<CoinType>(account, @BridgeDeployer, left);
 
         let tokenAddr = type_info::account_address(&type_info::type_of<CoinType>());
 
-        event::emit_event<UserLockLogger>(&mut borrow_global_mut<Cross>(@bridge_root).event_handler.user_lock_logger, UserLockLogger {
+        event::emit_event<UserLockLogger>(&mut borrow_global_mut<Cross>(@BridgeDeployer).event_handler.user_lock_logger, UserLockLogger {
             smgID: param.smgID,
             tokenPairID: param.tokenPairID,
             tokenAccount: tokenAddr,
@@ -513,7 +513,7 @@ module bridge_root::cross {
 
     public entry fun user_burn<CoinType>(account: &signer, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: vector<u8>) acquires Cross {
         not_halted();
-        let data = borrow_global_mut<Cross>(@bridge_root);
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
         let tokenAddr = type_info::account_address(&type_info::type_of<CoinType>());
@@ -534,14 +534,14 @@ module bridge_root::cross {
     }
 
     fun user_burn_internal<CoinType>(account: &signer, param: RapidityUserBurnParams) acquires Cross {
-        let (fromChainID, fromTokenAccount, toChainID, toTokenAccount) = token_manager::get_token_pair(param.tokenPairID);
+        let (fromChainID, fromTokenAccount, toChainID, toTokenAccount) = TokenManager::get_token_pair(param.tokenPairID);
         assert!(fromChainID != 0u64, error::invalid_argument(ENO_INPUT_ERROR));
         let contractFee = param.tokenPairContractFee;
 
         let tokenScAddr;
         if (param.currentChainID == fromChainID) {
             if (contractFee == 0u64) {
-                let mapContractFee = &mut borrow_global_mut<Cross>(@bridge_root).data.mapContractFee;
+                let mapContractFee = &mut borrow_global_mut<Cross>(@BridgeDeployer).data.mapContractFee;
                 let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, fromChainID, simple_map::create<u64, u64>());
                 if (simple_map::contains_key<u64, u64>(contractFeeMap, &toChainID)) {
                     contractFee = *simple_map::borrow<u64, u64>(contractFeeMap, &toChainID);
@@ -550,7 +550,7 @@ module bridge_root::cross {
             tokenScAddr = fromTokenAccount;
         } else if (param.currentChainID == toChainID) {
             if (contractFee == 0u64) {
-                let mapContractFee = &mut borrow_global_mut<Cross>(@bridge_root).data.mapContractFee;
+                let mapContractFee = &mut borrow_global_mut<Cross>(@BridgeDeployer).data.mapContractFee;
                 let contractFeeMap = table::borrow_mut_with_default<u64, simple_map::SimpleMap<u64, u64>>(mapContractFee, toChainID, simple_map::create<u64, u64>());
                 if (simple_map::contains_key<u64, u64>(contractFeeMap, &fromChainID)) {
                     contractFee = *simple_map::borrow<u64, u64>(contractFeeMap, &fromChainID);
@@ -563,7 +563,7 @@ module bridge_root::cross {
 
         assert!(param.srcTokenAccount == tokenScAddr, error::invalid_argument(ENO_INPUT_ERROR));
         
-        let fromTokenType = token_manager::get_token_pair_type(param.tokenPairID);
+        let fromTokenType = TokenManager::get_token_pair_type(param.tokenPairID);
         assert!(fromTokenType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
         let account_addr = signer::address_of(account);
@@ -571,12 +571,12 @@ module bridge_root::cross {
         coin::burn_from<CoinType>(account_addr, param.value, &cap);
 
         if (contractFee > 0) {
-            coin::transfer<AptosCoin>(account, @bridge_root, contractFee);
+            coin::transfer<AptosCoin>(account, @BridgeDeployer, contractFee);
         };
 
         let tokenAddr = type_info::account_address(&type_info::type_of<CoinType>());
 
-        event::emit_event<UserBurnLogger>(&mut borrow_global_mut<Cross>(@bridge_root).event_handler.user_burn_logger, UserBurnLogger {
+        event::emit_event<UserBurnLogger>(&mut borrow_global_mut<Cross>(@BridgeDeployer).event_handler.user_burn_logger, UserBurnLogger {
             smgID: param.smgID,
             tokenPairID: param.tokenPairID,
             tokenAccount: tokenAddr,
