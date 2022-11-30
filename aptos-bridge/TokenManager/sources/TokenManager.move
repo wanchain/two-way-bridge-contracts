@@ -29,9 +29,13 @@ module BridgeDeployer::TokenManager {
     use aptos_std::table;
     use std::error;
     use aptos_framework::account;
+    use aptos_framework::coin::{MintCapability, FreezeCapability, BurnCapability}
     use aptos_std::event::{Self, EventHandle};
+    
+    use BridgeDeployer::WrappedCoin;
+    use BridgeDeployer::ResourceAccount;
 
-    // friend BridgeDeployer::Cross;
+    friend BridgeDeployer::Cross;
 
     struct AncestorInfo has store, drop, copy {
         account: address,
@@ -62,6 +66,18 @@ module BridgeDeployer::TokenManager {
         remove_token_pair_events: EventHandle<RemoveTokenPairEvent>,
     }
 
+    // save into resource_account
+    struct AdminData has key {
+        signer_cap: SignerCapability,
+    }
+
+    // save into resource_account
+    struct WrappedInfo<phantom CoinType> has key {
+        mint_cap: MintCapability<WrappedCoin<CoinType>>,
+        freeze_cap: FreezeCapability<WrappedCoin<CoinType>>,
+        burn_cap: BurnCapability<WrappedCoin<CoinType>>,
+    }
+
     struct AddTokenPairEvent has drop, store {
         info: TokenPairInfo,
     }
@@ -73,6 +89,11 @@ module BridgeDeployer::TokenManager {
     struct RemoveTokenPairEvent has drop, store {
         info: TokenPairInfo,
     }
+
+    const DEPLOYER_ADDRESS: address = @BridgeDeployer;
+    const RESOURCE_ACCOUNT_ADDRESS: address = @ResourceAccountDeployer;
+
+    const ERR_WRAPPED_COIN_ALREADY_EXIST: u64 = 1;
 
     fun init_module(sender: &signer) {
         let account_addr = signer::address_of(sender);
@@ -88,6 +109,11 @@ module BridgeDeployer::TokenManager {
                 remove_token_pair_events: account::new_event_handle<RemoveTokenPairEvent>(sender),
             },
         );
+
+        // transfer back signer_cap to resource address
+        let signer_cap = ResourceAccount::retrieve_signer_cap(sender);
+        let resource_account = &account::create_signer_with_capability(&signer_cap);
+        move_to(resource_account, AdminData { signer_cap });
     }
 
     fun only_admin(account: &signer) acquires TokenManager {
@@ -252,9 +278,37 @@ module BridgeDeployer::TokenManager {
         *table::borrow<u64, u8>(&manager.tokenPairsType, id)
     }
 
-    public entry fun destory(account: &signer) : TokenManager acquires TokenManager {
+    // public entry fun destory(account: &signer) : TokenManager acquires TokenManager {
+    //     let account_addr = signer::address_of(account);
+    //     move_from<TokenManager>(account_addr)
+    // }
+
+    // register coin if not registered
+    public fun register_coin<CoinType>(
+        account: &signer
+    ) {
         let account_addr = signer::address_of(account);
-        move_from<TokenManager>(account_addr)
+        if (!coin::is_account_registered<CoinType>(account_addr)) {
+            coin::register<CoinType>(account);
+        };
+    }
+
+    /// return pair admin account signer
+    fun get_resource_account_signer(): signer acquires AdminData {
+        let signer_cap = &borrow_global<AdminData>(RESOURCE_ACCOUNT_ADDRESS).signer_cap;
+        account::create_signer_with_capability(signer_cap)
+    }
+
+    public entry fun create_wrapped_coin<CoinType>(account: &signer, name: vector<u8>, symbol: vector<u8>) acquires AdminData {
+        assert!(!exists<WrappedInfo<CoinType>>(RESOURCE_ACCOUNT_ADDRESS), ERR_WRAPPED_COIN_ALREADY_EXIST);
+        let resource_account_signer = get_resource_account_signer();
+        let (lp_b, lp_f, lp_m) = coin::initialize<WrappedCoin<CoinType>>(&resource_account_signer, name, symbol, 8, true);
+        register_coin<WrappedCoin<CoinType>>(&resource_account_signer);
+        move_to<WrappedInfo<CoinType>>(account, WrappedInfo<CoinType> {
+            burn_cap: lp_b,
+            freeze_cap: lp_f,
+            mint_cap: lp_m,
+        });
     }
 
     // public entry fun create_wrapped_coin(account: &signer, name: vector<u8>, symbol: vector<u8>, decimals: u8) acquires TokenManager {
@@ -269,13 +323,16 @@ module BridgeDeployer::TokenManager {
     //     // TODO:
     // }
 
-    // public fun lock_coin<CoinType>(account: &signer, amount: u128) acquires TokenManager {
-    //     // TODO:
-    // }
+    public(friend) fun lock_coin<CoinType>(account: &signer, amount: u64) acquires TokenManager {
+        // TODO: register with resource_account signer capability
+        // register_coin<CoinType>(@ResourceAccountDeployer);
+        coin::transfer<CoinType>(account, RESOURCE_ACCOUNT_ADDRESS, amount);
+    }
 
-    // public fun release_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
-    //     // TODO:
-    // }
+    public(friend) fun release_coin<CoinType>(account: &signer, to: address, amount: u128) acquires TokenManager {
+        // need to register by user first
+        // TODO:
+    }
 
     #[test_only]
     public fun initialize_for_test(tester: &signer) {

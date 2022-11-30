@@ -454,15 +454,15 @@ module BridgeDeployer::Cross {
         user_lock_internal<CoinType>(account, param);
     }
 
-    // register coin if not registered
-    public fun register_coin<CoinType>(
-        account: &signer
-    ) {
-        let account_addr = signer::address_of(account);
-        if (!coin::is_account_registered<CoinType>(account_addr)) {
-            coin::register<CoinType>(account);
-        };
-    }
+    // // register coin if not registered
+    // public fun register_coin<CoinType>(
+    //     account: &signer
+    // ) {
+    //     let account_addr = signer::address_of(account);
+    //     if (!coin::is_account_registered<CoinType>(account_addr)) {
+    //         coin::register<CoinType>(account);
+    //     };
+    // }
 
     fun user_lock_internal<CoinType>(account: &signer, param: RapidityUserLockParams) acquires Cross {
         let (fromChainID, fromAccount, toChainID, toAccount) = TokenManager::get_token_pair(param.tokenPairID);
