@@ -1,3 +1,3 @@
 module ResourceAccountDeployer::WrappedCoin {
-    struct WrappedCoin<phantom CoinType> {}
+    struct WrappedCoin<phantom CoinBase> {}
 }
