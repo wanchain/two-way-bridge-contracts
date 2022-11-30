@@ -1,6 +1,7 @@
 const {getWeb3, stringToBytes, newContract} = require('../utils');
 const {assert} = require('chai');
 const Ed25519Curve = artifacts.require('./lib/Ed25519Curve.sol');
+const TestEd25519 = artifacts.require('./lib/TestEd25519.sol');
 const crypto = require('crypto');
 
 contract('Ed25519Curve', () => {
@@ -8,6 +9,7 @@ contract('Ed25519Curve', () => {
     let web3;
     before(async () => {
         ed25519Curve = await newContract(Ed25519Curve);
+	console.log("ed25519Curve",ed25519Curve)
         web3 = getWeb3();
     });
 
@@ -99,6 +101,20 @@ contract('Ed25519Curve', () => {
 
 
     });
+
+    it("mulG 1 [ok]", async ()=> {
+	let testEd25519= await newContract(TestEd25519);
+        let x = "0x006de777a0755c7032f3a6a6d0107c23de27d89289769209211d99bf025b20bf";
+        let x1 = "0x7b9e0bbbe2c95e505a9eaf8de693e6306415724606122e49370230872f92a3ee";
+        let y1 = "0x04d351b07ee453434018da5544f93ad524db9495bb6ddf8f154f7df2b2db9c05";
+        let ret = await  testEd25519.methods.setCurve(ed25519Curve.options.address).send({from:"0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e"});
+	console.log("address",ed25519Curve.options.address)
+	console.log("ret",ret);
+	console.log("testEd25519",testEd25519);
+        ret = await  testEd25519.methods.mulG(x).send({from:"0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e"});
+	console.log("ret1",ret);
+
+	});
 
 
     it("calPolyCommit [ok]", async () => {
