@@ -29,10 +29,13 @@ module BridgeDeployer::Cross {
     use std::error;
     use std::bcs;
     use std::vector;
+    use std::string;
+    use std::hash;
     use aptos_std::from_bcs;
     use aptos_std::table;
     use aptos_std::simple_map;
     use aptos_std::event::{Self, EventHandle};
+    use aptos_std::ed25519;
     use aptos_framework::account;
     use aptos_framework::coin::{Self, BurnCapability, MintCapability};
     use aptos_framework::timestamp;
@@ -105,7 +108,7 @@ module BridgeDeployer::Cross {
     struct UserLockNFT has drop, store {
         smgID: address,
         tokenPairID: u64,
-        tokenAccount: address,
+        tokenAccount: vector<u8>,
         keys: vector<u8>,
         values: vector<u8>,
     }
@@ -114,7 +117,7 @@ module BridgeDeployer::Cross {
     struct UserBurnNFT has drop, store {
         smgID: address,
         tokenPairID: u64,
-        tokenAccount: address,
+        tokenAccount: vector<u8>,
         keys: vector<u8>,
         values: vector<u8>,
     }
@@ -141,7 +144,7 @@ module BridgeDeployer::Cross {
     struct UserLockLogger has drop, store {
         smgID: address,
         tokenPairID: u64,
-        tokenAccount: address,
+        tokenAccount: vector<u8>,
         value: u64,
         contractFee: u64,
         userAccount: vector<u8>,
@@ -151,7 +154,7 @@ module BridgeDeployer::Cross {
     struct UserBurnLogger has drop, store {
         smgID: address,
         tokenPairID: u64,
-        tokenAccount: address,
+        tokenAccount: vector<u8>,
         value: u64,
         contractFee: u64,
         fee: u64,
@@ -164,7 +167,7 @@ module BridgeDeployer::Cross {
         smgID: address,
         tokenPairID: u64,
         value: u64,
-        tokenAccount: address,
+        tokenAccount: vector<u8>,
         userAccount: vector<u8>,
     }
 
@@ -183,7 +186,7 @@ module BridgeDeployer::Cross {
         smgID: address,
         tokenPairID: u64,
         value: u64,
-        tokenAccount: address,
+        tokenAccount: vector<u8>,
         userAccount: vector<u8>,
     }
     
@@ -222,9 +225,19 @@ module BridgeDeployer::Cross {
         tokenPairID: u64,                 /// token pair id on cross chain
         value: u64,                       /// exchange token value
         fee: u64,                         /// exchange token fee
-        destTokenAccount: address,         /// shadow token account
+        destTokenAccount: vector<u8>,         /// shadow token account
         destUserAccount: address,          /// account of shadow chain, used to receive token
         smgFeeProxy: address,             
+    }
+
+    struct SmgSignatureData has store, drop {
+        currentChainID: u64,
+        uniqueID: address,
+        tokenPairID: u64,
+        value: u64,
+        fee: u64,
+        tokenAccount: vector<u8>,
+        userAccount: address,
     }
 
     struct RapidityUserBurnParams has store, drop {
@@ -360,8 +373,8 @@ module BridgeDeployer::Cross {
         assert!(!data.halted, error::permission_denied(ENO_CAPABILITIES));
     }
 
-    fun only_ready_smg(smgID: address): bool {
-        let (status, startTime, endTime) = Oracle::get_storeman_group_status(smgID);
+    fun only_ready_smg(smgID: &address): bool {
+        let (status, startTime, endTime) = Oracle::get_storeman_group_status(*smgID);
         status == GROUP_STATUS_READY && startTime <= timestamp::now_seconds() && timestamp::now_seconds() <= endTime
     }
 
@@ -454,16 +467,6 @@ module BridgeDeployer::Cross {
         user_lock_internal<CoinType>(account, param);
     }
 
-    // // register coin if not registered
-    // public fun register_coin<CoinType>(
-    //     account: &signer
-    // ) {
-    //     let account_addr = signer::address_of(account);
-    //     if (!coin::is_account_registered<CoinType>(account_addr)) {
-    //         coin::register<CoinType>(account);
-    //     };
-    // }
-
     fun user_lock_internal<CoinType>(account: &signer, param: RapidityUserLockParams) acquires Cross {
         let (fromChainID, _, toChainID, _) = TokenManager::get_token_pair(param.tokenPairID);
         assert!(fromChainID != 0u64, error::invalid_argument(ENO_INPUT_ERROR));
@@ -497,9 +500,9 @@ module BridgeDeployer::Cross {
         let type = TokenManager::get_token_pair_type(param.tokenPairID);
         assert!(type == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
-        coin::transfer<CoinType>(account, @BridgeDeployer, left);
+        TokenManager::lock_coin<CoinType>(account, left);
 
-        let tokenAddr = type_info::account_address(&type_info::type_of<CoinType>());
+        let tokenAddr = string::bytes(&type_info::type_name<CoinType>());
 
         event::emit_event<UserLockLogger>(&mut borrow_global_mut<Cross>(@BridgeDeployer).event_handler.user_lock_logger, UserLockLogger {
             smgID: param.smgID,
@@ -566,7 +569,6 @@ module BridgeDeployer::Cross {
         let fromTokenType = TokenManager::get_token_pair_type(param.tokenPairID);
         assert!(fromTokenType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
-        // TODO: check BURN value
         TokenManager::burn_wrapped_coin<CoinType>(account, param.value);
 
         if (contractFee > 0) {
@@ -585,5 +587,49 @@ module BridgeDeployer::Cross {
             fee: contractFee,
         });
     }
+
+    public entry fun smg_mint<CoinType>(uniqueID: address, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: address, signature: vector<u8>) acquires Cross {
+        not_halted();
+        only_ready_smg(&smgID);
+
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
+        let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
+        let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
+        let tokenAddr = type_info::bytes(&type_info::type_name<CoinType>());
+        let pk = Oracle::get_storeman_group_pk(*&smgID);
+
+
+        let param = RapiditySmgMintParams {
+            uniqueID,                  
+            smgID,                  
+            tokenPairID,           
+            value,                  
+            fee,     
+            destTokenAccount: tokenAddr,                 
+            destUserAccount: userAccount,          
+            smgFeeProxy: data.smg_fee_proxy, 
+        };
+
+        smg_mint_internal<CoinType>(&param);
+
+        let sigData = bcs::to_bytes(&SmgSignatureData{
+            currentChainID: data.current_chain_id,
+            uniqueID: param.uniqueID,
+            tokenPairID: param.tokenPairID,
+            value: param.value,
+            fee: param.fee,
+            tokenAccount: param.destTokenAccount,
+            userAccount: param.destUserAccount,
+        });
+
+        let mHash = hash::sha2_256<SmgSignatureData>(&sigData);
+        let result = ed25519::signature_verify_strict(&ed25519::new_signature_from_bytes(signature), &ed25519::new_unvalidated_public_key_from_bytes(pk), mHash);
+        assert!(result, error::invalid_argument(ENO_INPUT_ERROR));
+    }
+
+    fun smg_mint_internal<CoinType>(param: &RapiditySmgMintParams) acquires Cross {
+        
+    }
+
 }
 

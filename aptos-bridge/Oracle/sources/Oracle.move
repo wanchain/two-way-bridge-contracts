@@ -265,9 +265,10 @@ module BridgeDeployer::Oracle {
         table::borrow<address, StoremanGroupConfig>(&data.mapStoremanGroupConfig, smgID).deposit
     }
 
-    public fun get_storeman_group_config(smgID: address): StoremanGroupConfig acquires Oracle {
+    public fun get_storeman_group_pk(smgID: address): vector<u8> acquires Oracle {
         let data = borrow_global<Oracle>(@BridgeDeployer);
-        *table::borrow<address, StoremanGroupConfig>(&data.mapStoremanGroupConfig, smgID)
+        let config = table::borrow<address, StoremanGroupConfig>(&data.mapStoremanGroupConfig, smgID);
+        config.gpk1
     }
 
     public fun get_storeman_group_status(smgID: address): (u8, u64, u64) acquires Oracle {

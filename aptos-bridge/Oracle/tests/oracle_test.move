@@ -48,8 +48,8 @@ module BridgeDeployer::oracle_test {
             87654321,
         );
 
-        let config = Oracle::get_storeman_group_config(@0x1);
-        debug::print<Oracle::StoremanGroupConfig>(&config);
+        // let config = Oracle::get_storeman_group_config(@0x1);
+        // debug::print<Oracle::StoremanGroupConfig>(&config);
 
         Oracle::update_deposit(&account, @0x1, 100);
         assert!(Oracle::get_deposit(@0x1) == 100, 3);
