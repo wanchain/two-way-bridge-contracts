@@ -48,9 +48,9 @@ module BridgeDeployer::TokenManager {
     struct TokenPairInfo has store, drop, copy {
         aInfo: AncestorInfo,
         fromChainID: u64,
-        fromAccount: address,
+        fromAccount: vector<u8>,
         toChainID: u64,
-        toAccount: address,
+        toAccount: vector<u8>,
     }
 
     /// Account has no capabilities (admin/burn/mint).
@@ -138,9 +138,9 @@ module BridgeDeployer::TokenManager {
         ancestor_decimals: u8,
         ancestor_chainID: u64, 
         fromChainID: u64, 
-        fromAccount: address, 
+        fromAccount: vector<u8>, 
         toChainID: u64, 
-        toAccount: address
+        toAccount: vector<u8>
     ) acquires TokenManager {
         only_admin(account);
         
@@ -189,9 +189,9 @@ module BridgeDeployer::TokenManager {
         ancestor_decimals: u8,
         ancestor_chainID: u64, 
         fromChainID: u64, 
-        fromAccount: address, 
+        fromAccount: vector<u8>, 
         toChainID: u64, 
-        toAccount: address
+        toAccount: vector<u8>
     ) acquires TokenManager {
         only_admin(account);
 
@@ -246,7 +246,7 @@ module BridgeDeployer::TokenManager {
     }
 
     // returns: fromChainID, fromAccount, toChainID, toAccount
-    public fun get_token_pair(id: u64): (u64, address, u64, address) acquires TokenManager {
+    public fun get_token_pair(id: u64): (u64, vector<u8>, u64, vector<u8>) acquires TokenManager {
         let manager = borrow_global<TokenManager>(@BridgeDeployer);
         let val = table::borrow<u64, TokenPairInfo>(&manager.tokenPairs, id);
         (val.fromChainID, val.fromAccount, val.toChainID, val.toAccount)
@@ -314,7 +314,7 @@ module BridgeDeployer::TokenManager {
         coin::deposit<CoinType>(to, coin);
     }
 
-    public(friend) fun burn_wrapped_coin<CoinType>(account: &signer, to: address, amount: u64) acquires TokenManager {
+    public(friend) fun burn_wrapped_coin<CoinType>(account: &signer, amount: u64) acquires TokenManager {
         let resource_account_signer = get_resource_account_signer();
         let caps = borrow_global<WrappedInfo<CoinType>>(RESOURCE_ACCOUNT_ADDRESS);
         let account_addr = signer::address_of(account);

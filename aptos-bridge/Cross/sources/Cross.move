@@ -234,7 +234,7 @@ module BridgeDeployer::Cross {
         currentChainID: u64,            /// current chain ID
         fee: u64,                       /// exchange token fee
         tokenPairContractFee: u64,      /// fee of token pair
-        srcTokenAccount: address,        /// shadow token account
+        srcTokenAccount: vector<u8>,        /// shadow token account
         destUserAccount: vector<u8>,          /// account of token destination chain, used to receive token
         smgFeeProxy: address,            
     }
@@ -465,7 +465,7 @@ module BridgeDeployer::Cross {
     // }
 
     fun user_lock_internal<CoinType>(account: &signer, param: RapidityUserLockParams) acquires Cross {
-        let (fromChainID, fromAccount, toChainID, toAccount) = TokenManager::get_token_pair(param.tokenPairID);
+        let (fromChainID, _, toChainID, _) = TokenManager::get_token_pair(param.tokenPairID);
         assert!(fromChainID != 0u64, error::invalid_argument(ENO_INPUT_ERROR));
         let contractFee = param.tokenPairContractFee;
         if (param.currentChainID == fromChainID) {
@@ -516,7 +516,7 @@ module BridgeDeployer::Cross {
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
-        let tokenAddr = type_info::account_address(&type_info::type_of<CoinType>());
+        let tokenAddr = type_info::bytes(&type_info::type_name<CoinType>());
 
         let param = RapidityUserBurnParams {
             smgID,                  
@@ -538,7 +538,7 @@ module BridgeDeployer::Cross {
         assert!(fromChainID != 0u64, error::invalid_argument(ENO_INPUT_ERROR));
         let contractFee = param.tokenPairContractFee;
 
-        let tokenScAddr = @0x0;
+        let tokenScAddr: vector<u8> = vector::empty();
         if (param.currentChainID == fromChainID) {
             if (contractFee == 0u64) {
                 let mapContractFee = &mut borrow_global_mut<Cross>(@BridgeDeployer).data.mapContractFee;
@@ -566,10 +566,8 @@ module BridgeDeployer::Cross {
         let fromTokenType = TokenManager::get_token_pair_type(param.tokenPairID);
         assert!(fromTokenType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
-        // TODO: BURN
-        // let account_addr = signer::address_of(account);
-        // let cap: BurnCapability<CoinType>; //TODO: generate and get cap
-        // coin::burn_from<CoinType>(account_addr, param.value, &cap);
+        // TODO: check BURN value
+        TokenManager::burn_wrapped_coin<CoinType>(account, param.value);
 
         if (contractFee > 0) {
             coin::transfer<AptosCoin>(account, @BridgeDeployer, contractFee);
