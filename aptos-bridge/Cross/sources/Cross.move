@@ -672,5 +672,88 @@ module BridgeDeployer::Cross {
         });
     }
 
+    public entry fun smg_release<CoinType>(account: &signer, uniqueID: address, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: address, signature: vector<u8>) acquires Cross {
+        not_halted();
+        only_ready_smg(&smgID);
+
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
+        let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
+        let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
+        let tokenAddr = type_info::bytes(&type_info::type_name<CoinType>());
+        let pk = Oracle::get_storeman_group_pk(*&smgID);
+
+        let param = RapiditySmgReleaseParams {
+            uniqueID,                  
+            smgID,                  
+            tokenPairID,           
+            value,                  
+            fee,     
+            destTokenAccount: tokenAddr,                 
+            destUserAccount: userAccount,          
+            smgFeeProxy: data.smg_fee_proxy, 
+        };
+
+        smg_release_internal<CoinType>(account, &param);
+
+        let sigData = bcs::to_bytes(&SmgSignatureData{
+            currentChainID: data.current_chain_id,
+            uniqueID: param.uniqueID,
+            tokenPairID: param.tokenPairID,
+            value: param.value,
+            fee: param.fee,
+            tokenAccount: param.destTokenAccount,
+            userAccount: param.destUserAccount,
+        });
+
+        let mHash = hash::sha2_256<SmgSignatureData>(&sigData);
+        let result = ed25519::signature_verify_strict(&ed25519::new_signature_from_bytes(signature), &ed25519::new_unvalidated_public_key_from_bytes(pk), mHash);
+        assert!(result, error::invalid_argument(ENO_INPUT_ERROR));
+    }
+
+    fun smg_release_internal<CoinType>(account: &signer, param: &RapiditySmgReleaseParams) acquires Cross {
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
+        assert!(!table::contains<address, u8>(&data.data.mapTxStatus, &param.uniqueID), error::invalid_argument(ENO_INPUT_ERROR));
+        table::insert<address, u8>(&mut data.data.mapTxStatus, &param.uniqueID, TX_STATUS_CLAIMED);
+
+        let tokenCrossType = TokenManager::get_token_pair_type(param.tokenPairID);
+        assert!(tokenCrossType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
+
+        if (param.fee > 0) {
+            TokenManager::release_coin<CoinType>(account, param.smgFeeProxy, param.fee);
+        }
+
+        TokenManager::release_coin<CoinType>(account, param.destUserAccount, param.value);
+
+        let keys = vector.empty();
+        let values = vector.empty();
+
+        vector::push_back(&mut keys, b"value:u64");
+        vector::push_back(&mut keys, b"tokenAccount:TypeInfo");
+        vector::push_back(&mut keys, b"userAccount:address");
+        vector::push_back(&mut keys, b"fee:u64");
+
+        vector::push_back(&mut values, bcs::to_bytes(&param.value));
+        vector::push_back(&mut values, bcs::to_bytes(&param.destTokenAccount));
+        vector::push_back(&mut values, bcs::to_bytes(&param.destUserAccount));
+        vector::push_back(&mut values, bcs::to_bytes(&param.fee));
+
+        event::emit_event<SmgRelease>(&mut data.event_handler.smg_release, SmgRelease {
+            uniqueID: param.uniqueID,
+            smgID: param.smgID,
+            tokenPairID: param.tokenPairID,
+            keys: keys,
+            values: values,
+        });
+
+        event::emit_event<SmgReleaseLogger>(&mut data.event_handler.smg_release_logger, SmgReleaseLogger {
+            uniqueID: param.uniqueID,
+            smgID: param.smgID,
+            tokenPairID: param.tokenPairID,
+            tokenAccount: param.destTokenAccount,
+            value: param.value,
+            fee: param.fee,
+            userAccount: param.destUserAccount,
+        });
+    }
 }
 
