@@ -176,8 +176,8 @@ module BridgeDeployer::Cross {
         uniqueID: address,
         smgID: address,
         tokenPairID: u64,
-        keys: vector<u8>,
-        values: vector<u8>,
+        keys: vector<string::String>,
+        values: vector<vector<u8>>,
     }
 
     // event SmgReleaseLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
@@ -205,9 +205,6 @@ module BridgeDeployer::Cross {
         // TODO
     }
 
-    struct RapidityTxLibData has store, drop {
-        // TODO
-    }
 
     struct RapidityUserLockParams has store, drop {
         smgID: address,
@@ -266,7 +263,6 @@ module BridgeDeployer::Cross {
 
     struct CrossType has store {
         htlcTxData: HTLCTxLibData,
-        rapidityTxData: RapidityTxLibData,
 
         /// @notice transaction fee, smgID => fee
         mapStoremanFee: table::Table<address, u64>,
@@ -276,6 +272,8 @@ module BridgeDeployer::Cross {
         mapAgentFee: table::Table<u64, simple_map::SimpleMap<u64, u64>>,
         /// @notice tokenPair fee, tokenPairID => fee
         mapTokenPairContractFee: table::Table<u64, u64>,
+        /// @notice txStatus, uniqueID => status
+        mapTxStatus: table::Table<address, u8>,
     }
 
     struct CrossEventHandlers has store {
@@ -316,6 +314,7 @@ module BridgeDeployer::Cross {
     const TOKEN_CROSS_TYPE_ERC20: u8 = 0;
     const TOKEN_CROSS_TYPE_ERC721: u8 = 1;
     const TOKEN_CROSS_TYPE_ERC1155: u8 = 2;
+    const TX_STATUS_CLAIMED: u8 = 1;
 
     fun init_module(sender: &signer) {
         let account_addr = signer::address_of(sender);
@@ -588,7 +587,7 @@ module BridgeDeployer::Cross {
         });
     }
 
-    public entry fun smg_mint<CoinType>(uniqueID: address, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: address, signature: vector<u8>) acquires Cross {
+    public entry fun smg_mint<CoinType>(account: &signer, uniqueID: address, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: address, signature: vector<u8>) acquires Cross {
         not_halted();
         only_ready_smg(&smgID);
 
@@ -610,7 +609,7 @@ module BridgeDeployer::Cross {
             smgFeeProxy: data.smg_fee_proxy, 
         };
 
-        smg_mint_internal<CoinType>(&param);
+        smg_mint_internal<CoinType>(account, &param);
 
         let sigData = bcs::to_bytes(&SmgSignatureData{
             currentChainID: data.current_chain_id,
@@ -627,8 +626,50 @@ module BridgeDeployer::Cross {
         assert!(result, error::invalid_argument(ENO_INPUT_ERROR));
     }
 
-    fun smg_mint_internal<CoinType>(param: &RapiditySmgMintParams) acquires Cross {
-        
+    fun smg_mint_internal<CoinType>(account: &signer, param: &RapiditySmgMintParams) acquires Cross {
+        let data = borrow_global_mut<Cross>(@BridgeDeployer);
+        assert!(!table::contains<address, u8>(&data.data.mapTxStatus, &param.uniqueID), error::invalid_argument(ENO_INPUT_ERROR));
+        table::insert<address, u8>(&mut data.data.mapTxStatus, &param.uniqueID, TX_STATUS_CLAIMED);
+
+        let tokenCrossType = TokenManager::get_token_pair_type(param.tokenPairID);
+        assert!(tokenCrossType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
+
+        if (param.fee > 0) {
+            TokenManager::mint_wrapped_coin<CoinType>(account, param.smgFeeProxy, param.fee);
+        }
+
+        TokenManager::mint_wrapped_coin<CoinType>(account, param.destUserAccount, param.value);
+
+        let keys = vector.empty();
+        let values = vector.empty();
+
+        vector::push_back(&mut keys, b"value:u64");
+        vector::push_back(&mut keys, b"tokenAccount:TypeInfo");
+        vector::push_back(&mut keys, b"userAccount:address");
+        vector::push_back(&mut keys, b"fee:u64");
+
+        vector::push_back(&mut values, bcs::to_bytes(&param.value));
+        vector::push_back(&mut values, bcs::to_bytes(&param.destTokenAccount));
+        vector::push_back(&mut values, bcs::to_bytes(&param.destUserAccount));
+        vector::push_back(&mut values, bcs::to_bytes(&param.fee));
+
+        event::emit_event<SmgMint>(&mut data.event_handler.smg_mint, SmgMint {
+            uniqueID: param.uniqueID,
+            smgID: param.smgID,
+            tokenPairID: param.tokenPairID,
+            keys: keys,
+            values: values,
+        });
+
+        event::emit_event<SmgMintLogger>(&mut data.event_handler.smg_mint_logger, SmgMintLogger {
+            uniqueID: param.uniqueID,
+            smgID: param.smgID,
+            tokenPairID: param.tokenPairID,
+            tokenAccount: param.destTokenAccount,
+            value: param.value,
+            fee: param.fee,
+            userAccount: param.destUserAccount,
+        });
     }
 
 }
