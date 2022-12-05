@@ -29,10 +29,9 @@ module BridgeDeployer::TokenManager {
     use aptos_std::table;
     use std::error;
     use aptos_framework::account;
-    use aptos_framework::coin::{MintCapability, FreezeCapability, BurnCapability}
+    use aptos_framework::coin::{MintCapability, FreezeCapability, BurnCapability};
     use aptos_std::event::{Self, EventHandle};
     
-    use BridgeDeployer::WrappedCoin;
     use BridgeDeployer::ResourceAccount;
 
     friend BridgeDeployer::Cross;

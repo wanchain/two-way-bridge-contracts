@@ -31,16 +31,15 @@ module BridgeDeployer::Cross {
     use std::vector;
     use std::string;
     use std::hash;
-    use aptos_std::from_bcs;
     use aptos_std::table;
     use aptos_std::simple_map;
     use aptos_std::event::{Self, EventHandle};
     use aptos_std::ed25519;
     use aptos_framework::account;
-    use aptos_framework::coin::{Self, BurnCapability, MintCapability};
+    use aptos_framework::coin;
     use aptos_framework::timestamp;
-    use std::type_info::{Self, TypeInfo};
-    use aptos_framework::aptos_coin::{Self, AptosCoin};
+    use std::type_info;
+    use aptos_framework::aptos_coin::AptosCoin;
     
     use BridgeDeployer::Oracle;
     use BridgeDeployer::TokenManager;
@@ -262,8 +261,6 @@ module BridgeDeployer::Cross {
 
 
     struct CrossType has store {
-        htlcTxData: HTLCTxLibData,
-
         /// @notice transaction fee, smgID => fee
         mapStoremanFee: table::Table<address, u64>,
         /// @notice transaction fee, origChainID => shadowChainID => fee
@@ -325,12 +322,11 @@ module BridgeDeployer::Cross {
             halted: false,
             current_chain_id: 0,
             data: CrossType {
-                htlcTxData: HTLCTxLibData {},
-                rapidityTxData: RapidityTxLibData {},
                 mapStoremanFee: table::new<address, u64>(),
                 mapContractFee: table::new<u64, simple_map::SimpleMap<u64, u64>>(),
                 mapAgentFee: table::new<u64, simple_map::SimpleMap<u64, u64>>(),
                 mapTokenPairContractFee: table::new<u64, u64>(),
+                mapTxStatus: table::new<address, u8>(),
             },
             event_handler: CrossEventHandlers {
                 set_admin: account::new_event_handle<SetAdmin>(sender),
@@ -636,12 +632,12 @@ module BridgeDeployer::Cross {
 
         if (param.fee > 0) {
             TokenManager::mint_wrapped_coin<CoinType>(account, param.smgFeeProxy, param.fee);
-        }
+        };
 
         TokenManager::mint_wrapped_coin<CoinType>(account, param.destUserAccount, param.value);
 
-        let keys = vector.empty();
-        let values = vector.empty();
+        let keys = vector::empty();
+        let values = vector::empty();
 
         vector::push_back(&mut keys, b"value:u64");
         vector::push_back(&mut keys, b"tokenAccount:TypeInfo");
@@ -720,12 +716,12 @@ module BridgeDeployer::Cross {
 
         if (param.fee > 0) {
             TokenManager::release_coin<CoinType>(account, param.smgFeeProxy, param.fee);
-        }
+        };
 
         TokenManager::release_coin<CoinType>(account, param.destUserAccount, param.value);
 
-        let keys = vector.empty();
-        let values = vector.empty();
+        let keys = vector::empty();
+        let values = vector::empty();
 
         vector::push_back(&mut keys, b"value:u64");
         vector::push_back(&mut keys, b"tokenAccount:TypeInfo");

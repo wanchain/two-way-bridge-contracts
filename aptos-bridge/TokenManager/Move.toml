@@ -7,7 +7,7 @@ rev = 'main'
 subdir = 'aptos-move/framework/aptos-framework'
 
 [dependencies]
-WrappedCoin= { local= '../WrappedCoin' }
+# WrappedCoin= { local= '../WrappedCoin' }
 Cross= { local= '../Cross' }
 ResourceAccount= { local= '../ResourceAccount' }
 
