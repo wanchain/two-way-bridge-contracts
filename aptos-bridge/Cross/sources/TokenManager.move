@@ -34,7 +34,7 @@ module BridgeDeployer::TokenManager {
     use aptos_std::event::{Self, EventHandle};
     
     use BridgeDeployer::ResourceAccount;
-    use ResourceAccountDeployer::WrappedCoin::WrappedCoin;
+    use ResourceAccountDeployer::WrappedCoinV1::WrappedCoin;
 
     friend BridgeDeployer::Cross;
 
@@ -301,34 +301,34 @@ module BridgeDeployer::TokenManager {
         let resource_account_signer = get_resource_account_signer();
         let (lp_b, lp_f, lp_m) = coin::initialize<WrappedCoin<CoinBase>>(&resource_account_signer, string::utf8(name), string::utf8(symbol), 8, true);
         register_coin<WrappedCoin<CoinBase>>(&resource_account_signer);
-        move_to<WrappedInfo<WrappedCoin<CoinBase>>>(&resource_account_signer, WrappedInfo<WrappedCoin<CoinBase>> {
+        move_to(&resource_account_signer, WrappedInfo<CoinBase> {
             burn_cap: lp_b,
             freeze_cap: lp_f,
             mint_cap: lp_m,
         });
     }
 
-    public(friend) fun mint_wrapped_coin<CoinType>(account: &signer, to: address, amount: u64) acquires TokenManager {
+    public(friend) fun mint_wrapped_coin<CoinBase>(account: &signer, to: address, amount: u64) acquires WrappedInfo, AdminData {
         let resource_account_signer = get_resource_account_signer();
-        let caps = borrow_global<WrappedInfo<CoinType>>(RESOURCE_ACCOUNT_ADDRESS);
-        let coin = coin::mint<CoinType>(amount, &caps.mint_cap);
-        coin::deposit<CoinType>(to, coin);
+        let caps = borrow_global<WrappedInfo<CoinBase>>(RESOURCE_ACCOUNT_ADDRESS);
+        let coin = coin::mint<WrappedCoin<CoinBase>>(amount, &caps.mint_cap);
+        coin::deposit<WrappedCoin<CoinBase>>(to, coin);
     }
 
-    public(friend) fun burn_wrapped_coin<CoinType>(account: &signer, amount: u64) acquires TokenManager {
+    public(friend) fun burn_wrapped_coin<CoinBase>(account: &signer, amount: u64) acquires WrappedInfo, AdminData {
         let resource_account_signer = get_resource_account_signer();
-        let caps = borrow_global<WrappedInfo<CoinType>>(RESOURCE_ACCOUNT_ADDRESS);
+        let caps = borrow_global<WrappedInfo<CoinBase>>(RESOURCE_ACCOUNT_ADDRESS);
         let account_addr = signer::address_of(account);
-        coin::burn_from<CoinType>(account_addr, amount, &caps.burn_cap);
+        coin::burn_from<WrappedCoin<CoinBase>>(account_addr, amount, &caps.burn_cap);
     }
 
-    public(friend) fun lock_coin<CoinType>(account: &signer, amount: u64) acquires TokenManager {
+    public(friend) fun lock_coin<CoinType>(account: &signer, amount: u64) acquires AdminData {
         let resource_account_signer = get_resource_account_signer();
         register_coin<CoinType>(&resource_account_signer);
         coin::transfer<CoinType>(account, RESOURCE_ACCOUNT_ADDRESS, amount);
     }
 
-    public(friend) fun release_coin<CoinType>(account: &signer, to: address, amount: u64) acquires TokenManager {
+    public(friend) fun release_coin<CoinType>(account: &signer, to: address, amount: u64) acquires AdminData {
         let account_addr = signer::address_of(account);
         assert!(coin::is_account_registered<CoinType>(account_addr), ERR_COIN_NOT_REGISTERED);
         let resource_account_signer = get_resource_account_signer();

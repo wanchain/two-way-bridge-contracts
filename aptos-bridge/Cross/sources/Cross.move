@@ -43,6 +43,7 @@ module BridgeDeployer::Cross {
     
     use BridgeDeployer::Oracle;
     use BridgeDeployer::TokenManager;
+    use ResourceAccountDeployer::WrappedCoinV1::WrappedCoin;
     
 
     // events start ------------------------------------------------------------
@@ -509,12 +510,12 @@ module BridgeDeployer::Cross {
         });
     }
 
-    public entry fun user_burn<CoinType>(account: &signer, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: vector<u8>) acquires Cross {
+    public entry fun user_burn<CoinBase>(account: &signer, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: vector<u8>) acquires Cross {
         not_halted();
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
-        let tokenAddr = string::bytes(&type_info::type_name<CoinType>());
+        let tokenAddr = string::bytes(&type_info::type_name<WrappedCoin<CoinBase>>());
 
         let param = RapidityUserBurnParams {
             smgID,                  
@@ -528,10 +529,10 @@ module BridgeDeployer::Cross {
             smgFeeProxy: data.smg_fee_proxy, 
         };
 
-        user_burn_internal<CoinType>(account, param);
+        user_burn_internal<CoinBase>(account, param);
     }
 
-    fun user_burn_internal<CoinType>(account: &signer, param: RapidityUserBurnParams) acquires Cross {
+    fun user_burn_internal<CoinBase>(account: &signer, param: RapidityUserBurnParams) acquires Cross {
         let (fromChainID, fromTokenAccount, toChainID, toTokenAccount) = TokenManager::get_token_pair(param.tokenPairID);
         assert!(fromChainID != 0u64, error::invalid_argument(ENO_INPUT_ERROR));
         let contractFee = param.tokenPairContractFee;
@@ -564,13 +565,13 @@ module BridgeDeployer::Cross {
         let fromTokenType = TokenManager::get_token_pair_type(param.tokenPairID);
         assert!(fromTokenType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
-        TokenManager::burn_wrapped_coin<CoinType>(account, param.value);
+        TokenManager::burn_wrapped_coin<CoinBase>(account, param.value);
 
         if (contractFee > 0) {
             coin::transfer<AptosCoin>(account, @BridgeDeployer, contractFee);
         };
 
-        let tokenAddr = string::bytes(&type_info::type_of<CoinType>());
+        let tokenAddr = string::bytes(&type_info::type_name<WrappedCoin<CoinBase>>());
 
         event::emit_event<UserBurnLogger>(&mut borrow_global_mut<Cross>(@BridgeDeployer).event_handler.user_burn_logger, UserBurnLogger {
             smgID: param.smgID,
@@ -583,14 +584,14 @@ module BridgeDeployer::Cross {
         });
     }
 
-    public entry fun smg_mint<CoinType>(account: &signer, uniqueID: address, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: address, signature: vector<u8>) acquires Cross {
+    public entry fun smg_mint<CoinBase>(account: &signer, uniqueID: address, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: address, signature: vector<u8>) acquires Cross {
         not_halted();
         only_ready_smg(&smgID);
 
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
-        let tokenAddr = string::bytes(&type_info::type_name<CoinType>());
+        let tokenAddr = string::bytes(&type_info::type_name<WrappedCoin<CoinBase>>());
         let pk = Oracle::get_storeman_group_pk(*&smgID);
 
 
@@ -605,7 +606,7 @@ module BridgeDeployer::Cross {
             smgFeeProxy: data.smg_fee_proxy, 
         };
 
-        smg_mint_internal<CoinType>(account, &param);
+        smg_mint_internal<CoinBase>(account, &param);
 
         let sigData = bcs::to_bytes(&SmgSignatureData{
             currentChainID: data.current_chain_id,
@@ -622,7 +623,7 @@ module BridgeDeployer::Cross {
         assert!(result, error::invalid_argument(ENO_INPUT_ERROR));
     }
 
-    fun smg_mint_internal<CoinType>(account: &signer, param: &RapiditySmgMintParams) acquires Cross {
+    fun smg_mint_internal<CoinBase>(account: &signer, param: &RapiditySmgMintParams) acquires Cross {
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         assert!(!table::contains<address, u8>(&data.data.mapTxStatus, &param.uniqueID), error::invalid_argument(ENO_INPUT_ERROR));
         table::insert<address, u8>(&mut data.data.mapTxStatus, &param.uniqueID, TX_STATUS_CLAIMED);
@@ -631,10 +632,10 @@ module BridgeDeployer::Cross {
         assert!(tokenCrossType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
         if (param.fee > 0) {
-            TokenManager::mint_wrapped_coin<CoinType>(account, param.smgFeeProxy, param.fee);
+            TokenManager::mint_wrapped_coin<CoinBase>(account, param.smgFeeProxy, param.fee);
         };
 
-        TokenManager::mint_wrapped_coin<CoinType>(account, param.destUserAccount, param.value);
+        TokenManager::mint_wrapped_coin<CoinBase>(account, param.destUserAccount, param.value);
 
         let keys = vector::empty();
         let values = vector::empty();

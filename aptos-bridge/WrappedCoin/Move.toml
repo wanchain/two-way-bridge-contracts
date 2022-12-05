@@ -1,5 +1,5 @@
 [package]
-name = 'WrappedCoin'
+name = 'WrappedCoinV1'
 version = '1.0.0'
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core.git'
