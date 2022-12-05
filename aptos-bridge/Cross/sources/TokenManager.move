@@ -296,7 +296,7 @@ module BridgeDeployer::TokenManager {
         account::create_signer_with_capability(signer_cap)
     }
 
-    public entry fun create_wrapped_coin<CoinBase>(account: &signer, name: vector<u8>, symbol: vector<u8>) acquires AdminData {
+    public entry fun create_wrapped_coin<CoinBase>(_account: &signer, name: vector<u8>, symbol: vector<u8>) acquires AdminData {
         assert!(!exists<WrappedInfo<CoinBase>>(RESOURCE_ACCOUNT_ADDRESS), ERR_WRAPPED_COIN_ALREADY_EXIST);
         let resource_account_signer = get_resource_account_signer();
         let (lp_b, lp_f, lp_m) = coin::initialize<WrappedCoin<CoinBase>>(&resource_account_signer, string::utf8(name), string::utf8(symbol), 8, true);
@@ -308,15 +308,13 @@ module BridgeDeployer::TokenManager {
         });
     }
 
-    public(friend) fun mint_wrapped_coin<CoinBase>(account: &signer, to: address, amount: u64) acquires WrappedInfo, AdminData {
-        let resource_account_signer = get_resource_account_signer();
+    public(friend) fun mint_wrapped_coin<CoinBase>(to: address, amount: u64) acquires WrappedInfo {
         let caps = borrow_global<WrappedInfo<CoinBase>>(RESOURCE_ACCOUNT_ADDRESS);
         let coin = coin::mint<WrappedCoin<CoinBase>>(amount, &caps.mint_cap);
         coin::deposit<WrappedCoin<CoinBase>>(to, coin);
     }
 
-    public(friend) fun burn_wrapped_coin<CoinBase>(account: &signer, amount: u64) acquires WrappedInfo, AdminData {
-        let resource_account_signer = get_resource_account_signer();
+    public(friend) fun burn_wrapped_coin<CoinBase>(account: &signer, amount: u64) acquires WrappedInfo {
         let caps = borrow_global<WrappedInfo<CoinBase>>(RESOURCE_ACCOUNT_ADDRESS);
         let account_addr = signer::address_of(account);
         coin::burn_from<WrappedCoin<CoinBase>>(account_addr, amount, &caps.burn_cap);
