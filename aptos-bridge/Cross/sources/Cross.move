@@ -502,7 +502,7 @@ module BridgeDeployer::Cross {
         event::emit_event<UserLockLogger>(&mut borrow_global_mut<Cross>(@BridgeDeployer).event_handler.user_lock_logger, UserLockLogger {
             smgID: param.smgID,
             tokenPairID: param.tokenPairID,
-            tokenAccount: tokenAddr,
+            tokenAccount: *tokenAddr,
             value: param.value,
             contractFee: contractFee,
             userAccount: param.destUserAccount,
@@ -514,7 +514,7 @@ module BridgeDeployer::Cross {
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
-        let tokenAddr = type_info::bytes(&type_info::type_name<CoinType>());
+        let tokenAddr = string::bytes(&type_info::type_name<CoinType>());
 
         let param = RapidityUserBurnParams {
             smgID,                  
@@ -523,7 +523,7 @@ module BridgeDeployer::Cross {
             currentChainID: data.current_chain_id,           
             fee,                       
             tokenPairContractFee: *contractFee,      
-            srcTokenAccount: tokenAddr,        
+            srcTokenAccount: *tokenAddr,        
             destUserAccount: userAccount,          
             smgFeeProxy: data.smg_fee_proxy, 
         };
@@ -570,7 +570,7 @@ module BridgeDeployer::Cross {
             coin::transfer<AptosCoin>(account, @BridgeDeployer, contractFee);
         };
 
-        let tokenAddr = type_info::account_address(&type_info::type_of<CoinType>());
+        let tokenAddr = string::bytes(&type_info::type_of<CoinType>());
 
         event::emit_event<UserBurnLogger>(&mut borrow_global_mut<Cross>(@BridgeDeployer).event_handler.user_burn_logger, UserBurnLogger {
             smgID: param.smgID,
@@ -590,7 +590,7 @@ module BridgeDeployer::Cross {
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
-        let tokenAddr = type_info::bytes(&type_info::type_name<CoinType>());
+        let tokenAddr = string::bytes(&type_info::type_name<CoinType>());
         let pk = Oracle::get_storeman_group_pk(*&smgID);
 
 

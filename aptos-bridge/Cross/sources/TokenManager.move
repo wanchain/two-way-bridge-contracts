@@ -28,11 +28,13 @@ module BridgeDeployer::TokenManager {
     use std::signer;
     use aptos_std::table;
     use std::error;
-    use aptos_framework::account;
-    use aptos_framework::coin::{MintCapability, FreezeCapability, BurnCapability};
+    use std::string;
+    use aptos_framework::account::{Self, SignerCapability};
+    use aptos_framework::coin::{Self, MintCapability, FreezeCapability, BurnCapability};
     use aptos_std::event::{Self, EventHandle};
     
     use BridgeDeployer::ResourceAccount;
+    use ResourceAccountDeployer::WrappedCoin::WrappedCoin;
 
     friend BridgeDeployer::Cross;
 
@@ -71,10 +73,10 @@ module BridgeDeployer::TokenManager {
     }
 
     // save into resource_account
-    struct WrappedInfo<phantom CoinType> has key {
-        mint_cap: MintCapability<WrappedCoin<CoinType>>,
-        freeze_cap: FreezeCapability<WrappedCoin<CoinType>>,
-        burn_cap: BurnCapability<WrappedCoin<CoinType>>,
+    struct WrappedInfo<phantom CoinBase> has key {
+        mint_cap: MintCapability<WrappedCoin<CoinBase>>,
+        freeze_cap: FreezeCapability<WrappedCoin<CoinBase>>,
+        burn_cap: BurnCapability<WrappedCoin<CoinBase>>,
     }
 
     struct AddTokenPairEvent has drop, store {
@@ -297,7 +299,7 @@ module BridgeDeployer::TokenManager {
     public entry fun create_wrapped_coin<CoinBase>(account: &signer, name: vector<u8>, symbol: vector<u8>) acquires AdminData {
         assert!(!exists<WrappedInfo<CoinBase>>(RESOURCE_ACCOUNT_ADDRESS), ERR_WRAPPED_COIN_ALREADY_EXIST);
         let resource_account_signer = get_resource_account_signer();
-        let (lp_b, lp_f, lp_m) = coin::initialize<WrappedCoin<CoinBase>>(&resource_account_signer, name, symbol, 8, true);
+        let (lp_b, lp_f, lp_m) = coin::initialize<WrappedCoin<CoinBase>>(&resource_account_signer, string::utf8(name), string::utf8(symbol), 8, true);
         register_coin<WrappedCoin<CoinBase>>(&resource_account_signer);
         move_to<WrappedInfo<WrappedCoin<CoinBase>>>(&resource_account_signer, WrappedInfo<WrappedCoin<CoinBase>> {
             burn_cap: lp_b,

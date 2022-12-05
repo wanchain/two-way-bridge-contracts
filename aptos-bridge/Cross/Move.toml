@@ -7,7 +7,10 @@ rev = 'main'
 subdir = 'aptos-move/framework/aptos-framework'
 
 [dependencies]
-Oracle = { local= '../Oracle' }
+Oracle= { local= '../Oracle' }
+ResourceAccount= { local= '../ResourceAccount' }
+WrappedCoin={ local= '../WrappedCoin' }
+
 # TokenManager = { local= '../TokenManager' }
 
 [addresses]
