@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # deployer address
-BridgeDeployer='0x0fed7b4e9b93c0373998b80cebee85010af2dea9cd5ddc754a01fb89fec291e4'
-ResourceAccountDeployer='0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d'
+BridgeDeployer='0xf53320936356d3f21a17aa42ae09b9d9e0a48053641bac69bbb1f7e20d3cb706'
+ResourceAccountDeployer='0x1ea21d055d67185a0c5de10fcc95a72bace3d3e0e056058c1945997bc845af8f'
 
 aptos move run --function-id $BridgeDeployer::TokenManagerV2::add_token_pair \
   --args 350u64 

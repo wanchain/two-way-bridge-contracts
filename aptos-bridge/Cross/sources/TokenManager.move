@@ -39,7 +39,7 @@ module BridgeDeployer::TokenManager {
     friend BridgeDeployer::Cross;
 
     struct AncestorInfo has store, drop, copy {
-        account: address,
+        account: vector<u8>,
         name: vector<u8>,
         symbol: vector<u8>,
         decimals: u8,
@@ -133,7 +133,7 @@ module BridgeDeployer::TokenManager {
     public entry fun add_token_pair(
         account: &signer, 
         id: u64, 
-        ancestor_account: address,
+        ancestor_account: vector<u8>,
         ancestor_name: vector<u8>,
         ancestor_symbol: vector<u8>,
         ancestor_decimals: u8,
@@ -184,7 +184,7 @@ module BridgeDeployer::TokenManager {
     public entry fun update_token_pair(
         account: &signer, 
         id: u64, 
-        ancestor_account: address,
+        ancestor_account: vector<u8>,
         ancestor_name: vector<u8>,
         ancestor_symbol: vector<u8>,
         ancestor_decimals: u8,
