@@ -1,11 +1,10 @@
 [package]
 name = 'Oracle'
 version = '1.0.0'
-[dependencies.AptosFramework]
-git = 'https://github.com/aptos-labs/aptos-core.git'
-rev = 'main'
-subdir = 'aptos-move/framework/aptos-framework'
+
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "83641d3f083762f31700060e5e95fbb1cbc28bf0" }
 
 [addresses]
-BridgeDeployer = '0x0f97d720564154bcb9fab1392f6ff8d4ca9333f6f4ff66a5da8cce493953e645'
-ResourceAccountDeployer = '0x6ee56eb2a8e83a89df13189a87e1b9ba1c45aaf150cfc9ebb7b0dcb90431b22b'
+BridgeDeployer = '0x0fed7b4e9b93c0373998b80cebee85010af2dea9cd5ddc754a01fb89fec291e4'
+ResourceAccountDeployer = '0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d'
