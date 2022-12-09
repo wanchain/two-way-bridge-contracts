@@ -37,8 +37,8 @@ echo
 # hex:a11ceb0b0500000005010002020206070826082e200a4e0500000001000100010d57726170706564436f696e56310b57726170706564436f696e0b64756d6d795f6669656c6494bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d000201020100
 
 # Step 3: ------------------- deploy other modules -------------------
-aptos move publish --package-dir $PWD/Oracle/
-aptos move publish --package-dir $PWD/Cross/
+# aptos move publish --package-dir $PWD/Oracle/
+# aptos move publish --package-dir $PWD/Cross/
 
 # echo 'Finish!'
 
