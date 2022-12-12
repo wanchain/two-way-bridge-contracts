@@ -98,22 +98,32 @@ async function main() {
 
   console.log('config...');
   await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
+  console.log('tokenManagerProxy upgradeTo finished.');
   await crossProxy.upgradeTo(crossDelegate.address);
+  console.log('crossProxy upgradeTo finished.');
   await oracleProxy.upgradeTo(oracleDelegate.address);
+  console.log('oracleProxy upgradeTo finished.');
   let tokenManager = await hre.ethers.getContractAt("TokenManagerDelegateV2", tokenManagerProxy.address);
   let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
   let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.address);
 
   await tokenManager.addAdmin(crossProxy.address);
+  console.log('tokenManager addAdmin finished.');
   await signatureVerifier.register(1, bn128SchnorrVerifier.address);
+  console.log('signatureVerifier register finished.');
   await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
+  console.log('cross setPartners finished.');
   console.log('config finished.');
   console.log('transfer owner...');
   // transfer owner
   await tokenManager.transferOwner(OWNER_ADDRESS);
+  console.log('tokenManager transferOwner finished.');
   await cross.transferOwner(OWNER_ADDRESS);
+  console.log('cross transferOwner finished.');
   await oracle.transferOwner(OWNER_ADDRESS);
+  console.log('oracle transferOwner finished.');
   await signatureVerifier.transferOwner(OWNER_ADDRESS);
+  console.log('signatureVerifier transferOwner finished.');
   console.log('transfer owner finished.');
   const deployed = {
     tokenManagerDelegate: tokenManagerDelegate.address,
