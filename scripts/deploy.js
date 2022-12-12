@@ -12,6 +12,7 @@ const { sleep } = require("@nomiclabs/hardhat-ethers");
 const waitForReceipt = false;
 
 const OWNER_ADDRESS = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
+const SMG_FEE_PROXY = '0x0000000000000000000000000000000000000000';
 const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 
 async function main() {
@@ -27,7 +28,6 @@ async function main() {
   if (waitForReceipt) {
     await tokenManagerProxy.deployed();
   }
-
   console.log("TokenManagerProxy deployed to:", tokenManagerProxy.address);
 
   let NFTLibV1 = await hre.ethers.getContractFactory("NFTLibV1");
@@ -35,7 +35,6 @@ async function main() {
   if (waitForReceipt) {
     await nftLib.deployed();
   }
-
   console.log("NFTLibV1 deployed to:", nftLib.address);
 
   let RapidityLibV4 = await hre.ethers.getContractFactory("RapidityLibV4");
@@ -43,8 +42,8 @@ async function main() {
   if (waitForReceipt) {
     await rapidityLib.deployed();
   }
-
   console.log("RapidityLibV4 deployed to:", rapidityLib.address);
+  
   let CrossDelegateV4 = await hre.ethers.getContractFactory("CrossDelegateV4", {
     libraries: {
       NFTLibV1: nftLib.address,
@@ -110,7 +109,9 @@ async function main() {
   console.log('tokenManager addAdmin finished.');
   await signatureVerifier.register(1, bn128SchnorrVerifier.address);
   console.log('signatureVerifier register finished.');
-  await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, oracle.address, QUOTA_PROXY, signatureVerifier.address);
+
+  await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
+  
   console.log('cross setPartners finished.');
   console.log('config finished.');
   console.log('transfer owner...');
