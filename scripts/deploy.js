@@ -12,7 +12,6 @@ const { sleep } = require("@nomiclabs/hardhat-ethers");
 const waitForReceipt = false;
 
 const OWNER_ADDRESS = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const SMG_FEE_PROXY = "0x0000000000000000000000000000000000000000";
 const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 
 async function main() {
@@ -111,7 +110,7 @@ async function main() {
   console.log('tokenManager addAdmin finished.');
   await signatureVerifier.register(1, bn128SchnorrVerifier.address);
   console.log('signatureVerifier register finished.');
-  await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
+  await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, oracle.address, QUOTA_PROXY, signatureVerifier.address);
   console.log('cross setPartners finished.');
   console.log('config finished.');
   console.log('transfer owner...');
