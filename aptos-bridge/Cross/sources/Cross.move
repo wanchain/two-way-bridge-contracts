@@ -444,10 +444,9 @@ module BridgeDeployer::Cross {
     public entry fun user_lock<CoinType>(account: &signer, smgID: address, tokenPairID: u64, value: u64, userAccount: vector<u8>) acquires Cross {
         not_halted();
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
-        let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         let contractFee = 0;
-        if (table::contains<u64, u64>(mapTokenPairContractFee, tokenPairID)) {
-            contractFee = *table::borrow<u64, u64>(mapTokenPairContractFee, tokenPairID);
+        if (table::contains<u64, u64>(&data.data.mapTokenPairContractFee, tokenPairID)) {
+            contractFee = *table::borrow<u64, u64>(&data.data.mapTokenPairContractFee, tokenPairID);
         };
         let param = RapidityUserLockParams {
             smgID: smgID,
@@ -512,10 +511,9 @@ module BridgeDeployer::Cross {
     public entry fun user_burn<CoinBase>(account: &signer, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: vector<u8>) acquires Cross {
         not_halted();
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
-        let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         let contractFee = 0;
-        if (table::contains<u64, u64>(mapTokenPairContractFee, tokenPairID)) {
-            contractFee = *table::borrow<u64, u64>(mapTokenPairContractFee, tokenPairID);
+        if (table::contains<u64, u64>(&data.data.mapTokenPairContractFee, tokenPairID)) {
+            contractFee = *table::borrow<u64, u64>(&data.data.mapTokenPairContractFee, tokenPairID);
         };
         let tokenAddr = string::bytes(&type_info::type_name<WrappedCoin<CoinBase>>());
 
