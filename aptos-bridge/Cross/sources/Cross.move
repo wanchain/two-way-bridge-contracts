@@ -437,6 +437,7 @@ module BridgeDeployer::Cross {
         only_admin(account);
         not_halted();
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
+        assert!(data.current_chain_id == 0, error::invalid_argument(ENO_INPUT_ERROR));
         data.current_chain_id = chainID;
     }
 
@@ -444,13 +445,16 @@ module BridgeDeployer::Cross {
         not_halted();
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
-        let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
+        let contractFee = 0;
+        if (table::contains<u64, u64>(mapTokenPairContractFee, tokenPairID)) {
+            contractFee = *table::borrow<u64, u64>(mapTokenPairContractFee, tokenPairID);
+        };
         let param = RapidityUserLockParams {
             smgID: smgID,
             tokenPairID: tokenPairID,
             value: value,
             currentChainID: data.current_chain_id,
-            tokenPairContractFee: *contractFee,
+            tokenPairContractFee: contractFee,
             destUserAccount: userAccount,
             smgFeeProxy: data.smg_fee_proxy,
         };
@@ -509,7 +513,10 @@ module BridgeDeployer::Cross {
         not_halted();
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
-        let contractFee = table::borrow_mut_with_default<u64, u64>(mapTokenPairContractFee, tokenPairID, 0);
+        let contractFee = 0;
+        if (table::contains<u64, u64>(mapTokenPairContractFee, tokenPairID)) {
+            contractFee = *table::borrow<u64, u64>(mapTokenPairContractFee, tokenPairID);
+        };
         let tokenAddr = string::bytes(&type_info::type_name<WrappedCoin<CoinBase>>());
 
         let param = RapidityUserBurnParams {
@@ -518,7 +525,7 @@ module BridgeDeployer::Cross {
             value,                  
             currentChainID: data.current_chain_id,           
             fee,                       
-            tokenPairContractFee: *contractFee,      
+            tokenPairContractFee: contractFee,      
             srcTokenAccount: *tokenAddr,        
             destUserAccount: userAccount,          
             smgFeeProxy: data.smg_fee_proxy, 
