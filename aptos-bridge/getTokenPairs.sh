@@ -1,7 +1,7 @@
 #!/bin/sh
 
 curl --request GET \
-  --url https://fullnode.devnet.aptoslabs.com/v1/accounts/0xf53320936356d3f21a17aa42ae09b9d9e0a48053641bac69bbb1f7e20d3cb706/events/10 \
+  --url https://fullnode.devnet.aptoslabs.com/v1/accounts/0x0fed7b4e9b93c0373998b80cebee85010af2dea9cd5ddc754a01fb89fec291e4/events/10 \
   --header 'Content-Type: application/json' |jq
   
 

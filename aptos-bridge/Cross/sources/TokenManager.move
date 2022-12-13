@@ -80,14 +80,17 @@ module BridgeDeployer::TokenManager {
     }
 
     struct AddTokenPairEvent has drop, store {
+        id: u64,
         info: TokenPairInfo,
     }
 
     struct UpdateTokenPairEvent has drop, store {
+        id: u64,
         info: TokenPairInfo,
     }
 
     struct RemoveTokenPairEvent has drop, store {
+        id: u64,
         info: TokenPairInfo,
     }
 
@@ -164,6 +167,7 @@ module BridgeDeployer::TokenManager {
         event::emit_event<AddTokenPairEvent>(
             &mut manager.add_token_pair_events,
             AddTokenPairEvent { 
+                id: id,
                 info: TokenPairInfo {
                     aInfo: AncestorInfo {
                         account: ancestor_account,
@@ -214,6 +218,7 @@ module BridgeDeployer::TokenManager {
         event::emit_event<UpdateTokenPairEvent>(
             &mut manager.update_token_pair_events,
             UpdateTokenPairEvent { 
+                id: id,
                 info: TokenPairInfo {
                     aInfo: AncestorInfo {
                         account: ancestor_account,
@@ -241,6 +246,7 @@ module BridgeDeployer::TokenManager {
         event::emit_event<RemoveTokenPairEvent>(
             &mut manager.remove_token_pair_events,
             RemoveTokenPairEvent { 
+                id: id,
                 info,
             },
         );
