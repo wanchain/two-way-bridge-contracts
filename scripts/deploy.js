@@ -31,7 +31,6 @@ async function main() {
   if (waitForReceipt) {
     await tokenManagerProxy.deployed();
   }
-
   console.log("TokenManagerProxy deployed to:", tokenManagerProxy.address);
 
   let NFTLibV1 = await hre.ethers.getContractFactory("NFTLibV1");
@@ -39,7 +38,6 @@ async function main() {
   if (waitForReceipt) {
     await nftLib.deployed();
   }
-
   console.log("NFTLibV1 deployed to:", nftLib.address);
 
   let RapidityLibV4 = await hre.ethers.getContractFactory("RapidityLibV4");
@@ -47,8 +45,8 @@ async function main() {
   if (waitForReceipt) {
     await rapidityLib.deployed();
   }
-
   console.log("RapidityLibV4 deployed to:", rapidityLib.address);
+  
   let CrossDelegateV4 = await hre.ethers.getContractFactory("CrossDelegateV4", {
     libraries: {
       NFTLibV1: nftLib.address,
@@ -102,8 +100,11 @@ async function main() {
 
   console.log('config...');
   await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
+  console.log('tokenManagerProxy upgradeTo finished.');
   await crossProxy.upgradeTo(crossDelegate.address);
+  console.log('crossProxy upgradeTo finished.');
   await oracleProxy.upgradeTo(oracleDelegate.address);
+  console.log('oracleProxy upgradeTo finished.');
   let tokenManager = await hre.ethers.getContractAt("TokenManagerDelegateV2", tokenManagerProxy.address);
   let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
   let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.address);
