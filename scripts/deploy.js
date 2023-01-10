@@ -9,9 +9,12 @@ const fs = require('fs');
 const { sleep } = require("@nomiclabs/hardhat-ethers");
 
 
-const waitForReceipt = false;
+const waitForReceipt = true;
 
-const OWNER_ADDRESS = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
+// const OWNER_ADDRESS = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
+const ORACLE_ADMIN = '0x390CC3173EE7F425Fe7659df215B13959FD468E1';
+const CROSS_ADMIN = '0xa35B3C55626188015aC79F396D0B593947231976';
+const TOKEN_MANAGER_OPERATOR = '0xa35B3C55626188015aC79F396D0B593947231976';
 const SMG_FEE_PROXY = "0x0000000000000000000000000000000000000000";
 const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 
@@ -59,6 +62,7 @@ async function main() {
   }
 
   console.log("CrossDelegateV4 deployed to:", crossDelegate.address);
+
   let CrossProxy = await hre.ethers.getContractFactory("CrossProxy");
   let crossProxy = await CrossProxy.deploy();
   if (waitForReceipt) {
@@ -104,17 +108,35 @@ async function main() {
   let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
   let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.address);
 
+  console.log('oracle set admin...')
+  await oracle.setAdmin(ORACLE_ADMIN);
+  console.log('oracle set admin finished.')
+  console.log('tokenManager add admin...')
   await tokenManager.addAdmin(crossProxy.address);
+  console.log('tokenManager add admin finished.')
+
+  console.log('tokenManager set operator...')
+  await tokenManager.setOperator(TOKEN_MANAGER_OPERATOR);
+  console.log('tokenManager set operator finished.')
+
+  console.log('verifier register...')
   await signatureVerifier.register(1, bn128SchnorrVerifier.address);
+  console.log('verifier register finished.')
+
+  console.log('cross set partner...');
   await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
+  console.log('cross set partner finished.');
+
+  console.log('cross add admin...')
+  await cross.setAdmin(CROSS_ADMIN);
   console.log('config finished.');
-  console.log('transfer owner...');
+  // console.log('transfer owner...');
   // transfer owner
-  await tokenManager.transferOwner(OWNER_ADDRESS);
-  await cross.transferOwner(OWNER_ADDRESS);
-  await oracle.transferOwner(OWNER_ADDRESS);
-  await signatureVerifier.transferOwner(OWNER_ADDRESS);
-  console.log('transfer owner finished.');
+  // await tokenManager.transferOwner(OWNER_ADDRESS);
+  // await cross.transferOwner(OWNER_ADDRESS);
+  // await oracle.transferOwner(OWNER_ADDRESS);
+  // await signatureVerifier.transferOwner(OWNER_ADDRESS);
+  // console.log('transfer owner finished.');
   const deployed = {
     tokenManagerDelegate: tokenManagerDelegate.address,
     tokenManagerProxy: tokenManagerProxy.address,
@@ -126,7 +148,6 @@ async function main() {
     bn128SchnorrVerifier: bn128SchnorrVerifier.address,
     RapidityLibV4: rapidityLib.address,
     NFTLibV1: nftLib.address,
-    owner: OWNER_ADDRESS,
   };
 
   fs.writeFileSync(`deployed/${hre.network.name}.json`, JSON.stringify(deployed, null, 2));
