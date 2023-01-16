@@ -37,7 +37,12 @@ module.exports = {
       accounts: [process.env.PK],
     },
     astar: {
-      url: 'https://astar.public.blastapi.io',
+      // url: 'https://astar-mainnet.g.alchemy.com/v2/3A48KG9F7zeoEXkJWpNYbQwpnOHUVWOU',
+      url: 'https://evm.astar.network',
+      accounts: [process.env.PK],
+    },
+    optimisticEthereum: {
+      url: 'https://opt-mainnet.g.alchemy.com/v2/EA2PhKrouVck-pDZscwY8AEGv_G-TXvj',
       accounts: [process.env.PK],
     }
   },
@@ -47,7 +52,8 @@ module.exports = {
       bscTestnet: "X3KC4YWKNDM8N3MJ52SFJC21GT9T5DWRK6",
       moonbaseAlpha: "EE37GEZGJA7RHS3ZKXWW1JJVDXZ6SBYBRC",
       goerli: "HNUE7V72CI8XJ6FNZ1CDIYSEBYY6HHREAE",
-      astar: 'X3KC4YWKNDM8N3MJ52SFJC21GT9T5DWRK6', //fake
+      optimisticEthereum: "JSYSW7GDUAAZ4U7WN3SCFE7NM62IBB6GFC",
+      // astar: 'X3KC4YWKNDM8N3MJ52SFJC21GT9T5DWRK6', //fake
     },
   },
 };

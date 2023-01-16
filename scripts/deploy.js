@@ -15,10 +15,13 @@ const waitForReceipt = true;
 const ORACLE_ADMIN = '0x390CC3173EE7F425Fe7659df215B13959FD468E1';
 const CROSS_ADMIN = '0xa35B3C55626188015aC79F396D0B593947231976';
 const TOKEN_MANAGER_OPERATOR = '0xa35B3C55626188015aC79F396D0B593947231976';
-const SMG_FEE_PROXY = "0x0000000000000000000000000000000000000000";
+const SMG_FEE_PROXY = "0x82bf94d159b15a587c45c9d70e0fab7fd87889eb";
 const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
+const BIP44_CHAIN_ID = 0x8000032a; // ASTAR
 
 async function main() {
+  let deployer = (await hre.ethers.getSigner()).address;
+
   let TokenManagerDelegateV2 = await hre.ethers.getContractFactory("TokenManagerDelegateV2");
   let tokenManagerDelegate = await TokenManagerDelegateV2.deploy();
   if (waitForReceipt) {
@@ -99,37 +102,52 @@ async function main() {
   // config
 
   console.log('config...');
-  await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
+  let tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
+  await tx.wait();
   console.log('tokenManagerProxy upgradeTo finished.');
-  await crossProxy.upgradeTo(crossDelegate.address);
+  tx = await crossProxy.upgradeTo(crossDelegate.address);
+  await tx.wait();
   console.log('crossProxy upgradeTo finished.');
-  await oracleProxy.upgradeTo(oracleDelegate.address);
+  tx = await oracleProxy.upgradeTo(oracleDelegate.address);
+  await tx.wait();
   console.log('oracleProxy upgradeTo finished.');
   let tokenManager = await hre.ethers.getContractAt("TokenManagerDelegateV2", tokenManagerProxy.address);
   let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
   let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.address);
 
   console.log('oracle set admin...')
-  await oracle.setAdmin(ORACLE_ADMIN);
+  tx = await oracle.setAdmin(ORACLE_ADMIN);
+  await tx.wait();
   console.log('oracle set admin finished.')
   console.log('tokenManager add admin...')
-  await tokenManager.addAdmin(crossProxy.address);
+  tx = await tokenManager.addAdmin(crossProxy.address);
+  await tx.wait();
   console.log('tokenManager add admin finished.')
 
   console.log('tokenManager set operator...')
-  await tokenManager.setOperator(TOKEN_MANAGER_OPERATOR);
+  tx = await tokenManager.setOperator(TOKEN_MANAGER_OPERATOR);
+  await tx.wait();
   console.log('tokenManager set operator finished.')
 
   console.log('verifier register...')
-  await signatureVerifier.register(1, bn128SchnorrVerifier.address);
+  tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
+  await tx.wait();
   console.log('verifier register finished.')
 
   console.log('cross set partner...');
-  await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
+  tx = await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
+  await tx.wait();
   console.log('cross set partner finished.');
 
   console.log('cross add admin...')
-  await cross.setAdmin(CROSS_ADMIN);
+  tx = await cross.setAdmin(deployer);
+  await tx.wait();
+  console.log('cross set chainID...')
+  tx = await cross.setChainID(BIP44_CHAIN_ID);
+  await tx.wait();
+  console.log('cross add admin2...')
+  tx = await cross.setAdmin(CROSS_ADMIN);
+  await tx.wait();
   console.log('config finished.');
   // console.log('transfer owner...');
   // transfer owner
@@ -139,16 +157,16 @@ async function main() {
   // await signatureVerifier.transferOwner(OWNER_ADDRESS);
   // console.log('transfer owner finished.');
   const deployed = {
-    tokenManagerDelegate: tokenManagerDelegate.address,
-    tokenManagerProxy: tokenManagerProxy.address,
-    crossDelegate: crossDelegate.address,
-    crossProxy: crossProxy.address,
-    oracleDelegate: oracleDelegate.address,
-    oracleProxy: oracleProxy.address,
     signatureVerifier: signatureVerifier.address,
     bn128SchnorrVerifier: bn128SchnorrVerifier.address,
     RapidityLibV4: rapidityLib.address,
     NFTLibV1: nftLib.address,
+    crossDelegate: crossDelegate.address,
+    crossProxy: crossProxy.address,
+    tokenManagerDelegate: tokenManagerDelegate.address,
+    tokenManagerProxy: tokenManagerProxy.address,
+    oracleDelegate: oracleDelegate.address,
+    oracleProxy: oracleProxy.address,
   };
 
   fs.writeFileSync(`deployed/${hre.network.name}.json`, JSON.stringify(deployed, null, 2));
