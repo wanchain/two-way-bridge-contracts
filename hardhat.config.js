@@ -53,7 +53,17 @@ module.exports = {
       moonbaseAlpha: "EE37GEZGJA7RHS3ZKXWW1JJVDXZ6SBYBRC",
       goerli: "HNUE7V72CI8XJ6FNZ1CDIYSEBYY6HHREAE",
       optimisticEthereum: "JSYSW7GDUAAZ4U7WN3SCFE7NM62IBB6GFC",
-      // astar: 'X3KC4YWKNDM8N3MJ52SFJC21GT9T5DWRK6', //fake
+      astar: 'X3KC4YWKNDM8N3MJ52SFJC21GT9T5DWRK6', //fake
     },
+    customChains: [
+      {
+        network: "astar",
+        chainId: 592,
+        urls: {
+          apiURL: "https://blockscout.com/astar/api",
+          browserURL: "https://blockscout.com/astar"
+        }
+      }
+    ]
   },
 };
