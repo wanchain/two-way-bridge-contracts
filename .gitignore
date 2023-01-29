@@ -16,3 +16,4 @@ package-lock.json
 artifacts
 wanchain-sc-sdk
 migrations/deployed
+cache/
