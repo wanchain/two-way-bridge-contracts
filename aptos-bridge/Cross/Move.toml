@@ -3,7 +3,7 @@ name = 'Cross'
 version = '1.0.0'
 
 [dependencies]
-AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "b45652376387cadbb4c2d93b2de7ac4737c82737" }
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "a78970aa2a6fd6fa7db94d6d5700a902807102c7" }
 Oracle= { local= '../Oracle' }
 ResourceAccount= { local= '../ResourceAccount' }
 WrappedCoinV1={ local= '../WrappedCoin' }
