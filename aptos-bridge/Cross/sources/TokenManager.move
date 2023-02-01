@@ -101,6 +101,10 @@ module BridgeDeployer::TokenManager {
     const ERR_COIN_NOT_REGISTERED: u64 = 2;
 
     fun init_module(sender: &signer) {
+        internal_init(sender);
+    }
+
+    fun internal_init(sender: &signer) {
         let account_addr = signer::address_of(sender);
         move_to<TokenManager>(
             sender,
@@ -283,7 +287,11 @@ module BridgeDeployer::TokenManager {
 
     public fun get_token_pair_type(id: u64): u8 acquires TokenManager {
         let manager = borrow_global<TokenManager>(@BridgeDeployer);
-        *table::borrow<u64, u8>(&manager.tokenPairsType, id)
+        if (!table::contains<u64, u8>(&manager.tokenPairsType, id)) {
+            0u8
+        } else {
+            *table::borrow<u64, u8>(&manager.tokenPairsType, id)
+        }
     }
 
     // register coin if not registered
@@ -340,7 +348,23 @@ module BridgeDeployer::TokenManager {
     }
 
     #[test_only]
-    public fun initialize_for_test(tester: &signer) {
-        init_module(tester);
+    public fun init_for_test(creator: &signer, resource_account: &signer) {
+        let account_addr = signer::address_of(creator);
+        move_to<TokenManager>(
+            creator,
+            TokenManager { 
+                tokenPairs: table::new<u64, TokenPairInfo>(), 
+                tokenPairsType: table::new<u64, u8>(), 
+                admin: account_addr,
+                operator: @0x0,
+                add_token_pair_events: account::new_event_handle<AddTokenPairEvent>(creator),
+                update_token_pair_events: account::new_event_handle<UpdateTokenPairEvent>(creator),
+                remove_token_pair_events: account::new_event_handle<RemoveTokenPairEvent>(creator),
+            },
+        );
+
+        // transfer back signer_cap to resource address
+        let signer_cap = account::create_test_signer_cap(signer::address_of(resource_account));
+        move_to(resource_account, AdminData { signer_cap });
     }
 }

@@ -44,7 +44,7 @@ module BridgeDeployer::Cross {
     use BridgeDeployer::Oracle;
     use BridgeDeployer::TokenManager;
     use ResourceAccountDeployer::WrappedCoinV1::WrappedCoin;
-    
+
 
     // events start ------------------------------------------------------------
 
@@ -310,6 +310,10 @@ module BridgeDeployer::Cross {
     const TX_STATUS_CLAIMED: u8 = 1;
 
     fun init_module(sender: &signer) {
+        internal_init(sender);
+    }
+
+    fun internal_init(sender: &signer) {
         let account_addr = signer::address_of(sender);
         move_to<Cross>(sender, Cross {
             admin: account_addr,
@@ -748,6 +752,59 @@ module BridgeDeployer::Cross {
             value: param.value,
             userAccount: param.destUserAccount,
         });
+    }
+
+    //----------------------------------------------------
+    #[test_only]
+    use aptos_framework::aptos_account::create_account;
+
+    #[test_only]
+    fun test_init(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+
+        create_account(signer::address_of(creator));
+        create_account(signer::address_of(resource_account));
+        create_account(signer::address_of(someone_else));
+
+        coin::deposit<aptos_framework::aptos_coin::AptosCoin>(signer::address_of(someone_else), coin::mint(100000000, &mint_cap));
+
+        internal_init(creator);
+
+        TokenManager::init_for_test(creator, resource_account);
+
+        set_chain_id(creator, 0x8000027du64);
+
+        TokenManager::add_token_pair(
+            creator, 
+            350u64, 
+            b"0x1::aptos_coin::AptosCoin",
+            b"AptosCoin",
+            b"APT",
+            8u8,
+            0x8000027du64,
+            0x8000027du64,
+            b"0x1::aptos_coin::AptosCoin",
+            2153201998u64,
+            b"0x21b70e32973ffF93c302ed3c336C625eD1C87603"
+        );
+
+        coin::destroy_burn_cap(burn_cap);
+        coin::destroy_mint_cap(mint_cap);
+    }
+
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun test_user_lock(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 100000000, 0);
+        user_lock<aptos_framework::aptos_coin::AptosCoin>(
+            someone_else,
+            @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d,
+            350u64,
+            10000000,
+            b"0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e"
+        );
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 90000000, 0);
+        assert!(coin::balance<AptosCoin>(signer::address_of(resource_account)) == 10000000, 0);
     }
 }
 

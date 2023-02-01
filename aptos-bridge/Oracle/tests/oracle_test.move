@@ -4,7 +4,7 @@ module BridgeDeployer::oracle_test {
     use std::vector;
     use std::signer;
     use aptos_framework::account;
-    use aptos_std::debug;
+    // use aptos_std::debug;
 
 
     #[test(account = @0x666)]

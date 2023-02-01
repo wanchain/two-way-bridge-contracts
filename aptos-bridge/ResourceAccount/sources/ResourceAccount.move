@@ -29,7 +29,7 @@ module BridgeDeployer::ResourceAccount {
     }
 
     /// Destroys temporary storage for resource account signer capability and returns signer capability.
-    /// It needs for initialization of swap.
+    /// It needs for initialization of bridge.
     public fun retrieve_signer_cap(admin: &signer): SignerCapability acquires CapabilityStorage {
         assert!(signer::address_of(admin) == @BridgeDeployer, ERR_FORBIDDEN);
         let CapabilityStorage { signer_cap } = move_from<CapabilityStorage>(signer::address_of(admin));
