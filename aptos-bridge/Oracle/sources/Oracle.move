@@ -286,4 +286,27 @@ module BridgeDeployer::Oracle {
     public fun initialize_for_test(tester: &signer) {
         init_module(tester);
     }
+
+    #[test_only]
+    public fun initialize_smg_id(account: &signer, smgID: address, status: u8) acquires Oracle {
+        let chain: vector<u128> = vector::empty();
+        let curve: vector<u128> = vector::empty();
+        vector::push_back<u128>(&mut chain, 100);
+        vector::push_back<u128>(&mut chain, 101);
+        vector::push_back<u128>(&mut curve, 1);
+        vector::push_back<u128>(&mut curve, 2);
+
+        set_storeman_group_config(
+            account,
+            smgID,
+            status,
+            100000000u128,
+            chain,
+            curve,
+            b"Hello",
+            b"World",
+            12345678,
+            87654321,
+        );
+    }
 }

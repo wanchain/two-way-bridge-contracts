@@ -447,6 +447,7 @@ module BridgeDeployer::Cross {
 
     public entry fun user_lock<CoinType>(account: &signer, smgID: address, tokenPairID: u64, value: u64, userAccount: vector<u8>) acquires Cross {
         not_halted();
+        only_ready_smg(&smgID);
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let contractFee = 0;
         if (table::contains<u64, u64>(&data.data.mapTokenPairContractFee, tokenPairID)) {
@@ -514,6 +515,7 @@ module BridgeDeployer::Cross {
 
     public entry fun user_burn<CoinBase>(account: &signer, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: vector<u8>) acquires Cross {
         not_halted();
+        only_ready_smg(&smgID);
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let contractFee = 0;
         if (table::contains<u64, u64>(&data.data.mapTokenPairContractFee, tokenPairID)) {
@@ -761,6 +763,7 @@ module BridgeDeployer::Cross {
     #[test_only]
     fun test_init(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
         let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+        aptos_framework::timestamp::set_time_has_started_for_testing(core);
 
         create_account(signer::address_of(creator));
         create_account(signer::address_of(resource_account));
@@ -769,6 +772,8 @@ module BridgeDeployer::Cross {
         coin::deposit<aptos_framework::aptos_coin::AptosCoin>(signer::address_of(someone_else), coin::mint(100000000, &mint_cap));
 
         internal_init(creator);
+
+        Oracle::initialize_for_test(creator);
 
         TokenManager::init_for_test(creator, resource_account);
 
@@ -796,9 +801,14 @@ module BridgeDeployer::Cross {
     fun test_user_lock(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
         test_init(core, creator, resource_account, someone_else);
         assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 100000000, 0);
+
+        let smgID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        Oracle::initialize_smg_id(creator, smgID, GROUP_STATUS_READY);
+
         user_lock<aptos_framework::aptos_coin::AptosCoin>(
             someone_else,
-            @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d,
+            smgID,
             350u64,
             10000000,
             b"0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e"
