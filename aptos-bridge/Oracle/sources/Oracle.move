@@ -288,7 +288,7 @@ module BridgeDeployer::Oracle {
     }
 
     #[test_only]
-    public fun initialize_smg_id(account: &signer, smgID: address, status: u8) acquires Oracle {
+    public fun initialize_smg_id_for_test(account: &signer, smgID: address, gpk: vector<u8>, status: u8) acquires Oracle {
         let chain: vector<u128> = vector::empty();
         let curve: vector<u128> = vector::empty();
         vector::push_back<u128>(&mut chain, 100);
@@ -303,8 +303,8 @@ module BridgeDeployer::Oracle {
             100000000u128,
             chain,
             curve,
-            b"Hello",
-            b"World",
+            gpk,
+            gpk,
             12345678,
             87654321,
         );
