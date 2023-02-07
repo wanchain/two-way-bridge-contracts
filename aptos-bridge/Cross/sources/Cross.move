@@ -500,6 +500,10 @@ module BridgeDeployer::Cross {
         let type = TokenManager::get_token_pair_type(param.tokenPairID);
         assert!(type == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
+        let (_fromChainID, _fromAccount, _, _) = TokenManager::get_token_pair(param.tokenPairID);
+        assert!(param.currentChainID == _fromChainID, error::invalid_argument(ENO_INPUT_ERROR));
+        assert!(_fromAccount == *string::bytes(&type_info::type_name<CoinType>()), error::invalid_argument(ENO_INPUT_ERROR));
+
         TokenManager::lock_coin<CoinType>(account, left);
 
         let tokenAddr = string::bytes(&type_info::type_name<CoinType>());
@@ -571,6 +575,10 @@ module BridgeDeployer::Cross {
         
         let fromTokenType = TokenManager::get_token_pair_type(param.tokenPairID);
         assert!(fromTokenType == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
+        
+        let (_fromChainID, _fromAccount, _toChainID, _toChainAccount) = TokenManager::get_token_pair(param.tokenPairID);
+        assert!(param.currentChainID == _toChainID, error::invalid_argument(ENO_INPUT_ERROR));
+        assert!(_toChainAccount == *string::bytes(&type_info::type_name<WrappedCoin<CoinBase>>()), error::invalid_argument(ENO_INPUT_ERROR));
 
         TokenManager::burn_wrapped_coin<CoinBase>(account, param.value);
 
@@ -954,7 +962,7 @@ module BridgeDeployer::Cross {
             someone_else, 
             uniqueID,
             smgID,
-            350u64,
+            351u64,
             10000000u64,
             0u64,
             signer::address_of(someone_else),
@@ -979,7 +987,7 @@ module BridgeDeployer::Cross {
             someone_else, 
             uniqueID,
             smgID,
-            350u64,
+            351u64,
             10000000u64,
             0u64,
             signer::address_of(someone_else),
@@ -988,6 +996,44 @@ module BridgeDeployer::Cross {
         );
 
         assert!(coin::balance<WrappedCoin<CoinBase::WAN>>(signer::address_of(someone_else)) == 10000000u64, 0);
+    }
+
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun test_user_burn(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 100000000, 0);
+
+        let smgID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        Oracle::initialize_smg_id_for_test(creator, smgID, TEST_GPK, GROUP_STATUS_READY);
+
+        let uniqueID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        TokenManager::register_coin<WrappedCoin<CoinBase::WAN>>(someone_else);
+
+        smg_mint_sig_ctl<CoinBase::WAN>(
+            someone_else, 
+            uniqueID,
+            smgID,
+            351u64,
+            10000000u64,
+            0u64,
+            signer::address_of(someone_else),
+            TEST_SIGNATURE,
+            false,
+        );
+
+        assert!(coin::balance<WrappedCoin<CoinBase::WAN>>(signer::address_of(someone_else)) == 10000000u64, 0);
+
+        // user_burn<CoinBase::WAN>(
+        //     someone_else, 
+        //     smgID,
+        //     351u64,
+        //     10000000u64,
+        //     0u64,
+        //     signer::address_of(someone_else),
+        //     TEST_SIGNATURE
+        // );
     }
 }
 

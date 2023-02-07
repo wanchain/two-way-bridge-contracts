@@ -151,6 +151,7 @@ module BridgeDeployer::TokenManager {
         toAccount: vector<u8>
     ) acquires TokenManager {
         only_admin(account);
+        set_token_pair_type_internal(id, 0u8);
         
         let manager = borrow_global_mut<TokenManager>(@BridgeDeployer);
 
@@ -167,6 +168,7 @@ module BridgeDeployer::TokenManager {
             toChainID,
             toAccount,
         });
+
 
         event::emit_event<AddTokenPairEvent>(
             &mut manager.add_token_pair_events,
@@ -277,21 +279,19 @@ module BridgeDeployer::TokenManager {
         manager.admin = admin;
     }
 
+    fun set_token_pair_type_internal(id: u64, type: u8) acquires TokenManager {
+        let manager = borrow_global_mut<TokenManager>(@BridgeDeployer);
+        table::add<u64, u8>(&mut manager.tokenPairsType, id, type);
+    }
+
     public entry fun set_token_pair_type(account: &signer, id: u64, type: u8) acquires TokenManager {
         only_operator(account);
-        
-        let manager = borrow_global_mut<TokenManager>(@BridgeDeployer);
-
-        table::add<u64, u8>(&mut manager.tokenPairsType, id, type);
+        set_token_pair_type_internal(id, type);
     }
 
     public fun get_token_pair_type(id: u64): u8 acquires TokenManager {
         let manager = borrow_global<TokenManager>(@BridgeDeployer);
-        if (!table::contains<u64, u8>(&manager.tokenPairsType, id)) {
-            0u8
-        } else {
-            *table::borrow<u64, u8>(&manager.tokenPairsType, id)
-        }
+        *table::borrow<u64, u8>(&manager.tokenPairsType, id)
     }
 
     // register coin if not registered
