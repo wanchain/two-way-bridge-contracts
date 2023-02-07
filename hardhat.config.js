@@ -44,6 +44,10 @@ module.exports = {
     optimisticEthereum: {
       url: 'https://opt-mainnet.g.alchemy.com/v2/EA2PhKrouVck-pDZscwY8AEGv_G-TXvj',
       accounts: [process.env.PK],
+    },
+    telos_testnet: {
+      url: 'https://testnet.telos.net/evm',
+      accounts: [process.env.PK],
     }
   },
   etherscan: {
