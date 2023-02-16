@@ -1025,15 +1025,16 @@ module BridgeDeployer::Cross {
 
         assert!(coin::balance<WrappedCoin<CoinBase::WAN>>(signer::address_of(someone_else)) == 10000000u64, 0);
 
-        // user_burn<CoinBase::WAN>(
-        //     someone_else, 
-        //     smgID,
-        //     351u64,
-        //     10000000u64,
-        //     0u64,
-        //     signer::address_of(someone_else),
-        //     TEST_SIGNATURE
-        // );
+        user_burn<CoinBase::WAN>(
+            someone_else, 
+            smgID,
+            351u64,
+            10000000u64,
+            0u64,
+            x"4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e",
+        );
+
+        assert!(coin::balance<WrappedCoin<CoinBase::WAN>>(signer::address_of(someone_else)) == 0u64, 0);
     }
 }
 
