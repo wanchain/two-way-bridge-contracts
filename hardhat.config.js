@@ -48,6 +48,10 @@ module.exports = {
     telos_testnet: {
       url: 'https://testnet.telos.net/evm',
       accounts: [process.env.PK],
+    },
+    telos_mainnet: {
+      url: 'https://mainnet.telos.net/evm',
+      accounts: [process.env.PK],
     }
   },
   etherscan: {
