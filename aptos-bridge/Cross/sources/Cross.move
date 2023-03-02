@@ -784,8 +784,8 @@ module BridgeDeployer::Cross {
     #[test_only]
     use BridgeDeployer::CoinBase;
 
-    #[test_only]
-    use aptos_std::debug;
+    // #[test_only]
+    // use aptos_std::debug;
 
     #[test_only]
     fun test_init(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
@@ -824,7 +824,7 @@ module BridgeDeployer::Cross {
 
         let toCoin = string::bytes(&type_info::type_name<WrappedCoin<CoinBase::WAN>>());
 
-        debug::print<vector<u8>>(toCoin);
+        // debug::print<vector<u8>>(toCoin);
 
         TokenManager::add_token_pair(
             creator, 
