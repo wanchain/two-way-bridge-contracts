@@ -1,7 +1,7 @@
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
+const GpkDelegate = artifacts.require('GpkDelegateV2');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, Data } = require('./Data');
 const utils = require('../utils.js');
@@ -37,18 +37,24 @@ contract('Gpk_UT_terminate', async () => {
     console.log("onwer address: %s", owner);
     console.log("admin address: %s", admin);
 
-    groupId = await registerStart(smgSc);
+    groupId = await registerStart(smgSc, 0, {registerDuration:20, gpkDuration:10});
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
     await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
+    let curves = [1,0,1]
+    let algos  = [1,1,0]
+    await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin}) 
+
+
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
     // console.log("gpk ut data: %O", data);
 
-    await gpkSc.setPeriod(groupId, 10, 10, 10, {from: g.admin});
+    await gpkSc.setPeriod(groupId, 10, 10, 15, {from: g.admin});
+
   })
 
   // setPolyCommit
@@ -61,8 +67,8 @@ contract('Gpk_UT_terminate', async () => {
     } catch (e) {
       result = e;
     }
-    let info = await gpkSc.getGroupInfo(groupId, 0);
-    assert.equal(info.curve1Status, GpkStatus.Negotiate);
+    let info = await gpkSc.getGroupInfobyIndex(groupId, 0, 0);
+    assert.equal(info.curveStatus, GpkStatus.Negotiate);
   })
 
   // terminate
@@ -77,7 +83,7 @@ contract('Gpk_UT_terminate', async () => {
       await gpkSc.terminate(groupId, 0);
     } catch (e) {
       result = e;
-      console.log("terminate Not late: %O", e);
+      //console.log("terminate Not late: %O", e);
     }
     assert.equal(result.reason, 'Not late');
   })
@@ -91,8 +97,10 @@ contract('Gpk_UT_terminate', async () => {
       result = e;
       console.log("terminate should success: %O", e);
     }
-    let info = await gpkSc.getGroupInfo(groupId, 0);
-    assert.equal(info.curve1Status, GpkStatus.Close);
-    assert.equal(info.curve2Status, GpkStatus.Close);
+    for(let i=0; i<data.gpkCount; i++) {
+      let info = await gpkSc.getGroupInfobyIndex(groupId, 0, i);
+      assert.equal(info.curveStatus, GpkStatus.Close);
+    }
+
   })
 })

@@ -1,7 +1,7 @@
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
 const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
+const GpkDelegate = artifacts.require('GpkDelegateV2');
 const FakeSkCurve = artifacts.require('FakeSkCurve');
 const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, Data } = require('./Data');
@@ -53,11 +53,17 @@ contract('Gpk_UT_encsij_timeout', async () => {
     await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
+    let curves = [0,0,1]
+    let algos  = [0,1,1]
+    await gpkSc.setGpkCfg(groupId, curves, algos,{from:admin}) 
+
+
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
     // console.log("gpk ut data: %O", data);
 
     await gpkSc.setPeriod(groupId, 10, 10, 10, {from: g.admin});
+ 
   })
 
   // setPolyCommit
@@ -66,7 +72,12 @@ contract('Gpk_UT_encsij_timeout', async () => {
     if (fakeSc) {
       let result = {};
       try {
-        await skCurve.setAddResult(false);
+        let gpkt = await gpkSc.getGpkbyIndex(groupId, 0)
+        console.log("gpkt:", gpkt)
+        let tx = await skCurve.setAddResult(false);
+        console.log("setAddResult:", tx)
+        let addResult = await skCurve.addResult()
+        console.log("addResult:", addResult)
         await data.setPolyCommit(0, 0, 1);
       } catch (e) {
         result = e;
@@ -116,8 +127,8 @@ contract('Gpk_UT_encsij_timeout', async () => {
     } catch (e) {
       result = e;
     }
-    let info = await gpkSc.getGroupInfo(groupId, 0);
-    assert.equal(info.curve1Status, GpkStatus.Negotiate);
+    let info = await gpkSc.getGroupInfobyIndex(groupId, 0, 0);
+    assert.equal(info.curveStatus, GpkStatus.Negotiate);
   })
 
   it('[GpkDelegate_setPolyCommit] should fail: Invalid status', async () => {
@@ -150,8 +161,11 @@ contract('Gpk_UT_encsij_timeout', async () => {
       result = e;
       console.log("polyCommitTimeout should success: %O", e);
     }
-    let info = await gpkSc.getGroupInfo(groupId, 0);
-    assert.equal(info.curve1Status, GpkStatus.Close);
-    assert.equal(info.curve2Status, GpkStatus.Close);
+    for(let i=0; i<data.gpkCount; i++) {
+      let info = await gpkSc.getGroupInfobyIndex(groupId, 0, i);
+
+      assert.equal(info.curveStatus, GpkStatus.Close);
+    }
+
   })
 })

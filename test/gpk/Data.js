@@ -19,6 +19,7 @@ class Data {
     this.groupId = groupId;
     this.smList = [];
     this.threshold = 0;
+    this.gpkCount = 0;
     this.round = [];
   }
 
@@ -44,24 +45,30 @@ class Data {
     }
     this.smList = await Promise.all(ps);
     this.threshold = await this.smgSc.getThresholdByGrpId(this.groupId);
-    console.log('gpk ut get smList: %O', this.smList);
-    console.log('gpk ut get threshold: %d/%d', this.threshold, smNumber);
+    //console.log('gpk ut get smList: %O', this.smList);
+    //console.log('gpk ut get threshold: %d/%d', this.threshold, smNumber);
   }
 
   async initCurve() {
     let info = await this.smgSc.getStoremanGroupConfig(this.groupId);
-    console.log('gpk ut get curves: %O', info);
-    let round = new Round(parseInt(info.curve1));
-    await round.init(this.smList, this.threshold);
-    this.round[0] = round;
-    round = new Round(parseInt(info.curve2));
-    await round.init(this.smList, this.threshold);
-    this.round[1] = round;
+    //console.log('gpk ut get curves: %O', info);
+
+    let gpkCount = await this.gpkSc.getGpkCount(this.groupId);
+    console.log("gpkCount:", gpkCount.toString(10))
+    this.gpkCount = gpkCount;
+    for(let i=0; i<gpkCount; i++) {
+      let cfg = await this.gpkSc.getGpkCfgbyGroup(this.groupId, i)
+      let curve = cfg.curveIndex
+      let round = new Round(parseInt(curve));
+      await round.init(this.smList, this.threshold);
+      this.round[i] = round;
+    }
   }
 
   async setPolyCommit(round, curve, src, sender = null) {
-    let polyCommit = this.round[curve % 2].src[src].polyCommit;
+    let polyCommit = this.round[curve%this.gpkCount].src[src].polyCommit;
     let order = polyCommit.length;
+    console.log("setPolyCommit order:", order)
     let buf = Buffer.alloc(order * 64);
     let offset = 0;
     for (let i = 0; i < order; i++) {
@@ -72,7 +79,7 @@ class Data {
     let pcStr = '0x' + buf.toString('hex');
     sender = sender || this.smList[src].address;
     await this.gpkSc.setPolyCommit(this.groupId, round, curve, pcStr, {from: sender});
-    this.round[curve % 2].src[src].pcStr = pcStr;
+    this.round[curve].src[src].pcStr = pcStr;
   }
 
   async setEncSij(round, curve, dest, src) {
