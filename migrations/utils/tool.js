@@ -1,11 +1,15 @@
 const fs = require("fs");
 const path = require("path");
 const {
+  operationDict,
   chainDict,
   networkDict,
   networks,
   defaultGas,
-  ADDRESS_0
+  ADDRESS_0,
+  contractLoad,
+  actionDict,
+  deployScript,
 } = require("./config");
 
 function mkdir(dirname) {
@@ -26,82 +30,112 @@ function exit(error) {
 }
 
 function parseNetwork(network) {
-  let info = networkDict[network];
-  if (info) {
-    return {chainType: info.chainType, chainId: info.chainId, isMainnet: !!info.isMainnet};
-  } else {
-    throw new Error("invalid network: " + network);
+  if (!Object.keys(networkDict).includes(network)) {
+    throw new Error(`invalid network: ${network}`);
   }
+
+  return networkDict[network];
 }
 
 function getProxyDelegate(string) {
   return string.replace(/(.*)Proxy/, "$1Delegate")
 }
 
+function getAllRegExp() {
+  return [
+    {regExp:/^contractV[0-9]*$/, replaceExp:/^contractV/},
+    {regExp:/^wanchain_sc_deployV[0-9]*$/, replaceExp:/^wanchain_sc_deployV/},
+    {regExp:/^wanchain_sc_updateV[0-9]*$/, replaceExp:/^wanchain_sc_updateV/},
+  ];
+}
+
+function isQualifiedRegExp(fileName) {
+  let fileParsed = path.parse(fileName);
+
+  let totalRegExp = getAllRegExp();
+  for (let item of totalRegExp) {
+    if (item.regExp.test(fileParsed.name)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getVersionNumber(contractName) {
+  let totalRegExp = getAllRegExp();
+  for (let item of totalRegExp) {
+    if (item.regExp.test(contractName)) {
+      return Number(contractName.replace(item.replaceExp, ""));
+    }
+  }
+  throw new Error(`invalid contract config name ${contractName}`);
+}
+
 function skipContract(string) {
   return string.includes("Delegate");
 }
 
-function getWorkspace(root, contractLoad, deployScriptFileName) {
-  const workspace = {
-    WAN: {
-      contract: path.join(root, chainDict.WAN.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.WAN.toLowerCase(), deployScriptFileName)
-    },
-    ETH: {
-      contract: path.join(root, chainDict.ETH.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.ETH.toLowerCase(), deployScriptFileName)
-    },
-    ETC: {
-      contract: path.join(root, chainDict.ETC.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.ETC.toLowerCase(), deployScriptFileName)
-    },
-    EOS: {
-      contract: path.join(root, chainDict.EOS.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.EOS.toLowerCase(), deployScriptFileName)
-    },
-    TEST: {
-      contract: path.join(root, chainDict.TEST.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.TEST.toLowerCase(), deployScriptFileName)
-    },
-    BSC: {
-      contract: path.join(root, chainDict.BSC.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.BSC.toLowerCase(), deployScriptFileName)
-    },
-    AVAX: {
-      contract: path.join(root, chainDict.AVAX.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.AVAX.toLowerCase(), deployScriptFileName)
-    },
-    MOONBEAM: {
-      contract: path.join(root, chainDict.MOONBEAM.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.MOONBEAM.toLowerCase(), deployScriptFileName)
-    },
-    MATIC: {
-      contract: path.join(root, chainDict.MATIC.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.MATIC.toLowerCase(), deployScriptFileName)
-    },
-    ADA: {
-      contract: path.join(root, chainDict.ADA.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.ADA.toLowerCase(), deployScriptFileName)
-    },
-    ARB: {
-        contract: path.join(root, chainDict.ARB.toLowerCase(), contractLoad),
-        deploy: path.join(root, chainDict.ARB.toLowerCase(), deployScriptFileName)
-    },
-    OPM: {
-        contract: path.join(root, chainDict.OPM.toLowerCase(), contractLoad),
-        deploy: path.join(root, chainDict.OPM.toLowerCase(), deployScriptFileName)
-    },
-    FTM: {
-        contract: path.join(root, chainDict.FTM.toLowerCase(), contractLoad),
-        deploy: path.join(root, chainDict.FTM.toLowerCase(), deployScriptFileName)
-    },
-    XDC: {
-      contract: path.join(root, chainDict.XDC.toLowerCase(), contractLoad),
-      deploy: path.join(root, chainDict.XDC.toLowerCase(), deployScriptFileName)
-    },
+function getWorkspace(action, type, root, version) {
+  const dirPath = path.join(root, type.toLowerCase());
+
+  let result = {}
+  let selectedContract = contractLoad;
+  let selectedAction = getScScript(action);
+  let contractLoadParsed = path.parse(contractLoad); // { root: '/', dir: '/a/b', base: 'c.js', ext: '.js', name: 'c' }
+  let actionLoadParsed = path.parse(getScScript(action)); // { root: '/', dir: '/a/b', base: 'c.js', ext: '.js', name: 'c' }
+
+  if (typeof(version) !== "undefined") {
+    // specify contract version
+    contractLoadParsed.name = `${contractLoadParsed.name}${version}`;
+    contractLoadParsed.base = `${contractLoadParsed.name}${contractLoadParsed.ext}`;
+    selectedContract = path.format(contractLoadParsed);
+    // specify action version
+    actionLoadParsed.name = `${actionLoadParsed.name}${version}`;
+    actionLoadParsed.base = `${actionLoadParsed.name}${actionLoadParsed.ext}`;
+    selectedAction = path.format(actionLoadParsed);
+  } else if (type === operationDict.MODEL) {
+    const files = fs.readdirSync(dirPath);
+    let versionNumberDict = {};
+    for (let file of files) {
+      if (!versionNumberDict[file]) {
+        versionNumberDict[file] = 1;
+      }
+      if (isQualifiedRegExp(file)) {
+        let currVersionNumber = getVersionNumber(path.parse(file).name);
+        if (currVersionNumber > versionNumberDict[file]) {
+          versionNumberDict[file] = currVersionNumber;
+          if (file.includes(contractLoadParsed.name)) {
+            selectedContract = file;
+          } else if (file.includes(actionLoadParsed.name)) {
+            selectedAction = file;
+          }
+        }
+      }
+    }
   }
-  return workspace;
+
+  result["contract"] = path.join(root, type.toLowerCase(), selectedContract);
+  result[action] = path.join(root, type.toLowerCase(), selectedAction);
+  return result;
+}
+
+function getScScript(action) {
+  let script;
+  switch (actionDict[action]) {
+    case actionDict.deploy: {
+      script = deployScript.wanchainSc;
+      break;
+    }
+    case actionDict.update: {
+      script = deployScript.wanchainScUpdate;
+      break;
+    }
+    default: {
+      throw new Error(`not support action ${action}`);
+    }
+  }
+  return script
 }
 
 function parseScArgs() {
@@ -111,20 +145,30 @@ function parseScArgs() {
   .alias('h', 'help')
   .describe('h', 'display the usage')
   .describe('network', `identify chain network, support ${networks}, mainnet means Wanchain mainnet, testnet means Wanchain testnet`)
+  .describe('action', `identify action, support ${Object.keys(actionDict)}, prepare means prepare the environment for network, deploy means deploy contracts for network, update means update contracts for network`)
   .describe('nodeURL', `identify node url`)
   .describe('gasPrice', `identify gasPrice, using ${defaultGas.gasPrice} as default`)
   .describe('gasLimit', `identify gasLimit, using ${defaultGas.gasLimit} as default`)
   .describe('mnemonic', `identify mnemonic`)
   .describe('ownerIdx', `identify owner index in the hd wallet, start with 0, using mix "--mnemonic" and "--ownerIdx"`)
-  .describe('adminIdx', `identify admin index in the hd wallet, start with 0, using mix "--mnemonic" and "--adminIdx"`)
+  .describe('adminIdxCross', `identify admin index of cross contract in the hd wallet, start with 0, using mix "--mnemonic" and "--adminIdxCross"`)
+  .describe('adminIdxOracle', `identify admin index of oracle contract in the hd wallet, start with 0, using mix "--mnemonic" and "--adminIdxOracle"`)
+  .describe('adminIdxSmg', `identify admin index of storeman contract in the hd wallet, start with 0, using mix "--mnemonic" and "--adminIdxSmg"`)
   .describe('ownerPk', `identify owner private key`)
-  .describe('adminPk', `identify admin private key`)
+  .describe('adminPkCross', `identify admin of cross contract private key`)
+  .describe('adminPkOracle', `identify admin of oracle contract private key`)
+  .describe('adminPkSmg', `identify admin of storeman contract private key`)
+  .describe('adminCross', `identify admin of cross contract address`)
+  .describe('adminOracle', `identify admin of oracle contract address`)
+  .describe('adminSmg', `identify admin of storeman contract address`)
+  .describe('foundation', `identify foundation address`)
   .describe('outputDir', `identify the output absolute directory`)
   .default('gasPrice', defaultGas.gasPrice)
   .default('gasLimit', defaultGas.gasLimit)
+  .default('foundation', ADDRESS_0)
   .default('outputDir', path.join("deployed"))
-  .string(["network", "nodeURL", "mnemonic", "ownerPk", "adminPk", "outputDir"])
-  .demand(['network'])
+  .string(["network", "action", "nodeURL", "mnemonic", "ownerPk", "adminPkCross", "adminPkOracle", "adminPkSmg", "adminCross", "adminOracle", "adminSmg", "foundation", "outputDir"])
+  .demand(["network", "action"])
   .argv;
 
   if (argv.help) {

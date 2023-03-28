@@ -1,5 +1,5 @@
 pragma solidity ^0.4.24;
-import "./SafeMath.sol";
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 
 
 library PosLib {

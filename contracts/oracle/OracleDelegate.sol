@@ -105,7 +105,6 @@ contract OracleDelegate is OracleStorage, Owned {
     emit SetStoremanGroupConfig(id, status, deposit, chain, curve, gpk1, gpk2, startTime, endTime);
   }
 
-  // robot 都是true时,才调用
   function setDebtClean(
     bytes32 storemanGroupId,
     bool isClean

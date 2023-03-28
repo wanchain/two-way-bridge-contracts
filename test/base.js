@@ -319,24 +319,6 @@ async function toDelegateClaim(smg, wkAddr, index=30000,count=11){
         await sendTransaction(d, 0, sdata,smg.contract._address);
     }
 }
-async function toDelegateOut(smg, wkAddr, index=30000,count=11){
-    for(let i=index; i<index+count;i++){
-        let d = utils.getAddressFromInt(i)
-        let sdata =  smg.contract.methods.delegateOut(wkAddr).encodeABI()
-        
-        await web3.eth.sendTransaction({from:g.owner, to:d.addr, value:web3.utils.toWei('1')})
-        await sendTransaction(d, 0, sdata,smg.contract._address);
-    }
-}
-async function toPartOut(smg, wkAddr, index=40000,count=3){
-    for(let i=index; i<index+count;i++){
-        let d = utils.getAddressFromInt(i)
-        let sdata =  smg.contract.methods.partOut(wkAddr).encodeABI()
-        
-        await web3.eth.sendTransaction({from:g.owner, to:d.addr, value:web3.utils.toWei('1')})
-        await sendTransaction(d, 0, sdata,smg.contract._address);
-    }
-}
 async function toPartClaim(smg, wkAddr, index=40000,count=3){
     for(let i=index; i<index+count;i++){
         let d = utils.getAddressFromInt(i)
@@ -495,7 +477,7 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
 
 module.exports = {
     g,setupNetwork,toDelegateClaim, toPartClaim,
-    registerStart,toStakeAppend,toStakeIn,timeWaitIncentive,toDelegateIn,toPartIn,toSetGpk,toDelegateOut, toPartOut,
+    registerStart,toStakeAppend,toStakeIn,timeWaitIncentive,toDelegateIn,toPartIn,toSetGpk,
     stakeInPre,stakeWhiteList,toSelect,timeWaitSelect,timeWaitEnd,sendTransaction,
     initTestValue
 }

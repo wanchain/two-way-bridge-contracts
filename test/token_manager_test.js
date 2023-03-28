@@ -123,9 +123,9 @@ contract('TokenManagerDelegate', (accounts) => {
       const tokenPairID = parseInt(await tokenManagerDelegate.mapTokenPairIndex(0));
       const tokenPairInfo = await tokenManagerDelegate.mapTokenPairInfo(tokenPairID);
       const token = await MappingToken.at(tokenPairInfo.toAccount);
-      gas1 = await tokenManagerDelegate.mintToken.estimateGas(tokenPairID, other, 100, {from: admin});
+      gas1 = await tokenManagerDelegate.mintToken.estimateGas(token.address, other, 100, {from: admin});
       console.log(`mintToken estimate = ${gas1}`);
-      receipt = await tokenManagerDelegate.mintToken(tokenPairID, other, 100, {from: admin});
+      receipt = await tokenManagerDelegate.mintToken(token.address, other, 100, {from: admin});
       console.log(`mintToken used = ${receipt.receipt.gasUsed}`);
       // // check MintToken event log
       // const mintTokenEvent = receipt.logs[0].args;
@@ -135,9 +135,9 @@ contract('TokenManagerDelegate', (accounts) => {
 
       await token.transfer(admin, 80, {from: other});
 
-      gas1 = await tokenManagerDelegate.burnToken.estimateGas(tokenPairID, 20, {from: admin});
+      gas1 = await tokenManagerDelegate.burnToken.estimateGas(token.address, admin, 20, {from: admin});
       console.log(`burnToken estimate = ${gas1}`);
-      receipt = await tokenManagerDelegate.burnToken(tokenPairID, 20, {from: admin});
+      receipt = await tokenManagerDelegate.burnToken(token.address, admin, 20, {from: admin});
       console.log(`burnToken used = ${receipt.receipt.gasUsed}`);
 
       // // check BurnToken event log
@@ -373,13 +373,10 @@ contract('TokenManagerDelegate', (accounts) => {
 
       await tokenManagerDelegate.addAdmin(admin, {from: owner});
 
-      obj = await sendAndGetReason(tokenManagerDelegate.mintToken, [111, other, 100], {from: admin});
-      assert.equal(obj.reason, "token not exist");
-
-      obj = await sendAndGetReason(tokenManagerDelegate.mintToken, [addTokenPairParam[0], other, 100], {from: owner});
+      obj = await sendAndGetReason(tokenManagerDelegate.mintToken, [param[5], other, 100], {from: owner});
       assert.equal(obj.reason, "not admin");
 
-      obj = await sendAndGetReason(tokenManagerDelegate.mintToken, [addTokenPairParam[0], other, 0], {from: admin});
+      obj = await sendAndGetReason(tokenManagerDelegate.mintToken, [param[5], other, 0], {from: admin});
       assert.equal(obj.reason, "Value is null");
     });
   });

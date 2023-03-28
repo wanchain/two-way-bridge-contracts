@@ -1,24 +1,31 @@
 {
      "HTLCTxLib": {
-          "address": "0x5989d2Ab4cC5BdEF2cbFeF003f66FD2ba16CEcc5"
-     },
-     "HTLCDebtLib": {
-          "address": "0xeB8615721B2390c2C9b7AEaf772af3Fb1A5C7508"
+          "address": "0xe9407b8507198bf16c1be4ba011ae1d6250f112d"
      },
      "RapidityLib": {
-          "address": "0x6244874651416e8c3fFD62CC8599CeA003D40070"
+          "address": "0x13ef7ffa03fdadd5f685bae5b6546c080b8325af"
+     },
+     "NFTLibV1": {
+          "address": "0xa625e73fc8ecb84b146208b761c41a127f53686e"
+     },
+     "CrossDelegate": {
+          "address": "0x46522fffe0df8f2a8e9d2bdb0b1bdd8840a1b6ec",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "TokenManagerDelegate": {
+          "address": "0x703a6e99cfe8d489789a25f31d89a41efa8e3ba7",
+          "abi": "abi.TokenManagerDelegate.json"
      },
      "CrossProxy": {
           "address": "0x62dE27e16f6f31d9Aa5B02F4599Fc6E21B339e79",
           "abi": "abi.CrossDelegate.json"
      },
-     "CrossDelegate": {
-          "address": "0xE6BEd7Bb482C7b82A2C591e556bcBc1d54A2C3Ca",
-          "abi": "abi.CrossDelegate.json"
-     },
-     "TokenManagerDelegate": {
-          "address": "0x52C5Fefe8e38DFa722905Ce5f8ff6Fc7e96c6c1d",
+     "TokenManagerProxy": {
+          "address": "0x017aB6485fF91C1A0a16B90E71f92B935B7213d3",
           "abi": "abi.TokenManagerDelegate.json"
+     },
+     "HTLCDebtLib": {
+          "address": "0xeB8615721B2390c2C9b7AEaf772af3Fb1A5C7508"
      },
      "QuotaDelegate": {
           "address": "0x9a1B526802DD18b2658F04Cd2DE8aD4cE4b41729",
@@ -31,10 +38,6 @@
      "QuotaProxy": {
           "address": "0x7585c2ae6a3F3B2998103cB7040F811B550C9930",
           "abi": "abi.QuotaDelegate.json"
-     },
-     "TokenManagerProxy": {
-          "address": "0x017aB6485fF91C1A0a16B90E71f92B935B7213d3",
-          "abi": "abi.TokenManagerDelegate.json"
      },
      "OracleProxy": {
           "address": "0x27933A9b0A5c21B838843d7601B6e0b488122AE9",
@@ -58,16 +61,16 @@
           "address": "0x83A15a7976B5aB97D423f87678CC93f0757B2a92"
      },
      "CommonTool": {
-          "address": "0xd6A6Ddee99bf0e4c6c69C24006Af62Eda0Da1b11"
+          "address": "0xd76f54df8dBF214CdA15310076837504fc635FAD"
      },
      "StoremanUtil": {
-          "address": "0xF891FD543cDC36DBFa9b67b7b8de0C9C6Ec36c09"
+          "address": "0x3eDA25fEB7Ab2fc58E0BCf23737ac7d9a5c75Dd5"
      },
      "StoremanLib": {
-          "address": "0xd9B514360b818eDa08C208eF8Fd20193737a5836"
+          "address": "0x6cff5551bA19301150856C1192F75a0F7Cfef012"
      },
      "IncentiveLib": {
-          "address": "0xd324D20796d51600e5f9C4fDaFAB9d1Bc43D9717"
+          "address": "0x99ab3D7E391D08aebB6BDe3505F1D7ff4AB3a1eF"
      },
      "Deposit": {
           "address": "0xcd2C7272B91c08cd9A6B1e3C092A5e16Ff01a4d5"
@@ -77,7 +80,7 @@
           "abi": "abi.StoremanGroupDelegate.json"
      },
      "StoremanGroupDelegate": {
-          "address": "0xd324D20796d51600e5f9C4fDaFAB9d1Bc43D9717",
+          "address": "0xf16085f929A51DC16c34D48863cB2a351c75aff3",
           "abi": "abi.StoremanGroupDelegate.json"
      },
      "MetricLib": {

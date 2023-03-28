@@ -31,10 +31,10 @@ pragma experimental ABIEncoderV2;
  * Math operations with safety checks
  */
 
+import "../interfaces/IMappingToken.sol";
 import "../components/Admin.sol";
 import "./TokenManagerStorage.sol";
 import "./MappingToken.sol";
-import "./IMappingToken.sol";
 
 contract TokenManagerDelegate is TokenManagerStorage, Admin {
     using SafeMath for uint;

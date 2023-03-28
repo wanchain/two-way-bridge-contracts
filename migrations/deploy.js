@@ -3,11 +3,12 @@ const path = require("path");
 
 const Contract = require("./utils/contract");
 const {
-  contractLoad,
-  wanchainScScript,
-  chainDict,
+  operationDict,
+  actionDict,
   networks,
-  defaultArgv
+  defaultArgv,
+  bipChainIdDict,
+  hideKeys
 } = require("./utils/config");
 const {
   mkdir,
@@ -21,28 +22,37 @@ const {
 async function deploy(argv) {
   let error;
   let ownerPrivateKey;
-  let adminPrivateKey;
+  let adminCrossPrivateKey;
+  let adminOraclePrivateKey;
+  let adminSmgPrivateKey;
   let deployedPath;
 
-  argv = Object.assign({}, defaultArgv[argv.network], argv);
   if (!networks.includes(argv.network)) {
     error = `Invalid network ${argv.network}`;
+    throw new Error(error);
   }
+  argv.name = argv.network;
+  argv.network = defaultArgv[argv.name].network;
+  argv = Object.assign({}, defaultArgv[argv.name], argv);
+
+  if (!actionDict[argv.action]) {
+    error = `Invalid action ${argv.action}`;
+    throw new Error(error);
+  }
+
+  const {chainType, isMainnet} = parseNetwork(argv.name);
+
+  if (actionDict[argv.action] === actionDict.prepare) {
+    return prepareEnvironment(chainType, argv.version);
+  }
+
   if (!argv.nodeURL) {
     error = `Invalid nodeURL ${argv.nodeURL}`;
+    throw new Error(error);
   }
   if (!argv.ownerPk && (!argv.mnemonic || Number.isNaN(Number(argv.ownerIdx)))) {
     error = `Need identify ownerPk or (mnemonic and ownerIdx)`;
-  }
-
-  const {chainType, chainId, isMainnet} = parseNetwork(argv.network);
-  if (chainType === chainDict.WAN) {
-    if (!argv.adminPk && (!argv.mnemonic || Number.isNaN(Number(argv.adminIdx)))) {
-      error = `Need identify adminPk or (mnemonic and adminIdx)`;
-    }
-  }
-  if (error) {
-    exit(error);
+    throw new Error(error);
   }
 
   if (!path.isAbsolute(argv.outputDir)) {
@@ -58,32 +68,49 @@ async function deploy(argv) {
     ownerPrivateKey = Contract.exportPrivateKey(argv.mnemonic, Contract.getChainIndex(chainType), argv.ownerIdx).toString("hex");
   }
   // console.log("owner privateKey", ownerPrivateKey);
-  if (argv.adminPk) {
-    adminPrivateKey = argv.adminPk;
-  } else if (argv.mnemonic && typeof(argv.adminIdx) !== "undefined") {
-    adminPrivateKey = Contract.exportPrivateKey(argv.mnemonic, Contract.getChainIndex(chainType), argv.adminIdx).toString("hex");
+  if (argv.adminPkCross) {
+    adminCrossPrivateKey = argv.adminPkCross;
   }
-  // console.log("admin privateKey", adminPrivateKey);
+  if (argv.adminPkOracle) {
+    adminOraclePrivateKey = argv.adminPkOracle;
+  }
+  if (argv.adminPkSmg) {
+    adminSmgPrivateKey = argv.adminPkSmg;
+  }
+  if (argv.mnemonic) {
+    if (typeof(argv.adminIdxCross) !== "undefined") {
+      adminCrossPrivateKey = Contract.exportPrivateKey(argv.mnemonic, Contract.getChainIndex(chainType), argv.adminIdxCross).toString("hex");
+    }
+    if (typeof(argv.adminIdxOracle) !== "undefined") {
+      adminOraclePrivateKey = Contract.exportPrivateKey(argv.mnemonic, Contract.getChainIndex(chainType), argv.adminIdxOracle).toString("hex");
+    }
+    if (typeof(argv.adminIdxSmg) !== "undefined") {
+      adminSmgPrivateKey = Contract.exportPrivateKey(argv.mnemonic, Contract.getChainIndex(chainType), argv.adminIdxSmg).toString("hex");
+    }
+  }
 
   let cfg = {
-    network: argv.network, // 'mainnet' or 'testnet' or 'ethereum' or 'rinkeby'
-    chainId,
-    nodeURL: argv.nodeURL,
+    ...argv,
     privateKey: ownerPrivateKey,
-    adminPrivateKey: adminPrivateKey,
+    adminCrossPrivateKey: adminCrossPrivateKey,
+    adminOraclePrivateKey: adminOraclePrivateKey,
+    adminSmgPrivateKey: adminSmgPrivateKey,
 
     contractDir: path.join(__dirname, "..", 'contracts'),
     outputDir: path.join(__dirname, "..", 'build', 'sc-contracts'),
     gasPrice: Number(argv.gasPrice),
     gasLimit: Number(argv.gasLimit)
-  }
-  console.log("cfg", hideObject(cfg, ["privateKey", "adminPrivateKey"]));
+  };
+  console.log("cfg", hideObject(cfg, hideKeys));
 
-  const workspace = getWorkspace(__dirname, contractLoad, wanchainScScript);
-  console.log("run", workspace[chainType].deploy);
+  const workspace = getWorkspace(actionDict[argv.action], chainType, __dirname);
+  console.log("run", workspace[actionDict[argv.action]]);
 
-  const {deploy} = require(workspace[chainType].deploy);
-  let contractDict = await deploy(cfg, isMainnet);
+  const {deploy} = require(workspace[actionDict[argv.action]]);
+  let contractDict = await deploy(cfg, isMainnet, {
+    chainType: chainType,
+    bipChainID:bipChainIdDict[chainType]
+  });
 
   let deployed = {};
   for (let contract in contractDict.address) {
@@ -101,7 +128,7 @@ async function deploy(argv) {
 
   if (Object.keys(deployed).length > 0) {
     // merge
-    const outputFile = path.join(deployedPath,`${argv.network}.json`);
+    const outputFile = path.join(deployedPath,`${argv.name}.json`);
     if (fs.existsSync(outputFile)) {
       const preDeployed = require(outputFile);
       for (let key in preDeployed) {
@@ -111,8 +138,48 @@ async function deploy(argv) {
       }
     }
     fs.writeFileSync(outputFile, JSON.stringify(deployed, null, 5), {flag: 'w', encoding: 'utf8', mode: '0666'});
-    console.log("output", deployedPath);
+    console.log("output", outputFile);
   }
+}
+
+function prepareEnvironment(chainType, version) {
+  const modelWorkspace = [
+    getWorkspace(actionDict.update, operationDict.MODEL, __dirname, version),
+    getWorkspace(actionDict.deploy, operationDict.MODEL, __dirname, version)
+  ].reduce((reduced, next) => {
+    for (let key in next) {
+      if (!reduced[key]) {
+        reduced[key] = next[key];
+      }
+    }
+    return reduced;
+  }, {});
+  // workspace: {contract: '/a/b/c/d.js', deploy: '/a/b/c/e.js', update: '/a/b/c/f.js'}
+  const destWorkspace = [
+    getWorkspace(actionDict.update, chainType, __dirname),
+    getWorkspace(actionDict.deploy, chainType, __dirname)
+  ].reduce((reduced, next) => {
+    for (let key in next) {
+      if (!reduced[key]) {
+        reduced[key] = next[key];
+      }
+    }
+    return reduced;
+  }, {});
+
+  console.log("modelWorkspace:", modelWorkspace)
+  for (let key in destWorkspace) {
+    const dirPath = path.dirname(destWorkspace[key]);
+    if (!fs.existsSync(path.dirname(destWorkspace[key]))) {
+      mkdir(dirPath);
+    }
+
+    if (!fs.existsSync(destWorkspace[key])) {
+      fs.copyFileSync(modelWorkspace[key], destWorkspace[key]);
+      console.log(`copy ${modelWorkspace[key]} to ${destWorkspace[key]}`);
+    }
+  }
+  console.log(chainType, destWorkspace, "environment is ready");
 }
 
 module.exports = deploy;

@@ -27,12 +27,12 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 import "../components/Halt.sol";
 
 import "./MetricStorage.sol";
 import "./lib/MetricTypes.sol";
 import "../interfaces/IStoremanGroup.sol";
-import "../lib/SafeMath.sol";
 import "../lib/CommonTool.sol";
 import "./lib/MetricLib.sol";
 import "../interfaces/IPosLib.sol";

@@ -26,11 +26,11 @@
 
 pragma solidity 0.4.26;
 
-import "../lib/SafeMath.sol";
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 import "../components/BasicStorage.sol";
 
 contract QuotaStorage is BasicStorage {
-    
+
     /// @dev Math operations with safety checks
     using SafeMath for uint;
 

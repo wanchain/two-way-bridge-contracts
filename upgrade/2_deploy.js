@@ -1,61 +1,15 @@
-
-
-//const QuotaLib = artifacts.require('QuotaLib');
-let PosLib = artifacts.require('PosLib');
 const StoremanUtil = artifacts.require('StoremanUtil');
 
 
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-
 const CommonTool = artifacts.require('CommonTool');
-const MetricProxy = artifacts.require('MetricProxy');
-const MetricDelegate = artifacts.require('MetricDelegate');
-const MetricLib = artifacts.require('MetricLib');
-const FakeSmg = artifacts.require('FakeSmg');
-const FakeSkCurve = artifacts.require('FakeSkCurve');
-const FakeBnCurve = artifacts.require('FakeBnCurve');
-const FakePosLib = artifacts.require('FakePosLib');
-const FakeCommonTool = artifacts.require('FakeCommonTool');
-
-const Secp256k1Curve = artifacts.require('Secp256k1Curve');
-const Bn256Curve = artifacts.require('Bn256Curve');
 const GpkLib = artifacts.require('GpkLib');
-const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
 const Deposit = artifacts.require('Deposit');
-const TestDeposit = artifacts.require('TestDeposit');
+
 const StoremanLib = artifacts.require('StoremanLib');
 const IncentiveLib = artifacts.require('IncentiveLib');
 const ListGroup = artifacts.require('ListGroup');
-
-const fakeQuota = artifacts.require('fakeQuota');
-
-const HTLCTxLib = artifacts.require('HTLCTxLib');
-const HTLCBurnLib = artifacts.require('HTLCBurnLib');
-const HTLCDebtLib = artifacts.require('HTLCDebtLib');
-const HTLCMintLib = artifacts.require('HTLCMintLib');
-const RapidityLib = artifacts.require('RapidityLib');
-const CrossDelegate = artifacts.require('CrossDelegate');
-const CrossProxy = artifacts.require('CrossProxy');
-
-const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
-const TokenManagerProxy = artifacts.require('TokenManagerProxy');
-
-const QuotaDelegate = artifacts.require('QuotaDelegate');
-const QuotaProxy = artifacts.require('QuotaProxy');
-
-const OracleDelegate = artifacts.require('OracleDelegate');
-const OracleProxy = artifacts.require('OracleProxy');
-
-const Bn128SchnorrVerifier = artifacts.require('Bn128SchnorrVerifier');
-const Secp256k1SchnorrVerifier = artifacts.require('Secp256k1SchnorrVerifier');
-const SignatureVerifier = artifacts.require('SignatureVerifier');
-
-const ConfigDelegate = artifacts.require('ConfigDelegate');
-const ConfigProxy = artifacts.require('ConfigProxy');
-
-const config = require("../truffle-config");
 
 const curveMap = new Map([
     ['secp256k1', 0],
@@ -84,17 +38,15 @@ module.exports = async function (deployer, network) {
     //let quotaProxyAddr = '0x7585c2ae6a3F3B2998103cB7040F811B550C9930';
     let smgProxyAddr = '0xaA5A0f7F99FA841F410aafD97E8C435c75c22821';
     let posLibAddr = '0x4Ec1e3c0aB865707eEc5F9a97Bcaee2E39b8a2De';
-    let crossProxyAddr = '0x62dE27e16f6f31d9Aa5B02F4599Fc6E21B339e79';
 
-
-    //### smg
+    // smg
     await deployer.deploy(CommonTool);
     await deployer.link(CommonTool,StoremanUtil);
     await deployer.deploy(StoremanUtil);
 
     await deployer.link(StoremanUtil,StoremanLib);
     await deployer.link(StoremanUtil,IncentiveLib);
-    //await deployer.link(StoremanUtil,ListGroup);
+    await deployer.link(StoremanUtil,ListGroup);
 
     await deployer.deploy(Deposit);
     await deployer.link(Deposit,StoremanGroupDelegate);
@@ -114,39 +66,13 @@ module.exports = async function (deployer, network) {
     await smgProxy.upgradeTo(smgDelegate.address);
     console.log("smg address:", smgProxy.address);
 
-    /*
-    //###htlc
-    // cross approach smart contracts
-    await deployer.deploy(HTLCTxLib);
-
-    await deployer.link(HTLCTxLib, HTLCDebtLib);
-    await deployer.deploy(HTLCDebtLib);
-
-    await deployer.deploy(RapidityLib);
-
-    await deployer.link(HTLCTxLib, CrossDelegate);
-    await deployer.link(HTLCDebtLib, CrossDelegate);
-
-    await deployer.link(RapidityLib, CrossDelegate);
-    await deployer.deploy(CrossDelegate);
-
-    let crossProxy = await CrossProxy.at(crossProxyAddr);
-    console.log("crossProxyAddr",crossProxyAddr);
-    let crossDelegate = await CrossDelegate.deployed();
-    await crossProxy.upgradeTo(crossDelegate.address);
-    */
-
-
-    /*
     // ListGroup
-    await deployer.deploy(ListGroup,smgProxyAddr, posLibAddr);
-    let listGroup = await ListGroup.deployed();
-
-    let smg = await StoremanGroupDelegate.at(smgProxyAddr);
-    await smg.setGlobalGroupScAddr(listGroup.address);
-    await smg.addActiveGroupId('0x000000000000000000000000000000000000000000746573746e65745f303036',{from: config.networks[network].admin});
-    await smg.addActiveGroupId('0x000000000000000000000000000000000000000000000041726965735f303032',{from: config.networks[network].admin});
-    */
+    // await deployer.deploy(ListGroup,smgProxyAddr, posLibAddr);
+    // let listGroup = await ListGroup.deployed();
+    //
+    // let smg = await StoremanGroupDelegate.at(smgProxyAddr);
+    // await smg.setGlobalGroupScAddr(listGroup.address);
+    // await smg.addActiveGroupId('0x000000000000000000000000000000000000000000746573746e65745f303035',{from: config.networks[network].admin});
 
     // gpk
     /*

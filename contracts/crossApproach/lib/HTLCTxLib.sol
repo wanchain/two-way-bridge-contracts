@@ -27,7 +27,7 @@
 pragma solidity ^0.4.26;
 pragma experimental ABIEncoderV2;
 
-import "../../lib/SafeMath.sol";
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 
 library HTLCTxLib {
     using SafeMath for uint;

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../lib/SafeMath.sol";
+import 'openzeppelin-eth/contracts/math/SafeMath.sol';
 
 contract Secp256k1 {
     using SafeMath for uint256;
