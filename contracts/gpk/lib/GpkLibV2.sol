@@ -84,6 +84,7 @@ library GpkLibV2 {
     /// @param group                      storeman group
     /// @param cfg                        group config
     /// @param smg                        storeman group contract address
+    /// @param curves                     storeman group curves, sec256:0, bn256:1
     function initGroup(bytes32 groupId, GpkTypes.Group storage group, address cfg, address smg, uint[] memory curves)
         public
     {
