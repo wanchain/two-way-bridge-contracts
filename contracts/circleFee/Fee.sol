@@ -45,6 +45,8 @@ contract Fee is Ownable, ReentrancyGuard {
         address burnToken,
         uint256 fee
     );
+    
+    event UpdateFeeTo(address to);
 
     constructor(address _feeToAddress, address _feeReadSC, uint256 _localChainId, address _circleTokenMessengerSC) {
         feeToAddress = _feeToAddress;
@@ -55,6 +57,7 @@ contract Fee is Ownable, ReentrancyGuard {
 
     function setFeeToAddress(address _feeToAddress) external onlyOwner {
         feeToAddress = _feeToAddress;
+        emit UpdateFeeTo(_feeToAddress);
     }
 
     function setCirclePathToBip44(uint256 _circlePath, uint256 _bip44) external onlyOwner {
@@ -68,7 +71,7 @@ contract Fee is Ownable, ReentrancyGuard {
             destChainID: circlePathToBip44[destinationDomain]
         }));
         
-        return fee.contractFee + fee.agentFee;
+        return fee.contractFee;
     }
 
     function depositForBurn(
