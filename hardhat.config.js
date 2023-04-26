@@ -52,6 +52,14 @@ module.exports = {
     telos_mainnet: {
       url: 'https://mainnet.telos.net/evm',
       accounts: [process.env.PK],
+    },
+    fxTestnet: {
+      url: "https://testnet-fx-json-web3.functionx.io:8545",
+      accounts: [process.env.PK]
+    },
+    fxMainnet: {
+      url: "https://fx-json-web3.functionx.io:8545",
+      accounts: [process.env.PK]
     }
   },
   etherscan: {
