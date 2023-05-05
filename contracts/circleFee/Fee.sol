@@ -28,12 +28,19 @@ interface ICircleTokenMessenger {
         address burnToken) external;
 }
 
+interface ICircleMessageTransmitter {
+    function receiveMessage(
+        bytes calldata message, 
+        bytes calldata attestation) external;
+}
+
 contract Fee is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address public feeToAddress;
     address public feeReadSC;
     address public circleTokenMessengerSC;
+    address public circleMessageTransmitterSC;
     uint256 public localChainId;
 
     mapping(uint256 => uint256) public circlePathToBip44;
@@ -45,16 +52,22 @@ contract Fee is Ownable, ReentrancyGuard {
         address burnToken,
         uint256 fee
     );
+    
+    event UpdateFeeTo(address to);
 
-    constructor(address _feeToAddress, address _feeReadSC, uint256 _localChainId, address _circleTokenMessengerSC) {
+    event MintToken(bytes32 mintRecipient, address token);
+
+    constructor(address _feeToAddress, address _feeReadSC, uint256 _localChainId, address _circleTokenMessengerSC, address _circleMessageTransmitterSC) {
         feeToAddress = _feeToAddress;
         feeReadSC = _feeReadSC;
         localChainId = _localChainId;
         circleTokenMessengerSC = _circleTokenMessengerSC;
+        circleMessageTransmitterSC = _circleMessageTransmitterSC;
     }
 
     function setFeeToAddress(address _feeToAddress) external onlyOwner {
         feeToAddress = _feeToAddress;
+        emit UpdateFeeTo(_feeToAddress);
     }
 
     function setCirclePathToBip44(uint256 _circlePath, uint256 _bip44) external onlyOwner {
@@ -68,7 +81,7 @@ contract Fee is Ownable, ReentrancyGuard {
             destChainID: circlePathToBip44[destinationDomain]
         }));
         
-        return fee.contractFee + fee.agentFee;
+        return fee.contractFee;
     }
 
     function depositForBurn(
@@ -86,5 +99,10 @@ contract Fee is Ownable, ReentrancyGuard {
         IERC20(burnToken).safeApprove(circleTokenMessengerSC, amount);
         ICircleTokenMessenger(circleTokenMessengerSC).depositForBurn(amount, destinationDomain, mintRecipient, burnToken);
         emit DepositForBurnWithFee(amount, destinationDomain, mintRecipient, burnToken, fee);
+    }
+
+    function receiveMessage(bytes calldata message, bytes calldata attestation, bytes32 mintRecipient, address token) external nonReentrant {
+        ICircleMessageTransmitter(circleMessageTransmitterSC).receiveMessage(message, attestation);
+        emit MintToken(mintRecipient, token);
     }
 }
