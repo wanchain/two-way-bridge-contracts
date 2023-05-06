@@ -60,6 +60,10 @@ module.exports = {
     fxMainnet: {
       url: "https://fx-json-web3.functionx.io:8545",
       accounts: [process.env.PK]
+    },
+    gatherTestnet: {
+      url: "https://testnet.gather.network",
+      accounts: [process.env.PK]
     }
   },
   etherscan: {
