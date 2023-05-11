@@ -18,7 +18,7 @@
  *
  */
 
-const HDWalletProvider = require("truffle-hdwallet-provider");
+ const HDWalletProvider = require('@truffle/hdwallet-provider');
 const mnemonic = "skill level pulse dune pattern rival used syrup inner first balance sad"; 
 
 
@@ -89,6 +89,20 @@ module.exports = {
           gasPrice: 1e9,   // 20 gwei (in wei) (default: 100 gwei)
           skipDryRun:true
       },
+      testnetRpc: {
+      provider: () =>
+      new HDWalletProvider({
+        mnemonic: {
+          phrase: mnemonic
+        },
+        providerOrUrl: "https://gwan-ssl.wandevs.org:46891",
+        chainId:999
+      }),
+      network_id: "999",
+      skipDryRun:true,
+      from: "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959",
+      admin: "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959",
+    },  
     // testnet: {
     //   provider: wanProvider,
     //   network_id: "*",
