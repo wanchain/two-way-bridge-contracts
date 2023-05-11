@@ -23,9 +23,9 @@ const FakeCommonTool = artifacts.require('FakeCommonTool');
 
 const Secp256k1Curve = artifacts.require('Secp256k1Curve');
 const Bn256Curve = artifacts.require('Bn256Curve');
-const GpkLib = artifacts.require('GpkLib');
+const GpkLib = artifacts.require('GpkLibV2');
 const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
+const GpkDelegate = artifacts.require('GpkDelegateV2');
 const Deposit = artifacts.require('Deposit');
 const TestDeposit = artifacts.require('TestDeposit');
 const StoremanLib = artifacts.require('StoremanLib');
