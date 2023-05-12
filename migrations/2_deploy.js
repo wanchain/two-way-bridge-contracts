@@ -23,6 +23,8 @@ const FakeCommonTool = artifacts.require('FakeCommonTool');
 
 const Secp256k1Curve = artifacts.require('Secp256k1Curve');
 const Bn256Curve = artifacts.require('Bn256Curve');
+const Ed25519Curve = artifacts.require('Ed25519Curve');
+
 const GpkLib = artifacts.require('GpkLibV2');
 const GpkProxy = artifacts.require('GpkProxy');
 const GpkDelegate = artifacts.require('GpkDelegate');
@@ -62,7 +64,8 @@ const config = require("../truffle-config");
 
 const curveMap = new Map([
     ['secp256k1', 0],
-    ['bn256', 1]
+    ['bn256', 1],
+    ['ed25519', 2],
 ])
 const coinSymbol = "WAN";
 const htlcLockedTime = 60*60; //unit: s
@@ -232,7 +235,7 @@ module.exports = async function (deployer, network) {
     let cnf = await ConfigDelegate.at(cnfProxy.address);
     await cnf.addAdmin(config.networks[network].admin);
 
-    let secp256k1, bn256;
+    let secp256k1, bn256,ed25519;
     if (network == 'local' || network == 'coverage') {
       await deployer.deploy(FakeSkCurve);
       secp256k1 = await FakeSkCurve.deployed();
@@ -243,8 +246,12 @@ module.exports = async function (deployer, network) {
       secp256k1 = await Secp256k1Curve.deployed();
       await deployer.deploy(Bn256Curve);
       bn256 = await Bn256Curve.deployed();
+
+      await deployer.deploy(Ed25519Curve);
+      ed25519 = await Ed25519Curve.deployed();
     }
-    await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256')], [secp256k1.address, bn256.address], {from: config.networks[network].admin});
+    await cnf.setCurve([curveMap.get('secp256k1'), curveMap.get('bn256'),curveMap.get('ed25519')],
+        [secp256k1.address, bn256.address,ed25519.address], {from: config.networks[network].admin});
 
     // dependence
     await smg.setDependence(metricProxy.address, gpkProxy.address, quotaProxy.address,posLib.address);
@@ -261,6 +268,9 @@ module.exports = async function (deployer, network) {
     let secp256K1 = await Secp256k1SchnorrVerifier.deployed();
     signatureVerifier.register(curveMap.get('bn256'), bn128.address);
     signatureVerifier.register(curveMap.get('secp256k1'), secp256K1.address);
+
+    //todo, do not need register,because now, only wanchain precompile support ed25519
+    //signatureVerifier.register(curveMap.get('ed25519'), ed25519.address);
 
     // config crossApproach
     if (!isMainnet) {
