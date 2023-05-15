@@ -74,6 +74,10 @@ contract Fee is Ownable, ReentrancyGuard {
         circlePathToBip44[_circlePath] = _bip44;
     }
 
+    function setFeeReadSC(address _feeReadSC) external onlyOwner {
+        feeReadSC = _feeReadSC;
+    }
+
     function estimateFee(uint32 destinationDomain) public view returns(uint256) {
         require(circlePathToBip44[destinationDomain] != 0, "Fee: Invalid destination domain");
         GetFeesReturn memory fee = IFeeReadSC(feeReadSC).getFee(GetFeesParam({
