@@ -34,6 +34,7 @@ module.exports = async function (deployer, network) {
 
     let gpkProxyAddr = '0xf0bFfF373EEF7b787f5aecb808A59dF714e2a6E7';
 
+    await deployer.deploy(CommonTool);
     await deployer.link(CommonTool, GpkLib);
     await deployer.deploy(GpkLib);
 
