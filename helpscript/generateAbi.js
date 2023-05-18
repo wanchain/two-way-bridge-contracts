@@ -1,0 +1,101 @@
+const fs= require('fs');
+const path= require('path');
+
+const abiPrefix = "abi.";
+const abiFiles = [
+    [
+        '../build/contracts/StoremanGroupDelegate.json',
+        '../build/contracts/StoremanLib.json',
+        '../build/contracts/IncentiveLib.json',
+    ],
+    [
+        '../build/contracts/MetricDelegate.json',
+        '../build/contracts/MetricStorage.json',
+    ],
+    [
+        '../build/contracts/GpkDelegate.json',
+        '../build/contracts/GpkLib.json',
+    ],
+    [
+        '../build/contracts/CrossDelegate.json',
+        '../build/contracts/HTLCDebtLib.json',
+        '../build/contracts/RapidityLib.json',
+    ],
+    [
+        '../build/contracts/SignatureVerifier.json',
+    ],
+    [
+        '../build/contracts/TokenManagerDelegate.json',
+
+    ],
+    [
+        '../build/contracts/QuotaDelegate.json',
+    ],
+    [
+        '../build/contracts/OracleDelegate.json',
+    ],
+    [
+        '../build/contracts/MappingToken.json',
+    ],
+    [
+        '../build/contracts/PosLib.json',
+    ],
+    [
+        '../build/contracts/ListGroup.json',
+    ],
+    [
+        '../build/contracts/CrossDelegateV2.json',
+        '../build/contracts/HTLCDebtLibV2.json',
+        '../build/contracts/RapidityLibV2.json',
+    ],
+    [
+        '../build/contracts/TokenManagerDelegateV2.json',
+    ],
+    [
+        '../build/contracts/CrossDelegateV3.json',
+        '../build/contracts/RapidityLibV3.json',
+    ],
+    [
+        '../build/contracts/CrossDelegateV4.json',
+        '../build/contracts/RapidityLibV4.json',
+        '../build/contracts/NFTLibV1.json',
+    ],
+    [
+        '../build/contracts/CrossDelegateXinFin.json',
+        '../build/contracts/RapidityLibV4.json',
+        '../build/contracts/NFTLibV1.json',
+    ]
+];
+
+function generateAbi(abiFile) {
+    let total = [];
+    let filename;
+    for(let i = 0; i < abiFile.length; ++i) {
+        if (!filename) {
+            let parsed = path.parse(abiFile[i]);
+            filename = path.format({
+                dir: __dirname,
+                name: abiPrefix.concat(parsed.name),
+                ext: parsed.ext
+            });
+        }
+
+        let content = fs.readFileSync(__dirname+'/'+abiFile[i], 'utf8');
+        let json = JSON.parse(content);
+        for(let k= 0; k< json.abi.length; ++k) {
+            if(0 === i || json.abi[k].type == 'event') {
+            total.push(json.abi[k])
+        }
+    }
+    }
+    console.log("abi path:",filename);
+    fs.writeFileSync(filename, JSON.stringify(total));
+}
+
+function main () {
+    abiFiles.forEach(abiFile => {
+        generateAbi(abiFile);
+    });
+}
+
+main();

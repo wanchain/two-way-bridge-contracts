@@ -1,0 +1,42 @@
+{
+     "HTLCTxLib": {
+          "address": "0xf9aee7faadb3449083a76250e0b2c87a88eabd98"
+     },
+     "RapidityLib": {
+          "address": "0x0f000c6d590caec02e59f9c740b5fb3d3727752e"
+     },
+     "NFTLibV1": {
+          "address": "0x8dd71ce0e2693fc1645fd9e76792f0c5db356520"
+     },
+     "CrossDelegate": {
+          "address": "0xa3c9453e9d623e5046c7fec236f3a89ec4ed843d",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "TokenManagerDelegate": {
+          "address": "0xc4d075fcda87808572d34491da51a215afe72f98",
+          "abi": "abi.TokenManagerDelegate.json"
+     },
+     "OracleProxy": {
+          "address": "0x9c843263Bd9ae7277ab7c29c18e3F532894A0d35",
+          "abi": "abi.OracleDelegate.json"
+     },
+     "OracleDelegate": {
+          "address": "0x9B281146A04A67948f4601ABDA704016296017c5",
+          "abi": "abi.OracleDelegate.json"
+     },
+     "SignatureVerifier": {
+          "address": "0x35B90F99680C426bf6753a78C364B045115cb46e",
+          "abi": "abi.SignatureVerifier.json"
+     },
+     "Bn128SchnorrVerifier": {
+          "address": "0xfc9a863EDFEA47F6e4e6954Be978d447133D87ce"
+     },
+     "CrossProxy": {
+          "address": "0x18eDFE1e49CA89157384832482c66E95Ea9B0Fca",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "TokenManagerProxy": {
+          "address": "0x3E18014F7c11F4D70b0023d8f61350A3Ef8f0978",
+          "abi": "abi.TokenManagerDelegate.json"
+     }
+}

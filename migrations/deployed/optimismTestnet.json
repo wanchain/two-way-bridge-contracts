@@ -1,0 +1,36 @@
+{
+  "TokenManagerProxy": {
+       "address": "0x0b55dC6D5823166933196E5dD96A2b427779aE2a",
+       "abi": "abi.TokenManagerDelegate.json"
+  },
+  "TokenManagerDelegate": {
+       "address": "0x59d7a0895941100a432dCE67A3588D326f75A5fF",
+       "abi": "abi.TokenManagerDelegate.json"
+  },
+  "OracleProxy": {
+       "address": "0x2Ee304e160431fA02661AA6bD16549e77a009246",
+       "abi": "abi.QuotaDelegate.json"
+  },
+  "OracleDelegate": {
+       "address": "0xB5bf1013898a93f0BD902F6e346Ed6cBB627b791",
+       "abi": "abi.QuotaDelegate.json"
+  },
+  "RapidityLib": {
+       "address": "0x7e04c879ad9ee4ae1f3320fc4f53b62c8b8721bf"
+  },
+  "CrossProxy": {
+       "address": "0x0467bF248BdDb10e4465214E9baf404Ff8e93332",
+       "abi": "abi.CrossDelegate.json"
+  },
+  "CrossDelegate": {
+       "address": "0x513E3659a614Cf136F6225B7fE9D859ab4e443F9",
+       "abi": "abi.CrossDelegate.json"
+  },
+  "SignatureVerifier": {
+       "address": "0xD7d6e016B5aE221609e464682704931fbD257963",
+       "abi": "abi.SignatureVerifier.json"
+  },
+  "Bn128SchnorrVerifier": {
+       "address": "0x5F17368007cF6C90e0bf8C58bd9b39F896b514Fa"
+  }
+}

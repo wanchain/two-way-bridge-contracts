@@ -11,3 +11,19 @@ artifacts
 
 .DS_Store
 aptos-bridge
+build/
+node_modules/
+.cxt
+#keystore
+coverage/
+yarn*
+.DS_Store
+coverage.json
+coverageEnv
+scTopics
+allFiredEvents
+.DS_Store
+.idea
+.vscode
+package-lock.json
+migrations/deployed
