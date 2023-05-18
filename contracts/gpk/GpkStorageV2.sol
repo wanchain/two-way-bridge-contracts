@@ -22,16 +22,21 @@
 //   \ V  V / (_| | | | | (__| | | | (_| | | | | | (_| |  __/\ V /
 //    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
 //
-//
+//  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
 pragma solidity ^0.4.24;
 
-interface IGPK {
-    function getGpkShare(bytes32 groupId, uint index) external view returns(bytes gpkShare1, bytes gpkShare2);
-    function getGpk(bytes32 groupId) external view returns(bytes gpk1, bytes gpk2);
-    function getGpkCount(bytes32 groupId) public view returns(uint count);
-    function getGpkbyIndex(bytes32 groupId, uint8 gpkIndex) external view returns(bytes gpk);
-    function getGpkSharebyIndex(bytes32 groupId, uint16 smIndex, uint8 gpkIndex) external view returns(bytes gpkShare);
-    function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algoIndex);
-    function setGpkCfg(bytes32 groupId, uint[] curIndex, uint[] algoIndex) external;
+import "../components/BasicStorage.sol";
+import "./lib/GpkTypes.sol";
+import "./GpkStorage.sol";
+import "../components/Admin.sol";
+import "../components/Proxy.sol";
+
+
+contract GpkStorageV2 is GpkStorage, Admin, Proxy {
+    //groupId=>gpkCount
+    mapping(bytes32=>uint) public gpkCount;
+    // groupId=>gpkIndex=>curves
+    mapping(bytes32=>mapping(uint=>uint)) public curve;
+    mapping(bytes32=>mapping(uint=>uint)) public algo;
 }

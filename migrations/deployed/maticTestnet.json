@@ -1,0 +1,53 @@
+{
+     "HTLCTxLib": {
+          "address": "0x1c5d87e074eb05168402ccae2b8214a8cc7a81bb"
+     },
+     "RapidityLib": {
+          "address": "0x71ea9d13b48cfde861e648ac2cc4955c3447371e"
+     },
+     "NFTLibV1": {
+          "address": "0x6d119182ffdc5387455f2c3e0e593eb8908a0935"
+     },
+     "CrossDelegate": {
+          "address": "0x61263bd242db2658f9f94f5d2558a9a0cbcc54d7",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "TokenManagerDelegate": {
+          "address": "0x12e12e446773008345bf39223b0da0b9df69e9ad",
+          "abi": "abi.TokenManagerDelegate.json"
+     },
+     "CrossProxy": {
+          "address": "0xB5bf1013898a93f0BD902F6e346Ed6cBB627b791",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "TokenManagerProxy": {
+          "address": "0x15Ad86ebE92EccE4347E65DA59122E2F495D6a48",
+          "abi": "abi.TokenManagerDelegate.json"
+     },
+     "HTLCDebtLib": {
+          "address": "0xF10C25901779893e4c966262bb04c5142AE2f8aB"
+     },
+     "QuotaProxy": {
+          "address": "0xBdff39372E4BC0ceFC54b858828aaedFd5498cD1",
+          "abi": "abi.QuotaDelegate.json"
+     },
+     "QuotaDelegate": {
+          "address": "0xA4a7d8473948728C9651841cEc9370ceEcb20bBd",
+          "abi": "abi.QuotaDelegate.json"
+     },
+     "OracleProxy": {
+          "address": "0xdfF6a8699031a448C4cc130F2bfDd9d2Db4E5877",
+          "abi": "abi.OracleDelegate.json"
+     },
+     "OracleDelegate": {
+          "address": "0x4A8F5Dd531e4Cd1993b79B23Dbda21fAacb9c731",
+          "abi": "abi.OracleDelegate.json"
+     },
+     "SignatureVerifier": {
+          "address": "0x4C12E6696FE23b15F2B911DB7CA42b2d01cDE84A",
+          "abi": "abi.SignatureVerifier.json"
+     },
+     "Bn128SchnorrVerifier": {
+          "address": "0x8949b626cEF8978accdB3dbe69C2E35DE6718462"
+     }
+}

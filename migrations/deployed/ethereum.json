@@ -1,0 +1,27 @@
+{
+     "HTLCTxLib": {
+          "address": "0xea0c753d391761bbdb090ac93102a4d1bdcbee2b"
+     },
+     "HTLCDebtLib": {
+          "address": "0xc928c8e48647c8b0ce550c2352087b1cf5c6111e"
+     },
+     "RapidityLib": {
+          "address": "0x97Ce40AeB600F3A1e2Cac32208FC58C937676688"
+     },
+     "CrossDelegate": {
+          "address": "0x7f70d0047ae63131ab77f179a90f1a41ceea93aa",
+          "abi": "abi.CrossDelegate.json"
+     },
+     "TokenManagerDelegate": {
+          "address": "0x9c39efA16715856b58B61901dBeFc13be461B303",
+          "abi": "abi.TokenManagerDelegate.json"
+     },
+     "QuotaDelegate": {
+          "address": "0x9C06a2e334AA11B4CC7F10b0d49A7b53A1b61eAD",
+          "abi": "abi.QuotaDelegate.json"
+     },
+     "OracleDelegate": {
+          "address": "0xa6a6f6872b9c1114fD2407aacE632f8512389187",
+          "abi": "abi.OracleDelegate.json"
+     }
+}
