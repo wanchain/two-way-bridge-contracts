@@ -64,6 +64,10 @@ module.exports = {
     gatherTestnet: {
       url: "https://testnet.gather.network",
       accounts: [process.env.PK]
+    },
+    metisTestnet: {
+      url: "https://goerli.gateway.metisdevops.link",
+      accounts: [process.env.PK]
     }
   },
   etherscan: {
