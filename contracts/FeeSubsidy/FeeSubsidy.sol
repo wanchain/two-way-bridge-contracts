@@ -3,7 +3,6 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 struct GetFeesParam {
@@ -25,7 +24,7 @@ interface ITokenManager {
     function getTokenPairInfo(uint id) external view returns (uint fromChainID, bytes memory fromAccount, uint toChainID, bytes memory toAccount);
 }
 
-contract FeeSubsidy is Ownable, ReentrancyGuard {
+contract FeeSubsidy is Ownable {
     using SafeERC20 for IERC20;
 
     address public crossSC;
