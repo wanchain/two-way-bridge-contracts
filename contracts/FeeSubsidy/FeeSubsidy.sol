@@ -23,6 +23,7 @@ interface ICrossSC {
     function currentChainID() external view returns (uint256);
 
     //ERC20
+    function getTokenPairFee(uint256 tokenPairID) external view returns(uint256 contractFee);
     function getFee(GetFeesParam memory param) external view returns(GetFeesReturn memory fee);
     function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes memory userAccount) external payable;
     function userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes memory userAccount) external payable;
@@ -81,7 +82,7 @@ contract FeeSubsidy is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
     function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, bytes memory userAccount) public payable nonReentrant {
         address token;
         uint fee;
-        (token, fee) = getTokenAndFeeByPairID(tokenPairID);
+        (token, fee) = getNftTokenAndFeeByPairID(tokenPairID, tokenIDs.length);
 
         uint8 tokenCrossType = ITokenManager(tokenManagerSC).mapTokenPairType(tokenPairID);
 
@@ -102,7 +103,7 @@ contract FeeSubsidy is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
 
     function userBurnNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, address tokenAccount, bytes memory userAccount) public payable nonReentrant {
         uint fee;
-        (, fee) = getTokenAndFeeByPairID(tokenPairID);
+        (, fee) = getNftTokenAndFeeByPairID(tokenPairID, tokenIDs.length);
 
         uint8 tokenCrossType = ITokenManager(tokenManagerSC).mapTokenPairType(tokenPairID);
         if (tokenCrossType == uint8(TokenCrossType.ERC721)) {
@@ -132,11 +133,38 @@ contract FeeSubsidy is Ownable, ReentrancyGuard, ERC721Holder, ERC1155Holder {
         require(subsidized[fromChainID][toChainID] || subsidized[toChainID][fromChainID], "FeeSubsidy: not subsidized");
 
         uint currentChainID = ICrossSC(crossSC).currentChainID();
+        fee = ICrossSC(crossSC).getTokenPairFee(tokenPairID);
         if (currentChainID == fromChainID) {
-            fee = ICrossSC(crossSC).getFee(GetFeesParam({srcChainID: currentChainID, destChainID: toChainID})).contractFee;
+            if (fee == 0) {
+                fee = ICrossSC(crossSC).getFee(GetFeesParam({srcChainID: currentChainID, destChainID: toChainID})).contractFee;
+            }
             token = bytesToAddress(fromAccount);
         } else if (currentChainID == toChainID) {
-            fee = ICrossSC(crossSC).getFee(GetFeesParam({srcChainID: currentChainID, destChainID: fromChainID})).contractFee;
+            if (fee == 0) {
+                fee = ICrossSC(crossSC).getFee(GetFeesParam({srcChainID: currentChainID, destChainID: fromChainID})).contractFee;
+            }
+            token = bytesToAddress(toAccount);
+        } else {
+            require(false, "Invalid token pair");
+        }
+        
+        require(address(this).balance >= fee, "FeeSubsidy: Insufficient fee");
+    }
+
+    function getNftTokenAndFeeByPairID(uint _tokenPairId, uint batchLength) public view returns (address token, uint fee) {
+        uint fromChainID;
+        uint toChainID;
+        bytes memory fromAccount;
+        bytes memory toAccount;
+        (fromChainID, fromAccount, toChainID, toAccount) = ITokenManager(tokenManagerSC).getTokenPairInfo(_tokenPairId);
+        require(subsidized[fromChainID][toChainID] || subsidized[toChainID][fromChainID], "FeeSubsidy: not subsidized");
+
+        fee = ICrossSC(crossSC).getBatchFee(_tokenPairId, batchLength);
+        uint currentChainID = ICrossSC(crossSC).currentChainID();
+
+        if (currentChainID == fromChainID) {
+            token = bytesToAddress(fromAccount);
+        } else if (currentChainID == toChainID) {
             token = bytesToAddress(toAccount);
         } else {
             require(false, "Invalid token pair");
