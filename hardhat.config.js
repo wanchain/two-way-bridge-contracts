@@ -72,6 +72,10 @@ module.exports = {
     metisTestnet: {
       url: "https://goerli.gateway.metisdevops.link",
       accounts: [process.env.PK]
+    },
+    okbTestnet: {
+      url: "https://okbtestrpc.okbchain.org",
+      accounts: [process.env.PK]
     }
   },
   etherscan: {
