@@ -3,7 +3,7 @@ name = 'Oracle'
 version = '1.0.0'
 
 [dependencies]
-AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "a78970aa2a6fd6fa7db94d6d5700a902807102c7" }
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "89f950b28b2c2f5e270d877160e6007a2d8d25a6" }
 
 [addresses]
 BridgeDeployer = '0x0fed7b4e9b93c0373998b80cebee85010af2dea9cd5ddc754a01fb89fec291e4'
