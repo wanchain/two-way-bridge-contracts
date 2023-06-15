@@ -78,10 +78,12 @@ module.exports = {
             accounts: [process.env.PK]
         },
         wanTestnet: {
+	    gasPrice:2000000000,
             url: "http://gwan-testnet.wandevs.org:36891",
             accounts: [process.env.PK]
         },
         wanMainnet: {
+	    gasPrice:2000000000,
             url: "https://gwan-ssl.wandevs.org:56891",
             accounts: [process.env.PK]
         }

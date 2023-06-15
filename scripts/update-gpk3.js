@@ -64,3 +64,4 @@ main().catch((error) => {
 
 
 /// npx hardhat --verbose --network wanTestnet run scripts/update-gpk3.js
+//  npx hardhat --network wanMainnet run scripts/update-gpk3.js
