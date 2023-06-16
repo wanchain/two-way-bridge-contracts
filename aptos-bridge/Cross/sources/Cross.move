@@ -1036,5 +1036,139 @@ module BridgeDeployer::Cross {
 
         assert!(coin::balance<WrappedCoin<CoinBase::WAN>>(signer::address_of(someone_else)) == 0u64, 0);
     }
+
+    #[expected_failure(abort_code = 65539, location = BridgeDeployer::Cross)]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun smg_bad_sig_verify(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 100000000, 0);
+
+        let smgID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        Oracle::initialize_smg_id_for_test(creator, smgID, TEST_GPK, GROUP_STATUS_READY);
+
+        let uniqueID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        TokenManager::register_coin<WrappedCoin<CoinBase::WAN>>(someone_else);
+
+        smg_mint_sig_ctl<CoinBase::WAN>(
+            someone_else, 
+            uniqueID,
+            smgID,
+            351u64,
+            10000000u64,
+            0u64,
+            signer::address_of(someone_else),
+            TEST_SIGNATURE,
+            true,
+        );
+    }
+
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun smg_bad_id_verify(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 100000000, 0);
+
+        let smgID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        Oracle::initialize_smg_id_for_test(creator, smgID, TEST_GPK, GROUP_STATUS_READY);
+
+        let uniqueID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        TokenManager::register_coin<WrappedCoin<CoinBase::WAN>>(someone_else);
+
+        smgID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7e;
+
+        smg_mint_sig_ctl<CoinBase::WAN>(
+            someone_else, 
+            uniqueID,
+            smgID,
+            351u64,
+            10000000u64,
+            0u64,
+            signer::address_of(someone_else),
+            TEST_SIGNATURE,
+            true,
+        );
+    }
+
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_halt_from_owner(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_halt(creator, true);
+    }
+
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_halt_not_owner(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_halt(someone_else, true);
+    }
+
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_admin_from_owner(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_admin(creator, signer::address_of(someone_else));
+    }
+
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_admin_not_owner(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_admin(someone_else, signer::address_of(someone_else));
+    }
+
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_owner_from_owner(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_owner(creator, signer::address_of(someone_else));
+    }
+
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_owner_not_owner(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_owner(someone_else, signer::address_of(someone_else));
+    }
+
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_fee_from_admin(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_admin(creator, signer::address_of(someone_else));
+        set_fee(someone_else, 100u64, 101u64, 102u64, 103u64);
+    }
+
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_fee_not_admin(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_admin(creator, signer::address_of(someone_else));
+        set_fee(resource_account, 100u64, 101u64, 102u64, 103u64);
+    }
+
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_fee_when_halt(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_halt(creator, true);
+        set_admin(creator, signer::address_of(someone_else));
+        set_fee(someone_else, 100u64, 101u64, 102u64, 103u64);
+    }
+
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_token_pair_fee_from_admin(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_admin(creator, signer::address_of(someone_else));
+        set_token_pair_fee(someone_else, 100u64, 101u64);
+    }
+
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_token_pair_fee_not_admin(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_admin(creator, signer::address_of(someone_else));
+        set_token_pair_fee(resource_account, 100u64, 101u64);
+    }
 }
 

@@ -17,3 +17,5 @@ artifacts
 wanchain-sc-sdk
 migrations/deployed
 cache/
+.trace
+.coverage*
