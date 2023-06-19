@@ -76,7 +76,11 @@ module.exports = {
     okbTestnet: {
       url: "https://okbtestrpc.okbchain.org",
       accounts: [process.env.PK]
-    }
+    },
+    metisMainnet: {
+      url: "https://andromeda.metis.io/?owner=1088",
+      accounts: [process.env.PK]
+    },
   },
   etherscan: {
     apiKey: {
