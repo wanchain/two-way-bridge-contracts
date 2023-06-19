@@ -309,4 +309,50 @@ module BridgeDeployer::Oracle {
             87654321,
         );
     }
+
+    #[test_only]
+    public fun initialize_smg_id_for_test2(account: &signer, smgID: address, gpk: vector<u8>, status: u8) acquires Oracle {
+        let chain: vector<u128> = vector::empty();
+        let curve: vector<u128> = vector::empty();
+        vector::push_back<u128>(&mut chain, 100);
+        vector::push_back<u128>(&mut chain, 101);
+        vector::push_back<u128>(&mut curve, 1);
+        vector::push_back<u128>(&mut curve, 2);
+
+        set_storeman_group_config(
+            account,
+            smgID,
+            status,
+            100000000u128,
+            chain,
+            curve,
+            gpk,
+            gpk,
+            12345678,
+            12345678,
+        );
+    }
+
+    #[test_only]
+    public fun initialize_smg_id_for_test3(account: &signer, smgID: address, gpk: vector<u8>, status: u8) acquires Oracle {
+        let chain: vector<u128> = vector::empty();
+        let curve: vector<u128> = vector::empty();
+        vector::push_back<u128>(&mut chain, 100);
+        vector::push_back<u128>(&mut chain, 101);
+        vector::push_back<u128>(&mut curve, 1);
+        vector::push_back<u128>(&mut curve, 2);
+
+        set_storeman_group_config(
+            account,
+            smgID,
+            status,
+            100000000u128,
+            chain,
+            curve,
+            gpk,
+            gpk,
+            87654321,
+            87654321,
+        );
+    }
 }

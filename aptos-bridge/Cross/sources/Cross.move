@@ -868,6 +868,16 @@ module BridgeDeployer::Cross {
         );
         assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 90000000, 0);
         assert!(coin::balance<AptosCoin>(signer::address_of(resource_account)) == 10000000, 0);
+
+        set_token_pair_fee(creator, 350u64, 100u64);
+
+        user_lock<aptos_framework::aptos_coin::AptosCoin>(
+            someone_else,
+            smgID,
+            350u64,
+            10000000,
+            b"0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e"
+        );
     }
 
     #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
@@ -1093,6 +1103,87 @@ module BridgeDeployer::Cross {
         );
     }
 
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun smg_bad_status_verify(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 100000000, 0);
+
+        let smgID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        Oracle::initialize_smg_id_for_test(creator, smgID, TEST_GPK, 4u8);
+
+        let uniqueID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        TokenManager::register_coin<WrappedCoin<CoinBase::WAN>>(someone_else);
+
+        smg_mint_sig_ctl<CoinBase::WAN>(
+            someone_else, 
+            uniqueID,
+            smgID,
+            351u64,
+            10000000u64,
+            0u64,
+            signer::address_of(someone_else),
+            TEST_SIGNATURE,
+            true,
+        );
+    }
+
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun smg_bad_time_verify1(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 100000000, 0);
+
+        let smgID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        Oracle::initialize_smg_id_for_test2(creator, smgID, TEST_GPK, GROUP_STATUS_READY);
+
+        let uniqueID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        TokenManager::register_coin<WrappedCoin<CoinBase::WAN>>(someone_else);
+
+        smg_mint_sig_ctl<CoinBase::WAN>(
+            someone_else, 
+            uniqueID,
+            smgID,
+            351u64,
+            10000000u64,
+            0u64,
+            signer::address_of(someone_else),
+            TEST_SIGNATURE,
+            true,
+        );
+    }
+
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun smg_bad_time_verify2(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 100000000, 0);
+
+        let smgID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        Oracle::initialize_smg_id_for_test3(creator, smgID, TEST_GPK, GROUP_STATUS_READY);
+
+        let uniqueID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        TokenManager::register_coin<WrappedCoin<CoinBase::WAN>>(someone_else);
+
+        smg_mint_sig_ctl<CoinBase::WAN>(
+            someone_else, 
+            uniqueID,
+            smgID,
+            351u64,
+            10000000u64,
+            0u64,
+            signer::address_of(someone_else),
+            TEST_SIGNATURE,
+            true,
+        );
+    }
+
     #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
     fun set_halt_from_owner(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
         test_init(core, creator, resource_account, someone_else);
@@ -1137,6 +1228,8 @@ module BridgeDeployer::Cross {
         test_init(core, creator, resource_account, someone_else);
         set_admin(creator, signer::address_of(someone_else));
         set_fee(someone_else, 100u64, 101u64, 102u64, 103u64);
+        set_fee(someone_else, 100u64, 101u64, 102u64, 103u64);
+        set_fee(someone_else, 100u64, 101u64, 102u64, 103u64);
     }
 
     #[expected_failure]
@@ -1169,6 +1262,38 @@ module BridgeDeployer::Cross {
         test_init(core, creator, resource_account, someone_else);
         set_admin(creator, signer::address_of(someone_else));
         set_token_pair_fee(resource_account, 100u64, 101u64);
+    }
+
+    #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun set_chain_id_twice(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        set_chain_id(creator, 0x8000027eu64);
+    }
+
+    // #[expected_failure]
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun user_lock_bad_type(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 100000000, 0);
+
+        let smgID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        Oracle::initialize_smg_id_for_test(creator, smgID, TEST_GPK, GROUP_STATUS_READY);
+
+        TokenManager::set_operator(creator, signer::address_of(someone_else));
+
+        TokenManager::set_token_pair_type(someone_else, 350u64, TOKEN_CROSS_TYPE_ERC721);
+
+        user_lock<aptos_framework::aptos_coin::AptosCoin>(
+            someone_else,
+            smgID,
+            350u64,
+            10000000,
+            b"0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e"
+        );
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 90000000, 0);
+        assert!(coin::balance<AptosCoin>(signer::address_of(resource_account)) == 10000000, 0);
     }
 }
 
