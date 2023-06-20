@@ -81,6 +81,10 @@ module.exports = {
       url: "https://andromeda.metis.io/?owner=1088",
       accounts: [process.env.PK]
     },
+    songbirdTestnet: {
+      url: "https://coston-api.flare.network/ext/C/rpc",
+      accounts: [process.env.PK]
+    },
   },
   etherscan: {
     apiKey: {
