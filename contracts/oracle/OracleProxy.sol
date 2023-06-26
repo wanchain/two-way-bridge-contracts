@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: MIT
 
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,24 +26,12 @@
 //
 //
 
-pragma solidity 0.4.26;
-import "../components/Owned.sol";
-import "./OracleStorage.sol";
-import "../components/Proxy.sol";
+pragma solidity >=0.8.0;
+import "../components/CommonProxy.sol";
 
-contract OracleProxy is OracleStorage, Owned, Proxy {
-    /**
-    *
-    * MANIPULATIONS
-    *
-    */
-
-    /// @notice                           function for setting or upgrading OracleDelegate address by owner
-    /// @param impl                       OracleDelegate contract address
-    function upgradeTo(address impl) public onlyOwner {
-        require(impl != address(0), "Cannot upgrade to invalid address");
-        require(impl != _implementation, "Cannot upgrade to the same implementation");
-        _implementation = impl;
-        emit Upgraded(impl);
-    }
+contract OracleProxy is CommonProxy {
+    constructor(address _logic, address admin_, bytes memory _data)
+      payable
+      CommonProxy(_logic, admin_, _data)
+    {}
 }

@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,11 +26,10 @@
 //
 //
 
-pragma solidity ^0.4.26;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.8.0;
 
-import "../../interfaces/IERC1155.sol";
-import 'openzeppelin-eth/contracts/token/ERC721/IERC721.sol';
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./RapidityTxLib.sol";
 import "./CrossTypesV1.sol";
 import "../../interfaces/ITokenManager.sol";
@@ -141,7 +142,7 @@ library NFTLibV1 {
         (tokenScAddr, contractFee) = getTokenScAddrAndContractFee(storageData, params.tokenPairID, params.tokenPairContractFee, params.currentChainID, params.tokenIDs.length);
 
         if (contractFee > 0) {
-            params.smgFeeProxy.transfer(contractFee);
+            payable(params.smgFeeProxy).transfer(contractFee);
         }
 
         uint left = (msg.value).sub(contractFee);
@@ -159,7 +160,7 @@ library NFTLibV1 {
         }
 
         if (left != 0) {
-            (msg.sender).transfer(left);
+            payable(msg.sender).transfer(left);
         }
 
         string[] memory keys = new string[](4);
@@ -197,12 +198,12 @@ library NFTLibV1 {
         ITokenManager(tokenManager).burnNFT(uint(tokenCrossType), tokenScAddr, msg.sender, params.tokenIDs, params.tokenValues);
 
         if (contractFee > 0) {
-            params.smgFeeProxy.transfer(contractFee);
+            payable(params.smgFeeProxy).transfer(contractFee);
         }
 
         uint left = (msg.value).sub(contractFee);
         if (left != 0) {
-            (msg.sender).transfer(left);
+            payable(msg.sender).transfer(left);
         }
 
         string[] memory keys = new string[](4);

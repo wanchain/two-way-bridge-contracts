@@ -1,8 +1,8 @@
-pragma solidity 0.4.26;
+// SPDX-License-Identifier: MIT
 
-import "../components/BasicStorage.sol";
+pragma solidity >=0.8.0;
 
-contract OracleStorage is BasicStorage {
+contract OracleStorage {
   /************************************************************
     **
     ** STRUCTURE DEFINATIONS
@@ -33,4 +33,7 @@ contract OracleStorage is BasicStorage {
 
   /// @notice owner and admin have the authority of admin
   address public admin;
+
+  /** Constant Variables */
+  bytes32 public constant ORACLE_ADMIN_ROLE = keccak256("ORACLE_ADMIN");
 }

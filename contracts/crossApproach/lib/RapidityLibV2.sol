@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,8 +26,7 @@
 //
 //
 
-pragma solidity ^0.4.26;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.8.0;
 
 
 import "./RapidityTxLib.sol";
@@ -163,7 +164,7 @@ library RapidityLibV2 {
             if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[bytes32(0)] = storageData.mapStoremanFee[bytes32(0)].add(contractFee);
             } else {
-                (storageData.smgFeeProxy).transfer(contractFee);
+                payable(storageData.smgFeeProxy).transfer(contractFee);
             }
         }
 
@@ -175,10 +176,10 @@ library RapidityLibV2 {
         } else {
             left = (msg.value).sub(contractFee);
 
-            require(CrossTypesV1.transferFrom(tokenScAddr, msg.sender, this, params.value), "Lock token failed");
+            require(CrossTypesV1.transferFrom(tokenScAddr, msg.sender, address(this), params.value), "Lock token failed");
         }
         if (left != 0) {
-            (msg.sender).transfer(left);
+            payable(msg.sender).transfer(left);
         }
         emit UserLockLogger(params.smgID, params.tokenPairID, tokenScAddr, params.value, contractFee, params.destUserAccount);
     }
@@ -221,14 +222,14 @@ library RapidityLibV2 {
             if (storageData.smgFeeProxy == address(0)) {
                 storageData.mapStoremanFee[bytes32(0)] = storageData.mapStoremanFee[bytes32(0)].add(contractFee);
             } else {
-                (storageData.smgFeeProxy).transfer(contractFee);
+                payable(storageData.smgFeeProxy).transfer(contractFee);
             }
         }
 
         uint left = (msg.value).sub(contractFee);
         // uint left = (msg.value).sub(contractFee);
         if (left != 0) {
-            (msg.sender).transfer(left);
+            payable(msg.sender).transfer(left);
         }
 
         emit UserBurnLogger(params.smgID, params.tokenPairID, tokenScAddr, params.value, contractFee, params.fee, params.destUserAccount);
@@ -266,7 +267,7 @@ library RapidityLibV2 {
         }
 
         if (params.destTokenAccount == address(0)) {
-            (params.destUserAccount).transfer(params.value);
+            payable(params.destUserAccount).transfer(params.value);
         } else {
             require(CrossTypesV1.transfer(params.destTokenAccount, params.destUserAccount, params.value), "Transfer token failed");
         }
@@ -274,23 +275,23 @@ library RapidityLibV2 {
         emit SmgReleaseLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
 
-    function burnShadowToken(address tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
+    function burnShadowToken(ITokenManager tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
         uint beforeBalance;
         uint afterBalance;
         beforeBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
 
-        ITokenManager(tokenManager).burnToken(tokenAddress, userAccount, value);
+        tokenManager.burnToken(tokenAddress, userAccount, value);
 
         afterBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
         return afterBalance == beforeBalance.sub(value);
     }
 
-    function mintShadowToken(address tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
+    function mintShadowToken(ITokenManager tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
         uint beforeBalance;
         uint afterBalance;
         beforeBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
 
-        ITokenManager(tokenManager).mintToken(tokenAddress, userAccount, value);
+        tokenManager.mintToken(tokenAddress, userAccount, value);
 
         afterBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
         return afterBalance == beforeBalance.add(value);

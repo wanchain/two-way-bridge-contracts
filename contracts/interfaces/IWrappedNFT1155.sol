@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,16 +26,16 @@
 //
 //
 
-pragma solidity 0.4.26;
+pragma solidity >=0.8.0;
 
 interface IWrappedNFT1155 {
     function changeOwner(address _newOwner) external;
     function acceptOwnership() external;
     function transferOwner(address) external;
-    function name() external view returns (string);
-    function symbol() external view returns (string);
-    function update(string, string) external;
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function update(string calldata, string calldata) external;
 
-    function burnBatch(address , uint256[] , uint256[] ) public;
-    function mintBatch(address , uint256[] , uint256[] , bytes) public;
+    function burnBatch(address , uint256[] calldata , uint256[] calldata ) external;
+    function mintBatch(address , uint256[] calldata , uint256[] calldata , bytes calldata) external;
 }

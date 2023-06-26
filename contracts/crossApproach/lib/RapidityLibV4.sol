@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,8 +26,7 @@
 //
 //
 
-pragma solidity ^0.4.26;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.8.0;
 
 import "./RapidityTxLib.sol";
 import "./CrossTypesV1.sol";
@@ -176,7 +177,7 @@ library RapidityLibV4 {
             require(false, "Invalid token pair");
         }
         if (contractFee > 0) {
-            params.smgFeeProxy.transfer(contractFee);
+            payable(params.smgFeeProxy).transfer(contractFee);
         }
 
         uint left;
@@ -190,7 +191,7 @@ library RapidityLibV4 {
             require(CrossTypesV1.transferFrom(tokenScAddr, msg.sender, address(this), params.value), "Lock token failed");
         }
         if (left != 0) {
-            (msg.sender).transfer(left);
+            payable(msg.sender).transfer(left);
         }
         emit UserLockLogger(params.smgID, params.tokenPairID, tokenScAddr, params.value, contractFee, params.destUserAccount);
     }
@@ -233,12 +234,12 @@ library RapidityLibV4 {
         require(burnShadowToken(tokenManager, tokenScAddr, msg.sender, params.value), "Burn failed");
 
         if (contractFee > 0) {
-            params.smgFeeProxy.transfer(contractFee);
+            payable(params.smgFeeProxy).transfer(contractFee);
         }
 
         uint left = (msg.value).sub(contractFee);
         if (left != 0) {
-            (msg.sender).transfer(left);
+            payable(msg.sender).transfer(left);
         }
 
         emit UserBurnLogger(params.smgID, params.tokenPairID, tokenScAddr, params.value, contractFee, params.fee, params.destUserAccount);
@@ -285,9 +286,9 @@ library RapidityLibV4 {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
 
         if (params.destTokenAccount == address(0)) {
-            (params.destUserAccount).transfer(params.value);
+            payable(params.destUserAccount).transfer(params.value);
             if (params.fee > 0) {
-                params.smgFeeProxy.transfer(params.fee);
+                payable(params.smgFeeProxy).transfer(params.fee);
             }
         } else {
             uint8 tokenCrossType = storageData.tokenManager.mapTokenPairType(params.tokenPairID);
@@ -312,23 +313,23 @@ library RapidityLibV4 {
         emit SmgReleaseLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
 
-    function burnShadowToken(address tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
+    function burnShadowToken(ITokenManager tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
         uint beforeBalance;
         uint afterBalance;
         beforeBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
 
-        ITokenManager(tokenManager).burnToken(tokenAddress, userAccount, value);
+        tokenManager.burnToken(tokenAddress, userAccount, value);
 
         afterBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
         return afterBalance == beforeBalance.sub(value);
     }
 
-    function mintShadowToken(address tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
+    function mintShadowToken(ITokenManager tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
         uint beforeBalance;
         uint afterBalance;
         beforeBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
 
-        ITokenManager(tokenManager).mintToken(tokenAddress, userAccount, value);
+        tokenManager.mintToken(tokenAddress, userAccount, value);
 
         afterBalance = IRC20Protocol(tokenAddress).balanceOf(userAccount);
         return afterBalance == beforeBalance.add(value);

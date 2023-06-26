@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,29 +24,14 @@
 //   \ V  V / (_| | | | | (__| | | | (_| | | | | | (_| |  __/\ V /
 //    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
 //
-//  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
+//
 
-pragma solidity ^0.4.24;
+pragma solidity >=0.8.0;
+import "../components/CommonProxy.sol";
 
-import "../components/Halt.sol";
-import "../components/Admin.sol";
-import "./StoremanGroupStorage.sol";
-import "../components/Proxy.sol";
-import "../components/ReentrancyGuard.sol";
-
-contract StoremanGroupProxy is StoremanGroupStorage, Halt, Admin, ReentrancyGuard,Proxy {
-    /**
-    *
-    * MANIPULATIONS
-    *
-    */
-
-    /// @notice                           function for setting or upgrading StoremanGroupDelegate address by owner
-    /// @param impl                       StoremanGroupDelegate contract address
-    function upgradeTo(address impl) public onlyOwner {
-        require(impl != address(0), "Cannot upgrade to invalid address");
-        require(impl != _implementation, "Cannot upgrade to the same implementation");
-        _implementation = impl;
-        emit Upgraded(impl);
-    }
+contract StoremanGroupProxy is CommonProxy {
+    constructor(address _logic, address admin_, bytes memory _data)
+      payable
+      CommonProxy(_logic, admin_, _data)
+    {}
 }

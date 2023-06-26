@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,15 +26,17 @@
 //
 //
 
-pragma solidity ^0.4.26;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.8.0;
+pragma abicoder v2;
 
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../components/Halt.sol";
 import "./CrossStorageV4.sol";
 import "./lib/RapidityLibV4.sol";
 import "./lib/NFTLibV1.sol";
+// import "./lib/NFTLibV1.sol";
 
-
-contract CrossDelegateV4 is CrossStorageV4 {
+contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4 {
     using SafeMath for uint;
 
     /**
@@ -83,7 +87,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         uint endTime;
         (status,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupStatus(smgID);
 
-        require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
+        require(status == uint8(GroupStatus.ready) && block.timestamp >= startTime && block.timestamp <= endTime, "PK is not ready");
         _;
     }
 
@@ -98,7 +102,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /// @param  tokenPairID                     token pair ID of cross chain coin/token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive shadow chain token
-    function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes userAccount)
+    function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
     external
     payable
     notHalted
@@ -123,7 +127,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /// @param  tokenPairID                     token pair ID of cross chain token
     /// @param  value                           exchange value
     /// @param  userAccount                     account of user, used to receive original chain token
-    function userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes userAccount)
+    function userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes calldata userAccount)
     external
     payable
     notHalted
@@ -154,7 +158,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /// @param  userAccount                     address of user, used to receive WRC20 token
     /// @param  r                               signature
     /// @param  s                               signature
-    function smgMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes r, bytes32 s)
+    function smgMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes calldata r, bytes32 s)
     external
     notHalted
     {
@@ -187,7 +191,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /// @param  userAccount                     address of user, used to receive original token/coin
     /// @param  r                               signature
     /// @param  s                               signature
-    function smgRelease(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes r, bytes32 s)
+    function smgRelease(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes calldata r, bytes32 s)
     external
     notHalted
     {
@@ -213,7 +217,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
     /// @notice                             set the fee of the storeman group should get
     /// @param param                        struct of setFee parameter
-    function setFee(SetFeesParam param) public onlyAdmin {
+    function setFee(SetFeesParam calldata param) public onlyAdmin {
         storageData.mapContractFee[param.srcChainID][param.destChainID] = param.contractFee;
         storageData.mapAgentFee[param.srcChainID][param.destChainID] = param.agentFee;
         emit SetFee(param.srcChainID, param.destChainID, param.contractFee, param.agentFee);
@@ -221,7 +225,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
     /// @notice                             set the fee of the storeman group should get
     /// @param params                        struct of setFees parameter
-    function setFees(SetFeesParam [] params) public onlyAdmin {
+    function setFees(SetFeesParam [] calldata params) public onlyAdmin {
         for (uint i = 0; i < params.length; ++i) {
             storageData.mapContractFee[params[i].srcChainID][params[i].destChainID] = params[i].contractFee;
             storageData.mapAgentFee[params[i].srcChainID][params[i].destChainID] = params[i].agentFee;
@@ -239,7 +243,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
     /// @notice                             set the fee of the storeman group should get
     /// @param params                       struct of setTokenPairFees parameter
-    function setTokenPairFees(SetTokenPairFeesParam [] params) public onlyAdmin {
+    function setTokenPairFees(SetTokenPairFeesParam [] calldata params) public onlyAdmin {
         for (uint i = 0; i < params.length; ++i) {
             mapTokenPairContractFee[params[i].tokenPairID] = params[i].contractFee;
             emit SetTokenPairFee(params[i].tokenPairID, params[i].contractFee);
@@ -257,12 +261,12 @@ contract CrossDelegateV4 is CrossStorageV4 {
         emit SetAdmin(adminAccount);
     }
 
-    function setUintValue(bytes key, bytes innerKey, uint value) external onlyAdmin {
-        return uintData.setStorage(key, innerKey, value);
+    function setUintValue(bytes calldata key, bytes calldata innerKey, uint value) external onlyAdmin {
+        return BasicStorageLib.setStorage(uintData, key, innerKey, value);
     }
 
-    function delUintValue(bytes key, bytes innerKey) external onlyAdmin {
-        return uintData.delStorage(key, innerKey);
+    function delUintValue(bytes calldata key, bytes calldata innerKey) external onlyAdmin {
+        return BasicStorageLib.delStorage(uintData, key, innerKey);
     }
 
     /// @notice                             update the initialized state value of this contract
@@ -290,7 +294,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
     /// @notice                             withdraw the history fee to foundation account
     /// @param smgIDs                       array of storemanGroup ID
-    function smgWithdrawHistoryFee(bytes32 [] smgIDs) external {
+    function smgWithdrawHistoryFee(bytes32 [] calldata smgIDs) external {
         uint fee;
         uint currentFee;
         address smgFeeProxy = storageData.smgFeeProxy;
@@ -306,15 +310,15 @@ contract CrossDelegateV4 is CrossStorageV4 {
             emit WithdrawHistoryFeeLogger(smgIDs[i], block.timestamp, smgFeeProxy, currentFee);
         }
         if (fee > 0) {
-            smgFeeProxy.transfer(fee);
+            payable(smgFeeProxy).transfer(fee);
         }
     }
 
 
     /** Get Functions */
 
-    function getUintValue(bytes key, bytes innerKey) public view returns (uint) {
-        return uintData.getStorage(key, innerKey);
+    function getUintValue(bytes calldata key, bytes calldata innerKey) public view returns (uint) {
+        return BasicStorageLib.getStorage(uintData, key, innerKey);
     }
 
     /// @notice                             get the fee of the storeman group should get
@@ -326,8 +330,8 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
     /// @notice                             get the fee of the storeman group should get
     /// @param param                        struct of getFee parameter
-    /// @return fees                        struct of getFee return
-    function getFee(GetFeesParam param) public view returns(GetFeesReturn fee) {
+    /// @return fee                        struct of getFee return
+    function getFee(GetFeesParam calldata param) public view returns(GetFeesReturn memory fee) {
         fee.contractFee = storageData.mapContractFee[param.srcChainID][param.destChainID];
         fee.agentFee = storageData.mapAgentFee[param.srcChainID][param.destChainID];
     }
@@ -335,7 +339,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /// @notice                             get the fee of the storeman group should get
     /// @param params                       struct of getFees parameter
     /// @return fees                        struct of getFees return
-    function getFees(GetFeesParam [] params) public view returns(GetFeesReturn [] fees) {
+    function getFees(GetFeesParam [] calldata params) public view returns(GetFeesReturn [] memory fees) {
         fees = new GetFeesReturn[](params.length);
         for (uint i = 0; i < params.length; ++i) {
             fees[i].contractFee = storageData.mapContractFee[params[i].srcChainID][params[i].destChainID];
@@ -353,7 +357,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /// @notice                             get the token pair fees of the storeman group should get
     /// @param tokenPairIDs                 array of tokenPairID
     /// @return contractFees                array of tokenPair contractFee
-    function getTokenPairFees(uint256[] tokenPairIDs) external view returns(uint256 [] contractFees) {
+    function getTokenPairFees(uint256[] calldata tokenPairIDs) external view returns(uint256 [] memory contractFees) {
         contractFees = new uint256[](tokenPairIDs.length);
         for (uint i = 0; i < tokenPairIDs.length; ++i) {
             contractFees[i] = mapTokenPairContractFee[tokenPairIDs[i]];
@@ -395,7 +399,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         uint endTime;
         (,status,,,,curveID,,PK,,startTime,endTime) = storageData.smgAdminProxy.getStoremanGroupConfig(smgID);
 
-        require(status == uint8(GroupStatus.ready) && now >= startTime && now <= endTime, "PK is not ready");
+        require(status == uint8(GroupStatus.ready) && block.timestamp >= startTime && block.timestamp <= endTime, "PK is not ready");
 
         return (curveID, PK);
     }
@@ -429,7 +433,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /// @param  message     message to be verified
     /// @param  r           Signature info r
     /// @param  s           Signature info s
-    function verifySignature(uint curveID, bytes32 message, bytes PK, bytes r, bytes32 s) internal {
+    function verifySignature(uint curveID, bytes32 message, bytes memory PK, bytes memory r, bytes32 s) internal {
         bytes32 PKx = bytesToBytes32(PK, 0);
         bytes32 PKy = bytesToBytes32(PK, 32);
 
@@ -447,23 +451,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
     //*********************************************************************************************
     //*********************************************************************************************
     // NFT
-    /**
-     * @notice Handle the receipt of an NFT
-     * @dev The ERC721 smart contract calls this function on the recipient
-     * after a `safeTransfer`. This function MUST return the function selector,
-     * otherwise the caller will revert the transaction. The selector to be
-     * returned can be obtained as `this.onERC721Received.selector`. This
-     * function MAY throw to revert and reject the transfer.
-
-     * Note: the ERC721 contract address is always the message sender.
-
-     * @param operator The address which called `safeTransferFrom` function
-     * @param from The address which previously owned the token
-     * @param tokenId The NFT identifier which is being transferred
-     * @param data Additional data with no specified format
-     * @return `bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))`
-     */
-    function onERC721Received(address operator, address from, uint256 tokenId, bytes data)
+    function onERC721Received(address, address, uint256, bytes memory)
         public
         pure
         returns(bytes4)
@@ -479,7 +467,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         return this.onERC1155Received.selector;
     }
 
-    function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory) 
+    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) 
         public
         pure
         returns (bytes4)
@@ -487,8 +475,8 @@ contract CrossDelegateV4 is CrossStorageV4 {
         return this.onERC1155BatchReceived.selector;
     }
 
-
-    function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, bytes userAccount)
+    // using "memory" instead of "calldata" to avoid Stakck too deep
+    function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, bytes memory userAccount)
         public
         payable
         notHalted
@@ -509,8 +497,9 @@ contract CrossDelegateV4 is CrossStorageV4 {
         });
         NFTLibV1.userLockNFT(storageData, params);
     }
-    
-    function userBurnNFT(bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, address tokenAccount, bytes userAccount)
+
+    // using "memory" instead of "calldata" to avoid Stakck too deep
+    function userBurnNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, address tokenAccount, bytes memory userAccount)
         public
         payable
         notHalted
@@ -533,7 +522,8 @@ contract CrossDelegateV4 is CrossStorageV4 {
         NFTLibV1.userBurnNFT(storageData, params);
     }
 
-    function smgMintNFT(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, bytes extData, address tokenAccount, address userAccount, bytes r, bytes32 s)
+    // using "memory" instead of "calldata" to avoid Stakck too deep
+    function smgMintNFT(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, bytes memory extData, address tokenAccount, address userAccount, bytes memory r, bytes32 s)
         public
         notHalted
     {
@@ -553,11 +543,13 @@ contract CrossDelegateV4 is CrossStorageV4 {
         });
 
         NFTLibV1.smgMintNFT(storageData, params);
-        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, extData, tokenAccount, userAccount));
+        // bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, extData, tokenAccount, userAccount));
+        bytes32 mHash = sha256(abi.encode(currentChainID, params.uniqueID, params.tokenPairID, params.tokenIDs, params.tokenValues, params.extData, params.destTokenAccount, params.destUserAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
-    function smgReleaseNFT(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, address tokenAccount, address userAccount, bytes r, bytes32 s)
+    // using "memory" instead of "calldata" to avoid Stakck too deep
+    function smgReleaseNFT(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, address tokenAccount, address userAccount, bytes memory r, bytes32 s)
         public
         notHalted
     {
@@ -576,7 +568,8 @@ contract CrossDelegateV4 is CrossStorageV4 {
         });
         NFTLibV1.smgReleaseNFT(storageData, params);
 
-        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount));
+        // bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount));
+        bytes32 mHash = sha256(abi.encode(currentChainID, params.uniqueID, params.tokenPairID, params.tokenIDs, params.tokenValues, params.destTokenAccount, params.destUserAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 

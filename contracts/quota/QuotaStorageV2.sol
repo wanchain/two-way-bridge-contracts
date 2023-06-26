@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,15 +26,15 @@
 //
 //
 
-pragma solidity 0.4.26;
+pragma solidity >=0.8.0;
 
-import "./QuotaProxy.sol";
+import "./QuotaStorage.sol";
 
 /**
  * Math operations with safety checks
  */
 
-contract QuotaStorageV2 is QuotaProxy {
+contract QuotaStorageV2 is QuotaStorage {
     /// @dev mapping: tokenId => storemanPk => Quota
     mapping(uint => mapping(bytes32 => Quota)) v2QuotaMap;
 

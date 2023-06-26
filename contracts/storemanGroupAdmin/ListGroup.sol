@@ -1,5 +1,6 @@
-pragma solidity ^0.4.26;
-pragma experimental ABIEncoderV2;
+// SPDX-License-Identifier: MIT
+
+pragma solidity >=0.8.0;
 
 import "../components/Admin.sol";
 import "./StoremanUtil.sol";
@@ -21,7 +22,7 @@ contract ListGroup is Admin  {
   mapping(address=>mapping(address=>bytes32)) delegateQuitNextGroupId;
   mapping(address=>mapping(address=>bytes32)) partQuitGroupId;
   mapping(address=>mapping(address=>bytes32)) partQuitNextGroupId;
-  constructor(address _smg, address _pos) public {
+  constructor(address _smg, address _pos) {
     smg = _smg;
     posAddr = _pos;  
   }
@@ -63,21 +64,21 @@ contract ListGroup is Admin  {
     return epochDeposit[day];
   }
   
-  function getGroups() external view returns (Group[]) {
+  function getGroups() external view returns (Group[] memory) {
     return groups;
   }
 
   function cleanExpiredGroup() external {
     for(uint i=groups.length; i>0; i--) {
-        if(groups[i-1].endTime < now){ //  expired.
+        if(groups[i-1].endTime < block.timestamp){ //  expired.
           if(i < groups.length){
             groups[i-1]= groups[groups.length-1];
           }
-          groups.length--;
+          groups.pop();
         } 
     }
   }          
-  function getActiveGroupIds(uint epochId) external view returns (bytes32[]) {
+  function getActiveGroupIds(uint epochId) external view returns (bytes32[] memory) {
     bytes32[] memory activeGroups = new bytes32[](groups.length);
     uint activeCount;
     

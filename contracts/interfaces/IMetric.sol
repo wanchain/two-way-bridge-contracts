@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,12 +26,12 @@
 //
 //
 
-pragma solidity ^0.4.24;
+pragma solidity >=0.8.0;
 
 interface IMetric {
     // index of array: smIndex
-    function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId) external returns(uint[]);
-    function getPrdSlshMetric(bytes32 grpId, uint startEpId, uint endEpId) external returns(uint[]);
+    function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId) external returns(uint[] memory);
+    function getPrdSlshMetric(bytes32 grpId, uint startEpId, uint endEpId) external returns(uint[] memory);
 
     function getSmSuccCntByEpId(bytes32 grpId, uint epId, uint8 smIndex) external returns(uint);
     function getSlshCntByEpId(bytes32 grpId, uint epId, uint8 smIndex) external returns(uint);

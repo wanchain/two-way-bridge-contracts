@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.4.24;
+pragma solidity >=0.8.0;
 
 import '../components/StandardToken.sol';
 import '../components/Owned.sol';
@@ -74,8 +76,7 @@ contract WanToken is StandardToken, Owned {
     ///@param tokenName The token name to be used
     ///@param tokenSymbol The token symbol to be used
     ///@param tokenDecimal The token decimals to be used
-    constructor(string tokenName, string tokenSymbol, uint8 tokenDecimal)
-        public
+    constructor(string memory tokenName, string memory tokenSymbol, uint8 tokenDecimal)
     {
         name = tokenName;
         symbol = tokenSymbol;

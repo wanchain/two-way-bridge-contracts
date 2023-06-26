@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.4.26;
+pragma solidity >=0.8.0;
 
 //interface IERC1155 is IERC165 {
 interface IERC1155  {
@@ -114,7 +116,7 @@ interface IERC1155  {
      * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
      * acceptance magic value.
      */
-    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data) external;
+    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external;
 
     /**
      * @dev xref:ROOT:erc1155.adoc#batch-operations[Batched] version of {safeTransferFrom}.
@@ -127,5 +129,5 @@ interface IERC1155  {
      * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155BatchReceived} and return the
      * acceptance magic value.
      */
-    function safeBatchTransferFrom(address from, address to, uint256[] ids, uint256[] amounts, bytes data) external;
+    function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata amounts, bytes calldata data) external;
 }

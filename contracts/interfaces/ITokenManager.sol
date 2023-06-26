@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,17 +26,17 @@
 //
 //
 
-pragma solidity 0.4.26;
+pragma solidity >=0.8.0;
 
 interface ITokenManager {
     function getTokenPairInfo(uint id) external view
-      returns (uint origChainID, bytes tokenOrigAccount, uint shadowChainID, bytes tokenShadowAccount);
+      returns (uint origChainID, bytes memory tokenOrigAccount, uint shadowChainID, bytes memory tokenShadowAccount);
 
     function getTokenPairInfoSlim(uint id) external view
-      returns (uint origChainID, bytes tokenOrigAccount, uint shadowChainID);
+      returns (uint origChainID, bytes memory tokenOrigAccount, uint shadowChainID);
 
     function getAncestorInfo(uint id) external view
-      returns (bytes account, string name, string symbol, uint8 decimals, uint chainId);
+      returns (bytes memory account, string memory name, string memory symbol, uint8 decimals, uint chainId);
 
     function mintToken(address tokenAddress, address to, uint value) external;
 
@@ -44,6 +46,6 @@ interface ITokenManager {
       returns (uint8 tokenPairType);
 
     // erc1155
-    function mintNFT(uint tokenCrossType, address tokenAddress, address to, uint[] ids, uint[] values, bytes data) public;
-    function burnNFT(uint tokenCrossType, address tokenAddress, address from, uint[] ids, uint[] values) public;
+    function mintNFT(uint tokenCrossType, address tokenAddress, address to, uint[] calldata ids, uint[] calldata values, bytes calldata data) external;
+    function burnNFT(uint tokenCrossType, address tokenAddress, address from, uint[] calldata ids, uint[] calldata values) external;
 }

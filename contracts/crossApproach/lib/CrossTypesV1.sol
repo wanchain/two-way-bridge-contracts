@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.4.26;
+pragma solidity >=0.8.0;
 
 import "../../interfaces/IRC20Protocol.sol";
 import "../../interfaces/IQuota.sol";
@@ -91,7 +93,7 @@ library CrossTypesV1 {
 
     /// @notice       convert bytes to address
     /// @param b      bytes
-    function bytesToAddress(bytes b) internal pure returns (address addr) {
+    function bytesToAddress(bytes memory b) internal pure returns (address addr) {
         assembly {
             addr := mload(add(b,20))
         }
@@ -105,7 +107,8 @@ library CrossTypesV1 {
         uint afterBalance;
         beforeBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
         // IRC20Protocol(tokenScAddr).transfer(to, value);
-        tokenScAddr.call(bytes4(keccak256("transfer(address,uint256)")), to, value);
+        (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transfer(address,uint256)")), to, value));
+        require(success, "transfer failed");
         afterBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
         return afterBalance == beforeBalance.add(value);
     }
@@ -118,7 +121,8 @@ library CrossTypesV1 {
         uint afterBalance;
         beforeBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
         // IRC20Protocol(tokenScAddr).transferFrom(from, to, value);
-        tokenScAddr.call(bytes4(keccak256("transferFrom(address,address,uint256)")), from, to, value);
+        (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transferFrom(address,address,uint256)")), from, to, value));
+        require(success, "TransferFrom failed");
         afterBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
         return afterBalance == beforeBalance.add(value);
     }

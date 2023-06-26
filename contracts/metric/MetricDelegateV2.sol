@@ -28,9 +28,9 @@
 
 pragma solidity >=0.8.0;
 
-
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "../components/Halt.sol";
 
 import "./MetricStorage.sol";
 import "./lib/MetricTypes.sol";
@@ -39,7 +39,7 @@ import "../lib/CommonTool.sol";
 import "./lib/MetricLib.sol";
 import "../interfaces/IPosLib.sol";
 
-contract MetricDelegate is Halt, MetricStorage {
+contract MetricDelegate is Ownable, Pausable, MetricStorage{
     using SafeMath for uint;
     using MetricLib for MetricTypes.MetricStorageData;
 
@@ -164,7 +164,7 @@ contract MetricDelegate is Halt, MetricStorage {
     /// @param inctData                 incentive store man's bitmap
     function wrInct(bytes32 grpId, bytes32 hashX, uint inctData)
     external
-    notHalted
+    whenNotPaused
     onlyLeader(grpId)
     {
 
@@ -186,7 +186,7 @@ contract MetricDelegate is Halt, MetricStorage {
     /// @param rslshData                data of slash
     function wrRSlsh(bytes32 grpId, bytes32 hashX, MetricTypes.RSlshData memory rslshData)
     public
-    notHalted
+    whenNotPaused
     onlyLeader(grpId)
     {
         bool success;
@@ -204,7 +204,7 @@ contract MetricDelegate is Halt, MetricStorage {
     /// @param sslshData                data of slash
     function wrSSlsh(bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData memory sslshData)
     public
-    notHalted
+    whenNotPaused
     onlyLeader(grpId)
     {
         bool success;
@@ -260,6 +260,19 @@ contract MetricDelegate is Halt, MetricStorage {
 
     receive() external payable {
         revert("Not support");
+    }
+
+    /// @notice function Emergency situation that requires
+    /// @notice contribution period to stop or not.
+    function setHalt(bool halt)
+        public
+        onlyOwner
+    {
+        if (halt) {
+            _pause();
+        } else {
+            _unpause();
+        }
     }
 
 }

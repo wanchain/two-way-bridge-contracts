@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.4.24;
+pragma solidity >=0.8.0;
 
 interface ICurve {
 
@@ -32,7 +34,7 @@ interface ICurve {
 
     function mulG(uint256 scalar) external view returns(uint256 x, uint256 y, bool success);
 
-    function calPolyCommit(bytes polyCommit, bytes pk) external view returns(uint256 sx, uint256 sy, bool success);
+    function calPolyCommit(bytes memory polyCommit, bytes memory pk) external view returns(uint256 sx, uint256 sy, bool success);
 
     function mulPk(uint256 scalar, uint256 xPk, uint256 yPk)
     external
@@ -41,5 +43,5 @@ interface ICurve {
 
     function equalPt (uint256 xLeft, uint256 yLeft,uint256 xRight, uint256 yRight) external view returns(bool);
 
-    function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes pk) external view returns(bool);
+    function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes memory pk) external view returns(bool);
 }

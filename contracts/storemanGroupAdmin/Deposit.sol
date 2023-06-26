@@ -1,6 +1,8 @@
-pragma solidity ^0.4.26;
+// SPDX-License-Identifier: MIT
 
-import 'openzeppelin-eth/contracts/math/SafeMath.sol';
+pragma solidity >=0.8.0;
+
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 library Deposit {
     using SafeMath for uint;
@@ -33,7 +35,7 @@ library Deposit {
     function clean(Records storage self) internal {
         self.total = 0;
     }
-    function addRecord(Records storage self, Record r) internal {
+    function addRecord(Records storage self, Record memory r) internal {
         if(self.total == 0) {
             self.records[0] = r;
             self.total = 1;

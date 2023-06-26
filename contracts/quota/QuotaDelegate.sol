@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,17 +26,18 @@
 //
 //
 
-pragma solidity 0.4.26;
+pragma solidity >=0.8.0;
 
 /**
  * Math operations with safety checks
  */
 
 import "./QuotaStorageV2.sol";
+import "../components/Halt.sol";
 import "../interfaces/IOracle.sol";
 
 interface _ITokenManager {
-    function getAncestorSymbol(uint id) external view returns (string symbol, uint8 decimals);
+    function getAncestorSymbol(uint id) external view returns (string memory symbol, uint8 decimals);
 }
 
 interface _IStoremanGroup {
@@ -46,7 +49,8 @@ interface IDebtOracle {
 }
 
 
-contract QuotaDelegate is QuotaStorageV2 {
+contract QuotaDelegate is Halt, QuotaStorageV2 {
+    using SafeMath for uint;
 
     event AssetTransfered(bytes32 indexed srcStoremanGroupId, bytes32 indexed dstStoremanGroupId, uint tokenId, uint value);
 
@@ -80,7 +84,7 @@ contract QuotaDelegate is QuotaStorageV2 {
         address _depositOracleAddr,
         address _tokenManagerAddress,
         uint _depositRate,
-        string _depositTokenSymbol
+        string calldata _depositTokenSymbol
     ) external onlyOwner {
         priceOracleAddress = _priceOracleAddr;
         htlcGroupMap[_htlcAddr] = true;
@@ -153,7 +157,7 @@ contract QuotaDelegate is QuotaStorageV2 {
     }
 
     /// @dev get minimize token count for fast cross chain
-    function getFastMinCount(uint tokenId) public view returns (uint, string, uint, uint, uint) {
+    function getFastMinCount(uint tokenId) public view returns (uint, string memory, uint, uint, uint) {
         if (fastCrossMinValue == 0) {
             return (0, "", 0, 0, 0);
         }
@@ -229,7 +233,7 @@ contract QuotaDelegate is QuotaStorageV2 {
         quota._debt = debt;
     }
 
-    function upgrade(bytes32[] storemanGroupIdArray) external onlyOwner {
+    function upgrade(bytes32[] calldata storemanGroupIdArray) external onlyOwner {
         require(version < 2, "Can upgrade again.");
         version = 2; //upgraded v2
         uint length = storemanGroupIdArray.length;
@@ -349,7 +353,7 @@ contract QuotaDelegate is QuotaStorageV2 {
         return v2TokensMap[storemanGroupId][index];
     }
 
-    function getTokenQuota(string ancestorSymbol, uint decimals, bytes32 storemanGroupId)
+    function getTokenQuota(string calldata ancestorSymbol, uint decimals, bytes32 storemanGroupId)
         public view returns (uint debt_receivable, uint debt_payable, uint _debt, uint asset_receivable, uint asset_payable, uint _asset, bool _active) {
         uint tokenKey = uint(keccak256(abi.encodePacked(ancestorSymbol, decimals)));
         return getQuotaMap(tokenKey, storemanGroupId);
@@ -366,7 +370,7 @@ contract QuotaDelegate is QuotaStorageV2 {
     function getTokenAncestorInfo(uint tokenId)
         private
         view
-        returns (string ancestorSymbol, uint decimals)
+        returns (string memory ancestorSymbol, uint decimals)
     {
         _ITokenManager tokenManager = _ITokenManager(tokenManagerAddress);
         (ancestorSymbol,decimals) = tokenManager.getAncestorSymbol(tokenId);
@@ -383,7 +387,7 @@ contract QuotaDelegate is QuotaStorageV2 {
         }
     }
 
-    function getPrice(string symbol) private view returns (uint price) {
+    function getPrice(string memory symbol) private view returns (uint price) {
         IOracle oracle = IOracle(priceOracleAddress);
         price = oracle.getValue(stringToBytes32(symbol));
     }

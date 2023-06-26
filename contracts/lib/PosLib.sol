@@ -1,19 +1,21 @@
-pragma solidity ^0.4.24;
-import 'openzeppelin-eth/contracts/math/SafeMath.sol';
+// SPDX-License-Identifier: MIT
+
+pragma solidity >=0.8.0;
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 
 library PosLib {
 
     using SafeMath for uint;
     uint public constant DIVISOR = 10000;
-    address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
+    address constant PRECOMPILE_CONTRACT_ADDR = address(0x268);
 
 
     function getEpochId(uint256 blockTime) public view returns (uint256) {
         bytes32 functionSelector = keccak256("getEpochId(uint256)");
 
         (uint256 result, bool success) = callWith32BytesReturnsUint256(
-            0x262,
+            address(0x262),
             functionSelector,
             bytes32(blockTime)
         );
@@ -35,7 +37,7 @@ library PosLib {
             mstore(add(freePtr, 4), param1)
 
             // call ERC20 Token contract transfer function
-            success := staticcall(gas, to, freePtr, 36, freePtr, 32)
+            success := staticcall(gas(), to, freePtr, 36, freePtr, 32)
 
             result := mload(freePtr)
         }
@@ -53,14 +55,14 @@ library PosLib {
             mstore(add(freePtr, 4), targetSecond)
 
             // call ERC20 Token contract transfer function
-            success := staticcall(gas, to, freePtr,36, freePtr, 32)
+            success := staticcall(gas(), to, freePtr,36, freePtr, 32)
             result := mload(freePtr)
         }
     }
 
 
     function testGetHardCap ()  public view returns(uint256,bool) {
-        return getHardCap(now - 3600 * 24);
+        return getHardCap(block.timestamp - 3600 * 24);
     }
 
 
@@ -73,7 +75,7 @@ library PosLib {
             let freePtr := mload(0x40)
             mstore(freePtr, functionSelector)
             mstore(add(freePtr, 4), time)
-            success := staticcall(gas, to, freePtr,36, freePtr, 32)
+            success := staticcall(gas(), to, freePtr,36, freePtr, 32)
             posReturn := mload(freePtr)
         }
 

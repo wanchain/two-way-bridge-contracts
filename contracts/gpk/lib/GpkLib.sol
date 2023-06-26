@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +26,7 @@
 //
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
-pragma solidity ^0.4.24;
+pragma solidity >=0.8.0;
 
 import "../../lib/CommonTool.sol";
 import "../../interfaces/IStoremanGroup.sol";
@@ -134,7 +136,7 @@ library GpkLib {
     /// @notice                           function for update gpk
     /// @param round                      round
     /// @param polyCommit                 poly commit
-    function updateGpk(GpkTypes.Round storage round, bytes polyCommit)
+    function updateGpk(GpkTypes.Round storage round, bytes memory polyCommit)
         public
     {
         bytes memory gpk = round.gpk;
@@ -158,7 +160,7 @@ library GpkLib {
     /// @param group                      storeman group
     /// @param round                      round
     /// @param polyCommit                 poly commit
-    function updateGpkShare(GpkTypes.Group storage group, GpkTypes.Round storage round, bytes polyCommit)
+    function updateGpkShare(GpkTypes.Group storage group, GpkTypes.Round storage round, bytes memory polyCommit)
         public
     {
         uint x;
@@ -190,7 +192,7 @@ library GpkLib {
     /// @param destPk                     dest storeman pk
     /// @param polyCommit                 polyCommit of pki
     /// @param curve                      curve contract address
-    function verifySij(GpkTypes.Dest storage d, bytes destPk, bytes polyCommit, address curve)
+    function verifySij(GpkTypes.Dest storage d, bytes memory destPk, bytes memory polyCommit, address curve)
         public
         view
         returns(bool)
@@ -281,10 +283,10 @@ library GpkLib {
     {
         GpkTypes.Round storage round = group.roundMap[group.round][0];
         round.status = GpkTypes.GpkStatus.Close;
-        round.statusTime = now;
+        round.statusTime = block.timestamp;
         round = group.roundMap[group.round][1];
         round.status = GpkTypes.GpkStatus.Close;
-        round.statusTime = now;
+        round.statusTime = block.timestamp;
 
         // clear data
         for (uint i = 0; i < group.smNumber; i++) {

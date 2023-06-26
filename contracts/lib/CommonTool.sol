@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2020 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,15 +26,15 @@
 //
 //
 
-pragma solidity ^0.4.24;
+pragma solidity >=0.8.0;
 
 library CommonTool {
 
     enum CurveType  {SK, BN}
 
-    address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
+    address constant PRECOMPILE_CONTRACT_ADDR = address(0x268);
 
-    function bytes2uint(bytes source, uint16 offset, uint16 length)
+    function bytes2uint(bytes memory source, uint16 offset, uint16 length)
     public
     pure
     returns(uint)
@@ -50,7 +52,7 @@ library CommonTool {
         }
     }
 
-    function cmpBytes(bytes b1, bytes b2)
+    function cmpBytes(bytes memory b1, bytes memory b2)
     public
     pure
     returns(bool)
@@ -73,10 +75,10 @@ library CommonTool {
         }
     }
 
-    function enc(bytes32 rbpri, bytes32 iv, uint256 mes, bytes pub)
+    function enc(bytes32 rbpri, bytes32 iv, uint256 mes, bytes memory pub)
     public
     view
-    returns(bytes, bool success)
+    returns(bytes memory, bool success)
     {
         bytes32 functionSelector = 0xa1ecea4b00000000000000000000000000000000000000000000000000000000;
         address to = PRECOMPILE_CONTRACT_ADDR;
@@ -91,15 +93,11 @@ library CommonTool {
             mstore(add(freePtr, 132), mload(add(pub, 64)))
 
         // call ERC20 Token contract transfer function
-            success := staticcall(gas,to, freePtr, 164, freePtr, 1024)
+            success := staticcall(gas(),to, freePtr, 164, freePtr, 1024)
 
-            let loopCnt := 0
-            loop:
-            jumpi(loopend, eq(loopCnt, 6))
-            mstore(add(cc,mul(add(loopCnt,1),32)),mload(add(freePtr,mul(loopCnt,32))))
-            loopCnt := add(loopCnt, 1)
-            jump(loop)
-            loopend:
+            for { let loopCnt := 0 } lt(loopCnt, 6) { loopCnt := add(loopCnt, 1) } {
+                mstore(add(cc, mul(add(loopCnt, 1), 32)), mload(add(freePtr, mul(loopCnt, 32))))
+            }
         }
         return (cc,success);
     }

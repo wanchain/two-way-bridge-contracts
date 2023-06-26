@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,17 +26,17 @@
 //
 //
 
-pragma solidity 0.4.26;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.8.0;
+
+/**
+ * Math operations with safety checks
+ */
 
 import "../interfaces/IWrappedNFT721.sol";
 import "../interfaces/IWrappedNFT1155.sol";
-import "../interfaces/IMappingToken.sol";
-import "./MappingToken.sol";
 import "./TokenManagerDelegate.sol";
-import "../components/Proxy.sol";
 
-contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
+contract TokenManagerDelegateV2 is TokenManagerDelegate {
 
     /************************************************************
      **
@@ -72,7 +74,7 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
      ** MANIPULATIONS
      **
      ************************************************************/
-    function setTokenPairTypes(uint[] tokenPairIds, uint8[] tokenPairTypes)
+    function setTokenPairTypes(uint[] calldata tokenPairIds, uint8[] calldata tokenPairTypes)
         external
         onlyOperator
     {
@@ -100,11 +102,11 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
         uint    tokenCrossType,
         address tokenAddress,
         address to,
-        uint[]  tokenIDs,
-        uint[]  values,
-        bytes   data
+        uint[] calldata tokenIDs,
+        uint[] calldata values,
+        bytes  calldata data
     )
-        public
+        external
         onlyAdmin
     {
         if(tokenCrossType == uint(TokenCrossType.ERC721)) {
@@ -122,10 +124,10 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
         uint    tokenCrossType,
         address tokenAddress,
         address from,
-        uint[]  tokenIDs,
-        uint[]  values
+        uint[] calldata tokenIDs,
+        uint[] calldata values
     )
-        public
+        external
         onlyAdmin
     {
         if(tokenCrossType == uint(TokenCrossType.ERC721)) {

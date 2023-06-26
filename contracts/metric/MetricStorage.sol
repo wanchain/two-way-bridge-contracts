@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2020 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,15 +26,11 @@
 //
 //
 
-pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.8.0;
 
-import "../components/BasicStorage.sol";
 import "./lib/MetricTypes.sol";
-import "../interfaces/IConfig.sol";
-import "../interfaces/IStoremanGroup.sol";
 
-contract MetricStorage is BasicStorage {
+contract MetricStorage {
 
     /**
      *

@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,29 +26,12 @@
 //
 //
 
-pragma solidity 0.4.26;
+pragma solidity >=0.8.0;
+import "../components/CommonProxy.sol";
 
-/**
- * Math operations with safety checks
- */
-
-import "../components/Admin.sol";
-import "./TokenManagerStorage.sol";
-import "../components/Proxy.sol";
-
-contract TokenManagerProxy is TokenManagerStorage, Admin, Proxy {
-    /**
-    *
-    * MANIPULATIONS
-    *
-    */
-
-    /// @notice                           function for setting or upgrading TokenManagerDelegate address by owner
-    /// @param impl                       TokenManagerDelegate contract address
-    function upgradeTo(address impl) public onlyOwner {
-        require(impl != address(0), "Cannot upgrade to invalid address");
-        require(impl != _implementation, "Cannot upgrade to the same implementation");
-        _implementation = impl;
-        emit Upgraded(impl);
-    }
+contract TokenManagerProxy is CommonProxy {
+    constructor(address _logic, address admin_, bytes memory _data)
+      payable
+      CommonProxy(_logic, admin_, _data)
+    {}
 }
