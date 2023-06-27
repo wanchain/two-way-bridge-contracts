@@ -8,8 +8,9 @@ pragma solidity >=0.8.0;
 
 import "../components/Owned.sol";
 import "./OracleStorage.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract OracleDelegate is Owned, OracleStorage {
+contract OracleDelegate is Owned, OracleStorage, Initializable {
   /**
     *
     * EVENTS
@@ -181,5 +182,9 @@ contract OracleDelegate is Owned, OracleStorage {
     returns (bool)
   {
     return mapStoremanGroupConfig[storemanGroupId].isDebtClean;
+  }
+
+  function initialize() external initializer {
+    owner = msg.sender;
   }
 }

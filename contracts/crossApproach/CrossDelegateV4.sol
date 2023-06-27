@@ -34,9 +34,10 @@ import "../components/Halt.sol";
 import "./CrossStorageV4.sol";
 import "./lib/RapidityLibV4.sol";
 import "./lib/NFTLibV1.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 // import "./lib/NFTLibV1.sol";
 
-contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4 {
+contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable {
     using SafeMath for uint;
 
     /**
@@ -599,5 +600,9 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4 {
       uint contractFee;
       (, contractFee) = NFTLibV1.getTokenScAddrAndContractFee(storageData, tokenPairID, mapTokenPairContractFee[tokenPairID], currentChainID, batchLength);
       return contractFee;
+    }
+
+    function initialize() external initializer {
+        owner = msg.sender;
     }
 }
