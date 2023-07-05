@@ -500,10 +500,6 @@ module BridgeDeployer::Cross {
         let type = TokenManager::get_token_pair_type(param.tokenPairID);
         assert!(type == TOKEN_CROSS_TYPE_ERC20, error::invalid_argument(ENO_INPUT_ERROR));
 
-        let (_fromChainID, _fromAccount, _, _) = TokenManager::get_token_pair(param.tokenPairID);
-        assert!(param.currentChainID == _fromChainID, error::invalid_argument(ENO_INPUT_ERROR));
-        assert!(_fromAccount == *string::bytes(&type_info::type_name<CoinType>()), error::invalid_argument(ENO_INPUT_ERROR));
-
         TokenManager::lock_coin<CoinType>(account, left);
 
         let tokenAddr = string::bytes(&type_info::type_name<CoinType>());
@@ -806,6 +802,9 @@ module BridgeDeployer::Cross {
 
         set_chain_id(creator, 0x8000027du64);
 
+        // TokenManager::set_admin(creator, signer::address_of(someone_else));
+
+
         TokenManager::add_token_pair(
             creator, 
             350u64, 
@@ -819,6 +818,39 @@ module BridgeDeployer::Cross {
             2153201998u64,
             b"0x21b70e32973ffF93c302ed3c336C625eD1C87603"
         );
+
+        TokenManager::update_token_pair(
+            creator, 
+            350u64, 
+            b"0x1::aptos_coin::AptosCoin",
+            b"AptosCoin",
+            b"APT",
+            8u8,
+            0x8000027du64,
+            0x8000027du64,
+            b"0x1::aptos_coin::AptosCoin",
+            2153201998u64,
+            b"0x21b70e32973ffF93c302ed3c336C625eD1C87603"
+        );
+
+        // TokenManager::remove_token_pair(
+        //     creator, 
+        //     350u64
+        // );
+
+        // TokenManager::add_token_pair(
+        //     creator, 
+        //     350u64, 
+        //     b"0x1::aptos_coin::AptosCoin",
+        //     b"AptosCoin",
+        //     b"APT",
+        //     8u8,
+        //     0x8000027du64,
+        //     0x8000027du64,
+        //     b"0x1::aptos_coin::AptosCoin",
+        //     2153201998u64,
+        //     b"0x21b70e32973ffF93c302ed3c336C625eD1C87603"
+        // );
 
         TokenManager::create_wrapped_coin<CoinBase::WAN>(creator, b"WAN", b"WAN");
 
@@ -838,6 +870,20 @@ module BridgeDeployer::Cross {
             b"0x0000000000000000000000000000000000000000",
             0x8000027du64,
             *toCoin,
+        );
+
+        TokenManager::add_token_pair(
+            creator, 
+            352u64, 
+            b"0x1::aptos_coin::AptosCoin",
+            b"AptosCoin",
+            b"APT",
+            8u8,
+            0x8000027du64,
+            2153201998u64,
+            b"0x21b70e32973ffF93c302ed3c336C625eD1C87603",
+            0x8000027du64,
+            b"0x1::aptos_coin::AptosCoin"
         );
 
         coin::destroy_burn_cap(burn_cap);
@@ -875,6 +921,36 @@ module BridgeDeployer::Cross {
             someone_else,
             smgID,
             350u64,
+            10000000,
+            b"0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e"
+        );
+    }
+
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun test_user_lock2(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 100000000, 0);
+
+        let smgID = @0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d;
+
+        Oracle::initialize_smg_id_for_test(creator, smgID, TEST_GPK, GROUP_STATUS_READY);
+
+        user_lock<aptos_framework::aptos_coin::AptosCoin>(
+            someone_else,
+            smgID,
+            352u64,
+            10000000,
+            b"0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e"
+        );
+        assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 90000000, 0);
+        assert!(coin::balance<AptosCoin>(signer::address_of(resource_account)) == 10000000, 0);
+
+        set_token_pair_fee(creator, 352u64, 100u64);
+
+        user_lock<aptos_framework::aptos_coin::AptosCoin>(
+            someone_else,
+            smgID,
+            352u64,
             10000000,
             b"0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e"
         );
@@ -1271,7 +1347,7 @@ module BridgeDeployer::Cross {
         set_chain_id(creator, 0x8000027eu64);
     }
 
-    // #[expected_failure]
+    #[expected_failure]
     #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
     fun user_lock_bad_type(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
         test_init(core, creator, resource_account, someone_else);
@@ -1294,6 +1370,44 @@ module BridgeDeployer::Cross {
         );
         assert!(coin::balance<AptosCoin>(signer::address_of(someone_else)) == 90000000, 0);
         assert!(coin::balance<AptosCoin>(signer::address_of(resource_account)) == 10000000, 0);
+    }
+
+    #[test(core = @0x1, creator = @BridgeDeployer, resource_account = @ResourceAccountDeployer, someone_else = @0x11)]
+    fun token_pair_manage(core: &signer, creator: &signer, resource_account: &signer, someone_else: &signer) acquires Cross {
+        test_init(core, creator, resource_account, someone_else);
+        
+        TokenManager::add_token_pair(
+            creator, 
+            353u64, 
+            b"0x1::aptos_coin::AptosCoin",
+            b"AptosCoin",
+            b"APT",
+            8u8,
+            0x8000027du64,
+            0x8000027du64,
+            b"0x1::aptos_coin::AptosCoin",
+            2153201998u64,
+            b"0x21b70e32973ffF93c302ed3c336C625eD1C87603"
+        );
+
+        TokenManager::update_token_pair(
+            creator, 
+            353u64, 
+            b"0x1::aptos_coin::AptosCoin",
+            b"AptosCoinAAA",
+            b"APTTTT",
+            8u8,
+            0x8000027du64,
+            0x8000027du64,
+            b"0x1::aptos_coin::AptosCoin",
+            2153201998u64,
+            b"0x21b70e32973ffF93c302ed3c336C625eD1C87603"
+        );
+
+        TokenManager::remove_token_pair(
+            creator, 
+            353u64
+        );
     }
 }
 
