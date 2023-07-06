@@ -3,13 +3,29 @@ require("@nomicfoundation/hardhat-toolbox");
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.4.26",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200
-      }
-    }
+    compilers: [
+      {
+        version: "0.4.26",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      },
+      {
+        version: "0.5.16",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    ],
+    overrides: {
+      "contracts/lib/Multicall2.sol": {version:"0.5.16", settings: { optimizer: { enabled: true, runs: 200}}},
+    },
   },
   networks: {
     fuji: {
@@ -83,6 +99,10 @@ module.exports = {
     },
     songbirdTestnet: {
       url: "https://coston-api.flare.network/ext/C/rpc",
+      accounts: [process.env.PK]
+    },
+    songbirdMainnet: {
+      url: "https://songbird-api.flare.network/ext/C/rpc",
       accounts: [process.env.PK]
     },
   },

@@ -12,18 +12,18 @@ const { sleep } = require("@nomiclabs/hardhat-ethers");
 const waitForReceipt = true;
 
 // mainnet
-// const ORACLE_ADMIN = '0x390CC3173EE7F425Fe7659df215B13959FD468E1';
-// const CROSS_ADMIN = '0xa35B3C55626188015aC79F396D0B593947231976';
-// const TOKEN_MANAGER_OPERATOR = '0xa35B3C55626188015aC79F396D0B593947231976';
-// const SMG_FEE_PROXY = "0x82bf94d159b15a587c45c9d70e0fab7fd87889eb";
-// const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
+const ORACLE_ADMIN = '0x390CC3173EE7F425Fe7659df215B13959FD468E1';
+const CROSS_ADMIN = '0xa35B3C55626188015aC79F396D0B593947231976';
+const TOKEN_MANAGER_OPERATOR = '0xa35B3C55626188015aC79F396D0B593947231976';
+const SMG_FEE_PROXY = "0x82bf94d159b15a587c45c9d70e0fab7fd87889eb";
+const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 
 // testnet
-const ORACLE_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const CROSS_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const TOKEN_MANAGER_OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const SMG_FEE_PROXY = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9";
-const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
+// const ORACLE_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
+// const CROSS_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
+// const TOKEN_MANAGER_OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
+// const SMG_FEE_PROXY = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9";
+// const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 // const BIP44_CHAIN_ID = 0x800003d1; // TELOS EVM
 // const BIP44_CHAIN_ID = 1073741830; // Function X EVM
 // const BIP44_CHAIN_ID = 1073741833; // GATHER CHAIN
@@ -34,6 +34,14 @@ const BIP44_CHAIN_ID = 1073741836; // SONGBIRD CHAIN
 
 async function main() {
   let deployer = (await hre.ethers.getSigner()).address;
+
+  // deploy Multicall2
+  let Multicall2 = await hre.ethers.getContractFactory("Multicall2");
+  let multicall2 = await Multicall2.deploy();
+  if (waitForReceipt) {
+    await multicall2.deployed();
+  }
+  console.log("Multicall2 deployed to:", multicall2.address);
 
   let TokenManagerDelegateV2 = await hre.ethers.getContractFactory("TokenManagerDelegateV2");
   let tokenManagerDelegate = await TokenManagerDelegateV2.deploy();
@@ -180,6 +188,7 @@ async function main() {
     tokenManagerProxy: tokenManagerProxy.address,
     oracleDelegate: oracleDelegate.address,
     oracleProxy: oracleProxy.address,
+    multicallV2: multicall2.address,
   };
 
   fs.writeFileSync(`deployed/${hre.network.name}.json`, JSON.stringify(deployed, null, 2));
