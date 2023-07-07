@@ -108,7 +108,8 @@ library CrossTypesV1 {
         IRC20Protocol token = IRC20Protocol(tokenScAddr);
         beforeBalance = token.balanceOf(to);
         // IRC20Protocol(tokenScAddr).transfer(to, value);
-        (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transfer.selector, to, value));
+        (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transfer(address,uint256)")), abi.encode(to, value))); // for verify
+        // (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transfer.selector, to, value));
         require(success, "transfer failed");
         afterBalance = token.balanceOf(to);
         return afterBalance == beforeBalance.add(value);
@@ -123,7 +124,8 @@ library CrossTypesV1 {
         IRC20Protocol token = IRC20Protocol(tokenScAddr);
         beforeBalance = token.balanceOf(to);
         // IRC20Protocol(tokenScAddr).transferFrom(from, to, value);
-        (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+        (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transferFrom(address,address,uint256)")), abi.encode(from, to, value))); // for verify
+        // (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
         require(success, "TransferFrom failed");
         afterBalance = token.balanceOf(to);
         return afterBalance == beforeBalance.add(value);
