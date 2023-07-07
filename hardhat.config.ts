@@ -24,7 +24,7 @@ const zkSyncTestnet =
 
 const config: HardhatUserConfig = {
   zksolc: {
-    version: "1.3.11",
+    version: "1.3.13",
     compilerSource: "binary",
     settings: {
       isSystem: false, // optional.  Enables Yul instructions available only for zkSync system contracts and libraries
@@ -35,10 +35,10 @@ const config: HardhatUserConfig = {
       },
       libraries: {
         "contracts/crossApproach/lib/RapidityLibV4.sol": {
-          "RapidityLibV4": "0x2a50a82026b2F6f1542833aA427db58523528131",
+          "RapidityLibV4": "0x264c2eB13970468458c08123CB70A1005a093c29",
         },
         "contracts/crossApproach/lib/NFTLibV1.sol": {
-          "NFTLibV1": "0x9c999dc8120a8225A0Bbf385f8a95aAb3EA7b00c",
+          "NFTLibV1": "0xb46Fdd7c2A7A2fd8278a52daD6FE130D964ccb13",
         },
         "contracts/gpk/lib/GpkLib.sol": {
           "GpkLib": "0x0000000000000000000000000000000000000000",
