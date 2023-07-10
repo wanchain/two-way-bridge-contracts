@@ -78,6 +78,15 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   let deployer = getDeployer(hre);
 
+  // let RapidityLibV4 = await getArtifact(deployer, "RapidityLibV4");
+  // let rapidityLib = await deploy(deployer, RapidityLibV4, []);
+  // console.log("RapidityLibV4 deployed to:", rapidityLib.address);
+
+  let CrossDelegateV4 = await getArtifact(deployer, "CrossDelegateV4");
+  let crossDelegate = await deploy(deployer, CrossDelegateV4, []);
+  console.log("CrossDelegateV4 deployed to:", crossDelegate.address);
+
+
   // First you need to deploy the libraries
 
   // let NFTLibV1 = await getArtifact(deployer, "NFTLibV1");
@@ -90,24 +99,24 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
 
   // let Test = await getArtifact(deployer, "Test");
-  // let test = await deploy(deployer, Test, ["0x99F7c6672B7929b7f7744dAbea8F7f2c4cC88F7F","0x9264Ca2329493036A2c4FA1C8B6F997BAAdE940E","1073741837"]);
+  // let test = await deploy(deployer, Test, ["0xb2aA0f60E29f90754Ed4A2886b48EC4247E05a8a","0x9264Ca2329493036A2c4FA1C8B6F997BAAdE940E","1073741837"]);
 
   // console.log("Test deployed to:", test.address);
 
-  // await verify(hre, Test, test.address, "contracts/Test.sol:Test", ["0x99F7c6672B7929b7f7744dAbea8F7f2c4cC88F7F","0x9264Ca2329493036A2c4FA1C8B6F997BAAdE940E","1073741837"]);
+  // await verify(hre, Test, test.address, "contracts/Test.sol:Test", ["0xb2aA0f60E29f90754Ed4A2886b48EC4247E05a8a","0x9264Ca2329493036A2c4FA1C8B6F997BAAdE940E","1073741837"]);
 
 
 
-  let Bn128SchnorrVerifier = await getArtifact(deployer, "Bn128SchnorrVerifier");
-  let bn128SchnorrVerifier = await deploy(deployer, Bn128SchnorrVerifier, []);
+  // let Bn128SchnorrVerifier = await getArtifact(deployer, "Bn128SchnorrVerifier");
+  // let bn128SchnorrVerifier = await deploy(deployer, Bn128SchnorrVerifier, []);
 
-  console.log("bn128SchnorrVerifier deployed to:", bn128SchnorrVerifier.address);
+  // console.log("bn128SchnorrVerifier deployed to:", bn128SchnorrVerifier.address);
 
-  let SignatureVerifier = await getArtifact(deployer, "SignatureVerifier");
-  let signatureVerifier = await deploy(deployer, SignatureVerifier, []);
-  console.log("SignatureVerifier deployed to:", signatureVerifier.address);
+  // let SignatureVerifier = await getArtifact(deployer, "SignatureVerifier");
+  // let signatureVerifier = await deploy(deployer, SignatureVerifier, []);
+  // console.log("SignatureVerifier deployed to:", signatureVerifier.address);
 
-  console.log('verifier register...')
-  let tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
-  console.log(tx);
+  // console.log('verifier register...')
+  // let tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
+  // console.log(tx);
 }
