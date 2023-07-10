@@ -2,9 +2,9 @@
 
 pragma solidity >=0.8.0;
 
-import "./Bn128.sol";
+import "./Bn128G1.sol";
 
-contract Bn128SchnorrVerifier is Bn128 {
+contract Bn128SchnorrVerifier is Bn128G1 {
     using SafeMath for uint256;
     struct Point {
         uint256 x; uint256 y;

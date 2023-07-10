@@ -1,6 +1,6 @@
 {
-  "signatureVerifier": "0x99F7c6672B7929b7f7744dAbea8F7f2c4cC88F7F",
-  "bn128SchnorrVerifier": "0x5ae2d58D2D2FcbE2120D5835e1B0f0c9B8F3Fe34",
+  "signatureVerifier": "0xb2aA0f60E29f90754Ed4A2886b48EC4247E05a8a",
+  "bn128SchnorrVerifier": "0xCB67B1B7A96CC5A9e41213e4227B9c6FE462B227",
   "crossDelegate": "0xD44E60EC8a2De7b439c0f46Af451728a2605cfec",
   "crossProxy": "0x782Ab1450A934620B08f1f5fb07dfd3b8e6Dd5f6",
   "tokenManagerDelegate": "0x1359F49aE78086E70541f914dDba8CF29193eFd3",

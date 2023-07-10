@@ -24,7 +24,7 @@ const zkSyncTestnet =
 
 const config: HardhatUserConfig = {
   zksolc: {
-    version: "1.3.11",
+    version: "1.3.13",
     compilerSource: "binary",
     settings: {
       isSystem: false, // optional.  Enables Yul instructions available only for zkSync system contracts and libraries
