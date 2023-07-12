@@ -86,6 +86,11 @@ module.exports = {
 	    gasPrice:2000000000,
             url: "https://gwan-ssl.wandevs.org:56891",
             accounts: [process.env.PK]
+        },
+        polyZkTestnet: {
+	    gasPrice:200000000,
+            url: "https://rpc.public.zkevm-test.net",
+            accounts: [process.env.PK]
         }
 
     },
