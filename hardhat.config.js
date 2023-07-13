@@ -105,6 +105,10 @@ module.exports = {
       url: "https://songbird-api.flare.network/ext/C/rpc",
       accounts: [process.env.PK]
     },
+    horizenTestnet: {
+      url: "https://rpc.ankr.com/horizen_testnet_evm",
+      accounts: [process.env.PK]
+    },
   },
   etherscan: {
     apiKey: {
