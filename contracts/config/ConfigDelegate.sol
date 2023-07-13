@@ -34,7 +34,7 @@ import "../components/Admin.sol";
 import "./ConfigStorage.sol";
 
 
-contract ConfigDelegate is ConfigStorage, Halt , Admin{
+contract ConfigDelegate is Halt , Admin, ConfigStorage{
 
     /// @notice                           function for set smg contract address
     /// @param curveId                    curve id array
