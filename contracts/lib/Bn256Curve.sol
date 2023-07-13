@@ -66,7 +66,7 @@ library Bn256Curve {
             mstore(add(freePtr,4), mload(add(polyCommit,32)))
             mstore(add(freePtr,36), mload(add(polyCommit,64)))
             let loopCnt := 1
-            for { } eq(loopCnt, polyCommitCnt) { loopCnt := add(loopCnt, 1) } {
+            for { } lt(loopCnt, polyCommitCnt) { loopCnt := add(loopCnt, 1) } {
                 mstore(add(freePtr,add(4,mul(loopCnt,64))),         mload(add(add(add(polyCommit,32),mul(loopCnt,64)),0)))
                 mstore(add(freePtr,add(4,add(mul(loopCnt,64),32))), mload(add(add(add(add(polyCommit,32),mul(loopCnt,64)),0),32)))
             }
