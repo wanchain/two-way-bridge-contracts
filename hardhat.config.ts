@@ -35,7 +35,7 @@ const config: HardhatUserConfig = {
       },
       libraries: {
         "contracts/crossApproach/lib/RapidityLibV4.sol": {
-          "RapidityLibV4": "0xa5E344DE591079b0409aE9629d2fC044Ac7685FE",
+          "RapidityLibV4": "0x38Ef6bf9b06738c35ff42c38bFD176EF590a607d",
         },
         "contracts/crossApproach/lib/NFTLibV1.sol": {
           "NFTLibV1": "0xb46Fdd7c2A7A2fd8278a52daD6FE130D964ccb13",
