@@ -33,7 +33,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./RapidityTxLib.sol";
 import "./CrossTypesV1.sol";
 import "../../interfaces/ITokenManager.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import "./ZkTransfer.sol";
 
 
 library NFTLibV1 {
@@ -144,7 +144,7 @@ library NFTLibV1 {
         (tokenScAddr, contractFee) = getTokenScAddrAndContractFee(storageData, params.tokenPairID, params.tokenPairContractFee, params.currentChainID, params.tokenIDs.length);
 
         if (contractFee > 0) {
-            Address.sendValue(payable(params.smgFeeProxy), contractFee);
+            ZkTransfer.sendValue(payable(params.smgFeeProxy), contractFee);
         }
 
         uint left = (msg.value).sub(contractFee);
@@ -162,7 +162,7 @@ library NFTLibV1 {
         }
 
         if (left != 0) {
-            Address.sendValue(payable(msg.sender), left);
+            ZkTransfer.sendValue(payable(msg.sender), left);
         }
 
         string[] memory keys = new string[](4);
@@ -200,12 +200,12 @@ library NFTLibV1 {
         ITokenManager(tokenManager).burnNFT(uint(tokenCrossType), tokenScAddr, msg.sender, params.tokenIDs, params.tokenValues);
 
         if (contractFee > 0) {
-            Address.sendValue(payable(params.smgFeeProxy), contractFee);
+            ZkTransfer.sendValue(payable(params.smgFeeProxy), contractFee);
         }
 
         uint left = (msg.value).sub(contractFee);
         if (left != 0) {
-            Address.sendValue(payable(msg.sender), left);
+            ZkTransfer.sendValue(payable(msg.sender), left);
         }
 
         string[] memory keys = new string[](4);

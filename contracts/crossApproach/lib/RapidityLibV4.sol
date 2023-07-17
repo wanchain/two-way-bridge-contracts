@@ -32,7 +32,7 @@ import "./RapidityTxLib.sol";
 import "./CrossTypesV1.sol";
 import "../../interfaces/ITokenManager.sol";
 import "../../interfaces/IRC20Protocol.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import "./ZkTransfer.sol";
 
 library RapidityLibV4 {
     using SafeMath for uint;
@@ -178,7 +178,7 @@ library RapidityLibV4 {
             require(false, "Invalid token pair");
         }
         if (contractFee > 0) {
-            Address.sendValue(payable(params.smgFeeProxy), contractFee);
+            ZkTransfer.sendValue(payable(params.smgFeeProxy), contractFee);
         }
 
         uint left;
@@ -192,7 +192,7 @@ library RapidityLibV4 {
             require(CrossTypesV1.transferFrom(tokenScAddr, msg.sender, address(this), params.value), "Lock token failed");
         }
         if (left != 0) {
-            Address.sendValue(payable(msg.sender), left);
+            ZkTransfer.sendValue(payable(msg.sender), left);
         }
         emit UserLockLogger(params.smgID, params.tokenPairID, tokenScAddr, params.value, contractFee, params.destUserAccount);
     }
@@ -235,12 +235,12 @@ library RapidityLibV4 {
         require(burnShadowToken(tokenManager, tokenScAddr, msg.sender, params.value), "Burn failed");
 
         if (contractFee > 0) {
-            Address.sendValue(payable(params.smgFeeProxy), contractFee);
+            ZkTransfer.sendValue(payable(params.smgFeeProxy), contractFee);
         }
 
         uint left = (msg.value).sub(contractFee);
         if (left != 0) {
-            Address.sendValue(payable(msg.sender), left);
+            ZkTransfer.sendValue(payable(msg.sender), left);
         }
 
         emit UserBurnLogger(params.smgID, params.tokenPairID, tokenScAddr, params.value, contractFee, params.fee, params.destUserAccount);
@@ -287,9 +287,9 @@ library RapidityLibV4 {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
 
         if (params.destTokenAccount == address(0)) {
-            Address.sendValue(payable(params.destUserAccount), params.value);
+            ZkTransfer.sendValue(payable(params.destUserAccount), params.value);
             if (params.fee > 0) {
-                Address.sendValue(payable(params.smgFeeProxy), params.fee);
+                ZkTransfer.sendValue(payable(params.smgFeeProxy), params.fee);
             }
         } else {
             uint8 tokenCrossType = storageData.tokenManager.mapTokenPairType(params.tokenPairID);
