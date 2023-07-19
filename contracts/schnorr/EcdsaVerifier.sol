@@ -15,7 +15,7 @@ contract EcdsaVerifier {
         returns(bool)
     {
         // Convert bytes32 v into uint8
-        uint8 vValue = uint8(uint256(v));
+        uint8 vValue = uint8(uint256(v)) + 27;
 
         // Use ecrecover to recover the public key address
         address recoveredAddr = ecrecover(message, vValue, r, signature);
@@ -34,7 +34,7 @@ contract EcdsaVerifier {
         returns(bool, address, address, uint, bytes memory)
     {
         // Convert bytes32 v into uint8
-        uint8 vValue = uint8(uint256(v));
+        uint8 vValue = uint8(uint256(v)) + 27;
 
         // Use ecrecover to recover the public key address
         address recoveredAddr = ecrecover(message, vValue, r, signature);
