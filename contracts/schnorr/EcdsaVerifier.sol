@@ -26,4 +26,23 @@ contract EcdsaVerifier {
 
         return (recoveredAddr == expectedAddr);
     }
+
+    // Function to verify the ECDSA signature
+    function debugVerify(bytes32 signature, bytes32 groupKeyX, bytes32 groupKeyY, bytes32 r, bytes32 v, bytes32 message)
+        public
+        view
+        returns(bool, address, address, uint, bytes memory)
+    {
+        // Convert bytes32 v into uint8
+        uint8 vValue = uint8(uint256(v));
+
+        // Use ecrecover to recover the public key address
+        address recoveredAddr = ecrecover(message, vValue, r, signature);
+
+        // Compare the recovered address with the expected address
+        bytes memory publicKey = abi.encodePacked(groupKeyX, groupKeyY);
+        address expectedAddr = publicKeyToAddress(publicKey);
+
+        return (recoveredAddr == expectedAddr, recoveredAddr, expectedAddr, vValue, publicKey);
+    }
 }
