@@ -1,6 +1,7 @@
 {
   "signatureVerifier": "0xb2aA0f60E29f90754Ed4A2886b48EC4247E05a8a",
   "bn128SchnorrVerifier": "0xCB67B1B7A96CC5A9e41213e4227B9c6FE462B227",
+  "ecdsaVerifier": "0x8D3d10AB9e1dE7994C2008F9d2f00e7D1e1c0942",
   "crossDelegate": "0xBAB32Fe5B00732fd8Ee152d425d0b1554f967CED",
   "crossProxy": "0x782Ab1450A934620B08f1f5fb07dfd3b8e6Dd5f6",
   "tokenManagerDelegate": "0x1359F49aE78086E70541f914dDba8CF29193eFd3",
