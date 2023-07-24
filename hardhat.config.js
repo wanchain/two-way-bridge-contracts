@@ -88,11 +88,15 @@ module.exports = {
             accounts: [process.env.PK]
         },
         polyZkTestnet: {
-	    gasPrice:200000000,
+	    //gasPrice:200000000,
             url: "https://rpc.public.zkevm-test.net",
             accounts: [process.env.PK]
-        }
-
+        },
+        linea: {
+                gasPrice:30000000000, // can not delete.
+                url: "https://rpc.goerli.linea.build",
+                accounts: [process.env.PK]
+            }
     },
     etherscan: {
         apiKey: {
