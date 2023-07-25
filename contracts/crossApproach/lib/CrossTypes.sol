@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 
 import "../../interfaces/IRC20Protocol.sol";
 import "../../interfaces/IQuota.sol";

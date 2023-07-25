@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 import "../../lib/CommonTool.sol";
 import "../../interfaces/IConfig.sol";
 import "../../interfaces/ICurve.sol";

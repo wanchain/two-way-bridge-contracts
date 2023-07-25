@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
@@ -35,7 +35,7 @@ import "../components/Admin.sol";
 import "./ConfigStorage.sol";
 
 
-contract ConfigDelegate is Halt , Admin, ConfigStorage{
+contract ConfigDelegate is Initializable, Halt , Admin, ConfigStorage{
 
     /* initializer */
     function initialize() external initializer {

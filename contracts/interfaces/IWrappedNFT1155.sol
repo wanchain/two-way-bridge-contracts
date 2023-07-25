@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 
 interface IWrappedNFT1155 {
     function changeOwner(address _newOwner) external;

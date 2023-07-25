@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 
 library Secp256k1Curve {
     address constant PRECOMPILE_CONTRACT_ADDR = address(0x268);

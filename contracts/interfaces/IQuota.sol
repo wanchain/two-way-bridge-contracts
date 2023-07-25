@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 
 interface IQuota {
   function userLock(uint tokenId, bytes32 storemanGroupId, uint value) external;
