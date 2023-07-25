@@ -29,12 +29,18 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "../components/Halt.sol";
 import "../components/Admin.sol";
 import "./ConfigStorage.sol";
 
 
 contract ConfigDelegate is Halt , Admin, ConfigStorage{
+
+    /* initializer */
+    function initialize() external initializer {
+        owner = msg.sender;
+    }
 
     /// @notice                           function for set smg contract address
     /// @param curveId                    curve id array

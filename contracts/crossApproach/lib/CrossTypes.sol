@@ -71,10 +71,10 @@ library CrossTypes {
         mapping(bytes32 => uint) mapStoremanFee;
 
         /// @notice transaction fee, origChainID => shadowChainID => fee
-        mapping(uint => mapping(uint =>uint)) mapLockFee;
+        mapping(uint => mapping(uint =>uint)) mapContractFee;
 
         /// @notice transaction fee, origChainID => shadowChainID => fee
-        mapping(uint => mapping(uint =>uint)) mapRevokeFee;
+        mapping(uint => mapping(uint =>uint)) mapAgentFee;
 
     }
 
@@ -105,11 +105,13 @@ library CrossTypes {
     {
         uint beforeBalance;
         uint afterBalance;
-        beforeBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
+        IRC20Protocol token = IRC20Protocol(tokenScAddr);
+        beforeBalance = token.balanceOf(to);
         // IRC20Protocol(tokenScAddr).transfer(to, value);
-        (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transfer(address,uint256)")), to, value));
+        (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transfer(address,uint256)")), abi.encode(to, value))); // for verify
+        // (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transfer.selector, to, value));
         require(success, "transfer failed");
-        afterBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
+        afterBalance = token.balanceOf(to);
         return afterBalance == beforeBalance.add(value);
     }
 
@@ -119,11 +121,13 @@ library CrossTypes {
     {
         uint beforeBalance;
         uint afterBalance;
-        beforeBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
+        IRC20Protocol token = IRC20Protocol(tokenScAddr);
+        beforeBalance = token.balanceOf(to);
         // IRC20Protocol(tokenScAddr).transferFrom(from, to, value);
-        (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transferFrom(address,address,uint256)")), from, to, value));
+        (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transferFrom(address,address,uint256)")), abi.encode(from, to, value))); // for verify
+        // (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
         require(success, "TransferFrom failed");
-        afterBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
+        afterBalance = token.balanceOf(to);
         return afterBalance == beforeBalance.add(value);
     }
 }

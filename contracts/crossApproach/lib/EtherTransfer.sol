@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.1;
 
-library ZkTransfer {
+library EtherTransfer {
     /**
      * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
      * `recipient`, forwarding all available gas and reverting on errors.
@@ -19,10 +19,10 @@ library ZkTransfer {
      * {ReentrancyGuard} or the
      * https://solidity.readthedocs.io/en/v0.8.0/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
-    function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "ZkTransfer: insufficient balance");
+    function sendValue(address payable recipient, uint256 amount, uint256 gasLimit) internal {
+        require(address(this).balance >= amount, "EtherTransfer: insufficient balance");
 
-        (bool success, ) = recipient.call{value: amount, gas: 20000}("");
-        require(success, "ZkTransfer: unable to send value, recipient may have reverted");
+        (bool success, ) = recipient.call{value: amount, gas: gasLimit}("");
+        require(success, "EtherTransfer: unable to send value, recipient may have reverted");
     }
 }

@@ -28,6 +28,7 @@
 
 pragma solidity >=0.8.0;
 
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../components/Admin.sol";
 import "./GpkStorage.sol";
@@ -79,6 +80,10 @@ contract GpkDelegate is Admin, GpkStorage {
     * MANIPULATIONS
     *
     */
+
+    function initialize() external initializer {
+        owner = msg.sender;
+    }
 
     /// @notice                           function for set smg contract address
     /// @param cfgAddr                    cfg contract address

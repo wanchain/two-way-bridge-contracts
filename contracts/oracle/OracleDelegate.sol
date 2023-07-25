@@ -6,11 +6,11 @@ pragma solidity >=0.8.0;
  * Math operations with safety checks
  */
 
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "../components/Owned.sol";
 import "./OracleStorage.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract OracleDelegate is Owned, OracleStorage, Initializable {
+contract OracleDelegate is Initializable, Owned, OracleStorage {
   /**
     *
     * EVENTS
@@ -32,6 +32,11 @@ contract OracleDelegate is Owned, OracleStorage, Initializable {
   modifier onlyAdmin() {
       require((msg.sender == admin) || (msg.sender == owner), "not admin");
       _;
+  }
+
+  /* initializer */
+  function initialize() external initializer {
+      owner = msg.sender;
   }
 
   /**
@@ -184,7 +189,4 @@ contract OracleDelegate is Owned, OracleStorage, Initializable {
     return mapStoremanGroupConfig[storemanGroupId].isDebtClean;
   }
 
-  function initialize() external initializer {
-    owner = msg.sender;
-  }
 }

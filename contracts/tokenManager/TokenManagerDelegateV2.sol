@@ -35,9 +35,8 @@ pragma solidity >=0.8.0;
 import "../interfaces/IWrappedNFT721.sol";
 import "../interfaces/IWrappedNFT1155.sol";
 import "./TokenManagerDelegate.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract TokenManagerDelegateV2 is TokenManagerDelegate, Initializable {
+contract TokenManagerDelegateV2 is TokenManagerDelegate {
 
     /************************************************************
      **
@@ -142,7 +141,4 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Initializable {
         }
     }
 
-    function initialize() external initializer {
-        owner = msg.sender;
-    }
 }

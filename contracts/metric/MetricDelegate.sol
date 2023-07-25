@@ -28,7 +28,7 @@
 
 pragma solidity >=0.8.0;
 
-
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../components/Halt.sol";
 
@@ -39,7 +39,7 @@ import "../lib/CommonTool.sol";
 import "./lib/MetricLib.sol";
 import "../interfaces/IPosLib.sol";
 
-contract MetricDelegate is Halt, MetricStorage {
+contract MetricDelegate is Initializable, Halt, MetricStorage {
     using SafeMath for uint;
     using MetricLib for MetricTypes.MetricStorageData;
 
@@ -53,6 +53,11 @@ contract MetricDelegate is Halt, MetricStorage {
         leader = metricData.getLeader(grpId);
         require(msg.sender == leader, "Not leader");
         _;
+    }
+
+    /* initializer */
+    function initialize() external initializer {
+        owner = msg.sender;
     }
 
     /**

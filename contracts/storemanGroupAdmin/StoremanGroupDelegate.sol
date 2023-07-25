@@ -28,6 +28,7 @@
 
 pragma solidity >=0.8.0;
 
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../components/Halt.sol";
@@ -40,7 +41,7 @@ import "./IncentiveLib.sol";
 import "../interfaces/IQuota.sol";
 import "../gpk/lib/GpkTypes.sol";
 
-contract StoremanGroupDelegate is Halt, Admin,ReentrancyGuard, StoremanGroupStorage {
+contract StoremanGroupDelegate is Initializable, Halt, Admin,ReentrancyGuard, StoremanGroupStorage {
     using SafeMath for uint;
     using Deposit for Deposit.Records;
     bytes key = "openStoreman";
@@ -56,6 +57,11 @@ contract StoremanGroupDelegate is Halt, Admin,ReentrancyGuard, StoremanGroupStor
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(msg.sender == group.selectedNode[0], "Sender is not allowed");
         _;
+    }
+
+    /* initializer */
+    function initialize() external initializer {
+        owner = msg.sender;
     }
 
     /// @notice                           function for owner set token manager and htlc contract address

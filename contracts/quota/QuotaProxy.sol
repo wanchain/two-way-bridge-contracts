@@ -29,9 +29,9 @@
 pragma solidity >=0.8.0;
 import "../components/CommonProxy.sol";
 
-contract QuotaProxy is CommonProxy {
+contract QuotaProxy is TransparentUpgradeableProxy {
     constructor(address _logic, address admin_, bytes memory _data)
       payable
-      CommonProxy(_logic, admin_, _data)
+      TransparentUpgradeableProxy(_logic, admin_, _data)
     {}
 }
