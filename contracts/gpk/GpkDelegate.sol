@@ -34,7 +34,7 @@ import "../components/Admin.sol";
 import "./GpkStorage.sol";
 import "./lib/GpkLib.sol";
 
-contract GpkDelegate is Admin, GpkStorage {
+contract GpkDelegate is Initializable, Admin, GpkStorage {
     using SafeMath for uint;
 
     /**
