@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 
 interface ITokenManager {
     function getTokenPairInfo(uint id) external view

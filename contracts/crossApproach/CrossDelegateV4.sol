@@ -26,18 +26,18 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 pragma abicoder v2;
 
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../components/Halt.sol";
 import "./CrossStorageV4.sol";
 import "./lib/RapidityLibV4.sol";
 import "./lib/NFTLibV1.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 // import "./lib/NFTLibV1.sol";
 
-contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable {
+contract CrossDelegateV4 is Initializable, ReentrancyGuard, Halt, CrossStorageV4 {
     using SafeMath for uint;
 
     /**
@@ -92,6 +92,10 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
         _;
     }
 
+    /* initializer */
+    function initialize() external initializer {
+        owner = msg.sender;
+    }
 
     /**
      *
@@ -107,6 +111,7 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
     external
     payable
     notHalted
+    nonReentrant
     onlyReadySmg(smgID)
     {
         address smgFeeProxy = getSmgFeeProxy();
@@ -117,6 +122,7 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
         value: value,
         currentChainID: currentChainID,
         tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
+        etherTransferGasLimit: getEtherTransferGasLimit(),
         destUserAccount: userAccount,
         smgFeeProxy: smgFeeProxy
         });
@@ -132,6 +138,7 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
     external
     payable
     notHalted
+    nonReentrant
     onlyReadySmg(smgID)
     {
         address smgFeeProxy = getSmgFeeProxy();
@@ -143,6 +150,7 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
         fee: fee,
         currentChainID: currentChainID,
         tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
+        etherTransferGasLimit: getEtherTransferGasLimit(),
         srcTokenAccount: tokenAccount,
         destUserAccount: userAccount,
         smgFeeProxy: smgFeeProxy
@@ -206,6 +214,7 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
         tokenPairID: tokenPairID,
         value: value,
         fee: fee,
+        etherTransferGasLimit: getEtherTransferGasLimit(),
         destTokenAccount: tokenAccount,
         destUserAccount: userAccount,
         smgFeeProxy: (storageData.smgFeeProxy == address(0)) ? owner : storageData.smgFeeProxy // fix: Stack too deep
@@ -481,6 +490,7 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
         public
         payable
         notHalted
+        nonReentrant
         onlyReadySmg(smgID)
     {
         require(tokenIDs.length > 0 && tokenIDs.length <= getMaxBatchSize(), "Invalid length");
@@ -493,6 +503,7 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
             tokenValues: tokenValues,
             currentChainID: currentChainID,
             tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
+            etherTransferGasLimit: getEtherTransferGasLimit(),
             destUserAccount: userAccount,
             smgFeeProxy: getSmgFeeProxy()
         });
@@ -504,6 +515,7 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
         public
         payable
         notHalted
+        nonReentrant
         onlyReadySmg(smgID)
     {
         require(tokenIDs.length > 0 && tokenIDs.length <= getMaxBatchSize(), "Invalid length");
@@ -516,6 +528,7 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
             tokenValues: tokenValues,
             currentChainID: currentChainID,
             tokenPairContractFee: mapTokenPairContractFee[tokenPairID],
+            etherTransferGasLimit: getEtherTransferGasLimit(),
             srcTokenAccount: tokenAccount,
             destUserAccount: userAccount,
             smgFeeProxy: getSmgFeeProxy()
@@ -602,7 +615,22 @@ contract CrossDelegateV4 is ReentrancyGuard, Halt, CrossStorageV4, Initializable
       return contractFee;
     }
 
-    function initialize() external initializer {
-        owner = msg.sender;
+    function setEtherTransferGasLimit(uint _etherTransferGasLimit) 
+      external
+      onlyAdmin
+    {
+      etherTransferGasLimit = _etherTransferGasLimit;
     }
+
+    function getEtherTransferGasLimit() 
+      public
+      view
+      returns (uint)
+    {
+      if(etherTransferGasLimit == 0) {
+        return 2300;
+      }
+      return etherTransferGasLimit;
+    }
+
 }

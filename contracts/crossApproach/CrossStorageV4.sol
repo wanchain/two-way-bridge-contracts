@@ -26,10 +26,10 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 
 import "../components/BasicStorage.sol";
-import "./lib/CrossTypesV1.sol";
+import "./lib/CrossTypes.sol";
 import "./lib/HTLCTxLib.sol";
 import "./lib/RapidityTxLib.sol";
 
@@ -43,7 +43,7 @@ contract CrossStorageV1 is BasicStorage {
      **
      ************************************************************/
 
-    CrossTypesV1.Data internal storageData;
+    CrossTypes.Data internal storageData;
 
     /// @notice locked time(in seconds)
     uint public lockedTime = uint(3600*36);
@@ -115,4 +115,5 @@ contract CrossStorageV4 is CrossStorageV3 {
      **
      ************************************************************/
      uint internal maxBatchSize;
+     uint internal etherTransferGasLimit;
 }

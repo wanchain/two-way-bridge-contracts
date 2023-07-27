@@ -26,12 +26,12 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 import "../components/CommonProxy.sol";
 
-contract ConfigProxy is CommonProxy {
+contract ConfigProxy is TransparentUpgradeableProxy {
     constructor(address _logic, address admin_, bytes memory _data)
       payable
-      CommonProxy(_logic, admin_, _data)
+      TransparentUpgradeableProxy(_logic, admin_, _data)
     {}
 }

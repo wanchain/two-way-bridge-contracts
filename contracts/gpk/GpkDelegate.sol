@@ -26,14 +26,15 @@
 //
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../components/Admin.sol";
 import "./GpkStorage.sol";
 import "./lib/GpkLib.sol";
 
-contract GpkDelegate is Admin, GpkStorage {
+contract GpkDelegate is Initializable, Admin, GpkStorage {
     using SafeMath for uint;
 
     /**
@@ -79,6 +80,10 @@ contract GpkDelegate is Admin, GpkStorage {
     * MANIPULATIONS
     *
     */
+
+    function initialize() external initializer {
+        owner = msg.sender;
+    }
 
     /// @notice                           function for set smg contract address
     /// @param cfgAddr                    cfg contract address

@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 
 interface IStoremanGroup {
     function getSelectedSmNumber(bytes32 groupId) external view returns(uint number);

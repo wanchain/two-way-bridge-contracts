@@ -26,19 +26,20 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 
 /**
  * Math operations with safety checks
  */
 
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "../interfaces/IMappingToken.sol";
 import "../components/Admin.sol";
 import "./TokenManagerStorage.sol";
 import "./MappingToken.sol";
 
 
-contract TokenManagerDelegate is Admin, TokenManagerStorage {
+contract TokenManagerDelegate is Initializable, Admin, TokenManagerStorage {
     using SafeMath for uint;
     /************************************************************
      **
@@ -66,6 +67,11 @@ contract TokenManagerDelegate is Admin, TokenManagerStorage {
     modifier onlyExistID(uint id) {
         require(mapTokenPairInfo[id].fromChainID > 0, "token not exist");
         _;
+    }
+
+    /* initializer */
+    function initialize() external initializer {
+        owner = msg.sender;
     }
 
     /**
@@ -417,4 +423,5 @@ contract TokenManagerDelegate is Admin, TokenManagerStorage {
             ancestorChainID[i] = mapTokenPairInfo[theId].aInfo.chainID;
         }
     }
+
 }

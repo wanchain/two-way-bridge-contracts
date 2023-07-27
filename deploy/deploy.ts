@@ -71,6 +71,7 @@ const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 // const BIP44_CHAIN_ID = 0x800003d1; // TELOS EVM
 // const BIP44_CHAIN_ID = 1073741830; // Function X EVM
 const BIP44_CHAIN_ID = 1073741837; // zkSync Era Testnet
+const etherTransferGasLimit = 20000; // zkSync Era Testnet
 
 // An example of a deploy script that will deploy and call a simple contract.
 export default async function (hre: HardhatRuntimeEnvironment) {
@@ -113,7 +114,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   console.log("TokenManagerProxy deployed to:", tokenManagerProxy.address);
 
-  
+
   let CrossDelegateV4 = await getArtifact(deployer, "CrossDelegateV4");
 
   let crossDelegate = await deploy(deployer, CrossDelegateV4, []);
@@ -190,6 +191,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   await tx.wait();
   console.log('cross set chainID...');
   tx = await cross.setChainID(BIP44_CHAIN_ID);
+  console.log('cross set etherTransferGasLimit...');
+  tx = await cross.setEtherTransferGasLimit(etherTransferGasLimit);
   await tx.wait();
   console.log('cross add admin2...')
   tx = await cross.setAdmin(CROSS_ADMIN);

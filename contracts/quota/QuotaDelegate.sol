@@ -26,12 +26,13 @@
 //
 //
 
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.18;
 
 /**
  * Math operations with safety checks
  */
 
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./QuotaStorageV2.sol";
 import "../components/Halt.sol";
 import "../interfaces/IOracle.sol";
@@ -49,7 +50,7 @@ interface IDebtOracle {
 }
 
 
-contract QuotaDelegate is Halt, QuotaStorageV2 {
+contract QuotaDelegate is Initializable, Halt, QuotaStorageV2 {
     using SafeMath for uint;
 
     event AssetTransfered(bytes32 indexed srcStoremanGroupId, bytes32 indexed dstStoremanGroupId, uint tokenId, uint value);
@@ -69,7 +70,12 @@ contract QuotaDelegate is Halt, QuotaStorageV2 {
         }
         _;
     }
-    
+
+    /* initializer */
+    function initialize() external initializer {
+        owner = msg.sender;
+    }
+
     /// @notice                         config params for owner
     /// @param _priceOracleAddr         token price oracle contract address
     /// @param _htlcAddr                HTLC contract address
