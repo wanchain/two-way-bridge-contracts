@@ -109,6 +109,14 @@ module.exports = {
       url: "https://rpc.ankr.com/horizen_testnet_evm",
       accounts: [process.env.PK]
     },
+    horizenMainnet: {
+      url: "https://horizen:c-ZMm4u72okCVALPA_Bb0Y@pool.zenchain.info/ethv1",
+      accounts: [process.env.PK]
+    },
+    vinuTestnet: {
+      url: "https://vinuchain-rpc.com",
+      accounts: [process.env.PK]
+    }
   },
   etherscan: {
     apiKey: {
