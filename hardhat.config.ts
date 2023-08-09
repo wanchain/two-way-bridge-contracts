@@ -40,8 +40,8 @@ const config: HardhatUserConfig = {
         "contracts/crossApproach/lib/NFTLibV1.sol": {
           "NFTLibV1": "0xb46Fdd7c2A7A2fd8278a52daD6FE130D964ccb13",
         },
-        "contracts/gpk/lib/GpkLib.sol": {
-          "GpkLib": "0x0000000000000000000000000000000000000000",
+        "contracts/gpk/lib/GpkLibV2.sol": {
+          "GpkLibV2": "0x0000000000000000000000000000000000000000",
         },
         "contracts/lib/CommonTool.sol": {
           "CommonTool": "0x0000000000000000000000000000000000000000",

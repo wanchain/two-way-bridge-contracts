@@ -36,7 +36,7 @@ import "./GpkTypes.sol";
 import "../../storemanGroupAdmin/StoremanType.sol";
 
 
-library GpkLib {
+library GpkLibV2 {
 
     /// submit period
     uint32 constant DEFAULT_PERIOD = 2 * 60 * 60;     // 2 hours
@@ -86,7 +86,8 @@ library GpkLib {
     /// @param group                      storeman group
     /// @param cfg                        group config
     /// @param smg                        storeman group contract address
-    function initGroup(bytes32 groupId, GpkTypes.Group storage group, address cfg, address smg)
+    /// @param curves                     storeman group curves, sec256:0, bn256:1
+    function initGroup(bytes32 groupId, GpkTypes.Group storage group, address cfg, address smg, uint[] memory curves)
         public
     {
         // init period
@@ -98,13 +99,13 @@ library GpkLib {
 
         // init signature curve
         uint8 status;
-        uint256 curve1;
-        uint256 curve2;
-        (,status,,,,curve1,curve2,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
+        (,status,,,,,,,,,) = IStoremanGroup(smg).getStoremanGroupConfig(groupId);
         require(status == uint8(StoremanType.GroupStatus.selected), "Invalid stage");
 
-        group.roundMap[group.round][0].curve = IConfig(cfg).getCurve(uint8(curve1));
-        group.roundMap[group.round][1].curve = IConfig(cfg).getCurve(uint8(curve2));
+        uint8 i;
+        for(i=0; i<curves.length; i++){
+            group.roundMap[group.round][i].curve = IConfig(cfg).getCurve(uint8(curves[i]));
+        }
 
         group.groupId = groupId;
 
@@ -112,7 +113,7 @@ library GpkLib {
         group.smNumber = uint16(IStoremanGroup(smg).getSelectedSmNumber(groupId));
         address txAddress;
         bytes memory pk;
-        for (uint i = 0; i < group.smNumber; i++) {
+        for (i = 0; i < group.smNumber; i++) {
             (txAddress, pk,) = IStoremanGroup(smg).getSelectedSmInfo(groupId, i);
             group.addrMap[i] = txAddress;
             group.indexMap[txAddress] = i;
@@ -120,18 +121,6 @@ library GpkLib {
         }
     }
 
-    /// @notice                           function for try to complete
-    /// @param group                      storeman group
-    function tryComplete(GpkTypes.Group storage group, address smg)
-        public
-    {
-        GpkTypes.Round storage round1 = group.roundMap[group.round][0];
-        GpkTypes.Round storage round2 = group.roundMap[group.round][1];
-        if (round1.status == round2.status) {
-            IStoremanGroup(smg).setGpk(group.groupId, round1.gpk, round2.gpk);
-            emit GpkCreatedLogger(group.groupId, group.round, round1.gpk, round2.gpk);
-        }
-    }
 
     /// @notice                           function for update gpk
     /// @param round                      round
@@ -281,15 +270,18 @@ library GpkLib {
     function reset(GpkTypes.Group storage group, bool isContinue)
         public
     {
-        GpkTypes.Round storage round = group.roundMap[group.round][0];
-        round.status = GpkTypes.GpkStatus.Close;
-        round.statusTime = block.timestamp;
-        round = group.roundMap[group.round][1];
-        round.status = GpkTypes.GpkStatus.Close;
-        round.statusTime = block.timestamp;
+        uint8 i;
+        while(true) {
+            GpkTypes.Round storage round = group.roundMap[group.round][i++];
+            if(round.curve == address(0)) {
+                break;
+            }
+            round.status = GpkTypes.GpkStatus.Close;
+            round.statusTime = block.timestamp;
+        }
 
         // clear data
-        for (uint i = 0; i < group.smNumber; i++) {
+        for (i = 0; i < group.smNumber; i++) {
             delete group.pkMap[group.addrMap[i]];
             delete group.indexMap[group.addrMap[i]];
             delete group.addrMap[i];
