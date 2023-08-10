@@ -320,7 +320,7 @@ contract CrossDelegateV4 is Initializable, ReentrancyGuard, Halt, CrossStorageV4
             emit WithdrawHistoryFeeLogger(smgIDs[i], block.timestamp, smgFeeProxy, currentFee);
         }
         if (fee > 0) {
-            payable(smgFeeProxy).transfer(fee);
+            EtherTransfer.sendValue(payable(smgFeeProxy), fee, getEtherTransferGasLimit());
         }
     }
 
