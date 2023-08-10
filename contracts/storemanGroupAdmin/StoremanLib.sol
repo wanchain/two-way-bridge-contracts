@@ -54,7 +54,7 @@ library StoremanLib {
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         require(StoremanUtil.onCurve(PK), "invalid PK");
         require(StoremanUtil.onCurve(enodeID), "invalid enodeID");
-        address wkAddr = address(uint160(uint256(keccak256(abi.encodePacked(PK)))));
+        address wkAddr = address(uint160(uint256(keccak256(PK))));
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         if(sk.sender != address(0x00)){
             deleteStoremanNode(data, wkAddr);
