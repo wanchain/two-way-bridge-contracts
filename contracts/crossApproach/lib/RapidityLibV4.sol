@@ -171,10 +171,16 @@ library RapidityLibV4 {
             if (contractFee == 0) {
                 contractFee = storageData.mapContractFee[fromChainID][toChainID];
             }
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[fromChainID][0];
+            }
             tokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
         } else if (params.currentChainID == toChainID) {
             if (contractFee == 0) {
                 contractFee = storageData.mapContractFee[toChainID][fromChainID];
+            }
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[toChainID][0];
             }
             tokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
         } else {
@@ -221,10 +227,16 @@ library RapidityLibV4 {
             if (contractFee == 0) {
                 contractFee = storageData.mapContractFee[toChainID][fromChainID];
             }
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[toChainID][0];
+            }
             tokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
         } else if (params.currentChainID == fromChainID) {
             if (contractFee == 0) {
                 contractFee = storageData.mapContractFee[fromChainID][toChainID];
+            }
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[fromChainID][0];
             }
             tokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
         } else {
