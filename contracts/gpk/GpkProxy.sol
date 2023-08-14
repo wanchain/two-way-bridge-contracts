@@ -27,11 +27,24 @@
 //
 
 pragma solidity ^0.8.18;
-import "../components/CommonProxy.sol";
 
-contract GpkProxy is TransparentUpgradeableProxy {
-    constructor(address _logic, address admin_, bytes memory _data)
-      payable
-      TransparentUpgradeableProxy(_logic, admin_, _data)
-    {}
+import "../components/Admin.sol";
+import "./GpkStorage.sol";
+import "../components/Proxy.sol";
+
+contract GpkProxy is GpkStorage, Admin, Proxy {
+    /**
+    *
+    * MANIPULATIONS
+    *
+    */
+
+    /// @notice                           function for setting or upgrading GpkDelegate address by owner
+    /// @param impl                       GpkDelegate contract address
+    function upgradeTo(address impl) external onlyOwner {
+        require(impl != address(0), "Cannot upgrade to invalid address");
+        require(impl != _implementation, "Cannot upgrade to the same implementation");
+        _implementation = impl;
+        emit Upgraded(impl);
+    }
 }

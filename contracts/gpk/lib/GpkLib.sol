@@ -36,7 +36,7 @@ import "./GpkTypes.sol";
 import "../../storemanGroupAdmin/StoremanType.sol";
 
 
-library GpkLibV2 {
+library GpkLib {
 
     /// submit period
     uint32 constant DEFAULT_PERIOD = 2 * 60 * 60;     // 2 hours

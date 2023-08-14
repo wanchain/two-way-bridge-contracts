@@ -33,9 +33,9 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../components/Admin.sol";
 import "./GpkStorageV2.sol";
 import "../interfaces/IStoremanGroup.sol";
-import {GpkLibV2 as GpkLib} from "./lib/GpkLibV2.sol" ;
+import "./lib/GpkLib.sol" ;
 
-contract GpkDelegateV2 is GpkStorageV2 {
+contract GpkDelegate is GpkStorageV2 {
     using SafeMath for uint;
     /**
      *
