@@ -206,7 +206,7 @@ async function main() {
   const deployed = {
     signatureVerifier: signatureVerifier.address,
     bn128SchnorrVerifier: bn128SchnorrVerifier.address,
-    EcdsaVerifier: ecdsaVerifier.address,
+    EcSchnorrVerifier: ecSchnorrVerifier.address,
     RapidityLibV4: rapidityLib.address,
     NFTLibV1: nftLib.address,
     crossDelegate: crossDelegate.address,
