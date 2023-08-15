@@ -36,6 +36,13 @@ const BIP44_CHAIN_ID = 1073741838; // polyZkEvm CHAIN
 async function main() {
   let deployer = (await hre.ethers.getSigner()).address;
 
+  let MulticallV2 = await hre.ethers.getContractFactory("MulticallV2");
+  let multicallV2 = await MulticallV2.deploy();
+  if (waitForReceipt) {
+    await multicallV2.deployed();
+  }
+  console.log("MulticallV2 deployed to:", multicallV2.address);
+
   let ProxyAdmin = await hre.ethers.getContractFactory("ProxyAdmin");
   let proxyAdmin = await ProxyAdmin.deploy();
   if (waitForReceipt) {
@@ -204,6 +211,7 @@ async function main() {
   // await signatureVerifier.transferOwner(OWNER_ADDRESS);
   // console.log('transfer owner finished.');
   const deployed = {
+    multicallV2: multicallV2.address,
     signatureVerifier: signatureVerifier.address,
     bn128SchnorrVerifier: bn128SchnorrVerifier.address,
     EcSchnorrVerifier: ecSchnorrVerifier.address,
