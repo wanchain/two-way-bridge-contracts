@@ -115,12 +115,16 @@ async function main() {
 
   console.log("bn128SchnorrVerifier deployed to:", bn128SchnorrVerifier.address);
 
-  let EcdsaVerifier = await hre.ethers.getContractFactory("EcdsaVerifier");
-  let ecdsaVerifier = await EcdsaVerifier.deploy();
+  /* there are 2 verify contract. 
+    0: use bn256 schnorr for EVM
+    1: use ecdsa schnorr for zk L2. for example: zksync zkEVM
+  */
+  let EcSchnorrVerifier = await hre.ethers.getContractFactory("EcSchnorrVerifier");
+  let ecSchnorrVerifier = await EcSchnorrVerifier.deploy();
   if (waitForReceipt) {
-    await ecdsaVerifier.deployed();
+    await ecSchnorrVerifier.deployed();
   }
-  console.log("EcdsaVerifier deployed to:", ecdsaVerifier.address);
+  console.log("EcSchnorrVerifier deployed to:", ecSchnorrVerifier.address);
   
   let SignatureVerifier = await hre.ethers.getContractFactory("SignatureVerifier");
   let signatureVerifier = await SignatureVerifier.deploy();
@@ -173,7 +177,7 @@ async function main() {
   console.log('verifier register...')
   // 1: common EVM, bn128, 0: ZK, ECDSA
   //tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
-  tx = await signatureVerifier.register(0, ecdsaVerifier.address);
+  tx = await signatureVerifier.register(0, ecSchnorrVerifier.address);
   await tx.wait();
   console.log('verifier register finished.')
 
