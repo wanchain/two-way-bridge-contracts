@@ -203,13 +203,18 @@ async function main() {
   tx = await cross.setAdmin(CROSS_ADMIN);
   await tx.wait();
   console.log('config finished.');
-  // console.log('transfer owner...');
+
   // transfer owner
-  // await tokenManager.transferOwner(OWNER_ADDRESS);
-  // await cross.transferOwner(OWNER_ADDRESS);
-  // await oracle.transferOwner(OWNER_ADDRESS);
-  // await signatureVerifier.transferOwner(OWNER_ADDRESS);
-  // console.log('transfer owner finished.');
+  const OWNER_ADDRESS = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9' 
+  if((await tokenManager.owner()) != OWNER_ADDRESS) {
+    console.log('transfer owner...', (await tokenManager.owner()));
+    await tokenManager.transferOwner(OWNER_ADDRESS);
+    await cross.transferOwner(OWNER_ADDRESS);
+    await oracle.transferOwner(OWNER_ADDRESS);
+    await signatureVerifier.transferOwner(OWNER_ADDRESS);
+    console.log('transfer owner finished.');
+  }
+
   const deployed = {
     multicall2: multicall2.address,
     signatureVerifier: signatureVerifier.address,
