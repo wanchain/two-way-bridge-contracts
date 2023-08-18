@@ -18,6 +18,7 @@ contract SmgMultiSigCtrl {
     struct Task {
         address to;
         bytes data;
+        bool executed;
     }
 
     struct SigData {
@@ -101,7 +102,7 @@ contract SmgMultiSigCtrl {
         );
 
         // save task 
-        tasks[_uid] = Task(_to, _data);
+        tasks[_uid] = Task(_to, _data, false);
         emit SmgScheduled(_uid, _to, _data);
     }
 
@@ -109,8 +110,10 @@ contract SmgMultiSigCtrl {
         bytes32 _uid
     ) external onlyFoundation {
         require(tasks[_uid].to != address(0), "task not exists");
+        require(!tasks[_uid].executed, "task already executed");
         (bool success, ) = tasks[_uid].to.call(tasks[_uid].data);
         require(success, "call failed");
+        tasks[_uid].executed = true;
         emit ApprovedAndExecuted(_uid, tasks[_uid].to, tasks[_uid].data);
     }
 
