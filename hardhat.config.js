@@ -22,9 +22,19 @@ module.exports = {
           },
         },
       },
+      {
+        version: "0.8.18",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
     ],
     overrides: {
       "contracts/lib/Multicall2.sol": {version:"0.5.16", settings: { optimizer: { enabled: true, runs: 200}}},
+      "contracts/multiSig/SmgMultiSigCtrl.sol": {version:"0.8.18", settings: { optimizer: { enabled: true, runs: 200}}},
     },
   },
   networks: {
