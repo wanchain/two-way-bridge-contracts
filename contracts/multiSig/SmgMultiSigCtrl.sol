@@ -56,6 +56,11 @@ contract SmgMultiSigCtrl {
         bytes data
     );
 
+    event TransferFoundation(
+        address indexed oldFoundation, 
+        address indexed newFoundation
+    );
+
     error SignatureVerifyFailed(
         bytes32 smgID,
         bytes32 sigHash,
@@ -72,6 +77,9 @@ contract SmgMultiSigCtrl {
     );
     
     constructor(address _foundation, address _signatureVerifier, address _oracle, uint256 _chainId) {
+        require(_foundation != address(0), "foundation is empty");
+        require(_signatureVerifier != address(0), "signatureVerifier is empty");
+        require(_oracle != address(0), "oracle is empty");
         foundation = _foundation;
         signatureVerifier = _signatureVerifier;
         chainId = _chainId;
@@ -121,7 +129,9 @@ contract SmgMultiSigCtrl {
     }
 
     function transferFoundation(address _newFoundation) external onlyFoundation {
+        require(_newFoundation != address(0), "new foundation is empty");
         foundation = _newFoundation;
+        emit TransferFoundation(msg.sender, _newFoundation);
     }
 
     // -------- internal functions --------

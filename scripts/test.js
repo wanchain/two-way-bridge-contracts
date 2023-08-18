@@ -16,6 +16,10 @@ const waitForReceipt = true;
 
 async function main() {
   console.log('hre', (await hre.ethers.getSigner()).address);  
+  let SmgMultiSigCtrl = await hre.ethers.getContractFactory("SmgMultiSigCtrl");
+  let smgMultiSigCtrl = await SmgMultiSigCtrl.deploy("0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e", "0x9276ee38a5250e2f7fbe00a12ec17d09b5d28f3d", "0xbb38d10033b26f3836a8c1e41788206868b9f228", "2147483708");
+  await smgMultiSigCtrl.deployed();
+  console.log("smgMultiSigCtrl deployed to:", smgMultiSigCtrl.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
