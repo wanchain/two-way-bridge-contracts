@@ -87,8 +87,7 @@ contract SmgMultiSigCtrl {
         bytes32 s
     ) external {
         require(_data.length > 0, "data is empty");
-        require(r.length > 0, "r is empty");
-        require(s.length > 0, "s is empty");
+        require(_to != address(0), "to is empty");
         require(tasks[_uid].to == address(0), "task already exists");
 
         // hash uniqueId and chainId for replay protection
