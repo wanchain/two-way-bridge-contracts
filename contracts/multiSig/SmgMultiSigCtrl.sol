@@ -42,7 +42,7 @@ contract SmgMultiSigCtrl {
     }
 
     modifier onlyMultiSig() {
-        require(msg.sender == address(this), "not foundation");
+        require(msg.sender == address(this), "not multisig");
         _;
     }
 
