@@ -143,8 +143,9 @@ contract SmgMultiSigCtrl {
 
     function transferFoundation(address _newFoundation) external onlyMultiSig {
         require(_newFoundation != address(0), "new foundation is empty");
+        require(_newFoundation != foundation, "new foundation is same as old");
         foundation = _newFoundation;
-        emit TransferFoundation(msg.sender, _newFoundation);
+        emit TransferFoundation(foundation, _newFoundation);
     }
 
     // -------- internal functions --------
