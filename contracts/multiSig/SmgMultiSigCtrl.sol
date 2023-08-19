@@ -10,8 +10,10 @@ import "./IWanchainMPC.sol";
  * executes the proposal tx.
  */
 
-interface IHalt {
+interface ICross {
     function setHalt(bool) external;
+    function getPartners() external view returns(address tokenManager, address smgAdminProxy, address smgFeeProxy, address quota, address sigVerifier);
+    function currentChainID() external view returns (uint256);
 }
 
 contract SmgMultiSigCtrl {
@@ -30,12 +32,13 @@ contract SmgMultiSigCtrl {
 
     // slip-0044 standands chainId for local chain
     uint256 public chainId;
+    uint256 public taskCount;
     address public foundation;
     address public signatureVerifier;
     address public oracle;
 
-    // uid => task
-    mapping(bytes32 => Task) public tasks;
+    // proposalId => task
+    mapping(uint256 => Task) public tasks;
 
     enum GroupStatus { none, initial, curveSeted, failed, selected, ready, unregistered, dismissed }
 
@@ -44,14 +47,29 @@ contract SmgMultiSigCtrl {
         _;
     }
 
-    event SmgScheduled(
-        bytes32 indexed uid, 
+    modifier onlyMultiSig() {
+        require(msg.sender == address(this), "not foundation");
+        _;
+    }
+
+    modifier onlySmg(uint proposalId, bytes32 smgID, bytes calldata r, bytes32 s) {
+        bytes32 sigHash = keccak256(abi.encode(proposalId, chainId));
+        _verifyMpcSignature(
+            SigData(
+                sigHash, smgID, r, s
+            )
+        );
+        _;
+    }
+
+    event Proposal(
+        uint256 indexed proposalId, 
         address indexed to, 
         bytes data
     );
 
     event ApprovedAndExecuted(
-        bytes32 indexed uid, 
+        uint256 indexed proposalId, 
         address indexed to, 
         bytes data
     );
@@ -76,59 +94,60 @@ contract SmgMultiSigCtrl {
         uint256 endTime
     );
     
-    constructor(address _foundation, address _signatureVerifier, address _oracle, uint256 _chainId) {
+    constructor(address _foundation, address _signatureVerifier, address _oracle, address _cross) {
         require(_foundation != address(0), "foundation is empty");
-        require(_signatureVerifier != address(0), "signatureVerifier is empty");
-        require(_oracle != address(0), "oracle is empty");
-        foundation = _foundation;
-        signatureVerifier = _signatureVerifier;
-        chainId = _chainId;
+        address _oracleCross;
+        address _signatureVerifierCross;
+
+        // cross check oracle and signatureVerifier address with cross contract
+        (, _oracleCross, , , _signatureVerifierCross) = ICross(_cross).getPartners();
         oracle = _oracle;
+        signatureVerifier = _signatureVerifier;
+        require(_oracle == _oracleCross, "oracle not match");
+        require(_signatureVerifier == _signatureVerifierCross, "signatureVerifier not match");
+
+        chainId = ICross(_cross).currentChainID(); // read from cross
+        require(chainId != 0, "chainId is empty");
+
+        foundation = _foundation;
     }
 
-    function smgSchedule(
-        bytes32 _uid, 
+    function proposal(
+        uint256 _chainId,
         address _to, 
-        bytes memory _data, 
-        bytes32 smgID, 
-        bytes calldata r, 
-        bytes32 s
-    ) external {
+        bytes memory _data
+    ) external onlyFoundation {
         require(_data.length > 0, "data is empty");
         require(_to != address(0), "to is empty");
-        require(tasks[_uid].to == address(0), "task already exists");
-
-        // hash uniqueId and chainId for replay protection
-        bytes32 sigHash = keccak256(abi.encode(_uid, _to, _data, chainId));
-        
-        // verify signature
-        _verifyMpcSignature(
-            SigData(
-                sigHash, smgID, r, s
-            )
-        );
+        require(_chainId == chainId, "chainId not match");
 
         // save task 
-        tasks[_uid] = Task(_to, _data, false);
-        emit SmgScheduled(_uid, _to, _data);
+        tasks[taskCount] = Task(_to, _data, false);
+        emit Proposal(taskCount, _to, _data);
+        taskCount++;
     }
 
     function approveAndExecute(
-        bytes32 _uid
-    ) external onlyFoundation {
-        require(tasks[_uid].to != address(0), "task not exists");
-        require(!tasks[_uid].executed, "task already executed");
-        (bool success, ) = tasks[_uid].to.call(tasks[_uid].data);
+        uint256 proposalId,
+        bytes32 smgID,
+        bytes calldata r,
+        bytes32 s
+    ) external onlySmg(proposalId, smgID, r, s) {
+        Task storage task = tasks[proposalId];
+        require(task.to != address(0), "task not exists");
+        require(!task.executed, "task already executed");
+
+        (bool success, ) = task.to.call(task.data);
         require(success, "call failed");
-        tasks[_uid].executed = true;
-        emit ApprovedAndExecuted(_uid, tasks[_uid].to, tasks[_uid].data);
+        task.executed = true;
+        emit ApprovedAndExecuted(proposalId, task.to, task.data);
     }
 
     function halt(address _to, bool _halt) external onlyFoundation {
-        IHalt(_to).setHalt(_halt);
+        ICross(_to).setHalt(_halt);
     }
 
-    function transferFoundation(address _newFoundation) external onlyFoundation {
+    function transferFoundation(address _newFoundation) external onlyMultiSig {
         require(_newFoundation != address(0), "new foundation is empty");
         foundation = _newFoundation;
         emit TransferFoundation(msg.sender, _newFoundation);
