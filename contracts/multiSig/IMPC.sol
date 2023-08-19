@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-interface IWanchainMPC {
+interface IMPC {
     /**
      * @dev Retrieves the configuration of a Storeman Group by ID
      * @param id The ID of the Storeman Group to retrieve

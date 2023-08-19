@@ -1,21 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import "./IWanchainMPC.sol";
+import "./IMPC.sol";
+import "./ICross.sol";
 
 /* 
  * The SmgMultiSigCtrl contract is a 2/2 multi-signature contract that 
- * requires the Storeman Group Nodes to perform MPC threshold signatures to 
- * schedule the proposal, while the Foundation account approve and 
- * executes the proposal tx.
+ * requires the Foundation account make the proposal and Storeman Group 
+ * Nodes to perform MPC threshold signatures to approve and executes 
+ * the proposal tx.
  */
-
-interface ICross {
-    function setHalt(bool) external;
-    function getPartners() external view returns(address tokenManager, address smgAdminProxy, address smgFeeProxy, address quota, address sigVerifier);
-    function currentChainID() external view returns (uint256);
-}
-
 contract SmgMultiSigCtrl {
     struct Task {
         address to;
@@ -167,7 +161,7 @@ contract SmgMultiSigCtrl {
         uint8 status;
         uint startTime;
         uint endTime;
-        (,status,,,,curveID,,PK,,startTime,endTime) = IWanchainMPC(oracle).getStoremanGroupConfig(smgID);
+        (,status,,,,curveID,,PK,,startTime,endTime) = IMPC(oracle).getStoremanGroupConfig(smgID);
 
         if (!(status == uint8(GroupStatus.ready) && block.timestamp >= startTime && block.timestamp <= endTime)) {
             revert StoremanGroupNotReady({
@@ -211,7 +205,7 @@ contract SmgMultiSigCtrl {
         bytes32 Ry = _bytesToBytes32(sig.r, 32);
 
         // Verify the signature using the Wanchain MPC contract
-        if (!IWanchainMPC(signatureVerifier).verify(curveID, sig.s, PKx, PKy, Rx, Ry, sig.sigHash)) {
+        if (!IMPC(signatureVerifier).verify(curveID, sig.s, PKx, PKy, Rx, Ry, sig.sigHash)) {
             revert SignatureVerifyFailed({
                 smgID: sig.smgID,
                 sigHash: sig.sigHash,
