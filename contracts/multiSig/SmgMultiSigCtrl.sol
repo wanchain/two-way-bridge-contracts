@@ -65,7 +65,8 @@ contract SmgMultiSigCtrl {
     event ApprovedAndExecuted(
         uint256 indexed proposalId, 
         address indexed to, 
-        bytes data
+        bytes data,
+        bytes32 smgID
     );
 
     event TransferFoundation(
@@ -134,7 +135,7 @@ contract SmgMultiSigCtrl {
         (bool success, ) = task.to.call(task.data);
         require(success, "call failed");
         task.executed = true;
-        emit ApprovedAndExecuted(proposalId, task.to, task.data);
+        emit ApprovedAndExecuted(proposalId, task.to, task.data, smgID);
     }
 
     function halt(address _to, bool _halt) external onlyFoundation {
