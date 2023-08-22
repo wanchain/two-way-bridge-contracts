@@ -13,14 +13,14 @@ const waitForReceipt = true;
 const TMP_ADMIN = '0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e';
 const REAL_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
 // goerli
-const SIGNATUREER = '0x08bad1a48b0b08bf769f83ba30c1dad0f8bb8b6b';
-const ORACLE = '0x0f0bf93bf16fd28294c637d855fc73b917ef5fcc';
-const CROSS_SC = '0xb8460eeaa06bc6668dad9fd42b661c0b96b3be57';
+// const SIGNATUREER = '0x08bad1a48b0b08bf769f83ba30c1dad0f8bb8b6b';
+// const ORACLE = '0x0f0bf93bf16fd28294c637d855fc73b917ef5fcc';
+// const CROSS_SC = '0xb8460eeaa06bc6668dad9fd42b661c0b96b3be57';
 
 // fuji
-// const SIGNATUREER = '0x0a5b5ea60930cca901bce3e3ad1772ebdd5065b8';
-// const ORACLE = '0x302554d20c92461f4c57bad481797b6d5f422c45';
-// const CROSS_SC = '0x4c200a0867753454db78af84d147bd03e567f234';
+const SIGNATUREER = '0x0a5b5ea60930cca901bce3e3ad1772ebdd5065b8';
+const ORACLE = '0x302554d20c92461f4c57bad481797b6d5f422c45';
+const CROSS_SC = '0x4c200a0867753454db78af84d147bd03e567f234';
 
 async function main() {
   console.log('hre', (await hre.ethers.getSigner()).address);  
