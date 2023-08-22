@@ -24,17 +24,17 @@ const CROSS_SC = '0x4c200a0867753454db78af84d147bd03e567f234';
 
 async function main() {
   console.log('hre', (await hre.ethers.getSigner()).address);  
-  let SmgMultiSigCtrl = await hre.ethers.getContractFactory("SmgMultiSigCtrl");
-  let smgMultiSigCtrl = await SmgMultiSigCtrl.deploy(TMP_ADMIN, SIGNATUREER, ORACLE, CROSS_SC);
-  await smgMultiSigCtrl.deployed();
-  console.log("smgMultiSigCtrl deployed to:", smgMultiSigCtrl.address);
+  let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
+  let groupApprove = await GroupApprove.deploy(TMP_ADMIN, SIGNATUREER, ORACLE, CROSS_SC);
+  await groupApprove.deployed();
+  console.log("groupApprove deployed to:", groupApprove.address);
   console.log("proposaling...");
-  let chainId = await smgMultiSigCtrl.chainId();
+  let chainId = await groupApprove.chainId();
   console.log('chainId', chainId);
   const data = encodeWithSignature("transferFoundation(address)", REAL_ADMIN);
   console.log(data);
 
-  let tx = await smgMultiSigCtrl.proposal(chainId, smgMultiSigCtrl.address, data);
+  let tx = await groupApprove.proposal(chainId, groupApprove.address, data);
   console.log("tx", tx.hash);
   await tx.wait();
   console.log("proposal done");

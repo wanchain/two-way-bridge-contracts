@@ -4,13 +4,7 @@ pragma solidity 0.8.18;
 import "./IMPC.sol";
 import "./ICross.sol";
 
-/* 
- * The SmgMultiSigCtrl contract is a 2/2 multi-signature contract that 
- * requires the Foundation account make the proposal and Storeman Group 
- * Nodes to perform MPC threshold signatures to approve and executes 
- * the proposal tx.
- */
-contract SmgMultiSigCtrl {
+contract GroupApprove {
     struct Task {
         address to;
         bytes data;
