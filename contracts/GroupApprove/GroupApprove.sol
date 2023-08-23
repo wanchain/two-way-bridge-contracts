@@ -18,7 +18,7 @@ contract GroupApprove {
         bytes32 s;
     }
 
-    // slip-0044 standands chainId for local chain
+    // slip-0044 chainId
     uint256 public chainId;
     uint256 public taskCount;
     address public foundation;
@@ -28,7 +28,7 @@ contract GroupApprove {
     // proposalId => task
     mapping(uint256 => Task) public tasks;
 
-    enum GroupStatus { none, initial, curveSeted, failed, selected, ready, unregistered, dismissed }
+    enum GroupStatus { none, initial, curveSet, failed, selected, ready, unregistered, dismissed }
 
     modifier onlyFoundation() {
         require(msg.sender == foundation, "not foundation");
