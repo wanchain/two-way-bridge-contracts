@@ -15,6 +15,8 @@ let data = encodeWithSignature("upgradeTo(address)", "0x97f7ad39abF2C29535fCed26
 console.log('upgradeTo', data);
 data = encodeWithSignature("transferOwner(address)", "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9");
 console.log('transferOwner', data);
+data = encodeWithSignature("transferFoundation(address)", "0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e");
+console.log('transferFoundation', data);
 
 
 describe("GroupApprove", function() {
@@ -147,8 +149,8 @@ describe("GroupApprove", function() {
         expect(await mockCross.halted()).to.equal(true);
     });
 
-    it("Should transferFoundation revert when not multisig", async function() {
-        await expect(groupApprove.connect(foundation).transferFoundation(other.address)).to.be.revertedWith("not multisig");
+    it("Should transferFoundation revert when not self", async function() {
+        await expect(groupApprove.connect(foundation).transferFoundation(other.address)).to.be.revertedWith("not self");
     });
 });
 

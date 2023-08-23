@@ -35,8 +35,8 @@ contract GroupApprove {
         _;
     }
 
-    modifier onlyMultiSig() {
-        require(msg.sender == address(this), "not multisig");
+    modifier onlySelf() {
+        require(msg.sender == address(this), "not self");
         _;
     }
 
@@ -136,7 +136,7 @@ contract GroupApprove {
         ICross(_to).setHalt(_halt);
     }
 
-    function transferFoundation(address _newFoundation) external onlyMultiSig {
+    function transferFoundation(address _newFoundation) external onlySelf {
         require(_newFoundation != address(0), "new foundation is empty");
         require(_newFoundation != foundation, "new foundation is same as old");
         foundation = _newFoundation;

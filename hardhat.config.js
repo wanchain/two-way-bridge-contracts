@@ -34,7 +34,7 @@ module.exports = {
     ],
     overrides: {
       "contracts/lib/Multicall2.sol": {version:"0.5.16", settings: { optimizer: { enabled: true, runs: 200}}},
-      "contracts/multiSig/SmgMultiSigCtrl.sol": {version:"0.8.18", settings: { optimizer: { enabled: true, runs: 200}}},
+      "contracts/GroupApprove/GroupApprove.sol": {version:"0.8.18", settings: { optimizer: { enabled: true, runs: 200}}},
     },
   },
   networks: {
@@ -126,6 +126,46 @@ module.exports = {
     vinuTestnet: {
       url: "https://vinuchain-rpc.com",
       accounts: [process.env.PK]
+    },
+    arbitrum: {
+      url: "https://arb1.arbitrum.io/rpc",
+      accounts: [process.env.PK]
+    },
+    ethereum: {
+      url: 'https://ethereum.publicnode.com',
+      accounts: [process.env.PK]
+    },
+    bsc: {
+      url: 'https://bsc-rpc.gateway.pokt.network',
+      accounts: [process.env.PK]
+    },
+    avax: {
+      url: 'https://api.avax.network/ext/bc/C/rpc',
+      accounts: [process.env.PK]
+    },
+    moonriver: {
+      url: 'https://rpc.api.moonriver.moonbeam.network',
+      accounts: [process.env.PK]
+    },
+    moonbeam: {
+      url: '',
+      accounts: [process.env.PK]
+    },
+    polygon: {
+      url: '',
+      accounts: [process.env.PK]
+    },
+    ethereum: {
+      url: '',
+      accounts: [process.env.PK]
+    },
+
+    wanchainMainnet: {
+      url: "https://gwan-ssl.wandevs.org:56891",
+      accounts: [process.env.PK],
+      gasPrice: 2e9,
+      gas: 8e6,
+      chainId: 888,
     }
   },
   etherscan: {
