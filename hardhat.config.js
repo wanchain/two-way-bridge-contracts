@@ -68,7 +68,7 @@ module.exports = {
       accounts: [process.env.PK],
     },
     optimisticEthereum: {
-      url: 'https://opt-mainnet.g.alchemy.com/v2/EA2PhKrouVck-pDZscwY8AEGv_G-TXvj',
+      url: 'https://optimism.publicnode.com',
       accounts: [process.env.PK],
     },
     telos_testnet: {
@@ -153,6 +153,14 @@ module.exports = {
     },
     polygon: {
       url: 'https://polygon-rpc.com',
+      accounts: [process.env.PK]
+    },
+    fantom: {
+      url: 'https://fantom.publicnode.com',
+      accounts: [process.env.PK]
+    },
+    xinfin: {
+      url: 'https://rpc1.xinfin.network',
       accounts: [process.env.PK]
     },
 
