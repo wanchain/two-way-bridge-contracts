@@ -148,15 +148,11 @@ module.exports = {
       accounts: [process.env.PK]
     },
     moonbeam: {
-      url: '',
+      url: 'https://rpc.ankr.com/moonbeam',
       accounts: [process.env.PK]
     },
     polygon: {
-      url: '',
-      accounts: [process.env.PK]
-    },
-    ethereum: {
-      url: '',
+      url: 'https://polygon-rpc.com',
       accounts: [process.env.PK]
     },
 
