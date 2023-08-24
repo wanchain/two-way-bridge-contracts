@@ -160,8 +160,19 @@ module.exports = {
       accounts: [process.env.PK]
     },
     xinfin: {
-      url: 'https://rpc1.xinfin.network',
+      url: 'https://rpc.xdcrpc.com',
       accounts: [process.env.PK]
+    },
+    okt: {
+      url: 'https://exchainrpc.okex.org',
+      accounts: [process.env.PK]
+    },
+    clover: {
+      url: 'https://api-para.clover.finance',
+      accounts: [process.env.PK],
+      chainId: 1024,
+      gasPrice: 20e9,
+      gas: 8e6,
     },
 
     wanchainMainnet: {

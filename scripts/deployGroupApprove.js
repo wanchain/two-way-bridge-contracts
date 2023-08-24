@@ -24,6 +24,10 @@ const REAL_ADMIN_WAN = '0x0F4f833F031fFF7e76AA783212f786432a14FB90';
 // const CROSS_SC = '0x4c200a0867753454db78af84d147bd03e567f234';
 
 const depends = {
+  // testnet
+  
+
+  // mainnet
   horizenMainnet: {
     SIGNATUREER: '0xFFB876Bd5Bee99e992cAc826A04396002f5f4a65',
     ORACLE: '0x290108879b633557cb35e8baa57eA9216278A61b',
