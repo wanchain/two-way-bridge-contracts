@@ -1,4 +1,6 @@
-pragma solidity 0.4.26;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.18;
 
 /**
  * Math operations with safety checks
@@ -38,8 +40,8 @@ contract OracleDelegate is OracleStorage, Owned {
   */
 
   function updatePrice(
-    bytes32[] keys,
-    uint[] prices
+    bytes32[] calldata keys,
+    uint[] calldata prices
   )
     external
     onlyAdmin
@@ -81,10 +83,10 @@ contract OracleDelegate is OracleStorage, Owned {
     bytes32 id,
     uint8   status,
     uint    deposit,
-    uint[2] chain,
-    uint[2] curve,
-    bytes   gpk1,
-    bytes   gpk2,
+    uint[2] calldata chain,
+    uint[2] calldata curve,
+    bytes   calldata gpk1,
+    bytes   calldata gpk2,
     uint    startTime,
     uint    endTime
   )
@@ -130,7 +132,7 @@ contract OracleDelegate is OracleStorage, Owned {
     return mapPrices[key];
   }
 
-  function getValues(bytes32[] keys) external view returns (uint[] values) {
+  function getValues(bytes32[] calldata keys) external view returns (uint[] memory values) {
     values = new uint[](keys.length);
     for(uint256 i = 0; i < keys.length; i++) {
         values[i] = mapPrices[keys[i]];
@@ -146,7 +148,7 @@ contract OracleDelegate is OracleStorage, Owned {
   )
     external
     view
-    returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2, bytes gpk1, bytes gpk2, uint startTime, uint endTime)
+    returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2, bytes memory gpk1, bytes memory gpk2, uint startTime, uint endTime)
   {
     groupId = id;
     status = mapStoremanGroupConfig[id].status;

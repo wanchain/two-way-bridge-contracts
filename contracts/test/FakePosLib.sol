@@ -1,5 +1,5 @@
-pragma solidity ^0.4.26;
-import 'openzeppelin-eth/contracts/math/SafeMath.sol';
+pragma solidity ^0.8.18;
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 
 library FakePosLib {

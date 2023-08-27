@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,10 +27,10 @@
 //
 
 
-pragma solidity 0.4.26;
+pragma solidity ^0.8.18;
 
 import "./WRC20Protocol.sol";
-import 'openzeppelin-eth/contracts/math/SafeMath.sol';
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract StandardToken is WRC20Protocol {
     using SafeMath for uint;
@@ -41,14 +43,14 @@ contract StandardToken is WRC20Protocol {
         _;
     }
 
-    function transfer(address _to, uint _value) public onlyPayloadSize(2 * 32) returns (bool success) {
+    function transfer(address _to, uint _value) public override onlyPayloadSize(2 * 32) returns (bool success) {
         balances[msg.sender] = balances[msg.sender].sub(_value);
         balances[_to] = balances[_to].add(_value);
         emit Transfer(msg.sender, _to, _value);
         return true;
     }
 
-    function transferFrom(address _from, address _to, uint _value) public onlyPayloadSize(3 * 32) returns (bool success) {
+    function transferFrom(address _from, address _to, uint _value) public override onlyPayloadSize(3 * 32) returns (bool success) {
         balances[_to] = balances[_to].add(_value);
         balances[_from] = balances[_from].sub(_value);
         allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
@@ -56,11 +58,11 @@ contract StandardToken is WRC20Protocol {
         return true;
     }
 
-    function balanceOf(address _owner) public view returns (uint balance) {
+    function balanceOf(address _owner) public view override returns (uint balance) {
         return balances[_owner];
     }
 
-    function approve(address _spender, uint _value) public onlyPayloadSize(2 * 32) returns (bool success) {
+    function approve(address _spender, uint _value) public override onlyPayloadSize(2 * 32) returns (bool success) {
         //  To change the approve amount you first have to reduce the addresses`
         //  allowance to zero by calling `approve(_spender, 0)` if it is not
         //  already 0 to mitigate the race condition described here:
@@ -72,7 +74,7 @@ contract StandardToken is WRC20Protocol {
         return true;
     }
 
-    function allowance(address _owner, address _spender) public view returns (uint remaining) {
+    function allowance(address _owner, address _spender) public view override returns (uint remaining) {
       return allowed[_owner][_spender];
     }
 }

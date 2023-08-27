@@ -1,5 +1,5 @@
 
-pragma solidity ^0.4.24;
+pragma solidity ^0.8.18
 
 interface TestIOwned {
     function changeOwner(address _newOwner) external;

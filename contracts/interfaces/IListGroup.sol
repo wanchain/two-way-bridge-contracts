@@ -1,8 +1,10 @@
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.18;
 
 interface IListGroup {
   function addActiveGroup(bytes32 groupId, uint startTime, uint endTime) external;
-  function getActiveGroupIds(uint day) external view returns (bytes32[]);
+  function getActiveGroupIds(uint day) external view returns (bytes32[] memory);
   function getTotalDeposit(uint day) external view returns(uint);
   function setTotalDeposit(uint day, uint value) external;
   function cleanExpiredGroup() external;

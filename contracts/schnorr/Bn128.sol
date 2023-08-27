@@ -1,9 +1,11 @@
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: MIT
 
-import 'openzeppelin-eth/contracts/math/SafeMath.sol';
+pragma solidity ^0.8.18;
+
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Bn128 {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     uint256 constant gx = 0x1;
     uint256 constant gy = 0x2;
@@ -37,7 +39,7 @@ contract Bn128 {
         input[3] = y2;
 
         assembly {
-            if iszero(staticcall(gas, 0x06, input, 0x80, outValue, 0x40)) {
+            if iszero(staticcall(gas(), 0x06, input, 0x80, outValue, 0x40)) {
                 revert(0, 0)
             }
         }
@@ -58,7 +60,7 @@ contract Bn128 {
         input[2] = scalar;
 
         assembly {
-            if iszero(staticcall(gas, 0x07, input, 0x60, outValue, 0x40)) {
+            if iszero(staticcall(gas(), 0x07, input, 0x60, outValue, 0x40)) {
                 revert(0, 0)
             }
         }

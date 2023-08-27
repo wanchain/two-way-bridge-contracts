@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,16 +26,16 @@
 //
 //
 
-pragma solidity ^0.4.24;
+pragma solidity ^0.8.18;
 
 interface IStoremanGroup {
     function getSelectedSmNumber(bytes32 groupId) external view returns(uint number);
-    function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime);
+    function getStoremanGroupConfig(bytes32 id) external view returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes memory gpk1, bytes memory gpk2, uint startTime, uint endTime);
     function getDeposit(bytes32 id) external view returns(uint);
     function getStoremanGroupStatus(bytes32 id) external view returns(uint8 status, uint startTime, uint endTime);
-    function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2) external;
-    function setInvalidSm(bytes32 groupId, uint[] indexs, uint8[] slashTypes) external returns(bool isContinue);
+    function setGpk(bytes32 groupId, bytes memory gpk1, bytes memory gpk2) external;
+    function setInvalidSm(bytes32 groupId, uint[] memory indexs, uint8[] memory slashTypes) external returns(bool isContinue);
     function getThresholdByGrpId(bytes32 groupId) external view returns (uint);
-    function getSelectedSmInfo(bytes32 groupId, uint index) external view returns(address wkAddr, bytes PK, bytes enodeId);
+    function getSelectedSmInfo(bytes32 groupId, uint index) external view returns(address wkAddr, bytes memory PK, bytes memory enodeId);
     function recordSmSlash(address wk) external;
 }

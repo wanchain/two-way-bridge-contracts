@@ -1,4 +1,6 @@
-pragma solidity 0.4.26;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.18;
 
 /**
  * @dev Contract module that helps prevent reentrant calls to a function.
@@ -16,10 +18,10 @@ pragma solidity 0.4.26;
  * to protect against it, check out our blog post
  * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].
  */
-contract ReentrancyGuard {
+abstract contract ReentrancyGuard {
     bool private _notEntered;
 
-    constructor () internal {
+    constructor () {
         // Storing an initial non-zero value makes deployment a bit more
         // expensive, but in exchange the refund on every call to nonReentrant
         // will be lower in amount. Since refunds are capped to a percetange of

@@ -1,4 +1,6 @@
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.18;
 
 import "./StoremanType.sol";
 import "./StoremanUtil.sol";
@@ -31,7 +33,7 @@ library StoremanLib {
         external
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
-        require(now > group.workTime + group.totalTime, "not expired");
+        require(block.timestamp > group.workTime + group.totalTime, "not expired");
         require(group.status == StoremanType.GroupStatus.ready,"Invalid status");
         group.status = StoremanType.GroupStatus.unregistered;
         emit StoremanGroupUnregisterEvent(groupId);
@@ -44,15 +46,15 @@ library StoremanLib {
         }
     }
 
-    function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes PK, bytes enodeID) external
+    function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes memory PK, bytes memory enodeID) external
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(group.status == StoremanType.GroupStatus.curveSeted,"invalid group");
-        require(now <= group.registerTime+group.registerDuration,"Registration closed");
+        require(block.timestamp <= group.registerTime+group.registerDuration,"Registration closed");
         require(msg.value >= group.minStakeIn, "Too small value in stake");
         require(StoremanUtil.onCurve(PK), "invalid PK");
         require(StoremanUtil.onCurve(enodeID), "invalid enodeID");
-        address wkAddr = address(keccak256(PK));
+        address wkAddr = address(uint160(uint256(keccak256(PK))));
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         if(sk.sender != address(0x00)){
             deleteStoremanNode(data, wkAddr);
@@ -64,8 +66,8 @@ library StoremanLib {
         sk.PK = PK;
         sk.wkAddr = wkAddr;
         sk.groupId = groupId;
-        sk.deposit = Deposit.Records(0);
-        sk.deposit.addRecord(Deposit.Record(StoremanUtil.getDaybyTime(data.posLib, now), msg.value));
+        // sk.deposit.total = 0;
+        sk.deposit.addRecord(Deposit.Record(StoremanUtil.getDaybyTime(data.posLib, block.timestamp), msg.value));
 
         // only not whitelist address need add memberCount;
         if(!isWorkingNodeInGroup(group, wkAddr)) {
@@ -102,7 +104,7 @@ library StoremanLib {
         uint amount = sk.deposit.getLastValue();
         require(amount != 0, "Claimed");
         
-        uint day = StoremanUtil.getDaybyTime(data.posLib, now);
+        uint day = StoremanUtil.getDaybyTime(data.posLib, block.timestamp);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         Deposit.Record memory rw = Deposit.Record(day, StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value));
         sk.deposit.addRecord(r);
@@ -113,7 +115,7 @@ library StoremanLib {
         emit stakeAppendEvent(wkAddr, msg.sender,msg.value);
     }
 
-    function checkCanStakeOut(StoremanType.StoremanData storage data,  address wkAddr) public returns(bool){
+    function checkCanStakeOut(StoremanType.StoremanData storage data,  address wkAddr) public view returns(bool){
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
         StoremanType.StoremanGroup storage  group = data.groups[sk.groupId];
@@ -149,7 +151,7 @@ library StoremanLib {
         return false;
     }
 
-    function checkCanStakeClaimFromGroup(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns (bool) {
+    function checkCanStakeClaimFromGroup(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private view returns (bool) {
         // if group haven't selected, can't claim 
         // if group failed, can claim. 
         // if group selected and the sk haven't been selected, can claim.
@@ -173,7 +175,7 @@ library StoremanLib {
         }
         return false;
     }
-    function checkCanStakeClaim(StoremanType.StoremanData storage data, address wkAddr) public returns(bool) {
+    function checkCanStakeClaim(StoremanType.StoremanData storage data, address wkAddr) public view returns(bool) {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         if(sk.wkAddr != wkAddr){ // sk doesn't exist.
             return false;
@@ -214,7 +216,7 @@ library StoremanLib {
         sk.quited = true;
 
         if(amount != 0){
-            sk.sender.transfer(amount);
+            payable(sk.sender).transfer(amount);
         }
     }
 
@@ -226,13 +228,14 @@ library StoremanLib {
         sk.incentive[0] = 0;
 
         if(amount != 0){
-            sk.sender.transfer(amount);
+            payable(sk.sender).transfer(amount);
         }
         emit stakeIncentiveClaimEvent(wkAddr,sk.sender,amount);
     }
 
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
-        for (uint i = group.whiteCount; i < group.selectedCount; i++) {
+        uint i = group.whiteCount;
+        for (; i < group.selectedCount; i++) {
             StoremanType.Candidate storage cmpNode = data.candidates[0][group.selectedNode[i]];
             if (cmpNode.wkAddr == skAddr) { // keep self position, do not sort
                 return;
@@ -244,7 +247,8 @@ library StoremanLib {
         }
         if (i < group.memberCountDesign) {
             address curAddr = group.selectedNode[i]; // must not be skAddr
-            for (uint j = i; j < group.selectedCount; j++) {
+            uint j = i;
+            for (; j < group.selectedCount; j++) {
                 if (j + 1 < group.memberCountDesign) {
                     address nextAddr = group.selectedNode[j + 1];
                     group.selectedNode[j + 1] = curAddr;
@@ -263,7 +267,7 @@ library StoremanLib {
         }
     }
 
-    function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record r, Deposit.Record rw) internal {
+    function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record memory r, Deposit.Record memory rw) internal {
         //if haven't selected, need not update group. 
         // if selected, need to update group. 
         if(group.status == StoremanType.GroupStatus.none){ // not exist group.
@@ -305,7 +309,7 @@ library StoremanLib {
             // dk.staker = wkAddr;
         }
         sk.delegateDeposit = sk.delegateDeposit.add(msg.value);
-        uint day = StoremanUtil.getDaybyTime(data.posLib, now);
+        uint day = StoremanUtil.getDaybyTime(data.posLib, block.timestamp);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         dk.deposit.addRecord(r);
         updateGroup(data, sk, group, r, r);
@@ -314,7 +318,7 @@ library StoremanLib {
     }
 
     // must specify all the whitelist.
-    function inheritNode(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] wkAddrs, address[] senders) public
+    function inheritNode(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] memory wkAddrs, address[] memory senders) public
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         uint len = 0;
@@ -364,7 +368,7 @@ library StoremanLib {
         emit storemanTransferEvent(groupId, preGroupId, oldArray);
     }
 
-    function inheritStaker(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] oldAddr, uint oldCount) public returns(uint) {
+    function inheritStaker(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] memory oldAddr, uint oldCount) public returns(uint) {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
         uint[] memory stakes = new uint[](oldGroup.memberCountDesign * 2);
@@ -389,7 +393,7 @@ library StoremanLib {
         return oldCount;
     }
 
-    function inheritSortedStaker(StoremanType.StoremanGroup storage group, address[] addresses, uint[] stakes, uint start, uint end) public {
+    function inheritSortedStaker(StoremanType.StoremanGroup storage group, address[] memory addresses, uint[] memory stakes, uint start, uint end) public {
       while ((group.selectedCount < group.memberCount) && (group.selectedCount < group.memberCountDesign)) {
         uint maxIndex = start;
         for (uint i = (start + 1); i < end; i++) {
@@ -448,7 +452,7 @@ library StoremanLib {
         delete sk.delegatorMap[sk.delegatorCount];
         delete sk.delegators[msg.sender];    
         IListGroup(listGroupAddr).setDelegateQuitGroupId(wkAddr, msg.sender, bytes32(0x00), bytes32(0x00));   
-        msg.sender.transfer(amount);
+        payable(msg.sender).transfer(amount);
     }
     
 
@@ -461,7 +465,7 @@ library StoremanLib {
         dk.incentive[0] = 0;
 
         if(amount!=0){
-            msg.sender.transfer(amount);
+            payable(msg.sender).transfer(amount);
         }
         emit delegateIncentiveClaimEvent(wkAddr,msg.sender,amount);
     }
@@ -489,10 +493,10 @@ library StoremanLib {
             sk.partnerCount++;
             // pn.sender = msg.sender;
             // pn.staker = wkAddr;
-            sk.partners[msg.sender] = pn;
+            // sk.partners[msg.sender] = pn;
         }
         sk.partnerDeposit = sk.partnerDeposit.add(msg.value);
-        uint day = StoremanUtil.getDaybyTime(data.posLib, now);
+        uint day = StoremanUtil.getDaybyTime(data.posLib, block.timestamp);
         Deposit.Record memory r = Deposit.Record(day, msg.value);
         Deposit.Record memory rw = Deposit.Record(day, StoremanUtil.calSkWeight(data.conf.standaloneWeight, msg.value));
         pn.deposit.addRecord(r);
@@ -514,7 +518,7 @@ library StoremanLib {
         IListGroup(listGroupAddr).setPartQuitGroupId(wkAddr, msg.sender, sk.groupId, sk.nextGroupId);
         emit partOutEvent(wkAddr, msg.sender);
     }
-    function checkGroupTerminated(StoremanType.StoremanData storage data, bytes32 groupId) public returns(bool){
+    function checkGroupTerminated(StoremanType.StoremanData storage data, bytes32 groupId) public view returns(bool){
         if(groupId == bytes32(0x00)) {
             return true;
         }
@@ -524,7 +528,7 @@ library StoremanLib {
         }
         return false;
     }
-    function checkCanPartnerClaim(StoremanType.StoremanData storage data, address wkAddr, address pnAddr, address listGroupAddr) public returns(bool) {
+    function checkCanPartnerClaim(StoremanType.StoremanData storage data, address wkAddr, address pnAddr, address listGroupAddr) public view returns(bool) {
         if(checkCanStakeClaim(data,wkAddr)){
             return true;
         }
@@ -538,7 +542,7 @@ library StoremanLib {
         }
         return false;
     }
-    function checkCanDelegatorClaim(StoremanType.StoremanData storage data, address wkAddr, address deAddr, address listGroupAddr) public returns(bool) {
+    function checkCanDelegatorClaim(StoremanType.StoremanData storage data, address wkAddr, address deAddr, address listGroupAddr) public view returns(bool) {
         if(checkCanStakeClaim(data,wkAddr)){
             return true;
         }
@@ -580,6 +584,6 @@ library StoremanLib {
         }
 
         emit partClaimEvent(wkAddr, msg.sender, amount);
-        msg.sender.transfer(amount);
+        payable(msg.sender).transfer(amount);
     }
 }

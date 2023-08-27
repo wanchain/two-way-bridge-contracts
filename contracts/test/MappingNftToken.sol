@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.4.26;
+pragma solidity ^0.8.18;
 
-import 'openzeppelin-eth/contracts/ownership/Ownable.sol';
-import 'openzeppelin-eth/contracts/token/ERC721/ERC721Full.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 
 /**
 * @notice This is the template for all NFT contract.
 */
-contract MappingNftToken is ERC721Full, Ownable {
+contract MappingNftToken is ERC721, ERC721Enumerable, ERC721Metadata, Ownable {
 
     using SafeMath for uint;
 
@@ -28,13 +29,11 @@ contract MappingNftToken is ERC721Full, Ownable {
     constructor(
         string name_,
         string symbol_
-    ) public {
+    ) public
+      ERC721(name_, symbol_)
+      ERC721Enumerable(name_, symbol_) {
         _name = name_;
         _symbol = symbol_;
-        Ownable.initialize(msg.sender);
-        ERC721.initialize();
-        ERC721Enumerable.initialize();
-        ERC721Metadata.initialize(name_, symbol_);
     }
 
     /****************************************************************************
@@ -62,7 +61,9 @@ contract MappingNftToken is ERC721Full, Ownable {
         external
         onlyOwner
     {
-        _burn(account_, nftID);
+        address tokenOwner = ERC721.ownerOf(tokenId);
+        require(account_ == tokenOwner, "invalid nft token owner");
+        _burn(nftID);
     }
 
     /// @notice update token name, symbol

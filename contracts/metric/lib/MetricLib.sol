@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2020 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,10 +26,9 @@
 //
 //
 
-pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.18;
 
-import 'openzeppelin-eth/contracts/math/SafeMath.sol';
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./MetricTypes.sol";
 import "../../lib/CommonTool.sol";
 import "../../interfaces/IPosLib.sol";
@@ -101,7 +102,7 @@ library MetricLib {
         bytes32 h;
         bytes memory senderPk;
 
-        MetricTypes.RSlshData rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+        MetricTypes.RSlshData memory rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
         // build h
         h = sha256(rslshData.polyDataPln.polyData);
         // build senderpk
@@ -157,7 +158,7 @@ library MetricLib {
     /// @param hashX                    hash of the signed data
     /// @param sslshData                slash data of S stage
     /// @param smCount                  total number of store man
-    function writeSSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData sslshData, uint8 smCount)
+    function writeSSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData memory sslshData, uint8 smCount)
     public
     returns (bool, uint8)
     {
@@ -213,7 +214,7 @@ library MetricLib {
         bytes32 h;
         bytes memory senderPk;
 
-        MetricTypes.SSlshData sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+        MetricTypes.SSlshData memory sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
         // build h
         h = sha256(sslshData.polyDataPln.polyData);
         // build senderpk
@@ -222,7 +223,7 @@ library MetricLib {
         return ckSig(metricData, h, sslshData.polyDataPln.polyDataR, sslshData.polyDataPln.polyDataS, senderPk);
     }
 
-    function ckSig(MetricTypes.MetricStorageData storage metricData, bytes32 hash, bytes32 r, bytes32 s, bytes pk)
+    function ckSig(MetricTypes.MetricStorageData storage metricData, bytes32 hash, bytes32 r, bytes32 s, bytes memory pk)
     internal
     returns (bool){
         address curveAddr;
@@ -278,7 +279,7 @@ library MetricLib {
     function getPkBytesByInx(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint8 smIndex)
     internal
     view
-    returns (bytes)
+    returns (bytes memory)
     {
         bytes memory smPk;
         (, smPk,) = (IStoremanGroup)(metricData.smg).getSelectedSmInfo(grpId, uint(smIndex));
@@ -291,7 +292,7 @@ library MetricLib {
     view
     returns (uint)
     {
-        return IPosLib(metricData.posLib).getEpochId(now);
+        return IPosLib(metricData.posLib).getEpochId(block.timestamp);
     }
     /// @notice                         get total number of store man in special group
     /// @param metricData               self parameter for lib function

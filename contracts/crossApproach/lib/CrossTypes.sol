@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.4.26;
+pragma solidity ^0.8.18;
 
 import "../../interfaces/IRC20Protocol.sol";
 import "../../interfaces/IQuota.sol";
@@ -69,10 +71,10 @@ library CrossTypes {
         mapping(bytes32 => uint) mapStoremanFee;
 
         /// @notice transaction fee, origChainID => shadowChainID => fee
-        mapping(uint => mapping(uint =>uint)) mapLockFee;
+        mapping(uint => mapping(uint =>uint)) mapContractFee;
 
         /// @notice transaction fee, origChainID => shadowChainID => fee
-        mapping(uint => mapping(uint =>uint)) mapRevokeFee;
+        mapping(uint => mapping(uint =>uint)) mapAgentFee;
 
     }
 
@@ -91,7 +93,7 @@ library CrossTypes {
 
     /// @notice       convert bytes to address
     /// @param b      bytes
-    function bytesToAddress(bytes b) internal pure returns (address addr) {
+    function bytesToAddress(bytes memory b) internal pure returns (address addr) {
         assembly {
             addr := mload(add(b,20))
         }
@@ -103,10 +105,13 @@ library CrossTypes {
     {
         uint beforeBalance;
         uint afterBalance;
-        beforeBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
+        IRC20Protocol token = IRC20Protocol(tokenScAddr);
+        beforeBalance = token.balanceOf(to);
         // IRC20Protocol(tokenScAddr).transfer(to, value);
-        tokenScAddr.call(bytes4(keccak256("transfer(address,uint256)")), to, value);
-        afterBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
+        (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transfer(address,uint256)")), abi.encode(to, value))); // for verify
+        // (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transfer.selector, to, value));
+        require(success, "transfer failed");
+        afterBalance = token.balanceOf(to);
         return afterBalance == beforeBalance.add(value);
     }
 
@@ -116,10 +121,13 @@ library CrossTypes {
     {
         uint beforeBalance;
         uint afterBalance;
-        beforeBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
+        IRC20Protocol token = IRC20Protocol(tokenScAddr);
+        beforeBalance = token.balanceOf(to);
         // IRC20Protocol(tokenScAddr).transferFrom(from, to, value);
-        tokenScAddr.call(bytes4(keccak256("transferFrom(address,address,uint256)")), from, to, value);
-        afterBalance = IRC20Protocol(tokenScAddr).balanceOf(to);
+        (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transferFrom(address,address,uint256)")), abi.encode(from, to, value))); // for verify
+        // (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+        require(success, "TransferFrom failed");
+        afterBalance = token.balanceOf(to);
         return afterBalance == beforeBalance.add(value);
     }
 }

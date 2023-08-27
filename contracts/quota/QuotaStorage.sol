@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,9 +26,9 @@
 //
 //
 
-pragma solidity 0.4.26;
+pragma solidity ^0.8.18;
 
-import 'openzeppelin-eth/contracts/math/SafeMath.sol';
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../components/BasicStorage.sol";
 
 contract QuotaStorage is BasicStorage {

@@ -1,4 +1,6 @@
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.18;
 import "./StoremanType.sol";
 import "../interfaces/IPosLib.sol";
 import "../interfaces/IMetric.sol";
@@ -24,7 +26,7 @@ library IncentiveLib {
         return co;
     }
 
-    function getGroupIncentive(address groupListAddr, StoremanType.StoremanGroup storage group, uint day,StoremanType.StoremanData storage data) private view returns (uint) {
+    function getGroupIncentive(address groupListAddr, StoremanType.StoremanGroup storage group, uint day,StoremanType.StoremanData storage data) private returns (uint) {
         uint chainTypeCo = getChainTypeCo(data,group.chain1, group.chain2);
         uint totalDeposit = IListGroup(groupListAddr).getTotalDeposit(day);
         if(totalDeposit == 0){
@@ -38,7 +40,7 @@ library IncentiveLib {
         return IPosLib(data.posLib).getMinIncentive(group.deposit.getLastValue(),day, totalDeposit).mul(chainTypeCo).div(DIVISOR);
     }
 
-    function calIncentive(uint groupIncentive, uint groupWeight, uint weight) private returns (uint) {
+    function calIncentive(uint groupIncentive, uint groupWeight, uint weight) private pure returns (uint) {
         return groupIncentive.mul(weight).div(groupWeight);
     }
     function checkMetric(IMetric metric, bytes32 groupId, uint day, uint index) private returns (bool) {
@@ -69,12 +71,12 @@ library IncentiveLib {
             }
         }
     }
-    function calFromEndDay(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private returns(uint,uint) {
+    function calFromEndDay(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private view returns(uint,uint) {
         uint fromDay = StoremanUtil.getDaybyTime(posLib, group.workTime);
         if (fromDay <= sk.incentivedDay){
             fromDay = sk.incentivedDay + 1;
         }
-        uint endDay = now;
+        uint endDay = block.timestamp;
         if (endDay > group.workTime + group.totalTime) {
             endDay = group.workTime + group.totalTime;
         }
@@ -163,7 +165,7 @@ library IncentiveLib {
         require(idx < group.selectedCount, "not selected");
 
         for (day = fromDay; day < endDay; day++) {
-            if (msg.gas < reservedGas ) { // check the gas. because calculate delegator incentive need more gas left.
+            if (gasleft() < reservedGas ) { // check the gas. because calculate delegator incentive need more gas left.
                 emit incentiveEvent(sk.groupId, wkAddr, false, fromDay, day);
                 return;
             }
@@ -176,7 +178,7 @@ library IncentiveLib {
                     incentiveNode(day, sk,group,data, listGroupAddr);
                 }
                 while (sk.incentivedDelegator < sk.delegatorCount) {
-                    if (msg.gas < reservedGas ) {
+                    if (gasleft() < reservedGas ) {
                         emit incentiveEvent(sk.groupId, wkAddr, false, fromDay, 0);
                         return;
                     }
@@ -207,7 +209,7 @@ library IncentiveLib {
         group.depositWeight.addRecord(depositWeight);
         return;        
     }
-    function cleanSmNode(StoremanType.Candidate storage skt, bytes32 groupId){
+    function cleanSmNode(StoremanType.Candidate storage skt, bytes32 groupId) public {
         if(skt.isWhite){
             if(skt.groupId == groupId){
                 skt.groupId = bytes32(0x00);
@@ -220,7 +222,7 @@ library IncentiveLib {
     function toSelect(StoremanType.StoremanData storage data,bytes32 groupId) public {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(group.status == StoremanType.GroupStatus.curveSeted,"Wrong status");
-        require(now > group.registerTime + group.registerDuration, "Wrong time");
+        require(block.timestamp > group.registerTime + group.registerDuration, "Wrong time");
         if(group.memberCount < group.memberCountDesign){
             group.status = StoremanType.GroupStatus.failed;
             for(uint k=0; k<group.whiteCountAll; k++){

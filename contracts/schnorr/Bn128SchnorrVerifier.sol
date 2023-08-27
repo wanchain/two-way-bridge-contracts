@@ -1,8 +1,11 @@
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: MIT
 
-import "./Bn128.sol";
+pragma solidity ^0.8.18;
 
-contract Bn128SchnorrVerifier is Bn128 {
+import "./Bn128G1.sol";
+
+contract Bn128SchnorrVerifier is Bn128G1 {
+    using SafeMath for uint256;
     struct Point {
         uint256 x; uint256 y;
     }
@@ -54,7 +57,7 @@ contract Bn128SchnorrVerifier is Bn128 {
         state._hash = h(state.message, state.randomPoint.x, state.randomPoint.y);
 
         /// change to bn256 range.
-        state._hash = uint256(state._hash).mod(getOrder());
+        state._hash = (state._hash).mod(getOrder());
 
         (state._left.x, state._left.y) = sg(state.signature);
         Point memory rightPart;

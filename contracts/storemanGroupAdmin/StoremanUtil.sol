@@ -1,6 +1,8 @@
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: MIT
 
-import 'openzeppelin-eth/contracts/math/SafeMath.sol';
+pragma solidity ^0.8.18;
+
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./StoremanType.sol";
 import "../interfaces/IPosLib.sol";
 import "../lib/CommonTool.sol";
@@ -20,7 +22,7 @@ library StoremanUtil {
     StoremanType.StoremanGroup storage group = data.groups[groupId];
     return group.selectedCount;
   }
-  function getSelectedStoreman(StoremanType.StoremanData storage data, bytes32 groupId) public view returns(address[]) {
+  function getSelectedStoreman(StoremanType.StoremanData storage data, bytes32 groupId) public view returns(address[] memory) {
     StoremanType.StoremanGroup storage group = data.groups[groupId];
     address[] memory storemans = new address[](group.selectedCount);
     for(uint8 i=0; i<group.selectedCount; i++){
@@ -28,7 +30,7 @@ library StoremanUtil {
     }
     return storemans;
   }
-  function onCurve(bytes pubkey) public view returns (bool) {
+  function onCurve(bytes calldata pubkey) public view returns (bool) {
     if(pubkey.length != 64) return false;
     uint[2] memory P;
     P[0] =  CommonTool.bytes2uint(pubkey, 0, 32);

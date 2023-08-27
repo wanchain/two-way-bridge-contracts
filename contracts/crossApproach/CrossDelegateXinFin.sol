@@ -1,6 +1,6 @@
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,14 +24,13 @@
 //
 //
 
-pragma solidity ^0.4.26;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.18;
 
 import "./CrossDelegateV4.sol";
 
 
 contract CrossDelegateXinFin is CrossDelegateV4 {
-    function onXRC721Received(address operator, address from, uint256 tokenId, bytes data)
+    function onXRC721Received(address operator, address from, uint256 tokenId, bytes calldata data)
         external
         pure
         returns (bytes4)
@@ -39,7 +38,7 @@ contract CrossDelegateXinFin is CrossDelegateV4 {
         return this.onXRC721Received.selector;
     }
 
-    function onXRC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes _data)
+    function onXRC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data)
         external
         pure
         returns(bytes4)
@@ -47,7 +46,7 @@ contract CrossDelegateXinFin is CrossDelegateV4 {
         return this.onXRC1155Received.selector;
     }
 
-    function onXRC1155BatchReceived(address _operator, address _from, uint256[] _ids, uint256[] _values, bytes _data)
+    function onXRC1155BatchReceived(address _operator, address _from, uint256[] _ids, uint256[] _values, bytes calldata _data)
         external
         pure
         returns(bytes4)

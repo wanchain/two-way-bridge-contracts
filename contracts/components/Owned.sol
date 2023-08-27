@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.4.24;
+pragma solidity ^0.8.18;
 
 /// @dev `Owned` is a base level contract that assigns an `owner` that can be
 ///  later changed
@@ -42,7 +44,7 @@ contract Owned {
     address public owner;
 
     /// @notice The Constructor assigns the message sender to be `owner`
-    constructor() public {
+    constructor() {
         owner = msg.sender;
     }
 

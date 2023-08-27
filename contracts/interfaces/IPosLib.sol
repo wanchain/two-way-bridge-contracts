@@ -1,4 +1,6 @@
-pragma solidity 0.4.26;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.18;
 
 interface IPosLib {
     function getEpochId(uint256 blockTime) external view returns (uint256);

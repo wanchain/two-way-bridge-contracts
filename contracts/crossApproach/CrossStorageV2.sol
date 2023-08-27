@@ -1,6 +1,6 @@
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@
 //
 //
 
-pragma solidity ^0.4.26;
+pragma solidity ^0.8.18;
 
 import "../components/Proxy.sol";
 import "../components/Halt.sol";
 import "../components/ReentrancyGuard.sol";
-import "./CrossStorageV1.sol";
+import "./CrossStorage.sol";
 
-contract CrossStorageV2 is CrossStorageV1, ReentrancyGuard, Halt, Proxy {
+contract CrossStorageV2 is CrossStorage, ReentrancyGuard, Halt, Proxy {
 
     /************************************************************
      **

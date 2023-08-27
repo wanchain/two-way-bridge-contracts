@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2020 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,8 +26,8 @@
 //
 //
 
-pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.18;
+pragma abicoder v2;
 
 import "../components/Halt.sol";
 import "../components/Admin.sol";
@@ -37,7 +39,7 @@ contract ConfigDelegate is ConfigStorage, Halt , Admin{
     /// @notice                           function for set smg contract address
     /// @param curveId                    curve id array
     /// @param curveAddress               curve contract address array
-    function setCurve(uint8[] curveId, address[] curveAddress)
+    function setCurve(uint8[] calldata curveId, address[] calldata curveAddress)
     external
     onlyAdmin
     {
@@ -56,7 +58,7 @@ contract ConfigDelegate is ConfigStorage, Halt , Admin{
         return curves[curveId];
     }
 
-    function() public payable {
+    receive() external payable {
         revert("Not support");
     }
 

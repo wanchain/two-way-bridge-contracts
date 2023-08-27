@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,14 +26,15 @@
 //
 //
 
-pragma solidity ^0.4.26;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.18;
 
-import "../../interfaces/IERC1155.sol";
-import 'openzeppelin-eth/contracts/token/ERC721/IERC721.sol';
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./RapidityTxLib.sol";
-import "./CrossTypesV1.sol";
+import "./CrossTypes.sol";
 import "../../interfaces/ITokenManager.sol";
+import "./EtherTransfer.sol";
+
 
 library NFTLibV1 {
     using SafeMath for uint;
@@ -47,6 +50,7 @@ library NFTLibV1 {
         uint[]                  tokenValues;            /// NFT token values
         uint                    currentChainID;         /// current chain ID
         uint                    tokenPairContractFee;   /// fee of token pair
+        uint                    etherTransferGasLimit;  /// exchange token fee
         bytes                   destUserAccount;        /// account of shadow chain, used to receive token
         address                 smgFeeProxy;            /// address of the proxy to store fee for storeman group
     }
@@ -71,6 +75,7 @@ library NFTLibV1 {
         uint[]                  tokenValues;            /// NFT token values
         uint                    currentChainID;         /// current chain ID
         uint                    tokenPairContractFee;   /// fee of token pair
+        uint                    etherTransferGasLimit;  /// exchange token fee
         address                 srcTokenAccount;        /// shadow token account
         bytes                   destUserAccount;        /// account of token destination chain, used to receive token
         address                 smgFeeProxy;            /// address of the proxy to store fee for storeman group
@@ -95,7 +100,7 @@ library NFTLibV1 {
 
     event SmgReleaseNFT(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
 
-    function getTokenScAddrAndContractFee(CrossTypesV1.Data storage storageData, uint tokenPairID, uint tokenPairContractFee, uint currentChainID, uint batchLength)
+    function getTokenScAddrAndContractFee(CrossTypes.Data storage storageData, uint tokenPairID, uint tokenPairContractFee, uint currentChainID, uint batchLength)
         public
         view
         returns (address, uint)
@@ -114,12 +119,18 @@ library NFTLibV1 {
             if (contractFee == 0) {
                 contractFee = storageData.mapContractFee[fromChainID][toChainID];
             }
-            tokenScAddr = CrossTypesV1.bytesToAddress(fromTokenAccount);
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[fromChainID][0];
+            }
+            tokenScAddr = CrossTypes.bytesToAddress(fromTokenAccount);
         } else if (currentChainID == toChainID) {
             if (contractFee == 0) {
                 contractFee = storageData.mapContractFee[toChainID][fromChainID];
             }
-            tokenScAddr = CrossTypesV1.bytesToAddress(toTokenAccount);
+            if (contractFee == 0) {
+                contractFee = storageData.mapContractFee[toChainID][0];
+            }
+            tokenScAddr = CrossTypes.bytesToAddress(toTokenAccount);
         } else {
             require(false, "Invalid token pair");
         }
@@ -133,7 +144,7 @@ library NFTLibV1 {
     /// @notice                         event invoked by user mint lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for user mint lock token on token original chain
-    function userLockNFT(CrossTypesV1.Data storage storageData, RapidityUserLockNFTParams memory params)
+    function userLockNFT(CrossTypes.Data storage storageData, RapidityUserLockNFTParams memory params)
         public
     {
         address tokenScAddr;
@@ -141,7 +152,7 @@ library NFTLibV1 {
         (tokenScAddr, contractFee) = getTokenScAddrAndContractFee(storageData, params.tokenPairID, params.tokenPairContractFee, params.currentChainID, params.tokenIDs.length);
 
         if (contractFee > 0) {
-            params.smgFeeProxy.transfer(contractFee);
+            EtherTransfer.sendValue(payable(params.smgFeeProxy), contractFee, params.etherTransferGasLimit);
         }
 
         uint left = (msg.value).sub(contractFee);
@@ -159,7 +170,7 @@ library NFTLibV1 {
         }
 
         if (left != 0) {
-            (msg.sender).transfer(left);
+            EtherTransfer.sendValue(payable(msg.sender), left, params.etherTransferGasLimit);
         }
 
         string[] memory keys = new string[](4);
@@ -184,7 +195,7 @@ library NFTLibV1 {
     /// @notice                         event invoked by user burn lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for user burn lock token on token original chain
-    function userBurnNFT(CrossTypesV1.Data storage storageData, RapidityUserBurnNFTParams memory params)
+    function userBurnNFT(CrossTypes.Data storage storageData, RapidityUserBurnNFTParams memory params)
         public
     {
         address tokenScAddr;
@@ -197,12 +208,12 @@ library NFTLibV1 {
         ITokenManager(tokenManager).burnNFT(uint(tokenCrossType), tokenScAddr, msg.sender, params.tokenIDs, params.tokenValues);
 
         if (contractFee > 0) {
-            params.smgFeeProxy.transfer(contractFee);
+            EtherTransfer.sendValue(payable(params.smgFeeProxy), contractFee, params.etherTransferGasLimit);
         }
 
         uint left = (msg.value).sub(contractFee);
         if (left != 0) {
-            (msg.sender).transfer(left);
+            EtherTransfer.sendValue(payable(msg.sender), left, params.etherTransferGasLimit);
         }
 
         string[] memory keys = new string[](4);
@@ -226,7 +237,7 @@ library NFTLibV1 {
     /// @notice                         event invoked by user mint lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for storeman mint lock token on token shadow chain
-    function smgMintNFT(CrossTypesV1.Data storage storageData, RapiditySmgMintNFTParams memory params)
+    function smgMintNFT(CrossTypes.Data storage storageData, RapiditySmgMintNFTParams memory params)
         public
     {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);
@@ -261,7 +272,7 @@ library NFTLibV1 {
     /// @notice                         event invoked by user burn lock
     /// @param storageData              Cross storage data
     /// @param params                   parameters for storeman burn lock token on token shadow chain
-    function smgReleaseNFT(CrossTypesV1.Data storage storageData, RapiditySmgReleaseNFTParams memory params)
+    function smgReleaseNFT(CrossTypes.Data storage storageData, RapiditySmgReleaseNFTParams memory params)
         public
     {
         storageData.rapidityTxData.addRapidityTx(params.uniqueID);

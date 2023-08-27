@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2019 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,14 +26,16 @@
 //
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
-pragma solidity ^0.4.24;
+pragma solidity ^0.8.18;
+pragma abicoder v2;
 
-import 'openzeppelin-eth/contracts/math/SafeMath.sol';
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../components/Admin.sol";
-import "./GpkStorage.sol";
-import "./lib/GpkLib.sol";
+import "./GpkStorageV2.sol";
+import "../interfaces/IStoremanGroup.sol";
+import "./lib/GpkLib.sol" ;
 
-contract GpkDelegate is GpkStorage, Admin {
+contract GpkDelegate is GpkStorageV2 {
     using SafeMath for uint;
 
     /**
@@ -71,6 +75,10 @@ contract GpkDelegate is GpkStorage, Admin {
     /// @param src                        src storeman address
     /// @param dest                       dest storeman address
     event RevealSijLogger(bytes32 indexed groupId, uint16 indexed round, uint8 indexed curveIndex, address src, address dest);
+
+
+    event GpkCreatedLogger(bytes32 indexed groupId, uint16 indexed round, bytes[] gpk);
+    event setGpkCfgEvent(bytes32 indexed groupId, uint indexed count);
 
     /**
     *
@@ -113,19 +121,25 @@ contract GpkDelegate is GpkStorage, Admin {
     /// @param roundIndex                 group negotiate round
     /// @param curveIndex                 singnature curve index
     /// @param polyCommit                 poly commit list (17 order in x0,y0,x1,y1... format)
-    function setPolyCommit(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, bytes polyCommit)
+    function setPolyCommit(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, bytes memory polyCommit)
         external
     {
         require(polyCommit.length > 0, "Invalid polyCommit");
+        require(gpkCount[groupId] != 0, "Invalid gpk count");
 
         GpkTypes.Group storage group = groupMap[groupId];
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
+        uint[] memory curves = new uint[](gpkCount[groupId]);
+        for(uint8 i=0; i<gpkCount[groupId];  i++) {
+            curves[i] = curve[groupId][i];
+        }
+
         if (group.smNumber == 0) {
             // init group when the first node submit to start every round
-            GpkLib.initGroup(groupId, group, cfg, smg);
+            GpkLib.initGroup(groupId, group, cfg, smg, curves);
         }
         if (round.statusTime == 0) {
-            round.statusTime = now;
+            round.statusTime = block.timestamp;
         }
         checkValid(group, roundIndex, curveIndex, GpkTypes.GpkStatus.PolyCommit, true, false, address(0));
         require(round.srcMap[msg.sender].polyCommit.length == 0, "Duplicate");
@@ -135,7 +149,7 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkLib.updateGpkShare(group, round, polyCommit);
         if (round.polyCommitCount >= group.smNumber) {
             round.status = GpkTypes.GpkStatus.Negotiate;
-            round.statusTime = now;
+            round.statusTime = block.timestamp;
         }
 
         emit SetPolyCommitLogger(groupId, roundIndex, curveIndex, msg.sender);
@@ -151,7 +165,7 @@ contract GpkDelegate is GpkStorage, Admin {
         checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.PolyCommit, false, false, address(0));
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
         uint32 timeout = (group.round == 0) ? group.ployCommitPeriod : group.defaultPeriod;
-        require(now.sub(round.statusTime) > timeout, "Not late");
+        require(block.timestamp.sub(round.statusTime) > timeout, "Not late");
         uint slashCount = 0;
         for (uint i = 0; (i < group.smNumber) && (slashCount + round.polyCommitCount < group.smNumber); i++) {
             address src = group.addrMap[i];
@@ -169,7 +183,7 @@ contract GpkDelegate is GpkStorage, Admin {
     /// @param curveIndex                 singnature curve index
     /// @param dest                       dest storeman address
     /// @param encSij                     encSij
-    function setEncSij(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address dest, bytes encSij)
+    function setEncSij(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address dest, bytes memory encSij)
         external
     {
         require(encSij.length > 0, "Invalid encSij"); // ephemPublicKey(65) + iv(16) + mac(32) + ciphertext(48)
@@ -179,7 +193,7 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Dest storage d = round.srcMap[msg.sender].destMap[dest];
         require(d.encSij.length == 0, "Duplicate");
         d.encSij = encSij;
-        d.setTime = now;
+        d.setTime = block.timestamp;
         emit SetEncSijLogger(groupId, roundIndex, curveIndex, msg.sender, dest);
     }
 
@@ -200,7 +214,7 @@ contract GpkDelegate is GpkStorage, Admin {
         require(d.encSij.length != 0, "Not ready");
         require(d.checkStatus == GpkTypes.CheckStatus.Init, "Duplicate");
 
-        d.checkTime = now;
+        d.checkTime = block.timestamp;
         emit SetCheckStatusLogger(groupId, roundIndex, curveIndex, src, msg.sender, isValid);
 
         if (isValid) {
@@ -209,8 +223,8 @@ contract GpkDelegate is GpkStorage, Admin {
             round.checkValidCount++;
             if (round.checkValidCount >= group.smNumber ** 2) {
                 round.status = GpkTypes.GpkStatus.Complete;
-                round.statusTime = now;
-                GpkLib.tryComplete(group, smg);
+                round.statusTime = block.timestamp;
+                tryComplete(groupId, smg);
             }
         } else {
             d.checkStatus = GpkTypes.CheckStatus.Invalid;
@@ -229,7 +243,7 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
         GpkTypes.Dest storage d = round.srcMap[src].destMap[msg.sender];
         require(d.encSij.length == 0, "Outdated");
-        require(now.sub(round.statusTime) > group.defaultPeriod, "Not late");
+        require(block.timestamp.sub(round.statusTime) > group.defaultPeriod, "Not late");
         GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijTimout, src, msg.sender, true, smg);
     }
 
@@ -272,7 +286,7 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Dest storage d = round.srcMap[msg.sender].destMap[dest];
         require(d.checkStatus == GpkTypes.CheckStatus.Init, "Checked");
         require(d.encSij.length != 0, "Not ready");
-        require(now.sub(d.setTime) > group.defaultPeriod, "Not late");
+        require(block.timestamp.sub(d.setTime) > group.defaultPeriod, "Not late");
         GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckTimeout, dest, msg.sender, true, smg);
     }
 
@@ -288,7 +302,7 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
         GpkTypes.Dest storage d = round.srcMap[src].destMap[msg.sender];
         require(d.checkStatus == GpkTypes.CheckStatus.Invalid, "Not need");
-        require(now.sub(d.checkTime) > group.defaultPeriod, "Not late");
+        require(block.timestamp.sub(d.checkTime) > group.defaultPeriod, "Not late");
         GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijTimeout, src, msg.sender, true, smg);
     }
 
@@ -301,7 +315,7 @@ contract GpkDelegate is GpkStorage, Admin {
         GpkTypes.Group storage group = groupMap[groupId];
         checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.Negotiate, false, false, address(0));
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
-        require(now.sub(round.statusTime) > group.negotiatePeriod, "Not late");
+        require(block.timestamp.sub(round.statusTime) > group.negotiatePeriod, "Not late");
         for (uint i = 0; i < group.smNumber; i++) {
             address src = group.addrMap[i];
             uint slashPair = uint(group.smNumber).sub(uint(round.srcMap[src].checkValidCount));
@@ -339,7 +353,7 @@ contract GpkDelegate is GpkStorage, Admin {
         view
     {
         require(roundIndex == group.round, "Invalid round"); // must be current round
-        require(curveIndex <= 1, "Invalid curve"); // curve only can be 0 or 1
+        require(curveIndex < gpkCount[group.groupId], "Invalid curve"); 
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
         require((round.status == status) && (round.statusTime > 0), "Invalid status");
         if (checkSender) {
@@ -356,7 +370,7 @@ contract GpkDelegate is GpkStorage, Admin {
         returns(uint16 queriedRound, address curve1, uint8 curve1Status, uint curve1StatusTime, address curve2, uint8 curve2Status, uint curve2StatusTime)
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        queriedRound = (roundIndex >= 0)? uint16(roundIndex) : group.round;
+        queriedRound = (roundIndex >= 0)? uint16(uint32(roundIndex)) : group.round;
         GpkTypes.Round storage round1 = group.roundMap[queriedRound][0];
         GpkTypes.Round storage round2 = group.roundMap[queriedRound][1];
         return (queriedRound, round1.curve, uint8(round1.status), round1.statusTime, round2.curve, uint8(round2.status), round2.statusTime);
@@ -365,7 +379,7 @@ contract GpkDelegate is GpkStorage, Admin {
     function getPolyCommit(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src)
         external
         view
-        returns(bytes polyCommit)
+        returns(bytes memory polyCommit)
     {
         GpkTypes.Group storage group = groupMap[groupId];
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
@@ -375,7 +389,7 @@ contract GpkDelegate is GpkStorage, Admin {
     function getSijInfo(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src, address dest)
         external
         view
-        returns(bytes encSij, uint8 checkStatus, uint setTime, uint checkTime, uint sij, uint ephemPrivateKey)
+        returns(bytes memory encSij, uint8 checkStatus, uint setTime, uint checkTime, uint sij, uint ephemPrivateKey)
     {
         GpkTypes.Group storage group = groupMap[groupId];
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
@@ -386,26 +400,94 @@ contract GpkDelegate is GpkStorage, Admin {
     function getGpkShare(bytes32 groupId, uint16 index)
         external
         view
-        returns(bytes gpkShare1, bytes gpkShare2)
+        returns(bytes memory gpkShare1, bytes memory gpkShare2)
     {
         GpkTypes.Group storage group = groupMap[groupId];
         address src = group.addrMap[index];
-        mapping(uint8 => GpkTypes.Round) roundMap = groupMap[groupId].roundMap[group.round];
+        mapping(uint8 => GpkTypes.Round) storage roundMap = groupMap[groupId].roundMap[group.round];
         return (roundMap[0].srcMap[src].gpkShare, roundMap[1].srcMap[src].gpkShare);
     }
 
     function getGpk(bytes32 groupId)
         external
         view
-        returns(bytes gpk1, bytes gpk2)
+        returns(bytes memory gpk1, bytes memory gpk2)
     {
         GpkTypes.Group storage group = groupMap[groupId];
-        mapping(uint8 => GpkTypes.Round) roundMap = groupMap[groupId].roundMap[group.round];
+        mapping(uint8 => GpkTypes.Round) storage roundMap = groupMap[groupId].roundMap[group.round];
         return (roundMap[0].gpk, roundMap[1].gpk);
     }
 
-    /// @notice fallback function
-    function () public payable {
-        revert("Not support");
+    // new functions for many gpks.
+    function getGpkbyIndex(bytes32 groupId, uint8 gpkIndex)
+        external
+        view
+        returns(bytes memory gpk)
+    {
+        GpkTypes.Group storage group = groupMap[groupId];
+        mapping(uint8 => GpkTypes.Round) storage roundMap = groupMap[groupId].roundMap[group.round];
+        return roundMap[gpkIndex].gpk;
+    }
+
+    function getGpkSharebyIndex(bytes32 groupId, uint16 smIndex, uint8 gpkIndex)
+        external
+        view
+        returns(bytes memory gpkShare)
+    {
+        GpkTypes.Group storage group = groupMap[groupId];
+        address src = group.addrMap[smIndex];
+        mapping(uint8 => GpkTypes.Round) storage roundMap = groupMap[groupId].roundMap[group.round];
+        return roundMap[gpkIndex].srcMap[src].gpkShare;
+    }
+
+    function getGpkCount(bytes32 groupId) public view returns(uint count) {
+        return gpkCount[groupId];
+    }
+    function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algoIndex) {
+        return (curve[groupId][index], algo[groupId][index]);
+    }
+
+    function setGpkCfg(bytes32 groupId, uint[] memory curIndex, uint[] memory algoIndex) external onlyAdmin {
+        require(curIndex.length != 0, "empty curve");
+        require(curIndex.length == algoIndex.length, "invalid length");
+        gpkCount[groupId] = curIndex.length;
+        for(uint i=0; i<gpkCount[groupId]; i++) {
+            algo[groupId][i] = algoIndex[i];
+            curve[groupId][i] = curIndex[i];
+        }
+        emit setGpkCfgEvent(groupId, gpkCount[groupId]);
+    }
+
+    function tryComplete(bytes32 groupId, address smg)
+        internal
+    {
+        GpkTypes.Group storage group = groupMap[groupId];
+        uint8 i;
+        for(i=0; i<gpkCount[groupId]; i++) {
+            if(group.roundMap[group.round][i].status != GpkTypes.GpkStatus.Complete) {
+                return;
+            }
+        }
+
+        bytes[] memory gpks = new  bytes[](gpkCount[groupId]);
+        
+        for(i=0; i<gpkCount[groupId]; i++) { 
+            gpks[i] = group.roundMap[group.round][i].gpk;
+        }
+        emit GpkCreatedLogger(groupId, group.round, gpks );
+        GpkTypes.Round storage round1 = group.roundMap[group.round][0];
+        GpkTypes.Round storage round2 = group.roundMap[group.round][1];
+        IStoremanGroup(smg).setGpk(groupId, round1.gpk, round2.gpk); // only set 2 gpk for compatible 
+    }
+    
+    function getGroupInfobyIndex(bytes32 groupId, int32 roundIndex, uint8 gpkIndex)
+        external
+        view
+        returns(uint16 queriedRound, address curve, uint8 curveStatus, uint curveStatusTime)
+    {
+        GpkTypes.Group storage group = groupMap[groupId];
+        queriedRound = (roundIndex >= 0)? uint16(uint32(roundIndex)) : group.round;
+        GpkTypes.Round storage round = group.roundMap[queriedRound][gpkIndex];
+        return (queriedRound, round.curve, uint8(round.status), round.statusTime);
     }
 }

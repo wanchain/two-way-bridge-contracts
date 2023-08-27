@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
-  Copyright 2020 Wanchain Foundation.
+  Copyright 2023 Wanchain Foundation.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,10 +26,9 @@
 //
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
-pragma solidity ^0.4.26;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.18;
 
-import 'openzeppelin-eth/contracts/math/SafeMath.sol';
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../components/Halt.sol";
 import "../components/Admin.sol";
 import "./StoremanGroupStorage.sol";
@@ -79,8 +80,8 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     /// @notice                           function for owner to open a storeman group.
     /// @param wkAddrs                    white list work address array.
     /// @param senders                    senders address array of the white list enode.
-    function storemanGroupRegisterStart(StoremanType.StoremanGroupInput smg,
-        address[] wkAddrs, address[] senders)
+    function storemanGroupRegisterStart(StoremanType.StoremanGroupInput calldata smg,
+        address[] calldata wkAddrs, address[] calldata senders)
         public
         onlyAdmin
     {
@@ -103,18 +104,18 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     }
 
     /// @dev	                    set the group chain and curve.
-    function initGroup(bytes32 groupId, StoremanType.StoremanGroupInput smg)
+    function initGroup(bytes32 groupId, StoremanType.StoremanGroupInput calldata smg)
         private
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         require(group.status == StoremanType.GroupStatus.none, "group has existed already");
 
-        Deposit.Records memory deposit =  Deposit.Records(0);
-        Deposit.Records memory depositWeight =  Deposit.Records(0);
-        group.deposit = deposit;
-        group.depositWeight = depositWeight;
+        // Deposit.Records memory deposit =  Deposit.Records(0);
+        // Deposit.Records memory depositWeight =  Deposit.Records(0);
+        // group.deposit = deposit;
+        // group.depositWeight = depositWeight;
 
-        group.registerTime = now;
+        group.registerTime = block.timestamp;
         group.status = StoremanType.GroupStatus.curveSeted;
 
         group.memberCountDesign = smg.memberCountDesign;
@@ -132,7 +133,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         group.curve2 = smg.curve2;
     }
 
-    function incentiveCandidator( address wkAddr) external   {
+    function incentiveCandidator(address wkAddr) external   {
         IncentiveLib.incentiveCandidator(data, wkAddr,metric, getGlobalGroupScAddr());
     }
 
@@ -140,7 +141,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     /// @param groupId                      the storeman group index.
     /// @param PK                           the agent keystore's public key.
     /// @param enodeID                      the agent enodeID, use for p2p network.
-    function stakeIn(bytes32 groupId, bytes PK, bytes enodeID)
+    function stakeIn(bytes32 groupId, bytes calldata PK, bytes calldata enodeID)
         external
         notHalted
         payable
@@ -222,7 +223,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     function getSelectedSmNumber(bytes32 groupId) external view returns(uint) {
         return StoremanUtil.getSelectedSmNumber(data, groupId);
     }
-    function getSelectedStoreman(bytes32 groupId) external view returns(address[]) {
+    function getSelectedStoreman(bytes32 groupId) external view returns(address[] memory) {
         return StoremanUtil.getSelectedStoreman(data, groupId);
     }
     function select(bytes32 groupId)
@@ -232,7 +233,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return IncentiveLib.toSelect(data, groupId);
     }
 
-    function getSelectedSmInfo(bytes32 groupId, uint index) external view returns(address wkAddr, bytes PK, bytes enodeId) {
+    function getSelectedSmInfo(bytes32 groupId, uint index) external view returns(address wkAddr, bytes memory PK, bytes memory enodeId) {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         address addr = group.selectedNode[index];
         StoremanType.Candidate storage sk = data.candidates[0][addr];
@@ -274,7 +275,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         return sk.delegatorMap[index];
     } 
-    function setGpk(bytes32 groupId, bytes gpk1, bytes gpk2)
+    function setGpk(bytes32 groupId, bytes calldata gpk1, bytes calldata gpk2)
         external
     {
         require(msg.sender == createGpkAddr, "Sender is not allowed");
@@ -296,10 +297,10 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     }
 
     function setGlobalGroupScAddr(address _addr) external onlyOwner {
-        addressData.setStorage(key, innerKey, _addr);
+        BasicStorageLib.setStorage(addressData, key, innerKey, _addr);
     }
     function getGlobalGroupScAddr() public view returns(address) {
-        return addressData.getStorage(key, innerKey);
+        return BasicStorageLib.getStorage(addressData, key, innerKey);
     }
     function addActiveGroup(bytes32 groupId, uint startTime, uint endTime) private {
         address addr = getGlobalGroupScAddr();
@@ -309,13 +310,13 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         address addr = getGlobalGroupScAddr();
         IListGroup(addr).cleanExpiredGroup();
     }
-    function getActiveGroupIds(uint epochId) external view returns(bytes32[]){
+    function getActiveGroupIds(uint epochId) external view returns(bytes32[] memory){
         address addr = getGlobalGroupScAddr();
         return IListGroup(addr).getActiveGroupIds(epochId);
     }
 
 
-    function setInvalidSm(bytes32 groupId, uint[] indexs, GpkTypes.SlashType[] slashTypes)
+    function setInvalidSm(bytes32 groupId, uint[] calldata indexs, GpkTypes.SlashType[] calldata slashTypes)
         external
         returns(bool isContinue)
     {
@@ -388,7 +389,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         require(quitable, "can not dismiss");
 
         group.status = StoremanType.GroupStatus.dismissed;
-        emit StoremanGroupDismissedEvent(groupId, now);
+        emit StoremanGroupDismissedEvent(groupId, block.timestamp);
 
         StoremanType.Candidate storage sk;
         for(uint i=0; i<group.selectedCount; i++){
@@ -402,7 +403,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         return dismissable;
     }
 
-    function getStoremanInfo(address wkAddr) external view returns(StoremanType.StoremanInfo si){
+    function getStoremanInfo(address wkAddr) external view returns(StoremanType.StoremanInfo memory si){
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
 
         si.sender = sk.sender;
@@ -424,7 +425,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
         si.nextGroupId = sk.nextGroupId;
         si.deposit = sk.deposit.getLastValue();
     }
-    function getStoremanGroupInfo(bytes32 id) external view returns(StoremanType.StoremanGroupInfo info){
+    function getStoremanGroupInfo(bytes32 id) external view returns(StoremanType.StoremanGroupInfo memory info){
         StoremanType.StoremanGroup storage smg = data.groups[id];
         info.groupId = id;
         info.status = smg.status;
@@ -457,7 +458,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     function getStoremanGroupConfig(bytes32 id)
         external
         view
-        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes gpk1, bytes gpk2, uint startTime, uint endTime)
+        returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2,  bytes memory gpk1, bytes memory gpk2, uint startTime, uint endTime)
     {
         StoremanType.StoremanGroup storage smg = data.groups[id];
         return (id, smg.status,smg.deposit.getLastValue(), smg.chain1, smg.chain2,smg.curve1, smg.curve2,
