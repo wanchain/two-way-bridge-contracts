@@ -96,7 +96,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log("TokenManagerDelegateV2 deployed to:", tokenManagerDelegate.address);
 
 
-  let MulticallV2 = await getArtifact(deployer, "MulticallV2");
+  let MulticallV2 = await getArtifact(deployer, "Multicall2");
   let multicall = await deploy(deployer, MulticallV2, []);
 
   console.log("MulticallV2 deployed to:", multicall.address);
