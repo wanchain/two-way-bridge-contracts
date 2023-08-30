@@ -96,15 +96,15 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log("TokenManagerDelegateV2 deployed to:", tokenManagerDelegate.address);
 
 
-  let MulticallV2 = await getArtifact(deployer, "Multicall2");
-  let multicall = await deploy(deployer, MulticallV2, []);
+  let Multicall2 = await getArtifact(deployer, "Multicall2");
+  let multicall = await deploy(deployer, Multicall2, []);
 
-  console.log("MulticallV2 deployed to:", multicall.address);
+  console.log("Multicall2 deployed to:", multicall.address);
 
   let ProxyAdmin = await getArtifact(deployer, "ProxyAdmin");
   let proxyAdmin = await deploy(deployer, ProxyAdmin, []);
 
-  console.log("MulticallV2 deployed to:", multicall.address);
+  console.log("Multicall2 deployed to:", multicall.address);
 
 
 
@@ -216,7 +216,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     oracleDelegate: oracleDelegate.address,
     oracleProxy: oracleProxy.address,
     proxyAdmin: proxyAdmin.address,
-    multicallV2: multicall.address,
+    multicall2: multicall.address,
   };
 
   fs.writeFileSync(`deployed/zkSyncEraTestnet.json`, JSON.stringify(deployed, null, 2));
@@ -227,7 +227,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   await verify(hre, Bn128SchnorrVerifier, bn128SchnorrVerifier.address, "contracts/schnorr/Bn128SchnorrVerifier.sol:Bn128SchnorrVerifier", []);
   await verify(hre, SignatureVerifier, signatureVerifier.address, "contracts/schnorr/SignatureVerifier.sol:SignatureVerifier", []);
   // await verify(hre, ProxyAdmin, proxyAdmin.address, "node_modules/@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol:ProxyAdmin", []);
-  await verify(hre, MulticallV2, multicall.address, "contracts/lib/MulticallV2.sol:MulticallV2", []);
+  await verify(hre, Multicall2, multicall.address, "contracts/lib/Multicall2.sol:Multicall2", []);
   await verify(hre, TokenManagerProxy, tokenManagerProxy.address, "contracts/tokenManager/TokenManagerProxy.sol:TokenManagerProxy", [tokenManagerDelegate.address, proxyAdmin.address, '0x']);
   await verify(hre, CrossProxy, crossProxy.address, "contracts/crossApproach/CrossProxy.sol:CrossProxy", [crossDelegate.address, proxyAdmin.address, '0x']);
   await verify(hre, OracleProxy, oracleProxy.address, "contracts/oracle/OracleProxy.sol:OracleProxy", [oracleDelegate.address, proxyAdmin.address, '0x']);
