@@ -48,7 +48,7 @@ contract CrossDelegateXinFin is CrossDelegateV4 {
         return this.onXRC1155Received.selector;
     }
 
-    function onXRC1155BatchReceived(address _operator, address _from, uint256[] _ids, uint256[] _values, bytes calldata _data)
+    function onXRC1155BatchReceived(address _operator, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data)
         external
         pure
         returns(bytes4)

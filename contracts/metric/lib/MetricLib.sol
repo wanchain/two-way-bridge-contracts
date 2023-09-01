@@ -340,7 +340,6 @@ library MetricLib {
     /// @param smIndex                  sm index
     function recordSmSlash(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint smIndex)
     public
-    view
     {
         address wkAddr;
         IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
