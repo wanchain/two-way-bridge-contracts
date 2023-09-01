@@ -1,4 +1,6 @@
-pragma solidity ^0.8.18
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.18;
 
 import "../tokenManager/WanToken.sol";
 import "../components/BasicStorage.sol";

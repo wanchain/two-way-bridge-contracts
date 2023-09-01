@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
   Copyright 2023 Wanchain Foundation.
@@ -24,7 +26,7 @@
 //
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
-pragma solidity ^0.8.18
+pragma solidity ^0.8.18;
 
 
 contract fakeQuota {

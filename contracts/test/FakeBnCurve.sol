@@ -1,4 +1,6 @@
-pragma solidity ^0.8.18
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.18;
 
 contract  FakeBnCurve {
     address constant PRECOMPILE_CONTRACT_ADDR = 0x268;

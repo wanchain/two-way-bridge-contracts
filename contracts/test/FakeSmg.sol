@@ -1,4 +1,6 @@
-pragma solidity ^0.8.18
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.18;
 
 import '../storemanGroupAdmin/StoremanType.sol';
 contract FakeSmg {
@@ -116,14 +118,14 @@ contract FakeSmg {
 
     // Convert an hexadecimal character to their value
     function fromHexChar(uint c) public pure returns (uint) {
-        if (byte(c) >= byte('0') && byte(c) <= byte('9')) {
-            return c - uint(byte('0'));
+        if (uint8(c) >= uint8('0') && uint8(c) <= uint8('9')) {
+            return c - uint(uint8('0'));
         }
-        if (byte(c) >= byte('a') && byte(c) <= byte('f')) {
-            return 10 + c - uint(byte('a'));
+        if (uint8(c) >= uint8('a') && uint8(c) <= uint8('f')) {
+            return 10 + c - uint(uint8('a'));
         }
-        if (byte(c) >= byte('A') && byte(c) <= byte('F')) {
-            return 10 + c - uint(byte('A'));
+        if (uint8(c) >= uint8('A') && uint8(c) <= uint8('F')) {
+            return 10 + c - uint(uint8('A'));
         }
         return uint(0);
     }
@@ -135,7 +137,7 @@ contract FakeSmg {
         // length must be even
         bytes memory r = new bytes(ss.length / 2);
         for (uint i = 0; i < ss.length / 2; ++i) {
-            r[i] = byte(fromHexChar(uint(ss[2 * i])) * 16 +
+            r[i] = uint8(fromHexChar(uint(ss[2 * i])) * 16 +
                 fromHexChar(uint(ss[2 * i + 1])));
         }
         return r;

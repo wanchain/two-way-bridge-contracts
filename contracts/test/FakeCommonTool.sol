@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 /*
 
   Copyright 2020 Wanchain Foundation.
@@ -24,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.8.18
+pragma solidity ^0.8.18;
 
 library FakeCommonTool {
 

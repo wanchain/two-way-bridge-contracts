@@ -43,15 +43,15 @@ contract Proxy {
         return _implementation;
     }
 
-    function () external payable {
+    fallback() external payable {
         address _impl = _implementation;
         require(_impl != address(0), "implementation contract not set");
 
         assembly {
             let ptr := mload(0x40)
-            calldatacopy(ptr, 0, calldatasize)
-            let result := delegatecall(gas, _impl, ptr, calldatasize, 0, 0)
-            let size := returndatasize
+            calldatacopy(ptr, 0, calldatasize())
+            let result := delegatecall(gasleft(), _impl, ptr, calldatasize(), 0, 0)
+            let size := returndatasize()
             returndatacopy(ptr, 0, size)
 
             switch result
