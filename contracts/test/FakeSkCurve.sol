@@ -34,7 +34,7 @@ contract  FakeSkCurve {
         return (0,0,mulGResult);
     }
 
-    function calPolyCommit(bytes polyCommit, bytes pk)
+    function calPolyCommit(bytes memory polyCommit, bytes memory pk)
     public
     view
     returns(uint256 sx, uint256 sy, bool success)
@@ -82,7 +82,7 @@ contract  FakeSkCurve {
         addZeroFail = fail;
     }
 
-    function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes pk) public view returns(bool) {
+    function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes memory pk) public view returns(bool) {
         return checkSigResult;
     }
 }

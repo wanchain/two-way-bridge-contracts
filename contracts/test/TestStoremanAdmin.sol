@@ -66,7 +66,7 @@ contract TestStoremanAdmin {
     }
 
     function addStoremanGroup(bytes32 groupId, uint8 status, uint deposit, uint chainPairID,
-                              bytes gpk1, bytes gpk2, uint startTime, uint endTime) public {
+                              bytes memory gpk1, bytes memory gpk2, uint startTime, uint endTime) public {
         ChainData memory chainData = mapChainPair[chainPairID];
         require(chainData.active, "Invalid chain pair");
 
@@ -86,10 +86,10 @@ contract TestStoremanAdmin {
         bytes32 groupId,
         uint8   status,
         uint    deposit,
-        uint[2] chain,
-        uint[2] curve,
-        bytes   gpk1,
-        bytes   gpk2,
+        uint[2] memory chain,
+        uint[2] memory curve,
+        bytes   memory gpk1,
+        bytes   memory gpk2,
         uint    startTime,
         uint    endTime
     ) external {
@@ -110,7 +110,7 @@ contract TestStoremanAdmin {
     function getStoremanGroupConfig(bytes32 id)
         public
         view
-        returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2, bytes gpk1, bytes gpk2, uint startTime, uint endTime)
+        returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2, uint curve1, uint curve2, bytes memory gpk1, bytes memory gpk2, uint startTime, uint endTime)
     {
         SmgData memory smgData = mapStoreman[id];
         ChainData memory chainData = mapChainPair[smgData.chainPairID];

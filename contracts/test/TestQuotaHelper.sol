@@ -28,7 +28,7 @@ contract TestQuotaHelper {
         return priceMap[key];
     }
 
-    function setValue(string key, uint256 value) public {
+    function setValue(string memory key, uint256 value) public {
         priceMap[stringToBytes32(key)] = value;
     }
 
@@ -43,8 +43,8 @@ contract TestQuotaHelper {
             uint256 chain2,
             uint256 curve1,
             uint256 curve2,
-            bytes gpk1,
-            bytes gpk2,
+            bytes memory gpk1,
+            bytes memory gpk2,
             uint256 startTime,
             uint256 endTime
         )
@@ -94,9 +94,9 @@ contract TestQuotaHelper {
         external
         pure
         returns (
-            bytes account,
-            string name,
-            string symbol,
+            bytes memory account,
+            string memory name,
+            string memory symbol,
             uint8 decimals,
             uint256 chainId
         )
@@ -120,7 +120,7 @@ contract TestQuotaHelper {
         return ("", "", "", 0, 1);
     }
 
-    function getAncestorSymbol(uint id) external pure returns (string symbol, uint8 decimals) {
+    function getAncestorSymbol(uint id) external pure returns (string memory symbol, uint8 decimals) {
         if (id == 0) {
             return ("WAN", 18);
         }

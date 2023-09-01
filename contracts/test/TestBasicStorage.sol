@@ -6,13 +6,13 @@ import "../components/BasicStorage.sol";
 
 contract TestBasicStorage is BasicStorage {
     /* uintData */
-    function setUintData(bytes key, bytes innerKey, uint value)
+    function setUintData(bytes memory key, bytes memory innerKey, uint value)
         external
     {
         return uintData.setStorage(key, innerKey, value);
     }
 
-    function getUintData(bytes key, bytes innerKey)
+    function getUintData(bytes memory key, bytes memory innerKey)
         external
         view
         returns (uint)
@@ -20,20 +20,20 @@ contract TestBasicStorage is BasicStorage {
         return uintData.getStorage(key, innerKey);
     }
 
-    function delUintData(bytes key, bytes innerKey)
+    function delUintData(bytes memory key, bytes memory innerKey)
         external
     {
         return uintData.delStorage(key, innerKey);
     }
 
     /* boolData */
-    function setBoolData(bytes key, bytes innerKey, bool value)
+    function setBoolData(bytes memory key, bytes memory innerKey, bool value)
         external
     {
         boolData.setStorage(key, innerKey, value);
     }
 
-    function getBoolData(bytes key, bytes innerKey)
+    function getBoolData(bytes memory key, bytes memory innerKey)
         external
         view
         returns (bool)
@@ -41,20 +41,20 @@ contract TestBasicStorage is BasicStorage {
         return boolData.getStorage(key, innerKey);
     }
 
-    function delBoolData(bytes key, bytes innerKey)
+    function delBoolData(bytes memory key, bytes memory innerKey)
         external
     {
         return boolData.delStorage(key, innerKey);
     }
 
     /* addressData */
-    function setAddressData(bytes key, bytes innerKey, address value)
+    function setAddressData(bytes memory key, bytes memory innerKey, address value)
         external
     {
         addressData.setStorage(key, innerKey, value);
     }
 
-    function getAddressData(bytes key, bytes innerKey)
+    function getAddressData(bytes memory key, bytes memory innerKey)
         external
         view
         returns (address)
@@ -62,49 +62,49 @@ contract TestBasicStorage is BasicStorage {
         return addressData.getStorage(key, innerKey);
     }
 
-    function delAddressData(bytes key, bytes innerKey)
+    function delAddressData(bytes memory key, bytes memory innerKey)
         external
     {
         return addressData.delStorage(key, innerKey);
     }
 
     /* bytesData */
-    function setBytesData(bytes key, bytes innerKey, bytes value)
+    function setBytesData(bytes memory key, bytes memory innerKey, bytes memory value)
         external
     {
         bytesData.setStorage(key, innerKey, value);
     }
 
-    function getBytesData(bytes key, bytes innerKey)
+    function getBytesData(bytes memory key, bytes memory innerKey)
         external
         view
-        returns (bytes)
+        returns (bytes memory)
     {
         return bytesData.getStorage(key, innerKey);
     }
 
-    function delBytesData(bytes key, bytes innerKey)
+    function delBytesData(bytes memory key, bytes memory innerKey)
         external
     {
         return bytesData.delStorage(key, innerKey);
     }
 
   /* stringData */
-    function setStringData(bytes key, bytes innerKey, string value)
+    function setStringData(bytes memory key, bytes memory innerKey, string memory value)
         external
     {
         stringData.setStorage(key, innerKey, value);
     }
 
-    function getStringData(bytes key, bytes innerKey)
+    function getStringData(bytes memory key, bytes memory innerKey)
         external
         view
-        returns (string)
+        returns (string memory)
     {
         return stringData.getStorage(key, innerKey);
     }
 
-   function delStringData(bytes key, bytes innerKey)
+   function delStringData(bytes memory key, bytes memory innerKey)
         external
     {
         return stringData.delStorage(key, innerKey);

@@ -5,12 +5,13 @@ pragma solidity ^0.8.18;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 
 /**
 * @notice This is the template for all NFT contract.
 */
-contract MappingNftToken is ERC721, ERC721Enumerable, ERC721Metadata, Ownable {
+contract MappingNftToken is ERC721, ERC721Enumerable,  Ownable {
 
     using SafeMath for uint;
 
@@ -27,8 +28,8 @@ contract MappingNftToken is ERC721, ERC721Enumerable, ERC721Metadata, Ownable {
      * construction.
      */
     constructor(
-        string name_,
-        string symbol_
+        string memory name_,
+        string memory symbol_
     ) public
       ERC721(name_, symbol_)
       ERC721Enumerable(name_, symbol_) {
@@ -61,7 +62,7 @@ contract MappingNftToken is ERC721, ERC721Enumerable, ERC721Metadata, Ownable {
         external
         onlyOwner
     {
-        address tokenOwner = ERC721.ownerOf(tokenId);
+        address tokenOwner = ERC721.ownerOf(nftID);
         require(account_ == tokenOwner, "invalid nft token owner");
         _burn(nftID);
     }
@@ -70,7 +71,7 @@ contract MappingNftToken is ERC721, ERC721Enumerable, ERC721Metadata, Ownable {
     /// @dev update token name, symbol
     /// @param name_ token new name
     /// @param symbol_ token new symbol
-    function update(string name_, string symbol_)
+    function update(string memory  name_, string memory  symbol_)
     external
     onlyOwner
     {
@@ -83,14 +84,14 @@ contract MappingNftToken is ERC721, ERC721Enumerable, ERC721Metadata, Ownable {
     }
 
     // mint supprt data
-    function mint(address account_, uint256 nftID, bytes data)
+    function mint(address account_, uint256 nftID, bytes memory  data)
         external
         onlyOwner
     {
         _mint(account_, nftID);
     }
 
-    function burnBatch(address account_, uint256[] nftIDs)
+    function burnBatch(address account_, uint256[] memory  nftIDs)
         external
         onlyOwner
     {
@@ -99,7 +100,7 @@ contract MappingNftToken is ERC721, ERC721Enumerable, ERC721Metadata, Ownable {
         }
     }
 
-    function mintBatch(address account_, uint256[] nftIDs, bytes data)
+    function mintBatch(address account_, uint256[] memory  nftIDs, bytes memory data)
         external
         onlyOwner
     {

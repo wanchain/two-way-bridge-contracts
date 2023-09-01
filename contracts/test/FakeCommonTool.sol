@@ -36,7 +36,7 @@ library FakeCommonTool {
 
     bytes constant encValue = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
-    function bytes2uint(bytes source, uint16 offset, uint16 length)
+    function bytes2uint(bytes memory source, uint16 offset, uint16 length)
     public
     pure
     returns(uint)
@@ -54,7 +54,7 @@ library FakeCommonTool {
         }
     }
 
-    function cmpBytes(bytes b1, bytes b2)
+    function cmpBytes(bytes memory b1, bytes memory b2)
     public
     pure
     returns(bool)
@@ -77,10 +77,10 @@ library FakeCommonTool {
         }
     }
 
-    function enc(bytes32 rbpri, bytes32 iv, uint256 mes, bytes pub)
+    function enc(bytes32 rbpri, bytes32 iv, uint256 mes, bytes memory pub)
     public
     pure
-    returns(bytes, bool success)
+    returns(bytes memory, bool success)
     {
         return (encValue, mes != 0);
     }
