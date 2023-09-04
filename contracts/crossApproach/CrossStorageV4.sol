@@ -39,4 +39,5 @@ contract CrossStorageV4 is CrossStorageV3 {
      ************************************************************/
      uint internal maxBatchSize;
      uint internal etherTransferGasLimit;
+     uint public hashType; // 0: sha256, 1: keccak256
 }
