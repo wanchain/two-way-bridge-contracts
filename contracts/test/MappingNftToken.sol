@@ -96,7 +96,7 @@ contract MappingNftToken is ERC721, ERC721Enumerable,  Ownable {
         onlyOwner
     {
         for(uint i = 0; i < nftIDs.length; ++i) {
-            _burn(account_, nftIDs[i]);
+            _burn(nftIDs[i]);
         }
     }
 

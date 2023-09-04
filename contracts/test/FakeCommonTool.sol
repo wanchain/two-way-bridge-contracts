@@ -32,7 +32,7 @@ library FakeCommonTool {
 
     enum CurveType  {SK, BN}
 
-    address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
+    address constant PRECOMPILE_CONTRACT_ADDR = address(0x268);
 
     bytes constant encValue = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 

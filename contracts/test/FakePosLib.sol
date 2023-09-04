@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 library FakePosLib {
     using SafeMath for uint;
     uint public constant DIVISOR = 10000;
-    address constant PRECOMPILE_CONTRACT_ADDR = 0x268;
+    address constant PRECOMPILE_CONTRACT_ADDR = address(0x268);
 
     function getEpochId(uint256 blockTime) public pure returns (uint256) {
         return blockTime/1;

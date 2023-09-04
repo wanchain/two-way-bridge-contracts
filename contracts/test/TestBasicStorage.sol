@@ -9,7 +9,7 @@ contract TestBasicStorage is BasicStorage {
     function setUintData(bytes memory key, bytes memory innerKey, uint value)
         external
     {
-        return uintData.setStorage(key, innerKey, value);
+        return BasicStorageLib.setStorage(uintData, key, innerKey, value);
     }
 
     function getUintData(bytes memory key, bytes memory innerKey)
@@ -17,20 +17,20 @@ contract TestBasicStorage is BasicStorage {
         view
         returns (uint)
     {
-        return uintData.getStorage(key, innerKey);
+        return BasicStorageLib.getStorage(uintData, key, innerKey);
     }
 
     function delUintData(bytes memory key, bytes memory innerKey)
         external
     {
-        return uintData.delStorage(key, innerKey);
+        return BasicStorageLib.delStorage(uintData, key, innerKey);
     }
 
     /* boolData */
     function setBoolData(bytes memory key, bytes memory innerKey, bool value)
         external
     {
-        boolData.setStorage(key, innerKey, value);
+        BasicStorageLib.setStorage(boolData, key, innerKey, value);
     }
 
     function getBoolData(bytes memory key, bytes memory innerKey)
@@ -38,20 +38,20 @@ contract TestBasicStorage is BasicStorage {
         view
         returns (bool)
     {
-        return boolData.getStorage(key, innerKey);
+        return BasicStorageLib.getStorage(boolData, key, innerKey);
     }
 
     function delBoolData(bytes memory key, bytes memory innerKey)
         external
     {
-        return boolData.delStorage(key, innerKey);
+        return BasicStorageLib.delStorage(boolData, key, innerKey);
     }
 
     /* addressData */
     function setAddressData(bytes memory key, bytes memory innerKey, address value)
         external
     {
-        addressData.setStorage(key, innerKey, value);
+        BasicStorageLib.setStorage(addressData, key, innerKey, value);
     }
 
     function getAddressData(bytes memory key, bytes memory innerKey)
@@ -59,20 +59,20 @@ contract TestBasicStorage is BasicStorage {
         view
         returns (address)
     {
-        return addressData.getStorage(key, innerKey);
+        return BasicStorageLib.getStorage(addressData, key, innerKey);
     }
 
     function delAddressData(bytes memory key, bytes memory innerKey)
         external
     {
-        return addressData.delStorage(key, innerKey);
+        return BasicStorageLib.delStorage(addressData, key, innerKey);
     }
 
     /* bytesData */
     function setBytesData(bytes memory key, bytes memory innerKey, bytes memory value)
         external
     {
-        bytesData.setStorage(key, innerKey, value);
+        BasicStorageLib.setStorage(bytesData, key, innerKey, value);
     }
 
     function getBytesData(bytes memory key, bytes memory innerKey)
@@ -80,20 +80,20 @@ contract TestBasicStorage is BasicStorage {
         view
         returns (bytes memory)
     {
-        return bytesData.getStorage(key, innerKey);
+        return BasicStorageLib.getStorage(bytesData, key, innerKey);
     }
 
     function delBytesData(bytes memory key, bytes memory innerKey)
         external
     {
-        return bytesData.delStorage(key, innerKey);
+        return BasicStorageLib.delStorage(bytesData, key, innerKey);
     }
 
   /* stringData */
     function setStringData(bytes memory key, bytes memory innerKey, string memory value)
         external
     {
-        stringData.setStorage(key, innerKey, value);
+        BasicStorageLib.setStorage(stringData, key, innerKey, value);
     }
 
     function getStringData(bytes memory key, bytes memory innerKey)
@@ -101,13 +101,13 @@ contract TestBasicStorage is BasicStorage {
         view
         returns (string memory)
     {
-        return stringData.getStorage(key, innerKey);
+        return BasicStorageLib.getStorage(stringData, key, innerKey);
     }
 
    function delStringData(bytes memory key, bytes memory innerKey)
         external
     {
-        return stringData.delStorage(key, innerKey);
+        return BasicStorageLib.delStorage(stringData, key, innerKey);
     }
 
 }
