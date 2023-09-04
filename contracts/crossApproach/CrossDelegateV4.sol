@@ -180,7 +180,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         });
         RapidityLibV4.smgMint(storageData, params);
 
-        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, value, fee, tokenAccount, userAccount));
+        bytes32 mHash = hashFunc(abi.encode(currentChainID, uniqueID, tokenPairID, value, fee, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
@@ -214,7 +214,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         });
         RapidityLibV4.smgRelease(storageData, params);
 
-        bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, value, fee, tokenAccount, userAccount));
+        bytes32 mHash = hashFunc(abi.encode(currentChainID, uniqueID, tokenPairID, value, fee, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
@@ -259,6 +259,16 @@ contract CrossDelegateV4 is CrossStorageV4 {
         }
     }
 
+    function hashFunc(bytes memory data) public view returns (bytes32){
+        if(hashType == 1) {
+            return keccak256(data);
+        } else {
+            return sha256(data);
+        }
+    }
+    function setHashType(uint _hashType) external onlyOwner {
+        hashType = _hashType;
+    }
     function setAdmin(address adminAccount) external onlyOwner {
         admin = adminAccount;
         emit SetAdmin(adminAccount);
@@ -551,7 +561,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
         NFTLibV1.smgMintNFT(storageData, params);
         // bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, extData, tokenAccount, userAccount));
-        bytes32 mHash = sha256(abi.encode(currentChainID, params.uniqueID, params.tokenPairID, params.tokenIDs, params.tokenValues, params.extData, params.destTokenAccount, params.destUserAccount));
+        bytes32 mHash = hashFunc(abi.encode(currentChainID, params.uniqueID, params.tokenPairID, params.tokenIDs, params.tokenValues, params.extData, params.destTokenAccount, params.destUserAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
@@ -576,7 +586,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         NFTLibV1.smgReleaseNFT(storageData, params);
 
         // bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount));
-        bytes32 mHash = sha256(abi.encode(currentChainID, params.uniqueID, params.tokenPairID, params.tokenIDs, params.tokenValues, params.destTokenAccount, params.destUserAccount));
+        bytes32 mHash = hashFunc(abi.encode(currentChainID, params.uniqueID, params.tokenPairID, params.tokenIDs, params.tokenValues, params.destTokenAccount, params.destUserAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
