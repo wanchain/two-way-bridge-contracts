@@ -2,7 +2,6 @@
 
 
 pragma solidity ^0.8.18;
-pragma abicoder v2;
 
 interface IPartner {
     function getStoremanGroupConfig(

@@ -32,7 +32,7 @@ import "./CrossDelegateV4.sol";
 
 
 contract CrossDelegateXinFin is CrossDelegateV4 {
-    function onXRC721Received(address operator, address from, uint256 tokenId, bytes calldata data)
+    function onXRC721Received(address, address, uint256, bytes calldata)
         external
         pure
         returns (bytes4)
@@ -40,7 +40,7 @@ contract CrossDelegateXinFin is CrossDelegateV4 {
         return this.onXRC721Received.selector;
     }
 
-    function onXRC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data)
+    function onXRC1155Received(address, address, uint256, uint256, bytes calldata)
         external
         pure
         returns(bytes4)
@@ -48,7 +48,7 @@ contract CrossDelegateXinFin is CrossDelegateV4 {
         return this.onXRC1155Received.selector;
     }
 
-    function onXRC1155BatchReceived(address _operator, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data)
+    function onXRC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
         external
         pure
         returns(bytes4)

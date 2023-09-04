@@ -30,7 +30,7 @@ library StoremanUtil {
     }
     return storemans;
   }
-  function onCurve(bytes calldata pubkey) public view returns (bool) {
+  function onCurve(bytes calldata pubkey) public pure returns (bool) {
     if(pubkey.length != 64) return false;
     uint[2] memory P;
     P[0] =  CommonTool.bytes2uint(pubkey, 0, 32);

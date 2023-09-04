@@ -27,7 +27,6 @@
 //
 
 pragma solidity ^0.8.18;
-pragma abicoder v2;
 
 import "./CrossStorageV4.sol";
 import "./lib/RapidityLibV4.sol";
@@ -286,9 +285,8 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /// @param tokenManager                 address of the token manager
     /// @param smgAdminProxy                address of the storeman group admin
     /// @param smgFeeProxy                  address of the proxy to store fee for storeman group
-    /// @param quota                        address of the quota
     /// @param sigVerifier                  address of the signature verifier
-    function setPartners(address tokenManager, address smgAdminProxy, address smgFeeProxy, address quota, address sigVerifier)
+    function setPartners(address tokenManager, address smgAdminProxy, address smgFeeProxy, address, address sigVerifier)
     external
     onlyOwner
     {
