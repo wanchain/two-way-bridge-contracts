@@ -3,7 +3,6 @@
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -11,7 +10,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 /**
 * @notice This is the template for all NFT contract.
 */
-contract MappingNftToken is ERC721, ERC721Enumerable,  Ownable {
+contract MappingNftToken is ERC721Enumerable,  Ownable {
 
     using SafeMath for uint;
 
@@ -30,9 +29,7 @@ contract MappingNftToken is ERC721, ERC721Enumerable,  Ownable {
     constructor(
         string memory name_,
         string memory symbol_
-    ) public
-      ERC721(name_, symbol_)
-      ERC721Enumerable(name_, symbol_) {
+    ) ERC721(name_, symbol_) {
         _name = name_;
         _symbol = symbol_;
     }

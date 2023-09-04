@@ -37,7 +37,7 @@ contract FakeSmg {
     "ccd16e96a70a5b496ff1cec869902b6a8ffa00715897937518f1c9299726f7090bc36cc23c1d028087eb0988c779663e996391f290631317fc22f84fa9bf2467"];
 
     address constant ADD_0 = address(0x0000000000000000000000000000000000000000);
-    address constant ADD_LEADER= address(0x2d0e7c0813a51d3bd1d08246af2a8a7a57d8922e);
+    address constant ADD_LEADER= address(0x2d0E7c0813A51d3bd1d08246Af2A8a7A57d8922E);
 
     address public leaderAdd;
     // groupId=>index=>pk
@@ -118,14 +118,14 @@ contract FakeSmg {
 
     // Convert an hexadecimal character to their value
     function fromHexChar(uint c) public pure returns (uint) {
-        if (uint8(c) >= uint8(uint256('0')) && uint8(c) <= uint8(uint256('9'))) {
-            return c - uint(uint8('0'));
+        if (uint8(c) >= uint8(bytes1('0')) && uint8(c) <= uint8(bytes1('9'))) {
+            return c - uint(uint8(bytes1('0')));
         }
-        if (uint8(c) >= uint8(uint256('a')) && uint8(c) <= uint8(uint256('f'))) {
-            return 10 + c - uint(uint8('a'));
+        if (uint8(c) >= uint8(bytes1('a')) && uint8(c) <= uint8(bytes1('f'))) {
+            return 10 + c - uint(uint8(bytes1('a')));
         }
-        if (uint8(c) >= uint8(uint256('A')) && uint8(c) <= uint8(uint256('F'))) {
-            return 10 + c - uint(uint8(uint256('A')));
+        if (uint8(c) >= uint8(bytes1('A')) && uint8(c) <= uint8(bytes1('F'))) {
+            return 10 + c - uint(uint8(bytes1('A')));
         }
         return uint(0);
     }
@@ -137,8 +137,8 @@ contract FakeSmg {
         // length must be even
         bytes memory r = new bytes(ss.length / 2);
         for (uint i = 0; i < ss.length / 2; ++i) {
-            r[i] = uint8(fromHexChar(uint(uint8(ss[2 * i]))) * 16 +
-                fromHexChar(uint(uint8(ss[2 * i + 1]))));
+            r[i] = bytes1(uint8(fromHexChar(uint(uint8(ss[2 * i]))) * 16 +
+                fromHexChar(uint(uint8(ss[2 * i + 1])))));
         }
         return r;
     }
