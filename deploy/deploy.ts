@@ -96,72 +96,56 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log("TokenManagerDelegateV2 deployed to:", tokenManagerDelegate.address);
 
 
-  let MulticallV2 = await getArtifact(deployer, "MulticallV2");
-  let multicall = await deploy(deployer, MulticallV2, []);
-
-  console.log("MulticallV2 deployed to:", multicall.address);
-
-  let ProxyAdmin = await getArtifact(deployer, "ProxyAdmin");
-  let proxyAdmin = await deploy(deployer, ProxyAdmin, []);
-
-  console.log("MulticallV2 deployed to:", multicall.address);
-
-
-
+  let Multicall2 = await getArtifact(deployer, "Multicall2");
+  let multicall = await deploy(deployer, Multicall2, []);
+  console.log("Multicall2 deployed to:", multicall.address);
 
   let TokenManagerProxy = await getArtifact(deployer, "TokenManagerProxy");
-  let tokenManagerProxy = await deploy(deployer, TokenManagerProxy, [tokenManagerDelegate.address, proxyAdmin.address, '0x']);
-
+  let tokenManagerProxy = await deploy(deployer, TokenManagerProxy, []);
   console.log("TokenManagerProxy deployed to:", tokenManagerProxy.address);
 
-
   let CrossDelegateV4 = await getArtifact(deployer, "CrossDelegateV4");
-
   let crossDelegate = await deploy(deployer, CrossDelegateV4, []);
-
   console.log("CrossDelegateV4 deployed to:", crossDelegate.address);
 
   let CrossProxy = await getArtifact(deployer, "CrossProxy");
-  let crossProxy = await deploy(deployer, CrossProxy, [crossDelegate.address, proxyAdmin.address, '0x']);
-
+  let crossProxy = await deploy(deployer, CrossProxy, []);
   console.log("CrossProxy deployed to:", crossProxy.address);
+
   let OracleDelegate = await getArtifact(deployer, "OracleDelegate");
   let oracleDelegate = await deploy(deployer, OracleDelegate, []);
 
   console.log("OracleDelegate deployed to:", oracleDelegate.address);
   let OracleProxy = await getArtifact(deployer, "OracleProxy");
-  let oracleProxy = await deploy(deployer, OracleProxy, [oracleDelegate.address, proxyAdmin.address, '0x']);
+  let oracleProxy = await deploy(deployer, OracleProxy, []);
 
   console.log("OracleProxy deployed to:", oracleProxy.address);
-  let Bn128SchnorrVerifier = await getArtifact(deployer, "Bn128SchnorrVerifier");
-  let bn128SchnorrVerifier = await deploy(deployer, Bn128SchnorrVerifier, []);
+  let EcSchnorrVerifier = await getArtifact(deployer, "EcSchnorrVerifier");
+  let ecSchnorrVerifier = await deploy(deployer, EcSchnorrVerifier, []);
 
-  console.log("bn128SchnorrVerifier deployed to:", bn128SchnorrVerifier.address);
+  console.log("ecSchnorrVerifier deployed to:", ecSchnorrVerifier.address);
   let SignatureVerifier = await getArtifact(deployer, "SignatureVerifier");
   let signatureVerifier = await deploy(deployer, SignatureVerifier, []);
 
   console.log("SignatureVerifier deployed to:", signatureVerifier.address);
   // config
 
+  console.log('config...');
+  let tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
+  await tx.wait();
+  console.log('tokenManagerProxy upgradeTo finished.');
+  tx = await crossProxy.upgradeTo(crossDelegate.address);
+  await tx.wait();
+  console.log('crossProxy upgradeTo finished.');
+  tx = await oracleProxy.upgradeTo(oracleDelegate.address);
+  await tx.wait();
+  console.log('oracleProxy upgradeTo finished.');
   console.log('deploy finished start to config...');
-  let tx;
-
   let tokenManager = getContract(hre, TokenManagerDelegateV2, tokenManagerProxy.address);
   let cross = getContract(hre, CrossDelegateV4, crossProxy.address);
   let oracle = getContract(hre, OracleDelegate, oracleProxy.address);
-  console.log('initialise...');
-  tx = await tokenManager.initialize();
-  await tx.wait();
-  console.log('tokenManager initialize finished.')
-  tx = await cross.initialize();
-  await tx.wait();
-  console.log('cross initialize finished.')
-  tx = await oracle.initialize();
-  await tx.wait();
-  console.log('oracle initialize finished.')
 
-  console.log('oracle set admin...');
-
+  console.log('oracle set admin...')
   tx = await oracle.setAdmin(ORACLE_ADMIN);
   await tx.wait();
   console.log('oracle set admin finished.')
@@ -176,7 +160,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log('tokenManager set operator finished.')
 
   console.log('verifier register...')
-  tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
+  tx = await signatureVerifier.register(1, ecSchnorrVerifier.address);
   await tx.wait();
   console.log('verifier register finished.')
 
@@ -208,15 +192,14 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   // console.log('transfer owner finished.');
   const deployed = {
     signatureVerifier: signatureVerifier.address,
-    bn128SchnorrVerifier: bn128SchnorrVerifier.address,
+    ecSchnorrVerifier: ecSchnorrVerifier.address,
     crossDelegate: crossDelegate.address,
     crossProxy: crossProxy.address,
     tokenManagerDelegate: tokenManagerDelegate.address,
     tokenManagerProxy: tokenManagerProxy.address,
     oracleDelegate: oracleDelegate.address,
     oracleProxy: oracleProxy.address,
-    proxyAdmin: proxyAdmin.address,
-    multicallV2: multicall.address,
+    Multicall2: multicall.address,
   };
 
   fs.writeFileSync(`deployed/zkSyncEraTestnet.json`, JSON.stringify(deployed, null, 2));
@@ -224,12 +207,11 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   await verify(hre, TokenManagerDelegateV2, tokenManagerDelegate.address, "contracts/tokenManager/TokenManagerDelegateV2.sol:TokenManagerDelegateV2", []);
   await verify(hre, CrossDelegateV4, crossDelegate.address, "contracts/crossApproach/CrossDelegateV4.sol:CrossDelegateV4", []);
   await verify(hre, OracleDelegate, oracleDelegate.address, "contracts/oracle/OracleDelegate.sol:OracleDelegate", []);
-  await verify(hre, Bn128SchnorrVerifier, bn128SchnorrVerifier.address, "contracts/schnorr/Bn128SchnorrVerifier.sol:Bn128SchnorrVerifier", []);
+  await verify(hre, EcSchnorrVerifier, ecSchnorrVerifier.address, "contracts/schnorr/EcSchnorrVerifier.sol:EcSchnorrVerifier", []);
   await verify(hre, SignatureVerifier, signatureVerifier.address, "contracts/schnorr/SignatureVerifier.sol:SignatureVerifier", []);
-  // await verify(hre, ProxyAdmin, proxyAdmin.address, "node_modules/@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol:ProxyAdmin", []);
-  await verify(hre, MulticallV2, multicall.address, "contracts/lib/MulticallV2.sol:MulticallV2", []);
-  await verify(hre, TokenManagerProxy, tokenManagerProxy.address, "contracts/tokenManager/TokenManagerProxy.sol:TokenManagerProxy", [tokenManagerDelegate.address, proxyAdmin.address, '0x']);
-  await verify(hre, CrossProxy, crossProxy.address, "contracts/crossApproach/CrossProxy.sol:CrossProxy", [crossDelegate.address, proxyAdmin.address, '0x']);
-  await verify(hre, OracleProxy, oracleProxy.address, "contracts/oracle/OracleProxy.sol:OracleProxy", [oracleDelegate.address, proxyAdmin.address, '0x']);
+  await verify(hre, Multicall2, multicall.address, "contracts/lib/Multicall2.sol:Multicall2", []);
+  await verify(hre, TokenManagerProxy, tokenManagerProxy.address, "contracts/tokenManager/TokenManagerProxy.sol:TokenManagerProxy", []);
+  await verify(hre, CrossProxy, crossProxy.address, "contracts/crossApproach/CrossProxy.sol:CrossProxy", []);
+  await verify(hre, OracleProxy, oracleProxy.address, "contracts/oracle/OracleProxy.sol:OracleProxy", []);
 
 }

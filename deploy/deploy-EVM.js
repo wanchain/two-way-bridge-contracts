@@ -30,9 +30,12 @@ const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 // const BIP44_CHAIN_ID = 1073741833; // GATHER CHAIN
 // const BIP44_CHAIN_ID = 1073741834; // METIS CHAIN
 //const BIP44_CHAIN_ID = 1073741835; // OKB CHAIN
-const BIP44_CHAIN_ID = 1073741838; // polyZkEvm CHAIN
-
-
+// const BIP44_CHAIN_ID = 1073741838; // polyZkEvm CHAIN
+const BIP44_CHAIN_ID = hre.network.config.bip44ChainId
+if(!BIP44_CHAIN_ID) {
+  console.log("please set BIP44_CHAIN_ID")
+  process.exit()
+}
 async function main() {
   let deployer = (await hre.ethers.getSigner()).address;
 
@@ -43,14 +46,6 @@ async function main() {
   }
   console.log("Multicall2 deployed to:", multicall2.address);
 
-  let ProxyAdmin = await hre.ethers.getContractFactory("ProxyAdmin");
-  let proxyAdmin = await ProxyAdmin.deploy();
-  if (waitForReceipt) {
-    await proxyAdmin.deployed();
-  }
-  console.log("ProxyAdmin deployed to:", proxyAdmin.address);
-
-
   let TokenManagerDelegateV2 = await hre.ethers.getContractFactory("TokenManagerDelegateV2");
   let tokenManagerDelegate = await TokenManagerDelegateV2.deploy();
   if (waitForReceipt) {
@@ -59,7 +54,7 @@ async function main() {
   console.log("TokenManagerDelegateV2 deployed to:", tokenManagerDelegate.address);
 
   let TokenManagerProxy = await hre.ethers.getContractFactory("TokenManagerProxy");
-  let tokenManagerProxy = await TokenManagerProxy.deploy(tokenManagerDelegate.address, proxyAdmin.address, '0x');
+  let tokenManagerProxy = await TokenManagerProxy.deploy();
   if (waitForReceipt) {
     await tokenManagerProxy.deployed();
   }
@@ -94,7 +89,7 @@ async function main() {
   console.log("CrossDelegateV4 deployed to:", crossDelegate.address);
 
   let CrossProxy = await hre.ethers.getContractFactory("CrossProxy");
-  let crossProxy = await CrossProxy.deploy(crossDelegate.address, proxyAdmin.address, '0x');
+  let crossProxy = await CrossProxy.deploy();
   if (waitForReceipt) {
     await crossProxy.deployed();
   }
@@ -108,64 +103,64 @@ async function main() {
 
   console.log("OracleDelegate deployed to:", oracleDelegate.address);
   let OracleProxy = await hre.ethers.getContractFactory("OracleProxy");
-  let oracleProxy = await OracleProxy.deploy(oracleDelegate.address, proxyAdmin.address, '0x');
+  let oracleProxy = await OracleProxy.deploy();
   if (waitForReceipt) {
     await oracleProxy.deployed();
   }
-
   console.log("OracleProxy deployed to:", oracleProxy.address);
-  let Bn128SchnorrVerifier = await hre.ethers.getContractFactory("Bn128SchnorrVerifier");
-  let bn128SchnorrVerifier = await Bn128SchnorrVerifier.deploy();
-  if (waitForReceipt) {
-    await bn128SchnorrVerifier.deployed();
-  }
 
-  console.log("bn128SchnorrVerifier deployed to:", bn128SchnorrVerifier.address);
-
-  /* there are 2 verify contract. 
-    0: use bn256 schnorr for EVM
-    1: use ecdsa schnorr for zk L2. for example: zksync zkEVM
-  */
-  let EcSchnorrVerifier = await hre.ethers.getContractFactory("EcSchnorrVerifier");
-  let ecSchnorrVerifier = await EcSchnorrVerifier.deploy();
-  if (waitForReceipt) {
-    await ecSchnorrVerifier.deployed();
-  }
-  console.log("EcSchnorrVerifier deployed to:", ecSchnorrVerifier.address);
-  
+ 
   let SignatureVerifier = await hre.ethers.getContractFactory("SignatureVerifier");
   let signatureVerifier = await SignatureVerifier.deploy();
   if (waitForReceipt) {
     await signatureVerifier.deployed();
   }
-
+  console.log('verifier register...')
+  // 1: common EVM, bn128, 0: ZK, ECDSA
+  //tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
+  let signCurveId = 1
+  let tx
+  if(hre.network.config.signCurveId != undefined) {
+    signCurveId = hre.network.config.signCurveId
+  }
+  let bn128SchnorrVerifier = {}
+  let ecSchnorrVerifier = {}
+  if(signCurveId == 1) {
+    let Bn128SchnorrVerifier = await hre.ethers.getContractFactory("Bn128SchnorrVerifier");
+    bn128SchnorrVerifier = await Bn128SchnorrVerifier.deploy();
+    if (waitForReceipt) {
+      await bn128SchnorrVerifier.deployed();
+    }
+    console.log("bn128SchnorrVerifier deployed to:", bn128SchnorrVerifier.address);
+    tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
+  }else {
+    let EcSchnorrVerifier = await hre.ethers.getContractFactory("EcSchnorrVerifier");
+    ecSchnorrVerifier = await EcSchnorrVerifier.deploy();
+    if (waitForReceipt) {
+      await ecSchnorrVerifier.deployed();
+    }
+    console.log("EcSchnorrVerifier deployed to:", ecSchnorrVerifier.address);
+    tx = await signatureVerifier.register(0, ecSchnorrVerifier.address);
+  }
+  await tx.wait();
+  console.log('verifier register finished.')
   console.log("SignatureVerifier deployed to:", signatureVerifier.address);
   // config
 
   console.log('config...');
-  // let tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
-  // await tx.wait();
-  // console.log('tokenManagerProxy upgradeTo finished.');
-  // tx = await crossProxy.upgradeTo(crossDelegate.address);
-  // await tx.wait();
-  // console.log('crossProxy upgradeTo finished.');
-  // tx = await oracleProxy.upgradeTo(oracleDelegate.address);
-  // await tx.wait();
-  // console.log('oracleProxy upgradeTo finished.');
+  let tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
+  await tx.wait();
+  console.log('tokenManagerProxy upgradeTo finished.');
+  tx = await crossProxy.upgradeTo(crossDelegate.address);
+  await tx.wait();
+  console.log('crossProxy upgradeTo finished.');
+  tx = await oracleProxy.upgradeTo(oracleDelegate.address);
+  await tx.wait();
+  console.log('oracleProxy upgradeTo finished.');
+  console.log('deploy finished start to config...');
   let tokenManager = await hre.ethers.getContractAt("TokenManagerDelegateV2", tokenManagerProxy.address);
   let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
   let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.address);
-
-  console.log('initialise...');
-  tx = await tokenManager.initialize();
-  await tx.wait();
-  console.log('tokenManager initialize finished.')
-  tx = await cross.initialize();
-  await tx.wait();
-  console.log('cross initialize finished.')
-  tx = await oracle.initialize();
-  await tx.wait();
-  console.log('oracle initialize finished.')
 
   console.log('oracle set admin...')
   tx = await oracle.setAdmin(ORACLE_ADMIN);
@@ -181,13 +176,6 @@ async function main() {
   await tx.wait();
   console.log('tokenManager set operator finished.')
 
-  console.log('verifier register...')
-  // 1: common EVM, bn128, 0: ZK, ECDSA
-  //tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
-  tx = await signatureVerifier.register(0, ecSchnorrVerifier.address);
-  await tx.wait();
-  console.log('verifier register finished.')
-
   console.log('cross set partner...');
   tx = await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
   await tx.wait();
@@ -202,18 +190,12 @@ async function main() {
   console.log('cross add admin2...')
   tx = await cross.setAdmin(CROSS_ADMIN);
   await tx.wait();
-  console.log('config finished.');
-
-  // transfer owner
-  const OWNER_ADDRESS = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9' 
-  if((await tokenManager.owner()) != OWNER_ADDRESS) {
-    console.log('transfer owner...', (await tokenManager.owner()));
-    await tokenManager.transferOwner(OWNER_ADDRESS);
-    await cross.transferOwner(OWNER_ADDRESS);
-    await oracle.transferOwner(OWNER_ADDRESS);
-    await signatureVerifier.transferOwner(OWNER_ADDRESS);
-    console.log('transfer owner finished.');
+  if(hre.network.config.hashType) {
+    tx = await cross.setHashType(hre.network.config.hashType);
+    await tx.wait();
+    console.log('set hash type:', hre.network.config.hashType)
   }
+  console.log('config finished.');
 
   const deployed = {
     multicall2: multicall2.address,

@@ -43,7 +43,11 @@ If you do not start the zkSync local environment, the tests will fail with error
 - [Discord](https://discord.gg/nMaPGrDDwk)
 
 ### EVM deploy
-npx hardhat --config ./hardhat.config-EVM.js   run deploy/deploy-EVM.js --network wanTestnet
+1. export PK='......your account PK .....'   
+2. npx hardhat --config hardhat.config-EVM.ts   run deploy/deploy-EVM.js --network wanTestnet
 
-### Zksync Era deploy
- npx hardhat --config hardhat.config-EVM.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
+### Zksync deploy
+1. export PK='......your account PK .....'  
+2. npx hardhat --config hardhat.config-EVM.ts  --network zkSyncTestnet  compile
+3. npx hardhat --config hardhat.config-EVM.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
+
