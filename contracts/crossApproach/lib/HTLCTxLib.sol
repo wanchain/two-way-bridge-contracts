@@ -323,7 +323,7 @@ library HTLCTxLib {
     function getLeftLockedTime(Data storage self, bytes32 xHash)
         external
         view
-        returns (uint)
+        returns (uint leftTime)
     {
         UserTx storage userTx = self.mapHashXUserTxs[xHash];
         if (userTx.baseTx.status != TxStatus.None) {

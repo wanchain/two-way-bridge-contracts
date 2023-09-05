@@ -37,7 +37,7 @@ contract EcSchnorrVerifier {
     // Function to verify signature
     function verify(bytes32 signature, bytes32 px, bytes32 /*groupKeyY*/, bytes32 e, bytes32 parity, bytes32 message)
         public
-        view
+        pure
         returns(bool)
     {
         return _verify(uint8(uint256(parity)), px, message, e, signature);
@@ -46,7 +46,7 @@ contract EcSchnorrVerifier {
     // Function to verify the ECDSA signature
     function debugVerify(bytes32 s, bytes32 px, bytes32 /*groupKeyY*/, bytes32 e, bytes32 parity, bytes32 message)
         public
-        view
+        pure
         returns(bool, bytes32, bytes32, address)
     {
         // ecrecover = (m, v, r, s);

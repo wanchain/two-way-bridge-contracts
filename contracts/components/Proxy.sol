@@ -43,7 +43,7 @@ contract Proxy {
         return _implementation;
     }
 
-    receive() external payable {
+    function _fallback() internal {
         address _impl = _implementation;
         require(_impl != address(0), "implementation contract not set");
 
@@ -58,5 +58,11 @@ contract Proxy {
             case 0 { revert(ptr, size) }
             default { return(ptr, size) }
         }
+    }
+    fallback() external payable {
+        return _fallback();
+    }
+    receive() external payable {
+        return _fallback();
     }
 }
