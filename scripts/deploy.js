@@ -35,9 +35,8 @@ const BIP44_CHAIN_ID = 1073741838; // polyZkEvm CHAIN
 
 async function main() {
   let deployer = (await hre.ethers.getSigner()).address;
-
   let EcdsaVerifier = await hre.ethers.getContractFactory("EcdsaVerifier");
-  let ec = await EcdsaVerifier.deploy({nonce:0x02});
+  let ec = await EcdsaVerifier.deploy();
   if (waitForReceipt) {
     await ec.deployed();
   }
