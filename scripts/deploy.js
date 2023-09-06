@@ -42,7 +42,7 @@ async function main() {
     await ec.deployed();
   }
   console.log("EcdsaVerifier deployed to:", ec.address);
-  return
+  
 
   let TokenManagerDelegateV2 = await hre.ethers.getContractFactory("TokenManagerDelegateV2");
   let tokenManagerDelegate = await TokenManagerDelegateV2.deploy();
