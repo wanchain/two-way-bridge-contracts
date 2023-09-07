@@ -10,7 +10,8 @@ const { sleep } = require("@nomiclabs/hardhat-ethers");
 
 
 const waitForReceipt = true;
-
+if (!process.env.PK)
+  throw "⛔️ Private key not detected! Add it to the .env file!";
 // mainnet
 // const ORACLE_ADMIN = '0x390CC3173EE7F425Fe7659df215B13959FD468E1';
 // const CROSS_ADMIN = '0xa35B3C55626188015aC79F396D0B593947231976';
@@ -148,7 +149,7 @@ async function main() {
   // config
 
   console.log('config...');
-  let tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
+  tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
   await tx.wait();
   console.log('tokenManagerProxy upgradeTo finished.');
   tx = await crossProxy.upgradeTo(crossDelegate.address);

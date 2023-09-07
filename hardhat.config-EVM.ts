@@ -29,10 +29,10 @@ const config = {
           },
           libraries: {
             "contracts/crossApproach/lib/RapidityLibV4.sol": {
-              "RapidityLibV4": "0x38Ef6bf9b06738c35ff42c38bFD176EF590a607d",
+              "RapidityLibV4": "0x474a1f2a37f8BE41521EeB78AAB3a78E315b49fB",
             },
             "contracts/crossApproach/lib/NFTLibV1.sol": {
-              "NFTLibV1": "0xb46Fdd7c2A7A2fd8278a52daD6FE130D964ccb13",
+              "NFTLibV1": "0x3Cf32FCEE7D8E71D29184C3CbbCE6069d67Fd2bC",
             },
             "contracts/gpk/lib/GpkLib.sol": {
               "GpkLib": "0x0000000000000000000000000000000000000000",
