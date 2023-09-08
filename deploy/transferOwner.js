@@ -1,30 +1,27 @@
 const hre = require("hardhat");
 
-const scAddr = require('../deployed/polyZkTestnet.json')
 async function main() {
     const OWNER_ADDRESS = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9' 
+    let deployer = (await hre.ethers.getSigner()).address;
+    console.log("deployer:", deployer)
+    const network = hre.network.name
+    const scAddr = require('../deployed/'+network+'.json')
 
-    let TokenManagerDelegateV2 = await hre.ethers.getContractFactory("TokenManagerDelegateV2");
-    let tokenManager = TokenManagerDelegateV2.attach(scAddr.tokenManagerProxy)
+    let tokenManager = await hre.ethers.getContractAt("TokenManagerDelegateV2", scAddr.tokenManagerProxy);
+    let cross = await hre.ethers.getContractAt("CrossDelegateV4", scAddr.crossProxy);
+    let oracle = await hre.ethers.getContractAt("OracleDelegate", scAddr.oracleProxy);
+    let signatureVerifier = await hre.ethers.getContractAt("SignatureVerifier", scAddr.signatureVerifier);
 
-    let CrossDelegateV4 = await hre.ethers.getContractFactory("CrossDelegateV4", {
-        libraries: {
-          NFTLibV1: scAddr.NFTLibV1,
-          RapidityLibV4: scAddr.RapidityLibV4,
-        }
-      });
-    let cross = CrossDelegateV4.attach(scAddr.crossProxy)
+    let tx
+    tx = await tokenManager.transferOwner(OWNER_ADDRESS);
+    await tx.wait()
+    tx = await oracle.transferOwner(OWNER_ADDRESS);
+    await tx.wait()
 
-    let OracleDelegate = await hre.ethers.getContractFactory("OracleDelegate");
-    let oracle = OracleDelegate.attach(scAddr.oracleProxy)
-
-    let SignatureVerifier = await hre.ethers.getContractFactory("SignatureVerifier");
-    let signatureVerifier = SignatureVerifier.attach(scAddr.signatureVerifier)
-
-    await tokenManager.transferOwner(OWNER_ADDRESS);
-    await cross.transferOwner(OWNER_ADDRESS);
-    await oracle.transferOwner(OWNER_ADDRESS);
-    await signatureVerifier.transferOwner(OWNER_ADDRESS);
+    // tx = await cross.transferOwner(OWNER_ADDRESS);
+    // await tx.wait()
+    // tx = await signatureVerifier.transferOwner(OWNER_ADDRESS);
+    // await tx.wait()
     console.log('transfer owner finished.');
     
     

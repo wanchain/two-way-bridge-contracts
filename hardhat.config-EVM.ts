@@ -135,6 +135,7 @@ const config = {
         },
         zkSyncTestnet: {
             url: "https://zksync2-testnet.zksync.dev",
+            accounts: [process.env.PK],
             ethNetwork: "goerli",
             zksync: true,
             // contract verification endpoint

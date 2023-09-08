@@ -202,7 +202,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     Multicall2: multicall.address,
   };
 
-  fs.writeFileSync(`deployed/zkSyncEraTestnet.json`, JSON.stringify(deployed, null, 2));
+  fs.writeFileSync(`deployed/zkSyncTestnet.json`, JSON.stringify(deployed, null, 2));
 
   await verify(hre, TokenManagerDelegateV2, tokenManagerDelegate.address, "contracts/tokenManager/TokenManagerDelegateV2.sol:TokenManagerDelegateV2", []);
   await verify(hre, CrossDelegateV4, crossDelegate.address, "contracts/crossApproach/CrossDelegateV4.sol:CrossDelegateV4", []);
