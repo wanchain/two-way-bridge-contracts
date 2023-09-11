@@ -160,7 +160,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log('tokenManager set operator finished.')
 
   console.log('verifier register...')
-  tx = await signatureVerifier.register(1, ecSchnorrVerifier.address);
+  tx = await signatureVerifier.register(0, ecSchnorrVerifier.address);
   await tx.wait();
   console.log('verifier register finished.')
 
