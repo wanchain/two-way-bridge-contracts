@@ -198,6 +198,14 @@ async function main() {
   }
   console.log('config finished.');
 
+
+  let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
+  let groupApprove = await GroupApprove.deploy(deployer, signatureVerifier.address, oracleProxy.address, crossProxy.address);
+  if (waitForReceipt) {
+    await groupApprove.deployed();
+  }
+  console.log("groupApprove deployed to:", groupApprove.address);
+
   const deployed = {
     multicall2: multicall2.address,
     signatureVerifier: signatureVerifier.address,
@@ -211,6 +219,7 @@ async function main() {
     tokenManagerProxy: tokenManagerProxy.address,
     oracleDelegate: oracleDelegate.address,
     oracleProxy: oracleProxy.address,
+    groupApprove: groupApprove.address,
   };
 
   fs.writeFileSync(`deployed/${hre.network.name}.json`, JSON.stringify(deployed, null, 2));
