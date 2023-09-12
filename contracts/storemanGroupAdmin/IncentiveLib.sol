@@ -35,7 +35,7 @@ library IncentiveLib {
             require(totalDeposit != 0, "internal error");
             IListGroup(groupListAddr).setTotalDeposit(day, totalDeposit);
         }
-        return IPosLib(data.posLib).getMinIncentive(group.deposit.getLastValue(),day, totalDeposit).mul(chainTypeCo).div(DIVISOR);
+        return IPosLib(data.posLib).getMinIncentive(group.deposit.getValueById(day),day, totalDeposit).mul(chainTypeCo).div(DIVISOR);
     }
 
     function calIncentive(uint groupIncentive, uint groupWeight, uint weight) private returns (uint) {
