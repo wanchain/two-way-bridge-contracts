@@ -174,6 +174,10 @@ module.exports = {
       gasPrice: 20e9,
       gas: 8e6,
     },
+    energiTestnet: {
+      url: 'https://nodeapi.test.energi.network',
+      accounts: [process.env.PK],
+    },
 
     wanchainMainnet: {
       url: "https://gwan-ssl.wandevs.org:56891",

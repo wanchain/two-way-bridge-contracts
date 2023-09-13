@@ -146,11 +146,6 @@ async function main() {
   let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
   let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.address);
 
-  let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
-  let groupApprove = await GroupApprove.deploy(CROSS_ADMIN, signatureVerifier.address, oracleProxy.address, crossProxy.address);
-  await groupApprove.deployed();
-  console.log("groupApprove deployed to:", groupApprove.address);
-
   console.log('oracle set admin...')
   tx = await oracle.setAdmin(ORACLE_ADMIN);
   await tx.wait();
@@ -184,6 +179,12 @@ async function main() {
   console.log('cross add admin2...')
   tx = await cross.setAdmin(CROSS_ADMIN);
   await tx.wait();
+
+  let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
+  let groupApprove = await GroupApprove.deploy(CROSS_ADMIN, signatureVerifier.address, oracleProxy.address, crossProxy.address);
+  await groupApprove.deployed();
+  console.log("groupApprove deployed to:", groupApprove.address);
+  
   console.log('config finished.');
   // console.log('transfer owner...');
   // transfer owner
