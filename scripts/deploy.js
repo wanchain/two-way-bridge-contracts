@@ -29,7 +29,7 @@ const TOKEN_MANAGER_OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
 const SMG_FEE_PROXY = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9";
 const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 // const BIP44_CHAIN_ID = 2147483708; // Ethereum
-const BIP44_CHAIN_ID = 2147492648; // Avalanche
+// const BIP44_CHAIN_ID = 2147492648; // Avalanche
 
 // const BIP44_CHAIN_ID = 0x800003d1; // TELOS EVM
 // const BIP44_CHAIN_ID = 1073741830; // Function X EVM
@@ -40,6 +40,7 @@ const BIP44_CHAIN_ID = 2147492648; // Avalanche
 // const BIP44_CHAIN_ID = 1073741836; // SONGBIRD CHAIN
 // const BIP44_CHAIN_ID = 1073741839; // HORIZEN CHAIN
 // const BIP44_CHAIN_ID = 1073741840; // VINU CHAIN
+const BIP44_CHAIN_ID = 2147493445; // ENERGI CHAIN
 
 async function main() {
   let deployer = (await hre.ethers.getSigner()).address;
@@ -145,6 +146,11 @@ async function main() {
   let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
   let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.address);
 
+  let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
+  let groupApprove = await GroupApprove.deploy(CROSS_ADMIN, signatureVerifier.address, oracleProxy.address, crossProxy.address);
+  await groupApprove.deployed();
+  console.log("groupApprove deployed to:", groupApprove.address);
+
   console.log('oracle set admin...')
   tx = await oracle.setAdmin(ORACLE_ADMIN);
   await tx.wait();
@@ -198,6 +204,7 @@ async function main() {
     oracleDelegate: oracleDelegate.address,
     oracleProxy: oracleProxy.address,
     multicallV2: multicall2.address,
+    groupApprove: groupApprove.address,
   };
 
   fs.writeFileSync(`deployed/${hre.network.name}.json`, JSON.stringify(deployed, null, 2));
