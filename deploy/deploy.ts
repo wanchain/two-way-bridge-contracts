@@ -60,7 +60,6 @@ const getContract = (hre: HardhatRuntimeEnvironment, artifact, address) => {
 // const TOKEN_MANAGER_OPERATOR = '0xa35B3C55626188015aC79F396D0B593947231976';
 // const SMG_FEE_PROXY = "0x82bf94d159b15a587c45c9d70e0fab7fd87889eb";
 // const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
-// const REAL_ADMIN = '0x4cEd9c0EA79Ee6181600777D5B6badE7F3D301bF';
 // const BIP44_CHAIN_ID = 0x8000032a; // ASTAR
 
 const PROXY_ADMIN_OWNER = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
@@ -69,7 +68,6 @@ const CROSS_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
 const TOKEN_MANAGER_OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
 const SMG_FEE_PROXY = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9";
 const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
-const REAL_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
 // const BIP44_CHAIN_ID = 0x800003d1; // TELOS EVM
 // const BIP44_CHAIN_ID = 1073741830; // Function X EVM
 const BIP44_CHAIN_ID = 1073741837; // zkSync Era Testnet
@@ -80,6 +78,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log(`Running deploy script...`);
 
   let deployer = getDeployer(hre);
+  let depolyer = getSigner(hre).address;
 
   // First you need to deploy the libraries
 
@@ -130,10 +129,6 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   let signatureVerifier = await deploy(deployer, SignatureVerifier, []);
 
   console.log("SignatureVerifier deployed to:", signatureVerifier.address);
-
-  let GroupApprove = await getArtifact(deployer, "GroupApprove");
-  let groupApprove = await deploy(deployer, GroupApprove, [REAL_ADMIN, signatureVerifier.address, oracleProxy.address, crossProxy.address]);
-  console.log("groupApprove deployed to:", groupApprove.address);
 
   // config
 
@@ -188,7 +183,13 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log('cross add admin2...')
   tx = await cross.setAdmin(CROSS_ADMIN);
   await tx.wait();
+
+  let GroupApprove = await getArtifact(deployer, "GroupApprove");
+  let groupApprove = await deploy(deployer, GroupApprove, [depolyer, signatureVerifier.address, oracleProxy.address, crossProxy.address]);
+  console.log("groupApprove deployed to:", groupApprove.address);
+
   console.log('config finished.');
+
   // console.log('transfer owner...');
   // transfer owner
   // await proxyAdmin.transferOwnership(PROXY_ADMIN_OWNER);
@@ -207,6 +208,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     oracleDelegate: oracleDelegate.address,
     oracleProxy: oracleProxy.address,
     Multicall2: multicall.address,
+    GroupApprove: groupApprove.address,
   };
 
   fs.writeFileSync(`deployed/zkSyncTestnet.json`, JSON.stringify(deployed, null, 2));
@@ -220,6 +222,6 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   await verify(hre, TokenManagerProxy, tokenManagerProxy.address, "contracts/tokenManager/TokenManagerProxy.sol:TokenManagerProxy", []);
   await verify(hre, CrossProxy, crossProxy.address, "contracts/crossApproach/CrossProxy.sol:CrossProxy", []);
   await verify(hre, OracleProxy, oracleProxy.address, "contracts/oracle/OracleProxy.sol:OracleProxy", []);
-  await verify(hre, GroupApprove, groupApprove.address, "contracts/GroupApprove/GroupApprove.sol:GroupApprove", [REAL_ADMIN, signatureVerifier.address, oracleProxy.address, crossProxy.address]);
+  await verify(hre, GroupApprove, groupApprove.address, "contracts/GroupApprove/GroupApprove.sol:GroupApprove", [depolyer, signatureVerifier.address, oracleProxy.address, crossProxy.address]);
 
 }
