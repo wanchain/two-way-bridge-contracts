@@ -18,10 +18,10 @@ async function main() {
     tx = await oracle.transferOwner(OWNER_ADDRESS);
     await tx.wait()
 
-    // tx = await cross.transferOwner(OWNER_ADDRESS);
-    // await tx.wait()
-    // tx = await signatureVerifier.transferOwner(OWNER_ADDRESS);
-    // await tx.wait()
+    tx = await cross.transferOwner(OWNER_ADDRESS);
+    await tx.wait()
+    tx = await signatureVerifier.transferOwner(OWNER_ADDRESS);
+    await tx.wait()
     console.log('transfer owner finished.');
     
     

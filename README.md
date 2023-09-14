@@ -51,3 +51,8 @@ If you do not start the zkSync local environment, the tests will fail with error
 2. npx hardhat --config hardhat.config.ts compile --network zkSyncTestnet
 3. npx hardhat --config hardhat.config.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
 
+### transfer owner
+
+npx hardhat --config hardhat.config.ts --network zkSyncTestnet run deploy/transferOwner.js
+
+

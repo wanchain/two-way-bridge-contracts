@@ -145,12 +145,18 @@ const config = {
         polyZkTestnet: {
 	    //gasPrice:200000000,
             url: "https://rpc.public.zkevm-test.net",
-            accounts: [process.env.PK]
+            accounts: [process.env.PK],
+            bip44ChainId: 1073741838,
+            signCurveId: 0,  // ecdsa
+            hashType: 1, // keccak256
         },
         polyZkMainnet: {
             //gasPrice:200000000,
                 url: "https://zkevm-rpc.com",
-                accounts: [process.env.PK]
+                accounts: [process.env.PK],
+                bip44ChainId: 0,
+                signCurveId: 0,  // ecdsa
+                hashType: 1, // keccak256
             },
         lineaTestnet: {
                 gasPrice:3e9, // can not delete.
