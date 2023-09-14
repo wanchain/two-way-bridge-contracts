@@ -100,7 +100,6 @@ library CrossTypes {
         uint afterBalance;
         IRC20Protocol token = IRC20Protocol(tokenScAddr);
         beforeBalance = token.balanceOf(to);
-        // (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transfer(address,uint256)")), abi.encode(to, value))); // for verify
         (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transfer.selector, to, value));
         require(success, "transfer failed");
         afterBalance = token.balanceOf(to);
@@ -115,7 +114,6 @@ library CrossTypes {
         uint afterBalance;
         IRC20Protocol token = IRC20Protocol(tokenScAddr);
         beforeBalance = token.balanceOf(to);
-        // (bool success,) = tokenScAddr.call(abi.encodePacked(bytes4(keccak256("transferFrom(address,address,uint256)")), abi.encode(from, to, value))); // for verify
         (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
         require(success, "TransferFrom failed");
         afterBalance = token.balanceOf(to);
