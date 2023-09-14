@@ -83,16 +83,6 @@ library PosLib {
 
     }
 
-
-    //  function getMinIncentive1 ()  public view returns(uint256,uint256) {
-    //      return (getMinIncentive(100000 ether,now - 86400 * 4),0);
-    //  }
-
-
-    //  function getMinIncentive2 ()  public view returns(uint256,uint256) {
-    //      return (getMinIncentive(10000000 ether,now - 86400 * 4),0);
-    //  }
-
     function getMinIncentive (uint256 smgDeposit,uint256 day, uint256 totalDeposit) public view returns(uint256) {
         uint256 p1;
         bool    success;

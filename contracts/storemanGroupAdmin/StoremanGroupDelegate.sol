@@ -481,16 +481,6 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     {
         return data.groups[id].deposit.getLastValue();
     }
-    
-    // function getStoremanGroupTime(bytes32 id)
-    //     external
-    //     view
-    //     returns(bytes32 groupId,  uint registerTime, uint registerDuration,  uint startTime, uint endTime)
-    // {
-    //     StoremanType.StoremanGroup storage smg = data.groups[id];
-    //     return (smg.groupId, smg.registerTime, smg.registerDuration, smg.workTime, smg.workTime+smg.totalTime);
-    // }
-
 
     function checkGroupIncentive(bytes32 id, uint day) external view returns ( uint) {
         StoremanType.StoremanGroup storage group = data.groups[id];

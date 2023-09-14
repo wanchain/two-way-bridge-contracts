@@ -273,7 +273,6 @@ library StoremanLib {
         if(group.status == StoremanType.GroupStatus.none){ // not exist group.
             return;
         }
-        //address wkAddr = sk.wkAddr;
 
         if(group.status == StoremanType.GroupStatus.curveSeted) {
             if(group.whiteWk[sk.wkAddr] == address(0x00)){
@@ -295,8 +294,6 @@ library StoremanLib {
         StoremanType.StoremanGroup storage  nextGroup = data.groups[sk.nextGroupId];
         require(msg.value >= group.minDelegateIn, "Too small value");
 
-        //require(sk.delegateDeposit.add(msg.value) <= sk.deposit.getLastValue().mul(data.conf.DelegationMulti), "Too many delegation");
-
         require(sk.delegateDeposit.add(msg.value) <= (sk.deposit.getLastValue().add(sk.partnerDeposit)).mul(data.conf.DelegationMulti), "Too many delegation");
 
         StoremanType.Delegator storage dk = sk.delegators[msg.sender];
@@ -305,8 +302,6 @@ library StoremanLib {
             sk.delegatorMap[sk.delegatorCount] = msg.sender;
             dk.index = sk.delegatorCount;
             sk.delegatorCount = sk.delegatorCount.add(1);
-            // dk.sender = msg.sender;
-            // dk.staker = wkAddr;
         }
         sk.delegateDeposit = sk.delegateDeposit.add(msg.value);
         uint day = StoremanUtil.getDaybyTime(data.posLib, block.timestamp);
@@ -491,9 +486,6 @@ library StoremanLib {
             sk.partMap[sk.partnerCount] = msg.sender;
             pn.index = sk.partnerCount;
             sk.partnerCount++;
-            // pn.sender = msg.sender;
-            // pn.staker = wkAddr;
-            // sk.partners[msg.sender] = pn;
         }
         sk.partnerDeposit = sk.partnerDeposit.add(msg.value);
         uint day = StoremanUtil.getDaybyTime(data.posLib, block.timestamp);

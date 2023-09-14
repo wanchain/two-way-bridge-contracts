@@ -290,8 +290,6 @@ contract CrossDelegateV4 is CrossStorageV4 {
     external
     onlyOwner
     {
-        // require(tokenManager != address(0) && smgAdminProxy != address(0) && quota != address(0) && sigVerifier != address(0),
-        //     "Parameter is invalid");
         require(tokenManager != address(0) && smgAdminProxy != address(0) && sigVerifier != address(0),
             "Parameter is invalid");
 
@@ -558,7 +556,6 @@ contract CrossDelegateV4 is CrossStorageV4 {
         });
 
         NFTLibV1.smgMintNFT(storageData, params);
-        // bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, extData, tokenAccount, userAccount));
         bytes32 mHash = hashFunc(abi.encode(currentChainID, params.uniqueID, params.tokenPairID, params.tokenIDs, params.tokenValues, params.extData, params.destTokenAccount, params.destUserAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
@@ -583,7 +580,6 @@ contract CrossDelegateV4 is CrossStorageV4 {
         });
         NFTLibV1.smgReleaseNFT(storageData, params);
 
-        // bytes32 mHash = sha256(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount));
         bytes32 mHash = hashFunc(abi.encode(currentChainID, params.uniqueID, params.tokenPairID, params.tokenIDs, params.tokenValues, params.destTokenAccount, params.destUserAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }

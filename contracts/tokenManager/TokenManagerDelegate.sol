@@ -275,54 +275,6 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         chainID = mapTokenPairInfo[id].aInfo.chainID;
     }
 
-    // function getTokenPairsFullFields()
-    //     external
-    //     view
-    //     returns (TokenPairInfoFull[] memory tokenPairs)
-    // {
-    //     tokenPairs = new TokenPairInfoFull[](totalTokenPairs);
-    //     for (uint i = 0; i < totalTokenPairs; i++) {
-    //         uint theId = mapTokenPairIndex[i];
-    //         tokenPairs[i].aInfo = mapTokenPairInfo[theId].aInfo;
-    //         tokenPairs[i].fromChainID = mapTokenPairInfo[theId].fromChainID;
-    //         tokenPairs[i].fromAccount = mapTokenPairInfo[theId].fromAccount;
-    //         tokenPairs[i].toChainID = mapTokenPairInfo[theId].toChainID;
-    //         tokenPairs[i].toAccount = mapTokenPairInfo[theId].toAccount;
-    //         tokenPairs[i].id = theId;
-    //     }
-    //     return tokenPairs;
-    // }
-
-    // function getTokenPairsByChainID2(uint chainID1, uint chainID2)
-    //     external
-    //     view
-    //     returns (TokenPairInfoFull[] memory tokenPairs)
-    // {
-    //     uint cnt = 0;
-    //     uint i = 0;
-    //     uint theId = 0;
-    //     uint[] memory id_valid = new uint[](totalTokenPairs);
-    //     for (; i < totalTokenPairs; i++ ) {
-    //         theId = mapTokenPairIndex[i];
-    //         if ((mapTokenPairInfo[theId].fromChainID == chainID1) && (mapTokenPairInfo[theId].toChainID == chainID2) ||
-    //         (mapTokenPairInfo[theId].toChainID == chainID1) && (mapTokenPairInfo[theId].fromChainID == chainID2)) {
-    //             id_valid[cnt] = theId;
-    //             cnt ++;
-    //         }
-    //     }
-
-    //     tokenPairs = new TokenPairInfoFull[](cnt);
-    //     for (i = 0; i < cnt; i++) {
-    //         theId = id_valid[i];
-    //         tokenPairs[i].aInfo = mapTokenPairInfo[theId].aInfo;
-    //         tokenPairs[i].fromChainID = mapTokenPairInfo[theId].fromChainID;
-    //         tokenPairs[i].fromAccount = mapTokenPairInfo[theId].fromAccount;
-    //         tokenPairs[i].toChainID = mapTokenPairInfo[theId].toChainID;
-    //         tokenPairs[i].toAccount = mapTokenPairInfo[theId].toAccount;
-    //         tokenPairs[i].id = theId;
-    //     }
-    // }
-
     function getTokenPairs()
         external
         view
