@@ -102,7 +102,7 @@ library MetricLib {
         bytes32 h;
         bytes memory senderPk;
 
-        MetricTypes.RSlshData memory rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
+        MetricTypes.RSlshData storage rslshData = metricData.mapRSlsh[grpId][hashX][smIndex];
         // build h
         h = sha256(rslshData.polyDataPln.polyData);
         // build senderpk
@@ -214,7 +214,7 @@ library MetricLib {
         bytes32 h;
         bytes memory senderPk;
 
-        MetricTypes.SSlshData memory sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
+        MetricTypes.SSlshData storage sslshData = metricData.mapSSlsh[grpId][hashX][smIndex];
         // build h
         h = sha256(sslshData.polyDataPln.polyData);
         // build senderpk
