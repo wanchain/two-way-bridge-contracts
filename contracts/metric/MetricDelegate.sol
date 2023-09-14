@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../components/Halt.sol";

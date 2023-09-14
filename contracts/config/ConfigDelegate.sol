@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import "../components/Halt.sol";
 import "../components/Admin.sol";

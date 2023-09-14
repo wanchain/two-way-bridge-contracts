@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import "../interfaces/IWrappedNFT721.sol";
 import "../interfaces/IWrappedNFT1155.sol";

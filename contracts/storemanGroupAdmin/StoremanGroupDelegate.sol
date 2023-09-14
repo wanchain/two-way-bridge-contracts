@@ -26,7 +26,7 @@
 //
 //  Code style according to: https://github.com/wanchain/wanchain-token/blob/master/style-guide.rst
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../components/Halt.sol";

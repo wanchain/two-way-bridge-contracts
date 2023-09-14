@@ -26,7 +26,7 @@
 //
 //
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import "./CrossStorageV4.sol";
 import "./lib/RapidityLibV4.sol";
