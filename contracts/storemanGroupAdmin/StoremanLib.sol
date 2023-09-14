@@ -66,7 +66,6 @@ library StoremanLib {
         sk.PK = PK;
         sk.wkAddr = wkAddr;
         sk.groupId = groupId;
-        // sk.deposit.total = 0;
         sk.deposit.addRecord(Deposit.Record(StoremanUtil.getDaybyTime(data.posLib, block.timestamp), msg.value));
 
         // only not whitelist address need add memberCount;
