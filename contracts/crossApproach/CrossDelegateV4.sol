@@ -556,7 +556,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         });
 
         NFTLibV1.smgMintNFT(storageData, params);
-        bytes32 mHash = hashFunc(abi.encode(currentChainID, params.uniqueID, params.tokenPairID, params.tokenIDs, params.tokenValues, params.extData, params.destTokenAccount, params.destUserAccount));
+        bytes32 mHash = hashFunc(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, extData, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
@@ -580,7 +580,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         });
         NFTLibV1.smgReleaseNFT(storageData, params);
 
-        bytes32 mHash = hashFunc(abi.encode(currentChainID, params.uniqueID, params.tokenPairID, params.tokenIDs, params.tokenValues, params.destTokenAccount, params.destUserAccount));
+        bytes32 mHash = hashFunc(abi.encode(currentChainID, uniqueID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount));
         verifySignature(curveID, mHash, PK, r, s);
     }
 
