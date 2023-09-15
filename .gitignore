@@ -27,3 +27,5 @@ allFiredEvents
 .vscode
 package-lock.json
 migrations/deployed
+cache-zk
+artifacts-zk
