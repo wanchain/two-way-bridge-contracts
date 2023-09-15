@@ -1,5 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
-
+require("@nomiclabs/hardhat-truffle5");
 require("@matterlabs/hardhat-zksync-deploy") ;
 require("@matterlabs/hardhat-zksync-solc");
 
@@ -158,12 +158,18 @@ const config = {
                 signCurveId: 0,  // ecdsa
                 hashType: 1, // keccak256
             },
-        lineaTestnet: {
+            lineaTestnet: {
                 gasPrice:3e9, // can not delete.
                 url: "https://rpc.goerli.linea.build",
                 accounts: [process.env.PK],
                 bip44ChainId: 2147492648, // TODO fake chainID. 
-            }
+            },
+            local: {
+                url: "http://127.0.0.1:8545",
+                mnemonic:
+                  "skill level pulse dune pattern rival used syrup inner first balance sad",
+                gasPrice: 1, // 20 gwei (in wei) (default: 100 gwei)
+            },
     },
     etherscan: {
         apiKey: {
