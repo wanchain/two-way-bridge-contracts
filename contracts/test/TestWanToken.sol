@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.18;
 
-import "../tokenManager/WanToken.sol";
+import "./WanToken.sol";
 import "../components/BasicStorage.sol";
 import "./TestIOwned.sol";
 

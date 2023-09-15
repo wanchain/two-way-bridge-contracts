@@ -12,7 +12,7 @@ contract  FakeSkCurve {
     bool public equalPtRes = true;
     bool public addZeroFail = false;
 
-    function add(uint256 x1, uint256 y1, uint256 x2, uint256 y2)
+    function add(uint256 x1, uint256 y1, uint256 /* x2 */, uint256 /* y2 */)
     public
     view
     returns(uint256 retx, uint256 rety, bool success)
@@ -26,7 +26,7 @@ contract  FakeSkCurve {
         return (0,0,result);
     }
 
-    function mulG(uint256 scalar)
+    function mulG(uint256 /* scalar */)
     public
     view
     returns(uint256 x, uint256 y, bool success)
@@ -34,7 +34,7 @@ contract  FakeSkCurve {
         return (0,0,mulGResult);
     }
 
-    function calPolyCommit(bytes memory polyCommit, bytes memory pk)
+    function calPolyCommit(bytes memory /* polyCommit */, bytes memory /* pk */)
     public
     view
     returns(uint256 sx, uint256 sy, bool success)
@@ -42,14 +42,14 @@ contract  FakeSkCurve {
         return (0,0,calPolyCommitResult);
     }
 
-    function mulPk(uint256 scalar, uint256 xPk, uint256 yPk)
+    function mulPk(uint256 /* scalar */, uint256 /* xPk */, uint256 /* yPk */)
     public
     view
     returns (uint256 x, uint256 y, bool success){
         return (0,0,mulPkResult);
     }
 
-    function equalPt (uint256 xLeft, uint256 yLeft,uint256 xRight, uint256 yRight) public view returns(bool){
+    function equalPt (uint256 /* xLeft */, uint256 /* yLeft */,uint256 /* xRight */, uint256 /* yRight */) public view returns(bool){
         return equalPtRes;
     }
 
@@ -82,7 +82,7 @@ contract  FakeSkCurve {
         addZeroFail = fail;
     }
 
-    function checkSig (bytes32 hash, bytes32 r, bytes32 s, bytes memory pk) public view returns(bool) {
+    function checkSig (bytes32 /* hash */, bytes32 /* r */, bytes32 /* s */, bytes memory /* pk */) public view returns(bool) {
         return checkSigResult;
     }
 }

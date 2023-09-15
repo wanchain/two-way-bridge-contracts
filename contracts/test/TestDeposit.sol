@@ -8,7 +8,7 @@ contract TestDeposit {
   using Deposit for Deposit.Records;
   Deposit.Records g;
 
-  constructor()public{
+  constructor() {
     g.total = 0;
     return;
   }

@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.18;
 
-import "../interfaces/IMappingToken.sol";
-import "../tokenManager/MappingToken.sol";
-import "../components/WRC20Protocol.sol";
+import "../interfaces/IWrappedToken.sol";
+import "../tokenManager/WrappedToken.sol";
 import "../components/BasicStorage.sol";
+import "./WRC20Protocol.sol";
 import "./TestIOwned.sol";
 
 contract TestOrigTokenCreator is BasicStorage {
@@ -25,7 +25,7 @@ contract TestOrigTokenCreator is BasicStorage {
     }
 
     function createToken(string memory tokenName, string memory tokenSymbol, uint8 tokenDecimal) external {
-        address tokenInst = address(new MappingToken(tokenName, tokenSymbol, tokenDecimal));
+        address tokenInst = address(new WrappedToken(tokenName, tokenSymbol, tokenDecimal));
         BasicStorageLib.setStorage(addressData, bytes(tokenName), bytes(tokenSymbol), tokenInst);
         BasicStorageLib.setStorage(uintData, bytes(tokenName), bytes(tokenSymbol), tokenDecimal);
         // TestIOwned(tokenInst).changeOwner(msg.sender);
@@ -47,12 +47,12 @@ contract TestOrigTokenCreator is BasicStorage {
 
     function mintToken(string memory tokenName, string memory tokenSymbol, address to, uint value) external {
         address tokenInst = BasicStorageLib.getStorage(addressData, bytes(tokenName), bytes(tokenSymbol));
-        IMappingToken(tokenInst).mint(to, value);
+        IWrappedToken(tokenInst).mint(to, value);
     }
 
     function burnToken(string memory tokenName, string memory tokenSymbol, address from, uint value) external {
         address tokenInst = BasicStorageLib.getStorage(addressData, bytes(tokenName), bytes(tokenSymbol));
-        IMappingToken(tokenInst).burn(from, value);
+        IWrappedToken(tokenInst).burn(from, value);
     }
 
     function tokenBalance(string memory tokenName, string memory tokenSymbol, address owner) external view returns (uint balance) {

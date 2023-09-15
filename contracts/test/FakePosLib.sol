@@ -13,7 +13,7 @@ library FakePosLib {
         return blockTime/1;
     }
 
-    function getMinIncentive (uint256 smgDeposit,uint256 targetSecond, uint256 totalDeposit) public pure returns(uint256) {
+    function getMinIncentive (uint256 smgDeposit,uint256 /* targetSecond */, uint256 totalDeposit) public pure returns(uint256) {
         uint posCap = 60000000000;
         if(totalDeposit < posCap) return 30000000;
         uint cap = posCap.mul(smgDeposit).div(totalDeposit);

@@ -64,11 +64,11 @@ contract FakeSmg {
     *
     */
 
-    function getSelectedSmNumber(bytes32 groupId) external pure returns (uint number){
+    function getSelectedSmNumber(bytes32 /* groupId */) external pure returns (uint number){
         return SelectedSMNumber;
     }
 
-    function getThresholdByGrpId(bytes32 groupId) external pure returns (uint){
+    function getThresholdByGrpId(bytes32 /* groupId */) external pure returns (uint){
         return ThresholdNumber;
     }
 
@@ -77,14 +77,14 @@ contract FakeSmg {
     }
 
 
-    function getStoremanInfo(address wkAddress) external pure  returns(
+    function getStoremanInfo(address /* wkAddress */) external pure  returns(
         bytes32 groupId,
         bytes32 nextGroupId)
     {
         return (bytesToBytes32(fromHex(GroupIdStr),0),bytesToBytes32(fromHex(GroupIdStr1),0));
     }
 
-    function getStoremanGroupInfo(bytes32 id)
+    function getStoremanGroupInfo(bytes32 /* id */)
     external
     pure
     returns(bytes32 groupId, StoremanType.GroupStatus status, uint deposit, uint whiteCount,  uint memberCount,  uint startTime, uint endTime){
@@ -92,13 +92,13 @@ contract FakeSmg {
     }
 
 
-    function getStoremanGroupConfig(bytes32 id) external pure returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2,
+    function getStoremanGroupConfig(bytes32 /* id */) external pure returns(bytes32 groupId, uint8 status, uint deposit, uint chain1, uint chain2,
         uint curve1, uint curve2,  bytes memory gpk1, bytes memory gpk2, uint startTime, uint endTime){
         return (bytesToBytes32(fromHex(GroupIdStr),0),0,0,0,0,0x00,0x01,fromHex(gpk1Str),fromHex(gpk2Str),0,0);
     }
 
 
-    function getGpkShare(bytes32 groupId, uint index) external pure returns(bytes memory gpkShare1, bytes memory gpkShare2){
+    function getGpkShare(bytes32 /* groupId */, uint /* index */) external pure returns(bytes memory gpkShare1, bytes memory gpkShare2){
         return (fromHex(gpkShare1Str),fromHex(gpkShare2Str));
     }
 

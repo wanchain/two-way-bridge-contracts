@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.18;
 
-import "../interfaces/IMappingToken.sol";
+import "../interfaces/IWrappedToken.sol";
 import "../components/BasicStorage.sol";
 import "./MappingNftToken.sol";
 import "./TestIOwned.sol";
@@ -46,12 +46,12 @@ contract TestNftTokenCreator is BasicStorage {
 
     function mintToken(string memory tokenName, string memory tokenSymbol, address to, uint value) external {
         address tokenInst = BasicStorageLib.getStorage(addressData, bytes(tokenName), bytes(tokenSymbol));
-        IMappingToken(tokenInst).mint(to, value);
+        IWrappedToken(tokenInst).mint(to, value);
     }
 
     function burnToken(string memory tokenName, string memory tokenSymbol, address from, uint value) external {
         address tokenInst = BasicStorageLib.getStorage(addressData, bytes(tokenName), bytes(tokenSymbol));
-        IMappingToken(tokenInst).burn(from, value);
+        IWrappedToken(tokenInst).burn(from, value);
     }
 
     function tokenBalance(string memory tokenName, string memory tokenSymbol, address owner) external view returns (uint balance) {

@@ -77,7 +77,7 @@ library FakeCommonTool {
         }
     }
 
-    function enc(bytes32 rbpri, bytes32 iv, uint256 mes, bytes memory pub)
+    function enc(bytes32 /* rbpri */, bytes32 /* iv */, uint256 mes, bytes memory /* pub */)
     public
     pure
     returns(bytes memory, bool success)

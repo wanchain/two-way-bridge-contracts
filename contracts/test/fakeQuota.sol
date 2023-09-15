@@ -31,7 +31,7 @@ pragma solidity ^0.8.18;
 
 contract fakeQuota {
     bool flag=true;
-    function isDebtClean(bytes32 storemanGroupId) external view returns (bool) {
+    function isDebtClean(bytes32 /* storemanGroupId */) external view returns (bool) {
       return flag;
     }
     function setDebtClean(bool f) public {

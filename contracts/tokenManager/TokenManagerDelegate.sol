@@ -32,10 +32,11 @@ pragma solidity 0.8.18;
  * Math operations with safety checks
  */
 
-import "../interfaces/IMappingToken.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../interfaces/IWrappedToken.sol";
 import "../components/Admin.sol";
 import "./TokenManagerStorage.sol";
-import "./MappingToken.sol";
+import "./WrappedToken.sol";
 
 contract TokenManagerDelegate is TokenManagerStorage, Admin {
     using SafeMath for uint;
@@ -87,7 +88,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         external
         onlyAdmin
     {
-        IMappingToken(tokenAddress).mint(to, value);
+        IWrappedToken(tokenAddress).mint(to, value);
     }
 
     function burnToken(
@@ -98,7 +99,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         external
         onlyAdmin
     {
-        IMappingToken(tokenAddress).burn(from, value);
+        IWrappedToken(tokenAddress).burn(from, value);
     }
 
     function addToken(
@@ -109,7 +110,7 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         external
         onlyOwner
     {
-        address tokenAddress = address(new MappingToken(name, symbol, decimals));
+        address tokenAddress = address(new WrappedToken(name, symbol, decimals));
 
         emit AddToken(tokenAddress, name, symbol, decimals);
     }
@@ -201,21 +202,21 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
         external
         onlyOwner
     {
-        IMappingToken(tokenAddress).update(name, symbol);
+        IWrappedToken(tokenAddress).update(name, symbol);
 
         emit UpdateToken(tokenAddress, name, symbol);
     }
 
     function changeTokenOwner(address tokenAddress, address _newOwner) external onlyOwner {
-        IMappingToken(tokenAddress).changeOwner(_newOwner);
+        IWrappedToken(tokenAddress).changeOwner(_newOwner);
     }
 
     function acceptTokenOwnership(address tokenAddress) external {
-        IMappingToken(tokenAddress).acceptOwnership();
+        IWrappedToken(tokenAddress).acceptOwnership();
     }
 
     function transferTokenOwner(address tokenAddress, address _newOwner) external onlyOwner {
-        IMappingToken(tokenAddress).transferOwner(_newOwner);
+        IWrappedToken(tokenAddress).transferOwner(_newOwner);
     }
 
     function getTokenPairInfo(
@@ -251,9 +252,9 @@ contract TokenManagerDelegate is TokenManagerStorage, Admin {
             addr = address(0);
         } else {
             address instance = bytesToAddress(mapTokenPairInfo[id].toAccount);
-            name = IMappingToken(instance).name();
-            symbol = IMappingToken(instance).symbol();
-            decimals = IMappingToken(instance).decimals();
+            name = IWrappedToken(instance).name();
+            symbol = IWrappedToken(instance).symbol();
+            decimals = IWrappedToken(instance).decimals();
             addr = instance;
         }
     }

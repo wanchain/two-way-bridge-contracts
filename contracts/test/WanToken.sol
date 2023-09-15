@@ -28,7 +28,7 @@
 
 pragma solidity ^0.8.18;
 
-import '../components/StandardToken.sol';
+import './StandardToken.sol';
 import '../components/Owned.sol';
 
 contract WanToken is StandardToken, Owned {

@@ -81,14 +81,14 @@ contract MappingNftToken is ERC721Enumerable,  Ownable {
     }
 
     // mint supprt data
-    function mint(address account_, uint256 nftID, bytes memory  data)
+    function mint(address account_, uint256 nftID, bytes memory /* data */)
         external
         onlyOwner
     {
         _mint(account_, nftID);
     }
 
-    function burnBatch(address account_, uint256[] memory  nftIDs)
+    function burnBatch(address /* account_*/, uint256[] memory  nftIDs)
         external
         onlyOwner
     {
@@ -97,7 +97,7 @@ contract MappingNftToken is ERC721Enumerable,  Ownable {
         }
     }
 
-    function mintBatch(address account_, uint256[] memory  nftIDs, bytes memory data)
+    function mintBatch(address account_, uint256[] memory  nftIDs, bytes memory /* data*/)
         external
         onlyOwner
     {

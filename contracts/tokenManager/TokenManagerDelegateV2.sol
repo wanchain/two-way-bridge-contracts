@@ -30,8 +30,6 @@ pragma solidity 0.8.18;
 
 import "../interfaces/IWrappedNFT721.sol";
 import "../interfaces/IWrappedNFT1155.sol";
-import "../interfaces/IMappingToken.sol";
-import "./MappingToken.sol";
 import "./TokenManagerDelegate.sol";
 import "../components/Proxy.sol";
 

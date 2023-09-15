@@ -28,7 +28,14 @@
 
 pragma solidity ^0.8.18;
 
-interface IWanToken {
+interface IWrappedToken {
+    function changeOwner(address _newOwner) external;
+    function acceptOwnership() external;
+    function transferOwner(address) external;
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function decimals() external view returns (uint8);
     function mint(address, uint) external;
     function burn(address, uint) external;
+    function update(string memory, string memory) external;
 }

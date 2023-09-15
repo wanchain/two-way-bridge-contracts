@@ -7,7 +7,7 @@ import "../interfaces/ITokenManager.sol";
 contract TestQuotaHelper {
     mapping(bytes32 => uint256) priceMap;
 
-    constructor() public {
+    constructor() {
         priceMap[stringToBytes32("BTC")] = 998000000000;
         priceMap[stringToBytes32("ETH")] = 24500000000;
         priceMap[stringToBytes32("WAN")] = 21240000;
@@ -49,6 +49,16 @@ contract TestQuotaHelper {
             uint256 endTime
         )
     {
+        groupId = bytes32(0);
+        status = uint256(0);
+        chain1 = uint256(0);
+        chain2 = uint256(0);
+        curve1 = uint256(0);
+        curve2 = uint256(0);
+        gpk1 = "";
+        gpk2 = "";
+        startTime = uint256(0);
+        endTime = uint256(0);
         if (storemanGroupId == keccak256("storeman1")) {
             deposit = 1000 ether;
         }
@@ -140,7 +150,7 @@ contract TestQuotaHelper {
         return ("", 0);
     }
 
-    function isDebtClean(bytes32 storemanGroupId) external pure returns (bool) {
+    function isDebtClean(bytes32 /* storemanGroupId*/ ) external pure returns (bool) {
         return false;
     }
 }
