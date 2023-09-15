@@ -2,7 +2,7 @@ const utils = require("./utils");
 const assert = require('chai').assert;
 const Web3 = require('web3');
 const optimist = require("optimist");
-const config = require("../truffle-config");
+const config = require("./config");
 const ListGroup = artifacts.require('ListGroup');
  
 //const timeMachine = require('ganache-time-traveler');

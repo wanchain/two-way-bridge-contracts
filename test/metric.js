@@ -27,7 +27,7 @@ let posLib;
 
 const lib = require('./lib.js');
 
-const TFCfg = require('../truffle-config');
+const TFCfg = require('./config');
 const optimist = require('optimist');
 let argv = optimist.argv;
 

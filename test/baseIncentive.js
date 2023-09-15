@@ -1,8 +1,6 @@
 const utils = require("./utils");
 const assert = require('chai').assert;
 const pu = require('promisefy-util');
-const wanUtil = require('wanchain-util');
-const Tx = wanUtil.wanchainTx;
 const Web3 = require('web3');
 const optimist = require("optimist")
 

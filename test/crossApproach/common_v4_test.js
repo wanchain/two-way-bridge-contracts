@@ -148,10 +148,26 @@ it('Others getTokenPairFees and getTokenPairFee  ==> The default value', async (
     assert.equal(ret.eq(new web3.utils.BN(0)), true, `check token pair fee about ${tokenPairIDs[0]} default contractFee failed`);
 });
 
+it('Others setEtherTransferGasLimit and getEtherTransferGasLimit  ==> The default value', async () => {
+    const wanchain = chainTypes.WAN;
+    let ret;
+
+    // wanchain
+    let wanCross = await CrossDelegateV4.at(global.chains[wanchain].scAddr.CrossProxy);
+
+    ret = await wanCross.getEtherTransferGasLimit();
+    assert.equal(ret.eq(new web3.utils.BN(2300)), true, `check default etherTransferGasLimit failed`);
+
+    const admin = await wanCross.admin();
+    await wanCross.setEtherTransferGasLimit(3000, {from: admin});
+    ret = await wanCross.getEtherTransferGasLimit();
+    assert.equal(ret.eq(new web3.utils.BN(3000)), true, `check etherTransferGasLimit after setEtherTransferGasLimit failed`);
+});
+
 it('Proxy @wanchain   -> get the implementation address', async () => {
     let crossProxy = await CrossProxy.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
     let address = await crossProxy.implementation();
-    assert.equal(address, global.chains[chainTypes.WAN].scAddr.CrossDelegateV4, "check implementation failed");
+    assert.equal(address, global.chains[chainTypes.WAN].scAddr.CrossDelegate, "check implementation failed");
 });
 
 it('Proxy @wanchain   -> upgradeTo', async () => {
@@ -184,9 +200,9 @@ it('Proxy @wanchain   -> upgradeTo with 0x address', async () => {
 
 it('Proxy @wanchain   -> restore', async () => {
     let crossProxy = await CrossProxy.at(global.chains[chainTypes.WAN].scAddr.CrossProxy);
-    let ret = await crossProxy.upgradeTo(global.chains[chainTypes.WAN].scAddr.CrossDelegateV4);
+    let ret = await crossProxy.upgradeTo(global.chains[chainTypes.WAN].scAddr.CrossDelegate);
     let address = await crossProxy.implementation();
-    assert.equal(address, global.chains[chainTypes.WAN].scAddr.CrossDelegateV4, "check implementation failed");
+    assert.equal(address, global.chains[chainTypes.WAN].scAddr.CrossDelegate, "check implementation failed");
 
     assert.checkWeb3Event(ret, {
         event: 'Upgraded',

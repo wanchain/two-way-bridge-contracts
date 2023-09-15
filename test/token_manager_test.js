@@ -4,7 +4,7 @@ const MappingToken = artifacts.require('MappingToken');
 
 const assert = require('assert');
 const { sendAndGetReason } = require('./helper.js');
-const netConfig = require('../truffle-config').networks[global.network];
+const netConfig = require('./config').networks[global.network];
 const from = netConfig? netConfig.from : null;
 
 const newTokenManager = async (accounts) => {

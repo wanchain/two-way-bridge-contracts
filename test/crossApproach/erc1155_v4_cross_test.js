@@ -125,7 +125,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( ethereum => wanc
 
     let receipt = await cross.userLockNFT(...Object.values(funcParams), { from: senderAccount, value: moreServiceFee });
     if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLibV1, receipt.tx);
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLib, receipt.tx);
     }
 
     const eventUserLockNFT = assert.getWeb3Log(receipt, { event: 'UserLockNFT' });
@@ -232,7 +232,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( ethereum => wanc
 
     let receipt = await cross.smgMintNFT(...Object.values(funcParams), { from: senderAccount });
     if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLibV1, receipt.tx);
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLib, receipt.tx);
     }
 
     const eventSmgMintNFT = assert.getWeb3Log(receipt, { event: 'SmgMintNFT' });
@@ -356,7 +356,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @wanchain] <( wanchain => ethe
     // exec
     let receipt = await cross.userBurnNFT(...Object.values(funcParams), { from: senderAccount, value: batchFee });
     if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLibV1, receipt.tx);
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLib, receipt.tx);
     }
 
     const eventUserBurnNFT = assert.getWeb3Log(receipt, { event: 'UserBurnNFT' });
@@ -480,7 +480,7 @@ it('Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC1155 @ethereum] <( wanchain => ethe
 
     let receipt = await cross.smgReleaseNFT(...Object.values(funcParams), { from: senderAccount });
     if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLibV1, receipt.tx);
+        receipt.logs = await getTxParsedLogs(global.knownEvents[currentChainType].NFTLib, receipt.tx);
     }
 
     const eventSmgReleaseNFT = assert.getWeb3Log(receipt, { event: 'SmgReleaseNFT' });

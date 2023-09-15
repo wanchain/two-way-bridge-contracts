@@ -1,37 +1,8 @@
-const TokenManagerProxy         = artifacts.require('TokenManagerProxy');
-const TokenManagerDelegateV2      = artifacts.require('TokenManagerDelegateV2');
-
-const OracleDelegate            = artifacts.require('OracleDelegate.sol');
-const OracleProxy               = artifacts.require('OracleProxy.sol');
-
-const Bn128SchnorrVerifier      = artifacts.require('Bn128SchnorrVerifier.sol');
-const Secp256k1SchnorrVerifier  = artifacts.require('Secp256k1SchnorrVerifier.sol');
-const SignatureVerifier         = artifacts.require('SignatureVerifier.sol');
-
-const HTLCTxLib                 = artifacts.require('HTLCTxLib');
-const HTLCDebtLib               = artifacts.require('HTLCDebtLib');
-const RapidityLib               = artifacts.require('RapidityLib');
-const HTLCDebtLibV2             = artifacts.require('HTLCDebtLibV2');
-const RapidityLibV2             = artifacts.require('RapidityLibV2');
-const CrossDelegate             = artifacts.require('CrossDelegate.sol');
-const CrossDelegateV2           = artifacts.require('CrossDelegateV2.sol');
-const RapidityLibV3             = artifacts.require('RapidityLibV3');
-const CrossDelegateV3           = artifacts.require('CrossDelegateV3.sol');
-const RapidityLibV4             = artifacts.require('RapidityLibV4');
-const NFTLibV1                  = artifacts.require('NFTLibV1');
-const CrossDelegateV4           = artifacts.require('CrossDelegateV4.sol');
-const CrossProxy                = artifacts.require('CrossProxy.sol');
-
-const TestStoremanAdmin         = artifacts.require('TestStoremanAdmin.sol');
-const TestOrigTokenCreator = artifacts.require("TestOrigTokenCreator.sol")
-const TestNftTokenCreator = artifacts.require("TestNftTokenCreator.sol")
-
 const optimist                  = require("optimist");
 const schnorrTool               = require('../utils/schnorr/tools');
 
 const {
     ADDRESS_0,
-    htlcLockedTime,
     chainTypes,
     defaultChainIDs,
     defaultCurve,
@@ -68,7 +39,8 @@ const {
     updateOracle
 } = require("./crossApproach/oracle-config");
 
-const truffleConfig = require("../truffle-config");
+const truffleConfig = require("./config");
+// console.log("truffleConfig:", truffleConfig);
 
 const {
     testInit,
@@ -84,10 +56,12 @@ const {
     clearGlobal
 }                               = require('./utils');
 
-contract('Test Cross Approach', (accounts) => {
+describe('Test Cross Approach', () => {
     before("init...   -> success", async () => {
         testInit();
 
+        let accounts = await web3.eth.getAccounts();
+        // console.log("accounts:", accounts, accounts.length);
         let currNetwork = optimist.argv.network || "development";
         currNetwork = currNetwork.split("-")[0];
         const from = truffleConfig.networks[currNetwork].from;
@@ -153,7 +127,7 @@ contract('Test Cross Approach', (accounts) => {
 
     importMochaTest("Test Cross V4", './crossApproach/cross_v4_test');
 
-    importMochaTest("Test ERC751 Cross V4", './crossApproach/nft_v4_cross_test');
+    importMochaTest("Test ERC751 Cross V4", './crossApproach/nft_v1_cross_test');
 
     importMochaTest("Test ERC1155 Cross V4", './crossApproach/erc1155_v4_cross_test');
 
@@ -189,6 +163,9 @@ function makeChainInfo(chainType, scAddr, coin, token, ntfToken, erc1155Tokens) 
 }
 
 async function getSmgProxy(chainType, address) {
+    const OracleDelegate            = artifacts.require('OracleDelegate.sol');
+    const TestStoremanAdmin         = artifacts.require('TestStoremanAdmin.sol');
+
     let smg;
     if (chainTypes.WAN === chainType) {
       smg = await TestStoremanAdmin.at(address);
@@ -199,11 +176,32 @@ async function getSmgProxy(chainType, address) {
 }
 
 async function addChainTokenPairs(tokenManagerAddr, tokenPairs) {
+    const TokenManagerDelegateV2 = artifacts.require('TokenManagerDelegateV2');
+
     let tokenManager = await TokenManagerDelegateV2.at(tokenManagerAddr);
     return await addTokenPairs(tokenManager, tokenPairs);
 }
 
 async function deployCrossContracts(owner, options) {
+    const TokenManagerProxy         = artifacts.require('TokenManagerProxy');
+    const TokenManagerDelegateV2      = artifacts.require('TokenManagerDelegateV2');
+
+    const OracleDelegate            = artifacts.require('OracleDelegate.sol');
+    const OracleProxy               = artifacts.require('OracleProxy.sol');
+
+    const Bn128SchnorrVerifier      = artifacts.require('Bn128SchnorrVerifier.sol');
+    const Secp256k1SchnorrVerifier  = artifacts.require('Secp256k1SchnorrVerifier.sol');
+    const SignatureVerifier         = artifacts.require('SignatureVerifier.sol');
+
+    const RapidityLibV4             = artifacts.require('RapidityLibV4');
+    const NFTLibV1                  = artifacts.require('NFTLibV1');
+    const CrossDelegateV4           = artifacts.require('CrossDelegateV4.sol');
+    const CrossProxy                = artifacts.require('CrossProxy.sol');
+
+    const TestStoremanAdmin         = artifacts.require('TestStoremanAdmin.sol');
+    const TestOrigTokenCreator      = artifacts.require("TestOrigTokenCreator.sol")
+    const TestNftTokenCreator       = artifacts.require("TestNftTokenCreator.sol")
+
     let opts = Object.assign({}, {
         chainType: chainTypes.WAN,
         depositSymbol: coins.WAN.symbol,
@@ -267,78 +265,32 @@ async function deployCrossContracts(owner, options) {
     scAddr["Bn128SchnorrVerifier"] = bn128.address;
 
     // cross approach
-    let htlcTxLib = await HTLCTxLib.new({from: owner});
-    await HTLCDebtLib.link("HTLCTxLib", htlcTxLib.address);
-    let htlcDebtLib = await HTLCDebtLib.new({from: owner});
-    let rapidityLib = await RapidityLib.new({from: owner});
-    await CrossDelegate.link("HTLCTxLib", htlcTxLib.address);
-    await CrossDelegate.link("HTLCDebtLib", htlcDebtLib.address);
-    await CrossDelegate.link("RapidityLib", rapidityLib.address);
-    let crossDelegate = await CrossDelegate.new({from: owner});
-
-    let htlcTxLibV2 = await HTLCTxLib.new({from: owner});
-    await HTLCDebtLib.link("HTLCTxLib", htlcTxLibV2.address);
-    let htlcDebtLibV2 = await HTLCDebtLibV2.new({from: owner});
-    let rapidityLibV2 = await RapidityLibV2.new({from: owner});
-    await CrossDelegateV2.link("HTLCTxLib", htlcTxLibV2.address);
-    await CrossDelegateV2.link("HTLCDebtLibV2", htlcDebtLibV2.address);
-    await CrossDelegateV2.link("RapidityLibV2", rapidityLibV2.address);
-    let crossDelegateV2 = await CrossDelegateV2.new({from: owner});
-
-    let htlcTxLibV3 = await HTLCTxLib.new({from: owner});
-    await RapidityLibV3.link("HTLCTxLib", htlcTxLibV3.address);
-    let rapidityLibV3 = await RapidityLibV3.new({from: owner});
-    await CrossDelegateV3.link("HTLCTxLib", htlcTxLibV3.address);
-    await CrossDelegateV3.link("RapidityLibV3", rapidityLibV3.address);
-    let crossDelegateV3 = await CrossDelegateV3.new({from: owner});
-
-    let htlcTxLibV4 = await HTLCTxLib.new({ from: owner });
-    await RapidityLibV4.link("HTLCTxLib", htlcTxLibV4.address);
-    let rapidityLibV4 = await RapidityLibV4.new({ from: owner });
-
-    await NFTLibV1.link("HTLCTxLib", htlcTxLibV4.address);
-    let nftLibV1 = await NFTLibV1.new({ from: owner });
-
-    await CrossDelegateV4.link("HTLCTxLib", htlcTxLibV4.address);
-    await CrossDelegateV4.link("RapidityLibV4", rapidityLibV4.address);
-    await CrossDelegateV4.link("NFTLibV1", nftLibV1.address);
-
-    let crossDelegateV4 = await CrossDelegateV4.new({ from: owner });
+    let rapidityLib = await RapidityLibV4.new({from: owner});
+    let nftLib = await NFTLibV1.new({ from: owner });
+    await CrossDelegateV4.link(rapidityLib);
+    await CrossDelegateV4.link(nftLib);
+    let crossDelegate = await CrossDelegateV4.new({from: owner});
 
     let crossProxy = await CrossProxy.new({from: owner});
     await crossProxy.upgradeTo(crossDelegate.address, {from: owner});
-    let cross = await CrossDelegate.at(crossProxy.address);
-    await cross.setLockedTime(htlcLockedTime) //second
+    let cross = await CrossDelegateV4.at(crossProxy.address);
     scAddr["CrossProxy"] = crossProxy.address;
     scAddr["CrossDelegate"] = crossDelegate.address;
-    scAddr["CrossDelegateV2"] = crossDelegateV2.address;
-    scAddr["RapidityLibV3"] = rapidityLibV3.address;
-    scAddr["CrossDelegateV3"] = crossDelegateV3.address;
-    scAddr["RapidityLibV4"] = rapidityLibV4.address;
-    scAddr["NFTLibV1"] = nftLibV1.address;
-    scAddr["CrossDelegateV4"] = crossDelegateV4.address;
+    scAddr["NFTLib"] = nftLib.address;
     knownEvents["RapidityLib"] = getEventSignature(rapidityLib.abi);
-    knownEvents["HTLCDebtLib"] = getEventSignature(htlcDebtLib.abi);
+    knownEvents["NFTLib"] = getEventSignature(nftLib.abi);
     knownEvents["CrossDelegate"] = getEventSignature(crossDelegate.abi);
-    knownEvents["RapidityLibV2"] = getEventSignature(rapidityLibV2.abi);
-    knownEvents["HTLCDebtLibV2"] = getEventSignature(htlcDebtLibV2.abi);
-    knownEvents["CrossDelegateV2"] = getEventSignature(crossDelegateV2.abi);
-    knownEvents["RapidityLibV3"] = getEventSignature(rapidityLibV3.abi);
-    knownEvents["CrossDelegateV3"] = getEventSignature(crossDelegateV3.abi);
-    knownEvents["RapidityLibV4"] = getEventSignature(rapidityLibV4.abi);
-    knownEvents["NFTLibV1"] = getEventSignature(nftLibV1.abi);
-    knownEvents["CrossDelegateV4"] = getEventSignature(crossDelegateV4.abi);
 
-    for (let theChainType in crossFees[opts.chainType]) {
-        for (let buddyChainType in crossFees[opts.chainType][theChainType]) {
-            if (theChainType === opts.chainType || buddyChainType === opts.chainType) {
-                await cross.setFees(defaultChainIDs[theChainType], defaultChainIDs[buddyChainType],
-                    crossFees[opts.chainType][theChainType][buddyChainType].lockFee,
-                    crossFees[opts.chainType][theChainType][buddyChainType].revokeFee
-                );
-            }
-        }
-    }
+    // for (let theChainType in crossFees[opts.chainType]) {
+    //     for (let buddyChainType in crossFees[opts.chainType][theChainType]) {
+    //         if (theChainType === opts.chainType || buddyChainType === opts.chainType) {
+    //             await cross.setFees(defaultChainIDs[theChainType], defaultChainIDs[buddyChainType],
+    //                 crossFees[opts.chainType][theChainType][buddyChainType].lockFee,
+    //                 crossFees[opts.chainType][theChainType][buddyChainType].revokeFee
+    //             );
+    //         }
+    //     }
+    // }
 
     if (!(await tokenManager.mapAdmin(cross.address))) {
         await tokenManager.addAdmin(cross.address);
@@ -387,48 +339,32 @@ async function deployCrossContracts(owner, options) {
     await cross.setPartners(
         tokenManager.address,
         isWAN ? smgAdminProxy.address : oracle.address,
-        isWAN ? smgAdminProxy.address : ADDRESS_0,
+        opts.foundation,
         ADDRESS_0,
         signatureVerifier.address,
         {from: owner}
     );
 
-    await crossProxy.upgradeTo(crossDelegateV2.address, {from: owner});
-    let crossV2 = await CrossDelegateV2.at(crossProxy.address);
-    await crossV2.setAdmin(opts.admin, {from: owner});
-    let partners = await cross.getPartners();
-    let partnersV2 = await crossV2.getPartners();
-    // console.log("v1 lockedTime:", (await cross.lockedTime()))
-    // console.log("proxy lockedTime:", (await crossProxy.lockedTime()))
-    assert.equal((await cross.lockedTime()).eq(await crossProxy.lockedTime()), true, `v1 lockedTime is not the proxy lockedTime`);
-    assert.equal(partners.tokenManager, partnersV2.tokenManager, `v1's tokenManager is not v2's tokenManager`);
-    assert.equal(partners.smgAdminProxy, partnersV2.smgAdminProxy, `v1's smgAdminProxy is not v2's smgAdminProxy`);
-    assert.equal(partners.smgFeeProxy, partnersV2.smgFeeProxy, `v1's smgFeeProxy is not v2's smgFeeProxy`);
-    assert.equal(partners.quota, partnersV2.quota, `v1's quota is not v2's quota`);
-    assert.equal(partners.sigVerifier, partnersV2.sigVerifier, `v1's sigVerifier is not v2's sigVerifier`);
+    assert.equal((await cross.getPartners()).smgFeeProxy, opts.foundation, `smgFeeProxy is not the foundation account`);
 
-    await crossProxy.upgradeTo(crossDelegateV4.address, {from: owner});
-    let crossV4 = await CrossDelegateV4.at(crossProxy.address);
+    await cross.setAdmin(opts.admin);
 
-    await crossV4.setPartners(partners.tokenManager, partners.smgAdminProxy, opts.foundation, partners.quota, partners.sigVerifier, {from: owner});
-    assert.equal((await crossV4.getPartners()).smgFeeProxy, opts.foundation, `v2's smgFeeProxy is not the foundation account`);
-
-    await crossV4.setChainID(defaultChainIDs[opts.chainType], {from: opts.admin});
-    assert.equal((await crossV4.currentChainID()), defaultChainIDs[opts.chainType], `invalid currentChainID`);
+    await cross.setChainID(defaultChainIDs[opts.chainType], {from: opts.admin});
+    assert.equal((await cross.currentChainID()), defaultChainIDs[opts.chainType], `invalid currentChainID`);
     let multi = false;
     for (let buddyChainType in crossFeesV3[opts.chainType]) {
         if (!multi) {
-            await crossV4.setFee({srcChainID: defaultChainIDs[opts.chainType], destChainID:defaultChainIDs[buddyChainType], contractFee: crossFeesV3[opts.chainType][buddyChainType].contractFee, agentFee: crossFeesV3[opts.chainType][buddyChainType].agentFee}, {from: opts.admin});
-            let fee = await crossV4.getFee({srcChainID: defaultChainIDs[opts.chainType], destChainID:defaultChainIDs[buddyChainType]});
-            assert.equal(fee.contractFee, crossFeesV3[opts.chainType][buddyChainType].contractFee, `invalid v2's ${opts.chainType} => ${buddyChainType} contractFee`);
-            assert.equal(fee.agentFee, crossFeesV3[opts.chainType][buddyChainType].agentFee, `invalid v2's ${opts.chainType} => ${buddyChainType} agentFee`);
+            await cross.setFee({srcChainID: defaultChainIDs[opts.chainType], destChainID:defaultChainIDs[buddyChainType], contractFee: crossFeesV3[opts.chainType][buddyChainType].contractFee, agentFee: crossFeesV3[opts.chainType][buddyChainType].agentFee}, {from: opts.admin});
+            let fee = await cross.getFee({srcChainID: defaultChainIDs[opts.chainType], destChainID:defaultChainIDs[buddyChainType]});
+            assert.equal(fee.contractFee, crossFeesV3[opts.chainType][buddyChainType].contractFee, `invalid ${opts.chainType} => ${buddyChainType} contractFee`);
+            assert.equal(fee.agentFee, crossFeesV3[opts.chainType][buddyChainType].agentFee, `invalid ${opts.chainType} => ${buddyChainType} agentFee`);
             multi = true;
             continue;
         }
-        await crossV4.setFees([{srcChainID: defaultChainIDs[opts.chainType], destChainID:defaultChainIDs[buddyChainType], contractFee: crossFeesV3[opts.chainType][buddyChainType].contractFee, agentFee: crossFeesV3[opts.chainType][buddyChainType].agentFee}], {from: opts.admin});
-        let fees = await crossV4.getFees([{srcChainID: defaultChainIDs[opts.chainType], destChainID:defaultChainIDs[buddyChainType]}]);
-        assert.equal(fees[0].contractFee, crossFeesV3[opts.chainType][buddyChainType].contractFee, `invalid v2's ${opts.chainType} => ${buddyChainType} contractFee`);
-        assert.equal(fees[0].agentFee, crossFeesV3[opts.chainType][buddyChainType].agentFee, `invalid v2's ${opts.chainType} => ${buddyChainType} agentFee`);
+        await cross.setFees([{srcChainID: defaultChainIDs[opts.chainType], destChainID:defaultChainIDs[buddyChainType], contractFee: crossFeesV3[opts.chainType][buddyChainType].contractFee, agentFee: crossFeesV3[opts.chainType][buddyChainType].agentFee}], {from: opts.admin});
+        let fees = await cross.getFees([{srcChainID: defaultChainIDs[opts.chainType], destChainID:defaultChainIDs[buddyChainType]}]);
+        assert.equal(fees[0].contractFee, crossFeesV3[opts.chainType][buddyChainType].contractFee, `invalid ${opts.chainType} => ${buddyChainType} contractFee`);
+        assert.equal(fees[0].agentFee, crossFeesV3[opts.chainType][buddyChainType].agentFee, `invalid ${opts.chainType} => ${buddyChainType} agentFee`);
     }
 
     return {

@@ -8,9 +8,6 @@ const ethutil = require("ethereumjs-util");
 // const JacksPotProxy = artifacts.require('./JacksPotProxy.sol');
 // const TestHelper = artifacts.require('./test/TestHelper.sol');
 const TestBasicStorage = artifacts.require('./test/TestBasicStorage.sol');
-const QuotaDelegate = artifacts.require('./quota/QuotaDelegate.sol');
-const QuotaProxy = artifacts.require('./quota/QuotaProxy.sol');
-const TestQuotaHelper = artifacts.require('./test/TestQuotaHelper.sol');
 const Bn128SchnorrVerifier = artifacts.require('./schnorr/Bn128SchnorrVerifier.sol');
 const Secp256k1SchnorrVerifier = artifacts.require('./schnorr/Secp256k1SchnorrVerifier.sol');
 const SignatureVerifier = artifacts.require('./schnorr/SignatureVerifier.sol');
@@ -104,49 +101,6 @@ const getSchnorrVerifierContracts = async (accounts) => {
         verifier
     };
 }
-
-const getQuotaContracts = async (accounts) => {
-    const quotaDelegate = await newContract(QuotaDelegate);
-  
-    const quotaProxy = await newContract(QuotaProxy);
-
-    const helper = await newContract(TestQuotaHelper);
-
-    await quotaProxy.methods.upgradeTo(quotaDelegate._address).send({ from: accounts[0], gas: 10000000 });
-
-    try {
-        await quotaProxy.methods.upgradeTo(quotaDelegate._address).send({ from: accounts[0], gas: 10000000 });
-        assert(false, 'Should never get here');
-    } catch (e) {
-        assert.ok(e.message.match(/revert/));
-    }
-
-    try {
-        await quotaProxy.methods.upgradeTo("0x0000000000000000000000000000000000000000").send({ from: accounts[0], gas: 10000000 });
-        assert(false, 'Should never get here');
-    } catch (e) {
-        assert.ok(e.message.match(/revert/));
-    }
-
-
-    // const quota = await getContractAt(QuotaDelegate, quotaProxy._address);
-    const quota = await getContractAt(QuotaDelegate, quotaDelegate._address);
-    let ret = await quota.methods.config(
-        helper._address,
-        accounts[1],
-        accounts[2],
-        helper._address,
-        helper._address,
-        15000,
-        "WAN",
-    ).send({ from: accounts[0], gas: 10000000 });
-    return {
-        quota,
-        quotaDelegate,
-        quotaProxy,
-        helper
-    };
-};
 
 
 const clone = x => JSON.parse(JSON.stringify(x));
@@ -347,7 +301,6 @@ module.exports = {
     sleepUntil,
     sleep,      
     getWeb3,  
-    getQuotaContracts,
     clone,
     getTestBasicStorage,
     resAssert,
