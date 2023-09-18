@@ -1,7 +1,7 @@
 const OracleProxy = artifacts.require('OracleProxy');
 const OracleDelegate = artifacts.require('OracleDelegate');
 
-const assert = require('assert');
+const { assert } = require('chai');
 const { sendAndGetReason } = require('./helper.js');
 const { waitForDebugger } = require('inspector');
 const netConfig = require('./config').networks[global.network];
@@ -32,11 +32,12 @@ contract('Oracle', function(accounts) {
   const owner = from ? from : owner_bk;
   const white = white_bk.toLowerCase() === owner.toLowerCase() ? owner_bk : white_bk;
 
-  const tokenDAI = web3.utils.hexToBytes(web3.utils.toHex("DAI"));
-  const tokenETH = web3.utils.hexToBytes(web3.utils.toHex("ETH"));
-  const tokenBTC = web3.utils.hexToBytes(web3.utils.toHex("BTC"));
+  // adapt for @nomiclabs/hardhat-truffle5
+  const tokenDAI = web3.utils.padRight(web3.utils.toHex("DAI"), 64);
+  const tokenETH = web3.utils.padRight(web3.utils.toHex("ETH"), 64);
+  const tokenBTC = web3.utils.padRight(web3.utils.toHex("BTC"), 64);
 
-  const smgID = web3.utils.hexToBytes("0x6b175474e89094c44da98b954eedeac495271d0f");
+  const smgID = web3.utils.padRight("0x6b175474e89094c44da98b954eedeac495271d0f", 64);
   const v = 100000;
 
   before('init', async function() {})
@@ -53,7 +54,7 @@ contract('Oracle', function(accounts) {
       // check UpdatePrice event log
       const updatePriceEvent = receipt.logs[0].args;
       for (let i = 0; i<updatePriceEvent.keys.length; i++) {
-        assert.equal(web3.utils.padRight(web3.utils.bytesToHex(tokenDAI), 64), updatePriceEvent.keys[i]);
+        assert.equal(tokenDAI, updatePriceEvent.keys[i]);
         assert.equal(v, updatePriceEvent.prices[i].toNumber());
       }
       // check storage
@@ -75,23 +76,23 @@ contract('Oracle', function(accounts) {
       const amount = web3.utils.toBN(await oracleDelegate.getDeposit(smgID)).toNumber();
       assert.equal(v, amount);
 
-      const gpk1 = web3.utils.hexToBytes("0x1234");
-      const gpk2 = web3.utils.hexToBytes("0x5678");
+      const gpk1 = "0x1234";
+      const gpk2 = "0x5678";
       gas1 = await oracleDelegate.setStoremanGroupConfig.estimateGas(smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10, { from: owner});
       console.log(`setStoremanGroupConfig estimate = ${gas1}`);
       receipt = await oracleDelegate.setStoremanGroupConfig(smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10, { from: owner});
       console.log(`setStoremanGroupConfig used = ${receipt.receipt.gasUsed}`);
       // check setStoremanGroupConfig event log
       const setStoremanGroupConfigEvent = receipt.logs[0].args;
-      assert.equal(web3.utils.padRight(web3.utils.bytesToHex(smgID), 64), setStoremanGroupConfigEvent.id);
+      assert.equal(smgID, setStoremanGroupConfigEvent.id);
       assert.equal(1, setStoremanGroupConfigEvent.status.toNumber());
       assert.equal(2, setStoremanGroupConfigEvent.deposit.toNumber());
       assert.equal(3, setStoremanGroupConfigEvent.chain[0].toNumber());
       assert.equal(4, setStoremanGroupConfigEvent.chain[1].toNumber());
       assert.equal(5, setStoremanGroupConfigEvent.curve[0].toNumber());
       assert.equal(6, setStoremanGroupConfigEvent.curve[1].toNumber());
-      assert.equal(web3.utils.bytesToHex(gpk1), setStoremanGroupConfigEvent.gpk1);
-      assert.equal(web3.utils.bytesToHex(gpk2), setStoremanGroupConfigEvent.gpk2);
+      assert.equal(gpk1, setStoremanGroupConfigEvent.gpk1);
+      assert.equal(gpk2, setStoremanGroupConfigEvent.gpk2);
       assert.equal(9, setStoremanGroupConfigEvent.startTime.toNumber());
       assert.equal(10, setStoremanGroupConfigEvent.endTime.toNumber());
       // check storage
@@ -136,7 +137,7 @@ contract('Oracle', function(accounts) {
       // check SetDebtClean event log
       const setDebtClean = receipt.logs[0].args;
       console.log(JSON.stringify(setDebtClean));
-      assert.equal(setDebtClean.id, web3.utils.padRight(web3.utils.bytesToHex(smgID), 64));
+      assert.equal(setDebtClean.id, smgID);
       assert.equal(setDebtClean.isDebtClean, true);
       // check storage
       isClean = await oracleDelegate.isDebtClean(smgID);
@@ -150,15 +151,15 @@ contract('Oracle', function(accounts) {
       const { oracleDelegate } = await newOracle(accounts);
 
       const obj = await sendAndGetReason(oracleDelegate.updatePrice, [[tokenDAI], [v]], {from: other});
-      assert.equal(obj.reason, "not admin");
+      assert.include(obj.reason, "not admin");
     });
     it('keys.length == prices.length', async function() {
       const { oracleDelegate } = await newOracle(accounts);
 
       let obj = await sendAndGetReason(oracleDelegate.updatePrice, [[tokenDAI], [v, v]], {from: owner});
-      assert.equal(obj.reason, "length not same");
+      assert.include(obj.reason, "length not same");
       obj = await sendAndGetReason(oracleDelegate.updatePrice, [[tokenDAI, tokenETH], [v]], {from: owner});
-      assert.equal(obj.reason, "length not same");
+      assert.include(obj.reason, "length not same");
     });
 
     it('success', async function() {
@@ -204,15 +205,15 @@ contract('Oracle', function(accounts) {
       const { oracleDelegate, oracleProxy } = await newOracle(accounts);
       const param = ["0x6b175474e89094c44da98b954eedeac495271d0f"];
       let obj = await sendAndGetReason(oracleProxy.upgradeTo, param, {from: white});
-      assert.equal(obj.reason, "Not owner");
+      assert.include(obj.reason, "Not owner");
 
       param[0] = "0x0000000000000000000000000000000000000000";
       obj = await sendAndGetReason(oracleProxy.upgradeTo, param, {from: owner});
-      assert.equal(obj.reason, "Cannot upgrade to invalid address");
+      assert.include(obj.reason, "Cannot upgrade to invalid address");
 
       param[0] = oracleDelegate.address;
       obj = await sendAndGetReason(oracleProxy.upgradeTo, param, {from: owner});
-      assert.equal(obj.reason, "Cannot upgrade to the same implementation");
+      assert.include(obj.reason, "Cannot upgrade to the same implementation");
     })
   })
 })
