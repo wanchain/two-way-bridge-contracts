@@ -106,7 +106,7 @@ contract WrappedToken is ERC20Burnable, Ownable {
         Ownable.transferOwnership(newOwner_);
     }
 
-    function _beforeTokenTransfer(address /*from*/, address to, uint256 /*amount*/) internal override { 
+    function _beforeTokenTransfer(address /*from*/, address to, uint256 /*amount*/) internal override view { 
         require(to != address(this), "to address incorrect");
     }
 }
