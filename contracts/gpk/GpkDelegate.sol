@@ -164,7 +164,7 @@ contract GpkDelegate is GpkStorageV2 {
         checkValid(group, group.round, curveIndex, GpkTypes.GpkStatus.PolyCommit, false, false, address(0));
         GpkTypes.Round storage round = group.roundMap[group.round][curveIndex];
         uint32 timeout = (group.round == 0) ? group.ployCommitPeriod : group.defaultPeriod;
-        require(block.timestamp.sub(round.statusTime) > timeout, "Not late");
+        require(block.timestamp.sub(round.statusTime) > timeout, "Time not arrive");
         uint slashCount = 0;
         for (uint i = 0; (i < group.smNumber) && (slashCount + round.polyCommitCount < group.smNumber); i++) {
             address src = group.addrMap[i];
