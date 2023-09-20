@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@truffle/hdwallet-provider": "^2.1.15",
     "hardhat": "^2.12.3",
     "openzeppelin-eth": "2.0.2-standalone"
   },
