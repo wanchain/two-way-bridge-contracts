@@ -141,7 +141,7 @@ library StoremanLib {
     }
     function stakeOutRevert(StoremanType.StoremanData storage data,  address wkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
-        require(sk.sender == msg.sender, "Only the sender can stakeOut");
+        require(sk.sender == msg.sender, "Only the sender can stakeOutRevert");
         sk.quited = false;
         emit stakeOutRevertEvent(wkAddr, msg.sender);
     }

@@ -12,12 +12,20 @@
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
     "@nomiclabs/hardhat-ethers": "^2.0.0",
     "@nomiclabs/hardhat-etherscan": "^3.0.0",
+    "@openzeppelin/test-helpers": "^0.5.16",
     "@typechain/ethers-v5": "^10.1.0",
     "@typechain/hardhat": "^6.1.2",
+    "bigi": "^1.4.2",
     "chai": "^4.2.0",
+    "ecurve": "^1.0.6",
+    "ecurve-bn256": "^1.0.15",
     "ethers": "^5.4.7",
     "hardhat-gas-reporter": "^1.0.8",
-    "solidity-coverage": "^0.8.0",
-    "typechain": "^8.1.0"
+    "js-sha256": "^0.10.1",
+    "optimist": "^0.6.1",
+    "promisefy-util": "^1.2.0",
+    "solidity-coverage": "^0.7.20",
+    "typechain": "^8.1.0",
+    "wanchain-util": "^1.2.1"
   }
 }

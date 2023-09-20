@@ -176,7 +176,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     }
 
     function stakeOutRevert(address wkAddr) external notHalted {
-        require(block.timestamp >= getStakeOutRevertTimestamp(),'invalid time');
+        require(block.timestamp <= getStakeOutRevertTimestamp(),'invalid time');
         return StoremanLib.stakeOutRevert(data, wkAddr);
     }
     function checkCanStakeOut(address wkAddr) external view returns(bool) {
