@@ -81,9 +81,9 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   let deployer = getDeployer(hre);
 
   let TimelockController = await getArtifact(deployer, "TimelockController");
-  let timelockController = await deploy(deployer, TimelockController, [3600, ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"], [], "0x0000000000000000000000000000000000000000"]);
+  let timelockController = await deploy(deployer, TimelockController, [3600, ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"], ["0x0000000000000000000000000000000000000000"], "0x0000000000000000000000000000000000000000"]);
 
   console.log("TimelockController deployed to:", timelockController.address);
 
-  await verify(hre, TimelockController, timelockController.address, "@openzeppelin/contracts/governance/TimelockController.sol:TimelockController", [3600, ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"], [], "0x0000000000000000000000000000000000000000"]);
+  await verify(hre, TimelockController, timelockController.address, "@openzeppelin/contracts/governance/TimelockController.sol:TimelockController", [3600, ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"], ["0x0000000000000000000000000000000000000000"], "0x0000000000000000000000000000000000000000"]);
 }
