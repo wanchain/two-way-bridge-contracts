@@ -28,7 +28,10 @@ contract('TestSmg', async () => {
       assert(t.toString(), 0, 'get timestamp error')
 
       let cur = parseInt(Date.now()/1000)
+      let tx = smg.setStakeOutRevertTimestamp(cur, {from: g.owner})
+      await expectRevert(tx, 'not admin')
       await smg.setStakeOutRevertTimestamp(cur, {from: g.admin})
+
       t = await smg.getStakeOutRevertTimestamp()
       assert(t.toString(), cur.toString(), 'get timestamp error')
     })
