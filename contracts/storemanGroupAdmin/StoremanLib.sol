@@ -13,6 +13,7 @@ library StoremanLib {
     event stakeInEvent(bytes32 indexed groupId,address indexed wkAddr, address indexed from, uint  value);
     event stakeAppendEvent(address indexed wkAddr, address indexed from, uint indexed value);
     event stakeOutEvent(address indexed wkAddr, address indexed from);
+    event stakeOutRevertEvent(address indexed wkAddr, address indexed from);
     event stakeClaimEvent(address indexed wkAddr, address indexed from,bytes32 indexed groupId, uint value);
     event stakeIncentiveClaimEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
     event stakeIncentiveCrossFeeEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
@@ -138,7 +139,12 @@ library StoremanLib {
         sk.quited = true;
         emit stakeOutEvent(wkAddr, msg.sender);
     }
-
+    function stakeOutRevert(StoremanType.StoremanData storage data,  address wkAddr) external {
+        StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
+        require(sk.sender == msg.sender, "Only the sender can stakeOutRevert");
+        sk.quited = false;
+        emit stakeOutRevertEvent(wkAddr, msg.sender);
+    }
     function isWorkingNodeInGroup(StoremanType.StoremanGroup storage group, address wkAddr) public  view returns (bool) {
         uint count = group.selectedCount;
         for(uint8 i = 0; i < count; i++) {

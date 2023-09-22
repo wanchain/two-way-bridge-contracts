@@ -103,6 +103,16 @@ module.exports = {
       from: "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959",
       admin: "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959",
     },  
+    testnetUpgrade: {
+      provider: () => new HDWalletProvider([process.env.PK], "https://gwan-ssl.wandevs.org:46891"),
+      network_id: "999",
+      skipDryRun:true,
+    },
+    mainnetUpgrade: {
+      provider: () => new HDWalletProvider([process.env.PK], "https://gwan-ssl.wandevs.org:56891"),
+      network_id: "888",
+      skipDryRun:true,
+    },
     // testnet: {
     //   provider: wanProvider,
     //   network_id: "*",

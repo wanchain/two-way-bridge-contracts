@@ -44,6 +44,7 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     using Deposit for Deposit.Records;
     bytes key = "openStoreman";
     bytes innerKey = "totalDeposit";
+    bytes innerKeyt = "stakeOutRevertTimestamp";
 
     event StoremanGroupRegisterStartEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, uint workStart, uint workDuration, uint registerDuration);
     event StoremanGroupDismissedEvent(bytes32 indexed groupId, uint dismissTime);
@@ -164,6 +165,19 @@ contract StoremanGroupDelegate is StoremanGroupStorage, Halt, Admin,ReentrancyGu
     /// @param wkAddr                     the agent keystore's address, which publickey is specified when stakeIn.
     function stakeOut(address wkAddr) external notHalted {
         return StoremanLib.stakeOut(data, wkAddr);
+    }
+
+    
+    function setStakeOutRevertTimestamp(uint timestamp) external notHalted onlyAdmin {
+        return uintData.setStorage(key, innerKeyt, timestamp);
+    }
+    function getStakeOutRevertTimestamp() public view returns(uint timestamp) {
+        return uintData.getStorage(key, innerKeyt);
+    }
+
+    function stakeOutRevert(address wkAddr) external notHalted {
+        require(block.timestamp <= getStakeOutRevertTimestamp(),'invalid time');
+        return StoremanLib.stakeOutRevert(data, wkAddr);
     }
     function checkCanStakeOut(address wkAddr) external view returns(bool) {
         return StoremanLib.checkCanStakeOut(data, wkAddr);
