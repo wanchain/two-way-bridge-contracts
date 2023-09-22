@@ -6,4 +6,4 @@ version = '1.0.0'
 AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "89f950b28b2c2f5e270d877160e6007a2d8d25a6" }
 
 [addresses]
-ResourceAccountDeployer = '0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d'
+ResourceAccountDeployer = '0xd89c5175dd0f1644b3039a945dcd9bb933958b72f85bc7d70d2b777a355890c0'

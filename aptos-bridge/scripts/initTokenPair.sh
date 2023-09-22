@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # deployer address
-BridgeDeployer='0x0fed7b4e9b93c0373998b80cebee85010af2dea9cd5ddc754a01fb89fec291e4'
-ResourceAccountDeployer='0x94bdaffa0d0bfde11de612c640071677c5f68f7721b407f83c738d4c1c05ce7d'
+BridgeDeployer='0x786870d087d01714842efcadc56d947ddf4e177ebc9b4fcd8ca546410d8f3d98'
+ResourceAccountDeployer='0xd89c5175dd0f1644b3039a945dcd9bb933958b72f85bc7d70d2b777a355890c0'
 
 aptos move run --function-id $BridgeDeployer::Cross::set_chain_id \
   --args u64:0x8000027d
