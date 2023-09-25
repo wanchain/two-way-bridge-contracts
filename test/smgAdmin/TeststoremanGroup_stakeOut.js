@@ -6,7 +6,7 @@ const assert = require("assert")
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
 const Web3 = require('web3')
-const { registerStart,stakeInPre, setupNetwork, g} = require('../base.js')
+const { registerStart,stakeInPre, setupNetwork, g,deploySmg} = require('../base.js')
 
 
 let web3 = new Web3()
@@ -17,9 +17,10 @@ contract('StoremanGroupDelegate stakeOut', async () => {
     let groupId
 
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
         await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
     })
 
 
@@ -46,7 +47,7 @@ contract('StoremanGroupDelegate stakeOut', async () => {
         let wk = utils.getAddressFromInt(10001)
         let sk = await smg.getStoremanInfo(wk.addr);
         console.log("sk:", sk);
-        let tx = smg.stakeOut(wk.addr, {from:g.leader});
+        let tx = smg.connect(g.signerLeader).stakeOut(wk.addr);
         await expectRevert(tx, "Only the sender can stakeOut")
     })
     it('T3', async ()=>{ // stakeAppend 10000

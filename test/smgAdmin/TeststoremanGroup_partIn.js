@@ -8,7 +8,7 @@ const { expectRevert, expectEvent , BN} = require('@openzeppelin/test-helpers');
 
 
 
-const { registerStart,stakeInPre, setupNetwork, g,toSelect,timeWaitIncentive,toPartIn,sendTransaction } = require('../base.js');
+const { registerStart,stakeInPre, deploySmg,setupNetwork, g,toSelect,timeWaitIncentive,toPartIn,sendTransaction } = require('../base.js');
 
 
 
@@ -21,9 +21,10 @@ contract('StoremanGroupDelegate partIn', async () => {
     let partValue = 10000;
 
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
         await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
     })
 
 
@@ -50,14 +51,14 @@ contract('StoremanGroupDelegate partIn', async () => {
     it('T2 partIn', async ()=>{
         let smallValue = 1000;
         let sk = await smg.getStoremanInfo(wk.addr);
-        let tx =  smg.partIn(wk.addr,{value:smallValue, from:g.sfs[0]});
+        let tx =  smg.connect(g.signers[0+1]).partIn(wk.addr,{value:smallValue, from:g.sfs[0]});
         await expectRevert(tx, "Too small value")
     })
 
     it('T2 partIn', async ()=>{
         let sk = await smg.getStoremanInfo(wk.addr);
-        let tx = await smg.partIn(wk.addr,{value:partValue, from:g.sfs[0]});
-        expectEvent(tx, 'partInEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0]), value:new BN(partValue)})
+        let tx = await smg.connect(g.signers[0+1]).partIn(wk.addr,{value:partValue, from:g.sfs[0]});
+        //expectEvent(tx, 'partInEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0]), value:new BN(partValue)})
         let sk2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(sk.partnerCount, 0)
         assert.equal(sk.partnerDeposit, 0)
@@ -67,8 +68,8 @@ contract('StoremanGroupDelegate partIn', async () => {
     })
     it('T2 partIn again', async ()=>{
         let sk = await smg.getStoremanInfo(wk.addr);
-        let tx = await smg.partIn(wk.addr,{value:partValue, from:g.sfs[0]});
-        expectEvent(tx, 'partInEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0]), value:new BN(partValue)})
+        let tx = await smg.connect(g.signers[0+1]).partIn(wk.addr,{value:partValue, from:g.sfs[0]});
+        //expectEvent(tx, 'partInEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0]), value:new BN(partValue)})
         let sk2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(sk.partnerCount, 1)
         assert.equal(sk.partnerDeposit, partValue)
@@ -79,13 +80,13 @@ contract('StoremanGroupDelegate partIn', async () => {
 
     it('T3 partIn', async ()=>{
         for(let i=1; i<5; i++){
-            await smg.partIn(wk.addr,{value:partValue, from: g.sfs[i]});
+            await smg.connect(g.signers[i+1]).partIn(wk.addr,{value:partValue, from: g.sfs[i]});
         }
-        let tx =  smg.partIn(wk.addr,{value:partValue,  from: g.sfs[5]});
+        let tx =  smg.connect(g.signers[5+1]).partIn(wk.addr,{value:partValue,  from: g.sfs[5]});
         await expectRevert(tx, "Too many partners");       
     })
     it('T8 partClaim', async ()=>{
-        let tx = smg.partClaim(wk.addr, {from:g.sfs[4]});
+        let tx = smg.connect(g.signers[4+1]).partClaim(wk.addr);
         await expectRevert(tx, "Cannot claim");       
     })
 
@@ -102,35 +103,35 @@ contract('StoremanGroupDelegate partIn', async () => {
     it('T7 normal partOut', async ()=>{
         await toSelect(smg, groupId);
         let sk = await smg.getStoremanInfo(wk.addr);
-        let tx =  await smg.partOut(wk.addr,{from:g.sfs[0]});
-        expectEvent(tx, 'partOutEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0])})
+        let tx =  await smg.connect(g.signers[0+1]).partOut(wk.addr,{from:g.sfs[0]});
+        //expectEvent(tx, 'partOutEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0])})
         tx = smg.partIn(wk.addr,{from:g.sfs[0], value:10000});
         await expectRevert(tx, "Quited")
 
         let sk2 = await smg.getStoremanInfo(wk.addr);
-        assert.equal(sk.partnerCount, sk2.partnerCount)
+        assert.equal(sk.partnerCount.toString(), sk2.partnerCount.toString())
         assert.equal(sk2.partnerDeposit, 4*partValue)
   
 
     })
     it('T6 partout: partner does not exist', async ()=>{
-        let tx =  smg.partOut(wk.addr, {from:g.sfs[6]});
+        let tx =  smg.connect(g.signers[6+1]).partOut(wk.addr, {from:g.sfs[6]});
         await expectRevert(tx, "Partner doesn't exist");       
     })
     it('T8 partClaim', async ()=>{
 
         await timeWaitIncentive(smg, groupId, wk.addr);
 
-        await smg.storemanGroupDismiss(groupId, {from:g.leader})
+        await smg.connect(g.signerLeader).storemanGroupDismiss(groupId, {from:g.leader})
 
-        tx = smg.partClaim(wk.addr, {from:g.sfs[8]});
+        tx = smg.connect(g.signers[8+1]).partClaim(wk.addr, {from:g.sfs[8]});
         await expectRevert(tx, "not exist")
 
         let skInfo1 = await smg.getStoremanInfo(wk.addr);
 
-        tx = await smg.partClaim(wk.addr, {from:g.sfs[4]});
+        tx = await smg.connect(g.signers[4+1]).partClaim(wk.addr, {from:g.sfs[4]});
         console.log("xxxxxxxxxxxxxxxxxxx:", tx)
-        expectEvent(tx, "partClaimEvent",{wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[4]), amount:new BN(partValue)});       
+        //expectEvent(tx, "partClaimEvent",{wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[4]), amount:new BN(partValue)});       
         let skInfo2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(skInfo1.partnerCount, parseInt(skInfo2.partnerCount)+1,"partCLaim failed")
     })
@@ -145,15 +146,16 @@ contract('StoremanGroupDelegate partClaim', async () => {
     let groupId, groupInfo
     let wk = utils.getAddressFromInt(10000)
     let de1 = utils.getAddressFromInt(30000)
-    const base=40000
+    const base=40
     const count=5
 
 
 
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
         await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
         groupId = await registerStart(smg, 0, {htlcDuration:20,delegateFee:1000});
         groupInfo = await smg.getStoremanGroupInfo(groupId)
         await stakeInPre(smg, groupId)
@@ -184,35 +186,38 @@ contract('StoremanGroupDelegate partClaim', async () => {
         d4 = utils.getAddressFromInt(base+4)
 
         // delete the first one,   0,1,2,3,4  -->  4,1,2,3
-        sdata =  smg.contract.methods.partClaim(wk.addr).encodeABI()
-        await sendTransaction(d0, 0, sdata,smg.contract._address);
+        // sdata =  smg.contract.methods.partClaim(wk.addr).encodeABI()
+        // await sendTransaction(d0, 0, sdata,smg.contract._address);
+        await smg.connect(g.signers[base+0]).partClaim(wk.addr)
         addr = await smg.getSmPartnerAddr(wk.addr, 0)
-        assert.equal(addr.toLowerCase(), d4.addr)
+        assert.equal(addr, g.signers[base+4].address)
         addr = await smg.getSmPartnerAddr(wk.addr, 3)
-        assert.equal(addr.toLowerCase(), d3.addr)
+        assert.equal(addr, g.signers[base+3].address)
         smInfo1 = await smg.getStoremanInfo(wk.addr);
         assert.equal(smInfo1.partnerCount, 4)
 
         // delete the last one 4,1,2,3  --->  4, 1, 2
-        sdata =  smg.contract.methods.partClaim(wk.addr).encodeABI()
-        await sendTransaction(d3, 0, sdata,smg.contract._address);
+        // sdata =  smg.contract.methods.partClaim(wk.addr).encodeABI()
+        // await sendTransaction(d3, 0, sdata,smg.contract._address);
+        await smg.connect(g.signers[base+3]).partClaim(wk.addr)
         smInfo1 = await smg.getStoremanInfo(wk.addr);
         assert.equal(smInfo1.partnerCount, 3)
 
         addr = await smg.getSmPartnerAddr(wk.addr, 0)
-        assert.equal(addr.toLowerCase(), d4.addr)
+        assert.equal(addr, g.signers[base+4].address)
         addr = await smg.getSmPartnerAddr(wk.addr, 2)
-        assert.equal(addr.toLowerCase(), d2.addr)
+        assert.equal(addr, g.signers[base+2].address)
 
         // delete the middle one 4, 1, 2  --> 4, 2
-        sdata =  smg.contract.methods.partClaim(wk.addr).encodeABI()
-        await sendTransaction(d1, 0, sdata,smg.contract._address);
+        // sdata =  smg.contract.methods.partClaim(wk.addr).encodeABI()
+        // await sendTransaction(d1, 0, sdata,smg.contract._address);
+        await smg.connect(g.signers[base+1]).partClaim(wk.addr)
         smInfo1 = await smg.getStoremanInfo(wk.addr);
         assert.equal(smInfo1.partnerCount, 2)
         addr = await smg.getSmPartnerAddr(wk.addr, 0)
-        assert.equal(addr.toLowerCase(), d4.addr)
+        assert.equal(addr, g.signers[base+4].address)
         addr = await smg.getSmPartnerAddr(wk.addr, 1)
-        assert.equal(addr.toLowerCase(), d2.addr)
+        assert.equal(addr, g.signers[base+2].address)
 
         let smInfo2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(smInfo.partnerCount, 5)

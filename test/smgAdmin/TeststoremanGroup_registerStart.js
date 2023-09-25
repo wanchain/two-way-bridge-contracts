@@ -9,7 +9,7 @@ const assert  = require('assert')
 
 
 
-const { setupNetwork, registerStart,g } = require('../base.js')
+const { setupNetwork, registerStart,g,deploySmg } = require('../base.js')
 
 contract('StoremanGroupDelegate_registerStart', async () => {
 
@@ -36,9 +36,10 @@ contract('StoremanGroupDelegate_registerStart', async () => {
     let wlStartIndex = 0
      
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
         await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
     })
 
 
@@ -115,8 +116,8 @@ contract('StoremanGroupDelegate_registerStart', async () => {
             minPartIn:minPartIn,
             delegateFee:delegateFee,
         }
-        let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
-        await expectRevert(tx, "Insufficient white list.")
+        let tx = smg.storemanGroupRegisterStart(smgIn, ws, srs)
+        await expectRevert(tx, "Insufficient white list")
     })
 
     it('Too many whitelist node ', async ()=>{
@@ -153,7 +154,7 @@ contract('StoremanGroupDelegate_registerStart', async () => {
             minPartIn:minPartIn,
             delegateFee:delegateFee,
         }
-        let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
+        let tx = smg.storemanGroupRegisterStart(smgIn, ws, srs)
         await expectRevert(tx, "Too many whitelist node")
     })
 

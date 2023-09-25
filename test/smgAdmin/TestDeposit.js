@@ -6,7 +6,9 @@ const assert = require('assert');
 contract('TestDeposit',async()=>{
     let td;
     before("init", async()=>{
-			td = await TestDeposit.deployed();
+			let TestDeposit = await ethers.getContractFactory("TestDeposit")
+			td = await TestDeposit.deploy()
+			await td.deployed()
 			console.log("TestDeposit address:", td.address);
     })
     it("T1 add 1", async()=>{

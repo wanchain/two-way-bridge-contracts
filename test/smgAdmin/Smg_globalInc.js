@@ -7,7 +7,7 @@ const assert = require('chai').assert;
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 const Web3 = require('web3')
 
-const { registerStart,stakeInPre, setupNetwork,toSelect, g, timeWaitSelect,timeWaitIncentive, toSetGpk } = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork, g,toSetGpk ,deploySmg, timeWaitSelect, toSelect, timeWaitIncentive} = require('../base.js');
 
 
 
@@ -18,17 +18,18 @@ contract('TestSmg', async () => {
     let wk = utils.getAddressFromInt(10000)
 
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
-        await setupNetwork();
-    })
+      await setupNetwork();
+      console.log("setup newwork finished")
+      smg = await deploySmg();
+      console.log("deploySmg finished")
+  })
 
 
-    it('registerStart_1 ', async ()=>{
-        groupId = await registerStart(smg);
-        groupInfo = await smg.getStoremanGroupInfo(groupId)
-
-    })
+  it('registerStart_1 ', async ()=>{
+      groupId = await registerStart(smg);
+      groupInfo = await smg.getStoremanGroupInfo(groupId);
+      assert(groupInfo.groupId, groupId, 'groupInfo is error')
+  })
 
     it('stakeInPre ', async ()=>{
         await stakeInPre(smg, groupId)

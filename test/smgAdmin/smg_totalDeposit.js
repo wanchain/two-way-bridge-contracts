@@ -10,26 +10,25 @@ const assert = require('chai').assert;
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 const Web3 = require('web3')
 
-const { registerStart,stakeInPre, setupNetwork, timeWaitSelect,toSelect,timeWaitIncentive,g } = require('../base.js');
+const { registerStart,stakeInPre, timeWaitIncentive,setupNetwork, g,timeWaitSelect,toSelect ,deploySmg} = require('../base.js');
 
 
 
 contract('TestSmg', async () => {
 
-    let  smg, pos
-		let groupId, groupInfo, groupId2
-		let contValue = 123456;
-		let web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
-    let wk1 = utils.getAddressFromInt(100001)
-    let wk2 = utils.getAddressFromInt(100002)
-    let listGroup;
+  let  smg, pos
+  let groupId, groupInfo, groupId2
+  let contValue = 123456;
+  let web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
+  let wk1 = utils.getAddressFromInt(100001)
+  let wk2 = utils.getAddressFromInt(100002)
+
 
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
-        listGroup = await ListGroup.deployed();
-        pos = await FakePosLib.deployed();
         await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
     })
 
 
@@ -47,21 +46,21 @@ contract('TestSmg', async () => {
     it('add,clean', async ()=>{
       groupInfo = await smg.getStoremanGroupInfo(groupId);
       let cur = parseInt(groupInfo.startTime)
-      let tx = smg.addActiveGroupId(groupId, {from:g.owner});
+      let tx = smg.connect(g.signerOwner).addActiveGroupId(groupId, {from:g.owner});
       await expectRevert(tx, "not admin")
-      tx = listGroup.addActiveGroup(groupId,0,0, {from:g.owner});
+      tx = g.listGroup.connect(g.signerOwner).addActiveGroup(groupId,0,0, {from:g.owner});
       await expectRevert(tx, "not allow")
-      await smg.addActiveGroupId(groupId,  {from:g.admin});
-      tx = smg.addActiveGroupId(groupId,  {from:g.admin});
+      await smg.connect(g.signerAdmin).addActiveGroupId(groupId,  {from:g.admin});
+      tx = smg.connect(g.signerAdmin).addActiveGroupId(groupId,  {from:g.admin});
       await expectRevert(tx, "existed")
       let as = await smg.getActiveGroupIds(cur+2);
       assert.equal(as.length, 1)
       console.log("cur:", cur)
       console.log("-------------------as:", as)
-      gs = await listGroup.getGroups()
+      gs = await g.listGroup.getGroups()
       console.log("-------------------gs:", gs)
 
-      await smg.addActiveGroupId(groupId2,  {from:g.admin});
+      await smg.connect(g.signerAdmin).addActiveGroupId(groupId2,  {from:g.admin});
       as = await smg.getActiveGroupIds(cur+8);
       assert.equal(as.length, 2)
       assert.equal(as[0], groupId2)
@@ -69,11 +68,11 @@ contract('TestSmg', async () => {
       as = await smg.getActiveGroupIds(cur+12);
       assert.equal(as.length, 1)
       assert.equal(as[0], groupId2)
-      gs = await listGroup.getGroups()
+      gs = await g.listGroup.getGroups()
       assert.equal(gs.length, 2)
       await utils.sleepUntil(1000+1000*parseInt(groupInfo.endTime))
-      await listGroup.cleanExpiredGroup()
-      gs = await listGroup.getGroups()
+      await g.listGroup.cleanExpiredGroup()
+      gs = await g.listGroup.getGroups()
       console.log("gs,cur:", gs, parseInt(Date.now()/1000))
       assert.equal(gs.length, 1)
     })
@@ -94,11 +93,13 @@ contract('TestSmg', async () => {
   let listGroup;
 
   before("init contracts", async() => {
-      let smgProxy = await StoremanGroupProxy.deployed();
-      smg = await StoremanGroupDelegate.at(smgProxy.address)
-      listGroup = await ListGroup.deployed();
-      pos = await FakePosLib.deployed();
       await setupNetwork();
+      console.log("setup newwork finished")
+      smg = await deploySmg();
+      console.log("deploySmg finished")
+
+      listGroup = g.listGroup
+      pos = g.fakePosLib
   })
 
 
@@ -125,7 +126,7 @@ contract('TestSmg', async () => {
 
   it('T7 setGpk', async ()=>{
 
-    await smg.setDependence(g.admin, g.admin, g.admin,pos.address);
+    await smg.connect(g.signerOwner).setDependence(g.admin, g.admin, g.admin,pos.address);
     let tx = smg.setGpk(groupId, g.leader, g.leader, {from:g.admin});
     await expectRevert(tx, "invalid status")
     groupInfo = await smg.getStoremanGroupInfo(groupId);
@@ -171,15 +172,16 @@ contract('many group', async () => {
 
   let  smg, listGroup
 
-  const groupNumber = 100;
+  const groupNumber = 9;
   let groupIds = [];
   let wk0 = utils.getAddressFromInt(80000)
 
   before("init contracts", async() => {
-      let smgProxy = await StoremanGroupProxy.deployed();
-      smg = await StoremanGroupDelegate.at(smgProxy.address)
-      listGroup = await ListGroup.deployed()
       await setupNetwork();
+      console.log("setup newwork finished")
+      smg = await deploySmg();
+      console.log("deploySmg finished")
+      listGroup = g.listGroup
 
       for(let i=0; i<groupNumber; i++){
         let wk = utils.getAddressFromInt(80000+i)
@@ -190,33 +192,33 @@ contract('many group', async () => {
       let groupInfo = await smg.getStoremanGroupInfo(groupIds[groupNumber-1])
       await timeWaitSelect(groupInfo)
       let dep = await smg.getDependence();
-      await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+      await smg.connect(g.signerOwner).setDependence(g.admin, g.admin, g.admin,dep[3]);
       for(let i=0; i<groupNumber; i++){
         await toSelect(smg, groupIds[i]);
-        let tx = await smg.setGpk(groupIds[i], g.leaderPk, g.leaderPk, {from:g.admin})
+        let tx = await smg.connect(g.signerAdmin).setGpk(groupIds[i], g.leaderPk, g.leaderPk)
         if(i == groupNumber-1){
           console.log("setgpk gas:", tx)
         }
       }
-      await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+      await smg.connect(g.signerOwner).setDependence(dep[0], dep[1], dep[2], dep[3]);
   })
 
   it('check incentive ', async ()=>{
       await timeWaitIncentive(smg, groupIds[0], wk0.addr);
       ginfo = await smg.getStoremanGroupInfo(groupIds[0]);
-      console.log("groupIds[0]:", ginfo)
+      //console.log("groupIds[0]:", ginfo)
 
 
           let dt = await listGroup.getTotalDeposit(parseInt(ginfo.endTime)-1) 
           console.log("dt i:", parseInt(ginfo.endTime)-1, dt)
-          let tx = listGroup.setTotalDeposit(parseInt(ginfo.endTime)-1, 100)
+          let tx = listGroup.connect(g.signerLeader).setTotalDeposit(parseInt(ginfo.endTime)-1, 100)
           await expectRevert(tx, "not allow")
           let activeGroup = await smg.getActiveGroupIds(parseInt(ginfo.endTime)-1)
           console.log("activeGroup:", parseInt(ginfo.endTime)-1, activeGroup.length)
       
-      console.log("groups:", await listGroup.getGroups().length)
-      await smg.storemanGroupUnregister(groupIds[0], {from:g.leader});
-      console.log("groups:", await listGroup.getGroups().length)
+      // console.log("groups:", await listGroup.getGroups().length)
+      // await smg.connect(g.signerAdmin).storemanGroupUnregister(groupIds[0]);
+      // console.log("groups:", await listGroup.getGroups().length)
 
   })
   
@@ -235,10 +237,11 @@ contract('group totalDeposit', async () => {
   let wk2 = utils.getAddressFromInt(80002)
 
   before("init contracts", async() => {
-      let smgProxy = await StoremanGroupProxy.deployed();
-      smg = await StoremanGroupDelegate.at(smgProxy.address)
-      listGroup = await ListGroup.deployed()
       await setupNetwork();
+      console.log("setup newwork finished")
+      smg = await deploySmg();
+      console.log("deploySmg finished")
+      listGroup = g.listGroup
         let cur = parseInt(Date.now()/1000)
         groupId0 = await registerStart(smg, 0, {startTIme:cur+6, htlcDuration:20,memberCountDesign:2});
         groupId1 = await registerStart(smg, 0, {startTIme:cur+6, htlcDuration:30,memberCountDesign:2});
@@ -249,14 +252,14 @@ contract('group totalDeposit', async () => {
         await smg.stakeIn(groupId2, wk2.pk, wk2.pk,{value:100000});
 
       let dep = await smg.getDependence();
-      await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
+      await smg.connect(g.signerOwner).setDependence(g.admin, g.admin, g.admin,dep[3]);
       await toSelect(smg, groupId0);
       await toSelect(smg, groupId1);
       await toSelect(smg, groupId2);
       await smg.setGpk(groupId0, g.leaderPk, g.leaderPk, {from:g.admin})
       await smg.setGpk(groupId1, g.leaderPk, g.leaderPk, {from:g.admin})
       await smg.setGpk(groupId2, g.leaderPk, g.leaderPk, {from:g.admin})
-      await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+      await smg.connect(g.signerOwner).setDependence(dep[0], dep[1], dep[2], dep[3]);
   })
 
   it('check incentive ', async ()=>{

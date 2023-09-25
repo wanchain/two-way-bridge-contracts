@@ -3,7 +3,7 @@ const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
-const { registerStart,stakeInPre, setupNetwork,g,  timeWaitSelect} = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork,g, deploySmg, timeWaitSelect} = require('../base.js');
 const { assert } = require("chai");
 
 contract('StoremanGroupDelegate stakeIn', async () => {
@@ -12,9 +12,10 @@ contract('StoremanGroupDelegate stakeIn', async () => {
     let groupId, groupInfo
 
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
         await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
         groupId = await registerStart(smg);
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         
@@ -22,7 +23,7 @@ contract('StoremanGroupDelegate stakeIn', async () => {
 
     it('stakeInPre', async ()=>{ // stakeIn 50000
         let sw = {addr:g.wks[1], pk:g.pks[1]}
-        let tx = smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[2], value:50000})
+        let tx = smg.connect(g.signers[3]).stakeIn(groupId, sw.pk, sw.pk,{value:50000})
         await expectRevert(tx, "invalid sender");
         await stakeInPre(smg, groupId)
     })

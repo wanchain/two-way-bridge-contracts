@@ -6,7 +6,7 @@ const fakeQuota = artifacts.require('fakeQuota');
 const assert  = require('assert')
 const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 
-const { registerStart,stakeInPre, g, toSelect,setupNetwork, timeWaitSelect,timeWaitIncentive,toSetGpk } = require('../base.js')
+const { registerStart,stakeInPre, g, deploySmg,toSelect,setupNetwork, timeWaitSelect,timeWaitIncentive,toSetGpk } = require('../base.js')
 
 contract('StoremanGroupDelegate_rotate', async () => {
  
@@ -16,10 +16,11 @@ contract('StoremanGroupDelegate_rotate', async () => {
     let groupInfo,groupInfo2;
     let wk = utils.getAddressFromInt(10001)
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
-        quota = await fakeQuota.deployed();
         await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
+        quota = g.quota
     })
 
 
@@ -99,11 +100,11 @@ contract('StoremanGroupDelegate_rotate', async () => {
         console.log("f:", f)
         assert.equal(f, false,"checkGroupDismissable")
 
-        tx = smg.storemanGroupDismiss(groupId,{from:g.leader})
+        tx = smg.connect(g.signerLeader).storemanGroupDismiss(groupId)
         await expectRevert(tx, 'can not dismiss')
 
         await quota.setDebtClean(true)
-        await smg.storemanGroupDismiss(groupId,{from:g.leader})
+        await smg.connect(g.signerLeader).storemanGroupDismiss(groupId)
         let count = await smg.getSelectedSmNumber(groupId)
         console.log("slected sm number: %d", count);  
         for (let i = 0; i<count; i++) {
@@ -115,7 +116,7 @@ contract('StoremanGroupDelegate_rotate', async () => {
     }) 
 
     it('T5 old group failed', async ()=>{
-        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.failed, {from:g.admin})
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId, g.storemanGroupStatus.failed)
         groupId2 = await registerStart(smg, 0, {preGroupId:groupId});
         groupinfo2 = await smg.getStoremanGroupInfo(groupId2)
         console.log("groupinfo2:", groupinfo2)
@@ -135,10 +136,11 @@ contract('StoremanGroupDelegate_rotate_whiteReuse', async () => {
     let groupInfo,groupInfo2;
     let wk = utils.getAddressFromInt(10001)
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
-        quota = await fakeQuota.deployed();
         await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
+        quota = g.quota
     })
 
 
@@ -169,10 +171,11 @@ contract('StoremanGroupDelegate_rotate sm check', async () => {
     let wk2 = utils.getAddressFromInt(17002)
     let groupInfo,groupInfo2;
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
-        quota = await fakeQuota.deployed();
         await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
+        quota = g.quota
     })
 
 
@@ -191,8 +194,8 @@ contract('StoremanGroupDelegate_rotate sm check', async () => {
     })
 
     it('T1 registerStart, whitelist node exist', async ()=>{
-        await smg.updateGroupStatus(groupId1, g.storemanGroupStatus.ready,{from:g.admin})
-        await smg.stakeOut(wk1.addr, {from:g.owner})
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId1, g.storemanGroupStatus.ready)
+        await smg.connect(g.signerAdmin).stakeOut(wk1.addr)
         let now = parseInt(Date.now()/1000);
         let ws = []
         let srs= []
@@ -234,13 +237,13 @@ contract('StoremanGroupDelegate_rotate sm check', async () => {
             minPartIn:minPartIn,
             delegateFee:delegateFee,
         }
-        let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
+        let tx =  smg.connect(g.signerAdmin).storemanGroupRegisterStart(smgIn, ws, srs)
         await expectRevert(tx, "Invalid node")
     })
 
 
     it('T1 registerStart, whitelist not in preGroup', async ()=>{
-        await smg.updateGroupStatus(groupId2, g.storemanGroupStatus.ready,{from:g.admin})
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId2, g.storemanGroupStatus.ready)
         let now = parseInt(Date.now()/1000);
         let ws = []
         let srs= []
@@ -284,7 +287,7 @@ contract('StoremanGroupDelegate_rotate sm check', async () => {
         }
         groupInfo2 = await smg.getStoremanGroupInfo(groupId2);
         console.log("groupInfo2:", groupInfo2)
-        let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
+        let tx =  smg.connect(g.signerAdmin).storemanGroupRegisterStart(smgIn, ws, srs)
         await expectRevert(tx, "Invalid whitelist")
     })
 

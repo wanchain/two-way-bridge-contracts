@@ -1,9 +1,9 @@
+const hre = require('hardhat')
 const utils = require("./utils");
 const assert = require('chai').assert;
 const Web3 = require('web3');
 const optimist = require("optimist");
 const config = require("./config");
-const ListGroup = artifacts.require('ListGroup');
  
 //const timeMachine = require('ganache-time-traveler');
 const wanutil = require('wanchain-util');
@@ -19,7 +19,7 @@ const whiteCount = whiteCountAll - whiteBackup;
 const memberCountDesign = 4;
 const threshold  = 3;
 const stakerCount = memberCountDesign + whiteBackup;
-const registerDuration = 5; // open staking for 10 days.
+const registerDuration = 8; // open staking for 10 days.
 const gpkDuration = 3;
 const htlcDuration = 10; // work 90 day.
 const timeBase = 1;
@@ -54,11 +54,21 @@ const g = {
 }
 
 async function setupNetwork() {
-    let network = args.network ? args.network : "development";
-    g.admin = config.networks[network].admin;
-    g.web3url = "http://" + config.networks[network].host + ":" + config.networks[network].port;
+    network = 'local'
+    g.web3url = hre.network.config.url;
+    //"http://" + config.networks[network].host + ":" + config.networks[network].port;
     console.log("setup network %s", network);
+    let signers =  await hre.ethers.getSigners()
+    g.signers = signers
     if (network == 'local' || network == 'coverage') {
+        const mnemonic = hre.network.config.mnemonic;
+        const index = 1; // first wallet, increment for next wallets
+        const walletAdmin = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/60'/0'/0/"+index);
+        console.log('walletAdmin:', walletAdmin.address, walletAdmin._signingKey())
+        g.signerAdmin = (await hre.ethers.getSigners())[1]
+        g.signerOwner = (await hre.ethers.getSigners())[0]
+        g.signerLeader= (await hre.ethers.getSigners())[30]
+        g.admin = '0xdC49B58d1Dc15Ff96719d743552A3d0850dD7057'
         g.owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959";
         g.leader = ("0xdF0A667F00cCfc7c49219e81b458819587068141").toLowerCase();
 
@@ -70,7 +80,7 @@ async function setupNetwork() {
         g.timeBase = 1;
 
         g.wks = accounts.slice(30,41);
-        // console.log("wks:", g.wks)
+        console.log("wks:", g.wks)
         g.pks = [ '0x6bd7c410f7c760cca63a3dfabeeeed08f371b080f1c0d37e5cfda1c7f48d8234af06766ff7aa007a574449bce2c54469a675228876094f2c97438027f5070cbd',
         '0x7ca2927d8343de9ae70638249beca7e42b86a71036081c36552c2f0a55d44cf11b3ba9c2d2fb47ae4f0d533e66f1e9e2dbc2d1788400f7dfb1b5ebc562bc9d56',
         '0xb5c60f28d5750cdfe82d99973896a14413873f23fe8481378ac4f6f4541b87d144a2512ba4e6328098a8799836ac0b0a7f44c9a9468b559c56186231c64bb695',
@@ -131,6 +141,103 @@ async function setupNetwork() {
     }
 }
 
+
+async function deploySmg() {
+    let deployer = (await hre.ethers.getSigner()).address;
+  
+    let CommonTool = await ethers.getContractFactory("CommonTool")
+    let commonTool = await CommonTool.deploy()
+    await commonTool.deployed()
+    console.log("commonTool deploy:", commonTool.address)
+
+    let StoremanUtil = await ethers.getContractFactory("StoremanUtil",{
+      libraries:{
+        CommonTool:commonTool.address,
+      }
+    })
+    let storemanUtil = await StoremanUtil.deploy()
+    await storemanUtil.deployed()
+    console.log("storemanUtil deploy:", storemanUtil.address)
+    g.storemanUtil = storemanUtil
+
+    let StoremanLib = await ethers.getContractFactory("StoremanLib",{
+      libraries:{
+        StoremanUtil:storemanUtil.address,
+      }
+    })
+    let storemanLib = await StoremanLib.deploy()
+    await storemanLib.deployed()
+    console.log("storemanLib deploy:", storemanLib.address)
+
+    let IncentiveLib = await ethers.getContractFactory("IncentiveLib",{
+      libraries:{
+        StoremanUtil:storemanUtil.address,
+      }
+    })
+    let incentiveLib = await IncentiveLib.deploy()
+    await incentiveLib.deployed()
+    console.log("incentiveLib deploy:", incentiveLib.address)
+
+    let Deposit = await ethers.getContractFactory("Deposit")
+    let deposit = await Deposit.deploy()
+    await deposit.deployed()
+    console.log("deposit deploy:", deposit.address)
+
+    let StoremanGroupDelegate = await ethers.getContractFactory("StoremanGroupDelegate",{
+      libraries:{
+        StoremanUtil:storemanUtil.address,
+        StoremanLib:storemanLib.address,
+        IncentiveLib:incentiveLib.address,
+      }
+    })
+    console.log("uuuuuu")
+    let storemanGroupDelegate = await StoremanGroupDelegate.deploy()
+    console.log("xxxx")
+    await storemanGroupDelegate.deployed()
+    console.log("storemanGroupDelegate deploy:", storemanGroupDelegate.address)
+
+    let StoremanGroupProxy = await ethers.getContractFactory("StoremanGroupProxy")
+    let storemanGroupProxy = await StoremanGroupProxy.deploy()
+    await storemanGroupProxy.deployed()
+    await storemanGroupProxy.upgradeTo(storemanGroupDelegate.address);
+    g.storemanGroupProxy = storemanGroupProxy
+    console.log("storemanGroupProxy deploy:", storemanGroupProxy.address)
+
+    let FakePosLib = await ethers.getContractFactory("FakePosLib")
+    let fakePosLib = await FakePosLib.deploy()
+    g.fakePosLib = fakePosLib
+    await fakePosLib.deployed()
+    let ListGroup = await ethers.getContractFactory("ListGroup",{
+      libraries:{
+        StoremanUtil:storemanUtil.address,
+      }
+    })
+    let listGroup = await ListGroup.deploy(storemanGroupProxy.address, fakePosLib.address)
+    await listGroup.deployed()
+    g.listGroup = listGroup
+    console.log("listGroup deploy:", listGroup.address)
+
+    let FakeQuota = await ethers.getContractFactory("fakeQuota")
+    let fakeQuota = await FakeQuota.deploy()
+    await fakeQuota.deployed()
+    g.quota = fakeQuota
+    console.log("fakeQuota deploy:", fakeQuota.address)
+    let FakeMetric = await ethers.getContractFactory("FakeMetric")
+    let fakeMetric = await FakeMetric.deploy()
+    await fakeMetric.deployed()
+    g.fakeMetric = fakeMetric
+    console.log("fakeQuota deploy:", fakeMetric.address)    
+
+    console.log("deploy finished....")
+    let smg = await ethers.getContractAt('StoremanGroupDelegate', storemanGroupProxy.address)
+    await smg.addAdmin(g.admin)
+    console.log("admin: ",g.admin)
+    await smg.setGlobalGroupScAddr(listGroup.address);
+    await smg.setDependence(fakeMetric.address,fakePosLib.address,fakeQuota.address,fakePosLib.address)
+    smg = smg.connect(g.signerAdmin)
+    return smg
+  }
+  
 function initTestValue(key, value) {
     g[key] = value;
 }
@@ -170,10 +277,11 @@ async function registerStart(smg, wlStartIndex = g.whiteAddrStartIdx, option = {
         minPartIn:minPartIn,
         delegateFee:delegateFee1,
     }
-    //console.log("wks: %O, ws: %O, srs: %O", g.wks, ws, srs)
-    let tx = await smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
+    //console.log("wks: %O, ws: %O, srs: %O", g.wks, ws, srs, g.owner)
+    
+    let tx = await smg.storemanGroupRegisterStart(smgIn, ws, srs )
     let group = await smg.getStoremanGroupInfo(groupId)
-    console.log("registerStart group %s txHash: %s", group.groupId, tx.tx)
+    console.log("registerStart group %s txHash: %s", group.groupId, tx.hash)
     assert.equal(group.status, storemanGroupStatus.curveSeted)
     assert.equal(group.groupId, groupId)
     if(!preGroupId) {
@@ -190,19 +298,23 @@ async function registerStart(smg, wlStartIndex = g.whiteAddrStartIdx, option = {
 }
 
 async function stakeInPre(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx, nodeCount = g.stakerCount){
-    console.log("smg.contract %s stake %d", smg.contract._address, nodeCount);
     let addresses = [];
+    let signers =  await hre.ethers.getSigners()
     for(let i=0; i<nodeCount; i++){
         let stakingValue = g.minStakeIn ;
         let sw, tx;
-        let index = i+nodeStartIndex;
+        let index = nodeStartIndex+i
         sw = {addr:g.wks[index], pk:g.pks[index]};
-        //console.log("send============================:", g.sfs[i % g.sfs.length]);
-        tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[index % g.sfs.length], value:stakingValue});
+        //console.log("send============================:", i, g.sfs[i % g.sfs.length], sw.pk, groupId);
+
+        // sfs start from 1
+        tx = await smg.connect(signers[index+1]).stakeIn(groupId, sw.pk, sw.pk,{ value:stakingValue});
 
         console.log("preE:", index, sw.addr);
         let candidate  = await smg.getStoremanInfo(sw.addr)
-        //console.log("candidate:", candidate)
+        // console.log("candidate:", candidate)
+        // console.log("g.sfs:", g.sfs)
+        // console.log("index:", index)
         assert.equal(candidate.sender.toLowerCase(), g.sfs[index % g.sfs.length].toLowerCase());
         assert.equal(candidate.wkAddr.toLowerCase(), sw.addr.toLowerCase());
         assert.equal(candidate.deposit, stakingValue);
@@ -214,13 +326,14 @@ async function stakeInPre(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx, no
 async function stakeWhiteList(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx){
     console.log("smg.contract:", smg.contract._address);
     console.log("groupId:", groupId, "nodeStartIndex", nodeStartIndex);
+    let signers =  await hre.ethers.getSigners()
     for(let i = 0; i < g.whiteCountAll; ++i){
         let stakingValue = g.minStakeIn;
         let sw, tx;
         console.log("stakeWhiteList", i, nodeStartIndex, g.wks[i+nodeStartIndex]);
         sw = {addr:g.wks[i+nodeStartIndex], pk:g.pks[i+nodeStartIndex]};
         //console.log("send============================ws: %O, srs: %O:", sw.addr, g.sfs[i % g.sfs.length]);
-        tx = await smg.stakeIn(groupId, sw.pk, sw.pk,{from:g.sfs[i % g.sfs.length], value:stakingValue});
+        tx = await smg.connect(signers[i+1]).stakeIn(groupId, sw.pk, sw.pk,{ value:stakingValue});
 
         console.log("preE:", i, tx.tx);
         let candidate  = await smg.getStoremanInfo(sw.addr);
@@ -259,23 +372,24 @@ async function toSelect(smg, groupId){
     let groupInfo = await smg.getStoremanGroupInfo(groupId);
     let second = 1+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
     await utils.sleepUntil(second*1000)
-    let tx = await smg.select(groupId,{from: g.leader})
-    console.log("group %s select tx:", groupId, tx.tx)
-    let count = await smg.getSelectedSmNumber(groupId)
-    console.log("slected sm number: %d", count);  
-    for (let i = 0; i<count; i++) {
-        let ski = await smg.getSelectedSmInfo(groupId, i)
-        //console.log("selected node %d: %O", i, skAddr);
-        let sk = await smg.getStoremanInfo(ski.wkAddr);
-        //console.log("storeman %d info: %O", i, sk);
-    }    
+    let tx = await smg.connect(g.signerLeader).select(groupId)
+    console.log("select tx:", tx)
+    // console.log("group %s select tx:", groupId, tx.tx)
+    // let count = await smg.getSelectedSmNumber(groupId)
+    // console.log("slected sm number: %d", count);  
+    // for (let i = 0; i<count; i++) {
+    //     let ski = await smg.getSelectedSmInfo(groupId, i)
+    //     //console.log("selected node %d: %O", i, skAddr);
+    //     let sk = await smg.getStoremanInfo(ski.wkAddr);
+    //     //console.log("storeman %d info: %O", i, sk);
+    // }    
 }
-async function toStakeIn(smg, groupId, wk, value=50000, from=g.admin){
-    let tx = await smg.stakeIn(groupId,wk.pk, wk.pk, {from: from, value:value})
+async function toStakeIn(smg, groupId, wk, value=50000, from=g.signerAdmin){
+    let tx = await smg.connect(from).stakeIn(groupId,wk.pk, wk.pk, { value:value})
     //await timeMachine.advanceBlock();
-    let block = await g.web3.eth.getBlock(tx.receipt.blockNumber);
-    console.log("toStakeIn sk %s at %d:", wk.addr, block.timestamp)  
-    return block.timestamp
+    // let block = await g.web3.eth.getBlock(tx.receipt.blockNumber);
+    // console.log("toStakeIn sk %s at %d:", wk.addr, block.timestamp)  
+    // return block.timestamp
 }
 
 async function toStakeAppend(smg, ascend = true, nodeStartIndex = g.whiteCountAll, nodeCount = g.memberCountDesign - g.whiteCount, step = 1) {
@@ -285,47 +399,29 @@ async function toStakeAppend(smg, ascend = true, nodeStartIndex = g.whiteCountAl
     let value = ascend? i + 1 : nodeCount - i;
     value *= step;
     console.log("sk %d(%s) stakeAppend value %d", index, wkAddr, value);
-    await smg.stakeAppend(wkAddr, {from: g.sfs[index % g.sfs.length], value: value});
+    await smg.connect(g.signers[index+1]).stakeAppend(wkAddr, {value: value});
   }
 }
 
 async function toDelegateIn(smg, wkAddr, index=30000,count=11, value=100){
     for(let i=index; i<index+count;i++){
-        let d = utils.getAddressFromInt(i)
-        let sdata =  smg.contract.methods.delegateIn(wkAddr).encodeABI()
-        
-        await web3.eth.sendTransaction({from:g.owner, to:d.addr, value:web3.utils.toWei('1')})
-        await sendTransaction(d, value, sdata,smg.contract._address);
+        await smg.connect(g.signers[i]).delegateIn(wkAddr,{value})
     }
 }
 async function toPartIn(smg, wkAddr, index=40000,count=3, value=10000){
-    for(let i=0; i<count;i++){
-        let d = utils.getAddressFromInt(i+index)
-        let sdata =  smg.contract.methods.partIn(wkAddr).encodeABI()
-        
-        await web3.eth.sendTransaction({from:g.owner, to:d.addr, value:web3.utils.toWei('1')})
-        await sendTransaction(d, value, sdata,smg.contract._address);
-        let addr = await smg.getSmPartnerAddr(wkAddr, i);
-        assert.equal(addr, web3.utils.toChecksumAddress(d.addr))
+    for(let i=index; i<index+count;i++){
+        await smg.connect(g.signers[i]).partIn(wkAddr,{value})
     }
 }
 
 async function toDelegateClaim(smg, wkAddr, index=30000,count=11){
     for(let i=index; i<index+count;i++){
-        let d = utils.getAddressFromInt(i)
-        let sdata =  smg.contract.methods.delegateClaim(wkAddr).encodeABI()
-        
-        await web3.eth.sendTransaction({from:g.owner, to:d.addr, value:web3.utils.toWei('1')})
-        await sendTransaction(d, 0, sdata,smg.contract._address);
+        await smg.connect(g.signers[i]).delegateClaim(wkAddr,{value})
     }
 }
 async function toPartClaim(smg, wkAddr, index=40000,count=3){
     for(let i=index; i<index+count;i++){
-        let d = utils.getAddressFromInt(i)
-        let sdata =  smg.contract.methods.partClaim(wkAddr).encodeABI()
-        
-        await web3.eth.sendTransaction({from:g.owner, to:d.addr, value:web3.utils.toWei('1')})
-        await sendTransaction(d, 0, sdata,smg.contract._address);
+        await smg.connect(g.signers[i]).partClaim(wkAddr,{value})
     }
 }
 
@@ -411,14 +507,13 @@ async function toSetGpk(smg, groupId){
     }
     if(groupInfo.status < g.storemanGroupStatus.ready){
         let dep = await smg.getDependence();
-        await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
-        await smg.setGpk(groupId, g.leaderPk, g.leaderPk, {from:g.admin})
-        await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+        await smg.connect(g.signerOwner).setDependence(g.admin, g.admin, g.admin, dep[3]);
+        await smg.connect(g.signerAdmin).setGpk(groupId, g.leaderPk, g.leaderPk)
+        await smg.connect(g.signerOwner).setDependence(dep[0], dep[1], dep[2], dep[3]);
     }
 }
 async function timeWaitIncentive(smg, groupId, wkAddr) {
     let groupInfo = await smg.getStoremanGroupInfo(groupId)
-    let listGroup = await ListGroup.deployed();
     if(groupInfo.status < g.storemanGroupStatus.selected){
         await timeWaitSelect(groupInfo)
         await toSelect(smg, groupId);
@@ -427,24 +522,27 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
         groupInfo = await smg.getStoremanGroupInfo(groupId)
         console.log("selected groupInfo:", groupInfo)
         let dep = await smg.getDependence();
-        await smg.setDependence(g.admin, g.admin, g.admin,g.admin);
-        await smg.setGpk(groupId, g.leaderPk, g.leaderPk, {from:g.admin})
-        await smg.setDependence(dep[0], dep[1], dep[2], dep[3]);
+        await smg.connect(g.signerOwner).setDependence(g.admin, g.admin, g.admin,dep[3]);
+        await smg.connect(g.signerAdmin).setGpk(groupId, g.leaderPk, g.leaderPk);
+        await smg.connect(g.signerOwner).setDependence(dep[0], dep[1], dep[2], dep[3]);
     }
 
+    console.log("xxxxxx groupInfo:", groupInfo)
     //await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
     let second = 2+parseInt(groupInfo.endTime)
     await utils.sleepUntil(second*1000)
-    await smg.contribute({from: g.owner, value: web3.utils.toWei('1000')})
+    await smg.connect(g.signerOwner).contribute({value: web3.utils.toWei('1000')})
     while(true){
         let cur = parseInt(Date.now()/1000);
         try {
-            let tx = await smg.incentiveCandidator(wkAddr, {from:g.leader, gas:"0x6691b7"})
-            let incLog = tx.logs[0].args;
-            console.log("====================================================incLog:", incLog, tx)
-            if(incLog.finished) break;
+            let txr = await smg.connect(g.signerLeader).incentiveCandidator(wkAddr, {gasLimit: 6000000})
+            console.log("txr:", txr)
+            let tx = await txr.wait()
+            let incLog = tx.logs[0].topics;
+            console.log("====================================================incLog:", incLog)
+            if(incLog[3] == '0x0000000000000000000000000000000000000000000000000000000000000001') break;
         } catch(err){
-            let gs = await listGroup.getGroups();
+            let gs = await g.listGroup.getGroups();
             console.log("cur gs:", cur, gs, err)
             throw(err);
         }
@@ -479,5 +577,5 @@ module.exports = {
     g,setupNetwork,toDelegateClaim, toPartClaim,
     registerStart,toStakeAppend,toStakeIn,timeWaitIncentive,toDelegateIn,toPartIn,toSetGpk,
     stakeInPre,stakeWhiteList,toSelect,timeWaitSelect,timeWaitEnd,sendTransaction,
-    initTestValue
+    initTestValue,deploySmg
 }

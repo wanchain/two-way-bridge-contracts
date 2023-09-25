@@ -7,7 +7,7 @@ const assert = require('chai').assert;
 const StoremanUtil = artifacts.require('StoremanUtil')
 
 
-const { registerStart, stakeInPre, setupNetwork} = require('../base.js')
+const { registerStart, deploySmg,stakeInPre, setupNetwork,g} = require('../base.js')
 
 /*************************************
 staker: 1000 ~ 1000+100
@@ -22,11 +22,12 @@ contract('StoremanGroupDelegate util', async () => {
     let smgUtil
     let pos
     before("init contracts", async() => {
-        let smgProxy = await StoremanGroupProxy.deployed();
-        smg = await StoremanGroupDelegate.at(smgProxy.address)
-        smgUtil = await StoremanUtil.deployed();
-        pos = await FakePosLib.deployed();
         await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
+        smgUtil =  g.storemanUtil
+        pos = g.fakePosLib
     })
 
     it('registerStart', async ()=>{
