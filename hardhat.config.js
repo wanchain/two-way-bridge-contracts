@@ -120,12 +120,11 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      avalancheFujiTestnet: "VUYMNSMVSN52DGIUDTYFQTDA26SZI1ZMC7",
-      bscTestnet: "X3KC4YWKNDM8N3MJ52SFJC21GT9T5DWRK6",
-      moonbaseAlpha: "EE37GEZGJA7RHS3ZKXWW1JJVDXZ6SBYBRC",
-      goerli: "HNUE7V72CI8XJ6FNZ1CDIYSEBYY6HHREAE",
-      optimisticEthereum: "JSYSW7GDUAAZ4U7WN3SCFE7NM62IBB6GFC",
-      astar: 'X3KC4YWKNDM8N3MJ52SFJC21GT9T5DWRK6', //fake
+      avalancheFujiTestnet: "",
+      bscTestnet: "",
+      moonbaseAlpha: "",
+      goerli: "",
+      optimisticEthereum: "",
     },
     customChains: [
       {
