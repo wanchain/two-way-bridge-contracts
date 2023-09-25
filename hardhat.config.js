@@ -116,7 +116,12 @@ module.exports = {
     vinuTestnet: {
       url: "https://vinufoundation-rpc.com",
       accounts: [process.env.PK]
+    },
+    vinuMainnet: {
+      url: "https://vinuchain-rpc.com",
+      accounts: [process.env.PK]
     }
+
   },
   etherscan: {
     apiKey: {
