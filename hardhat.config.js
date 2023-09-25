@@ -114,7 +114,7 @@ module.exports = {
       accounts: [process.env.PK]
     },
     vinuTestnet: {
-      url: "https://vinuchain-rpc.com",
+      url: "https://vinufoundation-rpc.com",
       accounts: [process.env.PK]
     }
   },
