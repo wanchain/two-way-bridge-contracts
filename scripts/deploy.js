@@ -36,8 +36,8 @@ const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 // const BIP44_CHAIN_ID = 0x8000032a; // ASTAR
 // const BIP44_CHAIN_ID = 1073741836; // SONGBIRD CHAIN
 // const BIP44_CHAIN_ID = 1073741839; // HORIZEN CHAIN
-// const BIP44_CHAIN_ID = 1073741840; // VINU CHAIN
-const BIP44_CHAIN_ID = 2147493445; // ENERGI CHAIN
+const BIP44_CHAIN_ID = 1073741840; // VINU CHAIN
+// const BIP44_CHAIN_ID = 2147493445; // ENERGI CHAIN
 
 async function main() {
   let deployer = (await hre.ethers.getSigner()).address;
@@ -178,7 +178,7 @@ async function main() {
   await tx.wait();
 
   let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
-  let groupApprove = await GroupApprove.deploy(CROSS_ADMIN, signatureVerifier.address, oracleProxy.address, crossProxy.address);
+  let groupApprove = await GroupApprove.deploy(deployer, signatureVerifier.address, oracleProxy.address, crossProxy.address);
   await groupApprove.deployed();
   console.log("groupApprove deployed to:", groupApprove.address);
   
