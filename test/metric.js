@@ -1,6 +1,7 @@
-const Proxy = artifacts.require('Proxy');
 const MetricProxy = artifacts.require('MetricProxy');
 const MetricDelegate = artifacts.require('MetricDelegate');
+const MetricLib = artifacts.require('MetricLib');
+const CommonTool = artifacts.require('CommonTool');
 
 const FakeSmg = artifacts.require('FakeSmg');
 const FakeSkCurve = artifacts.require('FakeSkCurve');
@@ -23,7 +24,8 @@ const ADDRONE = '0x0000000000000000000000000000000000000001';
 let metricInstProxy;
 let metricInst;
 let posLib;
-
+let fakeSkCurve;
+let fakeBnCurve;
 
 const lib = require('./lib.js');
 
@@ -40,35 +42,44 @@ function getXHash() {
 contract('Test Metric', async (accounts) => {
     before("init...   -> success", async () => {
         try {
+            console.log("accounts:", accounts);
             await testInit();
             // get the instance
-            let deploy, configProxy, fakeSmg, fakeSkCurve, fakeBnCurve, fakePosLib;
-            deploy = await MetricProxy.deployed();
+            let deploy, configProxy, fakeSmg, fakePosLib;
+            deploy = await MetricProxy.new();
+
+            commonTool = await CommonTool.new();
+            await MetricLib.link(commonTool);
+            metricLib = await MetricLib.new();
+
+            await MetricDelegate.link(metricLib);
+            await MetricDelegate.link(commonTool);
+            metricInst = await MetricDelegate.new();
+            await deploy.upgradeTo(metricInst.address);
             metricInstProxy = await MetricDelegate.at(deploy.address);
 
-            metricInst = await MetricDelegate.deployed();
+            fakeSmg = await FakeSmg.new();
+            fakeSkCurve = await FakeSkCurve.new();
+            fakeBnCurve = await FakeBnCurve.new();
+            fakePosLib = await FakePosLib.new();
 
-
-            fakeSmg = await FakeSmg.deployed();
-            fakeSkCurve = await FakeSkCurve.deployed();
-            fakeBnCurve = await FakeBnCurve.deployed();
-            fakePosLib = await FakePosLib.deployed();
-
-            configProxy = await ConfigProxy.deployed();
+            configProxy = await ConfigDelegate.new();
             let confDlg = await ConfigDelegate.at(configProxy.address);
-            // await confDlg.setCurve([0x00], [fakeSkCurve.address]);
-            // await confDlg.setCurve([0x01], [fakeBnCurve.address]);
+            await confDlg.addAdmin(accounts[0]);
+
+            await confDlg.setCurve([0x00], [fakeSkCurve.address]);
+            await confDlg.setCurve([0x01], [fakeBnCurve.address]);
 
             metricInstProxy.setDependence(configProxy.address, fakeSmg.address,fakePosLib.address);
 
             await fakeSmg.setLeader(accounts[0]);
 
-            posLib = await PosLib.deployed();
+            posLib = await PosLib.new();
             //let epochId = await posLib.getEpochId(Math.floor(Date.now() / 1000));
             let epochId = await getEpIDByNow(posLib);
             //console.log("epochId " + epochId);
 
-            let leaderAdd;
+            // let leaderAdd;
             let networkName;
             //console.log("argv", argv);
             //console.log("network", argv["network"]);
@@ -76,6 +87,10 @@ contract('Test Metric', async (accounts) => {
                 networkName = "development";
             } else {
                 networkName = argv["network"];
+                if (TFCfg.networks[networkName] && TFCfg.networks[networkName].from) {
+                    //console.log("begin set leader leaderAddr:");
+                    await fakeSmg.setLeader(TFCfg.networks[networkName].from);
+                }
             }
             //console.log("networkname:", networkName);
             //console.log("TFCfg networks", TFCfg.networks);
@@ -83,12 +98,12 @@ contract('Test Metric', async (accounts) => {
             //console.log("TFCfg networks[networkname]", TFCfg.networks['' + networkName + '']);
             //console.log("TFCfg networks[networkname][from]", TFCfg.networks['' + networkName + ''].from);
 
-            leaderAdd = TFCfg.networks[networkName].from;
-            //console.log("leaderAddr:", leaderAdd);
-            if (leaderAdd) {
-                //console.log("begin set leader leaderAddr:");
-                await fakeSmg.setLeader(leaderAdd);
-            }
+            // leaderAdd = TFCfg.networks[networkName].from;
+            // //console.log("leaderAddr:", leaderAdd);
+            // if (leaderAdd) {
+            //     //console.log("begin set leader leaderAddr:");
+            //     await fakeSmg.setLeader(leaderAdd);
+            // }
 
         } catch (err) {
             assert.fail(err);
@@ -109,6 +124,7 @@ contract('Test Metric', async (accounts) => {
         try {
             let incntData = new BN(0x0F);
             await metricInstProxy.setHalt(true);
+            console.log("halt metic success")
             await metricInstProxy.wrInct(grpId, getXHash(), incntData, {from: accounts[1]});
         } catch (err) {
             lib.assertInclude(err.message, "Smart contract is halted", err);
@@ -215,7 +231,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x10,
@@ -245,7 +261,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x10,
@@ -272,7 +288,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x10,
                 rcvrIndex: 0x02,
@@ -299,7 +315,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -326,7 +342,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -353,7 +369,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -372,7 +388,6 @@ contract('Test Metric', async (accounts) => {
     it('write proof...   -> wrRSlsh(sk256-R-sig-[success to write R slsh.  duplicate RSlsh])', async () => {
 
         let xHash = getXHash();
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(false);
         await fakeSkCurve.setMulGResult(true);
         await fakeSkCurve.setCalPolyCommitResult(true);
@@ -390,7 +405,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -413,7 +428,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -430,7 +445,6 @@ contract('Test Metric', async (accounts) => {
     // Fail to write R slsh.  checkSig=ture checkContent=true
     // true true
     it('write proof...   -> wrRSlsh(sk256-R-sig-[fail to write R slsh.  checkSig=ture checkContent=true equal])', async () => {
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(true);
         await fakeSkCurve.setMulGResult(true);
         await fakeSkCurve.setCalPolyCommitResult(true);
@@ -448,7 +462,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -464,7 +478,6 @@ contract('Test Metric', async (accounts) => {
     // true false
     // success to write R slsh.  checkSig=ture checkContent=false 0
     it('write proof...   -> wrRSlsh(sk256-R-sig-[success to write R slsh.  checkSig=ture checkContent=true not equal])', async () => {
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(true);
 
         await fakeSkCurve.setMulGResult(true);
@@ -483,7 +496,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -501,7 +514,6 @@ contract('Test Metric', async (accounts) => {
     // fail to write R slsh.  checkSig=true checkContent=false 1
     it('write proof...   -> wrRSlsh(sk256-R-sig-[fail to write R slsh.  checkSig=true checkContent=false 1])', async () => {
 
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(true);
 
         await fakeSkCurve.setCalPolyCommitResult(false);
@@ -519,7 +531,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -536,7 +548,6 @@ contract('Test Metric', async (accounts) => {
     // fail to write R slsh.  checkSig=true checkContent=false 2
     it('write proof...   -> wrRSlsh(sk256-R-sig-[success to write R slsh.  checkSig=true checkContent=false 2])', async () => {
 
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(true);
 
         await fakeSkCurve.setCalPolyCommitResult(true);
@@ -554,7 +565,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -571,7 +582,6 @@ contract('Test Metric', async (accounts) => {
     // success to write R slsh.  checkSig=true checkContent=false 3
     it('write proof...   -> wrRSlsh(sk256-R-sig-[success to write R slsh.  checkSig=true checkContent=false 3])', async () => {
 
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(true);
 
         await fakeSkCurve.setCalPolyCommitResult(true);
@@ -589,7 +599,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -606,7 +616,6 @@ contract('Test Metric', async (accounts) => {
     // Fail to write R slsh.  checkSig=true checkContent=false 4
     it('write proof...   -> wrRSlsh(sk256-R-sig-[Fail to write R slsh.  checkSig=true checkContent=false 4])', async () => {
 
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(true);
 
         await fakeSkCurve.setCalPolyCommitResult(true);
@@ -625,7 +634,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -642,7 +651,6 @@ contract('Test Metric', async (accounts) => {
     // success to write R slsh.  checkSig=false checkContent=true
     it('write proof...   -> wrRSlsh(sk256-R-sig-[success to write R slsh.  checkSig=false checkContent=true])', async () => {
 
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(false);
         await fakeSkCurve.setMulGResult(true);
         await fakeSkCurve.setCalPolyCommitResult(true);
@@ -659,7 +667,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -677,7 +685,6 @@ contract('Test Metric', async (accounts) => {
     // success to write R slsh.  checkSig=false checkContent=false
     it('write proof...   -> wrRSlsh(sk256-R-sig-[success to write R slsh.  checkSig=false checkContent=false])', async () => {
 
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(false);
 
         await fakeSkCurve.setCalPolyCommitResult(true);
@@ -695,7 +702,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -721,7 +728,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: 0x00,
                 rcvrIndex: 0x02,
@@ -737,7 +744,6 @@ contract('Test Metric', async (accounts) => {
     // -----------------------------------------------------------bn256 --------------------------------------
     // bn true true
     it('write proof...   -> wrRSlsh(bn256-R-Sig-error)[fail to write slsh]', async () => {
-        let fakeBnCurve = await FakeBnCurve.deployed();
 
         await fakeBnCurve.setCheckSig(true);
 
@@ -757,7 +763,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0xef70efd96267ddf9723cda19452865d69239adc8ff76b1dc6f944e7791a07a88",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
                 sndrIndex: 0x02,
                 rcvrIndex: 0x00,
@@ -773,7 +779,6 @@ contract('Test Metric', async (accounts) => {
 
     //bn sig=true content=false
     it('write proof...   -> wrRSlsh(bn256-R-Content-error)', async () => {
-        let fakeBnCurve = await FakeBnCurve.deployed();
 
         await fakeBnCurve.setCheckSig(true);
 
@@ -809,7 +814,6 @@ contract('Test Metric', async (accounts) => {
     // false true
     // bn sig=false content=true
     it('write proof...   -> wrRSlsh(bn256-R-Sig-error)', async () => {
-        let fakeBnCurve = await FakeBnCurve.deployed();
 
         await fakeBnCurve.setCheckSig(false);
 
@@ -829,7 +833,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0xef70efd96267ddf9723cda19452865d69239adc8ff76b1dc6f944e7791a07a88",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
                 sndrIndex: 0x02,
                 rcvrIndex: 0x00,
@@ -845,7 +849,6 @@ contract('Test Metric', async (accounts) => {
 
     // false false
     it('write proof...   -> wrRSlsh(bn256-R-Sig-error)', async () => {
-        let fakeBnCurve = await FakeBnCurve.deployed();
 
         await fakeBnCurve.setCheckSig(false);
 
@@ -865,7 +868,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0xef70efd96267ddf9723cda19452865d69239adc8ff76b1dc6f944e7791a07a88",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
                 sndrIndex: 0x02,
                 rcvrIndex: 0x00,
@@ -893,7 +896,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: sndrIndex,
                 rcvrIndex: 0x02,
@@ -928,7 +931,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x050d5a7de8fceb70797c9ff20bf8cfbcc64c62766bdf29f856a7ecd12a584e03",
-                    polyDataS: "0x01"
+                    polyDataS: web3.utils.padLeft("0x01",64)
                 },
                 sndrIndex: sndrIndex,
                 rcvrIndex: 0x02,
@@ -959,7 +962,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -990,7 +993,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1016,7 +1019,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1042,7 +1045,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1068,7 +1071,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1094,7 +1097,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x",
@@ -1119,7 +1122,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1145,7 +1148,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1171,7 +1174,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1193,7 +1196,6 @@ contract('Test Metric', async (accounts) => {
     // Duplicate SSlsh
     it('write proof...   -> wrSSlsh(bn256-S-sig-[success to write S slsh.  Duplicate SSlsh)', async () => {
 
-        let fakeBnCurve = await FakeBnCurve.deployed();
         let xHash = getXHash();
         await fakeBnCurve.setCheckSig(false);
 
@@ -1202,7 +1204,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1225,7 +1227,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1247,7 +1249,6 @@ contract('Test Metric', async (accounts) => {
     // true true
     it('write proof...   -> wrSSlsh(bn256-S-sig-error)[fail to write S slsh checkSig=ture checkContent=true equal]', async () => {
 
-        let fakeBnCurve = await FakeBnCurve.deployed();
         await fakeBnCurve.setCheckSig(true);
 
         await fakeBnCurve.setMulGResult(true);
@@ -1260,7 +1261,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1282,7 +1283,6 @@ contract('Test Metric', async (accounts) => {
     // true true
     it('write proof...   -> wrSSlsh(bn256-S-sig-[success to write S slsh.  checkSig=ture checkContent=true not equal])', async () => {
 
-        let fakeBnCurve = await FakeBnCurve.deployed();
         await fakeBnCurve.setCheckSig(true);
 
         await fakeBnCurve.setMulGResult(true);
@@ -1295,7 +1295,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x313cdbead0ae918ac0349b4241701e6fa0045f696cb4efbdcf4fb9a291bde9ce",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x240c656894bde7bf02434551fa6265304cab80c7c6b18ff6914a58f4cbc5206d0f224b6b642ca5deddda703645d6938832a75d7fc8ece1ad2aca8855c704ccf0",
@@ -1318,7 +1318,6 @@ contract('Test Metric', async (accounts) => {
     // success to write S slsh.  checkSig=true checkContent=false 1
     it('write proof...   -> wrSSlsh(bn256-R-sig-[fail to write S slsh.  checkSig=true checkContent=false 1])', async () => {
 
-        let fakeBnCurve = await FakeBnCurve.deployed();
         await fakeBnCurve.setCheckSig(true);
 
         await fakeBnCurve.setMulGResult(false);
@@ -1332,7 +1331,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x0a1168320c3763cde419fd109d59945a307316a8b3e4486c7e60c88b5922d9ed",
                     polyDataR: "0xa746603231ec6d349767acd427d20c61363d148e65a6ec7d90ef4297ff31e52b",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0adf29eaa11da6cb58f84b0e0bcdf7501e81b115a401dffd05ccbfa3373adb7e2b0d612ed449b7194b3333b7620551ec5221334ba1a39c8df2ec604fce76ea0c",
@@ -1354,7 +1353,6 @@ contract('Test Metric', async (accounts) => {
     // fail to write S slsh.  checkSig=true checkContent=false 2
     it('write proof...   -> wrSSlsh(bn256-R-sig-[fail to write S slsh.  checkSig=true checkContent=false 2])', async () => {
 
-        let fakeBnCurve = await FakeBnCurve.deployed();
         await fakeBnCurve.setCheckSig(true);
 
         await fakeBnCurve.setMulGResult(true);
@@ -1368,7 +1366,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x0a1168320c3763cde419fd109d59945a307316a8b3e4486c7e60c88b5922d9ed",
                     polyDataR: "0xa746603231ec6d349767acd427d20c61363d148e65a6ec7d90ef4297ff31e52b",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0adf29eaa11da6cb58f84b0e0bcdf7501e81b115a401dffd05ccbfa3373adb7e2b0d612ed449b7194b3333b7620551ec5221334ba1a39c8df2ec604fce76ea0c",
@@ -1391,7 +1389,6 @@ contract('Test Metric', async (accounts) => {
     // fail to write S slsh.  checkSig=true checkContent=false 3
     it('write proof...   -> wrSSlsh(bn256-R-sig-[fail to write S slsh.  checkSig=true checkContent=false 3])', async () => {
 
-        let fakeBnCurve = await FakeBnCurve.deployed();
         await fakeBnCurve.setCheckSig(true);
 
         await fakeBnCurve.setMulGResult(true);
@@ -1405,7 +1402,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x0a1168320c3763cde419fd109d59945a307316a8b3e4486c7e60c88b5922d9ed",
                     polyDataR: "0xa746603231ec6d349767acd427d20c61363d148e65a6ec7d90ef4297ff31e52b",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0adf29eaa11da6cb58f84b0e0bcdf7501e81b115a401dffd05ccbfa3373adb7e2b0d612ed449b7194b3333b7620551ec5221334ba1a39c8df2ec604fce76ea0c",
@@ -1428,7 +1425,6 @@ contract('Test Metric', async (accounts) => {
     // fail to write S slsh.  checkSig=true checkContent=false 4
     it('write proof...   -> wrSSlsh(bn256-R-sig-[fail to write S slsh.  checkSig=true checkContent=false 4])', async () => {
 
-        let fakeBnCurve = await FakeBnCurve.deployed();
         await fakeBnCurve.setCheckSig(true);
 
         await fakeBnCurve.setMulGResult(true);
@@ -1442,7 +1438,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x0a1168320c3763cde419fd109d59945a307316a8b3e4486c7e60c88b5922d9ed",
                     polyDataR: "0xa746603231ec6d349767acd427d20c61363d148e65a6ec7d90ef4297ff31e52b",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0adf29eaa11da6cb58f84b0e0bcdf7501e81b115a401dffd05ccbfa3373adb7e2b0d612ed449b7194b3333b7620551ec5221334ba1a39c8df2ec604fce76ea0c",
@@ -1465,7 +1461,6 @@ contract('Test Metric', async (accounts) => {
     // false true
     it('write proof...   -> wrSSlsh(bn256-R-sig-[success to write S slsh.  checkSig=false checkContent=true])', async () => {
 
-        let fakeBnCurve = await FakeBnCurve.deployed();
         await fakeBnCurve.setCheckSig(false);
 
         await fakeBnCurve.setMulGResult(true);
@@ -1479,7 +1474,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x0a1168320c3763cde419fd109d59945a307316a8b3e4486c7e60c88b5922d9ed",
                     polyDataR: "0xa746603231ec6d349767acd427d20c61363d148e65a6ec7d90ef4297ff31e52b",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0adf29eaa11da6cb58f84b0e0bcdf7501e81b115a401dffd05ccbfa3373adb7e2b0d612ed449b7194b3333b7620551ec5221334ba1a39c8df2ec604fce76ea0c",
@@ -1501,7 +1496,6 @@ contract('Test Metric', async (accounts) => {
     // false false
     it('write proof...   -> wrSSlsh(bn256-R-sig-[success to write S slsh.  checkSig=false checkContent=true])', async () => {
 
-        let fakeBnCurve = await FakeBnCurve.deployed();
         await fakeBnCurve.setCheckSig(false);
 
         await fakeBnCurve.setMulGResult(true);
@@ -1515,7 +1509,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x0a1168320c3763cde419fd109d59945a307316a8b3e4486c7e60c88b5922d9ed",
                     polyDataR: "0xa746603231ec6d349767acd427d20c61363d148e65a6ec7d90ef4297ff31e52b",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0adf29eaa11da6cb58f84b0e0bcdf7501e81b115a401dffd05ccbfa3373adb7e2b0d612ed449b7194b3333b7620551ec5221334ba1a39c8df2ec604fce76ea0c",
@@ -1537,7 +1531,6 @@ contract('Test Metric', async (accounts) => {
     // -----------------------------------------------------------sk256 --------------------------------------
     // true true
     it('write proof...   -> wrSSlsh(sk256-S-sig-error)', async () => {
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(true);
 
         await fakeSkCurve.setMulGResult(true);
@@ -1550,7 +1543,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x26aeb5ca02ea4101e396dd04cde95b03e68ff700b142775db8743a12534865c1",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0524fd8df2a7ebbe41c5d12a77618577997cc3cc27af411e4875cebf1d28345044ffc19e776e91141d19e8d77bc4f18d0d0b134c5af603492b9ba99c98992cd4",
@@ -1572,7 +1565,6 @@ contract('Test Metric', async (accounts) => {
 
     // true false
     it('write proof...   -> wrSSlsh(sk256-S-sig-error)', async () => {
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(true);
 
         await fakeSkCurve.setMulGResult(true);
@@ -1585,7 +1577,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x26aeb5ca02ea4101e396dd04cde95b03e68ff700b142775db8743a12534865c1",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0524fd8df2a7ebbe41c5d12a77618577997cc3cc27af411e4875cebf1d28345044ffc19e776e91141d19e8d77bc4f18d0d0b134c5af603492b9ba99c98992cd4",
@@ -1607,7 +1599,6 @@ contract('Test Metric', async (accounts) => {
 
     // false true
     it('write proof...   -> wrSSlsh(sk256-S-sig-error)', async () => {
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(false);
 
         await fakeSkCurve.setMulGResult(true);
@@ -1620,7 +1611,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x26aeb5ca02ea4101e396dd04cde95b03e68ff700b142775db8743a12534865c1",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0524fd8df2a7ebbe41c5d12a77618577997cc3cc27af411e4875cebf1d28345044ffc19e776e91141d19e8d77bc4f18d0d0b134c5af603492b9ba99c98992cd4",
@@ -1642,7 +1633,6 @@ contract('Test Metric', async (accounts) => {
 
     // false false
     it('write proof...   -> wrSSlsh(sk256-S-sig-error)', async () => {
-        let fakeSkCurve = await FakeSkCurve.deployed();
         await fakeSkCurve.setCheckSig(false);
 
         await fakeSkCurve.setMulGResult(true);
@@ -1655,7 +1645,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x01",
                     polyDataR: "0x26aeb5ca02ea4101e396dd04cde95b03e68ff700b142775db8743a12534865c1",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0524fd8df2a7ebbe41c5d12a77618577997cc3cc27af411e4875cebf1d28345044ffc19e776e91141d19e8d77bc4f18d0d0b134c5af603492b9ba99c98992cd4",
@@ -1682,7 +1672,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x08fad6d6eaaae87c7549e2cb958a53830649deec99ded906ab22d6cbea69f3d9",
                     polyDataR: "0x5f9f00cee1ccd39a1dbf1974f0bbec2f93d3696455fb5feb73ba86242ce31e4c",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0524fd8df2a7ebbe41c5d12a77618577997cc3cc27af411e4875cebf1d28345044ffc19e776e91141d19e8d77bc4f18d0d0b134c5af603492b9ba99c98992cd4",
@@ -1712,7 +1702,7 @@ contract('Test Metric', async (accounts) => {
                 polyDataPln: {
                     polyData: "0x0a1168320c3763cde419fd109d59945a307316a8b3e4486c7e60c88b5922d9ed",
                     polyDataR: "0xa746603231ec6d349767acd427d20c61363d148e65a6ec7d90ef4297ff31e52b",
-                    polyDataS: "0x01",
+                    polyDataS: web3.utils.padLeft("0x01",64),
                 },
 
                 gpkShare: "0x0adf29eaa11da6cb58f84b0e0bcdf7501e81b115a401dffd05ccbfa3373adb7e2b0d612ed449b7194b3333b7620551ec5221334ba1a39c8df2ec604fce76ea0c",
@@ -1824,14 +1814,24 @@ contract('Test Metric', async (accounts) => {
     // ===========================================================others====================================//
     // revert
 
-    it('revert...   -> callUnKnownFuc', async () => {
-        try {
-            let fakeSc = await ConfigDelegate.at(metricInstProxy.address);
-            await fakeSc.getCurve(0);
-        } catch (err) {
-            lib.assertInclude(err.message, "Not support", err);
-        }
-    });
+    // it('revert...   -> No curve', async () => {
+    //     try {
+    //         let config = await ConfigDelegate.at(metricInstProxy.address);
+    //         await config.setCurve(["0"], [ADDRZERO]);
+    //         await config.getCurve(0);
+    //     } catch (err) {
+    //         lib.assertInclude(err.message, "No curve", err);
+    //     }
+    // });
+
+    // it('revert...   -> callUnKnownFuc', async () => {
+    //     try {
+    //         web3.eth.sendTransaction({to: metricInstProxy.address, value: "1", from: accounts[0], data:"0x12345678"})
+    //         assert.fail("should be failed");
+    //     } catch (err) {
+    //         lib.assertInclude(err.message, "Not support", err);
+    //     }
+    // });
 
     // getDependence()
     it('getDependence...   ->   ', async () => {
