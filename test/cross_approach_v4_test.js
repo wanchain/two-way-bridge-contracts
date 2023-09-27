@@ -72,7 +72,7 @@ describe('Test Cross Approach', () => {
         const smgAccounts = { src: {WAN: accounts[7], ETH: accounts[8]}, dest: {WAN: accounts[7], ETH: accounts[8]} }
         const operatorAccounts = {WAN: accounts[9], ETH: accounts[9]};
         // const curveIDs = {WAN: defaultCurve.secp256K1, ETH: defaultCurve.bn128};
-        const curveIDs = {WAN: defaultCurve.bn128, ETH: defaultCurve.bn128};
+        const curveIDs = {WAN: defaultCurve.bn128, ETH: defaultCurve.bn128, BTC: defaultCurve.ecSchnorr};
 
         console.log(`Deploy contracts, wait...`);
         let tokenPairs = {};
@@ -191,6 +191,7 @@ async function deployCrossContracts(owner, options) {
 
     const Bn128SchnorrVerifier      = artifacts.require('Bn128SchnorrVerifier.sol');
     const Secp256k1SchnorrVerifier  = artifacts.require('Secp256k1SchnorrVerifier.sol');
+    const EcSchnorrVerifier  = artifacts.require('EcSchnorrVerifier.sol');
     const SignatureVerifier         = artifacts.require('SignatureVerifier.sol');
 
     const RapidityLibV4             = artifacts.require('RapidityLibV4');
@@ -206,7 +207,7 @@ async function deployCrossContracts(owner, options) {
         chainType: chainTypes.WAN,
         depositSymbol: coins.WAN.symbol,
         tokenPairs: {},
-        curveIDs:{ WAN:defaultCurve.secp256K1, ETH:defaultCurve.bn128 },
+        curveIDs:{ WAN:defaultCurve.secp256K1, ETH:defaultCurve.bn128, BTC: defaultCurve.ecSchnorr },
         alice: null,
         admin: null,
         foundation: null,
@@ -236,7 +237,7 @@ async function deployCrossContracts(owner, options) {
 
     let smgAdminProxy;
     let schnorrs = Object.keys(opts.curveIDs).map(chainType => schnorrTool[defaultCurve2Schnorr[opts.curveIDs[chainType]]]);
-    let wanCurveIDs = Object.values(opts.curveIDs);
+    // let wanCurveIDs = Object.values(opts.curveIDs);
 
     initStoremanGroup(storemanGroups, schnorrs);
     if (isWAN) {
@@ -244,25 +245,43 @@ async function deployCrossContracts(owner, options) {
         scAddr["TestStoremanAdmin"] = smgAdminProxy.address;
         knownEvents["TestStoremanAdmin"] = getEventSignature(smgAdminProxy.abi);
 
-        await addWanStoremanGroup(smgAdminProxy, storemanGroups, wanCurveIDs, owner);
+        await addWanStoremanGroup(smgAdminProxy, storemanGroups, owner);
     } else {
-        let ethCurveIDs = wanCurveIDs.reverse();
-        await syncWanStoremanGroup(oracle, storemanGroups, ethCurveIDs, owner);
+        // let ethCurveIDs = wanCurveIDs.reverse();
+        await syncWanStoremanGroup(oracle, storemanGroups, owner);
     }
     await updateOracle(oracle, storemanGroups, owner)
 
     // signature verifier
     let signatureVerifier = await SignatureVerifier.new({from: owner});
     let bn128 = await Bn128SchnorrVerifier.new({from: owner});
+    let ecSchnorr = await EcSchnorrVerifier.new({from: owner});
     if (isWAN) {
         let secp256K1 = await Secp256k1SchnorrVerifier.new({from: owner});
         await signatureVerifier.register(defaultCurve.secp256K1, secp256K1.address, {from: owner});
         scAddr["Secp256k1SchnorrVerifier"] = secp256K1.address;
+        assert.equal(web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.secp256K1))
+            , web3.utils.toChecksumAddress(secp256K1.address)
+            , `check registered secp256K1 signature verifier sc failed`
+        );
     }
-    // register signature verifier contracts
+   // register signature verifier contracts
     await signatureVerifier.register(defaultCurve.bn128, bn128.address, {from: owner});
+    await signatureVerifier.register(defaultCurve.ecSchnorr, ecSchnorr.address, {from: owner});
     scAddr["SignatureVerifier"] = signatureVerifier.address;
     scAddr["Bn128SchnorrVerifier"] = bn128.address;
+    scAddr["EcSchnorrVerifier"] = ecSchnorr.address;
+    console.log("register bn128:", defaultCurve.bn128, bn128.address)
+    console.log("register ecSchnorr:", defaultCurve.ecSchnorr, ecSchnorr.address)
+    web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.bn128))
+    assert.equal(web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.bn128))
+        , web3.utils.toChecksumAddress(bn128.address)
+        , `check registered bn128 signature verifier sc failed`
+    );
+    assert.equal(web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.ecSchnorr))
+        , web3.utils.toChecksumAddress(ecSchnorr.address)
+        , `check registered ecSchnorr signature verifier sc failed`
+    );
 
     // cross approach
     let rapidityLib = await RapidityLibV4.new({from: owner});

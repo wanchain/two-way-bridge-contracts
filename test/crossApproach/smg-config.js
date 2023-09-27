@@ -1,6 +1,7 @@
 const {
   ADDRESS_0,
-  defaultChainIDs
+  defaultChainIDs,
+  defaultCurve,
 } = require("./common");
 
 // const web3 = require("web3");
@@ -20,10 +21,12 @@ const skInfo             = {
   src: {
     WAN     : new Buffer("097e961933fa62e3fef5cedef9a728a6a927a4b29f06a15c6e6c52c031a6cb2b", 'hex'),
     ETH     : new Buffer("e6a00fb13723260102a6937fc86b0552eac9abbe67240d7147f31fdef151e18a", 'hex'),
+    BTC      : new Buffer("11755068315af28a09c4744991c3d4bbc6ec75b2ec3764dd9de8ab21cb1a3c90", 'hex'),
   },
   dest: {
     WAN     : new Buffer("0de99c2552e85e51fd7491a14ad340f92a02db92983178929b100776197bc4f6", 'hex'),
     ETH     : new Buffer("55aa70e9a9d984c91bd75d4793db2cd2d998dc8fcaebcb864202fb17a9a6d5b9", 'hex'),
+    BTC      : new Buffer("11755068315af28a09c4744991c3d4bbc6ec75b2ec3764dd9de8ab21cb1a3c90", 'hex'),
   },
   // srcSmg  : new Buffer("0de99c2552e85e51fd7491a14ad340f92a02db92983178929b100776197bc4f6", 'hex'),
   // srcSmg1 : new Buffer("55aa70e9a9d984c91bd75d4793db2cd2d998dc8fcaebcb864202fb17a9a6d5b9", 'hex'),
@@ -59,31 +62,41 @@ let storemanGroups       = {
       s                     : "",
       accounts              : { WAN: ADDRESS_0, ETH: ADDRESS_0 }
   },
-  exception: {
-      ID                    : web3.utils.padLeft("0x03", 64),
-  }
+  // exception: {
+  //     ID                    : web3.utils.padLeft("0xff", 64),
+  // }
 };
 
 function initStoremanGroup(storemanGroups, schnorrs) {
   for (let index in storemanGroups) {
-    if (!storemanGroups[index].deposit) {
-      continue;
-    }
+    // if (!storemanGroups[index].deposit) {
+    //   continue;
+    // }
+    storemanGroups[index].curve1 = defaultCurve.secp256K1;
+    storemanGroups[index].curve2 = defaultCurve.bn128;
+    storemanGroups[index].curve3 = defaultCurve.ecSchnorr;
     storemanGroups[index].gpk1 = schnorrs[0].getPKBySk(skInfo[index].WAN);
     storemanGroups[index].gpk2 = schnorrs[1].getPKBySk(skInfo[index].ETH);
+    storemanGroups[index].gpk3 = schnorrs[2].getPKBySk(skInfo[index].BTC);
   }
 }
 
-async function addWanStoremanGroup(smgAdminProxy, storemanGroups, curveIDs, owner) {
-  let count = 0;
+async function addWanStoremanGroup(smg, storemanGroups, curveIDs, owner) {
+  // let count = 0;
   for (let index in storemanGroups) {
-    if (count >= curveIDs.length) {
-      break;
-    }
-    count++
-    await smgAdminProxy.setStoremanGroupConfig(storemanGroups[index].ID, storemanGroupStatus.ready,
+    // if (count >= curveIDs.length) {
+    //   break;
+    // }
+    // count++
+    console.log("addWanStoremanGroup ===> index:", index, "smgID:", storemanGroups[index].ID, "status", storemanGroupStatus.ready,
+      "deposit:", web3.utils.toWei(storemanGroups[index].deposit), "chainArray:", [storemanGroups[index].chain1, storemanGroups[index].chain2],
+      "curveArray", [storemanGroups[index].curve1, storemanGroups[index].curve2],
+      "gpk1", storemanGroups[index].gpk1, "gpk2", storemanGroups[index].gpk2,
+      "startTime:", storemanGroups[index].startTime, "endTime", storemanGroups[index].endTime
+    );
+    await smg.setStoremanGroupConfig(storemanGroups[index].ID, storemanGroupStatus.ready,
       web3.utils.toWei(storemanGroups[index].deposit), [storemanGroups[index].chain1, storemanGroups[index].chain2],
-      curveIDs,
+      [storemanGroups[index].curve1, storemanGroups[index].curve2],
       storemanGroups[index].gpk1, storemanGroups[index].gpk2,
       storemanGroups[index].startTime, storemanGroups[index].endTime
     )
@@ -92,15 +105,21 @@ async function addWanStoremanGroup(smgAdminProxy, storemanGroups, curveIDs, owne
 }
 
 async function syncWanStoremanGroup(oracle, storemanGroups, curveIDs, owner) {
-  let count = 0;
+  // let count = 0;
   for (let index in storemanGroups) {
-    if (count >= curveIDs.length) {
-      break;
-    }
-    count++
+    // if (count >= curveIDs.length) {
+    //   break;
+    // }
+    // count++
+    console.log("syncWanStoremanGroup ===> index:", index, "smgID:", storemanGroups[index].ID, "status", storemanGroupStatus.ready,
+      "deposit:", web3.utils.toWei(storemanGroups[index].deposit), "chainArray:", [storemanGroups[index].chain1, storemanGroups[index].chain2],
+      "curveArray", [storemanGroups[index].curve1, storemanGroups[index].curve2],
+      "gpk1", storemanGroups[index].gpk1, "gpk2", storemanGroups[index].gpk2,
+      "startTime:", storemanGroups[index].startTime, "endTime", storemanGroups[index].endTime
+    );
     await oracle.setStoremanGroupConfig(storemanGroups[index].ID, storemanGroupStatus.ready,
         web3.utils.toWei(storemanGroups[index].deposit), [storemanGroups[index].chain2, storemanGroups[index].chain1],
-        curveIDs,
+        [storemanGroups[index].curve2, storemanGroups[index].curve1],
         storemanGroups[index].gpk2, storemanGroups[index].gpk1,
         storemanGroups[index].startTime, storemanGroups[index].endTime
     );

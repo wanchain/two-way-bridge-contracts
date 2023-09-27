@@ -163,10 +163,23 @@ function toNonExponential(num) {
 }
 
 function buildMpcSign (schnorr, sk, typesArray, ...args) {
-    let result = {
-        R: schnorr.getR(),
-        s: schnorr.getS(sk, typesArray, args)
-    };
+    let result;
+    const signature = schnorr.getS(sk, typesArray, args);
+    if (typeof(signature) === "object" && signature.e != undefined && signature.s != undefined && signature.parity != undefined) {
+        console.log("buildMpcSign:", signature)
+        result = {
+            R: web3.utils.bytesToHex(web3.utils.hexToBytes(signature.e).concat( web3.utils.hexToBytes(signature.parity))),
+            s: signature.s,
+            parity: signature.parity,
+            e: signature.e,
+            m: signature.m,
+        };
+    } else {
+        result = {
+            R: schnorr.getR(),
+            s: signature,
+        };
+    }
     return result;
 }
 
@@ -191,12 +204,36 @@ function sha256(message) {
     return crypto.createHash('SHA256').update(message, "utf8").digest('hex');
 }
 
-function keccak(message) {
+function soliditySha256(types, params) {
+    if (types.length != params.length) {
+        throw new Error("soliditySha256 invalid length");
+    }
+    const message =  Buffer.from(web3.utils.hexToBytes(web3.utils.encodePacked(...types.map((type, index) => ({
+        type:type, value: web3.eth.abi.formatParam(type, params[index])
+    })))));
+    const hash = sha256(message);
+    return hash.startsWith("0x") ? hash : `0x${hash}`;
+}
+
+function keccak256(message) {
     const keccak = require('keccak');
     return keccak('keccak256').update(message).digest('hex');
 }
 
-
+function solidityKeccak256(types, params) {
+    if (types.length != params.length) {
+        throw new Error("solidityKeccak256 invalid length");
+    }
+    console.log("solidityKeccak256 types:", types, "params:", params)
+    console.log("solidityKeccak256 format params:", types.map((type, index) => ({type:type, value:  Array.isArray(params[index]) ? Buffer.from(params[index]) : params[index]})))
+    const message =  Buffer.from(web3.utils.hexToBytes(web3.utils.encodePacked(...types.map((type, index) => ({
+        type:type, value: web3.eth.abi.formatParam(type, (Array.isArray(params[index]) || params[index] instanceof Uint8Array) ? Buffer.from(params[index]) : params[index])
+    })))));
+    // const message =  Buffer.from(web3.utils.hexToBytes(web3.utils.encodePacked(...types.map((type, index) => ({type:type, value: params[index]})))));
+    // == const hash = keccak256(message);
+    const hash = web3.utils.keccak256(message);
+    return hash.startsWith("0x") ? hash : `0x${hash}`;
+}
 
 function newContractAt(contract, address) {
     return new web3.eth.Contract(contract.abi, address);
@@ -288,7 +325,9 @@ async function waitReceipt(web3, txhash) {
 
 module.exports = {
     sha256,
-    keccak,
+    keccak256,
+    soliditySha256,
+    solidityKeccak256,
     newContract,
     newContractAt,
     contractAt,

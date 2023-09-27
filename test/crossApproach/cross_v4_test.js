@@ -1,5 +1,6 @@
 const CrossDelegate = artifacts.require('CrossDelegateV4');
 const CrossProxy = artifacts.require('CrossProxy');
+const EcSchnorrVerifier = artifacts.require('EcSchnorrVerifier');
 
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegateV2');
 
@@ -7,6 +8,7 @@ const OracleDelegate = artifacts.require('OracleDelegate');
 
 const TestStoremanAdmin = artifacts.require('TestStoremanAdmin.sol');
 const TestOrigTokenCreator = artifacts.require("TestOrigTokenCreator.sol");
+const crypto = require('crypto');
 
 const {
     ADDRESS_0,
@@ -448,6 +450,80 @@ it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( wanchain => ethereum 
 
     const afterBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
     assert.equal(afterBalance.sub(beforeBalance).eq(new web3.utils.BN(funcParams.crossFee)), true, "balance of storeman fee error");
+});
+
+it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @zk] <( wanchain => zk )> EcSchnorr -> smgMint  ==>  success', async () => {
+    const wanUserAccount = global.aliceAccount.WAN;
+    const ethUserAccount = global.aliceAccount.ETH;
+    const currentChainType = chainTypes.ETH;
+    const buddyChainType = chainTypes.WAN;
+    const uniqueID = web3.utils.toHex(crypto.randomBytes(32));
+    const smgID = global.storemanGroups.src.ID
+    const crossValueToWei = web3.utils.toWei(crossValue.toString());
+    const userAccount = ethUserAccount;
+    const senderAccount = global.smgAccount.src[currentChainType];
+    const sk = skInfo.src[chainTypes.BTC];
+
+    // cross
+    const cross = await CrossDelegate.at(global.chains[currentChainType].scAddr.CrossProxy);
+    const partners = await cross.getPartners();
+
+    // tokenAccount
+    const tokenPair = filterTokenPair(global.tokenPairs, currentChainType, buddyChainType, global.chains[buddyChainType].coin.symbol);
+    const tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
+    const tokenPairInfo = await tokenManager.getTokenPairInfo(tokenPair.tokenPairID);
+    const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
+    const tokenPairID = tokenPair.tokenPairID;
+
+    const fee = await cross.getFee({srcChainID:global.chains[currentChainType].ID, destChainID:global.chains[buddyChainType].ID});
+    const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
+    const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
+
+    let smgFeeProxy = partners.smgFeeProxy;
+    if (smgFeeProxy === ADDRESS_0) {
+        smgFeeProxy = await cross.owner();
+    }
+
+    let funcParams = {
+        uniqueID: uniqueID,
+        smgID: smgID,
+        tokenPairID: tokenPairID,
+        crossValue: crossValueActually,
+        crossFee: crossFee,
+        tokenAccount: tokenAccount,
+        userAccount: userAccount
+    };
+
+    let smg = await global.getSmgProxy(currentChainType, partners.smgAdminProxy);
+    let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.smgID);
+
+    // convert to EcSchnorrVerifier
+    let hashType = await cross.hashType();
+    await cross.setHashType(1);
+    await smg.setStoremanGroupConfig(funcParams.smgID, smgConfig.status,
+        smgConfig.deposit, [smgConfig.chain1, smgConfig.chain2],
+        [global.storemanGroups.dest.curve3, smgConfig.curve2],
+        global.storemanGroups.dest.gpk3, smgConfig.gpk2,
+        smgConfig.startTime, smgConfig.endTime
+    );
+
+    // sign
+    let {R, s, parity, e, m} = buildMpcSign(global.schnorr[defaultCurve2Schnorr[Number(global.storemanGroups.dest.curve3)]], sk, typesArrayList.smgMint, (await cross.currentChainID()), funcParams.uniqueID, funcParams.tokenPairID, funcParams.crossValue, funcParams.crossFee, funcParams.tokenAccount, funcParams.userAccount);
+    funcParams = {...funcParams, R: R, s: s};
+
+    // const ecSchnorr = await EcSchnorrVerifier.at(global.chains[currentChainType].scAddr.EcSchnorrVerifier);
+    // const xPublicKey = web3.utils.bytesToHex(web3.utils.hexToBytes(global.storemanGroups.dest.gpk3).slice(0,32));
+    // console.log("debugVerify:", await ecSchnorr.debugVerify(s, xPublicKey, web3.utils.padLeft("0x",64), e, parity, m));
+    await cross.smgMint.call(...Object.values(funcParams), {from: senderAccount});
+
+    await cross.setHashType(hashType);
+    await smg.setStoremanGroupConfig(funcParams.smgID, smgConfig.status,
+        smgConfig.deposit, [smgConfig.chain1, smgConfig.chain2],
+        [smgConfig.curve1, smgConfig.curve2],
+        smgConfig.gpk1, smgConfig.gpk2,
+        smgConfig.startTime, smgConfig.endTime
+    );
+
 });
 
 it('Chain [WAN] <=> Chain [ETH] -> COIN [WAN @ethereum] <( ethereum => wanchain )> -> userBurn ==>  success', async () => {

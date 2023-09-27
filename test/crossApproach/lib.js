@@ -111,9 +111,15 @@ async function getTxParsedLogs(knownEvents, txHash) {
   return logs;
 }
 
+function sha256(message) {
+  const crypto=require('crypto');
+  return `0x${crypto.createHash('SHA256').update(message).digest('hex')}`;
+}
+
 module.exports = {
     assert,
     testInit,
     getEventSignature,
-    getTxParsedLogs
+    getTxParsedLogs,
+    sha256,
 };

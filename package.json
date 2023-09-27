@@ -42,6 +42,7 @@
     "greet": "yarn hardhat deploy-zksync --script use-greeter.ts"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.2"
+    "@openzeppelin/contracts": "^4.9.2",
+    "ethereumjs-tx": "^2.1.2"
   }
 }

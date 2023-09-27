@@ -10,6 +10,7 @@ const {
 
 const {
     assert,
+    sha256,
 }                               = require('./lib');
 
 it('Transfer owner @wanchain  ==> Success', async () => {
@@ -162,6 +163,52 @@ it('Others setEtherTransferGasLimit and getEtherTransferGasLimit  ==> The defaul
     await wanCross.setEtherTransferGasLimit(3000, {from: admin});
     ret = await wanCross.getEtherTransferGasLimit();
     assert.equal(ret.eq(new web3.utils.BN(3000)), true, `check etherTransferGasLimit after setEtherTransferGasLimit failed`);
+
+    await wanCross.setEtherTransferGasLimit(0, {from: admin});
+    ret = await wanCross.getEtherTransferGasLimit();
+    assert.equal(ret.eq(new web3.utils.BN(2300)), true, `check etherTransferGasLimit after setEtherTransferGasLimit failed`);
+});
+
+it('Others setHashType and hashType  ==> The default value', async () => {
+    const wanchain = chainTypes.WAN;
+    let ret;
+    let data = "0x010203040506070809";
+
+    // wanchain
+    let wanCross = await CrossDelegateV4.at(global.chains[wanchain].scAddr.CrossProxy);
+
+    ret = await wanCross.hashType();
+    assert.equal(ret.eq(new web3.utils.BN(0)), true, `check default hashType failed`);
+
+    const sha256Hash = await wanCross.hashFunc(data);
+    const sha256Local = sha256(Buffer.from(web3.utils.hexToBytes(data)));
+    assert.equal(sha256Hash, sha256Local, "check sha256 failed");
+
+    await wanCross.setHashType(1);
+    ret = await wanCross.hashType();
+    assert.equal(ret.eq(new web3.utils.BN(1)), true, `check hashType after setHashType failed`);
+
+    const keccak256Hash = await wanCross.hashFunc(data);
+    const keccak256Local = web3.utils.keccak256(Buffer.from(web3.utils.hexToBytes(data)));
+    assert.equal(keccak256Hash, keccak256Local, "check keccak256 failed");
+
+    await wanCross.setHashType(0);
+    ret = await wanCross.hashType();
+    assert.equal(ret.eq(new web3.utils.BN(0)), true, `check hashType after setHashType failed`);
+});
+
+it('Others setHashType and hashType failed by account which is not owner', async () => {
+    try {
+        const wanchain = chainTypes.WAN;
+        let ret;
+
+        // wanchain
+        let wanCross = await CrossDelegateV4.at(global.chains[wanchain].scAddr.CrossProxy);
+        const admin = await wanCross.admin();
+        await wanCross.setHashType(1, {from: admin});
+        } catch (err) {
+        assert.include(err.toString(), "Not owner");
+    }
 });
 
 it('Proxy @wanchain   -> get the implementation address', async () => {
