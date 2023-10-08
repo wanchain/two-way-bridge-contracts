@@ -6,5 +6,5 @@ Other scripts was in ./scripts
 
 
 ## Devnet deployment
-https://explorer.aptoslabs.com/account/0x786870d087d01714842efcadc56d947ddf4e177ebc9b4fcd8ca546410d8f3d98/modules/code/CoinBase?network=devnet
+https://explorer.aptoslabs.com/account/0xdc8e034c5714c11a7d137973f7e9bf1ddb74d7d322656265f899eb3d9fb2d31c/modules/code/CoinBase?network=devnet
 
