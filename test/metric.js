@@ -1814,24 +1814,16 @@ contract('Test Metric', async (accounts) => {
     // ===========================================================others====================================//
     // revert
 
-    // it('revert...   -> No curve', async () => {
-    //     try {
-    //         let config = await ConfigDelegate.at(metricInstProxy.address);
-    //         await config.setCurve(["0"], [ADDRZERO]);
-    //         await config.getCurve(0);
-    //     } catch (err) {
-    //         lib.assertInclude(err.message, "No curve", err);
-    //     }
-    // });
-
-    // it('revert...   -> callUnKnownFuc', async () => {
-    //     try {
-    //         web3.eth.sendTransaction({to: metricInstProxy.address, value: "1", from: accounts[0], data:"0x12345678"})
-    //         assert.fail("should be failed");
-    //     } catch (err) {
-    //         lib.assertInclude(err.message, "Not support", err);
-    //     }
-    // });
+    it('revert...   -> No curve', async () => {
+        try {
+            await web3.eth.sendTransaction({from:accounts[0], to: metricInstProxy.address, value: web3.utils.toWei("1")})
+            // let config = await ConfigDelegate.at(metricInstProxy.address);
+            // await config.getCurve(0);
+            assert.fail("should be failed");
+        } catch (err) {
+            lib.assertInclude(err.message, "Not support", err);
+        }
+    });
 
     // getDependence()
     it('getDependence...   ->   ', async () => {
