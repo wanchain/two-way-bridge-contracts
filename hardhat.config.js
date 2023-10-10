@@ -189,6 +189,11 @@ module.exports = {
       gasPrice: 2e9,
       gas: 8e6,
       chainId: 888,
+    },
+
+    baseTestnet: {
+      url: 'https://base-goerli.publicnode.com',
+      accounts: [process.env.PK],
     }
 
   },
