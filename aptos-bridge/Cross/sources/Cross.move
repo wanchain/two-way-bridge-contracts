@@ -269,7 +269,15 @@ module BridgeDeployer::Cross {
         mapTxStatus: table::Table<address, u8>,
     }
 
-    struct CrossEventHandlers has store {
+    struct Cross has key, store {
+        admin: address,
+        owner: address,
+        halted: bool,
+        smg_fee_proxy: address,
+        current_chain_id: u64,
+        data: CrossType,
+
+        // events start ------------------------------------------------------------
         set_admin: EventHandle<SetAdmin>,
         set_fee: EventHandle<SetFee>,
         smg_withdraw_fee_logger: EventHandle<SmgWithdrawFeeLogger>,
@@ -288,16 +296,6 @@ module BridgeDeployer::Cross {
         smg_mint: EventHandle<SmgMint>,
         smg_release_logger: EventHandle<SmgReleaseLogger>,
         smg_release: EventHandle<SmgRelease>,
-    }
-
-    struct Cross has key, store {
-        admin: address,
-        owner: address,
-        halted: bool,
-        smg_fee_proxy: address,
-        current_chain_id: u64,
-        data: CrossType,
-        event_handler: CrossEventHandlers,
     }
 
     /// Account has no capabilities (admin).
@@ -329,26 +327,26 @@ module BridgeDeployer::Cross {
                 mapTokenPairContractFee: table::new<u64, u64>(),
                 mapTxStatus: table::new<address, u8>(),
             },
-            event_handler: CrossEventHandlers {
-                set_admin: account::new_event_handle<SetAdmin>(sender),
-                set_fee: account::new_event_handle<SetFee>(sender),
-                smg_withdraw_fee_logger: account::new_event_handle<SmgWithdrawFeeLogger>(sender),
-                withdraw_contract_fee_logger: account::new_event_handle<WithdrawContractFeeLogger>(sender),
-                set_token_pair_fee: account::new_event_handle<SetTokenPairFee>(sender),
-                withdraw_history_fee_logger: account::new_event_handle<WithdrawHistoryFeeLogger>(sender),
-                transfer_asset_logger: account::new_event_handle<TransferAssetLogger>(sender),
-                receive_debt_logger: account::new_event_handle<ReceiveDebtLogger>(sender),
-                user_lock_nft: account::new_event_handle<UserLockNFT>(sender),
-                user_burn_nft: account::new_event_handle<UserBurnNFT>(sender),
-                smg_mint_nft: account::new_event_handle<SmgMintNFT>(sender),
-                smg_release_nft: account::new_event_handle<SmgReleaseNFT>(sender),
-                user_lock_logger: account::new_event_handle<UserLockLogger>(sender),
-                user_burn_logger: account::new_event_handle<UserBurnLogger>(sender),
-                smg_mint_logger: account::new_event_handle<SmgMintLogger>(sender),
-                smg_mint: account::new_event_handle<SmgMint>(sender),
-                smg_release_logger: account::new_event_handle<SmgReleaseLogger>(sender),
-                smg_release: account::new_event_handle<SmgRelease>(sender),
-            },
+            
+            // events start ------------------------------------------------------------
+            set_admin: account::new_event_handle<SetAdmin>(sender),
+            set_fee: account::new_event_handle<SetFee>(sender),
+            smg_withdraw_fee_logger: account::new_event_handle<SmgWithdrawFeeLogger>(sender),
+            withdraw_contract_fee_logger: account::new_event_handle<WithdrawContractFeeLogger>(sender),
+            set_token_pair_fee: account::new_event_handle<SetTokenPairFee>(sender),
+            withdraw_history_fee_logger: account::new_event_handle<WithdrawHistoryFeeLogger>(sender),
+            transfer_asset_logger: account::new_event_handle<TransferAssetLogger>(sender),
+            receive_debt_logger: account::new_event_handle<ReceiveDebtLogger>(sender),
+            user_lock_nft: account::new_event_handle<UserLockNFT>(sender),
+            user_burn_nft: account::new_event_handle<UserBurnNFT>(sender),
+            smg_mint_nft: account::new_event_handle<SmgMintNFT>(sender),
+            smg_release_nft: account::new_event_handle<SmgReleaseNFT>(sender),
+            user_lock_logger: account::new_event_handle<UserLockLogger>(sender),
+            user_burn_logger: account::new_event_handle<UserBurnLogger>(sender),
+            smg_mint_logger: account::new_event_handle<SmgMintLogger>(sender),
+            smg_mint: account::new_event_handle<SmgMint>(sender),
+            smg_release_logger: account::new_event_handle<SmgReleaseLogger>(sender),
+            smg_release: account::new_event_handle<SmgRelease>(sender),
         });
     }
 
@@ -370,8 +368,10 @@ module BridgeDeployer::Cross {
     }
 
     fun only_ready_smg(smgID: &address): bool {
-        let (status, startTime, endTime) = Oracle::get_storeman_group_status(*smgID);
-        status == GROUP_STATUS_READY && startTime <= timestamp::now_seconds() && timestamp::now_seconds() <= endTime
+        true
+        // TODO: ONLY FOR DEBUG CLOSE
+        // let (status, startTime, endTime) = Oracle::get_storeman_group_status(*smgID);
+        // status == GROUP_STATUS_READY && startTime <= timestamp::now_seconds() && timestamp::now_seconds() <= endTime
     }
 
     public entry fun set_halt(account: &signer, halt: bool) acquires Cross {
@@ -384,7 +384,7 @@ module BridgeDeployer::Cross {
         only_owner(account);
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         data.admin = newAdmin;
-        event::emit_event<SetAdmin>(&mut data.event_handler.set_admin, SetAdmin{
+        event::emit_event<SetAdmin>(&mut data.set_admin, SetAdmin{
             adminAccount: newAdmin,
         });
     }
@@ -417,7 +417,7 @@ module BridgeDeployer::Cross {
             simple_map::add<u64, u64>(agentFeeMap, destChainID, agentFee);
         };
         
-        event::emit_event<SetFee>(&mut data.event_handler.set_fee, SetFee{
+        event::emit_event<SetFee>(&mut data.set_fee, SetFee{
             srcChainID: srcChainID,
             destChainID: destChainID,
             contractFee: contractFee,
@@ -432,7 +432,7 @@ module BridgeDeployer::Cross {
         let mapTokenPairContractFee = &mut data.data.mapTokenPairContractFee;
         table::upsert<u64, u64>(mapTokenPairContractFee, tokenPairID, contractFee);
 
-        event::emit_event<SetTokenPairFee>(&mut data.event_handler.set_token_pair_fee, SetTokenPairFee{
+        event::emit_event<SetTokenPairFee>(&mut data.set_token_pair_fee, SetTokenPairFee{
             tokenPairID: tokenPairID,
             contractFee: contractFee,
         });
@@ -504,7 +504,7 @@ module BridgeDeployer::Cross {
 
         let tokenAddr = string::bytes(&type_info::type_name<CoinType>());
 
-        event::emit_event<UserLockLogger>(&mut borrow_global_mut<Cross>(@BridgeDeployer).event_handler.user_lock_logger, UserLockLogger {
+        event::emit_event<UserLockLogger>(&mut borrow_global_mut<Cross>(@BridgeDeployer).user_lock_logger, UserLockLogger {
             smgID: param.smgID,
             tokenPairID: param.tokenPairID,
             tokenAccount: *tokenAddr,
@@ -584,7 +584,7 @@ module BridgeDeployer::Cross {
 
         let tokenAddr = string::bytes(&type_info::type_name<WrappedCoin<CoinBase>>());
 
-        event::emit_event<UserBurnLogger>(&mut borrow_global_mut<Cross>(@BridgeDeployer).event_handler.user_burn_logger, UserBurnLogger {
+        event::emit_event<UserBurnLogger>(&mut borrow_global_mut<Cross>(@BridgeDeployer).user_burn_logger, UserBurnLogger {
             smgID: param.smgID,
             tokenPairID: param.tokenPairID,
             tokenAccount: *tokenAddr,
@@ -596,7 +596,8 @@ module BridgeDeployer::Cross {
     }
 
     public entry fun smg_mint<CoinBase>(_account: &signer, uniqueID: address, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: address, signature: vector<u8>) acquires Cross {
-        smg_mint_sig_ctl<CoinBase>(_account, uniqueID, smgID, tokenPairID, value, fee, userAccount, signature, true);
+        // TODO: DEBUG CLOSE VERIFY
+        smg_mint_sig_ctl<CoinBase>(_account, uniqueID, smgID, tokenPairID, value, fee, userAccount, signature, false);
     }
 
     fun smg_mint_sig_ctl<CoinBase>(_account: &signer, uniqueID: address, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: address, signature: vector<u8>, verifySig: bool) acquires Cross {
@@ -605,8 +606,6 @@ module BridgeDeployer::Cross {
 
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let tokenAddr = string::bytes(&type_info::type_name<WrappedCoin<CoinBase>>());
-        let pk = Oracle::get_storeman_group_pk(*&smgID);
-
 
         let param = RapiditySmgMintParams {
             uniqueID,                  
@@ -623,19 +622,22 @@ module BridgeDeployer::Cross {
 
         smg_mint_internal<CoinBase>(&param);
 
-        let sigData = bcs::to_bytes(&SmgSignatureData{
-            currentChainID: current_chain_id,
-            uniqueID: param.uniqueID,
-            tokenPairID: param.tokenPairID,
-            value: param.value,
-            fee: param.fee,
-            tokenAccount: param.destTokenAccount,
-            userAccount: param.destUserAccount,
-        });
-
-        let mHash = hash::sha2_256(sigData);
-        let result = ed25519::signature_verify_strict(&ed25519::new_signature_from_bytes(signature), &ed25519::new_unvalidated_public_key_from_bytes(pk), mHash);
+        
         if (verifySig) {
+            let pk = Oracle::get_storeman_group_pk(*&smgID);
+
+            let sigData = bcs::to_bytes(&SmgSignatureData{
+                currentChainID: current_chain_id,
+                uniqueID: param.uniqueID,
+                tokenPairID: param.tokenPairID,
+                value: param.value,
+                fee: param.fee,
+                tokenAccount: param.destTokenAccount,
+                userAccount: param.destUserAccount,
+            });
+
+            let mHash = hash::sha2_256(sigData);
+            let result = ed25519::signature_verify_strict(&ed25519::new_signature_from_bytes(signature), &ed25519::new_unvalidated_public_key_from_bytes(pk), mHash);
             assert!(result, error::invalid_argument(SMG_SIGNATURE_VERIFY_FAILED));
         };
     }
@@ -667,7 +669,7 @@ module BridgeDeployer::Cross {
         vector::push_back(&mut values, bcs::to_bytes(&param.destUserAccount));
         vector::push_back(&mut values, bcs::to_bytes(&param.fee));
 
-        event::emit_event<SmgMint>(&mut data.event_handler.smg_mint, SmgMint {
+        event::emit_event<SmgMint>(&mut data.smg_mint, SmgMint {
             uniqueID: param.uniqueID,
             smgID: param.smgID,
             tokenPairID: param.tokenPairID,
@@ -675,7 +677,7 @@ module BridgeDeployer::Cross {
             values: values,
         });
 
-        event::emit_event<SmgMintLogger>(&mut data.event_handler.smg_mint_logger, SmgMintLogger {
+        event::emit_event<SmgMintLogger>(&mut data.smg_mint_logger, SmgMintLogger {
             uniqueID: param.uniqueID,
             smgID: param.smgID,
             tokenPairID: param.tokenPairID,
@@ -686,7 +688,8 @@ module BridgeDeployer::Cross {
     }
 
     public entry fun smg_release<CoinType>(account: &signer, uniqueID: address, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: address, signature: vector<u8>) acquires Cross {
-        smg_release_sig_ctl<CoinType>(account, uniqueID, smgID, tokenPairID, value, fee, userAccount, signature, true);
+        // TODO: DEBUG CLOSE VERIFY
+        smg_release_sig_ctl<CoinType>(account, uniqueID, smgID, tokenPairID, value, fee, userAccount, signature, false);
     }
 
     fun smg_release_sig_ctl<CoinType>(account: &signer, uniqueID: address, smgID: address, tokenPairID: u64, value: u64, fee: u64, userAccount: address, signature: vector<u8>, verifySig: bool) acquires Cross {
@@ -695,7 +698,6 @@ module BridgeDeployer::Cross {
 
         let data = borrow_global_mut<Cross>(@BridgeDeployer);
         let tokenAddr = string::bytes(&type_info::type_name<CoinType>());
-        let pk = Oracle::get_storeman_group_pk(*&smgID);
         let current_chain_id = data.current_chain_id;
 
         let param = RapiditySmgReleaseParams {
@@ -710,20 +712,22 @@ module BridgeDeployer::Cross {
         };
 
         smg_release_internal<CoinType>(account, &param);
-
-        let sigData = bcs::to_bytes(&SmgSignatureData{
-            currentChainID: current_chain_id,
-            uniqueID: param.uniqueID,
-            tokenPairID: param.tokenPairID,
-            value: param.value,
-            fee: param.fee,
-            tokenAccount: param.destTokenAccount,
-            userAccount: param.destUserAccount,
-        });
-
-        let mHash = hash::sha2_256(sigData);
-        let result = ed25519::signature_verify_strict(&ed25519::new_signature_from_bytes(signature), &ed25519::new_unvalidated_public_key_from_bytes(pk), mHash);
+        
         if (verifySig) {
+            let pk = Oracle::get_storeman_group_pk(*&smgID);
+
+            let sigData = bcs::to_bytes(&SmgSignatureData{
+                currentChainID: current_chain_id,
+                uniqueID: param.uniqueID,
+                tokenPairID: param.tokenPairID,
+                value: param.value,
+                fee: param.fee,
+                tokenAccount: param.destTokenAccount,
+                userAccount: param.destUserAccount,
+            });
+            let mHash = hash::sha2_256(sigData);
+            let result = ed25519::signature_verify_strict(&ed25519::new_signature_from_bytes(signature), &ed25519::new_unvalidated_public_key_from_bytes(pk), mHash);
+        
             assert!(result, error::invalid_argument(SMG_SIGNATURE_VERIFY_FAILED));
         };
     }
@@ -755,7 +759,7 @@ module BridgeDeployer::Cross {
         vector::push_back(&mut values, bcs::to_bytes(&param.destUserAccount));
         vector::push_back(&mut values, bcs::to_bytes(&param.fee));
 
-        event::emit_event<SmgRelease>(&mut data.event_handler.smg_release, SmgRelease {
+        event::emit_event<SmgRelease>(&mut data.smg_release, SmgRelease {
             uniqueID: param.uniqueID,
             smgID: param.smgID,
             tokenPairID: param.tokenPairID,
@@ -763,7 +767,7 @@ module BridgeDeployer::Cross {
             values: values,
         });
 
-        event::emit_event<SmgReleaseLogger>(&mut data.event_handler.smg_release_logger, SmgReleaseLogger {
+        event::emit_event<SmgReleaseLogger>(&mut data.smg_release_logger, SmgReleaseLogger {
             uniqueID: param.uniqueID,
             smgID: param.smgID,
             tokenPairID: param.tokenPairID,

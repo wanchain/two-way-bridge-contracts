@@ -295,7 +295,7 @@ module BridgeDeployer::TokenManager {
     }
 
     // register coin if not registered
-    public fun register_coin<CoinType>(
+    public entry fun register_coin<CoinType>(
         account: &signer
     ) {
         let account_addr = signer::address_of(account);
