@@ -1814,7 +1814,7 @@ contract('Test Metric', async (accounts) => {
     // ===========================================================others====================================//
     // revert
 
-    it('revert...   -> No curve', async () => {
+    it('revert...   -> Not support', async () => {
         try {
             await web3.eth.sendTransaction({from:accounts[0], to: metricInstProxy.address, value: web3.utils.toWei("1")})
             // let config = await ConfigDelegate.at(metricInstProxy.address);
