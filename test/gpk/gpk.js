@@ -1,12 +1,9 @@
-const ConfigProxy = artifacts.require('ConfigProxy');
-const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
-const { g, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
+const { g, curve1, curve2, setupNetwork, registerStart, stakeInPre, toSelect, deploySmg } = require('../base.js');
 const { GpkStatus, CheckStatus, Data } = require('./Data');
 const utils = require('../utils.js');
 const optimist = require("optimist");
+const { ethers } = require('hardhat');
+const { assert } = require('chai');
 
 const fakeSc = ['local', 'coverage'].includes(optimist.argv.network);
 
@@ -17,25 +14,109 @@ const ADDRESS_0 = '0x0000000000000000000000000000000000000000';
 let groupId = '';
 
 // contract
-let smgSc, gpkProxy, gpkDelegate, gpkSc, configProxy;
+let smgSc, gpkProxy, gpkDelegate, gpkSc, cnf;
 let data;
 
-contract('Gpk_UT_gpk', async() => {
+contract('Gpk_UT_gpk', async(accounts) => {
   let owner, admin;
 
   before("should do all preparations", async() => {
     // config
-    configProxy = await ConfigProxy.deployed();
+    let ConfigDelegate = await ethers.getContractFactory("ConfigDelegate");
+    cnf = await ConfigDelegate.deploy()
+    await cnf.deployed();
+
+    let FakeSkCurve = await ethers.getContractFactory("FakeSkCurve");
+    secp256k1 = await FakeSkCurve.deploy();
+    await secp256k1.deployed();
+    bn256 = await FakeSkCurve.deploy();
+    await bn256.deployed();
 
     // smg
-    let smgProxy = await StoremanGroupProxy.deployed();
-    smgSc = await StoremanGroupDelegate.at(smgProxy.address);
-    console.log("StoremanGroup contract address: %s", smgProxy.address);
+    let CommonTool = await ethers.getContractFactory("CommonTool")
+    let commonTool = await CommonTool.deploy()
+    await commonTool.deployed()
+
+    let StoremanUtil = await ethers.getContractFactory("StoremanUtil",{
+      libraries:{
+        CommonTool:commonTool.address,
+      }
+    })
+    let storemanUtil = await StoremanUtil.deploy()
+    await storemanUtil.deployed()
+    g.storemanUtil = storemanUtil
+
+    let StoremanLib = await ethers.getContractFactory("StoremanLib",{
+      libraries:{
+        StoremanUtil:storemanUtil.address,
+      }
+    })
+    let storemanLib = await StoremanLib.deploy()
+    await storemanLib.deployed()
+
+    let IncentiveLib = await ethers.getContractFactory("IncentiveLib",{
+      libraries:{
+        StoremanUtil:storemanUtil.address,
+      }
+    })
+    let incentiveLib = await IncentiveLib.deploy()
+    await incentiveLib.deployed()
+
+    let StoremanGroupDelegate = await ethers.getContractFactory("StoremanGroupDelegate",{
+      libraries:{
+        StoremanUtil:storemanUtil.address,
+        StoremanLib:storemanLib.address,
+        IncentiveLib:incentiveLib.address,
+      }
+    })
+    smgSc = await StoremanGroupDelegate.deploy();
+    await smgSc.deployed()
+    g.storemanGroupProxy = smgSc
+
+    let FakePosLib = await ethers.getContractFactory("FakePosLib")
+    let fakePosLib = await FakePosLib.deploy()
+    g.fakePosLib = fakePosLib
+    await fakePosLib.deployed()
+    let ListGroup = await ethers.getContractFactory("ListGroup",{
+      libraries:{
+        StoremanUtil:storemanUtil.address,
+      }
+    })
+    let listGroup = await ListGroup.deploy(smgSc.address, fakePosLib.address)
+    await listGroup.deployed()
+    g.listGroup = listGroup
+
+    let FakeQuota = await ethers.getContractFactory("fakeQuota")
+    let fakeQuota = await FakeQuota.deploy()
+    await fakeQuota.deployed()
+    g.quota = fakeQuota
+    let FakeMetric = await ethers.getContractFactory("FakeMetric")
+    let fakeMetric = await FakeMetric.deploy()
+    await fakeMetric.deployed()
+    g.fakeMetric = fakeMetric
+
+    await smgSc.setGlobalGroupScAddr(listGroup.address);
 
     // gpk
-    gpkProxy = await GpkProxy.deployed();
-    gpkDelegate = await GpkDelegate.deployed();
-    gpkSc = await GpkDelegate.at(gpkProxy.address);
+    let GpkProxy = await ethers.getContractFactory("GpkProxy")
+    gpkProxy = await GpkProxy.deploy()
+    await gpkProxy.deployed()
+    let GpkLib = await ethers.getContractFactory("GpkLib",{
+      libraries:{
+        CommonTool:commonTool.address,
+      }
+    })
+    let gpkLib = await GpkLib.deploy();
+    await gpkLib.deployed();
+    let GpkDelegate = await ethers.getContractFactory("GpkDelegate", {
+      libraries : {
+        GpkLib: gpkLib.address
+      }
+    });
+    gpkDelegate = await GpkDelegate.deploy();
+    await gpkDelegate.deployed();
+    await gpkProxy.upgradeTo(gpkDelegate.address);
+    gpkSc = await ethers.getContractAt('GpkDelegate', gpkProxy.address)
     console.log("Gpk contract address: %s", gpkProxy.address);
 
     // network
@@ -46,7 +127,26 @@ contract('Gpk_UT_gpk', async() => {
     console.log("onwer address: %s", owner);
     console.log("admin address: %s", admin);
 
+    let curveIdArray = [curve1, curve2];
+    let algoIdArray = [0, 1];
+    let curveAddrArray = [secp256k1.address, bn256.address];
+    await cnf.addAdmin(admin);
+    assert.equal(await cnf.mapAdmin(admin), true);
+    await cnf.connect(g.signerAdmin).setCurve(curveIdArray, curveAddrArray);
+    assert.equal(await cnf.getCurve(curve1), curveAddrArray[0]);
+    assert.equal(await cnf.getCurve(curve2), curveAddrArray[1]);
+
+    await smgSc.addAdmin(owner);
+    await smgSc.setDependence(fakeMetric.address,gpkSc.address,fakeQuota.address,fakePosLib.address)
     groupId = await registerStart(smgSc);
+    console.log("storeman group started:", groupId);
+
+    await gpkSc.addAdmin(admin);
+    assert.equal(await gpkSc.mapAdmin(admin), true);
+    await gpkSc.connect(g.signerAdmin).setGpkCfg(groupId, curveIdArray, algoIdArray);
+    let gpkCount = await gpkSc.getGpkCount(groupId);
+    assert.equal(gpkCount, 2);
+
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
@@ -55,35 +155,37 @@ contract('Gpk_UT_gpk', async() => {
 
     data = new Data(smgSc, gpkSc, groupId);
     await data.init();
+
     // console.log("gpk ut data: %O", data);
+
   })
 
   // upgradeTo
   it('[GpkProxy_upgradeTo] should fail: Not owner', async () => {
     let result = {};
     try {
-      await gpkProxy.upgradeTo(gpkDelegate.address, {from: admin});
+      await gpkProxy.connect(g.signerAdmin).upgradeTo(gpkDelegate.address);
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Not owner');
+    assert.include(result.toString(), 'Not owner');
   })
 
   it('[GpkProxy_upgradeTo] should fail: Cannot upgrade to invalid address', async () => {
     let result = {};
     try {
-      await gpkProxy.upgradeTo(ADDRESS_0, {from: owner});
+      await gpkProxy.connect(g.signerOwner).upgradeTo(ADDRESS_0);
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Cannot upgrade to invalid address');
+    assert.include(result.toString(), 'Cannot upgrade to invalid address');
   })
 
   it('[GpkProxy_upgradeTo] should success', async () => {
     let result = {};
     try {
-      await gpkProxy.upgradeTo(gpkProxy.address, {from: owner}); // set self address temporarily
-      await gpkProxy.upgradeTo(gpkDelegate.address, {from: owner});
+      await gpkProxy.connect(g.signerOwner).upgradeTo(gpkProxy.address); // set self address temporarily
+      await gpkProxy.connect(g.signerOwner).upgradeTo(gpkDelegate.address);
     } catch (e) {
       result = e;
     }
@@ -93,51 +195,46 @@ contract('Gpk_UT_gpk', async() => {
   it('[GpkProxy_upgradeTo] should fail: Cannot upgrade to the same implementation', async () => {
     let result = {};
     try {
-      await gpkProxy.upgradeTo(gpkDelegate.address, {from: owner});
+      await gpkProxy.connect(g.signerOwner).upgradeTo(gpkDelegate.address);
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Cannot upgrade to the same implementation');
+    assert.include(result.toString(), 'Cannot upgrade to the same implementation');
   })
 
   // setDependence
   it('[GpkDelegate_setDependence] should fail: Not owner', async () => {
     let result = {};
     try {
-      await gpkSc.setDependence(configProxy.address, smgSc.address, {from: admin});
+      await gpkSc.connect(g.signerAdmin).setDependence(cnf.address, smgSc.address);
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Not owner');
+    assert.include(result.toString(), 'Not owner');
   })
 
   it('[GpkDelegate_setDependence] should fail: Invalid cfg', async () => {
     let result = {};
     try {
-      await gpkSc.setDependence(ADDRESS_0, smgSc.address, {from: owner});
+      await gpkSc.connect(g.signerOwner).setDependence(ADDRESS_0, smgSc.address);
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Invalid cfg');
+    assert.include(result.toString(), 'Invalid cfg');
   })
 
   it('[GpkDelegate_setDependence] should fail: Invalid smg', async () => {
     let result = {};
     try {
-      await gpkSc.setDependence(configProxy.address, ADDRESS_0, {from: owner});
+      await gpkSc.connect(g.signerOwner).setDependence(cnf.address, ADDRESS_0);
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Invalid smg');
+    assert.include(result.toString(), 'Invalid smg');
   })
   
   it('[GpkDelegate_setDependence] should success', async () => {
-    let result = {};
-    try {
-      await gpkSc.setDependence(configProxy.address, smgSc.address, {from: owner});
-    } catch (e) {
-      result = e;
-    }
+    await gpkSc.connect(g.signerOwner).setDependence(cnf.address, smgSc.address);
     assert.equal(await gpkSc.smg.call(), smgSc.address);
   })
 
@@ -148,12 +245,12 @@ contract('Gpk_UT_gpk', async() => {
     let defaultPeroid = 5 * 60;
     let negotiatePeroid = 15 * 60;
     try {
-      await gpkSc.setPeriod(groupId, ployCommitPeroid, defaultPeroid, negotiatePeroid, {from: owner});
+      await gpkSc.connect(g.signerOwner).setPeriod(groupId, ployCommitPeroid, defaultPeroid, negotiatePeroid);
     } catch (e) {
       result = e;
       console.log("setPeriod not admin: %O", e)
     }
-    assert.equal(result.reason, 'not admin');
+    assert.include(result.toString(), 'not admin');
   })
   
   it('[GpkDelegate_setPeriod] should success', async () => {
@@ -162,7 +259,7 @@ contract('Gpk_UT_gpk', async() => {
     let defaultPeriod = 5 * 60;
     let negotiatePeriod = 15 * 60;
     try {
-      await gpkSc.setPeriod(groupId, ployCommitPeriod, defaultPeriod, negotiatePeriod, {from: admin});
+      await gpkSc.connect(g.signerAdmin).setPeriod(groupId, ployCommitPeriod, defaultPeriod, negotiatePeriod);
     } catch (e) {
       result = e;
     }
@@ -180,17 +277,19 @@ contract('Gpk_UT_gpk', async() => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Invalid polyCommit');
+    assert.include(result.toString(), 'Invalid polyCommit');
   })
 
   it('[GpkDelegate_setPolyCommit] should fail: Invalid round', async () => {
     let result = {};
     try {
-      await data.setPolyCommit(1, 0, 0);
+      let gpkGroupInfo = await gpkSc.getGroupInfo(groupId, "1");
+      let invalidRoundIndex = (gpkGroupInfo.queriedRound + 1);
+      await gpkSc.connect(g.signerLeader).setPolyCommit(groupId, invalidRoundIndex, 0, "0x01");
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Invalid round');
+    assert.include(result.toString(), 'Invalid round');
   })
 
   it('[GpkDelegate_setPolyCommit] should fail: Invalid curve', async () => {
@@ -200,7 +299,7 @@ contract('Gpk_UT_gpk', async() => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Invalid curve');
+    assert.include(result.toString(), 'Invalid curve');
   })
 
   it('[GpkDelegate_setPolyCommit] should fail: Invalid sender', async () => {
@@ -211,7 +310,7 @@ contract('Gpk_UT_gpk', async() => {
       result = e;
       console.log("setPolyCommit Invalid sender: %O", e)
     }
-    assert.equal(result.reason, 'Invalid sender');
+    assert.include(result.toString(), 'Invalid sender');
   })
 
   it('[GpkDelegate_setPolyCommit] should fail: Duplicate', async () => {
@@ -225,17 +324,12 @@ contract('Gpk_UT_gpk', async() => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Duplicate');
+    assert.include(result.toString(), 'Duplicate');
   })
 
   it('[GpkDelegate_setPolyCommit] should success', async () => {
-    let result = {};
-    try {
-      for (let i = 1; i < data.smList.length; i++) {
-        await data.setPolyCommit(0, 0, i);
-      }
-    } catch (e) {
-      result = e;
+    for (let i = 1; i < data.smList.length; i++) {
+      await data.setPolyCommit(0, 0, i);
     }
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Negotiate);
@@ -250,18 +344,17 @@ contract('Gpk_UT_gpk', async() => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Invalid encSij');
+    assert.include(result.toString(), 'Invalid encSij');
   })
 
   it('[GpkDelegate_setEncSij] should fail: Invalid storeman', async () => {
     let result = {};
     try {
-      let sender = data.smList[0].address;
-      await gpkSc.setEncSij(groupId, 0, 0, ADDRESS_0, '0x00', {from: sender});
+      await gpkSc.connect(g.signerLeader).setEncSij(groupId, 0, 0, ADDRESS_0, '0x00');
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Invalid storeman');
+    assert.include(result.toString(), 'Invalid storeman');
   })
 
   it('[GpkDelegate_setEncSij] should success', async () => {
@@ -283,7 +376,7 @@ contract('Gpk_UT_gpk', async() => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Duplicate');
+    assert.include(result.toString(), 'Duplicate');
   })
 
   it('[GpkDelegate_setCheckStatus] should success', async () => {
@@ -305,7 +398,7 @@ contract('Gpk_UT_gpk', async() => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Duplicate');
+    assert.include(result.toString(), 'Duplicate');
   })
 
   it('[GpkDelegate_setCheckStatus] should fail: Not ready', async () => {
@@ -315,7 +408,7 @@ contract('Gpk_UT_gpk', async() => {
     } catch (e) {
       result = e;
     }
-    assert.equal(result.reason, 'Not ready');
+    assert.include(result.toString(), 'Not ready');
   })  
 
   it('[GpkDelegate_setEncSij_curve_1] should success', async () => {
@@ -377,7 +470,7 @@ contract('Gpk_UT_gpk', async() => {
   it('[GpkDelegate_payable] should fail: Not support', async () => {
     let result = null;
     try {
-      let fakeSC = await StoremanGroupDelegate.at(gpkProxy.address);
+      let fakeSC = await ethers.getContractAt("StoremanGroupDelegate", gpkProxy.address);
       await fakeSC.getStoremanGroupConfig(groupId);
     } catch (e) {
       result = e;
