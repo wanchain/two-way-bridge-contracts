@@ -150,6 +150,12 @@ const config = {
             signCurveId: 0,  // ecdsa
             hashType: 1, // keccak256
         },
+	baseTestnet: {
+		gasPrice:1e6,
+            url: "https://goerli.base.org",
+            accounts: [process.env.PK],
+            bip44ChainId: 1073741841,
+        },
         polyZkMainnet: {
             //gasPrice:200000000,
                 url: "https://zkevm-rpc.com",
