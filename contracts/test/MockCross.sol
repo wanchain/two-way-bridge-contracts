@@ -7,7 +7,7 @@ contract MockCross {
     uint public chainId;
     address public owner;
 
-    constructor(address _oracle, address _sigVerifier, uint256 _chainId) public {
+    constructor(address _oracle, address _sigVerifier, uint256 _chainId) {
         oracle = _oracle;
         sigVerifier = _sigVerifier;
         chainId = _chainId;
