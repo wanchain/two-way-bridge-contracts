@@ -29,7 +29,8 @@ contract('Gpk_UT_gpk', async(accounts) => {
     let FakeSkCurve = await ethers.getContractFactory("FakeSkCurve");
     secp256k1 = await FakeSkCurve.deploy();
     await secp256k1.deployed();
-    bn256 = await FakeSkCurve.deploy();
+    let FakeBnCurve = await ethers.getContractFactory("FakeBnCurve");
+    let bn256 = await FakeBnCurve.deploy();
     await bn256.deployed();
 
     // smg

@@ -6,8 +6,6 @@ const optimist = require("optimist");
 const config = require("./config");
  
 //const timeMachine = require('ganache-time-traveler');
-const wanutil = require('wanchain-util');
-const Tx = wanutil.wanchainTx
 const EthTx = require('ethereumjs-tx').Transaction
 
 let web3url, owner, leader, admin, leaderPk, web3;
@@ -574,7 +572,7 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
 
 
 module.exports = {
-    g,setupNetwork,toDelegateClaim, toPartClaim,
+    g,curve1,curve2,setupNetwork,toDelegateClaim, toPartClaim,
     registerStart,toStakeAppend,toStakeIn,timeWaitIncentive,toDelegateIn,toPartIn,toSetGpk,
     stakeInPre,stakeWhiteList,toSelect,timeWaitSelect,timeWaitEnd,sendTransaction,
     initTestValue,deploySmg

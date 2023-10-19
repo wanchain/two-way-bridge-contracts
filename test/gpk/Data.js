@@ -20,11 +20,30 @@ class Data {
     this.smList = [];
     this.threshold = 0;
     this.round = [];
+    this.singers = {};
   }
 
   async init() {
+    await this.initSingers();
     await this.getSmList();
     await this.initCurve();
+  }
+
+  async initSingers() {
+    let singers = await hre.ethers.getSigners();
+    this.singers.default = singers[0];
+
+    for (let singer of singers) {
+      this.singers[singer.address.toLowerCase()] = singer;
+    }
+  }
+
+  getSinger(address) {
+    let addr = address && address.toLowerCase();
+    if (!addr) {
+      return this.singers.default;
+    }
+    return this.singers[addr];
   }
 
   async getSmList() {
@@ -71,7 +90,8 @@ class Data {
     }
     let pcStr = '0x' + buf.toString('hex');
     sender = sender || this.smList[src].address;
-    await this.gpkSc.setPolyCommit(this.groupId, round, curve, pcStr, {from: sender});
+    let senderSinger = this.getSinger(sender);
+    await this.gpkSc.connect(senderSinger).setPolyCommit(this.groupId, round, curve, pcStr);
     this.round[curve % 2].src[src].pcStr = pcStr;
   }
 
@@ -79,13 +99,15 @@ class Data {
     let destAddr = this.smList[dest].address;
     let encSij = this.round[curve].src[src].send[dest].encSij;
     let sender = this.smList[src].address;
-    await this.gpkSc.setEncSij(this.groupId, round, curve, destAddr, encSij, {from: sender});
+    let senderSinger = this.getSinger(sender);
+    await this.gpkSc.connect(senderSinger).setEncSij(this.groupId, round, curve, destAddr, encSij);
   }
 
   async setCheckStatus(round, curve, src, isValid, dest) {
     let srcAddr = this.smList[src].address;
     let sender = this.smList[dest].address;
-    await this.gpkSc.setCheckStatus(this.groupId, round, curve, srcAddr, isValid, {from: sender});
+    let senderSinger = this.getSinger(sender);
+    await this.gpkSc.connect(senderSinger).setCheckStatus(this.groupId, round, curve, srcAddr, isValid);
   }
 
   genGpk(curve) {
@@ -140,6 +162,7 @@ class Src {
       this.polyCommit[i] = '0x' + encrypt.mulG(curve, poly).getEncoded(false).toString('hex').substr(2);
       // console.log("gpk ut init polyCommit %i: %s", i, this.polyCommit[i]);
     }
+      console.log("poly array:", this.poly)
     // send
     for (let i = 0; i < smList.length; i++) {
       let send = new Send();
@@ -160,13 +183,13 @@ class Send {
   async init(poly, curve, partner, pk) {
     // console.log("gpk ut init genEncSij for partner %s pk %s", partner, pk);
     let sij = '0x' + encrypt.genSij(curve, poly, pk).toBuffer(32).toString('hex');
-    // console.log("sij=%s", sij);
+    console.log("sij=%s", sij);
     let enc = await encrypt.encryptSij(pk, sij);
     this.sij = sij;
     this.encSij = '0x' + enc.ciphertext;
-    // console.log("encSij=%s", this.encSij);
+    console.log("encSij=%s", this.encSij);
     this.ephemPrivateKey = '0x' + enc.ephemPrivateKey;
-    // console.log("ephemPrivateKey=%s", this.ephemPrivateKey);
+    console.log("ephemPrivateKey=%s", this.ephemPrivateKey);
   }
 }
 
