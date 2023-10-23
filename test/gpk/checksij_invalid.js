@@ -30,7 +30,7 @@ contract('Gpk_UT_checksij_invalid', async () => {
     await bn256.deployed();
 
     // smg
-    let CommonTool = await ethers.getContractFactory("CommonTool")
+    let CommonTool = await ethers.getContractFactory("FakeCommonTool")
     let commonTool = await CommonTool.deploy()
     await commonTool.deployed()
 
@@ -147,7 +147,7 @@ contract('Gpk_UT_checksij_invalid', async () => {
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
-    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
+    // await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
     data = new Data(smgSc, gpkSc, groupId);
@@ -185,14 +185,11 @@ contract('Gpk_UT_checksij_invalid', async () => {
   it('[GpkDelegate_revealSij] should success', async () => {
     let src = data.smList[0].address;
     let dest = data.smList[1].address;
-    console.log("src:", src, "dest:", dest)
     let senderLeader = data.getSinger(src)
     let tx = await gpkSc.connect(senderLeader).revealSij(groupId, 0, 0, dest, data.round[0].src[0].send[1].sij, data.round[0].src[0].send[1].ephemPrivateKey);
     let result = await tx.wait()
-    console.log("[GpkDelegate_revealSij] should success, result:", JSON.stringify(result))
-    console.log("[GpkDelegate_revealSij] DebugRevealSijLogger:", JSON.stringify(result.events.find(log => log.event === "DebugRevealSijLogger")))
-    // const eventAbi = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"groupId","type":"bytes32"},{"indexed":true,"internalType":"uint8","name":"slashType","type":"uint8"},{"indexed":true,"internalType":"address","name":"slashed","type":"address"},{"indexed":false,"internalType":"address","name":"partner","type":"address"},{"indexed":false,"internalType":"uint16","name":"round","type":"uint16"},{"indexed":false,"internalType":"uint8","name":"curveIndex","type":"uint8"}],"name":"SlashLogger","type":"event"}]
-    const eventAbi = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"groupId","type":"bytes32"},{"indexed":true,"internalType":"uint8","name":"slashType","type":"uint8"},{"indexed":true,"internalType":"address","name":"slashed","type":"address"},{"indexed":false,"internalType":"address","name":"partner","type":"address"},{"indexed":false,"internalType":"uint16","name":"round","type":"uint16"},{"indexed":false,"internalType":"uint8","name":"curveIndex","type":"uint8"}],"name":"SlashLogger","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"ephemPrivateKey","type":"bytes32"},{"indexed":true,"internalType":"bytes32","name":"iv","type":"bytes32"},{"indexed":true,"internalType":"uint256","name":"sij","type":"uint256"},{"indexed":false,"internalType":"bytes","name":"destPk","type":"bytes"}],"name":"DebugCommonToolEncParams","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bytes","name":"encSij","type":"bytes"},{"indexed":false,"internalType":"bytes","name":"cipher","type":"bytes"}],"name":"DebugCommonToolCmpBytesParams","type":"event"}]
+    const eventAbi = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"groupId","type":"bytes32"},{"indexed":true,"internalType":"uint8","name":"slashType","type":"uint8"},{"indexed":true,"internalType":"address","name":"slashed","type":"address"},{"indexed":false,"internalType":"address","name":"partner","type":"address"},{"indexed":false,"internalType":"uint16","name":"round","type":"uint16"},{"indexed":false,"internalType":"uint8","name":"curveIndex","type":"uint8"}],"name":"SlashLogger","type":"event"}]
+    // const eventAbi = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"groupId","type":"bytes32"},{"indexed":true,"internalType":"uint8","name":"slashType","type":"uint8"},{"indexed":true,"internalType":"address","name":"slashed","type":"address"},{"indexed":false,"internalType":"address","name":"partner","type":"address"},{"indexed":false,"internalType":"uint16","name":"round","type":"uint16"},{"indexed":false,"internalType":"uint8","name":"curveIndex","type":"uint8"}],"name":"SlashLogger","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"ephemPrivateKey","type":"bytes32"},{"indexed":true,"internalType":"bytes32","name":"iv","type":"bytes32"},{"indexed":true,"internalType":"uint256","name":"sij","type":"uint256"},{"indexed":false,"internalType":"bytes","name":"destPk","type":"bytes"}],"name":"DebugCommonToolEncParams","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bytes","name":"encSij","type":"bytes"},{"indexed":false,"internalType":"bytes","name":"cipher","type":"bytes"}],"name":"DebugCommonToolCmpBytesParams","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bytes","name":"encSij","type":"bytes"},{"indexed":false,"internalType":"bytes32","name":"iv","type":"bytes32"}],"name":"DebugCommonToolBytes2uint","type":"event"}]
     let iface = new ethers.utils.Interface(eventAbi);
     // console.log("iface:", iface)
     result.logs = result.logs.map((log) => {
@@ -202,9 +199,7 @@ contract('Gpk_UT_checksij_invalid', async () => {
         return log;
       }
     });
-    console.log("result.logs:", result.logs)
     let event = result.logs.find(log => log.name === "SlashLogger").args;
-    console.log(event);
     assert.equal(event.slashed.toLowerCase(), dest.toLowerCase());
     assert.equal(event.slashType.toString(), SlashType.CheckInvalid);
   })
