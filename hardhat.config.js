@@ -192,6 +192,7 @@ const config = {
   etherscan: {
     apiKey: {
       // baseMainnet: ""
+      baseTestnet:'PLACEHOLDER_STRING',
     },
     customChains: [
       {
@@ -201,6 +202,14 @@ const config = {
           apiURL: "https://blockscout.com/astar/api",
           browserURL: "https://blockscout.com/astar",
         },
+      },
+      {
+        network: "baseTestnet",
+        chainId: 84531,
+        urls: {
+         apiURL: "https://api-goerli.basescan.org/api",
+         browserURL: "https://goerli.basescan.org"
+        }
       },
       {
         network: "baseMainnet",

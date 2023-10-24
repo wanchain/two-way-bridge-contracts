@@ -43,6 +43,8 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.2",
-    "ethereumjs-tx": "^2.1.2"
+    "@openzeppelin/test-helpers": "^0.5.16",
+    "ethereumjs-tx": "^2.1.2",
+    "ganache-cli": "^6.12.2"
   }
 }

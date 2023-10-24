@@ -56,3 +56,13 @@ If you do not start the zkSync local environment, the tests will fail with error
 npx hardhat --config hardhat.config.ts --network zkSyncTestnet run deploy/transferOwner.js
 
 
+### verify
+see： https://hardhat.org/hardhat-runner/plugins/nomicfoundation-hardhat-verify#adding-support-for-other-networks
+
+The hardhat verify plugin supports only etherscan compatible explorer。
+Please use 'npx hardhat verify --list-networks' to check if your chain is supported。
+if you are sure your chain is etherscan compatible， please add your chain in customChains section   
+1. verify use command
+npx hardhat --network <your_network_name> verify <the_sc_address>
+2. verify use js
+npx hardhat --network <your_network_name> run deploy/verifySc.js 
