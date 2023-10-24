@@ -72,7 +72,7 @@ let defaultChainID2Types = {}
 Object.keys(defaultChainIDs).forEach(chainType => defaultChainID2Types[defaultChainIDs[chainType]] = chainType);
 
 let defaultCurve         = {
-  secp256K1                : 0,
+  secp256k1                : 0,
   bn128                    : 1,
   ecSchnorr                : 2,
 };

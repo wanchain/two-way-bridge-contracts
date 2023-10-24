@@ -182,12 +182,6 @@ const config = {
         "skill level pulse dune pattern rival used syrup inner first balance sad",
       gasPrice: 1, // 20 gwei (in wei) (default: 100 gwei)
     },
-    coverage: {
-      url: "http://127.0.0.1:5545",
-      mnemonic:
-        "skill level pulse dune pattern rival used syrup inner first balance sad",
-      gasPrice: 1, // 20 gwei (in wei) (default: 100 gwei)
-    },
   },
   etherscan: {
     apiKey: {

@@ -69,31 +69,18 @@ let storemanGroups       = {
 
 function initStoremanGroup(storemanGroups, schnorrs) {
   for (let index in storemanGroups) {
-    // if (!storemanGroups[index].deposit) {
-    //   continue;
-    // }
-    storemanGroups[index].curve1 = defaultCurve.secp256K1;
+    storemanGroups[index].curve1 = defaultCurve.bn128;
     storemanGroups[index].curve2 = defaultCurve.bn128;
     storemanGroups[index].curve3 = defaultCurve.ecSchnorr;
-    storemanGroups[index].gpk1 = schnorrs[0].getPKBySk(skInfo[index].WAN);
-    storemanGroups[index].gpk2 = schnorrs[1].getPKBySk(skInfo[index].ETH);
-    storemanGroups[index].gpk3 = schnorrs[2].getPKBySk(skInfo[index].BTC);
+    storemanGroups[index].gpk1 = schnorrs[storemanGroups[index].curve1].getPKBySk(skInfo[index].WAN);
+    storemanGroups[index].gpk2 = schnorrs[storemanGroups[index].curve2].getPKBySk(skInfo[index].ETH);
+    storemanGroups[index].gpk3 = schnorrs[storemanGroups[index].curve3].getPKBySk(skInfo[index].BTC);
   }
+  // process.exit()
 }
 
 async function addWanStoremanGroup(smg, storemanGroups, curveIDs, owner) {
-  // let count = 0;
   for (let index in storemanGroups) {
-    // if (count >= curveIDs.length) {
-    //   break;
-    // }
-    // count++
-    console.log("addWanStoremanGroup ===> index:", index, "smgID:", storemanGroups[index].ID, "status", storemanGroupStatus.ready,
-      "deposit:", web3.utils.toWei(storemanGroups[index].deposit), "chainArray:", [storemanGroups[index].chain1, storemanGroups[index].chain2],
-      "curveArray", [storemanGroups[index].curve1, storemanGroups[index].curve2],
-      "gpk1", storemanGroups[index].gpk1, "gpk2", storemanGroups[index].gpk2,
-      "startTime:", storemanGroups[index].startTime, "endTime", storemanGroups[index].endTime
-    );
     await smg.setStoremanGroupConfig(storemanGroups[index].ID, storemanGroupStatus.ready,
       web3.utils.toWei(storemanGroups[index].deposit), [storemanGroups[index].chain1, storemanGroups[index].chain2],
       [storemanGroups[index].curve1, storemanGroups[index].curve2],

@@ -56,11 +56,15 @@ const {
     clearGlobal
 }                               = require('./utils');
 
-describe('Test Cross Approach', () => {
+const crossCommon = require('./crossApproach/common_v4_test');
+const crossErc20 = require('./crossApproach/cross_v4_test');
+const crossErc1155 = require('./crossApproach/erc1155_v4_cross_test');
+const crossNFT = require('./crossApproach/nft_v1_cross_test');
+
+contract('Test Cross Approach', (accounts) => {
     before("init...   -> success", async () => {
         testInit();
 
-        let accounts = await web3.eth.getAccounts();
         // console.log("accounts:", accounts, accounts.length);
         let currNetwork = optimist.argv.network || "development";
         currNetwork = currNetwork.split("-")[0];
@@ -71,8 +75,8 @@ describe('Test Cross Approach', () => {
         const aliceAccounts = {WAN: accounts[5], ETH: accounts[6], BTC: userBTCAccount};
         const smgAccounts = { src: {WAN: accounts[7], ETH: accounts[8]}, dest: {WAN: accounts[7], ETH: accounts[8]} }
         const operatorAccounts = {WAN: accounts[9], ETH: accounts[9]};
-        // const curveIDs = {WAN: defaultCurve.secp256K1, ETH: defaultCurve.bn128};
-        const curveIDs = {WAN: defaultCurve.bn128, ETH: defaultCurve.bn128, BTC: defaultCurve.ecSchnorr};
+        // const curveIDs = {WAN: defaultCurve.secp256k1, ETH: defaultCurve.bn128};
+        const curveIDs = {WAN: defaultCurve.secp256k1, ETH: defaultCurve.bn128, BTC: defaultCurve.ecSchnorr};
 
         console.log(`Deploy contracts, wait...`);
         let tokenPairs = {};
@@ -121,15 +125,21 @@ describe('Test Cross Approach', () => {
         setGlobal("contractOwner", owner);
         setGlobal("getSmgProxy", getSmgProxy);
 
+        console.log("global.schnorr:", global.schnorr);
     });
 
-    importMochaTest("Test Common V4", './crossApproach/common_v4_test');
+    crossCommon.testCases();
+    crossErc20.testCases();
+    crossErc1155.testCases();
+    crossNFT.testCases();
 
-    importMochaTest("Test Cross V4", './crossApproach/cross_v4_test');
+    // importMochaTest("Test Common V4", './crossApproach/common_v4_test');
 
-    importMochaTest("Test ERC751 Cross V4", './crossApproach/nft_v1_cross_test');
+    // importMochaTest("Test Cross V4", './crossApproach/cross_v4_test');
 
-    importMochaTest("Test ERC1155 Cross V4", './crossApproach/erc1155_v4_cross_test');
+    // importMochaTest("Test ERC751 Cross V4", './crossApproach/nft_v1_cross_test');
+
+    // importMochaTest("Test ERC1155 Cross V4", './crossApproach/erc1155_v4_cross_test');
 
     after("finish...   -> success", function () {
         clearGlobal("operatorAccount");
@@ -176,27 +186,27 @@ async function getSmgProxy(chainType, address) {
 }
 
 async function addChainTokenPairs(tokenManagerAddr, tokenPairs) {
-    const TokenManagerDelegateV2 = artifacts.require('TokenManagerDelegateV2');
+    const TokenManagerDelegate = artifacts.require('TokenManagerDelegateV2');
 
-    let tokenManager = await TokenManagerDelegateV2.at(tokenManagerAddr);
+    let tokenManager = await TokenManagerDelegate.at(tokenManagerAddr);
     return await addTokenPairs(tokenManager, tokenPairs);
 }
 
 async function deployCrossContracts(owner, options) {
     const TokenManagerProxy         = artifacts.require('TokenManagerProxy');
-    const TokenManagerDelegateV2      = artifacts.require('TokenManagerDelegateV2');
+    const TokenManagerDelegate      = artifacts.require('TokenManagerDelegateV2');
 
     const OracleDelegate            = artifacts.require('OracleDelegate.sol');
     const OracleProxy               = artifacts.require('OracleProxy.sol');
 
     const Bn128SchnorrVerifier      = artifacts.require('Bn128SchnorrVerifier.sol');
     const Secp256k1SchnorrVerifier  = artifacts.require('Secp256k1SchnorrVerifier.sol');
-    const EcSchnorrVerifier  = artifacts.require('EcSchnorrVerifier.sol');
+    const EcSchnorrVerifier         = artifacts.require('EcSchnorrVerifier.sol');
     const SignatureVerifier         = artifacts.require('SignatureVerifier.sol');
 
-    const RapidityLibV4             = artifacts.require('RapidityLibV4');
-    const NFTLibV1                  = artifacts.require('NFTLibV1');
-    const CrossDelegateV4           = artifacts.require('CrossDelegateV4.sol');
+    const RapidityLib               = artifacts.require('RapidityLibV4');
+    const NFTLib                    = artifacts.require('NFTLibV1');
+    const CrossDelegate             = artifacts.require('CrossDelegateV4.sol');
     const CrossProxy                = artifacts.require('CrossProxy.sol');
 
     const TestStoremanAdmin         = artifacts.require('TestStoremanAdmin.sol');
@@ -207,7 +217,8 @@ async function deployCrossContracts(owner, options) {
         chainType: chainTypes.WAN,
         depositSymbol: coins.WAN.symbol,
         tokenPairs: {},
-        curveIDs:{ WAN:defaultCurve.secp256K1, ETH:defaultCurve.bn128, BTC: defaultCurve.ecSchnorr },
+        // curveIDs:{ WAN:defaultCurve.secp256k1, ETH:defaultCurve.bn128, BTC: defaultCurve.ecSchnorr },
+        curveIDs:{ WAN:defaultCurve.bn128, ETH:defaultCurve.bn128, BTC: defaultCurve.ecSchnorr },
         alice: null,
         admin: null,
         foundation: null,
@@ -228,9 +239,9 @@ async function deployCrossContracts(owner, options) {
 
     // token manager proxy
     let tokenManagerProxy = await TokenManagerProxy.new({from: owner});
-    let tokenManagerDelegate = await TokenManagerDelegateV2.new({from: owner});
+    let tokenManagerDelegate = await TokenManagerDelegate.new({from: owner});
     await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address, {from: owner});
-    let tokenManager = await TokenManagerDelegateV2.at(tokenManagerProxy.address);
+    let tokenManager = await TokenManagerDelegate.at(tokenManagerProxy.address);
     scAddr["TokenManagerProxy"] = tokenManager.address;
     scAddr["TokenManagerDelegate"] = tokenManagerDelegate.address;
     knownEvents["TokenManagerDelegate"] = getEventSignature(tokenManagerDelegate.abi);
@@ -253,27 +264,25 @@ async function deployCrossContracts(owner, options) {
     await updateOracle(oracle, storemanGroups, owner)
 
     // signature verifier
+    let secp256k1 = await Secp256k1SchnorrVerifier.new({from: owner});
     let signatureVerifier = await SignatureVerifier.new({from: owner});
     let bn128 = await Bn128SchnorrVerifier.new({from: owner});
     let ecSchnorr = await EcSchnorrVerifier.new({from: owner});
-    if (isWAN) {
-        let secp256K1 = await Secp256k1SchnorrVerifier.new({from: owner});
-        await signatureVerifier.register(defaultCurve.secp256K1, secp256K1.address, {from: owner});
-        scAddr["Secp256k1SchnorrVerifier"] = secp256K1.address;
-        assert.equal(web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.secp256K1))
-            , web3.utils.toChecksumAddress(secp256K1.address)
-            , `check registered secp256K1 signature verifier sc failed`
-        );
-    }
    // register signature verifier contracts
-    await signatureVerifier.register(defaultCurve.bn128, bn128.address, {from: owner});
+   await signatureVerifier.register(defaultCurve.secp256k1, secp256k1.address, {from: owner});
+   await signatureVerifier.register(defaultCurve.bn128, bn128.address, {from: owner});
     await signatureVerifier.register(defaultCurve.ecSchnorr, ecSchnorr.address, {from: owner});
+    scAddr["Secp256k1SchnorrVerifier"] = secp256k1.address;
     scAddr["SignatureVerifier"] = signatureVerifier.address;
     scAddr["Bn128SchnorrVerifier"] = bn128.address;
     scAddr["EcSchnorrVerifier"] = ecSchnorr.address;
     console.log("register bn128:", defaultCurve.bn128, bn128.address)
     console.log("register ecSchnorr:", defaultCurve.ecSchnorr, ecSchnorr.address)
     web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.bn128))
+    assert.equal(web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.secp256k1))
+        , web3.utils.toChecksumAddress(secp256k1.address)
+        , `check registered secp256k1 signature verifier sc failed`
+    );
     assert.equal(web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.bn128))
         , web3.utils.toChecksumAddress(bn128.address)
         , `check registered bn128 signature verifier sc failed`
@@ -284,15 +293,15 @@ async function deployCrossContracts(owner, options) {
     );
 
     // cross approach
-    let rapidityLib = await RapidityLibV4.new({from: owner});
-    let nftLib = await NFTLibV1.new({ from: owner });
-    await CrossDelegateV4.link(rapidityLib);
-    await CrossDelegateV4.link(nftLib);
-    let crossDelegate = await CrossDelegateV4.new({from: owner});
+    let rapidityLib = await RapidityLib.new({from: owner});
+    let nftLib = await NFTLib.new({ from: owner });
+    await CrossDelegate.link(rapidityLib);
+    await CrossDelegate.link(nftLib);
+    let crossDelegate = await CrossDelegate.new({from: owner});
 
     let crossProxy = await CrossProxy.new({from: owner});
     await crossProxy.upgradeTo(crossDelegate.address, {from: owner});
-    let cross = await CrossDelegateV4.at(crossProxy.address);
+    let cross = await CrossDelegate.at(crossProxy.address);
     scAddr["CrossProxy"] = crossProxy.address;
     scAddr["CrossDelegate"] = crossDelegate.address;
     scAddr["NFTLib"] = nftLib.address;
