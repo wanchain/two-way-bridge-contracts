@@ -972,9 +972,6 @@ exports.testCases = () => {
       let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.smgID);
       let curveID = smgConfig.curve1;
       let sk = skInfo.src[currentChainType];
-      console.log(currentChainType, "sk:", sk);
-      console.log(currentChainType, "hashType:", await cross.hashType());
-      console.log(currentChainType, "curveID:", Number(curveID), defaultCurve2Schnorr[Number(curveID)]);
 
       // sign
       let { R, s } = buildMpcSign(
@@ -991,8 +988,6 @@ exports.testCases = () => {
       );
       funcParams = { ...funcParams, R: R, s: s };
 
-      console.log(currentChainType, "smgConfig:", await smg.getStoremanGroupConfig.call(funcParams.smgID));
-      console.log(currentChainType, "sign params:", await cross.currentChainID(),
         funcParams.uniqueID,
         funcParams.tokenPairID,
         funcParams.crossValue,

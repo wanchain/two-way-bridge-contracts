@@ -162,7 +162,6 @@ class Src {
       this.polyCommit[i] = '0x' + encrypt.mulG(curve, poly).getEncoded(false).toString('hex').substr(2);
       // console.log("gpk ut init polyCommit %i: %s", i, this.polyCommit[i]);
     }
-      console.log("poly array:", this.poly)
     // send
     for (let i = 0; i < smList.length; i++) {
       let send = new Send();
@@ -183,13 +182,13 @@ class Send {
   async init(poly, curve, partner, pk) {
     // console.log("gpk ut init genEncSij for partner %s pk %s", partner, pk);
     let sij = '0x' + encrypt.genSij(curve, poly, pk).toBuffer(32).toString('hex');
-    console.log("sij=%s", sij);
+    // console.log("sij=%s", sij);
     let enc = await encrypt.encryptSij(pk, sij);
     this.sij = sij;
     this.encSij = '0x' + enc.ciphertext;
-    console.log("encSij=%s", this.encSij);
+    // console.log("encSij=%s", this.encSij);
     this.ephemPrivateKey = '0x' + enc.ephemPrivateKey;
-    console.log("ephemPrivateKey=%s", this.ephemPrivateKey);
+    // console.log("ephemPrivateKey=%s", this.ephemPrivateKey);
   }
 }
 
