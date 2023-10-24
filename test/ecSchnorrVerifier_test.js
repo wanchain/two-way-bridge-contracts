@@ -72,9 +72,9 @@ describe("EcSchnorrVerifier", function () {
 
     var sig = sign(m, privKey);
 
-    console.log("privKey:", privKey);
-    console.log("privKey hex:", web3.utils.bytesToHex(privKey));
-    console.log("publicKey:", web3.utils.bytesToHex(publicKey));
+    // console.log("privKey:", privKey);
+    // console.log("privKey hex:", web3.utils.bytesToHex(privKey));
+    // console.log("publicKey:", web3.utils.bytesToHex(publicKey));
     let gas = await schnorr.verify.estimateGas(
       web3.utils.bytesToHex(sig.s),
       web3.utils.bytesToHex(publicKey.slice(1, 33)),
@@ -84,7 +84,7 @@ describe("EcSchnorrVerifier", function () {
       web3.utils.bytesToHex(m),
     )
 
-    console.log("verify gas cost:", gas);
+    // console.log("verify gas cost:", gas);
 
     expect(await schnorr.verify(
       web3.utils.bytesToHex(sig.s),

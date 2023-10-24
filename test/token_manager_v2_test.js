@@ -65,7 +65,7 @@ contract('TokenManagerDelegateV2', (accounts) => {
 
   before("init", async () => {});
 
-  describe('normal', () => {
+  contract('normal', () => {
     it('good token manager example', async function() {
       const accounts = await web3.eth.getAccounts();
       const { tokenManagerDelegateV2 } = await newTokenManager(accounts);

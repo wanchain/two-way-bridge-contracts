@@ -185,7 +185,7 @@ contract('Gpk_UT_terminate', async () => {
       await gpkSc.terminate(groupId, 0);
     } catch (e) {
       result = e;
-      console.log("terminate Not late: %O", e);
+      // console.log("terminate Not late: %O", e);
     }
     assert.include(result.toString(), 'Not late');
   })

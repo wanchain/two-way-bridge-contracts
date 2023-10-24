@@ -42,7 +42,6 @@ function getXHash() {
 contract('Test Metric', async (accounts) => {
     before("init...   -> success", async () => {
         try {
-            console.log("accounts:", accounts);
             await testInit();
             // get the instance
             let deploy, configProxy, fakeSmg, fakePosLib;
@@ -124,7 +123,7 @@ contract('Test Metric', async (accounts) => {
         try {
             let incntData = new BN(0x0F);
             await metricInstProxy.setHalt(true);
-            console.log("halt metic success")
+            // console.log("halt metic success")
             await metricInstProxy.wrInct(grpId, getXHash(), incntData, {from: accounts[1]});
         } catch (err) {
             lib.assertInclude(err.message, "Smart contract is halted", err);
@@ -2060,7 +2059,7 @@ async function getPrdSlshMetricByNow() {
         }
 
     } catch (err) {
-        console.log(err);
+        // console.log(err);
     }
 
     return ret;
@@ -2081,7 +2080,7 @@ async function getPrdInctMetricByNow() {
         }
 
     } catch (err) {
-        console.log(err);
+        // console.log(err);
     }
 
     return ret;

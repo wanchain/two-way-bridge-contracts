@@ -19,7 +19,7 @@ data = encodeWithSignature("transferFoundation(address)", "0x4Cf0A877E906DEaD748
 console.log('transferFoundation', data);
 
 
-contract("GroupApprove", function() {
+describe("GroupApprove", function() {
     let groupApprove, mockCross, owner, foundation, signatureVerifier, oracle, other;
     const chainId = 1337; // This is hardhat's default chainId for the local network
 
