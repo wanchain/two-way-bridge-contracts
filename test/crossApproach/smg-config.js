@@ -92,18 +92,7 @@ async function addWanStoremanGroup(smg, storemanGroups, curveIDs, owner) {
 }
 
 async function syncWanStoremanGroup(oracle, storemanGroups, curveIDs, owner) {
-  // let count = 0;
   for (let index in storemanGroups) {
-    // if (count >= curveIDs.length) {
-    //   break;
-    // }
-    // count++
-    console.log("syncWanStoremanGroup ===> index:", index, "smgID:", storemanGroups[index].ID, "status", storemanGroupStatus.ready,
-      "deposit:", web3.utils.toWei(storemanGroups[index].deposit), "chainArray:", [storemanGroups[index].chain1, storemanGroups[index].chain2],
-      "curveArray", [storemanGroups[index].curve1, storemanGroups[index].curve2],
-      "gpk1", storemanGroups[index].gpk1, "gpk2", storemanGroups[index].gpk2,
-      "startTime:", storemanGroups[index].startTime, "endTime", storemanGroups[index].endTime
-    );
     await oracle.setStoremanGroupConfig(storemanGroups[index].ID, storemanGroupStatus.ready,
         web3.utils.toWei(storemanGroups[index].deposit), [storemanGroups[index].chain2, storemanGroups[index].chain1],
         [storemanGroups[index].curve2, storemanGroups[index].curve1],

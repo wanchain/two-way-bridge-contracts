@@ -118,15 +118,15 @@ contract('Gpk_UT_gpk', async(accounts) => {
     await gpkDelegate.deployed();
     await gpkProxy.upgradeTo(gpkDelegate.address);
     gpkSc = await ethers.getContractAt('GpkDelegate', gpkProxy.address)
-    console.log("Gpk contract address: %s", gpkProxy.address);
+    // console.log("Gpk contract address: %s", gpkProxy.address);
 
     // network
     await setupNetwork();
 
     owner = g.owner;
     admin = g.admin;
-    console.log("onwer address: %s", owner);
-    console.log("admin address: %s", admin);
+    // console.log("onwer address: %s", owner);
+    // console.log("admin address: %s", admin);
 
     let curveIdArray = [curve1, curve2];
     let algoIdArray = [0, 1];
@@ -140,7 +140,7 @@ contract('Gpk_UT_gpk', async(accounts) => {
     await smgSc.addAdmin(owner);
     await smgSc.setDependence(fakeMetric.address,gpkSc.address,fakeQuota.address,fakePosLib.address)
     groupId = await registerStart(smgSc);
-    console.log("storeman group started:", groupId);
+    // console.log("storeman group started:", groupId);
 
     await gpkSc.addAdmin(admin);
     assert.equal(await gpkSc.mapAdmin(admin), true);
@@ -249,7 +249,7 @@ contract('Gpk_UT_gpk', async(accounts) => {
       await gpkSc.connect(g.signerOwner).setPeriod(groupId, ployCommitPeroid, defaultPeroid, negotiatePeroid);
     } catch (e) {
       result = e;
-      console.log("setPeriod not admin: %O", e)
+      // console.log("setPeriod not admin: %O", e)
     }
     assert.include(result.toString(), 'not admin');
   })
@@ -309,7 +309,7 @@ contract('Gpk_UT_gpk', async(accounts) => {
       await data.setPolyCommit(0, 0, 0, owner);
     } catch (e) {
       result = e;
-      console.log("setPolyCommit Invalid sender: %O", e)
+      // console.log("setPolyCommit Invalid sender: %O", e)
     }
     assert.include(result.toString(), 'Invalid sender');
   })

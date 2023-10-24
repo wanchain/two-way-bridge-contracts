@@ -114,15 +114,15 @@ contract('Gpk_UT_checksij_invalid', async () => {
     await gpkDelegate.deployed();
     await gpkProxy.upgradeTo(gpkDelegate.address);
     gpkSc = await ethers.getContractAt('GpkDelegate', gpkProxy.address)
-    console.log("Gpk contract address: %s", gpkProxy.address);
+    // console.log("Gpk contract address: %s", gpkProxy.address);
 
     // network
     await setupNetwork();
 
     owner = g.owner;
     admin = g.admin;
-    console.log("onwer address: %s", owner);
-    console.log("admin address: %s", admin);
+    // console.log("onwer address: %s", owner);
+    // console.log("admin address: %s", admin);
 
     let curveIdArray = [curve1, curve2];
     let algoIdArray = [0, 1];
@@ -136,7 +136,7 @@ contract('Gpk_UT_checksij_invalid', async () => {
     await smgSc.addAdmin(owner);
     await smgSc.setDependence(fakeMetric.address,gpkSc.address,fakeQuota.address,fakePosLib.address)
     groupId = await registerStart(smgSc);
-    console.log("storeman group started:", groupId);
+    // console.log("storeman group started:", groupId);
 
     await gpkSc.addAdmin(admin);
     assert.equal(await gpkSc.mapAdmin(admin), true);

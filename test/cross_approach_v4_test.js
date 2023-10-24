@@ -83,11 +83,11 @@ contract('Test Cross Approach', (accounts) => {
         let knownEvents = {};
         let deployed = {};
         deployed[chainTypes.WAN] = await deployCrossContracts(owner, {chainType: chainTypes.WAN, tokenPairs, curveIDs, alice:aliceAccounts.WAN, foundation: foundationAccounts.WAN, admin: adminAccounts.WAN, operator:operatorAccounts.WAN});
-        console.log("contracts:", chainTypes.WAN, JSON.stringify(deployed[chainTypes.WAN].scAddr));
+        // console.log("contracts:", chainTypes.WAN, JSON.stringify(deployed[chainTypes.WAN].scAddr));
         tokenPairs = deployed[chainTypes.WAN].tokenPairs;
         knownEvents[chainTypes.WAN] = deployed[chainTypes.WAN].knownEvents;
         deployed[chainTypes.ETH] = await deployCrossContracts(owner, {chainType: chainTypes.ETH, tokenPairs, curveIDs, alice:aliceAccounts.ETH, foundation: foundationAccounts.ETH, admin: adminAccounts.ETH, operator:operatorAccounts.ETH});
-        console.log("contracts:", chainTypes.ETH, JSON.stringify(deployed[chainTypes.ETH].scAddr));
+        // console.log("contracts:", chainTypes.ETH, JSON.stringify(deployed[chainTypes.ETH].scAddr));
         tokenPairs = deployed[chainTypes.ETH].tokenPairs;
         knownEvents[chainTypes.ETH] = deployed[chainTypes.ETH].knownEvents;
         await addChainTokenPairs(deployed[chainTypes.WAN].scAddr.TokenManagerProxy, tokenPairs);
@@ -124,8 +124,6 @@ contract('Test Cross Approach', (accounts) => {
         // set owner
         setGlobal("contractOwner", owner);
         setGlobal("getSmgProxy", getSmgProxy);
-
-        console.log("global.schnorr:", global.schnorr);
     });
 
     crossCommon.testCases();
@@ -276,8 +274,8 @@ async function deployCrossContracts(owner, options) {
     scAddr["SignatureVerifier"] = signatureVerifier.address;
     scAddr["Bn128SchnorrVerifier"] = bn128.address;
     scAddr["EcSchnorrVerifier"] = ecSchnorr.address;
-    console.log("register bn128:", defaultCurve.bn128, bn128.address)
-    console.log("register ecSchnorr:", defaultCurve.ecSchnorr, ecSchnorr.address)
+    // console.log("register bn128:", defaultCurve.bn128, bn128.address)
+    // console.log("register ecSchnorr:", defaultCurve.ecSchnorr, ecSchnorr.address)
     web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.bn128))
     assert.equal(web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.secp256k1))
         , web3.utils.toChecksumAddress(secp256k1.address)

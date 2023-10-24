@@ -136,7 +136,7 @@ contract('Oracle', function(accounts) {
       receipt = await oracleDelegate.setDebtClean(smgID, true);
       // check SetDebtClean event log
       const setDebtClean = receipt.logs[0].args;
-      console.log(JSON.stringify(setDebtClean));
+      // console.log(JSON.stringify(setDebtClean));
       assert.equal(setDebtClean.id, smgID);
       assert.equal(setDebtClean.isDebtClean, true);
       // check storage

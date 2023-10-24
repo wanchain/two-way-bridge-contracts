@@ -166,7 +166,6 @@ function buildMpcSign (schnorr, sk, typesArray, ...args) {
     let result;
     const signature = schnorr.getS(sk, typesArray, args);
     if (typeof(signature) === "object" && signature.e != undefined && signature.s != undefined && signature.parity != undefined) {
-        console.log("buildMpcSign:", signature)
         result = {
             R: web3.utils.bytesToHex(web3.utils.hexToBytes(signature.e).concat( web3.utils.hexToBytes(signature.parity))),
             s: signature.s,
@@ -224,8 +223,6 @@ function solidityKeccak256(types, params) {
     if (types.length != params.length) {
         throw new Error("solidityKeccak256 invalid length");
     }
-    console.log("solidityKeccak256 types:", types, "params:", params)
-    console.log("solidityKeccak256 format params:", types.map((type, index) => ({type:type, value:  Array.isArray(params[index]) ? Buffer.from(params[index]) : params[index]})))
     const message =  Buffer.from(web3.utils.hexToBytes(web3.utils.encodePacked(...types.map((type, index) => ({
         type:type, value: web3.eth.abi.formatParam(type, (Array.isArray(params[index]) || params[index] instanceof Uint8Array) ? Buffer.from(params[index]) : params[index])
     })))));
