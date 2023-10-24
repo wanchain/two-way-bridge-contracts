@@ -988,13 +988,6 @@ exports.testCases = () => {
       );
       funcParams = { ...funcParams, R: R, s: s };
 
-        funcParams.uniqueID,
-        funcParams.tokenPairID,
-        funcParams.crossValue,
-        funcParams.crossFee,
-        funcParams.tokenAccount,
-        funcParams.userAccount
-      );
       let receipt = await cross.smgRelease(...Object.values(funcParams), {
         from: senderAccount,
       });
