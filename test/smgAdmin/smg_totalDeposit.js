@@ -8,7 +8,6 @@ const FakePosLib = artifacts.require('FakePosLib');
 
 const assert = require('chai').assert;
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
-const Web3 = require('web3')
 
 const { registerStart,stakeInPre, timeWaitIncentive,setupNetwork, g,timeWaitSelect,toSelect ,deploySmg} = require('../base.js');
 
@@ -19,7 +18,6 @@ contract('TestSmg', async () => {
   let  smg, pos
   let groupId, groupInfo, groupId2
   let contValue = 123456;
-  let web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
   let wk1 = utils.getAddressFromInt(100001)
   let wk2 = utils.getAddressFromInt(100002)
 
@@ -87,7 +85,6 @@ contract('TestSmg', async () => {
   let  smg, pos
   let groupId, groupInfo, groupId2
   let contValue = 123456;
-  let web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
   let wk1 = utils.getAddressFromInt(100001)
   let wk2 = utils.getAddressFromInt(100002)
   let listGroup;

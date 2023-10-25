@@ -51,18 +51,26 @@ const g = {
     minStakeIn,minDelegateIn,minPartIn,delegateFee,whiteAddrStartIdx,whiteAddrOffset,otherAddrOffset
 }
 
+function getLocalAccounts(mnemonic) {
+    let accounts = []
+    for(let i=0; i<60; i++) {
+        const a = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/60'/0'/0/"+i);
+        accounts.push(a.address)
+    }
+    return accounts
+}
 async function setupNetwork() {
-    network = 'local'
+    network = hre.network.name
     g.web3url = hre.network.config.url;
     //"http://" + config.networks[network].host + ":" + config.networks[network].port;
-    console.log("setup network %s", network);
+    //console.log("setup network %s", hre.network.config.accounts);
     let signers =  await hre.ethers.getSigners()
     g.signers = signers
-    if (network == 'local' || network == 'coverage') {
-        const mnemonic = hre.network.config.mnemonic;
+    if (network == 'local' || network == 'coverage' || network == 'hardhat') {
+        const mnemonic = hre.network.config.accounts.mnemonic;
         const index = 1; // first wallet, increment for next wallets
         const walletAdmin = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/60'/0'/0/"+index);
-        console.log('walletAdmin:', walletAdmin.address, walletAdmin._signingKey())
+        //console.log('walletAdmin:', walletAdmin.address, walletAdmin._signingKey())
         g.signerAdmin = (await hre.ethers.getSigners())[1]
         g.signerOwner = (await hre.ethers.getSigners())[0]
         g.signerLeader= (await hre.ethers.getSigners())[30]
@@ -70,15 +78,15 @@ async function setupNetwork() {
         g.owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959";
         g.leader = ("0xdF0A667F00cCfc7c49219e81b458819587068141").toLowerCase();
 
-        web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
-        g.web3 = web3;
-        let accounts = await web3.eth.getAccounts();
+        // web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
+        // g.web3 = web3;
+        let accounts = getLocalAccounts(mnemonic) //await web3.eth.getAccounts();
         g.leaderPk = "0x6bd7c410f7c760cca63a3dfabeeeed08f371b080f1c0d37e5cfda1c7f48d8234af06766ff7aa007a574449bce2c54469a675228876094f2c97438027f5070cbd";
         g.sfs = accounts.slice(1,12);
         g.timeBase = 1;
 
         g.wks = accounts.slice(30,41);
-        console.log("wks:", g.wks)
+        //console.log("wks:", g.wks)
         g.pks = [ '0x6bd7c410f7c760cca63a3dfabeeeed08f371b080f1c0d37e5cfda1c7f48d8234af06766ff7aa007a574449bce2c54469a675228876094f2c97438027f5070cbd',
         '0x7ca2927d8343de9ae70638249beca7e42b86a71036081c36552c2f0a55d44cf11b3ba9c2d2fb47ae4f0d533e66f1e9e2dbc2d1788400f7dfb1b5ebc562bc9d56',
         '0xb5c60f28d5750cdfe82d99973896a14413873f23fe8481378ac4f6f4541b87d144a2512ba4e6328098a8799836ac0b0a7f44c9a9468b559c56186231c64bb695',

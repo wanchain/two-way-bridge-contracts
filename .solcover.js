@@ -19,9 +19,8 @@ module.exports = {
 	mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
         default_balance_ether: 100000000,
         total_accounts: 100,
-        hardfork: "byzantium",
         gasPrice: "0x3B9ACA00",
-        callGasLimit: "0x989680",
+        callGasLimit: 3e7,
         network_id: 3,
         debug: true,
     }
