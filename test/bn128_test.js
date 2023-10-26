@@ -24,12 +24,12 @@ contract('Verifier', accounts => {
 
     let ret = await verifier.methods.verify(
       1,
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).call();
 
     assert.equal(ret, true);
@@ -37,34 +37,34 @@ contract('Verifier', accounts => {
     signature = '0x1fe44cc08265229ab0e28ff75f14b1ef306f518e612803c7fc461676cdab8fa5';
     ret = await verifier.methods.verify(
       1,
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).call();
 
     assert.equal(ret, false);
 
     ret = await verifier.methods.verify(
       1,
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).send({from: accounts[0], gas:1e7});
     console.log('gas used', ret.gasUsed);
 
     ret = await bn128.methods.verify(
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).send({from: accounts[0], gas:1e7});
     console.log('gas used', ret.gasUsed);
   });
@@ -85,12 +85,12 @@ contract('Verifier', accounts => {
 
     let ret = await verifier.methods.verify(
       1,
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).call();
 
     assert.equal(ret, true);
@@ -98,34 +98,34 @@ contract('Verifier', accounts => {
     signature = '0x1fe44cc08265229ab0e28ff75f14b1ef306f518e612803c7fc461676cdab8fa5';
     ret = await verifier.methods.verify(
       1,
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).call();
 
     assert.equal(ret, false);
 
     ret = await verifier.methods.verify(
       1,
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).send({from: accounts[0], gas:1e7});
     console.log('gas used', ret.gasUsed);
 
     ret = await bn128.methods.verify(
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).send({from: accounts[0], gas:1e7});
     console.log('gas used', ret.gasUsed);
   });
@@ -145,12 +145,12 @@ contract('Verifier', accounts => {
 
     let ret = await verifier.methods.verify(
       0,
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).call();
 
     // console.log('ret', ret);
@@ -159,12 +159,12 @@ contract('Verifier', accounts => {
     signature = '0x39731aadfd82e34ffd00065da67acb3dd4281b214025695da6934738863b33be';
     ret = await verifier.methods.verify(
       0,
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).call();
 
     // console.log('ret', ret);
@@ -172,12 +172,12 @@ contract('Verifier', accounts => {
 
     ret = await verifier.methods.verify(
       0,
-      web3.utils.hexToBytes(signature),
-      web3.utils.hexToBytes(gpkX),
-      web3.utils.hexToBytes(gpkY),
-      web3.utils.hexToBytes(rX),
-      web3.utils.hexToBytes(rY),
-      web3.utils.hexToBytes(hashM),
+      signature,
+      gpkX,
+      gpkY,
+      rX,
+      rY,
+      hashM,
     ).send({from: accounts[0], gas:1e7});
     console.log('gas used', ret.gasUsed);
   });
