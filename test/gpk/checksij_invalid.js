@@ -135,6 +135,7 @@ contract('Gpk_UT_checksij_invalid', async () => {
 
     await smgSc.addAdmin(owner);
     await smgSc.setDependence(fakeMetric.address,gpkSc.address,fakeQuota.address,fakePosLib.address)
+    g.registerDuration = 15;
     groupId = await registerStart(smgSc);
     // console.log("storeman group started:", groupId);
 

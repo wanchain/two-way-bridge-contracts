@@ -1,14 +1,10 @@
-const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
 const { g, curve1, curve2, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, SlashType, Data } = require('./Data');
 const utils = require('../utils.js');
 const optimist = require("optimist");
 const { assert } = require('chai');
 
-const fakeSc = ['local', 'coverage'].includes(optimist.argv.network);
+// const fakeSc = ['local', 'coverage'].includes(optimist.argv.network);
 
 // group
 let groupId = '';
@@ -139,6 +135,7 @@ contract('Gpk_UT_sij_invalid_enc', async () => {
 
     await smgSc.addAdmin(owner);
     await smgSc.setDependence(fakeMetric.address,gpkSc.address,fakeQuota.address,fakePosLib.address)
+    g.registerDuration = 15;
     groupId = await registerStart(smgSc);
     // console.log("storeman group started:", groupId);
 
@@ -151,7 +148,7 @@ contract('Gpk_UT_sij_invalid_enc', async () => {
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
-    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
+    // await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
     data = new Data(smgSc, gpkSc, groupId);
@@ -178,9 +175,9 @@ contract('Gpk_UT_sij_invalid_enc', async () => {
   it('[GpkDelegate_setEncSij] should success', async () => {
     let result = {};
     try {
-      if (!fakeSc) {
-        data.round[0].src[0].send[1].encSij = data.round[0].src[0].send[1].encSij + '01';
-      }
+      // if (!fakeSc) {
+      //   data.round[0].src[0].send[1].encSij = data.round[0].src[0].send[1].encSij + '01';
+      // }
       await data.setEncSij(0, 0, 1, 0);
       await data.setCheckStatus(0, 0, 0, false, 1);
     } catch (e) {
@@ -197,7 +194,8 @@ contract('Gpk_UT_sij_invalid_enc', async () => {
   it('[GpkDelegate_revealSij] should success', async () => {
     let src = data.smList[0].address;
     let dest = data.smList[1].address;
-    let sij = fakeSc? 0 : data.round[0].src[0].send[1].sij;
+    let sij = 0;
+    // let sij = fakeSc? 0 : data.round[0].src[0].send[1].sij;
     let tx = await gpkSc.connect(g.signerLeader).revealSij(groupId, 0, 0, dest, sij, data.round[0].src[0].send[1].ephemPrivateKey);
     let result = await tx.wait();
     const eventAbi = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"groupId","type":"bytes32"},{"indexed":true,"internalType":"uint8","name":"slashType","type":"uint8"},{"indexed":true,"internalType":"address","name":"slashed","type":"address"},{"indexed":false,"internalType":"address","name":"partner","type":"address"},{"indexed":false,"internalType":"uint16","name":"round","type":"uint16"},{"indexed":false,"internalType":"uint8","name":"curveIndex","type":"uint8"}],"name":"SlashLogger","type":"event"}]

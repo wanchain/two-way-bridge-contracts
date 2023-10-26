@@ -1,7 +1,7 @@
 'use strict'
 
 const assert = require('assert')
-const PosLib = artifacts.require('test/PosLib')
+const PosLib = artifacts.require('test/FakePosLib')
 
 
 
@@ -10,7 +10,7 @@ contract('PosLib', async (accounts) => {
     let  pos
 
     before("init contracts", async() => {
-        pos = await PosLib.deployed();
+        pos = await PosLib.new();
     })
 
 

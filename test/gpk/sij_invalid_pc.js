@@ -1,8 +1,3 @@
-const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate');
-const GpkProxy = artifacts.require('GpkProxy');
-const GpkDelegate = artifacts.require('GpkDelegate');
-const FakeSkCurve = artifacts.require('FakeSkCurve');
 const { g, curve1, curve2, setupNetwork, registerStart, stakeInPre, toSelect } = require('../base.js');
 const { GpkStatus, CheckStatus, SlashType, Data } = require('./Data');
 const utils = require('../utils.js');
@@ -140,6 +135,7 @@ contract('Gpk_UT_sij_invalid_pc', async () => {
 
     await smgSc.addAdmin(owner);
     await smgSc.setDependence(fakeMetric.address,gpkSc.address,fakeQuota.address,fakePosLib.address)
+    g.registerDuration = 15;
     groupId = await registerStart(smgSc);
     // console.log("storeman group started:", groupId);
 
@@ -152,7 +148,7 @@ contract('Gpk_UT_sij_invalid_pc', async () => {
     let regTime = parseInt(new Date().getTime());
     let gi = await smgSc.getStoremanGroupInfo(groupId);
     await stakeInPre(smgSc, groupId);
-    await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
+    // await utils.sleepUntil(regTime + (parseInt(gi.registerDuration) + 5) * 1000);
     await toSelect(smgSc, groupId);
 
     data = new Data(smgSc, gpkSc, groupId);
