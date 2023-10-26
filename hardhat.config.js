@@ -18,6 +18,9 @@ const config = {
       },
     },
   },
+  mocha: {
+    timeout: 600000,
+  },
   zksolc: {
     version: "1.3.13",
     compilerSource: "binary",

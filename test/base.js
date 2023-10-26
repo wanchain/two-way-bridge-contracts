@@ -78,8 +78,8 @@ async function setupNetwork() {
         g.owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959";
         g.leader = ("0xdF0A667F00cCfc7c49219e81b458819587068141").toLowerCase();
 
-        // web3 = new Web3(new Web3.providers.HttpProvider(g.web3url));
-        // g.web3 = web3;
+        web3 = new Web3() //new Web3(new Web3.providers.HttpProvider(g.web3url));
+        g.web3 = web3;
         let accounts = getLocalAccounts(mnemonic) //await web3.eth.getAccounts();
         g.leaderPk = "0x6bd7c410f7c760cca63a3dfabeeeed08f371b080f1c0d37e5cfda1c7f48d8234af06766ff7aa007a574449bce2c54469a675228876094f2c97438027f5070cbd";
         g.sfs = accounts.slice(1,12);
