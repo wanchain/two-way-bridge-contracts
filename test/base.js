@@ -374,10 +374,22 @@ async function sendTransaction(sf, value, sdata, to){
     return receipt
 }
 
+async function sleepUntilBlockTime(targetBlockTime) {
+    await hre.ethers.provider.send("evm_mine");
+    let currBlockTime = parseInt((await hre.ethers.provider.getBlock("latest")).timestamp);
+    while (currBlockTime < targetBlockTime) {
+        let second = targetBlockTime - currBlockTime;
+        console.log(" =================================sleep %d ms ",second)
+        await utils.sleep(second*1000)
+        await hre.ethers.provider.send("evm_mine");
+        currBlockTime = parseInt((await hre.ethers.provider.getBlock("latest")).timestamp);
+    }
+}
+
 async function toSelect(smg, groupId){
     let groupInfo = await smg.getStoremanGroupInfo(groupId);
-    let second = 1+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
-    await utils.sleepUntil(second*1000)
+    let second = parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
+    await sleepUntilBlockTime(second)
     let tx = await smg.connect(g.signerLeader).select(groupId)
     console.log("select tx:", tx)
     // console.log("group %s select tx:", groupId, tx.tx)
