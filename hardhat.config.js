@@ -180,15 +180,21 @@ const config = {
       bip44ChainId: 2147492648, // TODO fake chainID.
     },
     hardhat: {
-      //url: "http://127.0.0.1:8545",
       accounts: {
-          mnemonic: "skill level pulse dune pattern rival used syrup inner first balance sad",
-          path: "m/44'/60'/0'/0",
-          initialIndex: 0,
-          count: 60,
+        mnemonic: "skill level pulse dune pattern rival used syrup inner first balance sad",
+        path: "m/44'/60'/0'/0",
+        initialIndex: 0,
+        accountsBalance: "9000000000000000000000000000",
+        count: 60,
       },
-      gas: 12000000,
-      blockGasLimit: 0x1fffffffffffff,
+      mining: {
+        auto: true,
+        interval: 0
+      },
+      allowBlocksWithSameTimestamp: true,
+      gas: 1e7,
+      gasPrice: 1e9,
+      blockGasLimit: 5e7,
       allowUnlimitedContractSize: true,
     },  
   },

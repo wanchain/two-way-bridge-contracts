@@ -9,14 +9,14 @@ const FakePosLib = artifacts.require('FakePosLib');
 const assert = require('chai').assert;
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
-const { registerStart,stakeInPre, timeWaitIncentive,setupNetwork, g,timeWaitSelect,toSelect ,deploySmg} = require('../base.js');
+const { registerStart,timeWaitEnd, timeWaitIncentive,setupNetwork, g,timeWaitSelect,toSelect ,deploySmg} = require('../base.js');
 
 
 
 contract('TestSmg', async () => {
 
   let  smg, pos
-  let groupId, groupInfo, groupId2
+  let groupId, groupInfo, groupId2,groupInfo2
   let contValue = 123456;
   let wk1 = utils.getAddressFromInt(100001)
   let wk2 = utils.getAddressFromInt(100002)
@@ -43,6 +43,8 @@ contract('TestSmg', async () => {
 
     it('add,clean', async ()=>{
       groupInfo = await smg.getStoremanGroupInfo(groupId);
+      groupInfo2 = await smg.getStoremanGroupInfo(groupId2);
+      let cap = parseInt(groupInfo2.startTime)-parseInt(groupInfo.startTime)
       let cur = parseInt(groupInfo.startTime)
       let tx = smg.connect(g.signerOwner).addActiveGroupId(groupId, {from:g.owner});
       await expectRevert(tx, "not admin")
@@ -51,24 +53,24 @@ contract('TestSmg', async () => {
       await smg.connect(g.signerAdmin).addActiveGroupId(groupId,  {from:g.admin});
       tx = smg.connect(g.signerAdmin).addActiveGroupId(groupId,  {from:g.admin});
       await expectRevert(tx, "existed")
-      let as = await smg.getActiveGroupIds(cur+2);
+      let as = await smg.getActiveGroupIds(cur+cap-1);
       assert.equal(as.length, 1)
-      console.log("cur:", cur)
-      console.log("-------------------as:", as)
+      console.log("cur:", cur, cap)
+      //console.log("-------------------as:", as)
       gs = await g.listGroup.getGroups()
-      console.log("-------------------gs:", gs)
+      // console.log("-------------------gs:", gs)
 
       await smg.connect(g.signerAdmin).addActiveGroupId(groupId2,  {from:g.admin});
-      as = await smg.getActiveGroupIds(cur+8);
+      as = await smg.getActiveGroupIds(cur+cap+1);
       assert.equal(as.length, 2)
       assert.equal(as[0], groupId2)
       assert.equal(as[1], groupId)
-      as = await smg.getActiveGroupIds(cur+12);
+      as = await smg.getActiveGroupIds(parseInt(groupInfo.endTime)+1);
       assert.equal(as.length, 1)
       assert.equal(as[0], groupId2)
       gs = await g.listGroup.getGroups()
       assert.equal(gs.length, 2)
-      await utils.sleepUntil(1000+1000*parseInt(groupInfo.endTime))
+      await timeWaitEnd(groupInfo)
       await g.listGroup.cleanExpiredGroup()
       gs = await g.listGroup.getGroups()
       console.log("gs,cur:", gs, parseInt(Date.now()/1000))
@@ -80,7 +82,7 @@ contract('TestSmg', async () => {
 
 
 
-contract('TestSmg', async () => {
+contract('TestSmg2', async () => {
 
   let  smg, pos
   let groupId, groupInfo, groupId2

@@ -316,7 +316,7 @@ async function stakeInPre(smg, groupId, nodeStartIndex = g.whiteAddrStartIdx, no
         // sfs start from 1
         tx = await smg.connect(signers[index+1]).stakeIn(groupId, sw.pk, sw.pk,{ value:stakingValue});
 
-        console.log("preE:", index, sw.addr);
+        // console.log("preE:", index, sw.addr);
         let candidate  = await smg.getStoremanInfo(sw.addr)
         // console.log("candidate:", candidate)
         // console.log("g.sfs:", g.sfs)
@@ -377,8 +377,8 @@ async function sendTransaction(sf, value, sdata, to){
 async function sleepUntilBlockTime(targetBlockTime) {
     await hre.ethers.provider.send("evm_mine");
     let currBlockTime = parseInt((await hre.ethers.provider.getBlock("latest")).timestamp);
-    while (currBlockTime < targetBlockTime) {
-        let second = targetBlockTime - currBlockTime;
+    while (currBlockTime <= targetBlockTime) {
+        let second = targetBlockTime - currBlockTime +1;
         console.log(" =================================sleep %d ms ",second)
         await utils.sleep(second*1000)
         await hre.ethers.provider.send("evm_mine");
@@ -509,13 +509,13 @@ async function toPartClaim(smg, wkAddr, index=40000,count=3){
 //     }
 // }
 async function timeWaitSelect(groupInfo) {
-    let second = g.timeBase+parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
-    await utils.sleepUntil(second*1000)
+    let second = parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
+    await sleepUntilBlockTime(second)
 }
 async function timeWaitEnd(groupInfo) {
     console.log("timeWaitEnd groupInfo.endTime: ", parseInt(groupInfo.endTime))
-    let second = 1+parseInt(groupInfo.endTime)
-    await utils.sleepUntil(second*1000)
+    let second = parseInt(groupInfo.endTime)
+    await sleepUntilBlockTime(second)
 }
 async function toSetGpk(smg, groupId){
     let groupInfo = await smg.getStoremanGroupInfo(groupId)
@@ -547,8 +547,9 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
 
     console.log("xxxxxx groupInfo:", groupInfo)
     //await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
-    let second = 2+parseInt(groupInfo.endTime)
-    await utils.sleepUntil(second*1000)
+    let second = parseInt(groupInfo.endTime)
+    await sleepUntilBlockTime(second)
+    
     await smg.connect(g.signerOwner).contribute({value: web3.utils.toWei('1000')})
     while(true){
         let cur = parseInt(Date.now()/1000);

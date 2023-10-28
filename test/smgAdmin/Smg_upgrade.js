@@ -6,6 +6,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
 const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 const Web3 = require('web3')
+const { expect } = require("chai");
 
 
 const { deploySmg,stakeInPre, setupNetwork, timeWaitSelect,toSelect,timeWaitIncentive,g } = require('../base.js');
@@ -31,12 +32,11 @@ contract('TestSmg', async () => {
       await expectRevert(tx, "Cannot upgrade to invalid address")
     })
     it('T2 upgradeTo a valid address. should succeed', async ()=>{
-      let tx =  smgProxy.upgradeTo(g.leader);
-      //expectEvent(tx, 'Upgraded', {implementation:web3.utils.toChecksumAddress(g.leader)})
+      let tx = await smgProxy.upgradeTo(g.leader);
+      expect(tx).to.emit(smgProxy, 'Upgraded').withArgs(g.leader)
     })
     it('T3 should failed. "Cannot upgrade to the same implementation"', async ()=>{
-      let tx =  smgProxy.upgradeTo(g.leader);
-      await expectRevert(tx, "Cannot upgrade to the same implementation")
+      await expect(smgProxy.upgradeTo(g.leader)).to.be.revertedWith("Cannot upgrade to the same implementation")
     })
     
     
