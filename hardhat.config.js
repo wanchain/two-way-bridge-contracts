@@ -165,6 +165,11 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 1073741841,
     },
+    energiMainnet: {
+      url: "https://nodeapi.energi.network",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147493445,
+    },
     polyZkMainnet: {
       //gasPrice:200000000,
       url: "https://zkevm-rpc.com",
