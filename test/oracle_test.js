@@ -146,6 +146,53 @@ contract('Oracle', function(accounts) {
     })
   });
 
+  describe('updateDeposit', function() {
+    it('onlyAdmin', async function() {
+      const { oracleDelegate } = await newOracle(accounts);
+
+      const obj = await sendAndGetReason(oracleDelegate.updateDeposit, [smgID, v + 111], {from: other});
+      assert.include(obj.reason, "not admin");
+    });
+  });
+
+  describe('setStoremanGroupStatus', function() {
+    it('onlyAdmin', async function() {
+      const { oracleDelegate } = await newOracle(accounts);
+
+      const obj = await sendAndGetReason(oracleDelegate.setStoremanGroupStatus, [smgID, "0"], {from: other});
+      assert.include(obj.reason, "not admin");
+    });
+  });
+
+  describe('setStoremanGroupConfig', function() {
+    it('onlyAdmin', async function() {
+      const { oracleDelegate } = await newOracle(accounts);
+
+      const gpk1 = "0x1234";
+      const gpk2 = "0x5678";
+      const obj = await sendAndGetReason(oracleDelegate.setStoremanGroupConfig, [smgID, 1, 2, [3,4], [5,6], gpk1, gpk2, 9, 10], {from: other});
+      assert.include(obj.reason, "not admin");
+    });
+  });
+
+  describe('setDebtClean', function() {
+    it('onlyAdmin', async function() {
+      const { oracleDelegate } = await newOracle(accounts);
+
+      const obj = await sendAndGetReason(oracleDelegate.setDebtClean, [smgID, false], {from: other});
+      assert.include(obj.reason, "not admin");
+    });
+  });
+
+  describe('setAdmin', function() {
+    it('onlyAdmin', async function() {
+      const { oracleDelegate } = await newOracle(accounts);
+
+      const obj = await sendAndGetReason(oracleDelegate.setAdmin, [white], {from: other});
+      assert.include(obj.reason, "Not owner");
+    });
+  });
+
   describe('updatePrice', function() {
     it('onlyAdmin', async function() {
       const { oracleDelegate } = await newOracle(accounts);
