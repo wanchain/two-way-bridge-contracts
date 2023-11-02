@@ -2,8 +2,7 @@ const utils = require("../utils");
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
-const { registerStart,stakeInPre, setupNetwork,g, deploySmg, timeWaitSelect} = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork,g, deploySmg, timeWaitSelect, expectRevert, expectEvent} = require('../base.js');
 const { assert } = require("chai");
 
 contract('StoremanGroupDelegate stakeIn', async () => {

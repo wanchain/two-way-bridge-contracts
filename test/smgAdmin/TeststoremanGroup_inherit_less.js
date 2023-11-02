@@ -23,7 +23,7 @@ contract('StoremanGroupDelegate_inherit_less', async () => {
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         console.log("groupId1: ", groupId)
         let receipt = await result.tx.wait()
-        console.log("receipt:", receipt)
+        // console.log("receipt:", receipt)
         // transferEvent
         // assert.equal(transferEvent.groupId, groupId);
         // assert.equal(transferEvent.preGroupId == 0, true);

@@ -3,6 +3,7 @@ const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
+const hre = require('hardhat')
 
 
 
@@ -11,8 +12,7 @@ const sk = [{
 },{
     addr:"0x0beba6154f527596b4b8bb45326131a90c5c6140", pk:"0x28b11382ec24a15d5fa7ae77f9e9531ddc0f83a8ab2faab942db77411e17fdcf8160b0fa132933f1afa613eb19e73cef5d869e06ca58ad7787ddc5f7c11c369b",
 }]
-const { registerStart,stakeInPre, setupNetwork,g,   timeWaitSelect,deploySmg, timeWaitIncentive} = require('../base.js')
-const { expectRevert, expectEvent , BN} = require('@openzeppelin/test-helpers');
+const { registerStart,stakeInPre, setupNetwork,g,   timeWaitSelect,deploySmg, timeWaitIncentive, expectRevert, expectEvent,} = require('../base.js')
 
 contract('StoremanGroupDelegate delegate', async () => {
     let  smg
@@ -43,14 +43,14 @@ contract('StoremanGroupDelegate delegate', async () => {
     
     it('stakeIn', async ()=>{
         let tx = await smg.connect(tester).stakeIn(groupId, wk.pk, wk.pk,{value:50000});
-        console.log("tx:", tx);
+        //console.log("tx:", tx);
     })
     it('stakeIn', async ()=>{
         let tx =  smg.delegateIn(wk2.addr,{value:120});
         await expectRevert(tx, "Candidate doesn't exist")
 
         tx = await smg.connect(tester).stakeIn(groupId, wk2.pk, wk2.pk,{value:50000});
-        console.log("tx:", tx);
+        //console.log("tx:", tx);
 
         tx =  smg.delegateIn(wk2.addr,{value:1200000});
         await expectRevert(tx, "Too many delegation")
@@ -71,12 +71,12 @@ contract('StoremanGroupDelegate delegate', async () => {
         }
         let candidate  = await smg.getStoremanInfo(wk.addr)
         assert.equal(candidate.delegatorCount, 2)
-        console.log("after delegateIn,  candidate:",candidate)
+        //console.log("after delegateIn,  candidate:",candidate)
 
         let nde = await smg.getSmDelegatorInfo(wk.addr, tester.address);
         assert.equal(nde.incentive, 0)
         assert.equal(nde.deposit.toNumber(), delegateValue*payCount)
-        console.log("nde: ", nde)
+        //console.log("nde: ", nde)
        
         tx =  smg.connect(tester).delegateOut(wk.addr)
         await expectRevert(tx, "selecting")
@@ -91,12 +91,12 @@ contract('StoremanGroupDelegate delegate', async () => {
         }
         let candidate  = await smg.getStoremanInfo(wk2.addr)
         assert.equal(candidate.delegatorCount, 1)
-        console.log("after delegateIn,  candidate:",candidate)
+        //console.log("after delegateIn,  candidate:",candidate)
 
         let nde = await smg.getSmDelegatorInfo(wk2.addr, tester.address);
         assert.equal(nde.incentive, 0)
         assert.equal(nde.deposit.toNumber(), delegateValue*payCount)
-        console.log("nde: ", nde)
+        //console.log("nde: ", nde)
     })
 
 
@@ -104,8 +104,8 @@ contract('StoremanGroupDelegate delegate', async () => {
     it('test toSelect', async ()=>{
         await timeWaitSelect(groupInfo);
         let tx = await smg.connect(tester).select(groupId)
-        console.log("toSelect tx:", tx.tx)
-        console.log("group:",await smg.getStoremanGroupInfo(groupId))
+        //console.log("toSelect tx:", tx.tx)
+        //console.log("group:",await smg.getStoremanGroupInfo(groupId))
 
         
         let count = await smg.getSelectedSmNumber(groupId)
@@ -114,21 +114,23 @@ contract('StoremanGroupDelegate delegate', async () => {
     })
     it('[StoremanGroupDelegate_delegateOut] should success', async () => {
         let result = {};
-        try {
-            let txhash = await smg.connect(tester).delegateOut(wk.addr)
-            console.log("stakeOut txhash:", txhash);
-        } catch (e) {
-            result = e;
-            console.log("result:", result);
-        }
+        let txhash = await smg.connect(tester).delegateOut(wk.addr)
+        //await txhash.wait()
+        console.log("=======================================================delegateOut txhash:", txhash);
+        let receipt = await hre.ethers.provider.send('eth_getTransactionReceipt',[txhash.hash])
+        console.log("xxxxxx:", receipt.logs[0].topics)
+        await expectEvent(g.storemanLib, txhash, "delegateOutEvent", [wk.addr, tester.address])
+        txhash = smg.connect(tester).delegateOut(wk.addr)
+        await expectRevert(txhash, "Quited")
+
         assert.equal(result.reason, undefined);
         let tx = smg.connect(tester).delegateIn(wk.addr, {value:100})
         await expectRevert(tx, "Quited")
 
         let candidate  = await smg.getStoremanInfo(wk.addr)
-        console.log("candidate:", candidate)
+        //console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), tester.address.toLowerCase())
-        assert.equal(candidate.wkAddr.toLowerCase(), wk.addr)
+        assert.equal(candidate.wkAddr, wk.addr)
     })
 
     it('[StoremanGroupDelegate_delegateOut]', async () => {
@@ -164,14 +166,13 @@ contract('StoremanGroupDelegate delegate', async () => {
         await expectRevert(tx, "not exist")
 
         tx = await smg.connect(tester).delegateIncentiveClaim(wk2.addr)
-        // expectEvent(tx, "delegateIncentiveClaimEvent")
+        await expectEvent(g.storemanLib, tx, "delegateIncentiveClaimEvent")
         // console.log("delegateIncentiveClaimEvent tx:", tx.logs[0].args)
         tx = await smg.connect(tester).delegateIncentiveClaim(wk2.addr)
-        // expectEvent(tx, "delegateIncentiveClaimEvent",{amount:new BN(0)})
+        await expectEvent(g.storemanLib, tx, "delegateIncentiveClaimEvent",[null, null, 0])
 
         tx = await smg.connect(tester).delegateClaim(wk.addr)
-        // expectEvent(tx, "delegateClaimEvent")
-        // console.log("delegateClaim :", tx);
+        await expectEvent(g.storemanLib, tx, "delegateClaimEvent")
 
         tx = smg.connect(g.signers[9]).delegateClaim(wk.addr)
         await expectRevert(tx,"not exist")

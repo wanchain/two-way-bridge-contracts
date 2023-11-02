@@ -3,9 +3,8 @@ const utils = require("../utils");
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
-const { registerStart,stakeInPre, setupNetwork, g,deploySmg} = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork, g,deploySmg,expectRevert, expectEvent} = require('../base.js');
 const  assert  = require("assert");
 
 contract('StoremanGroupDelegate staking', async () => {
@@ -73,7 +72,7 @@ contract('StoremanGroupDelegate staking', async () => {
         let candidate  = await smg.getStoremanInfo(wk1.addr)
         console.log("candidate:", candidate)
         assert.equal(candidate.sender.toLowerCase(), tester.address.toLowerCase())
-        assert.equal(candidate.wkAddr.toLowerCase(), wk1.addr)
+        assert.equal(candidate.wkAddr, wk1.addr)
         assert.equal(candidate.deposit, Number(candidateOld.deposit)+Number(appendValue))
     })
 
@@ -96,7 +95,7 @@ contract('StoremanGroupDelegate staking', async () => {
         assert.equal(f, true, "ready group can stakeOut")
 
         tx = await smg.connect(tester).stakeOut(wk1.addr )
-        //expectEvent(tx, 'stakeOutEvent', {wkAddr: web3.utils.toChecksumAddress(wk1.addr), from:web3.utils.toChecksumAddress(tester.address)})
+        await expectEvent(g.storemanLib, tx, 'stakeOutEvent', [wk1.addr, tester.address])
     })
     it('[StoremanGroupDelegate_stakeClaim] should fail: not dismissed', async () => {
         let f = await smg.connect(tester).checkCanStakeClaim(wk1.addr)
@@ -123,8 +122,7 @@ contract('StoremanGroupDelegate staking', async () => {
 
         tx = await smg.connect(tester).stakeClaim(wk4.addr)
         // console.log("xxx:", tx.logs[0])
-        // expectEvent(tx, 'stakeClaimEvent', {wkAddr: web3.utils.toChecksumAddress(wk4.addr), from:web3.utils.toChecksumAddress(tester),
-        //     groupId: groupId2, value:new BN(stakingValue)})
+        await expectEvent(g.storemanLib, tx, 'stakeClaimEvent', [wk4.addr, tester.address, groupId2, stakingValue])
     })
 
 })

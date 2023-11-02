@@ -4,11 +4,9 @@ const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
-const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
 
-
-const { registerStart,stakeInPre, setupNetwork,g, toPartIn,toDelegateIn, toSelect, timeWaitSelect,deploySmg, timeWaitIncentive} = require('../base.js')
+const { registerStart,stakeInPre, setupNetwork,g, toPartIn,toDelegateIn, toSelect, expectRevert,expectEvent,deploySmg, timeWaitIncentive} = require('../base.js')
 
 
 
@@ -46,10 +44,11 @@ contract('StoremanGroupDelegate delegateIn', async () => {
 
     it('T1 delegateIn normal', async ()=>{
         let sk = await smg.getStoremanInfo(wk.addr);
-        console.log("sk:", sk);
+        //console.log("sk:", sk);
         let tx = await smg.connect(tester).delegateIn(wk.addr,{value:delegateValue});
         // assert.equal(tx.receipt.logs[0].event, 'delegateInEvent')
         // console.log("tx:", tx);
+        await expectEvent(g.storemanLib, tx, 'delegateInEvent')
     })
 
     it('T2 delegateIn: small value', async ()=>{
@@ -58,13 +57,13 @@ contract('StoremanGroupDelegate delegateIn', async () => {
     })
     it('T3 delegateIn: to whitelist before select', async ()=>{
         let tx = await smg.delegateIn(g.leader,{value:100});
-        // expectEvent(tx, "delegateInEvent");       
+        await expectEvent(g.storemanLib, tx, 'delegateInEvent')
     })
     it('delegateIn to unselected node after select', async ()=>{
         await toSelect(smg, groupId);
         let ginfo1 = await smg.getStoremanGroupInfo(groupId)
         let tx = await smg.delegateIn(wk2.addr,{value:100});
-        // expectEvent(tx, "delegateInEvent");   
+        await expectEvent(g.storemanLib, tx, 'delegateInEvent') 
         let ginfo2 = await smg.getStoremanGroupInfo(groupId)
         assert.equal(ginfo1.deposit.toString(), ginfo2.deposit.toString())
         //assert.equal(ginfo1.deposit.mul(15000).div(10000), ginfo1.depositWeight)
@@ -74,7 +73,7 @@ contract('StoremanGroupDelegate delegateIn', async () => {
         await timeWaitIncentive(smg, groupId, wk.addr);
         let tx = await smg.connect(tester).delegateIncentiveClaim(wk.addr);
         // expectEvent(tx, "delegateIncentiveClaimEvent", {wkAddr: web3.utils.toChecksumAddress(wk.addr), sender: web3.utils.toChecksumAddress(tester)})   
-        
+        await expectEvent(g.storemanLib, tx, 'delegateIncentiveClaimEvent',[wk.addr, tester.address, null]) 
     })
 })
 
@@ -198,16 +197,83 @@ contract('StoremanGroupDelegate reuse', async () => {
 
         await smg.connect(g.signers[base]).partClaim(wk2.addr)
         let sk = await smg.getStoremanInfo(wk.addr)
-        console.log("sk:",sk)
+        //console.log("sk:",sk)
         await smg.connect(g.signerAdmin).stakeClaim(wk.addr);
         await smg.connect(g.signerAdmin).stakeClaim(wk2.addr);
 
         tx = await smg.stakeIn(groupId2, wk.pk, wk.pk,{value:100000});
-        //expectEvent(tx, "stakeInEvent")
+        await expectEvent(g.storemanLib, tx, 'stakeInEvent')
 
         tx = await smg.stakeIn(groupId2, wk2.pk, wk2.pk,{value:100000});
-        //expectEvent(tx, "stakeInEvent")   
+        await expectEvent(g.storemanLib, tx, 'stakeInEvent')
         
+    })
+    
+})
+
+
+
+
+contract('StoremanGroupDelegate delegateOut, delegateClaim in sk', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+    const base=40
+    const count=4
+
+
+
+    before("init contracts", async() => {
+        await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
+        groupId = await registerStart(smg, 0, {htlcDuration:20,delegateFee:1000});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+    })
+
+
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+        await toDelegateIn(smg, wk.addr,index=base,count, value=10000)
+        await toPartIn(smg, wk.addr,index=base,count, value=10000)
+    })  
+
+    it('check incentive ', async ()=>{
+        let sdata, tx;
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId, g.storemanGroupStatus.ready)
+        await smg.connect(g.signers[base]).delegateOut(wk.addr)
+        await smg.connect(g.signers[base]).partOut(wk.addr)
+        await smg.connect(g.signers[base+1]).delegateOut(wk.addr)
+        await smg.connect(g.signers[base+1]).partOut(wk.addr)        
+        await smg.connect(g.signers[base+2]).delegateOut(wk.addr)
+        await smg.connect(g.signers[base+2]).partOut(wk.addr)
+        await smg.connect(g.signers[base+3]).delegateOut(wk.addr)
+        await smg.connect(g.signers[base+3]).partOut(wk.addr)
+        let groupId2 = await registerStart(smg, 0, {htlcDuration:20,delegateFee:1000, preGroupId:groupId});
+        //await timeWaitEnd(groupInfo)
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId, g.storemanGroupStatus.failed)
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId2, g.storemanGroupStatus.ready)
+        tx =  await smg.connect(g.signers[base]).delegateClaim(wk.addr)
+        tx =  await smg.connect(g.signers[base]).partClaim(wk.addr)
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId, g.storemanGroupStatus.none)
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId2, g.storemanGroupStatus.ready)
+        tx = await smg.connect(g.signers[base+1]).delegateClaim(wk.addr)
+        tx = await smg.connect(g.signers[base+1]).partClaim(wk.addr)
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId, g.storemanGroupStatus.dismissed)
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId2, g.storemanGroupStatus.dismissed)
+        await smg.connect(g.signers[base+2]).delegateClaim(wk.addr)
+        await smg.connect(g.signers[base+2]).partClaim(wk.addr)
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId, g.storemanGroupStatus.ready)
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId2, g.storemanGroupStatus.ready)
+        tx =  smg.connect(g.signers[base+3]).delegateClaim(wk.addr)
+        await expectRevert(tx, 'Cannot claim')
+        tx = smg.connect(g.signers[base+3]).partClaim(wk.addr)
+        await expectRevert(tx, 'Cannot claim')
+       
     })
     
 })

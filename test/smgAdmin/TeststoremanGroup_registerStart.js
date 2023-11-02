@@ -3,13 +3,12 @@ const utils = require("../utils");
 
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
-const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 const assert  = require('assert')
 
 
 
 
-const { setupNetwork, registerStart,g,deploySmg } = require('../base.js')
+const { setupNetwork, registerStart,g,deploySmg,expectRevert, expectEvent } = require('../base.js')
 
 contract('StoremanGroupDelegate_registerStart', async () => {
 
@@ -78,8 +77,10 @@ contract('StoremanGroupDelegate_registerStart', async () => {
             minPartIn:minPartIn,
             delegateFee:delegateFee,
         }
-        let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs, {from: g.admin})
+        let tx =  smg.storemanGroupRegisterStart(smgIn, ws, srs)
         await expectRevert(tx, "Invalid white list length")
+        tx =  smg.connect(g.tester).storemanGroupRegisterStart(smgIn, ws, srs)
+        await expectRevert(tx, "not admin")
     })
 
     it('Insufficient white list ', async ()=>{
