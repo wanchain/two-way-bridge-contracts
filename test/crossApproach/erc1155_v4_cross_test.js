@@ -1,4 +1,4 @@
-const CrossDelegateV4 = artifacts.require("CrossDelegateV4");
+const CrossDelegate = artifacts.require("CrossDelegateV4");
 const TokenManagerDelegate = artifacts.require("TokenManagerDelegateV2");
 
 const {
@@ -62,7 +62,7 @@ exports.testCases = () => {
       const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
       // cross
-      const cross = await CrossDelegateV4.at(
+      const cross = await CrossDelegate.at(
         global.chains[currentChainType].scAddr.CrossProxy
       );
       const partners = await cross.getPartners();
@@ -105,6 +105,9 @@ exports.testCases = () => {
           { from: global.operatorAccount[currentChainType] }
         );
       }
+      const tokenPairType = await tokenManager.mapTokenPairType(tokenPair.tokenPairID);
+      console.log("tokenPairType:", tokenPairType.toString(10));
+
       let smgFeeProxy = partners.smgFeeProxy;
       if (smgFeeProxy === ADDRESS_0) {
         smgFeeProxy = await cross.owner();
@@ -315,7 +318,7 @@ exports.testCases = () => {
       )[0];
 
       // cross
-      const cross = await CrossDelegateV4.at(
+      const cross = await CrossDelegate.at(
         global.chains[currentChainType].scAddr.CrossProxy
       );
       const partners = await cross.getPartners();
@@ -565,7 +568,7 @@ exports.testCases = () => {
       const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
       // cross
-      const cross = await CrossDelegateV4.at(
+      const cross = await CrossDelegate.at(
         global.chains[currentChainType].scAddr.CrossProxy
       );
       const partners = await cross.getPartners();
@@ -812,7 +815,7 @@ exports.testCases = () => {
       )[0];
 
       // cross
-      const cross = await CrossDelegateV4.at(
+      const cross = await CrossDelegate.at(
         global.chains[currentChainType].scAddr.CrossProxy
       );
       const partners = await cross.getPartners();
