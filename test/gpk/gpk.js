@@ -162,6 +162,78 @@ contract('Gpk_UT_gpk', async(accounts) => {
 
   })
 
+  it('[GpkProxy_setGpkCfg] should fail: not admin', async () => {
+    let result = {};
+    let curveIdArray = [curve1, curve2];
+    let algoIdArray = [0, 1];
+    try {
+      await gpkSc.connect(g.signerLeader).setGpkCfg(groupId, curveIdArray, algoIdArray);
+    } catch (e) {
+      result = e;
+    }
+    assert.include(result.toString(), 'not admin');
+  })
+
+  it('[GpkProxy_setGpkCfg] should fail: empty curve', async () => {
+    let result = {};
+    let curveIdArray = [];
+    let algoIdArray = [];
+    try {
+      await gpkSc.connect(g.signerAdmin).setGpkCfg(groupId, curveIdArray, algoIdArray);
+    } catch (e) {
+      result = e;
+    }
+    assert.include(result.toString(), 'empty curve');
+  })
+
+  it('[GpkProxy_setGpkCfg] should fail: invalid length', async () => {
+    let result = {};
+    let curveIdArray = [1];
+    let algoIdArray = [];
+    try {
+      await gpkSc.connect(g.signerAdmin).setGpkCfg(groupId, curveIdArray, algoIdArray);
+    } catch (e) {
+      result = e;
+    }
+    assert.include(result.toString(), 'invalid length');
+  })
+
+  it('[GpkProxy_setPolyCommit] should fail: Invalid gpk count', async () => {
+    let result = {};
+    let GpkProxy = await ethers.getContractFactory("GpkProxy")
+    tempProxy = await GpkProxy.deploy()
+    await tempProxy.deployed()
+    await tempProxy.upgradeTo(await gpkSc.implementation());
+    temp = await ethers.getContractAt('GpkDelegate', tempProxy.address)
+    try {
+      let gpkGroupInfo = await gpkSc.getGroupInfo(groupId, "1");
+      await temp.connect(g.signerLeader).setPolyCommit(groupId, gpkGroupInfo.queriedRound, 0, "0x01");
+    } catch (e) {
+      result = e;
+    }
+    assert.include(result.toString(), 'Invalid gpk count');
+  })
+
+  it('[GpkProxy_getGpkbyIndex] success', async () => {
+    await gpkSc.getGpkbyIndex(groupId, "1");
+  })
+
+  it('[GpkProxy_getGpkSharebyIndex] success', async () => {
+    await gpkSc.getGpkSharebyIndex(groupId, "0", "1");
+  })
+
+  it('[GpkProxy_getGroupInfo] negative number', async () => {
+      await gpkSc.getGroupInfo(groupId, "-1");
+  })
+
+  it('[GpkProxy_getGpkCfgbyGroup] negative number', async () => {
+    await gpkSc.getGpkCfgbyGroup(groupId, "0");
+  })
+
+  it('[GpkProxy_getGroupInfobyIndex] negative number', async () => {
+    await gpkSc.getGroupInfobyIndex(groupId, "0", "0");
+  })
+
   // upgradeTo
   it('[GpkProxy_upgradeTo] should fail: Not owner', async () => {
     let result = {};
