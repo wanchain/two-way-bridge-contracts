@@ -210,6 +210,26 @@ async function deploySmg() {
     g.storemanGroupProxy = storemanGroupProxy
     console.log("storemanGroupProxy deploy:", storemanGroupProxy.address)
 
+    let TestIncentive1 = await ethers.getContractFactory("TestIncentive1")
+    let testIncentive1 = await TestIncentive1.deploy(storemanGroupProxy.address)
+    await testIncentive1.deployed()
+    g.testIncentive1 = testIncentive1
+    let TestIncentive2 = await ethers.getContractFactory("TestIncentive2")
+    let testIncentive2 = await TestIncentive2.deploy(storemanGroupProxy.address)
+    await testIncentive2.deployed()
+    g.testIncentive2 = testIncentive2
+    let TestIncentive3 = await ethers.getContractFactory("TestIncentive3")
+    let testIncentive3 = await TestIncentive3.deploy(storemanGroupProxy.address)
+    await testIncentive3.deployed()
+    g.testIncentive3 = testIncentive3
+    let TestIncentive4 = await ethers.getContractFactory("TestIncentive4")
+    let testIncentive4 = await TestIncentive4.deploy(storemanGroupProxy.address)
+    await testIncentive4.deployed()
+    g.testIncentive4 = testIncentive4
+    let TestIncentive5 = await ethers.getContractFactory("TestIncentive5")
+    let testIncentive5 = await TestIncentive5.deploy(storemanGroupProxy.address)
+    await testIncentive5.deployed()
+    g.testIncentive5 = testIncentive5
     let FakePosLib = await ethers.getContractFactory("FakePosLib")
     let fakePosLib = await FakePosLib.deploy()
     g.fakePosLib = fakePosLib

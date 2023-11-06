@@ -6,7 +6,7 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
 
 
-const { registerStart,stakeInPre, setupNetwork,g, toPartIn,toDelegateIn, toSelect, expectRevert,expectEvent,deploySmg, timeWaitIncentive} = require('../base.js')
+const { registerStart,stakeInPre, setupNetwork,g, toPartIn,toDelegateIn, toSelect, expectRevert,expectEvent,deploySmg, timeWaitIncentive,timeWaitSelect,toSetGpk, timeWaitEnd} = require('../base.js')
 
 
 
@@ -274,6 +274,66 @@ contract('StoremanGroupDelegate delegateOut, delegateClaim in sk', async () => {
         tx = smg.connect(g.signers[base+3]).partClaim(wk.addr)
         await expectRevert(tx, 'Cannot claim')
        
+    })
+    
+})
+
+
+
+
+
+
+contract('StoremanGroupDelegate TestIncentive', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+    let wk1 = utils.getAddressFromInt(10001)
+    let wk2 = utils.getAddressFromInt(10002)
+
+    before("init contracts", async() => {
+        await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
+        groupId = await registerStart(smg, 0, {htlcDuration:5,delegateFee:1000});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+    })
+
+
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+        let value=100000
+        await g.testIncentive1.delegateIn(wk.addr,{value})
+        await g.testIncentive2.delegateIn(wk.addr,{value})
+        await g.testIncentive3.partIn(wk.addr,{value})
+        await g.testIncentive4.stakeIn(groupId, wk1.pk, wk1.pk,{value});
+        await g.testIncentive5.stakeIn(groupId, wk2.pk, wk2.pk,{value});
+    })  
+
+    it('check incentive ', async ()=>{
+        let sdata, tx;
+        await toSetGpk(smg, groupId);
+        await g.testIncentive1.delegateOut(wk.addr)
+        await g.testIncentive2.delegateOut(wk.addr)
+        await g.testIncentive3.partOut(wk.addr)
+        await g.testIncentive4.stakeOut(wk1.addr)
+        await g.testIncentive5.stakeOut(wk2.addr)
+
+        await smg.connect(g.signerAdmin).updateGroupStatus(groupId, g.storemanGroupStatus.failed)
+
+        tx =  g.testIncentive1.delegateClaim(wk.addr)
+        //await expectRevert(tx, 'ReentrancyGuard: reentrant call')
+        tx =  g.testIncentive2.delegateClaim(wk.addr, {gasLimit:1e7})
+        //await expectRevert(tx, 'ReentrancyGuard: reentrant call')
+        tx =  g.testIncentive3.partClaim(wk.addr)
+        //await expectRevert(tx, 'ReentrancyGuard: reentrant call')
+        tx =  g.testIncentive4.stakeClaim(wk1.addr)
+        //await expectRevert(tx, 'ReentrancyGuard: reentrant call')
+        tx =  g.testIncentive5.stakeClaim(wk2.addr)
+        //await expectRevert(tx, 'ReentrancyGuard: reentrant call')
     })
     
 })
