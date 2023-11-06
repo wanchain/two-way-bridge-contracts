@@ -81,6 +81,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   let depolyer = getSigner(hre).address;
 
   // First you need to deploy the libraries
+  // and after write the libraries to the config file, 
+  // you must rm -rf artifacts-zk and compile it again!!!
 
   // let NFTLibV1 = await getArtifact(deployer, "NFTLibV1");
   // let nftLib = await deploy(deployer, NFTLibV1, []);
@@ -213,15 +215,63 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   fs.writeFileSync(`deployed/zkSyncMainnet.json`, JSON.stringify(deployed, null, 2));
 
-  await verify(hre, TokenManagerDelegateV2, tokenManagerDelegate.address, "contracts/tokenManager/TokenManagerDelegateV2.sol:TokenManagerDelegateV2", []);
-  await verify(hre, CrossDelegateV4, crossDelegate.address, "contracts/crossApproach/CrossDelegateV4.sol:CrossDelegateV4", []);
-  await verify(hre, OracleDelegate, oracleDelegate.address, "contracts/oracle/OracleDelegate.sol:OracleDelegate", []);
-  await verify(hre, EcSchnorrVerifier, ecSchnorrVerifier.address, "contracts/schnorr/EcSchnorrVerifier.sol:EcSchnorrVerifier", []);
-  await verify(hre, SignatureVerifier, signatureVerifier.address, "contracts/schnorr/SignatureVerifier.sol:SignatureVerifier", []);
-  await verify(hre, Multicall2, multicall.address, "contracts/lib/Multicall2.sol:Multicall2", []);
-  await verify(hre, TokenManagerProxy, tokenManagerProxy.address, "contracts/tokenManager/TokenManagerProxy.sol:TokenManagerProxy", []);
-  await verify(hre, CrossProxy, crossProxy.address, "contracts/crossApproach/CrossProxy.sol:CrossProxy", []);
-  await verify(hre, OracleProxy, oracleProxy.address, "contracts/oracle/OracleProxy.sol:OracleProxy", []);
-  await verify(hre, GroupApprove, groupApprove.address, "contracts/GroupApprove/GroupApprove.sol:GroupApprove", [depolyer, signatureVerifier.address, oracleProxy.address, crossProxy.address]);
+  try {
+    await verify(hre, TokenManagerDelegateV2, tokenManagerDelegate.address, "contracts/tokenManager/TokenManagerDelegateV2.sol:TokenManagerDelegateV2", []);
+  } catch (error) {
+    console.log(error);
+  }
 
+  try {
+    await verify(hre, CrossDelegateV4, crossDelegate.address, "contracts/crossApproach/CrossDelegateV4.sol:CrossDelegateV4", []);
+  } catch (error) {
+    console.log(error);
+  }
+
+  try {
+    await verify(hre, OracleDelegate, oracleDelegate.address, "contracts/oracle/OracleDelegate.sol:OracleDelegate", []);
+  } catch (error) {
+    console.log(error);
+  }
+
+  try {
+    await verify(hre, EcSchnorrVerifier, ecSchnorrVerifier.address, "contracts/schnorr/EcSchnorrVerifier.sol:EcSchnorrVerifier", []);
+  } catch (error) {
+    console.log(error);
+  }
+
+  try {
+    await verify(hre, SignatureVerifier, signatureVerifier.address, "contracts/schnorr/SignatureVerifier.sol:SignatureVerifier", []);
+  } catch (error) {
+    console.log(error);
+  }
+
+  try {
+    await verify(hre, Multicall2, multicall.address, "contracts/lib/Multicall2.sol:Multicall2", []);
+  } catch (error) {
+    console.log(error);
+  }
+
+  try {
+    await verify(hre, TokenManagerProxy, tokenManagerProxy.address, "contracts/tokenManager/TokenManagerProxy.sol:TokenManagerProxy", []);
+  } catch (error) {
+    console.log(error);
+  }
+
+  try {
+    await verify(hre, CrossProxy, crossProxy.address, "contracts/crossApproach/CrossProxy.sol:CrossProxy", []);
+  } catch (error) {
+    console.log(error);
+  }
+
+  try {
+    await verify(hre, OracleProxy, oracleProxy.address, "contracts/oracle/OracleProxy.sol:OracleProxy", []);
+  } catch (error) {
+    console.log(error);
+  }
+
+  try {
+    await verify(hre, GroupApprove, groupApprove.address, "contracts/GroupApprove/GroupApprove.sol:GroupApprove", [depolyer, signatureVerifier.address, oracleProxy.address, crossProxy.address]);
+  } catch (error) {
+    console.log(error);
+  }
 }
