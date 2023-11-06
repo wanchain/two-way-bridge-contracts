@@ -16,6 +16,21 @@ contract('Test Config', async (accounts) => {
         cnf = await ethers.getContractAt("ConfigDelegate", configProxy.address);
     });
 
+    it("[upgradeTo] should failed -> Not owner", async () => {
+        try {
+            let signers = await hre.ethers.getSigners();
+            let configProxy = await ethers.getContractAt("ConfigProxy", cnf.address);
+            await configProxy.connect(signers[5]).upgradeTo(delegate.address);
+            assert.fail(ERROR_INFO);
+        } catch (err) {
+            console.log(err)
+            assert.include(
+                err.toString(),
+                "Not owner"
+            );
+        }
+    });
+
     it('[upgradeTo] should failed -> Cannot upgrade to the same implementation', async () => {
         try {
             let configProxy = await ethers.getContractAt("ConfigProxy", cnf.address);
