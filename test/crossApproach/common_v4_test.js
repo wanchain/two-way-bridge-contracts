@@ -1,5 +1,8 @@
 const CrossProxy = artifacts.require("CrossProxy.sol");
-const CrossDelegateV4 = artifacts.require("CrossDelegateV4.sol");
+const CrossDelegate = artifacts.require("CrossDelegateV4.sol");
+const RapidityLib = artifacts.require('RapidityLibV4');
+const NFTLib = artifacts.require('NFTLibV1');
+const crypto = require("crypto");
 
 const {
   ADDRESS_0,
@@ -9,6 +12,7 @@ const {
 } = require("./common");
 
 const { assert, sha256 } = require("./lib");
+const { web3 } = require("hardhat");
 
 exports.testCases = () => {
   describe("Cross_common", function () {
@@ -57,7 +61,7 @@ exports.testCases = () => {
     });
 
     it("Others getStoremanFee @wanchain and @ethereum  -> The config value", async () => {
-      let wanCross = await CrossDelegateV4.at(
+      let wanCross = await CrossDelegate.at(
         global.chains[chainTypes.WAN].scAddr.CrossProxy
       );
       let smgWanFee = await wanCross.getStoremanFee(
@@ -69,7 +73,7 @@ exports.testCases = () => {
         `check storeman group fee at ${chainTypes.WAN} failed`
       );
 
-      let ethCross = await CrossDelegateV4.at(
+      let ethCross = await CrossDelegate.at(
         global.chains[chainTypes.ETH].scAddr.CrossProxy
       );
       let smgEthFee = await ethCross.getStoremanFee(
@@ -84,7 +88,7 @@ exports.testCases = () => {
 
     it("Others getPartners @wanchain and @ethereum  ==> The chainID value", async () => {
       let wanchain = chainTypes.WAN;
-      let wanCross = await CrossDelegateV4.at(
+      let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
       );
       let wanChainID = await wanCross.currentChainID();
@@ -95,7 +99,7 @@ exports.testCases = () => {
       );
 
       let ethereum = chainTypes.ETH;
-      let ethCross = await CrossDelegateV4.at(
+      let ethCross = await CrossDelegate.at(
         global.chains[ethereum].scAddr.CrossProxy
       );
       let ethChainID = await ethCross.currentChainID();
@@ -108,7 +112,7 @@ exports.testCases = () => {
 
     it("Others getPartners @wanchain and @ethereum  ==> The admin value", async () => {
       let wanchain = chainTypes.WAN;
-      let wanCross = await CrossDelegateV4.at(
+      let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
       );
       let wanAdmin = await wanCross.admin();
@@ -119,7 +123,7 @@ exports.testCases = () => {
       );
 
       let ethereum = chainTypes.ETH;
-      let ethCross = await CrossDelegateV4.at(
+      let ethCross = await CrossDelegate.at(
         global.chains[ethereum].scAddr.CrossProxy
       );
       let ethAdmin = await ethCross.admin();
@@ -132,7 +136,7 @@ exports.testCases = () => {
 
     it("Others getPartners @wanchain and @ethereum  ==> The config value", async () => {
       let wanchain = chainTypes.WAN;
-      let wanCross = await CrossDelegateV4.at(
+      let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
       );
       let wanPartners = await wanCross.getPartners();
@@ -158,7 +162,7 @@ exports.testCases = () => {
       );
 
       let ethereum = chainTypes.ETH;
-      let ethCross = await CrossDelegateV4.at(
+      let ethCross = await CrossDelegate.at(
         global.chains[ethereum].scAddr.CrossProxy
       );
       let ethPartners = await ethCross.getPartners();
@@ -184,13 +188,33 @@ exports.testCases = () => {
       );
     });
 
+    it("Others setPartners @wanchain  ==> Not owner", async () => {
+      try {
+        let wanCross = await CrossDelegate.at(
+          global.chains[chainTypes.WAN].scAddr.CrossProxy
+        );
+        const admin = await wanCross.admin();
+        await wanCross.setPartners(
+          ADDRESS_0,
+          ADDRESS_0,
+          global.chains[chainTypes.WAN].scAddr.TestStoremanAdmin,
+          ADDRESS_0,
+          ADDRESS_0,
+          { from: admin }
+        );
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "Not owner");
+      }
+    });
+
     it("Others setPartners @wanchain  ==> Parameter is invalid", async () => {
       try {
         let crossProxy = await CrossProxy.at(
           global.chains[chainTypes.WAN].scAddr.CrossProxy
         );
         const origOwner = await crossProxy.owner();
-        let wanCross = await CrossDelegateV4.at(
+        let wanCross = await CrossDelegate.at(
           global.chains[chainTypes.WAN].scAddr.CrossProxy
         );
         await wanCross.setPartners(
@@ -214,7 +238,7 @@ exports.testCases = () => {
       let ret;
 
       // wanchain
-      let wanCross = await CrossDelegateV4.at(
+      let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
       );
 
@@ -235,7 +259,7 @@ exports.testCases = () => {
       );
 
       // ethereum
-      let ethCross = await CrossDelegateV4.at(
+      let ethCross = await CrossDelegate.at(
         global.chains[ethereum].scAddr.CrossProxy
       );
 
@@ -261,7 +285,7 @@ exports.testCases = () => {
       let ret;
 
       // wanchain
-      let wanCross = await CrossDelegateV4.at(
+      let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
       );
 
@@ -283,12 +307,70 @@ exports.testCases = () => {
       );
     });
 
+    it("setChainID ==> Success", async () => {
+      let rapidityLib = await RapidityLib.new();
+      let nftLib = await NFTLib.new();
+      await CrossDelegate.link(rapidityLib);
+      await CrossDelegate.link(nftLib);
+      let crossDelegate = await CrossDelegate.new();
+      let owner = await crossDelegate.owner();
+      await crossDelegate.setAdmin(owner);
+      await crossDelegate.setChainID(3000, {from: owner});
+      assert(web3.utils.toBN(await crossDelegate.currentChainID()).eq(web3.utils.toBN(3000)), true, "check chainID failed");
+
+      await crossDelegate.setChainID(5000, {from: owner});
+      assert(web3.utils.toBN(await crossDelegate.currentChainID()).eq(web3.utils.toBN(3000)), true, "check chainID failed");
+    });
+
+    it("setChainID ==> not admin", async () => {
+      const wanchain = chainTypes.WAN;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      try {
+        await wanCross.setChainID(3000);
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not admin");
+      }
+    });
+
+    it("currentChainID ==> success", async () => {
+      const wanchain = chainTypes.WAN;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      const chainID = await wanCross.currentChainID(); 
+    });
+
+    it("setEtherTransferGasLimit ==> not admin", async () => {
+      const wanchain = chainTypes.WAN;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      try {
+        await wanCross.setEtherTransferGasLimit(3000);
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not admin");
+      }
+    });
+
     it("Others setEtherTransferGasLimit and getEtherTransferGasLimit  ==> The default value", async () => {
       const wanchain = chainTypes.WAN;
       let ret;
 
       // wanchain
-      let wanCross = await CrossDelegateV4.at(
+      let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
       );
 
@@ -317,13 +399,342 @@ exports.testCases = () => {
       );
     });
 
+    it("setUintValue ==> not admin", async () => {
+      const wanchain = chainTypes.WAN;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      try {
+        await wanCross.setUintValue("0x1","0x2","3");
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not admin");
+      }
+    });
+
+    it("delUintValue ==> not admin", async () => {
+      const wanchain = chainTypes.WAN;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      try {
+        await wanCross.delUintValue("0x1","0x2");
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not admin");
+      }
+    });
+
+    it("Others setUintValue, getUintValue and delUintValue  ==> The default value", async () => {
+      const wanchain = chainTypes.WAN;
+      let ret;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      ret = await wanCross.getUintValue("0x1", "0x2");
+      assert.equal(
+        web3.utils.toBN(ret).eq(new web3.utils.BN(0)),
+        true,
+        `check default getUintValue failed`
+      );
+
+      const admin = await wanCross.admin();
+      await wanCross.setUintValue("0x1","0x2","3", { from: admin });
+      ret = await wanCross.getUintValue("0x1", "0x2");
+      assert.equal(
+        web3.utils.toBN(ret).eq(new web3.utils.BN("3")),
+        true,
+        `check getUintValue failed`
+      );
+
+      await wanCross.delUintValue("0x1","0x2", { from: admin });
+      ret = await wanCross.getUintValue("0x1", "0x2");
+      assert.equal(
+        web3.utils.toBN(ret).eq(new web3.utils.BN(0)),
+        true,
+        `check delUintValue failed`
+      );
+    });
+
+    it('setAdmin ===> Not owner', async function() {
+      try {
+      const wanchain = chainTypes.WAN;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+      const admin = await wanCross.admin();
+      await wanCross.setAdmin(admin, {from: admin});
+      assert.fail(ERROR_INFO);
+    } catch (err) {
+        assert.include(err.toString(), "Not owner");
+      }
+    });
+
+    it("setTokenPairFees ==> not admin", async () => {
+      const wanchain = chainTypes.WAN;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      try {
+        await wanCross.setTokenPairFees([["0","1"]]);
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not admin");
+      }
+    });
+
+    it("setTokenPairFee ==> not admin", async () => {
+      const wanchain = chainTypes.WAN;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      try {
+        await wanCross.setTokenPairFee("0","1");
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not admin");
+      }
+    });
+
+    it("Others setTokenPairFee and getTokenPairFee  ==> The default value", async () => {
+      const wanchain = chainTypes.WAN;
+      let ret;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      ret = await wanCross.getTokenPairFee("0");
+      assert.equal(
+        web3.utils.toBN(ret).eq(new web3.utils.BN(0)),
+        true,
+        `check default token pair fee failed`
+      );
+      const admin = await wanCross.admin();
+      await wanCross.setTokenPairFee("0","1", { from: admin });
+      ret = await wanCross.getTokenPairFee("1");
+      assert.equal(
+        web3.utils.toBN(ret).eq(new web3.utils.BN("0")),
+        true,
+        `check default token pair fee failed`
+      );
+
+      await wanCross.setTokenPairFee("0","0", { from: admin });
+      ret = await wanCross.getTokenPairFee("0");
+      assert.equal(
+        web3.utils.toBN(ret).eq(new web3.utils.BN(0)),
+        true,
+        `check default token pair fee failed`
+      );
+    });
+
+    it("setFee ==> not admin", async () => {
+      const wanchain = chainTypes.WAN;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      try {
+        await wanCross.setFee(["0","1","2","3"]);
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not admin");
+      }
+    });
+
+    it("Others setFee and getFee  ==> The default value", async () => {
+      const wanchain = chainTypes.WAN;
+      let ret;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      ret = await wanCross.getFee(["0", "1"]);
+      assert.equal(
+        web3.utils.toBN(ret.contractFee).eq(new web3.utils.BN(0)),
+        true,
+        `check default contractFee failed`
+      );
+      assert.equal(
+        web3.utils.toBN(ret.agentFee).eq(new web3.utils.BN(0)),
+        true,
+        `check default agentFee failed`
+      );
+
+      const admin = await wanCross.admin();
+      await wanCross.setFee(["0","1","2","3"], { from: admin });
+      ret = await wanCross.getFee(["0", "1"]);
+      assert.equal(
+        web3.utils.toBN(ret.contractFee).eq(new web3.utils.BN("2")),
+        true,
+        `check default contractFee failed`
+      );
+      assert.equal(
+        web3.utils.toBN(ret.agentFee).eq(new web3.utils.BN("3")),
+        true,
+        `check default agentFee failed`
+      );
+
+      await wanCross.setFee(["0","1","0","0"], { from: admin });
+      ret = await wanCross.getFee(["0", "1"]);
+      assert.equal(
+        web3.utils.toBN(ret.contractFee).eq(new web3.utils.BN(0)),
+        true,
+        `check default contractFee failed`
+      );
+      assert.equal(
+       web3.utils.toBN( ret.agentFee).eq(new web3.utils.BN(0)),
+        true,
+        `check default agentFee failed`
+      );
+    });
+
+    it("setFees ==> not admin", async () => {
+      const wanchain = chainTypes.WAN;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      try {
+        await wanCross.setFees([["0","1","2","3"]]);
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not admin");
+      }
+    });
+
+    it("Others setFees and getFees  ==> The default value", async () => {
+      const wanchain = chainTypes.WAN;
+      let ret;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      ret = await wanCross.getFees([["0", "1"]]);
+      assert.equal(
+        web3.utils.toBN(ret[0].contractFee).eq(new web3.utils.BN(0)),
+        true,
+        `check default contractFee failed`
+      );
+      assert.equal(
+        web3.utils.toBN(ret[0].agentFee).eq(new web3.utils.BN(0)),
+        true,
+        `check default agentFee failed`
+      );
+
+      const admin = await wanCross.admin();
+      await wanCross.setFees([["0","1","2","3"]], { from: admin });
+      ret = await wanCross.getFees([["0", "1"]]);
+      assert.equal(
+        web3.utils.toBN(ret[0].contractFee).eq(new web3.utils.BN("2")),
+        true,
+        `check default contractFee failed`
+      );
+      assert.equal(
+        web3.utils.toBN(ret[0].agentFee).eq(new web3.utils.BN("3")),
+        true,
+        `check default agentFee failed`
+      );
+
+      await wanCross.setFees([["0","1","0","0"]], { from: admin });
+      ret = await wanCross.getFees([["0", "1"]]);
+      assert.equal(
+        web3.utils.toBN(ret[0].contractFee).eq(new web3.utils.BN(0)),
+        true,
+        `check default contractFee failed`
+      );
+      assert.equal(
+        web3.utils.toBN(ret[0].agentFee).eq(new web3.utils.BN(0)),
+        true,
+        `check default agentFee failed`
+      );
+    });
+
+    it("setMaxBatchSize ==> not admin", async () => {
+      const wanchain = chainTypes.WAN;
+      let maxBatchSize = 10;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      try {
+        await wanCross.setMaxBatchSize(maxBatchSize);
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not admin");
+      }
+    });
+
+    it("Others setMaxBatchSize and getMaxBatchSize  ==> The default value", async () => {
+      const wanchain = chainTypes.WAN;
+      let ret;
+      let maxBatchSize = 10;
+
+      // wanchain
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      ret = await wanCross.getMaxBatchSize();
+      assert.equal(
+        ret.eq(new web3.utils.BN(20)),
+        true,
+        `check default maxBatchSize failed`
+      );
+
+      const admin = await wanCross.admin();
+      await wanCross.setMaxBatchSize(maxBatchSize, { from: admin });
+      ret = await wanCross.getMaxBatchSize();
+      assert.equal(
+        ret.eq(new web3.utils.BN(maxBatchSize)),
+        true,
+        `check maxBatchSize after setMaxBatchSize failed`
+      );
+
+      await wanCross.setMaxBatchSize(20, { from: admin });
+      ret = await wanCross.getMaxBatchSize();
+      assert.equal(
+        ret.eq(new web3.utils.BN(20)),
+        true,
+        `check maxBatchSize after setMaxBatchSize failed`
+      );
+    });
+
     it("Others setHashType and hashType  ==> The default value", async () => {
       const wanchain = chainTypes.WAN;
       let ret;
       let data = "0x010203040506070809";
 
       // wanchain
-      let wanCross = await CrossDelegateV4.at(
+      let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
       );
 
@@ -367,14 +778,26 @@ exports.testCases = () => {
         let ret;
 
         // wanchain
-        let wanCross = await CrossDelegateV4.at(
+        let wanCross = await CrossDelegate.at(
           global.chains[wanchain].scAddr.CrossProxy
         );
         const admin = await wanCross.admin();
         await wanCross.setHashType(1, { from: admin });
+        assert.fail(ERROR_INFO);
       } catch (err) {
         assert.include(err.toString(), "Not owner");
       }
+    });
+
+    it("Others smgWithdrawHistoryFee foundation account ==> success", async () => {
+      const wanchain = chainTypes.WAN;
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      await wanCross.smgWithdrawHistoryFee([
+        crypto.randomBytes(32)
+      ]);
     });
 
     it("Proxy @wanchain   -> get the implementation address", async () => {
@@ -401,6 +824,23 @@ exports.testCases = () => {
         ADDRESS_CROSS_PROXY_IMPL,
         "check implementation failed"
       );
+    });
+
+    it("Proxy @wanchain   -> upgradeTo with Not owner", async () => {
+      try {
+        const wanchain = chainTypes.WAN;
+        let proxy = await CrossProxy.at(
+          global.chains[wanchain].scAddr.CrossProxy
+        );
+        await proxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL, {from: global.aliceAccount.WAN});
+
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(
+          err.toString(),
+          "Not owner"
+        );
+      }
     });
 
     it("Proxy @wanchain   -> upgradeTo with the same implementation address", async () => {

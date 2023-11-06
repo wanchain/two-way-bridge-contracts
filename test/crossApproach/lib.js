@@ -116,10 +116,28 @@ function sha256(message) {
   return `0x${crypto.createHash('SHA256').update(message).digest('hex')}`;
 }
 
+async function getCrossChainFee(input) {
+  const {cross, srcChainID, destChainID, tokenPairID} = input;
+  // console.log("getCrossChainFee ===> cross keys:", Object.keys(cross))
+  const [primaryFee, [secondaryFee, tertiaryFee]] = await Promise.all ([
+    cross.getTokenPairFee(tokenPairID)
+    , cross.getFees([{srcChainID,destChainID},{srcChainID,destChainID: "0"}])
+  ]);
+  if (primaryFee.contractFee != "0") {
+    return {contractFee:primaryFee.contractFee, agentFee:"0"};
+  }
+  if (secondaryFee.contractFee != "0") {
+    return secondaryFee;
+  }
+  return tertiaryFee;
+}
+
+
 module.exports = {
     assert,
     testInit,
     getEventSignature,
     getTxParsedLogs,
     sha256,
+    getCrossChainFee,
 };

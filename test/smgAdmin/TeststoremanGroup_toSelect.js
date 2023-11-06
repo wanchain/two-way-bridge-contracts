@@ -4,11 +4,7 @@ const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
 
-const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
-
-
-
-const { registerStart,stakeInPre, g, deploySmg,toSetGpk,toSelect, setupNetwork,timeWaitSelect} = require('../base.js')
+const { registerStart,stakeInPre, g, deploySmg,toSetGpk,toSelect, setupNetwork,timeWaitSelect,expectRevert, expectEvent} = require('../base.js')
 
 contract('StoremanGroupDelegate select', async () => {
  
@@ -43,14 +39,14 @@ contract('StoremanGroupDelegate select', async () => {
         console.log("tx:", tx);
 
         let sk = await smg.getSelectedSmInfo(groupId, 1);
-        assert.equal(sk.wkAddr.toLowerCase(), wk1.addr, "the node should be second one")
+        assert.equal(sk.wkAddr, wk1.addr, "the node should be second one")
     })
     it('T2', async ()=>{ 
         let tx = await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:55000});
         console.log("tx:", tx);
 
         let sk = await smg.getSelectedSmInfo(groupId, 2);
-        assert.equal(sk.wkAddr.toLowerCase(), wk2.addr, "the node should be third one")
+        assert.equal(sk.wkAddr, wk2.addr, "the node should be third one")
     })
     it('T3', async ()=>{ 
         let wk = utils.getAddressFromInt(10003)
@@ -58,7 +54,7 @@ contract('StoremanGroupDelegate select', async () => {
         console.log("tx:", tx);
 
         let sk = await smg.getSelectedSmInfo(groupId, 2);
-        assert.equal(sk.wkAddr.toLowerCase(), wk3.addr, "the node should be second one")
+        assert.equal(sk.wkAddr, wk3.addr, "the node should be second one")
     })
     it('T7 setInvalidSm', async ()=>{
         let dep = await smg.getDependence();
@@ -80,10 +76,10 @@ contract('StoremanGroupDelegate select', async () => {
         for(let i=0; i<count; i++) {
             sn[i] = await smg.getSelectedSmInfo(groupId, i)
         }
-        assert.equal(sn[0].wkAddr.toLowerCase(),g.leader,"the first one is wrong")
-        assert.equal(sn[1].wkAddr.toLowerCase(),wk1.addr,"the second one is wrong")
-        assert.equal(sn[2].wkAddr.toLowerCase(),wk3.addr,"the third one is wrong")
-        assert.equal(sn[3].wkAddr.toLowerCase(),wk2.addr,"the fourth one is wrong")
+        assert.equal(sn[0].wkAddr,g.leader,"the first one is wrong")
+        assert.equal(sn[1].wkAddr,wk1.addr,"the second one is wrong")
+        assert.equal(sn[2].wkAddr,wk3.addr,"the third one is wrong")
+        assert.equal(sn[3].wkAddr,wk2.addr,"the fourth one is wrong")
     })
 
     it('T7 setInvalidSm', async ()=>{
@@ -92,21 +88,21 @@ contract('StoremanGroupDelegate select', async () => {
         let tx =  smg.connect(g.signerOwner).setInvalidSm(groupId, [2],["0x02"], {from:g.owner});
         await expectRevert(tx, "Sender is not allowed");
         
-        tx =  await smg.connect(g.signerAdmin).setInvalidSm(groupId, [2],[2], {from:g.admin});
+        tx =  await smg.connect(g.signerAdmin).setInvalidSm(groupId, [2],[2]);
         groupInfo = await smg.getStoremanGroupInfo(groupId);
-        console.log("groupInfo:", groupInfo)
+        //console.log("groupInfo:", groupInfo)
         assert.equal(groupInfo.tickedCount, 1)
 
-        tx = await smg.connect(g.signerAdmin).setInvalidSm(groupId, [2],[5], {from:g.admin});
+        tx = await smg.connect(g.signerAdmin).setInvalidSm(groupId, [2],[5]);
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         assert.equal(groupInfo.tickedCount, 2)
 
-        tx = await smg.connect(g.signerAdmin).setInvalidSm(groupId, [2],[5], {from:g.admin});
+        tx = await smg.connect(g.signerAdmin).setInvalidSm(groupId, [2],[6]);
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         assert.equal(groupInfo.tickedCount, 3)
         assert.equal(groupInfo.status, g.storemanGroupStatus.selected)
         
-        tx = await smg.connect(g.signerAdmin).setInvalidSm(groupId, [2],[5], {from:g.admin});
+        tx = await smg.connect(g.signerAdmin).setInvalidSm(groupId, [2],[4]);
         groupInfo = await smg.getStoremanGroupInfo(groupId);
         assert.equal(groupInfo.tickedCount, 3)
         assert.equal(groupInfo.status, g.storemanGroupStatus.failed)
@@ -121,7 +117,7 @@ contract('StoremanGroupDelegate select', async () => {
         assert.equal(f, true,"checkCanStakeClaim")
 
         let tx = await smg.stakeClaim(wk1.addr);
-        // expectEvent(tx, 'stakeIncentiveClaimEvent')
+        await expectEvent(g.storemanLib, tx, 'stakeIncentiveClaimEvent')
         // console.log("tx stakeClaim:", tx.logs[0].args)
     })
 
@@ -163,6 +159,10 @@ contract('StoremanGroupDelegate select', async () => {
         await expectRevert(tx, "Wrong status")
     })
     it('test select', async ()=>{
+        await smg.connect(g.signerOwner).setHalt(true)
+        let btx =  smg.connect(g.signerLeader).select(groupId)
+        await expectRevert(btx, "Smart contract is halted")
+        await smg.connect(g.signerOwner).setHalt(false)
         let tx =  smg.connect(g.signerLeader).select(groupId)
         await expectRevert(tx, "Wrong time")
     })
@@ -170,7 +170,7 @@ contract('StoremanGroupDelegate select', async () => {
         await timeWaitSelect(groupInfo);
         let tx = await toSelect(smg, groupId);
         groupInfo = await smg.getStoremanGroupInfo(groupId);
-        console.log("groupInfo:", groupInfo)
+        //console.log("groupInfo:", groupInfo)
         assert.equal(groupInfo.status, g.storemanGroupStatus.failed, "select failed when insufficient")
     })
 
@@ -214,14 +214,14 @@ contract('StoremanGroupDelegate setInvalidSm groupInfo', async () => {
         console.log("tx:", tx);
 
         let sk = await smg.getSelectedSmInfo(groupId, 1);
-        assert.equal(sk.wkAddr.toLowerCase(), wk1.addr, "the node should be second one")
+        assert.equal(sk.wkAddr, wk1.addr, "the node should be second one")
     })
     it('T2', async ()=>{ 
         let tx = await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:55000});
         console.log("tx:", tx);
 
         let sk = await smg.getSelectedSmInfo(groupId, 2);
-        assert.equal(sk.wkAddr.toLowerCase(), wk2.addr, "the node should be third one")
+        assert.equal(sk.wkAddr, wk2.addr, "the node should be third one")
     })
 
 
@@ -253,7 +253,7 @@ contract('StoremanGroupDelegate setInvalidSm groupInfo', async () => {
         console.log("2 addr: ", smAddr2.wkAddr)
         let sm2 = await smg.getStoremanInfo(smAddr2.wkAddr)
         groupInfo = await smg.getStoremanGroupInfo(groupId);
-        console.log("groupInfo:", groupInfo)
+        //console.log("groupInfo:", groupInfo)
         // the old node has 55000, the new one is backup, has 50000
         assert.equal(parseInt(groupInfoOld.deposit)-55000, parseInt(groupInfo.deposit)-50000, "setInvalidSm group deposit")
         console.log("==============================old sm:", sm1.deposit)
@@ -298,7 +298,7 @@ contract('StoremanGroupDelegate setInvalidSm fetch backup whitelist again', asyn
         console.log("wk1.addr:", wk1.addr)
         let smAddr2 = await smg.getSelectedSmInfo(groupId, 1)
         sk = await smg.getStoremanInfo(smAddr2.wkAddr)
-        console.log("sk:", sk)
+        //console.log("sk:", sk)
         assert.equal(sk.groupId, groupId)
         assert.equal(sk.nextGroupId, utils.stringTobytes32(""))
         await toSetGpk(smg, groupId)

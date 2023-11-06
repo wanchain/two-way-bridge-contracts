@@ -3,6 +3,7 @@ const assert = require('assert');
 const MappingToken = artifacts.require("MappingToken");
 const MappingNftToken = artifacts.require("MappingNftToken");
 const ethutil = require("ethereumjs-util");
+const hre = require('hardhat')
 
 // const JacksPotDelegate = artifacts.require('./JacksPotDelegate.sol');
 // const JacksPotProxy = artifacts.require('./JacksPotProxy.sol');
@@ -282,7 +283,7 @@ function getAddressFromInt(i){
     let addr = '0x'+ethutil.pubToAddress(pkb).toString('hex')
     let pk = '0x'+pkb.toString('hex')
     //console.log("got address: ",addr)
-    return {addr, pk, priv:b}
+    return {addr: hre.ethers.utils.getAddress(addr), pk, priv:b}
 }
 
 function sleep(ms) {

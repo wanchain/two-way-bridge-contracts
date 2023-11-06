@@ -4,11 +4,10 @@ const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
-const { expectRevert, expectEvent , BN} = require('@openzeppelin/test-helpers');
 
 
 
-const { registerStart,stakeInPre, deploySmg,setupNetwork, g,toSelect,timeWaitIncentive,toPartIn,sendTransaction } = require('../base.js');
+const { registerStart,stakeInPre, deploySmg,setupNetwork, g,toSelect,timeWaitIncentive,toPartIn, expectRevert, expectEvent , } = require('../base.js');
 
 
 
@@ -58,7 +57,7 @@ contract('StoremanGroupDelegate partIn', async () => {
     it('T2 partIn', async ()=>{
         let sk = await smg.getStoremanInfo(wk.addr);
         let tx = await smg.connect(g.signers[0+1]).partIn(wk.addr,{value:partValue, from:g.sfs[0]});
-        //expectEvent(tx, 'partInEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0]), value:new BN(partValue)})
+        await expectEvent(g.storemanLib, tx, 'partInEvent', [wk.addr, g.sfs[0], partValue])
         let sk2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(sk.partnerCount, 0)
         assert.equal(sk.partnerDeposit, 0)
@@ -69,7 +68,7 @@ contract('StoremanGroupDelegate partIn', async () => {
     it('T2 partIn again', async ()=>{
         let sk = await smg.getStoremanInfo(wk.addr);
         let tx = await smg.connect(g.signers[0+1]).partIn(wk.addr,{value:partValue, from:g.sfs[0]});
-        //expectEvent(tx, 'partInEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0]), value:new BN(partValue)})
+        await expectEvent(g.storemanLib, tx, 'partInEvent', [wk.addr, g.sfs[0], partValue])
         let sk2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(sk.partnerCount, 1)
         assert.equal(sk.partnerDeposit, partValue)
@@ -86,8 +85,40 @@ contract('StoremanGroupDelegate partIn', async () => {
         await expectRevert(tx, "Too many partners");       
     })
     it('T8 partClaim', async ()=>{
+        await smg.connect(g.signerOwner).setHalt(true)
+        let btx
+        btx = smg.connect(g.signers[4]).partClaim(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+        btx = smg.connect(g.signers[4]).partIn(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+        btx = smg.connect(g.signers[4]).partOut(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+        btx = smg.connect(g.signers[4]).delegateIn(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+        btx = smg.connect(g.signers[4]).delegateClaim(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+        btx = smg.connect(g.signers[4]).delegateIncentiveClaim(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+
+        btx = smg.connect(g.signers[4]).stakeIncentiveClaim(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+        btx = smg.connect(g.signers[4]).stakeIncentiveClaim(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+        btx = smg.connect(g.signers[4]).stakeOut(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+        btx = smg.connect(g.signers[4]).stakeAppend(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+        btx = smg.connect(g.signers[4]).stakeIn(groupId,g.leaderPk, g.leaderPk);
+        await expectRevert(btx, "Smart contract is halted")
+        btx = smg.connect(g.signers[4]).stakeClaim(wk.addr);
+        await expectRevert(btx, "Smart contract is halted")
+        await smg.connect(g.signerOwner).setHalt(false)
         let tx = smg.connect(g.signers[4+1]).partClaim(wk.addr);
-        await expectRevert(tx, "Cannot claim");       
+        await expectRevert(tx, "Cannot claim");    
+        let r = await smg.checkCanPartnerClaim(wk.addr, g.signers[4].address)  
+        assert.equal(r, false)
+        r = await smg.checkCanDelegatorClaim(wk.addr, g.signers[4].address)  
+        assert.equal(r, false)
     })
 
     it('T4 partout when selecting', async ()=>{
@@ -104,7 +135,9 @@ contract('StoremanGroupDelegate partIn', async () => {
         await toSelect(smg, groupId);
         let sk = await smg.getStoremanInfo(wk.addr);
         let tx =  await smg.connect(g.signers[0+1]).partOut(wk.addr,{from:g.sfs[0]});
-        //expectEvent(tx, 'partOutEvent', {wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[0])})
+        await expectEvent(g.storemanLib,tx, 'partOutEvent', [wk.addr, g.sfs[0]])
+        tx =  smg.connect(g.signers[0+1]).partOut(wk.addr,{from:g.sfs[0]});
+        await expectRevert(tx, 'Quited')
         tx = smg.partIn(wk.addr,{from:g.sfs[0], value:10000});
         await expectRevert(tx, "Quited")
 
@@ -130,8 +163,7 @@ contract('StoremanGroupDelegate partIn', async () => {
         let skInfo1 = await smg.getStoremanInfo(wk.addr);
 
         tx = await smg.connect(g.signers[4+1]).partClaim(wk.addr, {from:g.sfs[4]});
-        console.log("xxxxxxxxxxxxxxxxxxx:", tx)
-        //expectEvent(tx, "partClaimEvent",{wkAddr:web3.utils.toChecksumAddress(wk.addr), from:web3.utils.toChecksumAddress(g.sfs[4]), amount:new BN(partValue)});       
+        await expectEvent(g.storemanLib, tx, "partClaimEvent",[wk.addr, g.sfs[4], partValue]);       
         let skInfo2 = await smg.getStoremanInfo(wk.addr);
         assert.equal(skInfo1.partnerCount, parseInt(skInfo2.partnerCount)+1,"partCLaim failed")
     })
@@ -228,3 +260,38 @@ contract('StoremanGroupDelegate partClaim', async () => {
     
 })
 
+
+contract('StoremanGroupDelegate recordSlash partClaim', async () => {
+
+    let  smg
+    let groupId, groupInfo
+    let wk = utils.getAddressFromInt(10000)
+    const base=40
+
+
+
+    before("init contracts", async() => {
+        await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
+        groupId = await registerStart(smg, 0, {htlcDuration:20,delegateFee:1000});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+    })
+
+
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+        await toPartIn(smg, wk.addr,index=base,1, value=10000)
+        await smg.updateGroupStatus(groupId, g.storemanGroupStatus.failed, {from:g.admin})
+
+        let dep = await smg.getDependence();
+        await smg.connect(g.signerOwner).setDependence(g.admin, g.admin, g.admin,dep[3]);
+        await smg.recordSmSlash(wk.addr)
+        await smg.recordSmSlash(wk.addr)
+        await smg.connect(g.signerOwner).setDependence(dep[0], dep[1], dep[2], dep[3]);
+        await smg.connect(g.signers[base]).partClaim(wk.addr)
+    })  
+})

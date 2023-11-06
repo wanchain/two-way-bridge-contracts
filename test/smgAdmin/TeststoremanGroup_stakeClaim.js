@@ -3,9 +3,8 @@ const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require("assert")
-const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
-const { registerStart,stakeInPre, deploySmg,setupNetwork,toStakeIn,timeWaitIncentive, g} = require('../base.js')
+const { registerStart,stakeInPre, deploySmg,setupNetwork,toStakeIn,timeWaitIncentive, g,expectRevert, expectEvent} = require('../base.js')
 
 
 contract('StoremanGroupDelegate stakeClaim', async () => {
@@ -43,7 +42,7 @@ contract('StoremanGroupDelegate stakeClaim', async () => {
         await expectRevert(tx, "Candidate doesn't exist")
 
         tx = await smg.connect(tester).stakeIncentiveClaim(wk.addr);
-        // expectEvent(tx, 'stakeIncentiveClaimEvent', {amount:new BN(0)})
+        await expectEvent(g.storemanLib, tx, 'stakeIncentiveClaimEvent', [null, null, 0])
     })
 
     it('T1 checkCanStakeClaim', async ()=>{ 
@@ -71,15 +70,14 @@ contract('StoremanGroupDelegate stakeClaim', async () => {
 
         tx = await smg.connect(tester).stakeIncentiveClaim(wk.addr);
         // console.log("stakeIncentiveClaim event:", tx.logs[0].args)
-        // expectEvent(tx, 'stakeIncentiveClaimEvent')
+        await expectEvent(g.storemanLib, tx, 'stakeIncentiveClaimEvent')
 
         tx = await smg.connect(tester).stakeIncentiveClaim(wk.addr);
         //expectEvent(tx, 'stakeIncentiveClaimEvent', {amount:new BN(0)})
 
         await smg.connect(g.signerLeader).storemanGroupDismiss(groupId)
         tx = await smg.stakeClaim(wk.addr);
-        //expectEvent(tx, 'stakeClaimEvent', {wkAddr: g.web3.utils.toChecksumAddress(wk.addr), from:g.web3.utils.toChecksumAddress(tester),
-        //    groupId: groupId, value:new BN(stakingValue)})
+        await expectEvent(g.storemanLib, tx, 'stakeClaimEvent', [wk.addr, tester.address, groupId, stakingValue])
 
         // claim again.
         tx = smg.stakeClaim(wk.addr);

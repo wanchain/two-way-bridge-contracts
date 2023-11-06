@@ -60,6 +60,8 @@ const crossCommon = require('./crossApproach/common_v4_test');
 const crossErc20 = require('./crossApproach/cross_v4_test');
 const crossErc1155 = require('./crossApproach/erc1155_v4_cross_test');
 const crossNFT = require('./crossApproach/nft_v1_cross_test');
+const transferTest = require('./crossApproach/transfer_test');
+const etherTransferTest = require('./crossApproach/etherTransfer_test');
 
 contract('Test Cross Approach', (accounts) => {
     before("init...   -> success", async () => {
@@ -130,6 +132,8 @@ contract('Test Cross Approach', (accounts) => {
     crossErc20.testCases();
     crossErc1155.testCases();
     crossNFT.testCases();
+    transferTest.testCases();
+    etherTransferTest.testCases()
 
     // importMochaTest("Test Common V4", './crossApproach/common_v4_test');
 

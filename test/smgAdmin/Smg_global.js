@@ -4,9 +4,8 @@ const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
-const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
-const { registerStart,stakeInPre, setupNetwork, g ,deploySmg} = require('../base.js');
+const { registerStart,stakeInPre, setupNetwork, g ,deploySmg, expectRevert,expectEvent} = require('../base.js');
 
 
 
@@ -38,8 +37,7 @@ contract('TestSmg', async () => {
 
 		it('T1 contribute', async ()=>{
 			let tx = await smg.contribute({value:contValue})
-			//expectEvent(tx, 'storemanGroupContributeEvent', {sender: web3.utils.toChecksumAddress(g.owner), value: new BN(contValue)})
-      			await tx.wait()
+			await expectEvent(smg, tx, 'storemanGroupContributeEvent', [g.admin, contValue])
 		})
     it('T2 getGlobalIncentive', async ()=>{
 				let tx = await smg.getGlobalIncentive();
@@ -54,6 +52,8 @@ contract('TestSmg', async () => {
 
     it('T4 ChainTypeCo', async ()=>{
       let ret;
+      ret = smg.connect(g.tester).setChainTypeCo(1, 2, 100);
+      await expectRevert(ret, 'not admin')
       await smg.setChainTypeCo(1, 2, 100);
       ret = await smg.getChainTypeCo(1,2);
       assert(Number(ret), 100, "setChainTypeCo failed")
@@ -101,6 +101,9 @@ contract('TestSmg', async () => {
       await expectRevert(tx, "Sender is not allowed")
     })
     it('T10 updateStoremanConf', async ()=>{
+      let tx = smg.connect(g.tester).updateStoremanConf( 4, 16000, 20);
+      await expectRevert(tx, 'not admin')
+
       await smg.updateStoremanConf( 4, 16000, 20);
 
       let conf = await smg.getStoremanConf();
@@ -118,12 +121,17 @@ contract('TestSmg', async () => {
       await expectRevert(tx, "Invalid gpkAddr address");
       tx = smg.setDependence(g.admin,g.admin, "0x0000000000000000000000000000000000000000",g.admin);
       await expectRevert(tx, "Invalid quotaAddr address");
+      tx = smg.connect(g.tester).setDependence(g.admin,g.admin, "0x0000000000000000000000000000000000000000",g.admin);
+      await expectRevert(tx, "Not owner");
     })
 
     it('T8 setGpk', async ()=>{
       smg = smg.connect(g.signerAdmin)
       let tx = smg.setGpk(groupId, g.leaderPk, g.leaderPk);
       await expectRevert(tx, "Sender is not allowed")
+
+      tx = smg.setGlobalGroupScAddr(g.leader);
+      await expectRevert(tx, "Not owner")
     })
     it('T8 checkGroupDismissable', async ()=>{
       let f = await smg.checkGroupDismissable(groupId);
@@ -137,17 +145,20 @@ contract('TestSmg', async () => {
     
     it('T7 recordSmSlash', async ()=>{
       smg = smg.connect(g.signerOwner)
-      await smg.setDependence(g.owner, g.owner, g.owner,g.leader);
+      await smg.setDependence(g.owner, g.admin, g.owner,g.leader);
       let tx = await smg.recordSmSlash(g.leader);
-      console.log("tx:", tx);
+      //console.log("tx:", tx);
       let sk = await smg.getStoremanInfo(g.leader);
       assert(sk.slashedCount, 1, "recordSmSlash failed")
 
       tx = await smg.recordSmSlash(g.leader);
-      console.log("tx:", tx);
+      //console.log("tx:", tx);
       sk = await smg.getStoremanInfo(g.leader);
-      console.log("sk:", sk);
+      //console.log("sk:", sk);
       assert(sk.slashedCount, 1, "recordSmSlash failed")
+      await smg.connect(g.signerAdmin).recordSmSlash(g.leader);
+      sk = await smg.getStoremanInfo(g.leader);
+      assert(sk.slashedCount, 2, "recordSmSlash failed")
     })
 
     it('T7 setGpk', async ()=>{
@@ -160,4 +171,43 @@ contract('TestSmg', async () => {
       assert.equal(groupInfo.status, g.storemanGroupStatus.ready,"setGpk")
 
     })
+})
+
+contract('ListGroup', async () => {
+
+  let  smg
+  let groupId, groupInfo
+  let contValue = 123456;
+  let wk = utils.getAddressFromInt(10000)
+  let listGroup
+
+  before("init contracts", async() => {
+    let CommonTool = await ethers.getContractFactory("CommonTool")
+    let commonTool = await CommonTool.deploy()
+    await commonTool.deployed()
+    let StoremanUtil = await ethers.getContractFactory("StoremanUtil",{
+      libraries:{
+        CommonTool:commonTool.address,
+      }
+    })
+    let storemanUtil = await StoremanUtil.deploy()
+    await storemanUtil.deployed()
+    let ListGroup = await ethers.getContractFactory("ListGroup",{
+      libraries:{
+        StoremanUtil:storemanUtil.address
+      }
+    })
+    listGroup = await ListGroup.deploy(g.admin, g.admin)
+    await listGroup.deployed()
+  })
+
+
+  it('Invalid msg.sender ', async ()=>{
+      let tx
+      let groupId = '0x129e5abde990d3e5c54bdbb384aaea782baf30b8b7298efabdc1e5a4d050c1df'
+      tx =  listGroup.connect(g.tester).setDelegateQuitGroupId(g.admin, g.admin, groupId, groupId)
+      await expectRevert(tx, "not allow")
+      tx =  listGroup.connect(g.tester).setPartQuitGroupId(g.admin, g.admin, groupId, groupId)
+      await expectRevert(tx, "not allow")
+  })
 })

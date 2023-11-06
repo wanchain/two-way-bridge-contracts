@@ -8,14 +8,13 @@ const fakeQuota = artifacts.require('fakeQuota');
 const GpkProxy = artifacts.require('GpkProxy');
 const ListGroup = artifacts.require('ListGroup');
 
-const { expectRevert, expectEvent , BN} = require('@openzeppelin/test-helpers');
 
 const {
     registerStart,deploySmg,
     stakeWhiteList,
     g,toSetGpk,
     toSelect,toDelegateIn,toPartIn, toDelegateClaim, toPartClaim,
-    setupNetwork,stakeInPre,timeWaitSelect, timeWaitIncentive,
+    setupNetwork,stakeInPre,timeWaitSelect, timeWaitIncentive,expectRevert, expectEvent,timeWaitEnd,
     initTestValue
 } = require('../base.js');
 
@@ -604,7 +603,7 @@ contract('incentive rotate', async () => {
         await smg.connect(g.signerLeader).storemanGroupDismiss(groupId);
 
         let tx = await smg.connect(g.signerLeader).incentiveCandidator(wk.addr);
-        // expectEvent(tx, "incentiveEvent")
+        await expectEvent(g.incentiveLib, tx, "incentiveEvent")
     })
 
 
@@ -628,7 +627,7 @@ contract('incentive rotate calFromEndDay', async () => {
         groupId = await registerStart(smg, 0, {htlcDuration:1000, startTime: now+10});
         groupInfo = await smg.getStoremanGroupInfo(groupId)
         await stakeInPre(smg, groupId)
-        console.log("groupInfo:", groupInfo)
+        //console.log("groupInfo:", groupInfo)
     })
 
     it('stakeIn', async ()=>{
@@ -648,13 +647,13 @@ contract('incentive rotate calFromEndDay', async () => {
         // await smg.storemanGroupDismiss(groupId, {from:g.admin});
 
         let tx = await smg.connect(g.signerLeader).incentiveCandidator(wk.addr);
-        // expectEvent(tx, "incentiveEvent")
+        await expectEvent(g.incentiveLib, tx, "incentiveEvent")
         // console.log("tx1:", tx.logs[0].args.from.toString(10),tx.logs[0].args.end.toString(10))
 
         second =  17+parseInt(groupInfo.startTime)
         await utils.sleepUntil(second*1000)
         tx = await smg.connect(g.signerLeader).incentiveCandidator(wk.addr);
-        // expectEvent(tx, "incentiveEvent")
+        await expectEvent(g.incentiveLib, tx, "incentiveEvent")
         // console.log("tx2:", tx.logs[0].args.from.toString(10),tx.logs[0].args.end.toString(10))
     })
 
@@ -722,8 +721,7 @@ contract('incentive rotate', async () => {
             await toSelect(smg, groupId);
         }
         await smg.connect(g.signerAdmin).updateGroupStatus(groupId, g.storemanGroupStatus.ready)
-        let second = 1+parseInt(groupInfo.endTime)
-        await utils.sleepUntil(second*1000)
+        await timeWaitEnd(groupInfo)
         await registerStart(smg, 0, {preGroupId:groupId});
         await smg.connect(g.signerLeader).storemanGroupDismiss(groupId);
 
@@ -770,9 +768,9 @@ contract('incentive rotate2', async () => {
         await smg.connect(g.signerLeader).storemanGroupDismiss(groupId);
 
         let tx = await smg.incentiveCandidator(wk.addr);
-        //expectEvent(tx, "incentiveEvent")
+        await expectEvent(g.incentiveLib,tx, "incentiveEvent")
         tx = await smg.incentiveCandidator(g.leader);
-        //expectEvent(tx, "incentiveEvent")
+        await expectEvent(g.incentiveLib, tx, "incentiveEvent")
     })
 
 
@@ -780,6 +778,70 @@ contract('incentive rotate2', async () => {
 })
 
 
+contract('incentive rotate3', async () => {
+
+    let  smg
+    let groupId,groupId2, groupInfo,groupInfo2
+    let wk = utils.getAddressFromInt(10000)
+
+
+    before("init contracts", async() => {
+        await setupNetwork();
+        console.log("setup newwork finished")
+        smg = await deploySmg();
+        console.log("deploySmg finished")
+        groupId = await registerStart(smg, 0, {htlcDuration:10});
+        groupInfo = await smg.getStoremanGroupInfo(groupId)
+        await stakeInPre(smg, groupId)
+
+    })
+
+    it('stakeIn', async ()=>{
+        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+        await smg.partIn(wk.addr, {value:100000})
+        await smg.delegateIn(wk.addr, {value:100000})
+    }) 
+
+    it('stakeIn 2', async ()=>{
+        let groupInfo = await smg.getStoremanGroupInfo(groupId)
+        if(groupInfo.status < g.storemanGroupStatus.selected){
+            await timeWaitSelect(groupInfo)
+            await toSelect(smg, groupId);
+        }
+        await toSetGpk(smg, groupId);
+        await timeWaitEnd(groupInfo)
+        await smg.partOut(wk.addr)
+        await smg.delegateOut(wk.addr)
+        groupId2 = await registerStart(smg, g.whiteAddrStartIdx, {preGroupId: groupId});
+        groupInfo2 = await smg.getStoremanGroupInfo(groupId2)
+        console.log("groupId, groupId2:", groupId, groupId2,groupInfo2 )
+        await smg.incentiveCandidator(wk.addr);
+        await smg.connect(g.signerLeader).storemanGroupDismiss(groupId);
+
+        groupInfo2 = await smg.getStoremanGroupInfo(groupId2)
+        if(groupInfo2.status < g.storemanGroupStatus.selected){
+            await timeWaitSelect(groupInfo2)
+            await toSelect(smg, groupId2);
+        }
+        await toSetGpk(smg, groupId2);
+        await timeWaitEnd(groupInfo2)
+
+        let r = await smg.getStoremanInfo(wk.addr)
+        console.log("getStoremanInfo:", r)
+        r = await g.listGroup.getDelegateQuitGroupId(wk.addr, g.admin)
+        console.log("getDelegateQuitGroupId:", r)
+        r = await smg.getSmDelegatorAddr(wk.addr, 0)
+        console.log("getSmDelegatorAddr, 0:", r)
+        r = await smg.getSmDelegatorInfo(wk.addr, g.admin)
+        console.log("getSmDelegatorInfo:", r)
+        let tx = await smg.incentiveCandidator(wk.addr);
+        await expectEvent(g.incentiveLib,tx, "incentiveEvent")
+
+    })
+
+
+
+})
 
 
 contract('incentive incentive value check', async () => {
@@ -972,7 +1034,7 @@ contract('incentive incentive value check 3', async () => {
 
 
         groupInfo = await smg.getStoremanGroupInfo(groupId);
-        console.log("groupInfo:", groupInfo)
+        //console.log("groupInfo:", groupInfo)
         // groupInfo2 = await smg.getStoremanGroupInfo(groupId2);
         // console.log("groupInfo2:", groupInfo2)
 
@@ -1009,68 +1071,4 @@ contract('incentive incentive value check 3', async () => {
     
 })
 
-
-contract.skip('delete sk', async () => {
-    // skip no the func cleanStoremanNode
-    let  smg
-    let groupId, groupInfo
-    let wk = utils.getAddressFromInt(10000)
-    let wk2 = utils.getAddressFromInt(10002)
-    let wk3 = utils.getAddressFromInt(10003)
-
-
-
-    before("init contracts", async() => {
-        await setupNetwork();
-        console.log("setup newwork finished")
-        smg = await deploySmg();
-        console.log("deploySmg finished")
-        groupId = await registerStart(smg, 0, {htlcDuration:20,delegateFee:1000});
-        groupInfo = await smg.getStoremanGroupInfo(groupId)
-        await stakeInPre(smg, groupId)
-    })
-
-
-
-    it('stakeIn', async ()=>{
-        await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
-        await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:100000});
-        await smg.stakeIn(groupId, wk3.pk, wk3.pk,{value:250000});
-        await toDelegateIn(smg, wk.addr, index=30,count=5, value=15000)
-        await toPartIn(smg, wk.addr,index=40,count=5)
-        let smInfo = await smg.getStoremanInfo(wk.addr);
-        console.log("stakeIn smInfo:", smInfo)
-    })  
-
-    it('check incentive ', async ()=>{
-        let endIncentive;
-        let tx
-        await timeWaitIncentive(smg, groupId, wk.addr);
-        endIncentive = await smg.getStoremanIncentive(wk.addr, parseInt(groupInfo.endTime-1))
-        console.log("sk info:", await smg.getStoremanInfo(wk.addr))
-        assert.equal(endIncentive, 7750000)
-        await smg.connect(g.signerAdmin).updateGroupStatus(groupId, g.storemanGroupStatus.dismissed, {from:g.admin})
-
-        tx = smg.connect(g.signerAdmin).cleanStoremanNode(wk.addr, {from:g.admin})
-        await expectRevert(tx, 'using')
-
-
-        await toDelegateClaim(smg, wk.addr, index=30,count=5)
-
-        tx = smg.connect(g.signerAdmin).cleanStoremanNode(wk.addr, {from:g.admin})
-        await expectRevert(tx, 'using')
-
-
-        await toPartClaim(smg, wk.addr,index=40,count=5)
-        tx = smg.connect(g.signerAdmin).cleanStoremanNode(wk.addr, {from:g.admin})
-        await expectRevert(tx, 'using')
-
-        await smg.stakeClaim(wk.addr);
-        let smInfo = await smg.getStoremanInfo(wk.addr);
-        console.log("smInfo:", smInfo)
-        tx = await smg.connect(g.signerAdmin).cleanStoremanNode(wk.addr, {from:g.admin})
-        console.log(" cleanStoremanNode tx:", tx)
-    })
-    
-})
 

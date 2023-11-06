@@ -1,6 +1,8 @@
 const hre = require('hardhat')
 const utils = require("./utils");
-const assert = require('chai').assert;
+const { assert, expect } = require("chai");
+const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs")
+
 const Web3 = require('web3');
 const optimist = require("optimist");
 const config = require("./config");
@@ -74,9 +76,10 @@ async function setupNetwork() {
         g.signerAdmin = (await hre.ethers.getSigners())[1]
         g.signerOwner = (await hre.ethers.getSigners())[0]
         g.signerLeader= (await hre.ethers.getSigners())[30]
+        g.tester= (await hre.ethers.getSigners())[59]
         g.admin = '0xdC49B58d1Dc15Ff96719d743552A3d0850dD7057'
         g.owner = "0xEf73Eaa714dC9a58B0990c40a01F4C0573599959";
-        g.leader = ("0xdF0A667F00cCfc7c49219e81b458819587068141").toLowerCase();
+        g.leader = "0xdF0A667F00cCfc7c49219e81b458819587068141";
 
         web3 = new Web3() //new Web3(new Web3.providers.HttpProvider(g.web3url));
         g.web3 = web3;
@@ -196,9 +199,7 @@ async function deploySmg() {
         IncentiveLib:incentiveLib.address,
       }
     })
-    console.log("uuuuuu")
     let storemanGroupDelegate = await StoremanGroupDelegate.deploy()
-    console.log("xxxx")
     await storemanGroupDelegate.deployed()
     console.log("storemanGroupDelegate deploy:", storemanGroupDelegate.address)
 
@@ -209,6 +210,26 @@ async function deploySmg() {
     g.storemanGroupProxy = storemanGroupProxy
     console.log("storemanGroupProxy deploy:", storemanGroupProxy.address)
 
+    let TestIncentive1 = await ethers.getContractFactory("TestIncentive1")
+    let testIncentive1 = await TestIncentive1.deploy(storemanGroupProxy.address)
+    await testIncentive1.deployed()
+    g.testIncentive1 = testIncentive1
+    let TestIncentive2 = await ethers.getContractFactory("TestIncentive2")
+    let testIncentive2 = await TestIncentive2.deploy(storemanGroupProxy.address)
+    await testIncentive2.deployed()
+    g.testIncentive2 = testIncentive2
+    let TestIncentive3 = await ethers.getContractFactory("TestIncentive3")
+    let testIncentive3 = await TestIncentive3.deploy(storemanGroupProxy.address)
+    await testIncentive3.deployed()
+    g.testIncentive3 = testIncentive3
+    let TestIncentive4 = await ethers.getContractFactory("TestIncentive4")
+    let testIncentive4 = await TestIncentive4.deploy(storemanGroupProxy.address)
+    await testIncentive4.deployed()
+    g.testIncentive4 = testIncentive4
+    let TestIncentive5 = await ethers.getContractFactory("TestIncentive5")
+    let testIncentive5 = await TestIncentive5.deploy(storemanGroupProxy.address)
+    await testIncentive5.deployed()
+    g.testIncentive5 = testIncentive5
     let FakePosLib = await ethers.getContractFactory("FakePosLib")
     let fakePosLib = await FakePosLib.deploy()
     g.fakePosLib = fakePosLib
@@ -236,6 +257,10 @@ async function deploySmg() {
 
     console.log("deploy finished....")
     let smg = await ethers.getContractAt('StoremanGroupDelegate', storemanGroupProxy.address)
+    //g.storemanUtil = await storemanUtil.attach(storemanGroupProxy.address)
+    g.storemanLib = await storemanLib.attach(storemanGroupProxy.address)
+    g.incentiveLib = await incentiveLib.attach(storemanGroupProxy.address)
+
     await smg.addAdmin(g.admin)
     console.log("admin: ",g.admin)
     await smg.setGlobalGroupScAddr(listGroup.address);
@@ -379,7 +404,7 @@ async function sleepUntilBlockTime(targetBlockTime) {
     let currBlockTime = parseInt((await hre.ethers.provider.getBlock("latest")).timestamp);
     while (currBlockTime <= targetBlockTime) {
         let second = targetBlockTime - currBlockTime +1;
-        console.log(" =================================sleep %d ms ",second)
+        console.log(" =================================sleep %d s ",second)
         await utils.sleep(second*1000)
         await hre.ethers.provider.send("evm_mine");
         currBlockTime = parseInt((await hre.ethers.provider.getBlock("latest")).timestamp);
@@ -391,7 +416,7 @@ async function toSelect(smg, groupId){
     let second = parseInt(groupInfo.registerTime)+parseInt(groupInfo.registerDuration)
     await sleepUntilBlockTime(second)
     let tx = await smg.connect(g.signerLeader).select(groupId)
-    console.log("select tx:", tx)
+    // console.log("select tx:", tx)
     // console.log("group %s select tx:", groupId, tx.tx)
     // let count = await smg.getSelectedSmNumber(groupId)
     // console.log("slected sm number: %d", count);  
@@ -538,14 +563,14 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
     }
     if(groupInfo.status < g.storemanGroupStatus.ready){
         groupInfo = await smg.getStoremanGroupInfo(groupId)
-        console.log("selected groupInfo:", groupInfo)
+        //console.log("selected groupInfo:", groupInfo)
         let dep = await smg.getDependence();
         await smg.connect(g.signerOwner).setDependence(g.admin, g.admin, g.admin,dep[3]);
         await smg.connect(g.signerAdmin).setGpk(groupId, g.leaderPk, g.leaderPk);
         await smg.connect(g.signerOwner).setDependence(dep[0], dep[1], dep[2], dep[3]);
     }
 
-    console.log("xxxxxx groupInfo:", groupInfo)
+    // console.log("groupInfo:", groupInfo)
     //await smg.updateGroupStatus(groupId, g.storemanGroupStatus.ready, {from:g.admin})
     let second = parseInt(groupInfo.endTime)
     await sleepUntilBlockTime(second)
@@ -590,11 +615,22 @@ async function timeWaitIncentive(smg, groupId, wkAddr) {
 
 
 }
+async function expectRevert(tx, msg){
+    return expect(tx).to.be.revertedWith(msg) 
+}
+function expectEvent(ins, tx, eventName, args) {
+    if(!args || args.length==0){
+        return expect(tx).to.be.emit(ins, eventName)
+    } else {
+        let nargs = args.map(item=>{if(item==null||item==undefined){return anyValue }else return item })
+        return expect(tx).to.be.emit(ins, eventName).withArgs(...nargs)
+    }
+}
 
 
 module.exports = {
     g,curve1,curve2,setupNetwork,toDelegateClaim, toPartClaim,
     registerStart,toStakeAppend,toStakeIn,timeWaitIncentive,toDelegateIn,toPartIn,toSetGpk,
     stakeInPre,stakeWhiteList,toSelect,timeWaitSelect,timeWaitEnd,sendTransaction,
-    initTestValue,deploySmg
+    initTestValue,deploySmg,expectRevert,expectEvent,
 }

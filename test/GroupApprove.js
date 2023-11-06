@@ -20,7 +20,7 @@ console.log('transferFoundation', data);
 
 
 describe("GroupApprove", function() {
-    let groupApprove, mockCross, owner, foundation, signatureVerifier, oracle, other;
+    let groupApprove, mockCross, owner, foundation, signatureVerifier, oracle, other, secp256k1SchnorrVerifier;
     const chainId = 1337; // This is hardhat's default chainId for the local network
 
     beforeEach(async function() {
@@ -34,7 +34,7 @@ describe("GroupApprove", function() {
         signatureVerifier = await SignatureVerifier.deploy();
         await signatureVerifier.deployed();
 
-        const Secp256k1SchnorrVerifier = await ethers.getContractFactory("Secp256k1SchnorrVerifier");
+        const Secp256k1SchnorrVerifier = await ethers.getContractFactory("MokeSigVerifier");
         secp256k1SchnorrVerifier = await Secp256k1SchnorrVerifier.deploy();
         await secp256k1SchnorrVerifier.deployed();
 
@@ -55,6 +55,30 @@ describe("GroupApprove", function() {
         expect(await groupApprove.chainId()).to.equal(chainId.toString());
         expect(await groupApprove.taskCount()).to.equal('0');
         expect(await groupApprove.signatureVerifier()).to.equal(signatureVerifier.address);
+    });
+
+    it("Should revert with foundation is empty", async function() {
+        const GroupApprove = await ethers.getContractFactory("GroupApprove");
+        await expect(GroupApprove.deploy("0x0000000000000000000000000000000000000000", signatureVerifier.address, oracle.address, mockCross.address)).to.be.revertedWith("foundation is empty");
+    });
+
+    it("Should revert with signatureVerifier not match", async function() {
+        const GroupApprove = await ethers.getContractFactory("GroupApprove");
+        await expect(GroupApprove.deploy(foundation.address, foundation.address, oracle.address, mockCross.address)).to.be.revertedWith("signatureVerifier not match");
+    });
+
+    it("Should revert with oracle not match", async function() {
+        const GroupApprove = await ethers.getContractFactory("GroupApprove");
+        await expect(GroupApprove.deploy(foundation.address, signatureVerifier.address, foundation.address, mockCross.address)).to.be.revertedWith("oracle not match");
+    });
+
+    it("Should revert with chainId is empty", async function() {
+        const MockCross = await ethers.getContractFactory("MockCross");
+        const cross = await MockCross.deploy(oracle.address, signatureVerifier.address, "0");
+        await cross.deployed();
+
+        const GroupApprove = await ethers.getContractFactory("GroupApprove");
+        await expect(GroupApprove.deploy(foundation.address, signatureVerifier.address, oracle.address, cross.address)).to.be.revertedWith("chainId is empty");
     });
 
     it("Should proposal revert when foundation not match", async function() {
@@ -137,6 +161,99 @@ describe("GroupApprove", function() {
         } catch (error) {
             expect(error.toString()).includes('SignatureVerifyFailed');
         }
+    });
+
+    it("Should approveAndExecute revert with call failed", async function() {
+        let data = encodeWithSignature("transferFoundation(address)", foundation.address)
+        let proposalTx = await groupApprove.connect(foundation).proposal(chainId, mockCross.address, data);
+        let receipt = await proposalTx.wait();
+        let proposalLog = receipt.events.find(log => log.event == "Proposal");
+        let proposalID = proposalLog.args.proposalId;
+
+        await secp256k1SchnorrVerifier.setResult(true);
+
+        let smgId = '0x000000000000000000000000000000000000000000746573746e65745f303534';
+        let r = '0xbd2efe9fe71f4a5043f89fa05ad46f01a1aef059bf4206d097839c28dd23092d0000000000000000000000000000000000000000000000000000000000000000';
+        let s = '0x3673314965225ae990879306b9ec6b3cc6c06bb188fc729a644d861b65b23d19';
+        await oracle.setStoremanGroupConfig(smgId, 5, 0, [0,0], [1,1], '0x', '0x', parseInt(Date.now()/1000 - 600), parseInt(Date.now()/1000 + 600));
+        await expect(groupApprove.connect(foundation).approveAndExecute(proposalID, smgId, r, s)).to.be.revertedWith("call failed");
+        await secp256k1SchnorrVerifier.setResult(false);
+    });
+
+    it("Should approveAndExecute call failed by new foundation is empty", async function() {
+        let data = encodeWithSignature("transferFoundation(address)", "0x0000000000000000000000000000000000000000");
+        let proposalTx = await groupApprove.connect(foundation).proposal(chainId, groupApprove.address, data);
+        let receipt = await proposalTx.wait();
+        let proposalID = receipt.events.find(log => log.event == "Proposal").args.proposalId;
+
+        await secp256k1SchnorrVerifier.setResult(true);
+
+        let smgId = '0x000000000000000000000000000000000000000000746573746e65745f303534';
+        let r = '0xbd2efe9fe71f4a5043f89fa05ad46f01a1aef059bf4206d097839c28dd23092d0000000000000000000000000000000000000000000000000000000000000000';
+        let s = '0x3673314965225ae990879306b9ec6b3cc6c06bb188fc729a644d861b65b23d19';
+        await oracle.setStoremanGroupConfig(smgId, 5, 0, [0,0], [1,1], '0x', '0x', parseInt(Date.now()/1000 - 600), parseInt(Date.now()/1000 + 600));
+        await expect(groupApprove.connect(foundation).approveAndExecute(proposalID, smgId, r, s)).to.be.revertedWith("call failed");
+        await secp256k1SchnorrVerifier.setResult(false);
+    });
+
+    it("Should approveAndExecute call failed by new foundation is same as old", async function() {
+        let data = encodeWithSignature("transferFoundation(address)", foundation.address);
+        let proposalTx = await groupApprove.connect(foundation).proposal(chainId, groupApprove.address, data);
+        let receipt = await proposalTx.wait();
+        let proposalID = receipt.events.find(log => log.event == "Proposal").args.proposalId;
+
+        await secp256k1SchnorrVerifier.setResult(true);
+
+        let smgId = '0x000000000000000000000000000000000000000000746573746e65745f303534';
+        let r = '0xbd2efe9fe71f4a5043f89fa05ad46f01a1aef059bf4206d097839c28dd23092d0000000000000000000000000000000000000000000000000000000000000000';
+        let s = '0x3673314965225ae990879306b9ec6b3cc6c06bb188fc729a644d861b65b23d19';
+        await oracle.setStoremanGroupConfig(smgId, 5, 0, [0,0], [1,1], '0x', '0x', parseInt(Date.now()/1000 - 600), parseInt(Date.now()/1000 + 600));
+        await expect(groupApprove.connect(foundation).approveAndExecute(proposalID, smgId, r, s)).to.be.revertedWith("call failed");
+        await secp256k1SchnorrVerifier.setResult(false);
+    });
+
+    it("Should approveAndExecute task not exists", async function() {
+        let proposalID = await groupApprove.taskCount();
+
+        await secp256k1SchnorrVerifier.setResult(true);
+
+        let smgId = '0x000000000000000000000000000000000000000000746573746e65745f303534';
+        let r = '0xbd2efe9fe71f4a5043f89fa05ad46f01a1aef059bf4206d097839c28dd23092d0000000000000000000000000000000000000000000000000000000000000000';
+        let s = '0x3673314965225ae990879306b9ec6b3cc6c06bb188fc729a644d861b65b23d19';
+        await oracle.setStoremanGroupConfig(smgId, 5, 0, [0,0], [1,1], '0x', '0x', parseInt(Date.now()/1000 - 600), parseInt(Date.now()/1000 + 600));
+        await expect(groupApprove.connect(foundation).approveAndExecute(proposalID, smgId, r, s)).to.be.revertedWith("task not exists");
+        await secp256k1SchnorrVerifier.setResult(false);
+    });
+
+    it("Should approveAndExecute success", async function() {
+        let data = encodeWithSignature("transferFoundation(address)", owner.address);
+        let proposalTx = await groupApprove.connect(foundation).proposal(chainId, groupApprove.address, data);
+        let receipt = await proposalTx.wait();
+        let proposalLog = receipt.events.find(log => log.event == "Proposal");
+        let proposalID = proposalLog.args.proposalId;
+
+        await secp256k1SchnorrVerifier.setResult(true);
+
+        let smgId = '0x000000000000000000000000000000000000000000746573746e65745f303534';
+        let r = '0xbd2efe9fe71f4a5043f89fa05ad46f01a1aef059bf4206d097839c28dd23092d0000000000000000000000000000000000000000000000000000000000000000';
+        let s = '0x3673314965225ae990879306b9ec6b3cc6c06bb188fc729a644d861b65b23d19';
+        await oracle.setStoremanGroupConfig(smgId, 5, 0, [0,0], [1,1], '0x', '0x', parseInt(Date.now()/1000 - 600), parseInt(Date.now()/1000 + 600));
+        let execTx = await groupApprove.connect(foundation).approveAndExecute(proposalID, smgId, r, s);
+        receipt = await execTx.wait();
+        let execLog = receipt.events.find(log => log.event == "ApprovedAndExecuted");
+        expect(execLog.args.proposalId).to.equal(proposalID);
+
+        data = encodeWithSignature("transferFoundation(address)", foundation.address);
+        proposalTx = await groupApprove.connect(owner).proposal(chainId, groupApprove.address, data);
+        receipt = await proposalTx.wait();
+        proposalLog = receipt.events.find(log => log.event == "Proposal");
+        proposalID = proposalLog.args.proposalId;
+        await groupApprove.connect(foundation).approveAndExecute(proposalID, smgId, r, s);
+        await execTx.wait();
+
+        await expect(groupApprove.connect(foundation).approveAndExecute(proposalID, smgId, r, s)).to.be.revertedWith("task already executed");
+
+        await secp256k1SchnorrVerifier.setResult(false);
     });
 
     it("Should halt revert when not foundation", async function() {

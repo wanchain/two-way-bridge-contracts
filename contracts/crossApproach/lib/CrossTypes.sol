@@ -115,7 +115,7 @@ library CrossTypes {
         IRC20Protocol token = IRC20Protocol(tokenScAddr);
         beforeBalance = token.balanceOf(to);
         (bool success,) = tokenScAddr.call(abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
-        require(success, "TransferFrom failed");
+        require(success, "transferFrom failed");
         afterBalance = token.balanceOf(to);
         return afterBalance == beforeBalance.add(value);
     }

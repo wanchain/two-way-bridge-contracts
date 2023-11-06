@@ -43,22 +43,4 @@ contract EcSchnorrVerifier {
         return _verify(uint8(uint256(parity)), px, message, e, signature);
     }
 
-    // Function to verify the ECDSA signature
-    function debugVerify(bytes32 s, bytes32 px, bytes32 /*groupKeyY*/, bytes32 e, bytes32 parity, bytes32 message)
-        public
-        pure
-        returns(bool, bytes32, bytes32, address)
-    {
-        // ecrecover = (m, v, r, s);
-        bytes32 sp = bytes32(Q - mulmod(uint256(s), uint256(px), Q));
-        bytes32 ep = bytes32(Q - mulmod(uint256(e), uint256(px), Q));
-
-        require(sp != 0);
-        // the ecrecover precompile implementation checks that the `r` and `s`
-        // inputs are non-zero (in this case, `px` and `ep`), thus we don't need to
-        // check if they're zero.
-        address R = ecrecover(sp, uint8(uint256(parity)), px, ep);
-        require(R != address(0), "ecrecover failed");
-        return (e == keccak256(abi.encodePacked(R, uint8(uint256(parity)), px, message)), sp, ep, R);
-    }
 }

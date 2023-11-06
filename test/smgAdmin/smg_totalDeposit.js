@@ -7,9 +7,8 @@ const ListGroup = artifacts.require('ListGroup');
 const FakePosLib = artifacts.require('FakePosLib');
 
 const assert = require('chai').assert;
-const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 
-const { registerStart,timeWaitEnd, timeWaitIncentive,setupNetwork, g,timeWaitSelect,toSelect ,deploySmg} = require('../base.js');
+const { registerStart,timeWaitEnd, timeWaitIncentive,setupNetwork, g,timeWaitSelect,toSelect ,deploySmg,expectRevert} = require('../base.js');
 
 
 
@@ -196,7 +195,7 @@ contract('many group', async () => {
         await toSelect(smg, groupIds[i]);
         let tx = await smg.connect(g.signerAdmin).setGpk(groupIds[i], g.leaderPk, g.leaderPk)
         if(i == groupNumber-1){
-          console.log("setgpk gas:", tx)
+          //console.log("setgpk gas:", tx)
         }
       }
       await smg.connect(g.signerOwner).setDependence(dep[0], dep[1], dep[2], dep[3]);

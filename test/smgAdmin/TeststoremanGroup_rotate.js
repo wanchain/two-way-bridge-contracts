@@ -4,9 +4,8 @@ const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 
 const fakeQuota = artifacts.require('fakeQuota');
 const assert  = require('assert')
-const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 
-const { registerStart,stakeInPre, g, deploySmg,toSelect,setupNetwork, timeWaitSelect,timeWaitIncentive,toSetGpk } = require('../base.js')
+const { registerStart,stakeInPre, g, deploySmg,toSelect,setupNetwork, timeWaitSelect,timeWaitIncentive,toSetGpk,expectRevert, expectEvent } = require('../base.js')
 
 contract('StoremanGroupDelegate_rotate', async () => {
  
@@ -39,7 +38,7 @@ contract('StoremanGroupDelegate_rotate', async () => {
         console.log("tx:", tx);
 
         let sk = await smg.getSelectedSmInfo(groupId, 1);
-        console.log("sk:=======", sk)
+        //console.log("sk:=======", sk)
         //assert.equal(sk.pkAddress.toLowerCase(), wk.addr, "the node should be second one")
     })
 
@@ -69,7 +68,7 @@ contract('StoremanGroupDelegate_rotate', async () => {
         console.log("tx:", tx);
 
         let sk = await smg.getSelectedSmInfo(groupId2, 1);
-        console.log("sk:=======", sk)
+        //console.log("sk:=======", sk)
         //assert.equal(sk.pkAddress.toLowerCase(), wk.addr, "the node should be second one")
     })
 
@@ -100,6 +99,12 @@ contract('StoremanGroupDelegate_rotate', async () => {
         console.log("f:", f)
         assert.equal(f, false,"checkGroupDismissable")
 
+        tx = smg.connect(g.tester).storemanGroupDismiss(groupId)
+        await expectRevert(tx, "Sender is not allowed")
+        await smg.connect(g.signerOwner).setHalt(true)
+        tx = smg.connect(g.signerLeader).storemanGroupDismiss(groupId)
+        await expectRevert(tx, "Smart contract is halted")
+        await smg.connect(g.signerOwner).setHalt(false)
         tx = smg.connect(g.signerLeader).storemanGroupDismiss(groupId)
         await expectRevert(tx, 'can not dismiss')
 

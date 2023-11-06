@@ -4,7 +4,6 @@ const utils = require("../utils");
 const StoremanGroupDelegate = artifacts.require('StoremanGroupDelegate')
 const StoremanGroupProxy = artifacts.require('StoremanGroupProxy');
 const assert = require('chai').assert;
-const { expectRevert, expectEvent, BN } = require('@openzeppelin/test-helpers');
 const Web3 = require('web3')
 
 const { registerStart,stakeInPre, setupNetwork, g,toSetGpk ,deploySmg, timeWaitSelect, toSelect, timeWaitIncentive} = require('../base.js');
@@ -49,11 +48,14 @@ contract('TestSmg', async () => {
       await timeWaitIncentive(smg, groupId, wk.addr);
 
       let I1 = await smg.checkGroupIncentive(groupId, parseInt(groupInfo.startTime));
-      console.log("I1:", I1)
+      expect(I1.toString(), '30000000','Incentive failed')
+      //console.log("I1:", I1)
       let I2 = await smg.checkGroupIncentive(groupId, parseInt(groupInfo.startTime)+1);
-      console.log("I2:", I2)
+      //console.log("I2:", I2)
+      expect(I2.toString(), '30000000','Incentive failed')
       let I3 = await smg.checkGroupIncentive(groupId, parseInt(groupInfo.startTime)+2);
-      console.log("I3:", I3)
+      //console.log("I3:", I3)
+      expect(I3.toString(), '30000000','Incentive failed')
   })
     
 })
