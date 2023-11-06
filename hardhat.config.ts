@@ -22,7 +22,7 @@ const config = {
     timeout: 600000,
   },
   zksolc: {
-    version: "1.3.13",
+    version: "1.3.16",
     compilerSource: "binary",
     settings: {
       isSystem: false, // optional.  Enables Yul instructions available only for zkSync system contracts and libraries
@@ -33,10 +33,10 @@ const config = {
       },
       libraries: {
         "contracts/crossApproach/lib/RapidityLibV4.sol": {
-          RapidityLibV4: "0x474a1f2a37f8BE41521EeB78AAB3a78E315b49fB",
+          RapidityLibV4: "0x7b5ab1C1776f6c980ED4c762abd7acE5B9d5D22C",
         },
         "contracts/crossApproach/lib/NFTLibV1.sol": {
-          NFTLibV1: "0x3Cf32FCEE7D8E71D29184C3CbbCE6069d67Fd2bC",
+          NFTLibV1: "0x0C24Ee2FB82FE87536cdBeA2AB89e42AB1287e97",
         },
         "contracts/gpk/lib/GpkLib.sol": {
           GpkLib: "0x0000000000000000000000000000000000000000",
@@ -145,6 +145,15 @@ const config = {
       // contract verification endpoint
       verifyURL:
         "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
+    },
+    zkSyncMainnet: {
+      // url: 'https://mainnet.era.zksync.io',
+      url: 'https://zksync-era.blockpi.network/v1/rpc/public',
+      accounts: [process.env.PK],
+      ethNetwork: "mainnet",
+      zksync: true,
+      verifyURL: 'https://zksync2-mainnet-explorer.zksync.io/contract_verification',
+      bip44ChainId: 1073741837,
     },
     polyZkTestnet: {
       //gasPrice:200000000,
