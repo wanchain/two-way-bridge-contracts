@@ -22,7 +22,7 @@ const config = {
     timeout: 600000,
   },
   zksolc: {
-    version: "1.3.13",
+    version: "1.3.16",
     compilerSource: "binary",
     settings: {
       isSystem: false, // optional.  Enables Yul instructions available only for zkSync system contracts and libraries
@@ -33,10 +33,10 @@ const config = {
       },
       libraries: {
         "contracts/crossApproach/lib/RapidityLibV4.sol": {
-          RapidityLibV4: "0x474a1f2a37f8BE41521EeB78AAB3a78E315b49fB",
+          RapidityLibV4: "0x1c4423FA4728e0a361e5971baAC2810e05dCACE2",
         },
         "contracts/crossApproach/lib/NFTLibV1.sol": {
-          NFTLibV1: "0x3Cf32FCEE7D8E71D29184C3CbbCE6069d67Fd2bC",
+          NFTLibV1: "0x560cED120942982a73D412B1a46A358ae7D92294",
         },
         "contracts/gpk/lib/GpkLib.sol": {
           GpkLib: "0x0000000000000000000000000000000000000000",
@@ -137,14 +137,23 @@ const config = {
       url: "https://gwan-ssl.wandevs.org:56891",
       accounts: [process.env.PK],
     },
-    zkSyncTestnet: {
-      url: "https://zksync2-testnet.zksync.dev",
+    // zkSyncTestnet: {
+    //   url: "https://zksync2-testnet.zksync.dev",
+    //   accounts: [process.env.PK],
+    //   ethNetwork: "goerli",
+    //   zksync: true,
+    //   // contract verification endpoint
+    //   verifyURL:
+    //     "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
+    // },
+    zkSyncMainnet: {
+      // url: 'https://mainnet.era.zksync.io',
+      url: 'https://zksync-era.blockpi.network/v1/rpc/public',
       accounts: [process.env.PK],
-      ethNetwork: "goerli",
+      ethNetwork: "mainnet",
       zksync: true,
-      // contract verification endpoint
-      verifyURL:
-        "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
+      verifyURL: 'https://zksync2-mainnet-explorer.zksync.io/contract_verification',
+      bip44ChainId: 1073741837,
     },
     polyZkTestnet: {
       //gasPrice:200000000,
