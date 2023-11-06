@@ -48,8 +48,16 @@ If you do not start the zkSync local environment, the tests will fail with error
 
 ### Zksync deploy
 1. export PK='......your account PK .....'  
-2. npx hardhat --config hardhat.config.ts compile --network zkSyncTestnet
-3. npx hardhat --config hardhat.config.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
+2. rm -rf artifacts-zk
+3. npx hardhat --config hardhat.config.ts compile --network zkSyncTestnet
+4. un-commit the libraries deploy code in deploy.ts file
+5. npx hardhat --config hardhat.config.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
+6. after deploy the library, commit the libraries deploy code in deploy.ts file.
+7. fill the library address in hardhat.config.ts file.
+8. rm -rf artifacts-zk
+9. npx hardhat --config hardhat.config.ts compile --network zkSyncTestnet
+10. must recompile it, otherwise it will not work
+11. npx hardhat --config hardhat.config.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
 
 ### transfer owner
 
