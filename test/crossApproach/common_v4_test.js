@@ -1,22 +1,20 @@
-const CrossProxy = artifacts.require("CrossProxy.sol");
-const CrossDelegate = artifacts.require("CrossDelegateV4.sol");
-const RapidityLib = artifacts.require('RapidityLibV4');
-const NFTLib = artifacts.require('NFTLibV1');
 const crypto = require("crypto");
 
 const {
   ADDRESS_0,
-  ADDRESS_CROSS_PROXY_IMPL,
+  ADDRESS_1,
   ERROR_INFO,
   chainTypes,
 } = require("./common");
 
 const { assert, sha256 } = require("./lib");
 const { web3 } = require("hardhat");
+const { access } = require("fs");
 
 exports.testCases = () => {
   describe("Cross_common", function () {
-    it("Transfer owner @wanchain  ==> Success", async () => {
+    it("Transfer owner @wanchain   -> Success", async () => {
+      const { CrossProxy } = getContractArtifacts();
       const currentChainType = chainTypes.WAN;
       let crossProxy;
       let currentOwner;
@@ -45,7 +43,8 @@ exports.testCases = () => {
       );
     });
 
-    it("Transfer owner @wanchain  ==> New owner is the zero address", async () => {
+    it("Transfer owner @wanchain   -> New owner is the zero address", async () => {
+      const { CrossProxy } = getContractArtifacts();
       const currentChainType = chainTypes.WAN;
       let crossProxy;
       try {
@@ -61,6 +60,7 @@ exports.testCases = () => {
     });
 
     it("Others getStoremanFee @wanchain and @ethereum  -> The config value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       let wanCross = await CrossDelegate.at(
         global.chains[chainTypes.WAN].scAddr.CrossProxy
       );
@@ -86,7 +86,8 @@ exports.testCases = () => {
       );
     });
 
-    it("Others getPartners @wanchain and @ethereum  ==> The chainID value", async () => {
+    it("Others getPartners @wanchain and @ethereum   -> The chainID value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       let wanchain = chainTypes.WAN;
       let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
@@ -110,7 +111,8 @@ exports.testCases = () => {
       );
     });
 
-    it("Others getPartners @wanchain and @ethereum  ==> The admin value", async () => {
+    it("Others getPartners @wanchain and @ethereum   -> The admin value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       let wanchain = chainTypes.WAN;
       let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
@@ -134,7 +136,8 @@ exports.testCases = () => {
       );
     });
 
-    it("Others getPartners @wanchain and @ethereum  ==> The config value", async () => {
+    it("Others getPartners @wanchain and @ethereum   -> The config value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       let wanchain = chainTypes.WAN;
       let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
@@ -188,8 +191,9 @@ exports.testCases = () => {
       );
     });
 
-    it("Others setPartners @wanchain  ==> Not owner", async () => {
+    it("Others setPartners @wanchain   -> Not owner", async () => {
       try {
+        const { CrossDelegate } = getContractArtifacts();
         let wanCross = await CrossDelegate.at(
           global.chains[chainTypes.WAN].scAddr.CrossProxy
         );
@@ -208,8 +212,9 @@ exports.testCases = () => {
       }
     });
 
-    it("Others setPartners @wanchain  ==> Parameter is invalid", async () => {
+    it("Others setPartners @wanchain   -> Parameter is invalid", async () => {
       try {
+        const { CrossProxy, CrossDelegate } = getContractArtifacts();
         let crossProxy = await CrossProxy.at(
           global.chains[chainTypes.WAN].scAddr.CrossProxy
         );
@@ -231,7 +236,8 @@ exports.testCases = () => {
       }
     });
 
-    it("Others getFees @wanchain and @ethereum  ==> The config value", async () => {
+    it("Others getFees @wanchain and @ethereum   -> The config value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       const ethereum = chainTypes.ETH;
       let fees;
@@ -280,7 +286,8 @@ exports.testCases = () => {
       );
     });
 
-    it("Others getTokenPairFees and getTokenPairFee  ==> The default value", async () => {
+    it("Others getTokenPairFees and getTokenPairFee   -> The default value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       let ret;
 
@@ -307,7 +314,9 @@ exports.testCases = () => {
       );
     });
 
-    it("setChainID ==> Success", async () => {
+    it("setChainID  -> Success", async () => {
+      const { CrossDelegate, RapidityLib, NFTLib } = getContractArtifacts();
+
       let rapidityLib = await RapidityLib.new();
       let nftLib = await NFTLib.new();
       await CrossDelegate.link(rapidityLib);
@@ -322,7 +331,8 @@ exports.testCases = () => {
       assert(web3.utils.toBN(await crossDelegate.currentChainID()).eq(web3.utils.toBN(3000)), true, "check chainID failed");
     });
 
-    it("setChainID ==> not admin", async () => {
+    it("setChainID  -> not admin", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
       // wanchain
@@ -338,7 +348,8 @@ exports.testCases = () => {
       }
     });
 
-    it("currentChainID ==> success", async () => {
+    it("currentChainID  -> success", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
       // wanchain
@@ -349,7 +360,8 @@ exports.testCases = () => {
       const chainID = await wanCross.currentChainID(); 
     });
 
-    it("setEtherTransferGasLimit ==> not admin", async () => {
+    it("setEtherTransferGasLimit  -> not admin", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
       // wanchain
@@ -365,7 +377,8 @@ exports.testCases = () => {
       }
     });
 
-    it("Others setEtherTransferGasLimit and getEtherTransferGasLimit  ==> The default value", async () => {
+    it("Others setEtherTransferGasLimit and getEtherTransferGasLimit   -> The default value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       let ret;
 
@@ -399,7 +412,8 @@ exports.testCases = () => {
       );
     });
 
-    it("setUintValue ==> not admin", async () => {
+    it("setUintValue  -> not admin", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
       // wanchain
@@ -415,7 +429,8 @@ exports.testCases = () => {
       }
     });
 
-    it("delUintValue ==> not admin", async () => {
+    it("delUintValue  -> not admin", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
       // wanchain
@@ -431,7 +446,8 @@ exports.testCases = () => {
       }
     });
 
-    it("Others setUintValue, getUintValue and delUintValue  ==> The default value", async () => {
+    it("Others setUintValue, getUintValue and delUintValue   -> The default value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       let ret;
 
@@ -467,21 +483,23 @@ exports.testCases = () => {
 
     it('setAdmin ===> Not owner', async function() {
       try {
-      const wanchain = chainTypes.WAN;
+        const { CrossDelegate } = getContractArtifacts();
+        const wanchain = chainTypes.WAN;
 
-      // wanchain
-      let wanCross = await CrossDelegate.at(
-        global.chains[wanchain].scAddr.CrossProxy
-      );
-      const admin = await wanCross.admin();
-      await wanCross.setAdmin(admin, {from: admin});
-      assert.fail(ERROR_INFO);
-    } catch (err) {
+        // wanchain
+        let wanCross = await CrossDelegate.at(
+          global.chains[wanchain].scAddr.CrossProxy
+        );
+        const admin = await wanCross.admin();
+        await wanCross.setAdmin(admin, {from: admin});
+        assert.fail(ERROR_INFO);
+      } catch (err) {
         assert.include(err.toString(), "Not owner");
       }
     });
 
-    it("setTokenPairFees ==> not admin", async () => {
+    it("setTokenPairFees  -> not admin", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
       // wanchain
@@ -497,7 +515,8 @@ exports.testCases = () => {
       }
     });
 
-    it("setTokenPairFee ==> not admin", async () => {
+    it("setTokenPairFee  -> not admin", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
       // wanchain
@@ -513,7 +532,8 @@ exports.testCases = () => {
       }
     });
 
-    it("Others setTokenPairFee and getTokenPairFee  ==> The default value", async () => {
+    it("Others setTokenPairFee and getTokenPairFee   -> The default value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       let ret;
 
@@ -546,7 +566,8 @@ exports.testCases = () => {
       );
     });
 
-    it("setFee ==> not admin", async () => {
+    it("setFee  -> not admin", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
       // wanchain
@@ -562,7 +583,8 @@ exports.testCases = () => {
       }
     });
 
-    it("Others setFee and getFee  ==> The default value", async () => {
+    it("Others setFee and getFee   -> The default value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       let ret;
 
@@ -611,7 +633,8 @@ exports.testCases = () => {
       );
     });
 
-    it("setFees ==> not admin", async () => {
+    it("setFees  -> not admin", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
       // wanchain
@@ -627,7 +650,8 @@ exports.testCases = () => {
       }
     });
 
-    it("Others setFees and getFees  ==> The default value", async () => {
+    it("Others setFees and getFees   -> The default value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       let ret;
 
@@ -676,7 +700,8 @@ exports.testCases = () => {
       );
     });
 
-    it("setMaxBatchSize ==> not admin", async () => {
+    it("setMaxBatchSize  -> not admin", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       let maxBatchSize = 10;
 
@@ -693,7 +718,8 @@ exports.testCases = () => {
       }
     });
 
-    it("Others setMaxBatchSize and getMaxBatchSize  ==> The default value", async () => {
+    it("Others setMaxBatchSize and getMaxBatchSize   -> The default value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       let ret;
       let maxBatchSize = 10;
@@ -728,7 +754,8 @@ exports.testCases = () => {
       );
     });
 
-    it("Others setHashType and hashType  ==> The default value", async () => {
+    it("Others setHashType and hashType   -> The default value", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       let ret;
       let data = "0x010203040506070809";
@@ -774,6 +801,7 @@ exports.testCases = () => {
 
     it("Others setHashType and hashType failed by account which is not owner", async () => {
       try {
+        const { CrossDelegate } = getContractArtifacts();
         const wanchain = chainTypes.WAN;
         let ret;
 
@@ -789,7 +817,30 @@ exports.testCases = () => {
       }
     });
 
-    it("Others smgWithdrawHistoryFee foundation account ==> success", async () => {
+    it("Others smgWithdrawHistoryFee foundation account  -> invalid smgFeeProxy", async () => {
+      try {
+        const { FakeCrossDelegate, RapidityLib, NFTLib } = getContractArtifacts();
+
+        let rapidityLib = await RapidityLib.new();
+        let nftLib = await NFTLib.new();
+        await FakeCrossDelegate.link(rapidityLib);
+        await FakeCrossDelegate.link(nftLib);
+        let crossDelegate = await FakeCrossDelegate.new();
+        let owner = await crossDelegate.owner();
+        await crossDelegate.setAdmin(owner);
+  
+        const groupID = crypto.randomBytes(32);
+        await crossDelegate.renounceOwner();
+        await crossDelegate.setStoremanFee(groupID, {value: 100})
+        await crossDelegate.smgWithdrawHistoryFee([groupID]);
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "invalid smgFeeProxy");
+      }
+    });
+
+    it("Others smgWithdrawHistoryFee foundation account 0 incentive  -> success", async () => {
+      const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
       let wanCross = await CrossDelegate.at(
         global.chains[wanchain].scAddr.CrossProxy
@@ -800,7 +851,24 @@ exports.testCases = () => {
       ]);
     });
 
+    it("Others smgWithdrawHistoryFee foundation account  -> success", async () => {
+      const { FakeCrossDelegate, RapidityLib, NFTLib } = getContractArtifacts();
+
+      let rapidityLib = await RapidityLib.new();
+      let nftLib = await NFTLib.new();
+      await FakeCrossDelegate.link(rapidityLib);
+      await FakeCrossDelegate.link(nftLib);
+      let crossDelegate = await FakeCrossDelegate.new();
+
+      await crossDelegate.setPartners(global.aliceAccount.WAN, global.aliceAccount.WAN, global.aliceAccount.WAN, global.aliceAccount.WAN, global.aliceAccount.WAN);
+
+      const groupID = crypto.randomBytes(32);
+      await crossDelegate.setStoremanFee(groupID, {value: 100})
+      await crossDelegate.smgWithdrawHistoryFee([groupID]);
+    });
+
     it("Proxy @wanchain   -> get the implementation address", async () => {
+      const { CrossProxy } = getContractArtifacts();
       let crossProxy = await CrossProxy.at(
         global.chains[chainTypes.WAN].scAddr.CrossProxy
       );
@@ -813,26 +881,28 @@ exports.testCases = () => {
     });
 
     it("Proxy @wanchain   -> upgradeTo", async () => {
+      const { CrossProxy } = getContractArtifacts();
       let crossProxy = await CrossProxy.at(
         global.chains[chainTypes.WAN].scAddr.CrossProxy
       );
-      await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
+      await crossProxy.upgradeTo(ADDRESS_1);
 
       let address = await crossProxy.implementation();
       assert.equal(
         address,
-        ADDRESS_CROSS_PROXY_IMPL,
+        ADDRESS_1,
         "check implementation failed"
       );
     });
 
     it("Proxy @wanchain   -> upgradeTo with Not owner", async () => {
       try {
+        const { CrossProxy } = getContractArtifacts();
         const wanchain = chainTypes.WAN;
         let proxy = await CrossProxy.at(
           global.chains[wanchain].scAddr.CrossProxy
         );
-        await proxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL, {from: global.aliceAccount.WAN});
+        await proxy.upgradeTo(ADDRESS_1, {from: global.aliceAccount.WAN});
 
         assert.fail(ERROR_INFO);
       } catch (err) {
@@ -845,10 +915,11 @@ exports.testCases = () => {
 
     it("Proxy @wanchain   -> upgradeTo with the same implementation address", async () => {
       try {
+        const { CrossProxy } = getContractArtifacts();
         let crossProxy = await CrossProxy.at(
           global.chains[chainTypes.WAN].scAddr.CrossProxy
         );
-        await crossProxy.upgradeTo(ADDRESS_CROSS_PROXY_IMPL);
+        await crossProxy.upgradeTo(ADDRESS_1);
         assert.fail(ERROR_INFO);
       } catch (err) {
         assert.include(
@@ -860,6 +931,7 @@ exports.testCases = () => {
 
     it("Proxy @wanchain   -> upgradeTo with 0x address", async () => {
       try {
+        const { CrossProxy } = getContractArtifacts();
         let crossProxy = await CrossProxy.at(
           global.chains[chainTypes.WAN].scAddr.CrossProxy
         );
@@ -871,6 +943,7 @@ exports.testCases = () => {
     });
 
     it("Proxy @wanchain   -> restore", async () => {
+      const { CrossProxy } = getContractArtifacts();
       let crossProxy = await CrossProxy.at(
         global.chains[chainTypes.WAN].scAddr.CrossProxy
       );
@@ -893,3 +966,13 @@ exports.testCases = () => {
     });
   });
 };
+
+function getContractArtifacts() {
+  const CrossProxy = artifacts.require("CrossProxy.sol");
+  const FakeCrossDelegate = artifacts.require("FakeCrossDelegate.sol");
+  const CrossDelegate = artifacts.require("CrossDelegateV4.sol");
+  const RapidityLib = artifacts.require('RapidityLibV4');
+  const NFTLib = artifacts.require('NFTLibV1');
+  
+  return {CrossProxy, FakeCrossDelegate, CrossDelegate, RapidityLib, NFTLib};
+}
