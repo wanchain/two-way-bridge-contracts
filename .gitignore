@@ -30,3 +30,5 @@ migrations/deployed
 cache-zk
 artifacts-zk
 remix-compiler.config.js
+
+.venv
