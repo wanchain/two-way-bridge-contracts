@@ -512,7 +512,7 @@ contract('incentive metric', async () => {
       await toSetGpk(smg, groupId);
 
     })
-    it('stakeIn', async ()=>{
+    it('incentiveCandidator', async ()=>{
         let metric = g.fakeMetric
         // let gpkProxy = await GpkProxy.deployed();
         // let pos = await FakePosLib.deployed();
