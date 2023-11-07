@@ -716,7 +716,14 @@ exports.testCases = () => {
       });
       const contractFee = web3.utils.toBN(crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
-    await cross.setTokenPairFees([[tokenPairID, contractFee]], {
+      await resetCrossChainFee({
+        cross,
+        srcChainID: global.chains[currentChainType].ID,
+        destChainID: global.chains[buddyChainType].ID,
+        tokenPairID,
+      }, currentChainAdmin);
+
+      await cross.setTokenPairFees([[tokenPairID, contractFee]], {
         from: currentChainAdmin,
       });
       assert.equal(
@@ -746,9 +753,12 @@ exports.testCases = () => {
       }
 
       let smgFeeProxy = partners.smgFeeProxy;
+      console.log("smgFeeProxy:", smgFeeProxy)
       if (smgFeeProxy === ADDRESS_0) {
         smgFeeProxy = await cross.owner();
       }
+      console.log("smgFeeProxy is owner:", smgFeeProxy)
+      console.log("cross owner:", await cross.owner())
       const beforeFeeProxyBalance = web3.utils.toBN(
         await web3.eth.getBalance(smgFeeProxy)
       );
@@ -772,7 +782,15 @@ exports.testCases = () => {
         assert.equal(approved, cross.address, "check approved fail");
       }
 
-      await cross.setFee([global.chains[currentChainType].ID, "0", contractFee, "0"], {from: await cross.admin()});
+      await cross.setFee({
+        srcChainID: global.chains[currentChainType].ID,
+        destChainID: "0",
+        contractFee:contractFee.toString(10),
+        agentFee:"0"
+      }, {from: currentChainAdmin});
+      // await cross.setFee([global.chains[currentChainType].ID, "0", contractFee, "0"], {from: await cross.admin()});
+      let batchFee = web3.utils.toBN(await cross.getBatchFee(tokenPairID, tokenIDs.length));
+      let moreBatchFee = batchFee.mul(web3.utils.toBN(2));
 
       // exec
       let funcParams = {
@@ -784,7 +802,7 @@ exports.testCases = () => {
       };
       let receipt = await cross.userLockNFT(...Object.values(funcParams), {
         from: senderAccount,
-        value: moreServiceFee,
+        value: moreBatchFee,
       });
       if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(
@@ -919,10 +937,15 @@ exports.testCases = () => {
       const afterFeeProxyBalance = web3.utils.toBN(
         await web3.eth.getBalance(smgFeeProxy)
       );
+      console.log("afterFeeProxyBalance:", afterFeeProxyBalance.toString(10))
+      console.log("beforeFeeProxyBalance:", beforeFeeProxyBalance.toString(10))
+      console.log("batchFee:", batchFee.toString(10))
+      console.log("afterFeeProxyBalance.sub(beforeFeeProxyBalance):", (afterFeeProxyBalance.sub(beforeFeeProxyBalance)).toString(10))
+
       assert.equal(
         afterFeeProxyBalance
           .sub(beforeFeeProxyBalance)
-          .eq(web3.utils.toBN(contractFee)),
+          .eq(batchFee),
         true,
         "balance of storeman fee error"
       );

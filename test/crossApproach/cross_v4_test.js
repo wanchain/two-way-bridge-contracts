@@ -2264,12 +2264,6 @@ exports.testCases = () => {
       const tokenPairID = tokenPair.tokenPairID;
 
       const crossAdmin = await cross.admin();
-      await resetCrossChainFee({
-        cross,
-        srcChainID: global.chains[currentChainType].ID,
-        destChainID: global.chains[buddyChainType].ID,
-        tokenPairID,
-      }, crossAdmin);
 
       const crossChainFee = await getCrossChainFee({
         cross,
@@ -2279,6 +2273,13 @@ exports.testCases = () => {
       });
       const contractFee = web3.utils.toBN(crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
+      await resetCrossChainFee({
+        cross,
+        srcChainID: global.chains[currentChainType].ID,
+        destChainID: global.chains[buddyChainType].ID,
+        tokenPairID,
+      }, crossAdmin);
 
       await cross.setFee({
         srcChainID: global.chains[currentChainType].ID,
@@ -2612,12 +2613,6 @@ exports.testCases = () => {
       const balance = await tokenInstance.balanceOf(senderAccount);
 
       const crossAdmin = await cross.admin();
-      await resetCrossChainFee({
-        cross,
-        srcChainID: global.chains[currentChainType].ID,
-        destChainID: global.chains[buddyChainType].ID,
-        tokenPairID,
-      }, crossAdmin);
 
       const crossChainFee = await getCrossChainFee({
         cross,
@@ -2628,6 +2623,13 @@ exports.testCases = () => {
       const contractFee = web3.utils.toBN(crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
       const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+
+      await resetCrossChainFee({
+        cross,
+        srcChainID: global.chains[currentChainType].ID,
+        destChainID: global.chains[buddyChainType].ID,
+        tokenPairID,
+      }, crossAdmin);
 
       await cross.setFee({
         srcChainID: global.chains[currentChainType].ID,
