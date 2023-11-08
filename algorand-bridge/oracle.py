@@ -82,6 +82,22 @@ def transfer_admin(
     return Seq(
         app.state.admin.set(new_admin.get())
     )
+    
+@app.external
+def get_admin(*, output: abi.Address) -> Expr:
+    return output.set(app.state.admin.get())
+
+@app.external
+def get_owner(*, output: abi.Address) -> Expr:
+    return output.set(app.state.owner.get())
+
+@app.external
+def get_smg_info(
+    smg_id: abi.Address,
+    *,
+    output: StoremanGroupConfig,
+) -> Expr:
+    return app.state.smgs[smg_id].store_into(output)
 
 ###
 # App lifecycle
