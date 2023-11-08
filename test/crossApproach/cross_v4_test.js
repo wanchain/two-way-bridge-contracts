@@ -1178,7 +1178,7 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
       const agentFee = web3.utils.toBN(crossChainFee.agentFee);
 
@@ -1392,8 +1392,8 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
   
       const crossFee = agentFee
         .mul(web3.utils.toBN(crossValueToWei))
@@ -1600,8 +1600,8 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       const crossFee = agentFee
         .mul(web3.utils.toBN(crossValueToWei))
@@ -1962,9 +1962,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       // token pair contract fee
       const crossAdmin = await cross.admin();
@@ -2098,8 +2098,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
+      const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       const crossFee = agentFee
         .mul(web3.utils.toBN(crossValueToWei))
@@ -2303,8 +2304,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       await resetCrossChainFee({
         cross,
@@ -2796,8 +2798,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
+      const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       const crossFee = agentFee
         .mul(web3.utils.toBN(crossValueToWei))
@@ -3003,9 +3006,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       await resetCrossChainFee({
         cross,
@@ -3473,10 +3476,11 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
+      const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
-      const crossFee = web3.utils.toBN(crossValueToWei);
+      const crossFee = agentFee;
       // const crossFee = agentFee
       //   .mul(web3.utils.toBN(crossValueToWei))
       //   .div(web3.utils.toBN(DENOMINATOR));
@@ -3678,8 +3682,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
+      const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       const crossFee = agentFee
         .mul(web3.utils.toBN(crossValueToWei))
@@ -3885,9 +3890,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       await resetCrossChainFee({
         cross,
@@ -4008,8 +4013,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
+      const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       const crossFee = agentFee
         .mul(web3.utils.toBN(crossValueToWei))
@@ -4213,9 +4219,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
-      const agentFee = web3.utils.toBN(crossChainFee.agentFee);
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       await resetCrossChainFee({
         cross,
@@ -4348,8 +4354,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       // exec
       let lockParams = {

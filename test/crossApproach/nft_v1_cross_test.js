@@ -768,8 +768,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
       await resetCrossChainFee({
         cross,
         srcChainID: global.chains[currentChainType].ID,
@@ -836,7 +837,7 @@ exports.testCases = () => {
       await cross.setFee({
         srcChainID: global.chains[currentChainType].ID,
         destChainID: "0",
-        contractFee:contractFee.toString(10),
+        contractFee:moreServiceFee.toString(10),
         agentFee:"0"
       }, {from: currentChainAdmin});
       // await cross.setFee([global.chains[currentChainType].ID, "0", contractFee, "0"], {from: await cross.admin()});
@@ -1263,8 +1264,6 @@ exports.testCases = () => {
       );
       const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
       const tokenPairID = tokenPair.tokenPairID;
-
-      const crossFee = web3.utils.toBN(0);
 
       const currTokenCrossType = await tokenManager.mapTokenPairType(
         tokenPairID
@@ -2144,8 +2143,9 @@ exports.testCases = () => {
         destChainID: global.chains[buddyChainType].ID,
         tokenPairID,
       });
-      const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
       const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
 
       const currTokenCrossType = await tokenManager.mapTokenPairType(
         tokenPairID
@@ -2614,7 +2614,7 @@ exports.testCases = () => {
 
       //const fee = await cross.getFee({ srcChainID: global.chains[currentChainType].ID, destChainID: global.chains[buddyChainType].ID });
       //const crossFee = web3.utils.toBN(fee.agentFee).mul(web3.utils.toBN(crossValueToWei)).div(web3.utils.toBN(DENOMINATOR));
-      const crossFee = web3.utils.toBN(0);
+      // const crossFee = web3.utils.toBN(0);
       //const crossValueActually = web3.utils.toBN(crossValueToWei).sub(crossFee);
 
       // const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
