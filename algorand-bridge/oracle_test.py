@@ -120,6 +120,26 @@ def main() -> None:
     )
     
     print(smg_info.return_value)
+    
+    assert smg_info.return_value[3] == 5
+    
+    # Test for update
+    owner_client.update()
+    print('update finish')
+    
+    # Admin should not be able to update
+    try:
+        admin_client.update()
+        assert False
+    except Exception as e:
+        print('pass')
+        
+    # Creator should not be able to update
+    try:
+        app_client.update()
+        assert False
+    except Exception as e:
+        print('pass')
 
 if __name__ == "__main__":
     main()
