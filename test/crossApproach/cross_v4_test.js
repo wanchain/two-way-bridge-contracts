@@ -2290,12 +2290,30 @@ exports.testCases = () => {
         currentToken.symbol
       );
       const tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
+      const tokenAncestorInfo = await tokenManager.getAncestorInfo(
+        tokenPair.tokenPairID
+      );
       const tokenPairInfo = await tokenManager.getTokenPairInfo(
         tokenPair.tokenPairID
       );
+
       const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
       const tokenPairID = tokenPair.tokenPairID;
 
+      await tokenManager.updateTokenPair(
+        tokenPairID,
+        [
+          tokenAncestorInfo.account,
+          tokenAncestorInfo.name,
+          tokenAncestorInfo.symbol,
+          tokenAncestorInfo.decimals,
+          tokenAncestorInfo.chainId
+        ],
+        tokenPairInfo.toChainID,
+        tokenPairInfo.toAccount,
+        tokenPairInfo.fromChainID,
+        tokenPairInfo.fromAccount
+      );
       const crossAdmin = await cross.admin();
 
       const crossChainFee = await getCrossChainFee({
@@ -2406,6 +2424,22 @@ exports.testCases = () => {
         true,
         "balance of storeman fee error"
       );
+
+      await tokenManager.updateTokenPair(
+        tokenPairID,
+        [
+          tokenAncestorInfo.account,
+          tokenAncestorInfo.name,
+          tokenAncestorInfo.symbol,
+          tokenAncestorInfo.decimals,
+          tokenAncestorInfo.chainId
+        ],
+        tokenPairInfo.fromChainID,
+        tokenPairInfo.fromAccount,
+        tokenPairInfo.toChainID,
+        tokenPairInfo.toAccount
+      );
+
     });
     it("Chain [ETH] <=> Chain [WAN] -> TOKEN [LINK @wanchain] <( ethereum => wanchain )> -> smgMint  ==>  Not support", async () => {
       let tokenManager, tokenPairID, operator;
