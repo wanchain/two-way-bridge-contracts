@@ -60,4 +60,13 @@ contract FakeToken is ERC20Burnable, Ownable {
         }
     }
 
+    function mint(address account_, uint256 value_)
+        external
+        virtual
+    {
+        if (!invalidMode) {
+            _mint(account_, value_);
+        }
+    }
+
 }

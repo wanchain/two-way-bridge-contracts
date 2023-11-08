@@ -673,6 +673,60 @@ exports.testCases = () => {
       }
     });
 
+    it("Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @ethereum] <( ethereum => wanchain )> -> userLockNFT  ==> Token does not exist", async () => {
+      let tokenManager;
+      let tokenPairID;
+      let operator;
+      try {
+        const wanUserAccount = global.aliceAccount.WAN;
+        const ethUserAccount = global.aliceAccount.ETH;
+        const currentChainType = chainTypes.ETH;
+        const buddyChainType = chainTypes.WAN;
+        const smgID = global.storemanGroups.src.ID;
+        const userAccount = wanUserAccount;
+        const senderAccount = ethUserAccount;
+        const currentChainAdmin = global.adminAccount[currentChainType];
+
+      // cross
+        const cross = await CrossDelegateV4.at(
+          global.chains[currentChainType].scAddr.CrossProxy
+        );
+        const partners = await cross.getPartners();
+
+        tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
+        tokenPairID = 1000;
+
+        operator = global.operatorAccount[currentChainType];
+        await tokenManager.setTokenPairTypes(
+          [tokenPairID],
+          [web3.utils.toBN("1")],
+          { from: operator }
+        );
+
+        let smgFeeProxy = partners.smgFeeProxy;
+        if (smgFeeProxy === ADDRESS_0) {
+          smgFeeProxy = await cross.owner();
+        }
+
+        // exec
+        let funcParams = {
+          smgID: smgID,
+          tokenPairID: tokenPairID,
+          tokenIDs: tokenIDs,
+          tokenValues: tokenValues,
+          userAccount: userAccount,
+        };
+
+        await cross.userLockNFT(...Object.values(funcParams), {
+          from: senderAccount,
+          value: 100,
+        });
+        assert.fail(ERROR_INFO)
+      } catch (err) {
+        assert.include(err.toString(), "Token does not exist");
+      }
+    });
+
     it("Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @ethereum] <( ethereum => wanchain )> -> userLockNFT  ==> success", async () => {
       const wanUserAccount = global.aliceAccount.WAN;
       const ethUserAccount = global.aliceAccount.ETH;
@@ -753,12 +807,9 @@ exports.testCases = () => {
       }
 
       let smgFeeProxy = partners.smgFeeProxy;
-      console.log("smgFeeProxy:", smgFeeProxy)
       if (smgFeeProxy === ADDRESS_0) {
         smgFeeProxy = await cross.owner();
       }
-      console.log("smgFeeProxy is owner:", smgFeeProxy)
-      console.log("cross owner:", await cross.owner())
       const beforeFeeProxyBalance = web3.utils.toBN(
         await web3.eth.getBalance(smgFeeProxy)
       );
@@ -937,10 +988,6 @@ exports.testCases = () => {
       const afterFeeProxyBalance = web3.utils.toBN(
         await web3.eth.getBalance(smgFeeProxy)
       );
-      console.log("afterFeeProxyBalance:", afterFeeProxyBalance.toString(10))
-      console.log("beforeFeeProxyBalance:", beforeFeeProxyBalance.toString(10))
-      console.log("batchFee:", batchFee.toString(10))
-      console.log("afterFeeProxyBalance.sub(beforeFeeProxyBalance):", (afterFeeProxyBalance.sub(beforeFeeProxyBalance)).toString(10))
 
       assert.equal(
         afterFeeProxyBalance

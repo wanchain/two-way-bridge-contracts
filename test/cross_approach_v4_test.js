@@ -39,8 +39,6 @@ const {
     updateOracle
 } = require("./crossApproach/oracle-config");
 
-const truffleConfig = require("./config");
-// console.log("truffleConfig:", truffleConfig);
 
 const {
     testInit,
@@ -71,8 +69,7 @@ contract('Test Cross Approach', (accounts) => {
         // console.log("accounts:", accounts, accounts.length);
         let currNetwork = optimist.argv.network || "development";
         currNetwork = currNetwork.split("-")[0];
-        const from = truffleConfig.networks[currNetwork].from;
-        const owner = from ? (accounts.includes(from) ? from : accounts[0]) : accounts[0];
+        const owner = accounts[0];
         const adminAccounts = {WAN: accounts[1], ETH: accounts[2]};
         const foundationAccounts = {WAN: accounts[3], ETH: accounts[4]};
         const aliceAccounts = {WAN: accounts[5], ETH: accounts[6], BTC: userBTCAccount};
