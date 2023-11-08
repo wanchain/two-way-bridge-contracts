@@ -54,11 +54,22 @@ def main() -> None:
     )
     
     app_client.call(
-        oracle.configure,
+        oracle.initialize,
         seed=TransactionWithSigner(ptxn, creator.signer),
         owner=owner.address,
         admin=admin.address,
     )
+
+    # Should not be able to initialize again
+    try:
+        app_client.call(
+            oracle.initialize,
+            seed=TransactionWithSigner(ptxn, creator.signer),
+            owner=owner.address,
+            admin=admin.address,
+        )
+    except Exception as e:
+        print('pass')
     
     print("config success", app_client.app_id)
     

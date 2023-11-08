@@ -108,8 +108,8 @@ def create() -> Expr:
     return app.initialize_global_state()
 
 @app.external(authorize=Authorize.only(Global.creator_address()))
-def configure(
-    seed: abi.PaymentTransaction,
+def initialize(
+    seed: abi.PaymentTransaction, # pay for minimum balance
     owner: abi.Address, 
     admin: abi.Address) -> Expr:
     """Initializes the global state of the app.
