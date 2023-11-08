@@ -14,6 +14,7 @@ module.exports = {
         'components/Owned.sol',
         'components/Proxy.sol',
         'Migrations.sol',
+        'test/FakeToken.sol',
         'test/FakeBnCurve.sol',
         'test/FakeCommonTool.sol',
         'test/FakeCrossDelegate.sol',
