@@ -36,6 +36,9 @@ def main() -> None:
     print("Creating app")
     app_client.create()
     print("Create success")
+
+    owner_client = app_client.prepare(signer=owner.signer)
+    admin_client = app_client.prepare(signer=admin.signer)
     
     print("Configing app")
     sp = app_client.get_suggested_params()
@@ -73,18 +76,44 @@ def main() -> None:
     except Exception as e:
         print('pass')
 
+    # Create Wrapped Token
+    print("Creating wrapped token")
+    app_client.fund(200000) # deposit for minimum balance require
+    owner_client.call(
+        token_manager.create_wrapped_token,
+        name="WAN@algorand",
+        symbol="WAN",
+        decimals=6,
+        total_supply=100000000000000
+    )
+
+    # Should not be able to create wrapped token by others
+    try:
+        admin_client.call(
+            token_manager.create_wrapped_token,
+            name="WAN@algorand",
+            symbol="WAN",
+            decimals=6,
+            total_supply=100000000000000
+        )
+    except Exception as e:
+        print('pass')
+
+    # get_latest_wrapped_token_id
+    print("Getting latest wrapped token id")
+    tokenId = owner_client.call(token_manager.get_latest_wrapped_token_id)
+    print(tokenId.return_value)
 
     # Test add_token_pair
     print("Adding token pair")
-    owner_client = app_client.prepare(signer=owner.signer)
     owner_client.fund(200000) # deposit for minimum balance require
     owner_client.call(
         token_manager.add_token_pair,
         id=666,
         from_chain_id=2153201998,
         from_account="0x0000000000000000000000000000000000000000",
-        to_chain_id=2147483931,
-        to_account="41234",
+        to_chain_id=2147483931, # algorand
+        to_account=str(tokenId.return_value),
         boxes=[(app_client.app_id, bytes.fromhex('029a')), (app_client.app_id, "pair_list")]
     )
 
