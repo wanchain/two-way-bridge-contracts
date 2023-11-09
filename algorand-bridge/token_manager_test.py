@@ -99,6 +99,10 @@ def main() -> None:
     except Exception as e:
         print('pass')
 
+    # create test asset
+    print("Creating test asset")
+    
+
     # get_latest_wrapped_token_id
     print("Getting latest wrapped token id")
     tokenId = owner_client.call(token_manager.get_latest_wrapped_token_id)

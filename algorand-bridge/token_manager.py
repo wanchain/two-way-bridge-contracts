@@ -68,6 +68,12 @@ def get_latest_wrapped_token_id(*, output: abi.Uint64) -> Expr:
     return output.set(app.state.latest_wrapped_token_id.get())
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
+def opt_in_token_id(
+    id: abi.Uint64,
+) -> Expr:
+    return Seq(do_opt_in(id.get()))
+
+@app.external(authorize=Authorize.only(app.state.owner.get()))
 def add_token_pair(
     id: abi.Uint16,
     from_chain_id: abi.Uint64,
