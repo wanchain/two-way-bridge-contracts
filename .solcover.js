@@ -2,8 +2,8 @@ module.exports = {
     skipFiles: [
         'crossApproach/CrossDelegateXinFin.sol',
         'crossApproach/lib/HTLCTxLib.sol',
-        'schnorr/Secp256k1.sol ',
-        'schnorr/Secp256k1SchnorrVerifier.sol ',
+        'schnorr/Secp256k1.sol',
+        'schnorr/Secp256k1SchnorrVerifier.sol',
         'lib/Bn256Curve.sol',
         'lib/Secp256k1Curve.sol',
         'lib/Multicall2.sol',
@@ -14,6 +14,8 @@ module.exports = {
         'components/Owned.sol',
         'components/Proxy.sol',
         'Migrations.sol',
+        'test/TestIOwned.sol',
+        'test/FakeReentrancy.sol',
         'test/FakeToken.sol',
         'test/FakeBnCurve.sol',
         'test/FakeCommonTool.sol',
@@ -41,6 +43,7 @@ module.exports = {
         'test/TestOrigTokenCreator.sol',
         'test/TestStoremanAdmin.sol',
         'test/TestIOwned.sol',
+        'test/FakeReentrancy.sol',
     ],
     mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
     providerOptions: {
