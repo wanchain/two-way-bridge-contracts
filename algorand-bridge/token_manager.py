@@ -15,7 +15,7 @@ class TokenManagerState:
     Token manager states
     """
     token_pairs = BoxMapping(abi.Uint16, TokenPairInfo)
-    pair_list = BoxList(abi.Uint16, 200) # max 1000 pairs
+    pair_list = BoxList(abi.Uint16, 200) # max 200 pairs
     total_pair_count: Final[GlobalStateValue] = GlobalStateValue(
         TealType.uint64,
         descr="total pair count",
@@ -36,6 +36,10 @@ class TokenManagerState:
         TealType.uint64,
         descr="initialized flag",
     )
+    latest_wrapped_token_id: Final[GlobalStateValue] = GlobalStateValue(
+        TealType.uint64,
+        descr="latest wrapped token id",
+    )
 
     
 app = Application(
@@ -47,6 +51,22 @@ app = Application(
 ###
 # API Methods
 ###
+@app.external(authorize=Authorize.only(app.state.owner.get()))
+def create_wrapped_token(
+    name: abi.String,
+    symbol: abi.String,
+    decimals: abi.Uint8,
+    total_supply: abi.Uint64,
+) -> Expr:
+    return Seq(
+        app.state.latest_wrapped_token_id.set(do_create_wrapped_token(name, symbol, decimals, total_supply)),
+        Log(Concat(Bytes("create_wrapped_token:"), Itob(app.state.latest_wrapped_token_id.get()))),
+    )
+
+@app.external
+def get_latest_wrapped_token_id(*, output: abi.Uint64) -> Expr:
+    return output.set(app.state.latest_wrapped_token_id.get())
+
 @app.external(authorize=Authorize.only(app.state.owner.get()))
 def add_token_pair(
     id: abi.Uint16,
@@ -104,6 +124,9 @@ def get_owner(*, output: abi.Address) -> Expr:
     return output.set(app.state.owner.get())
 
     
+##############
+# Utility methods for inner transactions
+##############
 
 @Subroutine(TealType.none)
 def do_axfer(rx: Expr, aid: Expr, amt: Expr) -> Expr:
@@ -140,7 +163,7 @@ def do_create_wrapped_token(
                 TxnField.config_asset_decimals: decimals.get(),
                 TxnField.config_asset_manager: Global.current_application_address(),
                 TxnField.config_asset_reserve: Global.current_application_address(),
-                TxnField.fee: Int(0),
+                TxnField.fee: Int(1000),
             }
         ),
         InnerTxn.created_asset_id(),
