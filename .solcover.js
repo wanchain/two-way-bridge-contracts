@@ -43,8 +43,6 @@ module.exports = {
         'test/TestOrigTokenCreator.sol',
         'test/TestStoremanAdmin.sol',
         'test/TestIOwned.sol',
-        'test/FakeReentrancy.sol',
-        'test/FakeReentrancy.sol',
         'test/TestCommonTool.sol',
         'test/TestIncentive.sol',
     ],

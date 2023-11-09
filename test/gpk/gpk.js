@@ -231,6 +231,10 @@ contract('Gpk_UT_gpk', async(accounts) => {
   })
 
   it('[GpkProxy_getGroupInfobyIndex] negative number', async () => {
+    await gpkSc.getGroupInfobyIndex(groupId, "-1", "0");
+  })
+
+  it('[GpkProxy_getGroupInfobyIndex] success', async () => {
     await gpkSc.getGroupInfobyIndex(groupId, "0", "0");
   })
 

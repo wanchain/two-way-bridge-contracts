@@ -33,7 +33,7 @@ contract('TokenManager_wrappedToken', (accounts) => {
         await web3.eth.sendTransaction({from: accounts[2], to: tokenSc.address, data: data});
         assert.fail(ERROR_INFO)
       } catch (err) {
-        console.log(err)
+        // console.log(err)
         assert.include(err.toString(), "Ownable: caller is not the owner");
       }
       // let obj = await sendAndGetReason(tokenSc.burn, [accounts[0], "10000000000"], {from: accounts[2]});
@@ -57,7 +57,7 @@ contract('TokenManager_wrappedToken', (accounts) => {
         await web3.eth.sendTransaction({from: accounts[0], to: tokenSc.address, data: data});
         assert.fail(ERROR_INFO)
       } catch (err) {
-        console.log(err)
+        // console.log(err)
         assert.include(err.toString(), "Value is null");
       }
       // let obj = await sendAndGetReason(tokenSc.burn, [accounts[0], "0"], {from: accounts[0]});

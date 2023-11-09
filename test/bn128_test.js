@@ -12,7 +12,7 @@ contract('Verifier', accounts => {
     let verifier = (await getSchnorrVerifierContracts(accounts)).verifier;
 
     try {
-      console.log("verifier:", verifier)
+      // console.log("verifier:", verifier)
       await verifier.methods.register(web3.utils.toBN(10), accounts[5]).send({from: accounts[6]});
       assert.fail("should be failed");
     } catch (err) {

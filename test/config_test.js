@@ -23,7 +23,7 @@ contract('Test Config', async (accounts) => {
             await configProxy.connect(signers[5]).upgradeTo(delegate.address);
             assert.fail(ERROR_INFO);
         } catch (err) {
-            console.log(err)
+            // console.log(err)
             assert.include(
                 err.toString(),
                 "Not owner"
