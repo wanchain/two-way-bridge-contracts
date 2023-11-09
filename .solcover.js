@@ -44,6 +44,9 @@ module.exports = {
         'test/TestStoremanAdmin.sol',
         'test/TestIOwned.sol',
         'test/FakeReentrancy.sol',
+        'test/FakeReentrancy.sol',
+        'test/TestCommonTool.sol',
+        'test/TestIncentive.sol',
     ],
     mnemonic:"skill level pulse dune pattern rival used syrup inner first balance sad",
     providerOptions: {

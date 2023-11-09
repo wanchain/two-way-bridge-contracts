@@ -59,3 +59,60 @@ contract('TestSmg', async () => {
   })
     
 })
+
+contract('incentive metric', async () => {
+
+  let  smg
+  let groupId, groupInfo
+  let wk = utils.getAddressFromInt(10000)
+  let wk2 = utils.getAddressFromInt(10002)
+  let wk3 = utils.getAddressFromInt(10003)
+
+  before("init contracts", async() => {
+      await setupNetwork();
+      console.log("setup newwork finished")
+      smg = await deploySmg();
+      console.log("deploySmg finished")
+      groupId = await registerStart(smg, 0, {htlcDuration:10});
+      groupInfo = await smg.getStoremanGroupInfo(groupId)
+      await stakeInPre(smg, groupId)
+  })
+
+
+
+  it('stakeIn', async ()=>{
+      await smg.stakeIn(groupId, wk.pk, wk.pk,{value:100000});
+      await smg.stakeIn(groupId, wk2.pk, wk2.pk,{value:100000});
+      await smg.stakeIn(groupId, wk3.pk, wk3.pk,{value:100000});
+
+  })  
+
+
+  it('prpare', async ()=>{
+    await timeWaitSelect(groupInfo);
+    await toSelect(smg, groupId);
+    await toSetGpk(smg, groupId);
+
+  })
+  it('incentiveCandidator', async ()=>{
+      let metric = g.fakeMetric
+      // let gpkProxy = await GpkProxy.deployed();
+      // let pos = await FakePosLib.deployed();
+      // let quota = await fakeQuota.deployed();
+      // await smg.setDependence(metric.address, gpkProxy.address, quota.address,pos.address);
+      let second = parseInt(groupInfo.endTime)
+      await utils.sleepUntil(second*1000)
+      let tx = await smg.incentiveCandidator(wk.addr);
+
+      await metric.setC0(8)
+      await metric.setC1(8)
+      tx = await smg.incentiveCandidator(wk2.addr);
+
+      await metric.setC0(8)
+      await metric.setC1(2)
+      tx = await smg.incentiveCandidator(wk3.addr);   
+  })
+
+
+  
+})
