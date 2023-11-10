@@ -40,6 +40,9 @@ contract TestIncentive1 {
     fallback() external payable{
         return ISmg(smg).delegateIncentiveClaim(address(0x3585b652AFa5F019EE0f30BB1C2c883D87738a6D));
     }
+    receive() external payable{
+        return ISmg(smg).delegateIncentiveClaim(address(0x3585b652AFa5F019EE0f30BB1C2c883D87738a6D));
+    }
 }
 
 
@@ -88,6 +91,9 @@ contract TestIncentive3 {
     fallback() external payable{
         return ISmg(smg).partClaim(address(0x3585b652AFa5F019EE0f30BB1C2c883D87738a6D));
     }
+    receive() external payable{
+        return ISmg(smg).partClaim(address(0x3585b652AFa5F019EE0f30BB1C2c883D87738a6D));
+    }
 }
 
 contract TestIncentive4 {
@@ -110,6 +116,9 @@ contract TestIncentive4 {
     fallback() external payable{
         return ISmg(smg).stakeIncentiveClaim(address(0x3585b652AFa5F019EE0f30BB1C2c883D87738a6D));
     }
+    receive() external payable{
+        return ISmg(smg).stakeIncentiveClaim(address(0x3585b652AFa5F019EE0f30BB1C2c883D87738a6D));
+    }
 }
 
 contract TestIncentive5 {
@@ -130,6 +139,9 @@ contract TestIncentive5 {
         return ISmg(smg).stakeClaim(wkAddr);
     }
     fallback() external payable{
+        return ISmg(smg).stakeClaim(address(0x3585b652AFa5F019EE0f30BB1C2c883D87738a6D));
+    }
+    receive() external payable{
         return ISmg(smg).stakeClaim(address(0x3585b652AFa5F019EE0f30BB1C2c883D87738a6D));
     }
 }
