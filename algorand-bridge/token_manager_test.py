@@ -2,7 +2,8 @@ import os
 from algosdk.abi import ABIType
 from algosdk.atomic_transaction_composer import TransactionWithSigner
 from algosdk.encoding import decode_address, encode_address, encode_as_bytes
-from algosdk.transaction import AssetOptInTxn, PaymentTxn
+from algosdk.transaction import AssetOptInTxn, PaymentTxn, AssetCreateTxn
+from algosdk import account, transaction
 
 import beaker
 
@@ -162,20 +163,97 @@ def main() -> None:
         id=666,
         boxes=[(app_client.app_id, bytes.fromhex('029a'))]
     )
-    
+
     assert pair.return_value[2] == '0xa4E62375593662E8fF92fAd0bA7FcAD25051EbCB'
 
     print_boxes(app_client)
+
+    print('create demo asset token')
+
+    ctxn = AssetCreateTxn(
+        owner.address,
+        sp,
+        total=100000000000000,
+        default_frozen=False,
+        unit_name="MOCK",
+        asset_name="MOCK TOKEN",
+        manager=creator.address,
+        reserve=creator.address,
+        freeze=creator.address,
+        clawback=creator.address,
+        url="https://bridge.wanchain.org",
+        decimals=6,
+    )
+    tx = owner.signer.sign_transactions([ctxn], [0])
+    txid = beaker.localnet.get_algod_client().send_transaction(tx[0])
+    print('txid', txid)
+    receipt = transaction.wait_for_confirmation(beaker.localnet.get_algod_client(), txid)
+    print('receipt', receipt['asset-index'])
+    asset_id = receipt['asset-index']
 
     # optIn test asset
     print("optIn test asset")
     app_client.fund(200000) # deposit for minimum balance require
     owner_client.call(
         token_manager.opt_in_token_id,
-        id=3188,
-        foreign_assets=[3188],
+        id=asset_id,
+        foreign_assets=[asset_id],
     )
 
+    asset_id = tokenId.return_value
+    print("mint wrapped token", asset_id)
+    
+    aitx = AssetOptInTxn(
+        owner.address,
+        sp,
+        asset_id,
+    )
+    
+    aitx = aitx.sign(owner.signer.private_key)
+    txid = beaker.localnet.get_algod_client().send_transaction(aitx)
+    
+    admin_client.call(
+        token_manager.mint_wrapped_token,
+        asset_id=asset_id,
+        amount=1000,
+        to=owner.address,
+        foreign_assets=[asset_id],
+        accounts=[owner.address],
+    )
+    
+    account_info = beaker.localnet.get_algod_client().account_info(owner.address)
+    
+    asset_balance = 0
+    if 'assets' in account_info:
+        for asset in account_info['assets']:
+            if asset['asset-id'] == asset_id:
+                asset_balance = asset['amount']
+                break
+    
+    print('balance', asset_balance)
+    assert asset_balance == 1000
+
+    print('burn wrapped token', asset_id)
+    admin_client.call(
+        token_manager.burn_wrapped_token,
+        asset_id=asset_id,
+        amount=1000,
+        holder=owner.address,
+        foreign_assets=[asset_id],
+        accounts=[owner.address],
+    )
+
+    account_info = beaker.localnet.get_algod_client().account_info(owner.address)
+    
+    asset_balance = 0
+    if 'assets' in account_info:
+        for asset in account_info['assets']:
+            if asset['asset-id'] == asset_id:
+                asset_balance = asset['amount']
+                break
+    
+    print('balance', asset_balance)
+    assert asset_balance == 0
 
     print('done')
 

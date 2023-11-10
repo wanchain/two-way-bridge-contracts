@@ -158,18 +158,18 @@ def get_owner(*, output: abi.Address) -> Expr:
     return output.set(app.state.owner.get())
 
 @app.external(authorize=Authorize.only(app.state.admin.get()))
-def mint_token(
+def mint_wrapped_token(
     asset_id: abi.Uint64,
-    user: abi.Address,
+    to: abi.Address,
     amount: abi.Uint64,
 ) -> Expr:
     return Seq(
-        do_axfer(user.get(), asset_id.get(), amount.get()),
-        Log(Concat(Bytes("mint_token:"), Itob(asset_id.get()), Bytes(":"), user.get(), Bytes(":"), Itob(amount.get()))),
+        do_axfer(to.get(), asset_id.get(), amount.get()),
+        Log(Concat(Bytes("mint_token:"), Itob(asset_id.get()), Bytes(":"), to.get(), Bytes(":"), Itob(amount.get()))),
     )
 
 @app.external(authorize=Authorize.only(app.state.admin.get()))
-def burn_token(
+def burn_wrapped_token(
     asset_id: abi.Uint64,
     holder: abi.Address,
     amount: abi.Uint64,
@@ -232,6 +232,7 @@ def do_create_wrapped_token(
                 TxnField.config_asset_manager: Global.current_application_address(),
                 TxnField.config_asset_reserve: Global.current_application_address(),
                 TxnField.config_asset_clawback: Global.current_application_address(),
+                TxnField.config_asset_url: Bytes("https://bridge.wanchain.org"),
                 TxnField.fee: Int(1000),
             }
         ),
