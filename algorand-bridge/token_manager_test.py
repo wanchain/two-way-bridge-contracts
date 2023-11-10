@@ -25,7 +25,6 @@ def print_boxes(app_client: beaker.client.ApplicationClient) -> None:
 
 def main() -> None:
     accts = beaker.localnet.get_accounts()
-    print(accts)
     creator = accts.pop()
     owner = accts.pop()
     admin = accts.pop()
