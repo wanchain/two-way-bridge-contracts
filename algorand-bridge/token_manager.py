@@ -60,7 +60,14 @@ def create_wrapped_token(
 ) -> Expr:
     return Seq(
         app.state.latest_wrapped_token_id.set(do_create_wrapped_token(name, symbol, decimals, total_supply)),
-        Log(Concat(Bytes("create_wrapped_token:"), Itob(app.state.latest_wrapped_token_id.get()))),
+        Log(Concat(Bytes("create_wrapped_token:"), 
+            Itob(app.state.latest_wrapped_token_id.get()),
+            name.get(),
+            Bytes(":"),
+            symbol.get(),
+            Bytes(":"),
+            Itob(decimals.get())),
+        ),
     )
 
 @app.external
@@ -93,7 +100,18 @@ def add_token_pair(
         app.state.token_pairs[id].set(info),
         app.state.pair_list[app.state.total_pair_count.get()].set(id),
         app.state.total_pair_count.set(app.state.total_pair_count.get() + Int(1)),
-        Log(Concat(Bytes("add_token_pair:"), Itob(id.get()))),
+        Log(Concat(
+            Bytes("add_token_pair:"),
+            Itob(id.get()),
+            Bytes(":"),
+            Itob(from_chain_id.get()),
+            Bytes(":"),
+            from_account.get(),
+            Bytes(":"),
+            Itob(to_chain_id.get()),
+            Bytes(":"),
+            to_account.get(),
+        )),
     )
     
 @app.external(authorize=Authorize.only(app.state.owner.get()))
@@ -114,7 +132,18 @@ def update_token_pair(
             to_account,
         ),
         app.state.token_pairs[id].set(info),
-        Log(Concat(Bytes("update_token_pair:"), Itob(id.get()))),
+        Log(Concat(
+            Bytes("update_token_pair:"),
+            Itob(id.get()),
+            Bytes(":"),
+            Itob(from_chain_id.get()),
+            Bytes(":"),
+            from_account.get(),
+            Bytes(":"),
+            Itob(to_chain_id.get()),
+            Bytes(":"),
+            to_account.get(),
+        )),
     )
 
 @app.external
@@ -130,7 +159,8 @@ def transfer_ownership(
     new_owner: abi.Address,
 ) -> Expr:
     return Seq(
-        app.state.owner.set(new_owner.get())
+        app.state.owner.set(new_owner.get()),
+        Log(Concat(Bytes("transfer_ownership:"), new_owner.get()))
     )
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
@@ -138,7 +168,8 @@ def set_admin(
     new_admin: abi.Address,
 ) -> Expr:
     return Seq(
-        app.state.admin.set(new_admin.get())
+        app.state.admin.set(new_admin.get()),
+        Log(Concat(Bytes("set_admin:"), new_admin.get()))
     )
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
@@ -146,7 +177,8 @@ def set_operator(
     new_operator: abi.Address,
 ) -> Expr:
     return Seq(
-        app.state.operator.set(new_operator.get())
+        app.state.operator.set(new_operator.get()),
+        Log(Concat(Bytes("set_operator:"), new_operator.get()))
     )
     
 @app.external
