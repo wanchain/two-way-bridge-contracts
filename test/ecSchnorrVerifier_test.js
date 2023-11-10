@@ -85,6 +85,13 @@ describe("EcSchnorrVerifier", function () {
     )
 
     // console.log("verify gas cost:", gas);
+    console.log("params ===>", "signature", web3.utils.bytesToHex(sig.s),
+      "px", web3.utils.bytesToHex(publicKey.slice(1, 33)),
+      "py", web3.utils.padLeft("0x", 64),
+      "e", web3.utils.bytesToHex(sig.e),
+      "parity",  web3.utils.padLeft(web3.utils.toHex(publicKey[0] - 2 + 27), 64),
+      "m", web3.utils.bytesToHex(m),
+    )
 
     expect(await schnorr.verify(
       web3.utils.bytesToHex(sig.s),

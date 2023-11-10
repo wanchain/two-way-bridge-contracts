@@ -1,12 +1,12 @@
 const TokenManagerProxy = artifacts.require('TokenManagerProxy');
 const TokenManagerDelegate = artifacts.require('TokenManagerDelegate');
 const TokenManagerDelegateV2 = artifacts.require('TokenManagerDelegateV2');
-const MappingToken = artifacts.require('MappingToken');
+const FakeWrappedToken = artifacts.require('FakeWrappedToken');
 const MappingNftToken = artifacts.require('MappingNftToken');
 
 const { assert } = require('chai');
-const { sendAndGetReason } = require('./helper.js');
-const netConfig = require('./config').networks[global.network];
+const { sendAndGetReason } = require('../helper.js');
+const netConfig = require('../config.js').networks[global.network];
 const from = netConfig? netConfig.from : null;
 
 const newTokenManager = async (accounts) => {
@@ -33,7 +33,7 @@ const getDeployedTokenManager = async () => {
   return {tokenManagerProxy: tokenManagerProxy, tokenManagerDelegateV2: tokenManagerDelegateV2}
 }
 
-contract('TokenManagerDelegateV2', (accounts) => {
+contract('TokenManager_tokenManager', (accounts) => {
   const [owner_bk, admin_bk, operator, other] = accounts;
   const owner = from ? from : owner_bk;
   const admin = admin_bk.toLowerCase() === owner.toLowerCase() ? owner_bk : admin_bk;
@@ -131,7 +131,7 @@ contract('TokenManagerDelegateV2', (accounts) => {
 
       const tokenPairID = parseInt(await tokenManagerDelegateV2.mapTokenPairIndex(0));
       const tokenPairInfo = await tokenManagerDelegateV2.mapTokenPairInfo(tokenPairID);
-      const token = await MappingToken.at(tokenPairInfo.toAccount);
+      const token = await FakeWrappedToken.at(tokenPairInfo.toAccount);
       gas1 = await tokenManagerDelegateV2.mintToken.estimateGas(token.address, other, 100, {from: admin});
       console.log(`mintToken estimate = ${gas1}`);
       receipt = await tokenManagerDelegateV2.mintToken(token.address, other, 100, {from: admin});
@@ -273,6 +273,63 @@ contract('TokenManagerDelegateV2', (accounts) => {
     });
   });
 
+  describe('getTokenInfo', () => {
+    it('query unregister token pair ID', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      const tokenInfo = await tokenManagerDelegateV2.getTokenInfo(20);
+      assert.equal(tokenInfo.addr, "0x0000000000000000000000000000000000000000");
+    });
+  });
+
+
+  describe('changeTokenOwner and acceptTokenOwnership', () => {
+    it('Not owner', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      const token = await FakeWrappedToken.new("TEST", "TK", 18);
+      await token.transferOwner(tokenManagerDelegateV2.address);
+      assert.equal(await token.owner(), tokenManagerDelegateV2.address)
+
+      let obj = await sendAndGetReason(tokenManagerDelegateV2.changeTokenOwner, [token.address, other], {from: other});
+      assert.include(obj.reason, "Not owner");
+    });
+
+    it('success', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      const token = await FakeWrappedToken.new("TEST", "TK", 18);
+      await token.transferOwner(tokenManagerDelegateV2.address);
+      assert.equal(await token.owner(), tokenManagerDelegateV2.address)
+
+      await tokenManagerDelegateV2.changeTokenOwner(token.address, other, {from: owner});
+      await tokenManagerDelegateV2.acceptTokenOwnership(token.address, {from: owner});
+      assert.equal(await token.owner(), other)
+    });
+  });
+
+  describe('transferTokenOwner', () => {
+    it('Not owner', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      const token = await FakeWrappedToken.new("TEST", "TK", 18);
+      await token.transferOwner(tokenManagerDelegateV2.address);
+      assert.equal(await token.owner(), tokenManagerDelegateV2.address)
+
+      let obj = await sendAndGetReason(tokenManagerDelegateV2.transferTokenOwner, [token.address, other], {from: other});
+      assert.include(obj.reason, "Not owner");
+    });
+  });
+
+  describe('burnToken', () => {
+    it('not admin', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      let obj = await sendAndGetReason(tokenManagerDelegateV2.burnToken, [admin, admin, 20], {from: owner});
+      assert.include(obj.reason, "not admin");
+    });
+  });
+
   describe('addToken', () => {
     it('onlyOwner, name.length != 0, symbol.length != 0', async function() {
       const accounts = await web3.eth.getAccounts();
@@ -296,6 +353,18 @@ contract('TokenManagerDelegateV2', (accounts) => {
   });
 
   describe('addTokenPair', () => {
+    it('Not owner', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      let param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[0] = 11;
+      param[2] = 61;
+      param[4] = 5718351;
+      param[5] = "0x0000000000000000000000000000000000000000";
+      let obj = await sendAndGetReason(tokenManagerDelegateV2.addTokenPair, param, {from: admin});
+      assert.include(obj.reason, "Not owner");
+    });
+
     it('ancestorName, ancestorSymbol length', async function() {
       const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
       // let param = JSON.parse(JSON.stringify(addTokenPairParam));
@@ -374,6 +443,22 @@ contract('TokenManagerDelegateV2', (accounts) => {
     });
   });
 
+  describe('removeTokenPair', () => {
+    it('Not owner', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      let obj = await sendAndGetReason(tokenManagerDelegateV2.removeTokenPair, [1], {from: admin});
+      assert.include(obj.reason, "Not owner");
+    });
+
+    it('token not exist', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      let obj = await sendAndGetReason(tokenManagerDelegateV2.removeTokenPair, [1], {from: owner});
+      assert.include(obj.reason, "token not exist");
+    });
+  });
+
   describe('mintToken', () => {
     it('onlyAdmin', async function() {
       const accounts = await web3.eth.getAccounts();
@@ -394,15 +479,18 @@ contract('TokenManagerDelegateV2', (accounts) => {
     });
   });
 
-  // describe('updateToken', () => {
-  //   it('onlyExistID', async function() {
-  //     const accounts = await web3.eth.getAccounts();
-  //     const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+  describe('updateToken', () => {
+    it('Not owner', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      const token = await FakeWrappedToken.new("TEST", "TK", 18);
+      await token.transferOwner(tokenManagerDelegateV2.address);
+      assert.equal(await token.owner(), tokenManagerDelegateV2.address)
 
-  //     obj = await sendAndGetReason(tokenManagerDelegateV2.updateToken, [222, nameDAI_NEW, symbolDAI_NEW], {from: owner});
-  //     assert.include(obj.reason, "token not exist");
-  //   })
-  // })
+      let obj = await sendAndGetReason(tokenManagerDelegateV2.updateToken, [token.address, "NewToken", "NTK"], {from: other});
+      assert.include(obj.reason, "Not owner");
+    });
+  })
 
   describe('upgradeTo', () => {
     it('onlyOwner, require', async function() {
@@ -452,6 +540,9 @@ contract('TokenManagerDelegateV2', (accounts) => {
       const addTokenPairObj = await sendAndGetReason(tokenManagerDelegateV2.addTokenPair, param, {from: owner});
       assert.include(addTokenPairObj.reason, "token exist");
 
+      let tokenPairInfoSlim = await tokenManagerDelegateV2.getTokenPairInfoSlim(param[0]);
+      assert.equal(tokenPairInfoSlim.fromAccount.toLowerCase(), nftAccount.toLowerCase(), "check from token account error");
+
       let tokenPairInfo = await tokenManagerDelegateV2.getTokenPairInfo(param[0]);
       assert.equal(tokenPairInfo.toAccount.toLowerCase(), shadowAccount.toLowerCase(), "check to token account error");
       assert.equal(await mappingNftToken.name(), shadowName, "check to token name error");
@@ -468,7 +559,90 @@ contract('TokenManagerDelegateV2', (accounts) => {
       const tokenCrossType = await tokenManagerDelegateV2.mapTokenPairType(param[0]);
       assert.equal(web3.utils.toBN(tokenCrossType).eq(erc721CrossType), true, "check token cross type failed");
     })
+
+    it('length mismatch', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      await sendAndGetReason(tokenManagerDelegateV2.setOperator, [operator], {from: owner});
+      const obj = await sendAndGetReason(tokenManagerDelegateV2.setTokenPairTypes, [[1], [2,3]], {from: operator});
+      assert.include(obj.reason, "length mismatch", "check setTokenPairType parameter length failed");
+    })
   })
+
+  describe('setOperator', () => {
+    it('Not owner', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+      await tokenManagerDelegateV2.addAdmin(admin, {from: owner});
+      const obj = await sendAndGetReason(tokenManagerDelegateV2.setOperator, [operator], {from: operator});
+      assert.include(obj.reason, "Not owner", "check setOperator permission failed");
+    })
+  })
+
+  describe('mintNFT', () => {
+    it('onlyAdmin', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+
+      let receipt = await tokenManagerDelegateV2.addToken(nameDAI, symbolDAI, decimals, {from: owner});
+      param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[5] = receipt.logs.find(v => v.event == 'AddToken').args.tokenAddress;
+      await tokenManagerDelegateV2.addTokenPair(...param, {from: owner});
+
+      await tokenManagerDelegateV2.addAdmin(admin, {from: owner});
+
+      const unknownCrossType = web3.utils.toBN("0x3")
+      obj = await sendAndGetReason(tokenManagerDelegateV2.mintNFT, [unknownCrossType, param[5], other, [1], [100], "0x"], {from: owner});
+      assert.include(obj.reason, "not admin");
+    });
+
+    it('Invalid NFT type', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+
+      let receipt = await tokenManagerDelegateV2.addToken(nameDAI, symbolDAI, decimals, {from: owner});
+      param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[5] = receipt.logs.find(v => v.event == 'AddToken').args.tokenAddress;
+      await tokenManagerDelegateV2.addTokenPair(...param, {from: owner});
+
+      await tokenManagerDelegateV2.addAdmin(admin, {from: owner});
+      const unknownCrossType = web3.utils.toBN("0x3")
+      let obj = await sendAndGetReason(tokenManagerDelegateV2.mintNFT, [unknownCrossType, param[5], other, [1], [100], "0x"], {from: admin});
+      assert.include(obj.reason, "Invalid NFT type");
+    });
+  });
+
+  describe('burnNFT', () => {
+    it('onlyAdmin', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+
+      let receipt = await tokenManagerDelegateV2.addToken(nameDAI, symbolDAI, decimals, {from: owner});
+      param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[5] = receipt.logs.find(v => v.event == 'AddToken').args.tokenAddress;
+      await tokenManagerDelegateV2.addTokenPair(...param, {from: owner});
+
+      await tokenManagerDelegateV2.addAdmin(admin, {from: owner});
+      const unknownCrossType = web3.utils.toBN("0x3")
+      obj = await sendAndGetReason(tokenManagerDelegateV2.burnNFT, [unknownCrossType, param[5], other, [1], [100]], {from: owner});
+      assert.include(obj.reason, "not admin");
+    });
+
+    it('Invalid NFT type', async function() {
+      const accounts = await web3.eth.getAccounts();
+      const { tokenManagerDelegateV2 } = await newTokenManager(accounts);
+
+      let receipt = await tokenManagerDelegateV2.addToken(nameDAI, symbolDAI, decimals, {from: owner});
+      param = JSON.parse(JSON.stringify(addTokenPairParam));
+      param[5] = receipt.logs.find(v => v.event == 'AddToken').args.tokenAddress;
+      await tokenManagerDelegateV2.addTokenPair(...param, {from: owner});
+
+      await tokenManagerDelegateV2.addAdmin(admin, {from: owner});
+      const unknownCrossType = web3.utils.toBN("0x3")
+      let obj = await sendAndGetReason(tokenManagerDelegateV2.burnNFT, [unknownCrossType, param[5], other, [1], [100]], {from: admin});
+      assert.include(obj.reason, "Invalid NFT type");
+    });
+  });
 
   describe('V1 upgradeTo V2', () => {
     it('onlyOwner, require', async function() {

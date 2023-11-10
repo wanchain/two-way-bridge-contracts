@@ -200,7 +200,7 @@ contract('Gpk_UT_sij_timeout', async () => {
       await gpkSc.connect(g.signerLeader).SijTimeout(groupId, 0, data.smList[0].address);
     } catch (e) {
       result = e;
-      console.log("polyCommitTimeout should success: %O", e);
+      // console.log("SijTimeout should success: %O", e);
     }
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Close);

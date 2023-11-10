@@ -19,6 +19,8 @@ const {
   testInit,
   getTxParsedLogs,
   getEventSignature,
+  getCrossChainFee,
+  resetCrossChainFee
 } = require("./lib");
 
 const {
@@ -28,6 +30,7 @@ const {
 } = require("../utils");
 
 const { typesArrayList } = require("./sc-config");
+const { web3 } = require("hardhat");
 
 const minerFee = 5;
 const tokenCrossType = 1;
@@ -54,11 +57,6 @@ exports.testCases = () => {
         const currentToken = global.chains[currentChainType].nftTokens.filter(
           (token) => token.symbol === "NFT"
         )[0];
-        const contractFee = new web3.utils.BN(
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee
-        ).div(new web3.utils.BN(2));
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
-
         // halt
         crossProxy = await CrossProxy.at(
           global.chains[currentChainType].scAddr.CrossProxy
@@ -86,12 +84,21 @@ exports.testCases = () => {
         const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
         const tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         await cross.setTokenPairFees([[tokenPairID, contractFee]], {
           from: currentChainAdmin,
         });
         assert.equal(
           contractFee.eq(
-            new web3.utils.BN(await cross.getTokenPairFee(tokenPairID))
+            web3.utils.toBN(await cross.getTokenPairFee(tokenPairID))
           ),
           true,
           "fee of token pair error"
@@ -101,13 +108,13 @@ exports.testCases = () => {
           tokenPairID
         );
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: global.operatorAccount[currentChainType] }
           );
         }
@@ -172,10 +179,6 @@ exports.testCases = () => {
         const currentToken = global.chains[currentChainType].nftTokens.filter(
           (token) => token.symbol === "NFT"
         )[0];
-        const contractFee = new web3.utils.BN(
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee
-        ).div(new web3.utils.BN(2));
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
       // cross
         const cross = await CrossDelegateV4.at(
@@ -198,12 +201,21 @@ exports.testCases = () => {
         const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
         const tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         await cross.setTokenPairFees([[tokenPairID, contractFee]], {
           from: currentChainAdmin,
         });
         assert.equal(
           contractFee.eq(
-            new web3.utils.BN(await cross.getTokenPairFee(tokenPairID))
+            web3.utils.toBN(await cross.getTokenPairFee(tokenPairID))
           ),
           true,
           "fee of token pair error"
@@ -213,13 +225,13 @@ exports.testCases = () => {
           tokenPairID
         );
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: global.operatorAccount[currentChainType] }
           );
         }
@@ -299,14 +311,6 @@ exports.testCases = () => {
         const senderAccount = ethUserAccount;
         const currentChainAdmin = global.adminAccount[currentChainType];
 
-        const currentToken = global.chains[currentChainType].nftTokens.filter(
-          (token) => token.symbol === "NFT"
-        )[0];
-        const contractFee = new web3.utils.BN(
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee
-        ).div(new web3.utils.BN(2));
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
-
       // cross
         const cross = await CrossDelegateV4.at(
           global.chains[currentChainType].scAddr.CrossProxy
@@ -324,18 +328,27 @@ exports.testCases = () => {
         tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
         tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         currTokenCrossType = await tokenManager.mapTokenPairType(
           tokenPairID
         );
         operator = global.operatorAccount[currentChainType];
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: operator }
           );
         }
@@ -364,7 +377,7 @@ exports.testCases = () => {
       } finally {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(currTokenCrossType)],
+          [web3.utils.toBN(currTokenCrossType)],
           { from: operator }
         );
       }
@@ -386,14 +399,6 @@ exports.testCases = () => {
         const senderAccount = ethUserAccount;
         const currentChainAdmin = global.adminAccount[currentChainType];
 
-        const currentToken = global.chains[currentChainType].nftTokens.filter(
-          (token) => token.symbol === "NFT"
-        )[0];
-        const contractFee = new web3.utils.BN(
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee
-        ).div(new web3.utils.BN(2));
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
-
       // cross
         const cross = await CrossDelegateV4.at(
           global.chains[currentChainType].scAddr.CrossProxy
@@ -411,18 +416,27 @@ exports.testCases = () => {
         tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
         tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         currTokenCrossType = await tokenManager.mapTokenPairType(
           tokenPairID
         );
         operator = global.operatorAccount[currentChainType];
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: operator }
           );
         }
@@ -451,7 +465,7 @@ exports.testCases = () => {
       } finally {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(currTokenCrossType)],
+          [web3.utils.toBN(currTokenCrossType)],
           { from: operator }
         );
       }
@@ -473,14 +487,6 @@ exports.testCases = () => {
         const senderAccount = ethUserAccount;
         const currentChainAdmin = global.adminAccount[currentChainType];
 
-        const currentToken = global.chains[currentChainType].nftTokens.filter(
-          (token) => token.symbol === "NFT"
-        )[0];
-        const contractFee = new web3.utils.BN(
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee
-        ).div(new web3.utils.BN(2));
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
-
       // cross
         const cross = await CrossDelegateV4.at(
           global.chains[currentChainType].scAddr.CrossProxy
@@ -498,18 +504,27 @@ exports.testCases = () => {
         tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
         tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         currTokenCrossType = await tokenManager.mapTokenPairType(
           tokenPairID
         );
         operator = global.operatorAccount[currentChainType];
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: operator }
           );
         }
@@ -538,7 +553,7 @@ exports.testCases = () => {
       } finally {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(currTokenCrossType)],
+          [web3.utils.toBN(currTokenCrossType)],
           { from: operator }
         );
       }
@@ -561,10 +576,6 @@ exports.testCases = () => {
         const currentToken = global.chains[currentChainType].nftTokens.filter(
           (token) => token.symbol === "NFT"
         )[0];
-        const contractFee = new web3.utils.BN(
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee
-        ).div(new web3.utils.BN(2));
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
       // cross
         const cross = await CrossDelegateV4.at(
@@ -587,12 +598,21 @@ exports.testCases = () => {
         const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
         tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         await cross.setTokenPairFees([[tokenPairID, contractFee]], {
           from: currentChainAdmin,
         });
         assert.equal(
           contractFee.eq(
-            new web3.utils.BN(await cross.getTokenPairFee(tokenPairID))
+            web3.utils.toBN(await cross.getTokenPairFee(tokenPairID))
           ),
           true,
           "fee of token pair error"
@@ -601,7 +621,7 @@ exports.testCases = () => {
         operator = global.operatorAccount[currentChainType];
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN("0")],
+          [web3.utils.toBN("0")],
           { from: operator }
         );
 
@@ -647,9 +667,63 @@ exports.testCases = () => {
       } finally {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(tokenCrossType)],
+          [web3.utils.toBN(tokenCrossType)],
           { from: operator }
         );
+      }
+    });
+
+    it("Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @ethereum] <( ethereum => wanchain )> -> userLockNFT  ==> Token does not exist", async () => {
+      let tokenManager;
+      let tokenPairID;
+      let operator;
+      try {
+        const wanUserAccount = global.aliceAccount.WAN;
+        const ethUserAccount = global.aliceAccount.ETH;
+        const currentChainType = chainTypes.ETH;
+        const buddyChainType = chainTypes.WAN;
+        const smgID = global.storemanGroups.src.ID;
+        const userAccount = wanUserAccount;
+        const senderAccount = ethUserAccount;
+        const currentChainAdmin = global.adminAccount[currentChainType];
+
+      // cross
+        const cross = await CrossDelegateV4.at(
+          global.chains[currentChainType].scAddr.CrossProxy
+        );
+        const partners = await cross.getPartners();
+
+        tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
+        tokenPairID = 1000;
+
+        operator = global.operatorAccount[currentChainType];
+        await tokenManager.setTokenPairTypes(
+          [tokenPairID],
+          [web3.utils.toBN("1")],
+          { from: operator }
+        );
+
+        let smgFeeProxy = partners.smgFeeProxy;
+        if (smgFeeProxy === ADDRESS_0) {
+          smgFeeProxy = await cross.owner();
+        }
+
+        // exec
+        let funcParams = {
+          smgID: smgID,
+          tokenPairID: tokenPairID,
+          tokenIDs: tokenIDs,
+          tokenValues: tokenValues,
+          userAccount: userAccount,
+        };
+
+        await cross.userLockNFT(...Object.values(funcParams), {
+          from: senderAccount,
+          value: 100,
+        });
+        assert.fail(ERROR_INFO)
+      } catch (err) {
+        assert.include(err.toString(), "Token does not exist");
       }
     });
 
@@ -666,10 +740,6 @@ exports.testCases = () => {
       const currentToken = global.chains[currentChainType].nftTokens.filter(
         (token) => token.symbol === "NFT"
       )[0];
-      const contractFee = new web3.utils.BN(
-        global.crossFeesV3[currentChainType][buddyChainType].contractFee
-      ).div(new web3.utils.BN(2));
-      const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
       // cross
       const cross = await CrossDelegateV4.at(
@@ -692,28 +762,47 @@ exports.testCases = () => {
       const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
       const tokenPairID = tokenPair.tokenPairID;
 
+      const crossChainFee = await getCrossChainFee({
+        cross,
+        srcChainID: global.chains[currentChainType].ID,
+        destChainID: global.chains[buddyChainType].ID,
+        tokenPairID,
+      });
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
+      const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
+      await resetCrossChainFee({
+        cross,
+        srcChainID: global.chains[currentChainType].ID,
+        destChainID: global.chains[buddyChainType].ID,
+        tokenPairID,
+      }, currentChainAdmin);
+
       await cross.setTokenPairFees([[tokenPairID, contractFee]], {
         from: currentChainAdmin,
       });
       assert.equal(
         contractFee.eq(
-          new web3.utils.BN(await cross.getTokenPairFee(tokenPairID))
+          web3.utils.toBN(await cross.getTokenPairFee(tokenPairID))
         ),
         true,
         "fee of token pair error"
       );
+      await cross.setTokenPairFees([[tokenPairID, "0"]], {
+        from: currentChainAdmin,
+      });
 
       const currTokenCrossType = await tokenManager.mapTokenPairType(
         tokenPairID
       );
       if (
-        !new web3.utils.BN(currTokenCrossType).eq(
-          new web3.utils.BN(tokenCrossType)
+        !web3.utils.toBN(currTokenCrossType).eq(
+          web3.utils.toBN(tokenCrossType)
         )
       ) {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(tokenCrossType)],
+          [web3.utils.toBN(tokenCrossType)],
           { from: global.operatorAccount[currentChainType] }
         );
       }
@@ -722,7 +811,7 @@ exports.testCases = () => {
       if (smgFeeProxy === ADDRESS_0) {
         smgFeeProxy = await cross.owner();
       }
-      const beforeFeeProxyBalance = new web3.utils.BN(
+      const beforeFeeProxyBalance = web3.utils.toBN(
         await web3.eth.getBalance(smgFeeProxy)
       );
 
@@ -745,6 +834,16 @@ exports.testCases = () => {
         assert.equal(approved, cross.address, "check approved fail");
       }
 
+      await cross.setFee({
+        srcChainID: global.chains[currentChainType].ID,
+        destChainID: "0",
+        contractFee:moreServiceFee.toString(10),
+        agentFee:"0"
+      }, {from: currentChainAdmin});
+      // await cross.setFee([global.chains[currentChainType].ID, "0", contractFee, "0"], {from: await cross.admin()});
+      let batchFee = web3.utils.toBN(await cross.getBatchFee(tokenPairID, tokenIDs.length));
+      let moreBatchFee = batchFee.mul(web3.utils.toBN(2));
+
       // exec
       let funcParams = {
         smgID: smgID,
@@ -755,7 +854,7 @@ exports.testCases = () => {
       };
       let receipt = await cross.userLockNFT(...Object.values(funcParams), {
         from: senderAccount,
-        value: moreServiceFee,
+        value: moreBatchFee,
       });
       if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(
@@ -887,13 +986,14 @@ exports.testCases = () => {
         "after UserLockNFT check cross balance error"
       );
 
-      const afterFeeProxyBalance = new web3.utils.BN(
+      const afterFeeProxyBalance = web3.utils.toBN(
         await web3.eth.getBalance(smgFeeProxy)
       );
+
       assert.equal(
         afterFeeProxyBalance
           .sub(beforeFeeProxyBalance)
-          .eq(new web3.utils.BN(contractFee)),
+          .eq(batchFee),
         true,
         "balance of storeman fee error"
       );
@@ -940,19 +1040,19 @@ exports.testCases = () => {
         const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
         const tokenPairID = tokenPair.tokenPairID;
 
-        const crossFee = new web3.utils.BN(0);
+        const crossFee = web3.utils.toBN(0);
 
         const currTokenCrossType = await tokenManager.mapTokenPairType(
           tokenPairID
         );
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: global.operatorAccount[currentChainType] }
           );
         }
@@ -1016,6 +1116,122 @@ exports.testCases = () => {
       }
     });
 
+    it("Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @wanchain] <( ethereum => wanchain )> -> smgMintNFT  ==>  Invalid NFT type", async () => {
+      let tokenManager;
+      let tokenPairID;
+      let operator;
+      try{ 
+        const wanUserAccount = global.aliceAccount.WAN;
+        const ethUserAccount = global.aliceAccount.ETH;
+        const currentChainType = chainTypes.WAN;
+        const buddyChainType = chainTypes.ETH;
+        const uniqueID = uniqueInfo.userLockNFT;
+        const smgID = global.storemanGroups.src.ID;
+        const userAccount = wanUserAccount;
+        const senderAccount = global.smgAccount.src[currentChainType];
+        const currentToken = global.chains[buddyChainType].nftTokens.filter(
+          (token) => token.symbol === "NFT"
+        )[0];
+
+        // cross
+        const cross = await CrossDelegateV4.at(
+          global.chains[currentChainType].scAddr.CrossProxy
+        );
+        const partners = await cross.getPartners();
+
+        // tokenAccount
+        const tokenPair = filterTokenPair(
+          global.tokenPairs,
+          currentChainType,
+          buddyChainType,
+          currentToken.symbol
+        );
+        tokenManager = await TokenManagerDelegate.at(partners.tokenManager);
+        const tokenPairInfo = await tokenManager.getTokenPairInfo(
+          tokenPair.tokenPairID
+        );
+        const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
+        tokenPairID = tokenPair.tokenPairID;
+        operator = global.operatorAccount[currentChainType];
+
+        const currTokenCrossType = await tokenManager.mapTokenPairType(
+          tokenPairID
+        );
+        if (
+          web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
+          )
+        ) {
+          await tokenManager.setTokenPairTypes(
+            [tokenPairID],
+            [web3.utils.toBN(50)],
+            { from: operator }
+          );
+        }
+
+        let tokenInstance = await getNftTokenInstance(tokenAccount);
+        let smgFeeProxy = partners.smgFeeProxy;
+        if (smgFeeProxy === ADDRESS_0) {
+          smgFeeProxy = await cross.owner();
+        }
+
+        let balance = await tokenInstance.balanceOf(wanUserAccount);
+        assert.equal(
+          parseInt(balance.toString()),
+          0,
+          "before check user balance"
+        );
+
+        let funcParams = {
+          uniqueID: uniqueID,
+          smgID: smgID,
+          tokenPairID: tokenPairID,
+          tokenIDs: tokenIDs,
+          tokenValues: tokenValues,
+          extData: "0x00",
+          tokenAccount: tokenAccount,
+          userAccount: userAccount,
+        };
+
+        let smg = await global.getSmgProxy(
+          currentChainType,
+          partners.smgAdminProxy
+        );
+        let smgConfig = await smg.getStoremanGroupConfig.call(funcParams.smgID);
+        let curveID = smgConfig.curve1;
+        let sk = skInfo.src[currentChainType];
+
+        // sign
+        let { R, s } = buildMpcSign(
+          global.schnorr[defaultCurve2Schnorr[Number(curveID)]],
+          sk,
+          typesArrayList.smgMintNFT,
+          await cross.currentChainID(),
+          funcParams.uniqueID,
+          funcParams.tokenPairID,
+          funcParams.tokenIDs,
+          funcParams.tokenValues,
+          funcParams.extData,
+          funcParams.tokenAccount,
+          funcParams.userAccount
+        );
+        funcParams = { ...funcParams, R: R, s: s };
+
+        await cross.smgMintNFT(...Object.values(funcParams), {
+          from: senderAccount,
+        });
+        assert.fail(ERROR_INFO)
+      } catch (err) {
+        assert.include(err.toString(), "Invalid NFT type");
+      } finally {
+        await tokenManager.setTokenPairTypes(
+          [tokenPairID],
+          [web3.utils.toBN(tokenCrossType)],
+          { from: operator }
+        );
+      }
+    });
+
     it("Chain [ETH] <=> Chain [WAN] -> TOKEN [ERC721 @wanchain] <( ethereum => wanchain )> -> smgMintNFT  ==>  success", async () => {
       const wanUserAccount = global.aliceAccount.WAN;
       const ethUserAccount = global.aliceAccount.ETH;
@@ -1049,19 +1265,17 @@ exports.testCases = () => {
       const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
       const tokenPairID = tokenPair.tokenPairID;
 
-      const crossFee = new web3.utils.BN(0);
-
       const currTokenCrossType = await tokenManager.mapTokenPairType(
         tokenPairID
       );
       if (
-        !new web3.utils.BN(currTokenCrossType).eq(
-          new web3.utils.BN(tokenCrossType)
+        !web3.utils.toBN(currTokenCrossType).eq(
+          web3.utils.toBN(tokenCrossType)
         )
       ) {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(tokenCrossType)],
+          [web3.utils.toBN(tokenCrossType)],
           { from: global.operatorAccount[currentChainType] }
         );
       }
@@ -1277,9 +1491,6 @@ exports.testCases = () => {
         const currentToken = global.chains[buddyChainType].nftTokens.filter(
           (token) => token.symbol === "NFT"
         )[0];
-        const contractFee =
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee;
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
         // halt
         crossProxy = await CrossProxy.at(
@@ -1307,17 +1518,26 @@ exports.testCases = () => {
         const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
         const tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         const currTokenCrossType = await tokenManager.mapTokenPairType(
           tokenPairID
         );
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: global.operatorAccount[currentChainType] }
           );
         }
@@ -1326,7 +1546,7 @@ exports.testCases = () => {
         if (smgFeeProxy === ADDRESS_0) {
           smgFeeProxy = await cross.owner();
         }
-        const beforeFeeProxyBalance = new web3.utils.BN(
+        const beforeFeeProxyBalance = web3.utils.toBN(
           await web3.eth.getBalance(smgFeeProxy)
         );
 
@@ -1391,14 +1611,12 @@ exports.testCases = () => {
         const currentToken = global.chains[buddyChainType].nftTokens.filter(
           (token) => token.symbol === "NFT"
         )[0];
-        const contractFee =
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee;
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
         // cross
         const cross = await CrossDelegateV4.at(
           global.chains[currentChainType].scAddr.CrossProxy
         );
+
         const partners = await cross.getPartners();
 
         // tokenAccount
@@ -1415,17 +1633,26 @@ exports.testCases = () => {
         const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
         const tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         const currTokenCrossType = await tokenManager.mapTokenPairType(
           tokenPairID
         );
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: global.operatorAccount[currentChainType] }
           );
         }
@@ -1511,9 +1738,6 @@ exports.testCases = () => {
         const currentToken = global.chains[buddyChainType].nftTokens.filter(
           (token) => token.symbol === "NFT"
         )[0];
-        const contractFee =
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee;
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
         // cross
         const cross = await CrossDelegateV4.at(
@@ -1536,18 +1760,27 @@ exports.testCases = () => {
         const tokenAccount = getTokenAccount(tokenPairInfo, buddyChainType);
         tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         currTokenCrossType = await tokenManager.mapTokenPairType(
           tokenPairID
         );
         operator = global.operatorAccount[currentChainType];
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: operator }
           );
         }
@@ -1575,12 +1808,11 @@ exports.testCases = () => {
         });
         assert.fail(ERROR_INFO)
       } catch (err) {
-        console.log(err)
         assert.include(err.toString(), "Invalid length");
       } finally {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(currTokenCrossType)],
+          [web3.utils.toBN(currTokenCrossType)],
           { from: operator }
         );
       }
@@ -1601,12 +1833,6 @@ exports.testCases = () => {
         const minerFeeToWei = web3.utils.toWei(minerFee.toString());
         const userAccount = ethUserAccount;
         const senderAccount = wanUserAccount;
-        const currentToken = global.chains[buddyChainType].nftTokens.filter(
-          (token) => token.symbol === "NFT"
-        )[0];
-        const contractFee =
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee;
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
         // cross
         const cross = await CrossDelegateV4.at(
@@ -1629,18 +1855,27 @@ exports.testCases = () => {
         const tokenAccount = getTokenAccount(tokenPairInfo, buddyChainType);
         tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         currTokenCrossType = await tokenManager.mapTokenPairType(
           tokenPairID
         );
         operator = global.operatorAccount[currentChainType];
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: operator }
           );
         }
@@ -1668,12 +1903,11 @@ exports.testCases = () => {
         });
         assert.fail(ERROR_INFO)
       } catch (err) {
-        console.log(err)
         assert.include(err.toString(), "Length mismatch");
       } finally {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(currTokenCrossType)],
+          [web3.utils.toBN(currTokenCrossType)],
           { from: operator }
         );
       }
@@ -1694,12 +1928,6 @@ exports.testCases = () => {
         const minerFeeToWei = web3.utils.toWei(minerFee.toString());
         const userAccount = ethUserAccount;
         const senderAccount = wanUserAccount;
-        const currentToken = global.chains[buddyChainType].nftTokens.filter(
-          (token) => token.symbol === "NFT"
-        )[0];
-        const contractFee =
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee;
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
         // cross
         const cross = await CrossDelegateV4.at(
@@ -1722,18 +1950,27 @@ exports.testCases = () => {
         const tokenAccount = getTokenAccount(tokenPairInfo, buddyChainType);
         tokenPairID = tokenPair.tokenPairID;
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         currTokenCrossType = await tokenManager.mapTokenPairType(
           tokenPairID
         );
         operator = global.operatorAccount[currentChainType];
         if (
-          !new web3.utils.BN(currTokenCrossType).eq(
-            new web3.utils.BN(tokenCrossType)
+          !web3.utils.toBN(currTokenCrossType).eq(
+            web3.utils.toBN(tokenCrossType)
           )
         ) {
           await tokenManager.setTokenPairTypes(
             [tokenPairID],
-            [new web3.utils.BN(tokenCrossType)],
+            [web3.utils.toBN(tokenCrossType)],
             { from: operator }
           );
         }
@@ -1765,7 +2002,7 @@ exports.testCases = () => {
       } finally {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(currTokenCrossType)],
+          [web3.utils.toBN(currTokenCrossType)],
           { from: operator }
         );
       }
@@ -1787,9 +2024,6 @@ exports.testCases = () => {
         const currentToken = global.chains[buddyChainType].nftTokens.filter(
           (token) => token.symbol === "NFT"
         )[0];
-        const contractFee =
-          global.crossFeesV3[currentChainType][buddyChainType].contractFee;
-        const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
         // cross
         const cross = await CrossDelegateV4.at(
@@ -1812,9 +2046,18 @@ exports.testCases = () => {
         tokenPairID = tokenPair.tokenPairID;
         operator = global.operatorAccount[currentChainType];
 
+        const crossChainFee = await getCrossChainFee({
+          cross,
+          srcChainID: global.chains[currentChainType].ID,
+          destChainID: global.chains[buddyChainType].ID,
+          tokenPairID,
+        });
+        const contractFee = web3.utils.toBN(crossChainFee.contractFee);
+        const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN("0")],
+          [web3.utils.toBN("0")],
           { from: operator }
         );
 
@@ -1855,7 +2098,7 @@ exports.testCases = () => {
       } finally {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(tokenCrossType)],
+          [web3.utils.toBN(tokenCrossType)],
           { from: operator }
         );
       }
@@ -1873,9 +2116,6 @@ exports.testCases = () => {
       const currentToken = global.chains[buddyChainType].nftTokens.filter(
         (token) => token.symbol === "NFT"
       )[0];
-      const contractFee =
-        global.crossFeesV3[currentChainType][buddyChainType].contractFee;
-      const moreServiceFee = new web3.utils.BN(contractFee).toString();
 
       // cross
       const cross = await CrossDelegateV4.at(
@@ -1897,17 +2137,27 @@ exports.testCases = () => {
       const tokenAccount = getTokenAccount(tokenPairInfo, currentChainType);
       const tokenPairID = tokenPair.tokenPairID;
 
+      const crossChainFee = await getCrossChainFee({
+        cross,
+        srcChainID: global.chains[currentChainType].ID,
+        destChainID: global.chains[buddyChainType].ID,
+        tokenPairID,
+      });
+      const contractFee = web3.utils.toBN(crossChainFee.contractFee == 0 ? 1000 : crossChainFee.contractFee);
+      const moreServiceFee = contractFee.mul(web3.utils.toBN(2));
+      const agentFee = web3.utils.toBN(crossChainFee.agentFee == 0 ? 100 : crossChainFee.agentFee);
+
       const currTokenCrossType = await tokenManager.mapTokenPairType(
         tokenPairID
       );
       if (
-        !new web3.utils.BN(currTokenCrossType).eq(
-          new web3.utils.BN(tokenCrossType)
+        !web3.utils.toBN(currTokenCrossType).eq(
+          web3.utils.toBN(tokenCrossType)
         )
       ) {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(tokenCrossType)],
+          [web3.utils.toBN(tokenCrossType)],
           { from: global.operatorAccount[currentChainType] }
         );
       }
@@ -1916,7 +2166,7 @@ exports.testCases = () => {
       if (smgFeeProxy === ADDRESS_0) {
         smgFeeProxy = await cross.owner();
       }
-      const beforeFeeProxyBalance = new web3.utils.BN(
+      const beforeFeeProxyBalance = web3.utils.toBN(
         await web3.eth.getBalance(smgFeeProxy)
       );
 
@@ -1951,12 +2201,13 @@ exports.testCases = () => {
         let approved = await tokenInstance.getApproved(tokenIDs[idx]);
         assert.equal(approved, cross.address, "check approved fail");
       }
-      let batchFee = await cross.getBatchFee(tokenPairID, tokenIDs.length);
+      let batchFee = web3.utils.toBN(await cross.getBatchFee(tokenPairID, tokenIDs.length));
+      let moreBatchFee = batchFee.mul(web3.utils.toBN(2));
 
       // exec
       let receipt = await cross.userBurnNFT(...Object.values(funcParams), {
         from: senderAccount,
-        value: batchFee,
+        value: moreBatchFee,
       });
       if (!receipt.logs.length) {
         receipt.logs = await getTxParsedLogs(
@@ -2082,13 +2333,13 @@ exports.testCases = () => {
         balance
       );
 
-      const afterFeeProxyBalance = new web3.utils.BN(
+      const afterFeeProxyBalance = web3.utils.toBN(
         await web3.eth.getBalance(smgFeeProxy)
       );
       assert.equal(
         afterFeeProxyBalance
           .sub(beforeFeeProxyBalance)
-          .eq(new web3.utils.BN(batchFee)),
+          .eq(web3.utils.toBN(batchFee)),
         true,
         "balance of storeman fee error"
       );
@@ -2136,13 +2387,13 @@ exports.testCases = () => {
         const tokenPairID = tokenPair.tokenPairID;
 
         //const fee = await cross.getFee({ srcChainID: global.chains[currentChainType].ID, destChainID: global.chains[buddyChainType].ID });
-        //const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
-        const crossFee = new web3.utils.BN(0);
-        //const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
+        //const crossFee = web3.utils.toBN(fee.agentFee).mul(web3.utils.toBN(crossValueToWei)).div(web3.utils.toBN(DENOMINATOR));
+        const crossFee = web3.utils.toBN(0);
+        //const crossValueActually = web3.utils.toBN(crossValueToWei).sub(crossFee);
 
         // const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
-        // if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
-        //     await tokenManager.setTokenPairTypes([tokenPairID], [new web3.utils.BN(tokenCrossType)], {from: global.operatorAccount[currentChainType]});
+        // if (!web3.utils.toBN(currTokenCrossType).eq(web3.utils.toBN(tokenCrossType))) {
+        //     await tokenManager.setTokenPairTypes([tokenPairID], [web3.utils.toBN(tokenCrossType)], {from: global.operatorAccount[currentChainType]});
         // }
 
         let tokenInstance = await getNftTokenInstance(tokenAccount);
@@ -2150,7 +2401,7 @@ exports.testCases = () => {
         //if (smgFeeProxy === ADDRESS_0) {
         //    smgFeeProxy = await cross.owner();
         //}
-        //const beforeFeeProxyBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
+        //const beforeFeeProxyBalance = web3.utils.toBN(await tokenInstance.balanceOf(smgFeeProxy));
 
         //console.log("nft smgRelease tokenPair:", tokenPair);
         let funcParams = {
@@ -2167,6 +2418,7 @@ exports.testCases = () => {
         let idx;
         // before check
         let balance = await tokenInstance.balanceOf(userAccount);
+        // console.log("nft smgRelease balance:", balance);
         assert.equal(
           0,
           parseInt(balance),
@@ -2272,7 +2524,7 @@ exports.testCases = () => {
 
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN("0")],
+          [web3.utils.toBN("0")],
           { from: operator }
         );
 
@@ -2321,7 +2573,7 @@ exports.testCases = () => {
       } finally {
         await tokenManager.setTokenPairTypes(
           [tokenPairID],
-          [new web3.utils.BN(tokenCrossType)],
+          [web3.utils.toBN(tokenCrossType)],
           { from: operator }
         );
       }
@@ -2361,13 +2613,13 @@ exports.testCases = () => {
       const tokenPairID = tokenPair.tokenPairID;
 
       //const fee = await cross.getFee({ srcChainID: global.chains[currentChainType].ID, destChainID: global.chains[buddyChainType].ID });
-      //const crossFee = new web3.utils.BN(fee.agentFee).mul(new web3.utils.BN(crossValueToWei)).div(new web3.utils.BN(DENOMINATOR));
-      const crossFee = new web3.utils.BN(0);
-      //const crossValueActually = new web3.utils.BN(crossValueToWei).sub(crossFee);
+      //const crossFee = web3.utils.toBN(fee.agentFee).mul(web3.utils.toBN(crossValueToWei)).div(web3.utils.toBN(DENOMINATOR));
+      // const crossFee = web3.utils.toBN(0);
+      //const crossValueActually = web3.utils.toBN(crossValueToWei).sub(crossFee);
 
       // const currTokenCrossType = await tokenManager.mapTokenPairType(tokenPairID);
-      // if (!new web3.utils.BN(currTokenCrossType).eq(new web3.utils.BN(tokenCrossType))) {
-      //     await tokenManager.setTokenPairTypes([tokenPairID], [new web3.utils.BN(tokenCrossType)], {from: global.operatorAccount[currentChainType]});
+      // if (!web3.utils.toBN(currTokenCrossType).eq(web3.utils.toBN(tokenCrossType))) {
+      //     await tokenManager.setTokenPairTypes([tokenPairID], [web3.utils.toBN(tokenCrossType)], {from: global.operatorAccount[currentChainType]});
       // }
 
       let tokenInstance = await getNftTokenInstance(tokenAccount);
@@ -2375,7 +2627,7 @@ exports.testCases = () => {
       //if (smgFeeProxy === ADDRESS_0) {
       //    smgFeeProxy = await cross.owner();
       //}
-      //const beforeFeeProxyBalance = new web3.utils.BN(await tokenInstance.balanceOf(smgFeeProxy));
+      //const beforeFeeProxyBalance = web3.utils.toBN(await tokenInstance.balanceOf(smgFeeProxy));
 
       //console.log("nft smgRelease tokenPair:", tokenPair);
       let funcParams = {

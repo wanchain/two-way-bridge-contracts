@@ -39,8 +39,6 @@ const {
     updateOracle
 } = require("./crossApproach/oracle-config");
 
-const truffleConfig = require("./config");
-// console.log("truffleConfig:", truffleConfig);
 
 const {
     testInit,
@@ -62,6 +60,7 @@ const crossErc1155 = require('./crossApproach/erc1155_v4_cross_test');
 const crossNFT = require('./crossApproach/nft_v1_cross_test');
 const transferTest = require('./crossApproach/transfer_test');
 const etherTransferTest = require('./crossApproach/etherTransfer_test');
+const reentrancyTest = require('./crossApproach/reentrancy_test');
 
 contract('Test Cross Approach', (accounts) => {
     before("init...   -> success", async () => {
@@ -70,8 +69,7 @@ contract('Test Cross Approach', (accounts) => {
         // console.log("accounts:", accounts, accounts.length);
         let currNetwork = optimist.argv.network || "development";
         currNetwork = currNetwork.split("-")[0];
-        const from = truffleConfig.networks[currNetwork].from;
-        const owner = from ? (accounts.includes(from) ? from : accounts[0]) : accounts[0];
+        const owner = accounts[0];
         const adminAccounts = {WAN: accounts[1], ETH: accounts[2]};
         const foundationAccounts = {WAN: accounts[3], ETH: accounts[4]};
         const aliceAccounts = {WAN: accounts[5], ETH: accounts[6], BTC: userBTCAccount};
@@ -133,7 +131,8 @@ contract('Test Cross Approach', (accounts) => {
     crossErc1155.testCases();
     crossNFT.testCases();
     transferTest.testCases();
-    etherTransferTest.testCases()
+    etherTransferTest.testCases();
+    reentrancyTest.testCases();
 
     // importMochaTest("Test Common V4", './crossApproach/common_v4_test');
 

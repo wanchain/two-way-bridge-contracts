@@ -68,6 +68,7 @@ function testInit() {
                 entryArgs[key] = entryArgs[key].toLowerCase();
               }
               if(expectArgs[key] != entryArgs[key]){
+                  console.log("key:", key, "expectArgs[key]:", expectArgs[key], "entryArgs[key]:", entryArgs[key]);
                   assert.fail("Not get the expected event args: " + key);
                   break;
               }
@@ -123,15 +124,30 @@ async function getCrossChainFee(input) {
     cross.getTokenPairFee(tokenPairID)
     , cross.getFees([{srcChainID,destChainID},{srcChainID,destChainID: "0"}])
   ]);
-  if (primaryFee.contractFee != "0") {
-    return {contractFee:primaryFee.contractFee, agentFee:"0"};
+  let contractFee, agentFee;
+  if (primaryFee != "0") {
+    contractFee = primaryFee;
+  } else if (secondaryFee.contractFee != "0") {
+    contractFee = secondaryFee.contractFee;
+  } else {
+    contractFee = tertiaryFee.contractFee;
   }
-  if (secondaryFee.contractFee != "0") {
-    return secondaryFee;
+  if (secondaryFee.agentFee != "0") {
+    agentFee = secondaryFee.agentFee;
+  } else {
+    agentFee = tertiaryFee.agentFee;
   }
-  return tertiaryFee;
+  return {contractFee, agentFee};
 }
 
+async function resetCrossChainFee(input, owner) {
+  const {cross, srcChainID, destChainID, tokenPairID} = input;
+  // console.log("resetCrossChainFee ===> cross keys:", Object.keys(cross))
+  await Promise.all ([
+    cross.setTokenPairFee(tokenPairID, "0", {from: owner})
+    , cross.setFees([{srcChainID,destChainID,contractFee:"0",agentFee:"0"},{srcChainID,destChainID: "0",contractFee:"0",agentFee:"0"}], {from: owner})
+  ]);
+}
 
 module.exports = {
     assert,
@@ -140,4 +156,5 @@ module.exports = {
     getTxParsedLogs,
     sha256,
     getCrossChainFee,
+    resetCrossChainFee,
 };

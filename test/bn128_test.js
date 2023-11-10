@@ -1,4 +1,4 @@
-const assert = require('assert');
+const {assert} = require('chai');
 const { getSchnorrVerifierContracts, getWeb3, stringToBytes } = require('./utils');
 const BigNumber = require('bignumber.js');
 let web3 = getWeb3();
@@ -6,6 +6,18 @@ const hash = require('js-sha256');
 
 contract('Verifier', accounts => {
   before(async () => {
+  });
+
+  it("verifier check Not owner", async () => {
+    let verifier = (await getSchnorrVerifierContracts(accounts)).verifier;
+
+    try {
+      // console.log("verifier:", verifier)
+      await verifier.methods.register(web3.utils.toBN(10), accounts[5]).send({from: accounts[6]});
+      assert.fail("should be failed");
+    } catch (err) {
+      assert.include(err.toString(), "Not owner");
+    }
   });
 
   it("verifier check bn128 signature 1", async () => {

@@ -194,7 +194,7 @@ contract('Gpk_UT_terminate', async () => {
       await gpkSc.terminate(groupId, 0);
     } catch (e) {
       result = e;
-      console.log("terminate should success: %O", e);
+      // console.log("terminate should success: %O", e);
     }
     let info = await gpkSc.getGroupInfo(groupId, 0);
     assert.equal(info.curve1Status, GpkStatus.Close);
