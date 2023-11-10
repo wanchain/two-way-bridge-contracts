@@ -99,10 +99,6 @@ def main() -> None:
     except Exception as e:
         print('pass')
 
-    # create test asset
-    print("Creating test asset")
-    
-
     # get_latest_wrapped_token_id
     print("Getting latest wrapped token id")
     tokenId = owner_client.call(token_manager.get_latest_wrapped_token_id)
@@ -120,6 +116,16 @@ def main() -> None:
         to_account=str(tokenId.return_value),
         boxes=[(app_client.app_id, bytes.fromhex('029a')), (app_client.app_id, "pair_list")]
     )
+
+    print('get token pair')
+    pair = app_client.call(
+        token_manager.get_token_pair,
+        id=666,
+        boxes=[(app_client.app_id, bytes.fromhex('029a'))]
+    )
+
+    assert pair.return_value[2] == '0x0000000000000000000000000000000000000000'
+
 
     # Should not be able to add_token_pair for same pair Id again
     try:
@@ -139,7 +145,37 @@ def main() -> None:
     
     print_boxes(app_client)
 
-    # admin_client = app_client.prepare(signer=admin.signer)
+    print('update token pair')
+    owner_client.call(
+        token_manager.update_token_pair,
+        id=666,
+        from_chain_id=2153201998,
+        from_account="0xa4E62375593662E8fF92fAd0bA7FcAD25051EbCB",
+        to_chain_id=2147483931, # algorand
+        to_account=str(tokenId.return_value),
+        boxes=[(app_client.app_id, bytes.fromhex('029a'))]
+    )
+
+    print('get token pair')
+    pair = app_client.call(
+        token_manager.get_token_pair,
+        id=666,
+        boxes=[(app_client.app_id, bytes.fromhex('029a'))]
+    )
+    
+    assert pair.return_value[2] == '0xa4E62375593662E8fF92fAd0bA7FcAD25051EbCB'
+
+    print_boxes(app_client)
+
+    # optIn test asset
+    print("optIn test asset")
+    app_client.fund(200000) # deposit for minimum balance require
+    owner_client.call(
+        token_manager.opt_in_token_id,
+        id=3188,
+        foreign_assets=[3188],
+    )
+
 
     print('done')
 

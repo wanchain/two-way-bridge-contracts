@@ -96,6 +96,34 @@ def add_token_pair(
         Log(Concat(Bytes("add_token_pair:"), Itob(id.get()))),
     )
     
+@app.external(authorize=Authorize.only(app.state.owner.get()))
+def update_token_pair(
+    id: abi.Uint16,
+    from_chain_id: abi.Uint64,
+    from_account: abi.String,
+    to_chain_id: abi.Uint64,
+    to_account: abi.String,
+) -> Expr:
+    return Seq(
+        Assert(app.state.token_pairs[id].exists() == Int(1)),
+        (info := TokenPairInfo()).set(
+            id,
+            from_chain_id,
+            from_account,
+            to_chain_id,
+            to_account,
+        ),
+        app.state.token_pairs[id].set(info),
+        Log(Concat(Bytes("update_token_pair:"), Itob(id.get()))),
+    )
+
+@app.external
+def get_token_pair(
+    id: abi.Uint16,
+    *,
+    output: TokenPairInfo,
+) -> Expr:
+    return app.state.token_pairs[id].store_into(output)
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
 def transfer_ownership(
@@ -129,6 +157,27 @@ def get_admin(*, output: abi.Address) -> Expr:
 def get_owner(*, output: abi.Address) -> Expr:
     return output.set(app.state.owner.get())
 
+@app.external(authorize=Authorize.only(app.state.admin.get()))
+def mint_token(
+    asset_id: abi.Uint64,
+    user: abi.Address,
+    amount: abi.Uint64,
+) -> Expr:
+    return Seq(
+        do_axfer(user.get(), asset_id.get(), amount.get()),
+        Log(Concat(Bytes("mint_token:"), Itob(asset_id.get()), Bytes(":"), user.get(), Bytes(":"), Itob(amount.get()))),
+    )
+
+@app.external(authorize=Authorize.only(app.state.admin.get()))
+def burn_token(
+    asset_id: abi.Uint64,
+    holder: abi.Address,
+    amount: abi.Uint64,
+) -> Expr:
+    return Seq(
+        do_ax_burn(holder.get(), asset_id.get(), amount.get()),
+        Log(Concat(Bytes("burn_token:"), Itob(asset_id.get()), Bytes(":"), holder.get(), Bytes(":"), Itob(amount.get()))),
+    )
     
 ##############
 # Utility methods for inner transactions
@@ -142,10 +191,23 @@ def do_axfer(rx: Expr, aid: Expr, amt: Expr) -> Expr:
             TxnField.xfer_asset: aid,
             TxnField.asset_amount: amt,
             TxnField.asset_receiver: rx,
-            TxnField.fee: Int(0),
+            TxnField.fee: Int(1000),
         }
     )
 
+@Subroutine(TealType.none)
+def do_ax_burn(holder: Expr, aid: Expr, amt: Expr) -> Expr:
+    return InnerTxnBuilder.Execute(
+        {
+            TxnField.type_enum: TxnType.AssetTransfer,
+            TxnField.xfer_asset: aid,
+            TxnField.asset_amount: amt,
+            TxnField.asset_sender: holder,
+            TxnField.asset_receiver: Global.current_application_address(),
+            TxnField.fee: Int(1000),
+            TxnField.sender: Global.current_application_address(),
+        }
+    )
 
 @Subroutine(TealType.none)
 def do_opt_in(aid: Expr) -> Expr:
@@ -169,6 +231,7 @@ def do_create_wrapped_token(
                 TxnField.config_asset_decimals: decimals.get(),
                 TxnField.config_asset_manager: Global.current_application_address(),
                 TxnField.config_asset_reserve: Global.current_application_address(),
+                TxnField.config_asset_clawback: Global.current_application_address(),
                 TxnField.fee: Int(1000),
             }
         ),
