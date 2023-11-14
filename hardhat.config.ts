@@ -191,7 +191,7 @@ const config = {
       gasPrice: 3e9, // can not delete.
       url: "https://rpc.goerli.linea.build",
       accounts: [process.env.PK],
-      bip44ChainId: 2147492648, // TODO fake chainID.
+      bip44ChainId: 1073741842,
     },
     bitrockTestnet: {
       url: "https://testnet.bit-rock.io",
