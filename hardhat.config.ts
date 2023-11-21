@@ -198,6 +198,11 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 2154655314,
     },
+    bitrockMainnet: {
+      url: "https://connect.bit-rock.io",
+      accounts: [process.env.PK],
+      bip44ChainId: 2154655314,
+    },
     hardhat: {
       accounts: {
         mnemonic: "skill level pulse dune pattern rival used syrup inner first balance sad",
