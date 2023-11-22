@@ -193,6 +193,12 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 1073741842,
     },
+    lineaMainnet: {
+      gasPrice: 3e9, // can not delete.
+      url: "https://1rpc.io/linea",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741842,
+    },
     bitrockTestnet: {
       url: "https://testnet.bit-rock.io",
       accounts: [process.env.PK],
@@ -226,6 +232,7 @@ const config = {
     apiKey: {
       // baseMainnet: ""
       baseTestnet:'PLACEHOLDER_STRING',
+      lineaMainnet: 'WW4J7R5WJEET4PAWH4P2AEWWUGEGAZ23XJ',
     },
     customChains: [
       {
@@ -251,6 +258,14 @@ const config = {
           apiURL: "https://api.basescan.org/api",
           browserURL: "https://basescan.org",
         },
+      },
+      {
+        network: "lineaMainnet",
+        chainId: 59144,
+        urls: {
+         apiURL: "https://api.lineascan.build/api",
+         browserURL: "https://lineascan.build"
+        }
       },
     ],
   },
