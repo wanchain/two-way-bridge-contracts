@@ -122,7 +122,8 @@ const config = {
       accounts: [process.env.PK],
     },
     okbTestnet: {
-      url: "https://okbtestrpc.okbchain.org",
+      url: "https://x1testrpc.okx.com/",
+      bip44ChainId: 1073741835,
       accounts: [process.env.PK],
     },
     wanTestnet: {
