@@ -124,6 +124,8 @@ const config = {
     okbTestnet: {
       url: "https://x1testrpc.okx.com/",
       bip44ChainId: 1073741835,
+      signCurveId: 0, // ecdsa
+      hashType: 1, // keccak256
       accounts: [process.env.PK],
     },
     wanTestnet: {
