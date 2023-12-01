@@ -209,6 +209,13 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 2154655314,
     },
+    scriptTestnet: {
+      url: "https://testeth-rpc-api.script.tv/rpc", 
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741843,
+      gasPrice: 4000e9,
+      chainId: 742,
+    },
     hardhat: {
       accounts: {
         mnemonic: "skill level pulse dune pattern rival used syrup inner first balance sad",
