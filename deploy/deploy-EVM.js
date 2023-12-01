@@ -6,7 +6,6 @@
 // global scope, and execute the script.
 const hre = require("hardhat");
 const fs = require('fs');
-const { sleep } = require("@nomiclabs/hardhat-ethers");
 
 
 const waitForReceipt = true;
@@ -88,6 +87,8 @@ async function main() {
   }
 
   console.log("CrossDelegateV4 deployed to:", crossDelegate.address);
+  console.log('Sleep 20 seconds...');
+  await new Promise(resolve => setTimeout(resolve, 20000));
 
   let CrossProxy = await hre.ethers.getContractFactory("CrossProxy");
   let crossProxy = await CrossProxy.deploy();
@@ -148,6 +149,9 @@ async function main() {
   console.log("SignatureVerifier deployed to:", signatureVerifier.address);
   // config
 
+  console.log('Sleep 20 seconds...');
+  await new Promise(resolve => setTimeout(resolve, 20000));
+
   console.log('config...');
   tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
   await tx.wait();
@@ -171,6 +175,9 @@ async function main() {
   tx = await tokenManager.addAdmin(crossProxy.address);
   await tx.wait();
   console.log('tokenManager add admin finished.')
+
+  console.log('Sleep 20 seconds...');
+  await new Promise(resolve => setTimeout(resolve, 20000));
 
   console.log('tokenManager set operator...')
   tx = await tokenManager.setOperator(TOKEN_MANAGER_OPERATOR);
@@ -198,6 +205,8 @@ async function main() {
   }
   console.log('config finished.');
 
+  console.log('Sleep 20 seconds...');
+  await new Promise(resolve => setTimeout(resolve, 20000));
 
   let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
   let groupApprove = await GroupApprove.deploy(deployer, signatureVerifier.address, oracleProxy.address, crossProxy.address);
