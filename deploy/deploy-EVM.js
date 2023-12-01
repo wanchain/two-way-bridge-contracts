@@ -8,14 +8,14 @@ const hre = require("hardhat");
 const fs = require('fs');
 
 
-const waitForReceipt = true;
+const waitForReceipt = false;
 
 const needSleep = true;
 
 async function sleep() {
   if(needSleep) {
-    console.log('Sleep 5 seconds...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log('Sleep 15 seconds...');
+    await new Promise(resolve => setTimeout(resolve, 15000));
   }
 }
 
@@ -53,40 +53,45 @@ async function main() {
   let multicall2 = await Multicall2.deploy();
   if (waitForReceipt) {
     await multicall2.deployed();
-    await sleep();
   }
+  await sleep();
+
   console.log("Multicall2 deployed to:", multicall2.address);
 
   let TokenManagerDelegateV2 = await hre.ethers.getContractFactory("TokenManagerDelegateV2");
   let tokenManagerDelegate = await TokenManagerDelegateV2.deploy();
   if (waitForReceipt) {
     await tokenManagerDelegate.deployed();
-    await sleep();
   }
+  await sleep();
+
   console.log("TokenManagerDelegateV2 deployed to:", tokenManagerDelegate.address);
 
   let TokenManagerProxy = await hre.ethers.getContractFactory("TokenManagerProxy");
   let tokenManagerProxy = await TokenManagerProxy.deploy();
   if (waitForReceipt) {
     await tokenManagerProxy.deployed();
-    await sleep();
   }
+  await sleep();
+
   console.log("TokenManagerProxy deployed to:", tokenManagerProxy.address);
 
   let NFTLibV1 = await hre.ethers.getContractFactory("NFTLibV1");
   let nftLib = await NFTLibV1.deploy();
   if (waitForReceipt) {
     await nftLib.deployed();
-    await sleep();
   }
+  await sleep();
+
   console.log("NFTLibV1 deployed to:", nftLib.address);
 
   let RapidityLibV4 = await hre.ethers.getContractFactory("RapidityLibV4");
   let rapidityLib = await RapidityLibV4.deploy();
   if (waitForReceipt) {
     await rapidityLib.deployed();
-    await sleep();
   }
+  await sleep();
+
   console.log("RapidityLibV4 deployed to:", rapidityLib.address);
   
   let CrossDelegateV4 = await hre.ethers.getContractFactory("CrossDelegateV4", {
@@ -99,8 +104,8 @@ async function main() {
   let crossDelegate = await CrossDelegateV4.deploy();
   if (waitForReceipt) {
     await crossDelegate.deployed();
-    await sleep();
   }
+  await sleep();
 
   console.log("CrossDelegateV4 deployed to:", crossDelegate.address);
   console.log('Sleep 20 seconds...');
@@ -110,24 +115,25 @@ async function main() {
   let crossProxy = await CrossProxy.deploy();
   if (waitForReceipt) {
     await crossProxy.deployed();
-    await sleep();
   }
+  await sleep();
 
   console.log("CrossProxy deployed to:", crossProxy.address);
   let OracleDelegate = await hre.ethers.getContractFactory("OracleDelegate");
   let oracleDelegate = await OracleDelegate.deploy();
   if (waitForReceipt) {
     await oracleDelegate.deployed();
-    await sleep();
   }
+  await sleep();
 
   console.log("OracleDelegate deployed to:", oracleDelegate.address);
   let OracleProxy = await hre.ethers.getContractFactory("OracleProxy");
   let oracleProxy = await OracleProxy.deploy();
   if (waitForReceipt) {
     await oracleProxy.deployed();
-    await sleep();
   }
+  await sleep();
+
   console.log("OracleProxy deployed to:", oracleProxy.address);
 
  
@@ -135,8 +141,9 @@ async function main() {
   let signatureVerifier = await SignatureVerifier.deploy();
   if (waitForReceipt) {
     await signatureVerifier.deployed();
-    await sleep();
   }
+  await sleep();
+
   console.log('verifier register...')
   // 1: common EVM, bn128, 0: ZK, ECDSA
   //tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
@@ -152,8 +159,9 @@ async function main() {
     bn128SchnorrVerifier = await Bn128SchnorrVerifier.deploy();
     if (waitForReceipt) {
       await bn128SchnorrVerifier.deployed();
-      await sleep();
     }
+    await sleep();
+
     console.log("bn128SchnorrVerifier deployed to:", bn128SchnorrVerifier.address);
     tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
   }else {
@@ -161,8 +169,9 @@ async function main() {
     ecSchnorrVerifier = await EcSchnorrVerifier.deploy();
     if (waitForReceipt) {
       await ecSchnorrVerifier.deployed();
-      await sleep();
     }
+    await sleep();
+
     console.log("EcSchnorrVerifier deployed to:", ecSchnorrVerifier.address);
     tx = await signatureVerifier.register(0, ecSchnorrVerifier.address);
   }
