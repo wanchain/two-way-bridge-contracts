@@ -9,6 +9,16 @@ const fs = require('fs');
 
 
 const waitForReceipt = true;
+
+const needSleep = true;
+
+async function sleep() {
+  if(needSleep) {
+    console.log('Sleep 5 seconds...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
+  }
+}
+
 if (!process.env.PK)
   throw "⛔️ Private key not detected! Add it to the .env file!";
 // mainnet
@@ -43,6 +53,7 @@ async function main() {
   let multicall2 = await Multicall2.deploy();
   if (waitForReceipt) {
     await multicall2.deployed();
+    await sleep();
   }
   console.log("Multicall2 deployed to:", multicall2.address);
 
@@ -50,6 +61,7 @@ async function main() {
   let tokenManagerDelegate = await TokenManagerDelegateV2.deploy();
   if (waitForReceipt) {
     await tokenManagerDelegate.deployed();
+    await sleep();
   }
   console.log("TokenManagerDelegateV2 deployed to:", tokenManagerDelegate.address);
 
@@ -57,6 +69,7 @@ async function main() {
   let tokenManagerProxy = await TokenManagerProxy.deploy();
   if (waitForReceipt) {
     await tokenManagerProxy.deployed();
+    await sleep();
   }
   console.log("TokenManagerProxy deployed to:", tokenManagerProxy.address);
 
@@ -64,6 +77,7 @@ async function main() {
   let nftLib = await NFTLibV1.deploy();
   if (waitForReceipt) {
     await nftLib.deployed();
+    await sleep();
   }
   console.log("NFTLibV1 deployed to:", nftLib.address);
 
@@ -71,6 +85,7 @@ async function main() {
   let rapidityLib = await RapidityLibV4.deploy();
   if (waitForReceipt) {
     await rapidityLib.deployed();
+    await sleep();
   }
   console.log("RapidityLibV4 deployed to:", rapidityLib.address);
   
@@ -84,6 +99,7 @@ async function main() {
   let crossDelegate = await CrossDelegateV4.deploy();
   if (waitForReceipt) {
     await crossDelegate.deployed();
+    await sleep();
   }
 
   console.log("CrossDelegateV4 deployed to:", crossDelegate.address);
@@ -94,6 +110,7 @@ async function main() {
   let crossProxy = await CrossProxy.deploy();
   if (waitForReceipt) {
     await crossProxy.deployed();
+    await sleep();
   }
 
   console.log("CrossProxy deployed to:", crossProxy.address);
@@ -101,6 +118,7 @@ async function main() {
   let oracleDelegate = await OracleDelegate.deploy();
   if (waitForReceipt) {
     await oracleDelegate.deployed();
+    await sleep();
   }
 
   console.log("OracleDelegate deployed to:", oracleDelegate.address);
@@ -108,6 +126,7 @@ async function main() {
   let oracleProxy = await OracleProxy.deploy();
   if (waitForReceipt) {
     await oracleProxy.deployed();
+    await sleep();
   }
   console.log("OracleProxy deployed to:", oracleProxy.address);
 
@@ -116,6 +135,7 @@ async function main() {
   let signatureVerifier = await SignatureVerifier.deploy();
   if (waitForReceipt) {
     await signatureVerifier.deployed();
+    await sleep();
   }
   console.log('verifier register...')
   // 1: common EVM, bn128, 0: ZK, ECDSA
@@ -132,6 +152,7 @@ async function main() {
     bn128SchnorrVerifier = await Bn128SchnorrVerifier.deploy();
     if (waitForReceipt) {
       await bn128SchnorrVerifier.deployed();
+      await sleep();
     }
     console.log("bn128SchnorrVerifier deployed to:", bn128SchnorrVerifier.address);
     tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
@@ -140,6 +161,7 @@ async function main() {
     ecSchnorrVerifier = await EcSchnorrVerifier.deploy();
     if (waitForReceipt) {
       await ecSchnorrVerifier.deployed();
+      await sleep();
     }
     console.log("EcSchnorrVerifier deployed to:", ecSchnorrVerifier.address);
     tx = await signatureVerifier.register(0, ecSchnorrVerifier.address);
@@ -149,19 +171,25 @@ async function main() {
   console.log("SignatureVerifier deployed to:", signatureVerifier.address);
   // config
 
-  console.log('Sleep 20 seconds...');
-  await new Promise(resolve => setTimeout(resolve, 20000));
+  await sleep();
 
   console.log('config...');
   tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
   await tx.wait();
   console.log('tokenManagerProxy upgradeTo finished.');
+  
+  await sleep();
+
   tx = await crossProxy.upgradeTo(crossDelegate.address);
   await tx.wait();
   console.log('crossProxy upgradeTo finished.');
+
+  await sleep();
   tx = await oracleProxy.upgradeTo(oracleDelegate.address);
   await tx.wait();
   console.log('oracleProxy upgradeTo finished.');
+
+  await sleep();
   console.log('deploy finished start to config...');
   let tokenManager = await hre.ethers.getContractAt("TokenManagerDelegateV2", tokenManagerProxy.address);
   let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
@@ -171,42 +199,45 @@ async function main() {
   tx = await oracle.setAdmin(ORACLE_ADMIN);
   await tx.wait();
   console.log('oracle set admin finished.')
+  await sleep();
   console.log('tokenManager add admin...')
   tx = await tokenManager.addAdmin(crossProxy.address);
   await tx.wait();
   console.log('tokenManager add admin finished.')
-
-  console.log('Sleep 20 seconds...');
-  await new Promise(resolve => setTimeout(resolve, 20000));
+  await sleep();
 
   console.log('tokenManager set operator...')
   tx = await tokenManager.setOperator(TOKEN_MANAGER_OPERATOR);
   await tx.wait();
   console.log('tokenManager set operator finished.')
 
+  await sleep();
+
   console.log('cross set partner...');
   tx = await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
   await tx.wait();
   console.log('cross set partner finished.');
+  await sleep();
 
   console.log('cross add admin...')
   tx = await cross.setAdmin(deployer);
   await tx.wait();
+  await sleep();
   console.log('cross set chainID...')
   tx = await cross.setChainID(BIP44_CHAIN_ID);
   await tx.wait();
+  await sleep();
   console.log('cross add admin2...')
   tx = await cross.setAdmin(CROSS_ADMIN);
   await tx.wait();
+  await sleep();
   if(hre.network.config.hashType) {
     tx = await cross.setHashType(hre.network.config.hashType);
     await tx.wait();
     console.log('set hash type:', hre.network.config.hashType)
+    await sleep();
   }
   console.log('config finished.');
-
-  console.log('Sleep 20 seconds...');
-  await new Promise(resolve => setTimeout(resolve, 20000));
 
   let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
   let groupApprove = await GroupApprove.deploy(deployer, signatureVerifier.address, oracleProxy.address, crossProxy.address);
