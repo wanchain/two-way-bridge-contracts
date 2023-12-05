@@ -183,10 +183,9 @@ const config = {
       bip44ChainId: 2147493445,
     },
     polyZkMainnet: {
-      //gasPrice:200000000,
       url: "https://zkevm-rpc.com",
       accounts: [process.env.PK],
-      bip44ChainId: 0,
+      bip44ChainId: 1073741838,
       signCurveId: 0, // ecdsa
       hashType: 1, // keccak256
     },
