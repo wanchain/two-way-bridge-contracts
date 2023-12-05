@@ -8,9 +8,9 @@ const hre = require("hardhat");
 const fs = require('fs');
 
 
-const waitForReceipt = false;
+const waitForReceipt = true;
 
-const needSleep = true;
+const needSleep = false;
 
 async function sleep() {
   if(needSleep) {
