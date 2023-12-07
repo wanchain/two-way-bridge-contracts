@@ -45,6 +45,7 @@
     "greet": "yarn hardhat deploy-zksync --script use-greeter.ts"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.2"
+    "@openzeppelin/contracts": "^4.9.2",
+    "readline": "^1.3.0"
   }
 }
