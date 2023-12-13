@@ -75,5 +75,31 @@ def main() -> None:
 
     print("done")
 
+    #token pair fee
+    app_client.call(
+        cross.setTokenPairFee,
+        tokenPairID=666,
+        contractFee=2153201998,
+        boxes=[(app_client.app_id, bytes.fromhex('029a'))]
+    )
+
+    fee = app_client.call(
+        cross.getTokenPairFee,
+        tokenPairID=666,
+        boxes=[(app_client.app_id, bytes.fromhex('029a'))]
+    )
+    print("fee:", fee.return_value)
+
+    #currentChainID
+    app_client.call(
+        cross.setChainID,
+        chainID=2153201998,
+    )
+
+    fee = app_client.call(
+        cross.currentChainID,
+    )
+    print("fee:", fee.return_value)
+
 if __name__ == "__main__":
     main()
