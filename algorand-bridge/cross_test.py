@@ -101,5 +101,18 @@ def main() -> None:
     )
     print("fee:", fee.return_value)
 
+    #admin
+    app_client.call(
+        cross.setAdmin,
+        adminAccount="TZZPM7LO6SVB632S7AWTCXABGEM2WHC4UEFPN46S57JHY6XRTUU6BBUWEI",
+    )
+
+    adminAccount = app_client.call(
+        cross.admin,
+    )
+    print("adminAccount:", adminAccount.return_value)
+
+    
+
 if __name__ == "__main__":
     main()
