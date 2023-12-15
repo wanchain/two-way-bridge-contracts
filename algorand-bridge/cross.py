@@ -15,6 +15,7 @@ class CrossState:
     """
     tx_status = BoxMapping(TransactionHash, abi.Bool)
     contract_fees = BoxMapping(abi.Uint16, abi.Uint64)
+    mapTokenPairContractFee = BoxMapping(abi.Uint16, abi.Uint64)
 
     oracle_id: Final[GlobalStateValue] = GlobalStateValue(
         TealType.uint64,
@@ -40,10 +41,26 @@ class CrossState:
         descr="initialized flag",
     )
 
-    current_chain_id: Final[GlobalStateValue] = GlobalStateValue(
+    currentChainID: Final[GlobalStateValue] = GlobalStateValue(
         TealType.uint64,
         descr="current chain id",
     )
+    
+    maxBatchSize: Final[GlobalStateValue] = GlobalStateValue(
+        TealType.uint64,
+        descr="current chain id",
+    )
+    etherTransferGasLimit: Final[GlobalStateValue] = GlobalStateValue(
+        TealType.uint64,
+        descr="current chain id",
+    )
+    hashType: Final[GlobalStateValue] = GlobalStateValue(
+        TealType.uint64,
+        descr="current chain id",
+    )
+
+    # lockedTime: depercated. only for HTLC
+    # smgFeeReceiverTimeout: useless
 
     
 app = Application(
@@ -55,6 +72,90 @@ app = Application(
 ###
 # API Methods
 ###
+
+@app.external
+def setAdmin(
+    adminAccount: abi.Address
+)   -> Expr:
+    return app.state.admin.set(adminAccount.get())
+
+@app.external
+def admin(
+    *,
+    output: abi.Address
+)    -> Expr:
+    return output.set(app.state.admin.get())
+
+@app.external
+def setMaxBatchSize(
+    _maxBatchSize: abi.Uint64
+)   -> Expr:
+    return app.state.maxBatchSize.set(_maxBatchSize.get())
+
+@app.external
+def getMaxBatchSize(
+    *,
+    output: abi.Uint64
+)    -> Expr:
+    return output.set(app.state.maxBatchSize.get())
+
+@app.external
+def setHashType(
+    _hashType: abi.Uint64
+)   -> Expr:
+    return app.state.hashType.set(_hashType.get())
+
+@app.external
+def hashType(
+    *,
+    output: abi.Uint64
+)    -> Expr:
+    return output.set(app.state.hashType.get())
+
+@app.external
+def setEtherTransferGasLimit(
+    _etherTransferGasLimit: abi.Uint64
+)   -> Expr:
+    return app.state.etherTransferGasLimit.set(_etherTransferGasLimit.get())
+
+@app.external
+def getEtherTransferGasLimit(
+    *,
+    output: abi.Uint64
+)    -> Expr:
+    return output.set(app.state.etherTransferGasLimit.get())
+
+
+@app.external
+def setChainID(
+    chainID: abi.Uint64
+)   -> Expr:
+    return app.state.currentChainID.set(chainID.get())
+
+@app.external
+def currentChainID(
+    *,
+    output: abi.Uint64
+)    -> Expr:
+    return output.set(app.state.currentChainID.get())
+
+@app.external
+def getTokenPairFee(
+    tokenPairID: abi.Uint16,
+    *,
+    output: abi.Uint64,
+) -> Expr:
+    return app.state.mapTokenPairContractFee[tokenPairID].store_into(output)
+
+@app.external
+def setTokenPairFee(
+    tokenPairID: abi.Uint16,
+    contractFee: abi.Uint64,
+) -> Expr:
+    return Seq(
+        app.state.mapTokenPairContractFee[tokenPairID].set(contractFee),
+    )
+
 
 @app.external
 def user_lock() -> Expr:
