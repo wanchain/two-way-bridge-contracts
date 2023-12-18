@@ -37,6 +37,6 @@ contract CrossAdminManager is AccessControl {
 
     fallback() external onlyRole(DEFAULT_ADMIN_ROLE) {
         (bool success, ) = crossSC.call(msg.data);
-        require(success, "Call failed");
+        require(success, "CrossAdminManager: fallback call failed");
     }
 }
