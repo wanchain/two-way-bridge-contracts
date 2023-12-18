@@ -16,7 +16,6 @@ interface ICrossProxy {
 }
 
 contract CrossAdminManager is AccessControl {
-    uint256 chainId; // slip-0044 chainId
     address crossSC; // cross chain contract address
 
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
