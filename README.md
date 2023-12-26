@@ -74,3 +74,7 @@ if you are sure your chain is etherscan compatible， please add your chain in c
 npx hardhat --network <your_network_name> verify <the_sc_address>
 2. verify use js
 npx hardhat --network <your_network_name> run deploy/verifySc.js 
+
+### transfer foundation 
+npx hardhat --network polyZkMainnet  run deploy/transferOwner.js
+
