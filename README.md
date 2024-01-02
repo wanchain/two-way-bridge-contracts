@@ -61,8 +61,12 @@ If you do not start the zkSync local environment, the tests will fail with error
 
 ### transfer owner
 
+1. check the information, the below command will display the information, please check them carefully.
 npx hardhat --config hardhat.config.ts --network zkSyncTestnet run deploy/transferOwner.js
 
+2. transfer owner and send transaction
+If the information is correct, please export NoTryRun='yes', then execute the command again.
+npx hardhat --config hardhat.config.ts --network zkSyncTestnet run deploy/transferOwner.js
 
 ### verify
 see： https://hardhat.org/hardhat-runner/plugins/nomicfoundation-hardhat-verify#adding-support-for-other-networks
@@ -76,5 +80,10 @@ npx hardhat --network <your_network_name> verify <the_sc_address>
 npx hardhat --network <your_network_name> run deploy/verifySc.js 
 
 ### transfer foundation 
-npx hardhat --network polyZkMainnet  run deploy/transferOwner.js
 
+1. check the information, the below command will display the information, please check them carefully.
+npx hardhat --config hardhat.config.ts --network zkSyncTestnet run deploy/transferFoundation.js
+
+2. transfer owner and send transaction
+If the information is correct, please export NoTryRun='yes', then execute the command again.
+npx hardhat --config hardhat.config.ts --network zkSyncTestnet run deploy/transferFoundation.js
