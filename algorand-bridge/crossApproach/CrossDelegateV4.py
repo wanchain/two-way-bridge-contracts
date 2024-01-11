@@ -166,18 +166,19 @@ def userLock(seed: abi.PaymentTransaction, smgID: abi.String, tokenPairID: abi.U
     #     event UserLockLogger(bytes32 indexed smgID, uint indexed tokenPairID, 
     #     address indexed tokenAccount, uint value, uint contractFee, bytes userAccount);
 
-    UserLockLogger = {
-        #"event": "UserLockLogger",
-        # "smgID": smgID.get(),
-        # "tokenPairID": tokenPairID.get(),
-        # "tokenAccount": Bytes("coming_soon"),
-        # "value": value.get(),
-        # "userAccount":userAccount.get()
-    }
+    UserLockLogger = Concat(
+        Bytes("UserLockLogger:"), 
+        smgID.get(), Bytes(":"),
+        Itob(tokenPairID.get()), Bytes(":"),
+        Bytes("this_is_tokenAccount"), Bytes(":"),
+        Itob(value.get()), Bytes(":"),
+        Itob(contractFee.get()), Bytes(":"),
+        userAccount.get(), Bytes(":")
+    )
     
     return Seq(
         #Log(json.dumps(UserLockLogger))
-        Log(Bytes("aa"))
+        Log(UserLockLogger)
     )
 
 @app.external

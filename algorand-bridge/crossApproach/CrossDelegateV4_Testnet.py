@@ -130,11 +130,12 @@ def main() -> None:
         app_client.app_addr,
         300000,
     )
-    app_client.call(
+    LLL = app_client.call(
         CrossDelegateV4.userLock,
         seed=TransactionWithSigner(ptxn, creator),
         smgID="smg", tokenPairID=33, value=55, userAccount="bb"
     )
+    console.log("LLLLLLLLLLLLLLLLLLL:", lll.tx_info)
     info = app_client.client.account_info(app_client.app_addr)
     print("info1 :", info)
 
@@ -200,7 +201,7 @@ def main() -> None:
     )
     app_client.call(
         CrossDelegateV4.userBurn,
-        seed=TransactionWithSigner(ptxn, admin.signer),
+        seed=TransactionWithSigner(ptxn, creator),
         smgID="smg", tokenPairID=33, value=55, fee=55,
         tokenAccount=assetID,
         userAccount= acctAddr,
