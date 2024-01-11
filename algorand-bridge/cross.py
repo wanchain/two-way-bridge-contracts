@@ -268,6 +268,20 @@ def close_out() -> Expr:
     return Approve()
 
 
+
+
+
+@app.external
+def testGet(*, output: abi.Uint64) -> Expr:
+    nn: TealType.Uint64 = getSmgFeeProxy()
+    return output.set(nn)
+    # return output.set(app.state.currentChainID.get())
+
+# function getSmgFeeProxy() internal view returns (address)
+# @Subroutine(TealType.uint64)
+def getSmgFeeProxy() -> Expr:
+    return 200
+
 if __name__ == "__main__":
     app.build().export("./artifacts_cross")
     print("done")

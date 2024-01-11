@@ -3,7 +3,7 @@ from algosdk.abi import ABIType
 from algosdk.atomic_transaction_composer import TransactionWithSigner
 from algosdk.encoding import decode_address, encode_address, encode_as_bytes
 from algosdk.transaction import AssetOptInTxn, PaymentTxn, AssetCreateTxn
-from algosdk import account, transaction
+from algosdk import account, transaction,logic
 
 import beaker
 
@@ -26,6 +26,7 @@ def main() -> None:
     owner = accts.pop()
     admin = accts.pop()
 
+    client = beaker.localnet.get_algod_client()
     app_client = beaker.client.ApplicationClient(
         beaker.localnet.get_algod_client(), cross.app, signer=creator.signer
     )
@@ -33,6 +34,9 @@ def main() -> None:
     print("Creating app")
     app_client.create()
     print("Create success")
+    print("app_client.app_id:", app_client.app_id, app_client)
+    app_addr = logic.get_application_address(app_client.app_id)
+    print("app_addr:", app_addr)
 
     owner_client = app_client.prepare(signer=owner.signer)
     admin_client = app_client.prepare(signer=admin.signer)
@@ -107,10 +111,10 @@ def main() -> None:
         adminAccount="TZZPM7LO6SVB632S7AWTCXABGEM2WHC4UEFPN46S57JHY6XRTUU6BBUWEI",
     )
 
-    adminAccount = app_client.call(
-        cross.admin,
+    testGetInfo = app_client.call(
+        cross.testGet,
     )
-    print("adminAccount:", adminAccount.return_value)
+    print("testGetInfo:", testGetInfo.return_value)
 
     
 
