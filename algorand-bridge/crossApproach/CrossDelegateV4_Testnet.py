@@ -24,8 +24,8 @@ def main() -> None:
     mn = "cost piano sample enough south bar diet garden nasty mystery mesh sadness convince bacon best patch surround protect drum actress entire vacuum begin abandon hair"
     pk = mnemonic.to_private_key(mn)
     print(f"Base64 encoded private key: {pk}")
-    addr = account.address_from_private_key(pk)
-    print(f"Address: {addr}")
+    acctAddr = account.address_from_private_key(pk)
+    print(f"Address: {acctAddr}")
     creator = AccountTransactionSigner(pk)
 
     algod_client = v2client.algod.AlgodClient('b7e384d0317b8050ce45900a94a1931e28540e1f69b2d242b424659c341b4697','https://testnet-api.algonode.cloud')
@@ -50,7 +50,7 @@ def main() -> None:
     
     # Pay for minimum balance
     ptxn = PaymentTxn(
-        creator.address,
+        acctAddr,
         sp,
         app_client.app_addr,
         300000,
@@ -58,9 +58,9 @@ def main() -> None:
     
     app_client.call(
         CrossDelegateV4.initialize,
-        seed=TransactionWithSigner(ptxn, creator.signer),
-        owner=owner.address,
-        admin=admin.address,
+        seed=TransactionWithSigner(ptxn, creator),
+        owner=acctAddr,
+        admin=acctAddr,
         oracle_id=1,
         token_manager_id=2,
     )
@@ -70,9 +70,9 @@ def main() -> None:
     try:
         app_client.call(
             CrossDelegateV4.initialize,
-            seed=TransactionWithSigner(ptxn, creator.signer),
-            owner=owner.address,
-            admin=admin.address,
+            seed=TransactionWithSigner(ptxn, creator),
+            owner=acctAddr,
+            admin=acctAddr,
             oracle_id=1,
             token_manager_id=2,
         )
@@ -125,14 +125,14 @@ def main() -> None:
 
     #userLock
     ptxn = PaymentTxn(
-        creator.address,
+        acctAddr,
         sp,
         app_client.app_addr,
         300000,
     )
     app_client.call(
         CrossDelegateV4.userLock,
-        seed=TransactionWithSigner(ptxn, creator.signer),
+        seed=TransactionWithSigner(ptxn, creator),
         smgID="smg", tokenPairID=33, value=55, userAccount="bb"
     )
     info = app_client.client.account_info(app_client.app_addr)
@@ -167,9 +167,9 @@ def main() -> None:
     assetID = info2.return_value
 
     optin_txn = transaction.AssetOptInTxn(
-        sender=admin.address, sp=sp, index=assetID
+        sender=acctAddr, sp=sp, index=assetID
     )
-    signed_optin_txn = optin_txn.sign(admin.private_key)
+    signed_optin_txn = optin_txn.sign(pk)
 
     txid = app_client.client.send_transaction(signed_optin_txn)
     print(f"Sent opt in transaction with txid: {txid}")
@@ -182,18 +182,18 @@ def main() -> None:
         uniqueID='aa',
         smgID="smg", tokenPairID=33, value=55, fee=55,
         tokenAccount=assetID,
-        userAccount= creator.address,
+        userAccount= acctAddr,
         r="r", s = "s",
         foreign_assets=[assetID],
-        accounts=[admin.address],
+        accounts=[acctAddr],
     )
-    info2 = app_client.client.account_info(admin.address)
+    info2 = app_client.client.account_info(acctAddr)
     print("info 4:", info2)
     
 
 
     ptxn = AssetTransferTxn(
-        admin.address,
+        acctAddr,
         sp,
         app_client.app_addr,
         55,assetID,
@@ -203,11 +203,11 @@ def main() -> None:
         seed=TransactionWithSigner(ptxn, admin.signer),
         smgID="smg", tokenPairID=33, value=55, fee=55,
         tokenAccount=assetID,
-        userAccount= creator.address,
+        userAccount= acctAddr,
         foreign_assets=[assetID],
-        accounts=[admin.address],
+        accounts=[acctAddr],
     )
-    info2 = app_client.client.account_info(admin.address)
+    info2 = app_client.client.account_info(acctAddr)
     print("after uer burn -------------------info:", info2)
     info2 = app_client.client.account_info(app_client.app_addr)
     print("info 5:", info2)
