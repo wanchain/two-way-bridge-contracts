@@ -135,7 +135,7 @@ def main() -> None:
         seed=TransactionWithSigner(ptxn, creator),
         smgID="smg", tokenPairID=33, value=55, userAccount="bb"
     )
-    console.log("LLLLLLLLLLLLLLLLLLL:", lll.tx_info)
+    print("LLLLLLLLLLLLLLLLLLL:", LLL.tx_info)
     info = app_client.client.account_info(app_client.app_addr)
     print("info1 :", info)
 

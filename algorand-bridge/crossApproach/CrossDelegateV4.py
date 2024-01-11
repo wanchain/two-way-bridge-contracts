@@ -172,7 +172,7 @@ def userLock(seed: abi.PaymentTransaction, smgID: abi.String, tokenPairID: abi.U
         Itob(tokenPairID.get()), Bytes(":"),
         Bytes("this_is_tokenAccount"), Bytes(":"),
         Itob(value.get()), Bytes(":"),
-        Itob(contractFee.get()), Bytes(":"),
+        Itob(Int(88888888888)), Bytes(":"),
         userAccount.get(), Bytes(":")
     )
     
