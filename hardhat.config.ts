@@ -211,6 +211,12 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 2154655314,
     },
+    hederaTestnet: {
+      url: "https://testnet.hashio.io/api",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147486678,
+      timeout:3600000,
+    },
     hardhat: {
       accounts: {
         mnemonic: "skill level pulse dune pattern rival used syrup inner first balance sad",
