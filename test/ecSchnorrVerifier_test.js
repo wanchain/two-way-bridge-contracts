@@ -16,6 +16,7 @@ function sign(m, x) {
   // R = G * k
   var k = randomBytes(32);
   var R = secp256k1.publicKeyCreate(k);
+  console.log("----------------verify para k:", web3.utils.bytesToHex(k))
 
   // e = h(address(R) || compressed pubkey || m)
   var e = challenge(R, m, publicKey);
@@ -64,7 +65,7 @@ describe("EcSchnorrVerifier", function () {
       privKey = randomBytes(32)
     } while (!secp256k1.privateKeyVerify(privKey))
 
-
+    console.log("----------------verify para privKey:", web3.utils.bytesToHex(privKey))
     var publicKey = secp256k1.publicKeyCreate(privKey);
 
     // message 
@@ -83,7 +84,12 @@ describe("EcSchnorrVerifier", function () {
       web3.utils.padLeft(web3.utils.toHex(publicKey[0] - 2 + 27), 64),
       web3.utils.bytesToHex(m),
     )
-
+    console.log("----------------verify para:",  web3.utils.bytesToHex(sig.s),
+    web3.utils.bytesToHex(publicKey.slice(1, 33)),
+    web3.utils.padLeft("0x", 64),
+    web3.utils.bytesToHex(sig.e),
+    web3.utils.padLeft(web3.utils.toHex(publicKey[0] - 2 + 27), 64),
+    web3.utils.bytesToHex(m))
     // console.log("verify gas cost:", gas);
 
     expect(await schnorr.verify(

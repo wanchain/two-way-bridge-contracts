@@ -130,7 +130,7 @@ def main() -> None:
     app_client.call(
         CrossDelegateV4.userLock,
         seed=TransactionWithSigner(ptxn, creator.signer),
-        smgID="smg", tokenPairID=33, value=55, userAccount="bb"
+        smgID="smg", tokenPairID=33, value=55, userAccount="0x1234"
     )
     info = app_client.client.account_info(app_client.app_addr)
     print("info1 :", info)
@@ -187,7 +187,19 @@ def main() -> None:
     info2 = app_client.client.account_info(admin.address)
     print("info 4:", info2)
     
-
+    txSmgMint = app_client.call(
+        CrossDelegateV4.smgMint,
+        uniqueID='aa',
+        smgID="smg", tokenPairID=33, value=56, fee=55,
+        tokenAccount=assetID,
+        userAccount= admin.address,
+        r="r", s = "s",
+        foreign_assets=[assetID],
+        accounts=[admin.address],
+    )
+    print("txSmgMinttttttttttttttttttttttttt:", txSmgMint)
+    info2 = app_client.client.account_info(admin.address)
+    print("info 4.4:", info2)
 
     ptxn = AssetTransferTxn(
         admin.address,

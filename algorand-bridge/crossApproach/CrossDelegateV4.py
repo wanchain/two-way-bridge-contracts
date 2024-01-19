@@ -166,6 +166,7 @@ def userLock(seed: abi.PaymentTransaction, smgID: abi.String, tokenPairID: abi.U
     #     event UserLockLogger(bytes32 indexed smgID, uint indexed tokenPairID, 
     #     address indexed tokenAccount, uint value, uint contractFee, bytes userAccount);
 
+#   assosiated these 2 txs.  check the value is same in these 2 txs.
     UserLockLogger = Concat(
         Bytes("UserLockLogger:"), 
         smgID.get(), Bytes(":"),

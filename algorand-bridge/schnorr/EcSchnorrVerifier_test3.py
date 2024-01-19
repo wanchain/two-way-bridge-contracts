@@ -66,39 +66,47 @@ def main() -> None:
             signer=acct.signer,
         )
     )
-    message = b"testdata"
-    m = keccak.new(digest_bits=256)
-    m.update(message)
-    hash = m.digest()
-    print("hash:", hash.hex())
+    
     sp_no_fee = algod_client.suggested_params()
     sp_no_fee.flat_fee = True
 
 
 
+    # signature:		0x8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6 
+    # px:			0x88ef3369fc869985783738c1db70ebb0ab6b91a2e7a4fcc2b70ead6e861fcadb 
+    # py:			0x0000000000000000000000000000000000000000000000000000000000000000 
+    # e:			0xa1dfceb88b3ed8b87f5452a9a2ddbc9e2d3bb9024203785b6ba7b4faea164105 
+    # parity:		0x000000000000000000000000000000000000000000000000000000000000001b 
+    # message:		0xd174910b50affeb72000a49a9fafaddd0da395586559227196fcf1743b2c6fc5
 
+    signature = bytes.fromhex("8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6")
+    px      = bytes.fromhex("88ef3369fc869985783738c1db70ebb0ab6b91a2e7a4fcc2b70ead6e861fcadb")
+    py      = bytes.fromhex("0000000000000000000000000000000000000000000000000000000000000000")
+    e       = bytes.fromhex("a1dfceb88b3ed8b87f5452a9a2ddbc9e2d3bb9024203785b6ba7b4faea164105")
+    parity  = bytes.fromhex("000000000000000000000000000000000000000000000000000000000000001b")
+    message = bytes.fromhex("d174910b50affeb72000a49a9fafaddd0da395586559227196fcf1743b2c6fc5")
 
-    # V0
-    hex_signature = (
-        "cabed943e1403fb93b388174c59a52c759b321855f2d7c4fcc23c99a8a6dce79"
-        + "56192820dde344c32f81450db05e51c6a6f45a2a2db229f657d2c040baf315371c"
-    )
-    signature = bytes.fromhex(hex_signature)
+    # the middle value:
 
 
     atc = app_client.add_method_call(
         atc,
-        EcSchnorrVerifier.check_eth_sig,
-        hash=hash,
+        EcSchnorrVerifier.check_ecSchnorr_sig,
         signature=signature,
+        px=px,
+        py=py,
+        e=e,
+        parity=parity,
+        message=message,
         suggested_params=sp_no_fee,
     )
 
 
 
     result = atc.execute(algod_client, 3)
+
     for rv in result.abi_results:
-        print(rv.return_value)
+        print(rv.return_value)        
 
     # ret = app_client.call(
     #     EcSchnorrVerifier.check_eth_sig,
