@@ -34,9 +34,11 @@ const config = {
       libraries: {
         "contracts/crossApproach/lib/RapidityLibV4.sol": {
           RapidityLibV4: "0x7b5ab1C1776f6c980ED4c762abd7acE5B9d5D22C",
+          // RapidityLibV4: "0x86F634D0d70F2Cdecb124d9ba8c86862e133ed24", // sepolia
         },
         "contracts/crossApproach/lib/NFTLibV1.sol": {
           NFTLibV1: "0x0C24Ee2FB82FE87536cdBeA2AB89e42AB1287e97",
+          // NFTLibV1: "0xaE18F47a8008ac6a5Bc7eA710424EBCD45411A01", // sepolia
         },
         "contracts/gpk/lib/GpkLib.sol": {
           GpkLib: "0x0000000000000000000000000000000000000000",
@@ -72,6 +74,11 @@ const config = {
       url: "https://rpc.testnet.moonbeam.network",
       accounts: [process.env.PK],
     },
+    sepolia: {
+      url: "https://ethereum-sepolia.publicnode.com",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147483708,
+    },
     goerli: {
       url: "https://rpc.ankr.com/eth_goerli",
       accounts: [process.env.PK],
@@ -89,9 +96,20 @@ const config = {
       url: "https://evm.astar.network",
       accounts: [process.env.PK],
     },
+    arbitrumSepolia: {
+      url: "https://sepolia-rollup.arbitrum.io/rpc",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741826,
+    },
     optimisticEthereum: {
       url: "https://opt-mainnet.g.alchemy.com/v2/EA2PhKrouVck-pDZscwY8AEGv_G-TXvj",
       accounts: [process.env.PK],
+    },
+    optimisticSepolia: {
+      url: "https://sepolia.optimism.io",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147484262,
+      gasPrice: 2000,
     },
     telos_testnet: {
       url: "https://testnet.telos.net/evm",
@@ -140,6 +158,16 @@ const config = {
       url: "https://gwan-ssl.wandevs.org:56891",
       accounts: [process.env.PK],
     },
+    zkSyncSepolia: {
+      url: "https://sepolia.era.zksync.dev/",
+      accounts: [process.env.PK],
+      ethNetwork: "sepolia",
+      zksync: true,
+      // contract verification endpoint
+      verifyURL:
+        "https://explorer.sepolia.era.zksync.dev/contract_verification",
+      bip44ChainId: 1073741837,
+    },
     zkSyncTestnet: {
       url: "https://zksync2-testnet.zksync.dev",
       accounts: [process.env.PK],
@@ -165,6 +193,12 @@ const config = {
       bip44ChainId: 1073741838,
       signCurveId: 0, // ecdsa
       hashType: 1, // keccak256
+    },
+    baseSepolia: {
+      gasPrice: 3e6,
+      url: "https://sepolia.base.org",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741841,
     },
     baseTestnet: {
       gasPrice: 1e6,
@@ -232,11 +266,23 @@ const config = {
   },
   etherscan: {
     apiKey: {
+      sepolia: "PLACEHOLDER_STRING",
+      arbitrumSepolia: "PLACEHOLDER_STRING",
+      baseSepolia: "PLACEHOLDER_STRING",
+      optimisticSepolia: "PLACEHOLDER_STRING",
       // baseMainnet: ""
       baseTestnet:'PLACEHOLDER_STRING',
       lineaMainnet: 'WW4J7R5WJEET4PAWH4P2AEWWUGEGAZ23XJ',
     },
     customChains: [
+      {
+        network: "optimisticSepolia",
+        chainId: 11155420,
+        urls: {
+          apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
+          browserURL: "https://sepolia-optimistic.etherscan.io/",
+        },
+      },
       {
         network: "astar",
         chainId: 592,
@@ -244,6 +290,22 @@ const config = {
           apiURL: "https://blockscout.com/astar/api",
           browserURL: "https://blockscout.com/astar",
         },
+      },
+      {
+        network: "arbitrumSepolia",
+        chainId: 421614,
+        urls: {
+         apiURL: "https://api-sepolia.arbiscan.io/api",
+         browserURL: "https://sepolia.arbiscan.io/"
+        }
+      },
+      {
+        network: "baseSepolia",
+        chainId: 84532,
+        urls: {
+         apiURL: "https://api-sepolia.basescan.org/api",
+         browserURL: "https://sepolia.basescan.org/"
+        }
       },
       {
         network: "baseTestnet",
