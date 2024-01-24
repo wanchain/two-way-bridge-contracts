@@ -60,12 +60,58 @@ const config = {
     },
   },
   networks: {
+    brockTestnet: {
+      url: 'https://testnet.bit-rock.io',
+      accounts: [process.env.PK],
+    },
+    vinuTestnet: {
+      url: 'https://vinufoundation-rpc.com',
+      accounts: [process.env.PK],
+    },
+    baseSepolia: {
+      url: 'https://base-sepolia.blockpi.network/v1/rpc/public',
+      accounts: [process.env.PK],
+      gasPrice: 1.5e9,
+    },
+    arbSepolia: {
+      url: 'https://sepolia-rollup.arbitrum.io/rpc',
+      accounts: [process.env.PK],
+    },
+    optSepolia: {
+      url: 'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+      accounts: [process.env.PK],
+      gasPrice: 1.5e9,
+    },
+    ethSepolia: {
+      url: 'https://ethereum-sepolia.publicnode.com',
+      accounts: [process.env.PK],
+    },
+    xdcTestnet: {
+      url: 'https://rpc.apothem.network',
+      accounts: [process.env.PK],
+    },
+    energiTestnet: {
+      url: 'https://nodeapi.test.energi.network',
+      accounts: [process.env.PK],
+    },
+    horizenTestnet: {
+      url: 'https://rpc.ankr.com/horizen_gobi_testnet',
+      accounts: [process.env.PK],
+    },
+    fantomTestnet: {
+      url: "https://rpc.ankr.com/fantom_testnet",
+      accounts: [process.env.PK],
+    },
+    polygonTestnet: {
+      url: "https://rpc.ankr.com/polygon_mumbai",
+      accounts: [process.env.PK],
+    },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
       accounts: [process.env.PK],
     },
     bscTestnet: {
-      url: "https://bsctestapi.terminet.io/rpc",
+      url: "https://bsc-testnet.publicnode.com",
       accounts: [process.env.PK],
     },
     moonbaseAlfa: {
@@ -83,6 +129,7 @@ const config = {
     shibuya: {
       url: "https://evm.shibuya.astar.network",
       accounts: [process.env.PK],
+      gasPrice: 1200e9,
     },
     astar: {
       // url: 'https://astar-mainnet.g.alchemy.com/v2/3A48KG9F7zeoEXkJWpNYbQwpnOHUVWOU',
@@ -149,6 +196,15 @@ const config = {
       verifyURL:
         "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
     },
+    zkSyncSepolia: {
+      url: "https://sepolia.era.zksync.dev",
+      accounts: [process.env.PK],
+      ethNetwork: "sepolia",
+      zksync: true,
+      // contract verification endpoint
+      verifyURL:
+        "https://sepolia.explorer.zksync.io/contract_verification",
+    },
     zkSyncMainnet: {
       // url: 'https://mainnet.era.zksync.io',
       url: 'https://zksync-era.blockpi.network/v1/rpc/public',
@@ -210,6 +266,10 @@ const config = {
       url: "https://connect.bit-rock.io",
       accounts: [process.env.PK],
       bip44ChainId: 2154655314,
+    },
+    arbTestnet: {
+      url: 'https://arbitrum-goerli.publicnode.com',
+      accounts: [process.env.PK],
     },
     hardhat: {
       accounts: {

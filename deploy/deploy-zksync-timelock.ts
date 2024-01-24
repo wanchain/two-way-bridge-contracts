@@ -54,25 +54,9 @@ const getContract = (hre: HardhatRuntimeEnvironment, artifact, address) => {
   return contract;
 }
 
-// const OWNER_ADDRESS = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-// mainnet
-// const ORACLE_ADMIN = '0x390CC3173EE7F425Fe7659df215B13959FD468E1';
-// const CROSS_ADMIN = '0xa35B3C55626188015aC79F396D0B593947231976';
-// const TOKEN_MANAGER_OPERATOR = '0xa35B3C55626188015aC79F396D0B593947231976';
-// const SMG_FEE_PROXY = "0x82bf94d159b15a587c45c9d70e0fab7fd87889eb";
-// const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
-// const BIP44_CHAIN_ID = 0x8000032a; // ASTAR
-
-const PROXY_ADMIN_OWNER = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const ORACLE_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const CROSS_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const TOKEN_MANAGER_OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const SMG_FEE_PROXY = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9";
-const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
-// const BIP44_CHAIN_ID = 0x800003d1; // TELOS EVM
-// const BIP44_CHAIN_ID = 1073741830; // Function X EVM
-const BIP44_CHAIN_ID = 1073741837; // zkSync Era Testnet
-const etherTransferGasLimit = 20000; // zkSync Era Testnet
+const proposers = ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"];
+const executors = ["0x0000000000000000000000000000000000000000"];
+const admin = '0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e';
 
 // An example of a deploy script that will deploy and call a simple contract.
 export default async function (hre: HardhatRuntimeEnvironment) {
@@ -81,9 +65,9 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   let deployer = getDeployer(hre);
 
   let TimelockController = await getArtifact(deployer, "TimelockController");
-  let timelockController = await deploy(deployer, TimelockController, [3600, ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"], ["0x0000000000000000000000000000000000000000"], "0x0000000000000000000000000000000000000000"]);
+  let timelockController = await deploy(deployer, TimelockController, [86400, proposers, executors, admin]);
 
   console.log("TimelockController deployed to:", timelockController.address);
 
-  await verify(hre, TimelockController, timelockController.address, "@openzeppelin/contracts/governance/TimelockController.sol:TimelockController", [3600, ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"], ["0x0000000000000000000000000000000000000000"], "0x0000000000000000000000000000000000000000"]);
+  await verify(hre, TimelockController, timelockController.address, "@openzeppelin/contracts/governance/TimelockController.sol:TimelockController", [86400, proposers, executors, admin]);
 }
