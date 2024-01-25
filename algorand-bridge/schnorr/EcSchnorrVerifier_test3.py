@@ -21,12 +21,12 @@ def main() -> None:
 
     # Now we should have the approval program available
     app_client.create()
-
+    print("app_client.app_id:", app_client.app_id, app_client.app_addr)
 
     # Add a payment just to cover fees
     sp_with_fees = algod_client.suggested_params()
     sp_with_fees.flat_fee = True
-    sp_with_fees.fee = beaker.consts.milli_algo * 5
+    sp_with_fees.fee = beaker.consts.milli_algo * 12
     
 
     signature = bytes.fromhex("8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6")
@@ -38,7 +38,8 @@ def main() -> None:
    
 
     tx = app_client.call(
-        EcSchnorrVerifier.check_ecSchnorr_sig,
+        EcSchnorrVerifier.verify,
+        # curveID = 0,
         signature=signature,
         px=px,
         py=py,

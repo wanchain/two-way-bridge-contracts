@@ -1,9 +1,13 @@
 import typing
+from typing import Literal
+
 import json
 from typing import Final
 from pyteal import *
+import pyteal as pt
 from beaker import *
 from beaker.lib.storage import BoxMapping, BoxList
+import schnorr.EcSchnorrVerifier as ec
 
     
 TransactionHash = abi.StaticBytes[typing.Literal[32]]
@@ -143,7 +147,7 @@ def currentChainID(
 )    -> Expr:
     return output.set(app.state.currentChainID.get())
 
-@app.external
+@app.external(read_only=True)
 def getTokenPairFee(
     tokenPairID: abi.Uint16,
     *,
@@ -162,22 +166,36 @@ def setTokenPairFee(
 
 # function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
 @app.external
-def userLock(seed: abi.PaymentTransaction, smgID: abi.String, tokenPairID: abi.Uint64, value: abi.Uint64, userAccount: abi.String) -> Expr:
+def userLock(
+    seed: abi.PaymentTransaction, 
+    smgID: pt.abi.StaticBytes[Literal[32]], 
+    tokenPairID: abi.Uint64, 
+    value: abi.Uint64, 
+    userAccount: abi.Address) -> Expr:
     #     event UserLockLogger(bytes32 indexed smgID, uint indexed tokenPairID, 
     #     address indexed tokenAccount, uint value, uint contractFee, bytes userAccount);
 
 #   assosiated these 2 txs.  check the value is same in these 2 txs.
+
+    smgID = smgID.get()
+    tokenPairID = tokenPairID.get()
+    value = value.get()
+    userAccount = userAccount.get()
     UserLockLogger = Concat(
         Bytes("UserLockLogger:"), 
-        smgID.get(), Bytes(":"),
-        Itob(tokenPairID.get()), Bytes(":"),
-        Bytes("this_is_tokenAccount"), Bytes(":"),
-        Itob(value.get()), Bytes(":"),
-        Itob(Int(88888888888)), Bytes(":"),
-        userAccount.get(), Bytes(":")
+        # smgID, Bytes(":"),
+        # Itob(tokenPairID), Bytes(":"),
+        # Bytes("this_is_tokenAccount"), Bytes(":"),
+        # Itob(value), Bytes(":"),
+        # Itob(Int(88888888888)), Bytes(":"),
+        # userAccount, Bytes(":"),
+        pt.Gtxn[0].tx_id()
     )
     
+
+
     return Seq(
+        Assert(Global.group_size() == Int(2)),
         #Log(json.dumps(UserLockLogger))
         Log(UserLockLogger)
     )
@@ -195,62 +213,128 @@ def getSmgFeeProxy() -> Expr:
 
 # userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes calldata userAccount)
 @app.external
-def userBurn(seed: abi.AssetTransferTransaction, smgID: abi.String, tokenPairID: abi.Uint64, value: abi.Uint64,
-        fee: abi.Uint64,  tokenAccount: abi.Uint64,  userAccount: abi.String) -> Expr:
+def userBurn(
+    seed: abi.AssetTransferTransaction, 
+    smgID: pt.abi.StaticBytes[Literal[32]], 
+    tokenPairID: abi.Uint64, 
+    value: abi.Uint64,
+    fee: abi.Uint64,  
+    tokenAccount: abi.Uint64,  
+    userAccount: abi.Address) -> Expr:
     #     event UserBurnLogger(bytes32 indexed smgID, uint indexed tokenPairID, 
     #   address indexed tokenAccount, uint value, uint contractFee, uint fee, bytes userAccount);
-    UserBurnLogger = {
-        #"event": "UserBurnLogger",
-        # "smgID": smgID.get(),
-        # "tokenPairID": tokenPairID.get(),
-        # "tokenAccount": Bytes("coming_soon"),
-        # "value": value.get(),
-        # "contractFee": contractFee.get(),
-        # "userAccount":userAccount.get()
-    }
+
+    smgID = smgID.get()
+    tokenPairID = tokenPairID.get()
+    value = value.get()
+    fee = fee.get()
+    tokenAccount = tokenAccount.get()
+    userAccount = userAccount.get()
+
+    UserBurnLogger = Concat(
+        Bytes("UserBurnLogger:"),
+        smgID, Bytes(":"),
+        Itob(tokenPairID), Bytes(":"),
+        Itob(tokenAccount), Bytes(":"),
+        Itob(value), Bytes(":"),
+        Itob(Int(88888888888)), Bytes(":"),
+        Itob(Int(999)), Bytes(":"),
+        userAccount, Bytes(":")
+    )
+
     return Seq(
         #Log(json.dumps(UserBurnLogger))
-        Log(Bytes("aa"))
+        Log(UserBurnLogger)
     )
 
 # function smgMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes calldata r, bytes32 s)   
 @app.external
-def smgMint(uniqueID:abi.String, smgID:abi.String,tokenPairID:abi.Uint64, value:abi.Uint64,
-        fee: abi.Uint64, tokenAccount:abi.Uint64, userAccount:abi.Address, r:abi.String, s:abi.String) -> Expr:
+def smgMint(
+        uniqueID:pt.abi.StaticBytes[Literal[32]], 
+        smgID:pt.abi.StaticBytes[Literal[32]],
+        tokenPairID:abi.Uint64, value:abi.Uint64,
+        fee: abi.Uint64, tokenAccount:abi.Uint64, 
+        userAccount:abi.Address, 
+        r:pt.abi.StaticBytes[Literal[64]], 
+        s:pt.abi.StaticBytes[Literal[32]]) -> Expr:
     #    event SmgMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
-    SmgMintLogger = {
-        #"event": "SmgMintLogger",
-        # "uniqueID": uniqueID.get(),
-        # "smgID": smgID.get(),
-        # "tokenPairID": tokenPairID.get(),
-        # "value": value.get(),
-        # "tokenAccount": tokenAccount.get(),
-        # "userAccount": userAccount.get()
-    }
+    uniqueID = uniqueID.get()
+    smgID = smgID.get()
+    tokenPairID = tokenPairID.get()
+    value = value.get()
+    fee = fee.get()
+    tokenAccount = tokenAccount.get()
+    userAccount = userAccount.get()
+
+    SmgMintLogger = Concat(
+        Bytes("SmgMintLogger:"),
+        uniqueID, Bytes(":"),
+        smgID, Bytes(":"),
+        Itob(tokenPairID), Bytes(":"),
+        Itob(value), Bytes(":"),
+        Itob(tokenAccount), Bytes(":"),
+        userAccount, Bytes(":")
+    )
+
     return Seq(
-        Log(Bytes("aa")),
+        Log(SmgMintLogger),
         #Log(json.dumps(SmgMintLogger)),
-        do_axfer(userAccount.get(), tokenAccount.get(), value.get())
+        do_axfer(userAccount, tokenAccount, value)
     )
 
 
 
 # smgRelease(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes calldata r, bytes32 s)
 @app.external
-def smgRelease(uniqueID: abi.String, smgID: abi.String, tokenPairID: abi.Uint64, value: abi.Uint64, fee: abi.Uint64, 
-    tokenAccount: abi.String, userAccount: abi.String, r: abi.String, s: abi.String) -> Expr:
+def smgRelease(
+        uniqueID: pt.abi.StaticBytes[Literal[32]], 
+        smgID: pt.abi.StaticBytes[Literal[32]], 
+        tokenPairID: abi.Uint64, 
+        value: abi.Uint64, fee: abi.Uint64, 
+        tokenAccount: abi.Uint64, 
+        userAccount: abi.Address, 
+        r: abi.StaticBytes[Literal[64]], 
+        s: abi.StaticBytes[Literal[32]]) -> Expr:
     #    event SmgReleaseLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
+    uniqueID = uniqueID.get()
+    smgID = smgID.get()
+    tokenPairID = tokenPairID.get()
+    value = value.get()
+    fee = fee.get()
+    tokenAccount = tokenAccount.get()
+    userAccount = userAccount.get()
+
     SmgReleaseLogger = Concat(Bytes("SmgReleaseLogger:"),
-        uniqueID.get(), Bytes(":"),
-        smgID.get(), Bytes(":"),
-        Itob(tokenPairID.get()), Bytes(":"),
-        uniqueID.get(), Bytes(":"),
-        Itob(value.get()), Bytes(":"),
-        tokenAccount.get(), Bytes(":"),
-        userAccount.get(), Bytes(":")
+        uniqueID, Bytes(":"),
+        smgID, Bytes(":"),
+        Itob(tokenPairID), Bytes(":"),
+        Itob(value), Bytes(":"),
+        Itob(tokenAccount), Bytes(":"),
+        userAccount
     )
+    r = r.get()
+    rx = pt.Extract(r, pt.Int(0), pt.Int(32))
+    ry = pt.Extract(r, pt.Int(32), pt.Int(32))
+
+    px = Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104")
+    py = Bytes("base16", "0000000000000000000000000000000000000000000000000000000000000000")
+
+    currentChainID = Int(1234)
+
+    alldata = Concat(Itob(currentChainID), uniqueID, 
+        Itob(tokenPairID), Itob(value),  Itob(fee), 
+        Itob(tokenAccount), userAccount)
+    mhash = pt.Keccak256(alldata)
+
+
     return Seq(
         Log(SmgReleaseLogger),
+        InnerTxnBuilder.ExecuteMethodCall(
+            app_id=Int(3709),
+            method_signature=ec.verify.method_signature(),
+            args=[s.get(), px,py, rx, ry, mhash],
+            # extra_fields=[],
+        ),
         InnerTxnBuilder.Execute(
             {
                 TxnField.type_enum: TxnType.Payment,

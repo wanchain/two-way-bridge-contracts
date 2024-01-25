@@ -81,47 +81,47 @@ def main() -> None:
 
     print("done")
 
-    #token pair fee
-    app_client.call(
-        CrossDelegateV4.setTokenPairFee,
-        tokenPairID=666,
-        contractFee=2153201998,
-        boxes=[(app_client.app_id, bytes.fromhex('029a'))]
-    )
+    # #token pair fee
+    # app_client.call(
+    #     CrossDelegateV4.setTokenPairFee,
+    #     tokenPairID=666,
+    #     contractFee=2153201998,
+    #     boxes=[(app_client.app_id, bytes.fromhex('029a'))]
+    # )
 
-    fee = app_client.call(
-        CrossDelegateV4.getTokenPairFee,
-        tokenPairID=666,
-        boxes=[(app_client.app_id, bytes.fromhex('029a'))]
-    )
-    print("fee:", fee.return_value)
+    # fee = app_client.call(
+    #     CrossDelegateV4.getTokenPairFee,
+    #     tokenPairID=666,
+    #     boxes=[(app_client.app_id, bytes.fromhex('029a'))]
+    # )
+    # print("fee:", fee.return_value)
 
-    #currentChainID
-    app_client.call(
-        CrossDelegateV4.setChainID,
-        chainID=2153201998,
-    )
+    # #currentChainID
+    # app_client.call(
+    #     CrossDelegateV4.setChainID,
+    #     chainID=2153201998,
+    # )
 
-    fee = app_client.call(
-        CrossDelegateV4.currentChainID,
-    )
-    print("fee:", fee.return_value)
+    # fee = app_client.call(
+    #     CrossDelegateV4.currentChainID,
+    # )
+    # print("fee:", fee.return_value)
 
-    #admin
-    app_client.call(
-        CrossDelegateV4.setAdmin,
-        adminAccount="TZZPM7LO6SVB632S7AWTCXABGEM2WHC4UEFPN46S57JHY6XRTUU6BBUWEI",
-    )
+    # #admin
+    # app_client.call(
+    #     CrossDelegateV4.setAdmin,
+    #     adminAccount="TZZPM7LO6SVB632S7AWTCXABGEM2WHC4UEFPN46S57JHY6XRTUU6BBUWEI",
+    # )
 
-    adminAccount = app_client.call(
-        CrossDelegateV4.admin,
-    )
-    print("adminAccount:", adminAccount.return_value)
+    # adminAccount = app_client.call(
+    #     CrossDelegateV4.admin,
+    # )
+    # print("adminAccount:", adminAccount.return_value)
 
-    testGetInfo = app_client.call(
-        CrossDelegateV4.testGet,
-    )
-    print("testGetInfo:", testGetInfo.return_value)
+    # testGetInfo = app_client.call(
+    #     CrossDelegateV4.testGet,
+    # )
+    # print("testGetInfo:", testGetInfo.return_value)
 
     #userLock
     ptxn = PaymentTxn(
@@ -130,24 +130,31 @@ def main() -> None:
         app_client.app_addr,
         300000,
     )
-    LLL = app_client.call(
+    txUserLock = app_client.call(
         CrossDelegateV4.userLock,
         seed=TransactionWithSigner(ptxn, creator),
-        smgID="smg", tokenPairID=33, value=55, userAccount="bb"
+        smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
+        tokenPairID=33, value=55, 
+        userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
     )
-    print("LLLLLLLLLLLLLLLLLLL:", LLL.tx_info)
-    info = app_client.client.account_info(app_client.app_addr)
-    print("info1 :", info)
+    print("---------------------- txUserLock:", txUserLock.tx_info, txUserLock.return_value)
+    return
+    # info = app_client.client.account_info(app_client.app_addr)
+    # print("info1 :", info)
 
     ttt = app_client.call(
         CrossDelegateV4.smgRelease,
-        uniqueID='aa',
-        smgID="smg", tokenPairID=33, value=55, 
-        fee=1, tokenAccount='dd',
-        r='1', s='a',
-        userAccount="bb"
+        uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6'),
+        smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
+        tokenPairID=33, value=55, 
+        fee=1, tokenAccount=0,
+        r=bytes.fromhex('d0063d8bf8360f65595969ca47b011495328d56403e918c4492a0930e9af3776000000000000000000000000000000000000000000000000000000000000001c'), 
+        s=bytes.fromhex('5a5ae6a5e0df90de840fab44dbbef26398ae0d0aa3eaff3501d713c4cbeeb25b'),
+        userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
+        suggested_params = sp_big_fee,
+        foreign_apps=[3709],
     )
-    print("tttttttttttttttttttttttttttttttttttttttttttttttt:", ttt.return_value, ttt.tx_info)
+    print("------------------smgRelease:", ttt.return_value, ttt.tx_info)
     info2 = app_client.client.account_info(app_client.app_addr)
     print("info 2:", info2.get('amount'))
 
@@ -157,10 +164,10 @@ def main() -> None:
         name= "aaa",
         symbol= "aaa",
         decimals= 8,
-        total_supply= 333444555,
+        total_supply= 99999999333444555,
     )
-    info2 = app_client.client.account_info(app_client.app_addr)
-    print("info 3:", info2)
+    # info2 = app_client.client.account_info(app_client.app_addr)
+    # print("info 3:", info2)
     info2 = app_client.call(
         CrossDelegateV4.get_latest_wrapped_token_id,
     )
