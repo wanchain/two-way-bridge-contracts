@@ -148,8 +148,9 @@ def main() -> None:
         CrossDelegateV4.userLock,
         seed=TransactionWithSigner(ptxn, creator.signer),
         smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
-        tokenPairID=33, value=55, 
+        tokenPairID=33, 
         userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
+        value=55, 
     )
     print("---------------------- txUserLock:", txUserLock.tx_info, txUserLock.return_value)
     return

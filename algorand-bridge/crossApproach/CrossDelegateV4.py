@@ -170,8 +170,9 @@ def userLock(
     seed: abi.PaymentTransaction, 
     smgID: pt.abi.StaticBytes[Literal[32]], 
     tokenPairID: abi.Uint64, 
+    userAccount: abi.String,
     value: abi.Uint64, 
-    userAccount: abi.String) -> Expr:
+    ) -> Expr:
     #     event UserLockLogger(bytes32 indexed smgID, uint indexed tokenPairID, 
     #     address indexed tokenAccount, uint value, uint contractFee, bytes userAccount);
 

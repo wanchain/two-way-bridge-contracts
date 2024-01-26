@@ -135,7 +135,7 @@ def main() -> None:
         seed=TransactionWithSigner(ptxn, creator),
         smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
         tokenPairID=33, value=55, 
-        userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
+        userAccount="zzz8260fca590c4a9ed067ead46612e25b33bc9b6f027ef12326e6",
     )
     print("---------------------- txUserLock:", txUserLock.tx_info, txUserLock.return_value)
     return
