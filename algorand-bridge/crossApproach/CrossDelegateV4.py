@@ -317,7 +317,7 @@ def smgRelease(
     rx = pt.Extract(r, pt.Int(0), pt.Int(32))
     ry = pt.Extract(r, pt.Int(32), pt.Int(32))
 
-    px = Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104")
+    px = Bytes("base16", "02a43b070f3299b016a96f02091adcff65b407ab445a63c5a58d484550978cb9")
     py = Bytes("base16", "0000000000000000000000000000000000000000000000000000000000000000")
 
     currentChainID = Int(1234)
