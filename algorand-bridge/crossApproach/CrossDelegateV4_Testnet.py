@@ -138,25 +138,25 @@ def main() -> None:
         userAccount="zzz8260fca590c4a9ed067ead46612e25b33bc9b6f027ef12326e6",
     )
     print("---------------------- txUserLock:", txUserLock.tx_info, txUserLock.return_value)
-    return
+    
     # info = app_client.client.account_info(app_client.app_addr)
     # print("info1 :", info)
 
-    ttt = app_client.call(
-        CrossDelegateV4.smgRelease,
-        uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6'),
-        smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
-        tokenPairID=33, value=55, 
-        fee=1, tokenAccount=0,
-        r=bytes.fromhex('d0063d8bf8360f65595969ca47b011495328d56403e918c4492a0930e9af3776000000000000000000000000000000000000000000000000000000000000001c'), 
-        s=bytes.fromhex('5a5ae6a5e0df90de840fab44dbbef26398ae0d0aa3eaff3501d713c4cbeeb25b'),
-        userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
-        suggested_params = sp_big_fee,
-        foreign_apps=[3709],
-    )
-    print("------------------smgRelease:", ttt.return_value, ttt.tx_info)
-    info2 = app_client.client.account_info(app_client.app_addr)
-    print("info 2:", info2.get('amount'))
+    # ttt = app_client.call(
+    #     CrossDelegateV4.smgRelease,
+    #     uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6'),
+    #     smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
+    #     tokenPairID=33, value=55, 
+    #     fee=1, tokenAccount=0,
+    #     r=bytes.fromhex('d0063d8bf8360f65595969ca47b011495328d56403e918c4492a0930e9af3776000000000000000000000000000000000000000000000000000000000000001c'), 
+    #     s=bytes.fromhex('5a5ae6a5e0df90de840fab44dbbef26398ae0d0aa3eaff3501d713c4cbeeb25b'),
+    #     userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
+    #     suggested_params = sp_big_fee,
+    #     foreign_apps=[3709],
+    # )
+    # print("------------------smgRelease:", ttt.return_value, ttt.tx_info)
+    # info2 = app_client.client.account_info(app_client.app_addr)
+    # print("info 2:", info2.get('amount'))
 
 
     app_client.call(
@@ -187,16 +187,18 @@ def main() -> None:
 
     app_client.call(
         CrossDelegateV4.smgMint,
-        uniqueID='aa',
-        smgID="smg", tokenPairID=33, value=55, fee=55,
+        uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6'),
+        smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
+        tokenPairID=33, value=55, fee=55,
         tokenAccount=assetID,
         userAccount= acctAddr,
-        r="r", s = "s",
+        r=bytes.fromhex('d0063d8bf8360f65595969ca47b011495328d56403e918c4492a0930e9af3776000000000000000000000000000000000000000000000000000000000000001c'), 
+        s=bytes.fromhex('5a5ae6a5e0df90de840fab44dbbef26398ae0d0aa3eaff3501d713c4cbeeb25b'),
         foreign_assets=[assetID],
         accounts=[acctAddr],
     )
-    info2 = app_client.client.account_info(acctAddr)
-    print("info 4:", info2)
+    # info2 = app_client.client.account_info(acctAddr)
+    # print("info 4:", info2)
     
 
 
@@ -209,16 +211,17 @@ def main() -> None:
     app_client.call(
         CrossDelegateV4.userBurn,
         seed=TransactionWithSigner(ptxn, creator),
-        smgID="smg", tokenPairID=33, value=55, fee=55,
+        smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
+        tokenPairID=33, value=55, fee=55,
         tokenAccount=assetID,
         userAccount= acctAddr,
         foreign_assets=[assetID],
         accounts=[acctAddr],
     )
-    info2 = app_client.client.account_info(acctAddr)
-    print("after uer burn -------------------info:", info2)
-    info2 = app_client.client.account_info(app_client.app_addr)
-    print("info 5:", info2)
+    # info2 = app_client.client.account_info(acctAddr)
+    # print("after uer burn -------------------info:", info2)
+    # info2 = app_client.client.account_info(app_client.app_addr)
+    # print("info 5:", info2)
     
 if __name__ == "__main__":
     main()
