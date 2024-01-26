@@ -245,6 +245,8 @@ const config = {
       // baseMainnet: ""
       baseTestnet:'PLACEHOLDER_STRING',
       lineaMainnet: 'WW4J7R5WJEET4PAWH4P2AEWWUGEGAZ23XJ',
+      opBnbTestnet:'82d7bfafd91b433c89670b523688e6ce',
+      opBnbMainnet:'82d7bfafd91b433c89670b523688e6ce',
     },
     customChains: [
       {
@@ -277,6 +279,22 @@ const config = {
         urls: {
          apiURL: "https://api.lineascan.build/api",
          browserURL: "https://lineascan.build"
+        }
+      },
+      {
+        network: "opBnbTestnet",
+        chainId: 5611,
+        urls: {
+          apiURL: "https://open-platform.nodereal.io/82d7bfafd91b433c89670b523688e6ce/op-bnb-testnet/contract/",
+          browserURL: "https://testnet.opbnbscan.com"
+        }
+      },
+      {
+        network: "opBnbMainnet",
+        chainId: 204,
+        urls: {
+          apiURL: "https://open-platform.nodereal.io/82d7bfafd91b433c89670b523688e6ce/op-bnb/contract/",
+          browserURL: "https://opbnb.bscscan.com"
         }
       },
     ],
