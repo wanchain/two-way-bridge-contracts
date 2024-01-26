@@ -183,12 +183,12 @@ def userLock(
     userAccount = userAccount.get()
     UserLockLogger = Concat(
         Bytes("UserLockLogger:"), 
-        # smgID, Bytes(":"),
-        # Itob(tokenPairID), Bytes(":"),
-        # Bytes("this_is_tokenAccount"), Bytes(":"),
-        # Itob(value), Bytes(":"),
-        # Itob(Int(88888888888)), Bytes(":"),
-        # userAccount, Bytes(":"),
+        smgID, Bytes(":"),
+        Itob(tokenPairID), Bytes(":"),
+        Bytes("this_is_tokenAccount"), Bytes(":"),
+        Itob(value), Bytes(":"),
+        Itob(Int(88888888888)), Bytes(":"),
+        userAccount, Bytes(":"),
         pt.Gtxn[0].tx_id()
     )
     
