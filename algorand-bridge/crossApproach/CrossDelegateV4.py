@@ -171,7 +171,7 @@ def userLock(
     smgID: pt.abi.StaticBytes[Literal[32]], 
     tokenPairID: abi.Uint64, 
     value: abi.Uint64, 
-    userAccount: abi.Address) -> Expr:
+    userAccount: abi.String) -> Expr:
     #     event UserLockLogger(bytes32 indexed smgID, uint indexed tokenPairID, 
     #     address indexed tokenAccount, uint value, uint contractFee, bytes userAccount);
 
@@ -220,7 +220,7 @@ def userBurn(
     value: abi.Uint64,
     fee: abi.Uint64,  
     tokenAccount: abi.Uint64,  
-    userAccount: abi.Address) -> Expr:
+    userAccount: abi.String) -> Expr:
     #     event UserBurnLogger(bytes32 indexed smgID, uint indexed tokenPairID, 
     #   address indexed tokenAccount, uint value, uint contractFee, uint fee, bytes userAccount);
 
