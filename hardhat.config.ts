@@ -211,6 +211,16 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 2154655314,
     },
+    opBnbTestnet: {
+      url: "https://opbnb-testnet-rpc.bnbchain.org",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741845,
+    },
+    opBnbMainnet: {
+      url: "https://opbnb-mainnet-rpc.bnbchain.org",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741845,
+    },
     hardhat: {
       accounts: {
         mnemonic: "skill level pulse dune pattern rival used syrup inner first balance sad",
