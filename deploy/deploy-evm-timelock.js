@@ -1,8 +1,8 @@
 const hre = require("hardhat");
 
-const proposers = ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"];
+const proposers = ["0x390CC3173EE7F425Fe7659df215B13959FD468E1"];
 const executors = ["0x0000000000000000000000000000000000000000"];
-const admin = '0x4Cf0A877E906DEaD748A41aE7DA8c220E4247D9e';
+const admin = '0xa35B3C55626188015aC79F396D0B593947231976';
 
 // An example of a deploy script that will deploy and call a simple contract.
 async function main() {
