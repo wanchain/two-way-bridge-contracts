@@ -167,7 +167,7 @@ def setTokenPairFee(
 # function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
 @app.external
 def userLock(
-    seed: abi.PaymentTransaction, 
+    # seed: abi.PaymentTransaction, 
     smgID: pt.abi.StaticBytes[Literal[32]], 
     tokenPairID: abi.Uint64, 
     userAccount: abi.String,
@@ -215,7 +215,7 @@ def getSmgFeeProxy() -> Expr:
 # userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes calldata userAccount)
 @app.external
 def userBurn(
-    seed: abi.AssetTransferTransaction, 
+    # seed: abi.AssetTransferTransaction, 
     smgID: pt.abi.StaticBytes[Literal[32]], 
     tokenPairID: abi.Uint64, 
     value: abi.Uint64,
@@ -244,9 +244,29 @@ def userBurn(
     )
 
     return Seq(
-        #Log(json.dumps(UserBurnLogger))
         Log(UserBurnLogger)
     )
+
+# function verifySignature(uint curveID, bytes32 message, bytes memory PK, bytes memory r, bytes32 s)
+# curveID is useless here.
+@Subroutine(pt.TealType.uint64)
+def verifySignature(mhash, PK, r, s)-> pt.Expr:
+    rx = pt.Extract(r, pt.Int(0), pt.Int(32))
+    ry = pt.Extract(r, pt.Int(32), pt.Int(32))
+
+    px = pt.Extract(PK, pt.Int(0), pt.Int(32))
+    py = pt.Extract(PK, pt.Int(32), pt.Int(32))
+
+
+    # ecResult = ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)
+    return If(ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)==Int(1), Int(1), Int(0))
+
+@Subroutine(pt.TealType.bytes)
+def acquireReadySmgInfo(smgID) -> pt.Expr:
+    # PK= Bytes("base16", "02a43b070f3299b016a96f02091adcff65b407ab445a63c5a58d484550978cb90000000000000000000000000000000000000000000000000000000000000000")
+    PK= Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5")
+
+    return PK
 
 # function smgMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes calldata r, bytes32 s)   
 @app.external
@@ -276,12 +296,23 @@ def smgMint(
         Itob(tokenAccount), Bytes(":"),
         userAccount, Bytes(":")
     )
+    PK = acquireReadySmgInfo(smgID)
+
+    currentChainID = Int(2147483931)
+    r = r.get()
+    s = s.get()
+    alldata = Concat(Itob(currentChainID), uniqueID, 
+        Itob(tokenPairID), Itob(value),  Itob(fee), 
+        Itob(tokenAccount), userAccount)
+    mhash = pt.Keccak256(alldata)
+    verifyResult = verifySignature(mhash, PK, r, s)
 
     return Seq(
         Log(SmgMintLogger),
-        #Log(json.dumps(SmgMintLogger)),
+        # Assert(verifyResult == Int(1)),   # TODO check the signature. here for test.
         do_axfer(userAccount, tokenAccount, value)
     )
+
 
 
 
@@ -313,29 +344,21 @@ def smgRelease(
         Itob(tokenAccount), Bytes(":"),
         userAccount
     )
+    OpUp(mode=pt.OpUpMode.OnCall).ensure_budget(Int(9000),fee_source=pt.OpUpFeeSource.GroupCredit),
+    PK = acquireReadySmgInfo(smgID)
+    currentChainID = Int(2147483931)
     r = r.get()
-    rx = pt.Extract(r, pt.Int(0), pt.Int(32))
-    ry = pt.Extract(r, pt.Int(32), pt.Int(32))
-
-    px = Bytes("base16", "02a43b070f3299b016a96f02091adcff65b407ab445a63c5a58d484550978cb9")
-    py = Bytes("base16", "0000000000000000000000000000000000000000000000000000000000000000")
-
-    currentChainID = Int(1234)
-
+    s = s.get()
     alldata = Concat(Itob(currentChainID), uniqueID, 
         Itob(tokenPairID), Itob(value),  Itob(fee), 
         Itob(tokenAccount), userAccount)
     mhash = pt.Keccak256(alldata)
 
+    verifyResult = verifySignature(mhash, PK, r, s)
 
     return Seq(
         Log(SmgReleaseLogger),
-        InnerTxnBuilder.ExecuteMethodCall(
-            app_id=Int(3709),
-            method_signature=ec.verify.method_signature(),
-            args=[s.get(), px,py, rx, ry, mhash],
-            # extra_fields=[],
-        ),
+        Assert(verifyResult == Int(1)),
         InnerTxnBuilder.Execute(
             {
                 TxnField.type_enum: TxnType.Payment,
@@ -477,7 +500,7 @@ def create() -> Expr:
 
 @app.external(authorize=Authorize.only(Global.creator_address()))
 def initialize(
-    seed: abi.PaymentTransaction, # pay for minimum balance
+    # seed: abi.PaymentTransaction, # pay for minimum balance
     owner: abi.Address, 
     admin: abi.Address,
     oracle_id: abi.Uint64,
