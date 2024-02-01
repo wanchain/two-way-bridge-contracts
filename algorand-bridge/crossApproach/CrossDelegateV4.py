@@ -9,6 +9,11 @@ from beaker import *
 from beaker.lib.storage import BoxMapping, BoxList
 import schnorr.EcSchnorrVerifier as ec
 
+class StoremanGroupConfig(abi.NamedTuple):
+    gpk: abi.Field[abi.StaticBytes[typing.Literal[64]]]
+    startTime: abi.Field[abi.Uint64]
+    endTime: abi.Field[abi.Uint64]
+    status: abi.Field[abi.Uint8]
     
 TransactionHash = abi.StaticBytes[typing.Literal[32]]
 
@@ -69,6 +74,10 @@ class CrossState:
     )
     # lockedTime: depercated. only for HTLC
     # smgFeeReceiverTimeout: useless
+    ## oracle
+    mapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], StoremanGroupConfig)
+    TTTmapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], abi.StaticBytes[typing.Literal[64]])
+
 
     
 app = Application(
@@ -201,11 +210,25 @@ def userLock(
         Log(UserLockLogger)
     )
 
-@app.external
-def testGet(*, output: abi.Uint64) -> Expr:
-    nn: TealType.Uint64 = getSmgFeeProxy()
-    return output.set(nn)
-    # return output.set(app.state.currentChainID.get())
+# @app.external
+# def testGet(*, output: abi.String) -> Expr:
+#     epx = pt.Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104")
+
+#     (info := StoremanGroupConfig()).decode(
+#         app.state.mapStoremanGroupConfig[smgID].get()
+#     )
+#     (gpk := abi.StaticBytes(abi.StaticBytesTypeSpec(64))).set(info.gpk),
+
+#     PK = gpk.get()
+
+#     # px = pt.Extract(PK, pt.Int(0), pt.Int(32))
+#     # py = pt.Extract(PK, pt.Int(32), pt.Int(32))
+#     # return Seq(
+#     #     Assert(pt.BytesEq(px, epx)),
+#     #     PK
+#     # )
+#     return output.set(PK)
+#     # return output.set(app.state.currentChainID.get())
 
 # function getSmgFeeProxy() internal view returns (address)
 # @Subroutine(TealType.uint64)
@@ -262,11 +285,22 @@ def verifySignature(mhash, PK, r, s)-> pt.Expr:
     return If(ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)==Int(1), Int(1), Int(0))
 
 @Subroutine(pt.TealType.bytes)
-def acquireReadySmgInfo(smgID) -> pt.Expr:
-    # PK= Bytes("base16", "02a43b070f3299b016a96f02091adcff65b407ab445a63c5a58d484550978cb90000000000000000000000000000000000000000000000000000000000000000")
-    PK= Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5")
+def acquireReadySmgInfo(
+    smgID,
+    ) -> pt.Expr:
 
-    return PK
+    # TPK= Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5")
+    # return TPK
+    return app.state.TTTmapStoremanGroupConfig[smgID].get()
+
+    # (info := StoremanGroupConfig()).decode(
+    #     app.state.mapStoremanGroupConfig[smgID].get()
+    # )
+    # gpk = abi.StaticBytes(abi.StaticBytesTypeSpec(64))
+    # info.gpk.store_into(gpk)
+    # gpk.decode(gpk.get())
+    # # info.gpk.store_into(gpk)
+    # return gpk.get()
 
 # function smgMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes calldata r, bytes32 s)   
 @app.external
@@ -353,6 +387,8 @@ def smgRelease(
         Itob(tokenPairID), Itob(value),  Itob(fee), 
         Itob(tokenAccount), userAccount)
     mhash = pt.Keccak256(alldata)
+
+    px = pt.Extract(PK, pt.Int(0), pt.Int(32))
 
     verifyResult = verifySignature(mhash, PK, r, s)
 
@@ -541,6 +577,51 @@ def clear_state() -> Expr:
 @app.close_out
 def close_out() -> Expr:
     return Approve()
+
+
+
+# oracle methods
+@app.external
+def set_storeman_group_config(
+    id: abi.StaticBytes[typing.Literal[32]],
+    gpk: abi.StaticBytes[typing.Literal[64]],
+    startTime: abi.Uint64,
+    endTime: abi.Uint64,
+) -> Expr:
+    return Seq(
+        (status := abi.Uint8()).set(Int(0)),
+        (info := StoremanGroupConfig()).set(gpk, startTime, endTime, status),
+        app.state.mapStoremanGroupConfig[id].set(info),
+        app.state.TTTmapStoremanGroupConfig[id].set(gpk.get())
+        
+    )
+
+@app.external
+def set_storeman_group_status(
+    id: abi.StaticBytes[typing.Literal[32]],
+    status: abi.Uint8,
+) -> Expr:
+
+    return Seq(
+        (info := StoremanGroupConfig()).decode(
+            app.state.mapStoremanGroupConfig[id].get()
+        ),
+        (gpk := abi.StaticBytes(abi.StaticBytesTypeSpec(64))).set(info.gpk),
+        (startTime := abi.Uint64()).set(info.startTime),
+        (endTime := abi.Uint64()).set(info.endTime),
+        (infoNew := StoremanGroupConfig()).set(gpk, startTime, endTime, status),
+        app.state.mapStoremanGroupConfig[id].set(infoNew)
+    )
+
+
+
+@app.external
+def get_smg_info(
+    id: abi.StaticBytes[typing.Literal[32]],
+    *,
+    output: StoremanGroupConfig,
+) -> Expr:
+    return app.state.mapStoremanGroupConfig[id].store_into(output)
 
 
 if __name__ == "__main__":

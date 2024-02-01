@@ -116,19 +116,48 @@ def test_smgRelease(app_client) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
-
+    smgID = bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338')
     ttt = app_client.call(
         CrossDelegateV4.smgRelease,
         uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6'),
-        smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
+        smgID=smgID, 
         tokenPairID=33, value=55, 
         fee=1, tokenAccount=0,
         r=bytes.fromhex('a423c56d531277a07ae3fb7ef34893c74f5d1f76fa0e1cad047497c413c3fc84000000000000000000000000000000000000000000000000000000000000001c'), 
         s=bytes.fromhex('c23ce3a9f9bf8b4953807fdf3f0fbd7b1b7f8e08f2567515b04ac9687ea66337'),
         userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
         suggested_params = sp_big_fee,
+        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
     )
     print("------------------smgRelease:", ttt.return_value, ttt.tx_info)
+
+def test_oracle(app_client, admin) -> None:
+    sp = app_client.get_suggested_params()
+    sp.flat_fee = True
+    sp.fee = beaker.consts.milli_algo 
+    smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338')
+
+    ttt = app_client.call(
+        CrossDelegateV4.set_storeman_group_config,
+        id=smgID,
+        # gpk="abc",
+        gpk=bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5'),
+
+        startTime=1699351331,
+        endTime=1799351331,
+        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
+        suggested_params = sp,
+    )
+    print("------------------set_storeman_group_config:", ttt.return_value, ttt.tx_info)
+
+    tx = app_client.call(
+        CrossDelegateV4.get_smg_info,
+        id=smgID,
+        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
+        suggested_params = sp,
+    )
+    print("------------------get_smg_info:", tx.return_value, tx.tx_info)
+
 
 def main() -> None:
     accts = beaker.localnet.get_accounts()
@@ -185,6 +214,10 @@ def main() -> None:
 
     result = atc.execute(algod_client, 3)
 
+    ################ oracle #######################
+    test_oracle(app_client, admin)
+
+    
 
     # #token pair fee
     # app_client.call(
@@ -278,11 +311,12 @@ def main() -> None:
     
     test_userBurn(app_client, admin, assetID)
 
-    # info2 = app_client.client.account_info(admin.address)
-    # print("after uer burn -------------------info:", info2)
-    # info2 = app_client.client.account_info(app_client.app_addr)
-    # print("info 5:", info2)
-    
+
+
 if __name__ == "__main__":
     main()
+
+
+
+
 
