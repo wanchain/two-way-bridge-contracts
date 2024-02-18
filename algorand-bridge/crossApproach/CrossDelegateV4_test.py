@@ -136,13 +136,13 @@ def test_oracle(app_client) -> None:
     sp = app_client.get_suggested_params()
     sp.flat_fee = True
     sp.fee = beaker.consts.milli_algo 
-    smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338')
+    smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
 
     ttt = app_client.call(
         CrossDelegateV4.set_storeman_group_config,
         id=smgID,
         # gpk="abc",
-        gpk=bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5'),
+        gpk=bytes.fromhex('70b6f778813c63b3a904a43a63092c5a9d3bcf4767cd79053e187c4dc55448f65d57b7eb14a89f50c6b7e7fdaa4d98ea4934270a93070ca5f28765baa200ce41'),
 
         startTime=1699351331,
         endTime=1799351331,
