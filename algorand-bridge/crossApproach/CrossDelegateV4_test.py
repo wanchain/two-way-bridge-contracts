@@ -12,7 +12,9 @@ from algosdk.atomic_transaction_composer import (
 import beaker
 
 import CrossDelegateV4
-IsTestnet = True
+IsTestnet = False
+smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
+# old_app_id = 1001
 
 
 def print_boxes(app_client: beaker.client.ApplicationClient) -> None:
@@ -43,7 +45,7 @@ def test_userLock(app_client, acct_addr, aacct_signer) -> None:
     atc = app_client.add_method_call(
         atc,
         CrossDelegateV4.userLock,
-        smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
+        smgID=smgID,
         tokenPairID=33, 
         userAccount="0x8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6",
         value=55, 
@@ -79,7 +81,7 @@ def test_userBurn(app_client, acct_addr, acct_signer,assetID) -> None:
     atc = app_client.add_method_call(
         atc,
         CrossDelegateV4.userBurn,
-        smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
+        smgID=smgID,
         tokenPairID=33, value=55, fee=55,
         tokenAccount=assetID,
         userAccount= acct_addr,
@@ -99,7 +101,7 @@ def test_smgMint(app_client, acct_addr, assetID) -> None:
     tx = app_client.call(
         CrossDelegateV4.smgMint,
         uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6'),
-        smgID=bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338'), 
+        smgID=smgID,
         tokenPairID=33, value=55, 
         fee=1, 
         tokenAccount=assetID,
@@ -117,7 +119,6 @@ def test_smgRelease(app_client) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
-    smgID = bytes.fromhex('000000000000000000000000000000000000000000000041726965735f303338')
     ttt = app_client.call(
         CrossDelegateV4.smgRelease,
         uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6'),
@@ -136,16 +137,13 @@ def test_oracle(app_client) -> None:
     sp = app_client.get_suggested_params()
     sp.flat_fee = True
     sp.fee = beaker.consts.milli_algo 
-    smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
 
     ttt = app_client.call(
         CrossDelegateV4.set_storeman_group_config,
         id=smgID,
-        # gpk="abc",
-        gpk=bytes.fromhex('70b6f778813c63b3a904a43a63092c5a9d3bcf4767cd79053e187c4dc55448f65d57b7eb14a89f50c6b7e7fdaa4d98ea4934270a93070ca5f28765baa200ce41'),
-
-        startTime=1699351331,
+        startTime=1799351111,
         endTime=1799351331,
+        gpk=bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5'),
         boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
         suggested_params = sp,
     )
@@ -157,7 +155,19 @@ def test_oracle(app_client) -> None:
         boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
         suggested_params = sp,
     )
-    print("------------------get_smg_info:", tx.return_value, tx.tx_info)
+    print("------------------get_smg_info:", tx.return_value)
+
+    tx = app_client.call(
+        CrossDelegateV4.acquireReadySmgInfoTest,
+        smgID=smgID,
+        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
+        # ss=33,
+        suggested_params = sp,
+    )
+    print("------------------acquireReadySmgInfoTest:", tx.return_value)
+    
+
+
 
 class Provider:
     def __init__(self,isTesn):
@@ -184,7 +194,9 @@ class Provider:
             self.acct_signer = creator.signer
             self.private_key = creator.private_key
             app_client = beaker.client.ApplicationClient(
-                beaker.localnet.get_algod_client(), CrossDelegateV4.app, signer=creator.signer
+                client=beaker.localnet.get_algod_client(), 
+                app=CrossDelegateV4.app,
+                signer=creator.signer,
             )
             algod_client = app_client.client
             self.app_client = app_client
@@ -205,6 +217,7 @@ def main() -> None:
 
     print("Creating app")
     app_client.create()
+    # app_client.update()
     print("app_client app_id,app_addr:", app_client.app_id, app_client.app_addr)
 
     atc = AtomicTransactionComposer()
@@ -231,7 +244,7 @@ def main() -> None:
 
     ################ oracle #######################
     test_oracle(app_client)
-
+    
     
 
     # #token pair fee
@@ -285,9 +298,8 @@ def main() -> None:
 
     #userLock
     test_userLock(app_client, acct_addr, acct_signer)
-
     
-
+    
     test_smgRelease(app_client)
     
     

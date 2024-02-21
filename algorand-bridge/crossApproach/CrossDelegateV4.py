@@ -76,7 +76,7 @@ class CrossState:
     # smgFeeReceiverTimeout: useless
     ## oracle
     mapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], StoremanGroupConfig)
-    TTTmapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], abi.StaticBytes[typing.Literal[64]])
+    # TTTmapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], abi.StaticBytes[typing.Literal[64]])
 
 
     
@@ -210,25 +210,7 @@ def userLock(
         Log(UserLockLogger)
     )
 
-# @app.external
-# def testGet(*, output: abi.String) -> Expr:
-#     epx = pt.Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104")
 
-#     (info := StoremanGroupConfig()).decode(
-#         app.state.mapStoremanGroupConfig[smgID].get()
-#     )
-#     (gpk := abi.StaticBytes(abi.StaticBytesTypeSpec(64))).set(info.gpk),
-
-#     PK = gpk.get()
-
-#     # px = pt.Extract(PK, pt.Int(0), pt.Int(32))
-#     # py = pt.Extract(PK, pt.Int(32), pt.Int(32))
-#     # return Seq(
-#     #     Assert(pt.BytesEq(px, epx)),
-#     #     PK
-#     # )
-#     return output.set(PK)
-#     # return output.set(app.state.currentChainID.get())
 
 # function getSmgFeeProxy() internal view returns (address)
 # @Subroutine(TealType.uint64)
@@ -284,23 +266,36 @@ def verifySignature(mhash, PK, r, s)-> pt.Expr:
     # ecResult = ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)
     return If(ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)==Int(1), Int(1), Int(0))
 
-@Subroutine(pt.TealType.bytes)
+@ABIReturnSubroutine
 def acquireReadySmgInfo(
-    smgID,
+    smgID: abi.StaticBytes[typing.Literal[32]],
+    *,
+    output: abi.StaticBytes[typing.Literal[64]],
     ) -> pt.Expr:
 
     # TPK= Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5")
     # return TPK
-    return app.state.TTTmapStoremanGroupConfig[smgID].get()
+    info = StoremanGroupConfig()
+    return Seq(
+        app.state.mapStoremanGroupConfig[smgID].store_into(info),
+        output.set(info.gpk)
+    ) 
 
-    # (info := StoremanGroupConfig()).decode(
-    #     app.state.mapStoremanGroupConfig[smgID].get()
-    # )
-    # gpk = abi.StaticBytes(abi.StaticBytesTypeSpec(64))
-    # info.gpk.store_into(gpk)
-    # gpk.decode(gpk.get())
-    # # info.gpk.store_into(gpk)
-    # return gpk.get()
+@app.external(read_only=True)
+def acquireReadySmgInfoTest(
+    smgID: abi.StaticBytes[typing.Literal[32]],
+    # ss: abi.Uint64,
+    *,
+    output: abi.StaticBytes[typing.Literal[64]],
+    ) -> pt.Expr:
+    tmp = abi.make(abi.StaticBytes[typing.Literal[64]])
+    return Seq(
+        acquireReadySmgInfo(smgID).store_into(tmp),
+        output.set(tmp),
+    ) 
+    
+
+    
 
 # function smgMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes calldata r, bytes32 s)   
 @app.external
@@ -313,6 +308,10 @@ def smgMint(
         r:pt.abi.StaticBytes[Literal[64]], 
         s:pt.abi.StaticBytes[Literal[32]]) -> Expr:
     #    event SmgMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
+    PK = abi.make(abi.StaticBytes[typing.Literal[64]])
+    PK.set(acquireReadySmgInfo(smgID))
+    PK = PK.get()
+
     uniqueID = uniqueID.get()
     smgID = smgID.get()
     tokenPairID = tokenPairID.get()
@@ -330,7 +329,6 @@ def smgMint(
         Itob(tokenAccount), Bytes(":"),
         userAccount, Bytes(":")
     )
-    PK = acquireReadySmgInfo(smgID)
 
     currentChainID = Int(2147483931)
     r = r.get()
@@ -362,8 +360,9 @@ def smgRelease(
         r: abi.StaticBytes[Literal[64]], 
         s: abi.StaticBytes[Literal[32]]) -> Expr:
     #    event SmgReleaseLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
+    PK = abi.make(abi.StaticBytes[typing.Literal[64]])
+
     uniqueID = uniqueID.get()
-    smgID = smgID.get()
     tokenPairID = tokenPairID.get()
     value = value.get()
     fee = fee.get()
@@ -372,14 +371,13 @@ def smgRelease(
 
     SmgReleaseLogger = Concat(Bytes("SmgReleaseLogger:"),
         uniqueID, Bytes(":"),
-        smgID, Bytes(":"),
+        smgID.get(), Bytes(":"),
         Itob(tokenPairID), Bytes(":"),
         Itob(value), Bytes(":"),
         Itob(tokenAccount), Bytes(":"),
         userAccount
     )
     OpUp(mode=pt.OpUpMode.OnCall).ensure_budget(Int(9000),fee_source=pt.OpUpFeeSource.GroupCredit),
-    PK = acquireReadySmgInfo(smgID)
     currentChainID = Int(2147483931)
     r = r.get()
     s = s.get()
@@ -388,18 +386,15 @@ def smgRelease(
         Itob(tokenAccount), userAccount)
     mhash = pt.Keccak256(alldata)
 
-    px = pt.Extract(PK, pt.Int(0), pt.Int(32))
-
-    verifyResult = verifySignature(mhash, PK, r, s)
-
     return Seq(
+        acquireReadySmgInfo(smgID).store_into(PK),
         Log(SmgReleaseLogger),
-        Assert(verifyResult == Int(1)),
+        Assert(verifySignature(mhash,  PK.get(), r, s) == Int(1)),
         InnerTxnBuilder.Execute(
             {
                 TxnField.type_enum: TxnType.Payment,
                 TxnField.receiver: Txn.sender(),
-                TxnField.amount: Int(111112),
+                TxnField.amount: value,
             }
         )
     )
@@ -592,7 +587,7 @@ def set_storeman_group_config(
         (status := abi.Uint8()).set(Int(0)),
         (info := StoremanGroupConfig()).set(gpk, startTime, endTime, status),
         app.state.mapStoremanGroupConfig[id].set(info),
-        app.state.TTTmapStoremanGroupConfig[id].set(gpk.get())
+        # app.state.TTTmapStoremanGroupConfig[id].set(gpk.get())
         
     )
 
