@@ -249,7 +249,7 @@ const config = {
       baseTestnet:'PLACEHOLDER_STRING',
       lineaMainnet: 'WW4J7R5WJEET4PAWH4P2AEWWUGEGAZ23XJ',
       opBnbTestnet:'82d7bfafd91b433c89670b523688e6ce',
-      opBnbMainnet:'82d7bfafd91b433c89670b523688e6ce',
+      opBnbMainnet:'db27845a41ec432a91eaa8917c4112a7',
     },
     customChains: [
       {
@@ -296,7 +296,7 @@ const config = {
         network: "opBnbMainnet",
         chainId: 204,
         urls: {
-          apiURL: "https://open-platform.nodereal.io/82d7bfafd91b433c89670b523688e6ce/op-bnb/contract/",
+          apiURL: "https://opbnb-mainnet.nodereal.io/db27845a41ec432a91eaa8917c4112a7/op-bnb-mainnet/contract/",
           browserURL: "https://opbnb.bscscan.com"
         }
       },
