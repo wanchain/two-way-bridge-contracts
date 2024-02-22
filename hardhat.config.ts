@@ -221,6 +221,8 @@ const config = {
       url: "https://opbnb-mainnet-rpc.bnbchain.org",
       accounts: [process.env.PK],
       bip44ChainId: 1073741845,
+      timeout: 600000,
+      gasPrice: 2e4,
     },
     hardhat: {
       accounts: {
