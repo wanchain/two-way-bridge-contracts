@@ -296,7 +296,7 @@ const config = {
         network: "opBnbMainnet",
         chainId: 204,
         urls: {
-          apiURL: "https://opbnb-mainnet.nodereal.io/db27845a41ec432a91eaa8917c4112a7/op-bnb-mainnet/contract/",
+          apiURL: "https://open-platform.nodereal.io/db27845a41ec432a91eaa8917c4112a7/op-bnb-mainnet/contract/",
           browserURL: "https://opbnb.bscscan.com"
         }
       },
