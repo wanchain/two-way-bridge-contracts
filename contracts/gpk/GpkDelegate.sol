@@ -37,6 +37,8 @@ import "./lib/GpkLib.sol" ;
 contract GpkDelegate is GpkStorageV2 {
     using SafeMath for uint;
 
+    uint constant COMMIT_PT_LEN = 64;
+
     /**
      *
      * EVENTS
@@ -125,6 +127,12 @@ contract GpkDelegate is GpkStorageV2 {
     {
         require(polyCommit.length > 0, "Invalid polyCommit");
         require(gpkCount[groupId] != 0, "Invalid gpk count");
+
+        uint threshold = IStoremanGroup(smg).getThresholdByGrpId(groupId);
+        if (curve[groupId][curveIndex] == 0 && algo[groupId][curveIndex] == 0){    // 0:0 sec/ecdsa
+         threshold = threshold/2;
+        }
+        require(polyCommit.length == threshold*COMMIT_PT_LEN, "Invalid commit length");
 
         GpkTypes.Group storage group = groupMap[groupId];
         GpkTypes.Round storage round = group.roundMap[roundIndex][curveIndex];
