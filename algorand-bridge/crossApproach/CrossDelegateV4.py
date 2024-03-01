@@ -15,23 +15,36 @@ class StoremanGroupConfig(abi.NamedTuple):
     endTime: abi.Field[abi.Uint64]
     status: abi.Field[abi.Uint8]
     
+class TokenPairInfo(abi.NamedTuple):
+    id: abi.Field[abi.Uint16]
+    from_chain_id: abi.Field[abi.Uint64]
+    from_account: abi.Field[abi.String]
+    to_chain_id: abi.Field[abi.Uint64]
+    to_account: abi.Field[abi.String]
+
+class SetTokenPairFeesParam(abi.NamedTuple):
+    tokenPairID: abi.Field[abi.Uint64]
+    contractFee: abi.Field[abi.Uint64]
+
+
+
+
 TransactionHash = abi.StaticBytes[typing.Literal[32]]
+CurrentChainID = Int(2147483931)
 
 class CrossState:
-    """
-    Cross chain states
-    tx_status: tx -> status
-    contract_fees: token_pair_id -> fee
-    """
-    tx_status = BoxMapping(TransactionHash, abi.Bool)
+    mapTxStatus = BoxMapping(TransactionHash, abi.Uint8)
     contract_fees = BoxMapping(abi.Uint16, abi.Uint64)
     mapTokenPairContractFee = BoxMapping(abi.Uint16, abi.Uint64)
+    mapContractFee = BoxMapping(abi.Uint64,abi.Uint64) # key could be fromChainID or fromChainId*2**32+toChainID
+    mapAgentFee = BoxMapping(abi.Uint64,abi.Uint64) # key could be fromChainID or fromChainId*2**32+toChainID
 
-    oracle_id: Final[GlobalStateValue] = GlobalStateValue(
+    token_pairs = BoxMapping(abi.Uint16, TokenPairInfo)
+    pair_list = BoxList(abi.Uint16, 200) # max 200 pairs
+    total_pair_count: Final[GlobalStateValue] = GlobalStateValue(
         TealType.uint64,
-        descr="oracle sc of the cross chain",
+        descr="total pair count",
     )
-
     token_manager_id: Final[GlobalStateValue] = GlobalStateValue(
         TealType.uint64,
         descr="token manager sc of the cross chain",
@@ -51,23 +64,23 @@ class CrossState:
         descr="initialized flag",
     )
 
-    currentChainID: Final[GlobalStateValue] = GlobalStateValue(
-        TealType.uint64,
-        descr="current chain id",
-    )
+    # currentChainID: Final[GlobalStateValue] = GlobalStateValue(
+    #     TealType.uint64,
+    #     descr="current chain id",
+    # )
     
-    maxBatchSize: Final[GlobalStateValue] = GlobalStateValue(
-        TealType.uint64,
-        descr="current chain id",
-    )
-    etherTransferGasLimit: Final[GlobalStateValue] = GlobalStateValue(
-        TealType.uint64,
-        descr="current chain id",
-    )
-    hashType: Final[GlobalStateValue] = GlobalStateValue(
-        TealType.uint64,
-        descr="current chain id",
-    )
+    # maxBatchSize: Final[GlobalStateValue] = GlobalStateValue(
+    #     TealType.uint64,
+    #     descr="current chain id",
+    # )
+    # etherTransferGasLimit: Final[GlobalStateValue] = GlobalStateValue(
+    #     TealType.uint64,
+    #     descr="current chain id",
+    # )
+    # hashType: Final[GlobalStateValue] = GlobalStateValue(
+    #     TealType.uint64,
+    #     descr="current chain id",
+    # )
     latest_wrapped_token_id: Final[GlobalStateValue] = GlobalStateValue(
         TealType.uint64,
         descr="latest wrapped token id",
@@ -76,7 +89,6 @@ class CrossState:
     # smgFeeReceiverTimeout: useless
     ## oracle
     mapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], StoremanGroupConfig)
-    # TTTmapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], abi.StaticBytes[typing.Literal[64]])
 
 
     
@@ -103,58 +115,58 @@ def admin(
 )    -> Expr:
     return output.set(app.state.admin.get())
 
-@app.external
-def setMaxBatchSize(
-    _maxBatchSize: abi.Uint64
-)   -> Expr:
-    return app.state.maxBatchSize.set(_maxBatchSize.get())
+# @app.external
+# def setMaxBatchSize(
+#     _maxBatchSize: abi.Uint64
+# )   -> Expr:
+#     return app.state.maxBatchSize.set(_maxBatchSize.get())
 
-@app.external
-def getMaxBatchSize(
-    *,
-    output: abi.Uint64
-)    -> Expr:
-    return output.set(app.state.maxBatchSize.get())
+# @app.external
+# def getMaxBatchSize(
+#     *,
+#     output: abi.Uint64
+# )    -> Expr:
+#     return output.set(app.state.maxBatchSize.get())
 
-@app.external
-def setHashType(
-    _hashType: abi.Uint64
-)   -> Expr:
-    return app.state.hashType.set(_hashType.get())
+# @app.external
+# def setHashType(
+#     _hashType: abi.Uint64
+# )   -> Expr:
+#     return app.state.hashType.set(_hashType.get())
 
-@app.external
-def hashType(
-    *,
-    output: abi.Uint64
-)    -> Expr:
-    return output.set(app.state.hashType.get())
+# @app.external
+# def hashType(
+#     *,
+#     output: abi.Uint64
+# )    -> Expr:
+#     return output.set(app.state.hashType.get())
 
-@app.external
-def setEtherTransferGasLimit(
-    _etherTransferGasLimit: abi.Uint64
-)   -> Expr:
-    return app.state.etherTransferGasLimit.set(_etherTransferGasLimit.get())
+# @app.external
+# def setEtherTransferGasLimit(
+#     _etherTransferGasLimit: abi.Uint64
+# )   -> Expr:
+#     return app.state.etherTransferGasLimit.set(_etherTransferGasLimit.get())
 
-@app.external
-def getEtherTransferGasLimit(
-    *,
-    output: abi.Uint64
-)    -> Expr:
-    return output.set(app.state.etherTransferGasLimit.get())
+# @app.external
+# def getEtherTransferGasLimit(
+#     *,
+#     output: abi.Uint64
+# )    -> Expr:
+#     return output.set(app.state.etherTransferGasLimit.get())
 
 
-@app.external
-def setChainID(
-    chainID: abi.Uint64
-)   -> Expr:
-    return app.state.currentChainID.set(chainID.get())
+# @app.external
+# def setChainID(
+#     chainID: abi.Uint64
+# )   -> Expr:
+#     return app.state.currentChainID.set(chainID.get())
 
-@app.external
-def currentChainID(
-    *,
-    output: abi.Uint64
-)    -> Expr:
-    return output.set(app.state.currentChainID.get())
+# @app.external
+# def currentChainID(
+#     *,
+#     output: abi.Uint64
+# )    -> Expr:
+#     return output.set(app.state.currentChainID.get())
 
 @app.external(read_only=True)
 def getTokenPairFee(
@@ -172,6 +184,23 @@ def setTokenPairFee(
     return Seq(
         app.state.mapTokenPairContractFee[tokenPairID].set(contractFee),
     )
+
+@app.external
+def setTokenPairFees(
+    tokenPairID: abi.DynamicArray[abi.Uint16] ,
+    contractFee: abi.DynamicArray[abi.Uint64] ,
+) -> Expr:
+    i = ScratchVar(TealType.uint64)
+    k = abi.make(abi.Uint16)
+    v = abi.make(abi.Uint64)
+    return Seq(
+        For(i.store(Int(0)), i.load() < tokenPairID.length(), i.store(i.load() + Int(1))).Do(
+            tokenPairID[i.load()].store_into(k),
+            contractFee[i.load()].store_into(v),
+            app.state.mapTokenPairContractFee[k].set(v)
+        )
+    )
+
 
 # function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
 @app.external
@@ -330,10 +359,9 @@ def smgMint(
         userAccount, Bytes(":")
     )
 
-    currentChainID = Int(2147483931)
     r = r.get()
     s = s.get()
-    alldata = Concat(Itob(currentChainID), uniqueID, 
+    alldata = Concat(Itob(CurrentChainID), uniqueID, 
         Itob(tokenPairID), Itob(value),  Itob(fee), 
         Itob(tokenAccount), userAccount)
     mhash = pt.Keccak256(alldata)
@@ -378,15 +406,20 @@ def smgRelease(
         userAccount
     )
     OpUp(mode=pt.OpUpMode.OnCall).ensure_budget(Int(9000),fee_source=pt.OpUpFeeSource.GroupCredit),
-    currentChainID = Int(2147483931)
     r = r.get()
     s = s.get()
-    alldata = Concat(Itob(currentChainID), uniqueID, 
+    alldata = Concat(Itob(CurrentChainID), uniqueID, 
         Itob(tokenPairID), Itob(value),  Itob(fee), 
         Itob(tokenAccount), userAccount)
     mhash = pt.Keccak256(alldata)
-
+    status = abi.make(abi.Uint8)
     return Seq(
+        status.set(0), # TODO, reset uniqueID status to 0 for test.
+        app.state.mapTxStatus[uniqueID].set(status),
+        app.state.mapTxStatus[uniqueID].store_into(status),
+        Assert(status.get() == Int(0)),
+        status.set(1),
+        app.state.mapTxStatus[uniqueID].set(status),
         acquireReadySmgInfo(smgID).store_into(PK),
         Log(SmgReleaseLogger),
         Assert(verifySignature(mhash,  PK.get(), r, s) == Int(1)),
@@ -405,6 +438,8 @@ def create_wrapped_token(
     symbol: abi.String,
     decimals: abi.Uint8,
     total_supply: abi.Uint64,
+    *,
+    output: abi.Uint64
 ) -> Expr:
     return Seq(
         app.state.latest_wrapped_token_id.set(do_create_wrapped_token(name, symbol, decimals, total_supply)),
@@ -416,12 +451,93 @@ def create_wrapped_token(
             Bytes(":"),
             Itob(decimals.get())),
         ),
+        output.set(app.state.latest_wrapped_token_id)
     )
 
 @app.external
 def get_latest_wrapped_token_id(*, output: abi.Uint64) -> Expr:
     return output.set(app.state.latest_wrapped_token_id.get())
 
+
+@app.external(authorize=Authorize.only(app.state.owner.get()))
+def opt_in_token_id(
+    id: abi.Uint64,
+) -> Expr:
+    return Seq(do_opt_in(id.get()))
+
+@app.external(authorize=Authorize.only(app.state.owner.get()))
+def add_token_pair(
+    id: abi.Uint16,
+    from_chain_id: abi.Uint64,
+    from_account: abi.String,
+    to_chain_id: abi.Uint64,
+    to_account: abi.String,
+) -> Expr:
+    return Seq(
+        Assert(app.state.token_pairs[id].exists() == Int(0)),
+        (info := TokenPairInfo()).set(
+            id,
+            from_chain_id,
+            from_account,
+            to_chain_id,
+            to_account,
+        ),
+        app.state.token_pairs[id].set(info),
+        app.state.pair_list[app.state.total_pair_count.get()].set(id),
+        app.state.total_pair_count.set(app.state.total_pair_count.get() + Int(1)),
+        Log(Concat(
+            Bytes("add_token_pair:"),
+            Itob(id.get()),
+            Bytes(":"),
+            Itob(from_chain_id.get()),
+            Bytes(":"),
+            from_account.get(),
+            Bytes(":"),
+            Itob(to_chain_id.get()),
+            Bytes(":"),
+            to_account.get(),
+        )),
+    )
+    
+@app.external(authorize=Authorize.only(app.state.owner.get()))
+def update_token_pair(
+    id: abi.Uint16,
+    from_chain_id: abi.Uint64,
+    from_account: abi.String,
+    to_chain_id: abi.Uint64,
+    to_account: abi.String,
+) -> Expr:
+    return Seq(
+        Assert(app.state.token_pairs[id].exists() == Int(1)),
+        (info := TokenPairInfo()).set(
+            id,
+            from_chain_id,
+            from_account,
+            to_chain_id,
+            to_account,
+        ),
+        app.state.token_pairs[id].set(info),
+        Log(Concat(
+            Bytes("update_token_pair:"),
+            Itob(id.get()),
+            Bytes(":"),
+            Itob(from_chain_id.get()),
+            Bytes(":"),
+            from_account.get(),
+            Bytes(":"),
+            Itob(to_chain_id.get()),
+            Bytes(":"),
+            to_account.get(),
+        )),
+    )
+
+@app.external
+def get_token_pair(
+    id: abi.Uint16,
+    *,
+    output: TokenPairInfo,
+) -> Expr:
+    return app.state.token_pairs[id].store_into(output)
 
 
 ##############
@@ -483,14 +599,6 @@ def do_create_wrapped_token(
         InnerTxn.created_asset_id(),
     )
 
-
-@Subroutine(TealType.none)
-def verify_signature(
-    hash: Expr,
-    sig: Expr,
-) -> Expr:
-    return Reject()
-
 @Subroutine(TealType.none)
 def do_axfer(rx: Expr, aid: Expr, amt: Expr) -> Expr:
     return InnerTxnBuilder.Execute(
@@ -534,8 +642,6 @@ def initialize(
     # seed: abi.PaymentTransaction, # pay for minimum balance
     owner: abi.Address, 
     admin: abi.Address,
-    oracle_id: abi.Uint64,
-    token_manager_id: abi.Uint64,
     ) -> Expr:
     """Initializes the global state of the app.
 
@@ -545,10 +651,9 @@ def initialize(
     """
     return Seq(
         Assert(app.state.initialized.get() == Int(0)),
+        Pop(app.state.pair_list.create()),
         app.state.owner.set(owner.get()),
         app.state.admin.set(admin.get()),
-        app.state.oracle_id.set(oracle_id.get()),
-        app.state.token_manager_id.set(token_manager_id.get()),
         app.state.initialized.set(Int(1)),
     )
 
@@ -587,7 +692,6 @@ def set_storeman_group_config(
         (status := abi.Uint8()).set(Int(0)),
         (info := StoremanGroupConfig()).set(gpk, startTime, endTime, status),
         app.state.mapStoremanGroupConfig[id].set(info),
-        # app.state.TTTmapStoremanGroupConfig[id].set(gpk.get())
         
     )
 

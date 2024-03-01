@@ -1,4 +1,5 @@
 import os
+import math
 from algosdk.abi import ABIType
 from algosdk.atomic_transaction_composer import TransactionWithSigner, AccountTransactionSigner
 from algosdk.encoding import decode_address, encode_address, encode_as_bytes
@@ -14,7 +15,17 @@ import beaker
 import CrossDelegateV4
 IsTestnet = False
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
-# old_app_id = 1001
+old_app_id = 0
+tokenPairId666 = 666
+tokenPairId888 = 888
+
+def tokenPairIdBoxKey(id):
+    tokenPairIdLength=math.ceil(((id).bit_length())/8)
+    return id.to_bytes(tokenPairIdLength, 'big')
+
+
+
+
 
 
 def print_boxes(app_client: beaker.client.ApplicationClient) -> None:
@@ -119,9 +130,10 @@ def test_smgRelease(app_client) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
+    uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
     ttt = app_client.call(
         CrossDelegateV4.smgRelease,
-        uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6'),
+        uniqueID=uniqueID,
         smgID=smgID, 
         tokenPairID=33, value=55, 
         fee=1, tokenAccount=0,
@@ -129,7 +141,7 @@ def test_smgRelease(app_client) -> None:
         s=bytes.fromhex('c23ce3a9f9bf8b4953807fdf3f0fbd7b1b7f8e08f2567515b04ac9687ea66337'),
         userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
         suggested_params = sp_big_fee,
-        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
+        boxes=[(app_client.app_id, smgID), (app_client.app_id, uniqueID)], # Must append app_id and box key for tx
     )
     print("------------------smgRelease:", ttt.return_value, ttt.tx_info)
 
@@ -189,19 +201,32 @@ class Provider:
             self.private_key = pk
         else:
             accts = beaker.localnet.get_accounts()
-            creator = accts.pop()
-            self.acct_addr = creator.address
-            self.acct_signer = creator.signer
-            self.private_key = creator.private_key
-            app_client = beaker.client.ApplicationClient(
-                client=beaker.localnet.get_algod_client(), 
-                app=CrossDelegateV4.app,
-                signer=creator.signer,
-            )
+            owner = accts.pop()
+            admin = accts.pop()
+            self.acct_addr = owner.address
+            self.acct_signer = owner.signer
+            self.private_key = owner.private_key
+            self.owner = owner
+            self.admin = admin
+            if(old_app_id == 0):
+                print("000")
+                app_client = beaker.client.ApplicationClient(
+                    client=beaker.localnet.get_algod_client(), 
+                    app=CrossDelegateV4.app,
+                    signer=owner.signer,
+                )
+            else:
+                print("111")
+                app_client = beaker.client.ApplicationClient(
+                    client=beaker.localnet.get_algod_client(), 
+                    app=CrossDelegateV4.app,
+                    app_id=old_app_id,
+                    signer=owner.signer,
+                )
             algod_client = app_client.client
             self.app_client = app_client
             self.algod_client = algod_client
-            print(f"localnet Address: {creator.address}")
+            print(f"localnet Address: {owner.address}")
 
 
 
@@ -215,60 +240,94 @@ def main() -> None:
     acct_signer = prov.acct_signer
     acct_private_key = prov.private_key
 
-    print("Creating app")
-    app_client.create()
-    # app_client.update()
-    print("app_client app_id,app_addr:", app_client.app_id, app_client.app_addr)
+    if old_app_id == 0:
+        print("Creating app")
+        app_client.create()
+        app_client2 = app_client.prepare(signer=prov.admin.signer)
+        try:
+            app_client2.update()
+            assert False
+        except Exception as e:
+            print('pass')
 
-    atc = AtomicTransactionComposer()
-    sp_with_fees = algod_client.suggested_params()
-    sp_with_fees.flat_fee = True
-    sp_with_fees.fee = beaker.consts.milli_algo
+        atc = AtomicTransactionComposer()
+        sp_with_fees = algod_client.suggested_params()
+        sp_with_fees.flat_fee = True
+        sp_with_fees.fee = beaker.consts.milli_algo
 
-    atc.add_transaction(
-        TransactionWithSigner(
-            txn=PaymentTxn(acct_addr, sp_with_fees, app_client.app_addr, 300001),
-            signer=acct_signer,
+
+
+        atc.add_transaction(
+            TransactionWithSigner(
+                txn=PaymentTxn(acct_addr, sp_with_fees, app_client.app_addr, 600000),
+                signer=acct_signer,
+            )
         )
-    )
+        atc = app_client.add_method_call(
+            atc,
+            CrossDelegateV4.initialize,
+            owner=prov.owner.address,
+            admin=prov.admin.address,
+            boxes=[(app_client.app_id, "pair_list")] * 8,
+        )
+        result = atc.execute(algod_client, 3)
+        print("app_client app_id,app_addr:", app_client.app_id, app_client.app_addr)
 
-    atc = app_client.add_method_call(
-        atc,
-        CrossDelegateV4.initialize,
-        owner=acct_addr,
-        admin=acct_addr,
-        oracle_id=1,
-        token_manager_id=2,
-    )
-    result = atc.execute(algod_client, 3)
+    else:
+        app_client.update()
 
     ################ oracle #######################
     test_oracle(app_client)
     
-    
+    sp = app_client.get_suggested_params()
+    sp.flat_fee = True
+    sp.fee = beaker.consts.milli_algo
 
     # #token pair fee
-    # app_client.call(
-    #     CrossDelegateV4.setTokenPairFee,
-    #     tokenPairID=666,
-    #     contractFee=2153201998,
-    #     boxes=[(app_client.app_id, bytes.fromhex('029a'))]
-    # )
+    app_client.call(
+        CrossDelegateV4.setTokenPairFee,
+        tokenPairID=tokenPairId666,
+        contractFee=2153201998,
+        boxes=[(app_client.app_id, tokenPairIdBoxKey(tokenPairId666))]
+    )
 
     # balance_before_get = app_client.client.account_info(acct_addr)
     # print("balance_before_get:", balance_before_get['amount'])
-    # fee = app_client.call(
-    #     CrossDelegateV4.getTokenPairFee,
-    #     tokenPairID=666,
-    #     boxes=[(app_client.app_id, bytes.fromhex('029a'))],
-    #     suggested_params=sp
-    # )
-    # print("fee:", fee.return_value)
-    # balance_after_get = app_client.client.account_info(acct_addr)
-    # print("balance_after_get:", balance_after_get['amount'])
+    fee = app_client.call(
+        CrossDelegateV4.getTokenPairFee,
+        tokenPairID=tokenPairId666,
+        boxes=[(app_client.app_id, tokenPairIdBoxKey(tokenPairId666))],
+        suggested_params=sp
+    )
+    print("fee:", fee.return_value)
+
+    app_client.call(
+        CrossDelegateV4.setTokenPairFees,
+        tokenPairID=[tokenPairId666,tokenPairId888],
+        contractFee=[2153201998,9999999],
+        boxes=[
+            (app_client.app_id, tokenPairIdBoxKey(tokenPairId666)),
+            (app_client.app_id, tokenPairIdBoxKey(tokenPairId888))
+        ]
+    )
     
-
-
+    sp.fee += 1
+    fee = app_client.call(
+        CrossDelegateV4.getTokenPairFee,
+        tokenPairID=tokenPairId666,
+        boxes=[(app_client.app_id, tokenPairIdBoxKey(tokenPairId666))],
+        suggested_params=sp
+    )
+    print("fee 6 :", fee.return_value)
+    sp.fee += 1
+    fee = app_client.call(
+        CrossDelegateV4.getTokenPairFee,
+        tokenPairID=tokenPairId888,
+        boxes=[(app_client.app_id, tokenPairIdBoxKey(tokenPairId888))],
+        suggested_params=sp
+    )
+    print("fee 8:", fee.return_value)
+    return
     # #currentChainID
     # app_client.call(
     #     CrossDelegateV4.setChainID,
@@ -303,24 +362,20 @@ def main() -> None:
     test_smgRelease(app_client)
     
     
-    app_client.call(
+    tx = app_client.call(
         CrossDelegateV4.create_wrapped_token,
         name= "aaa",
         symbol= "aaa",
         decimals= 8,
         total_supply= 0x6fffffffffffffff,
     )
-    # info2 = app_client.client.account_info(app_client.app_addr)
-    # print("info 3:", info2)
-    info2 = app_client.call(
-        CrossDelegateV4.get_latest_wrapped_token_id,
-    )
-    print("get_latest_wrapped_token_id:", info2.return_value)
-    assetID = info2.return_value
+    print("create_wrapped_token: ", tx.return_value)
+    assetID = tx.return_value
 
-    sp = app_client.get_suggested_params()
-    sp.flat_fee = True
-    sp.fee = 2000
+
+    
+
+
     optin_txn = transaction.AssetOptInTxn(
         sender=acct_addr, sp=sp, index=assetID
     )
@@ -339,6 +394,162 @@ def main() -> None:
     test_userBurn(app_client, acct_addr, acct_signer, assetID)
 
 
+
+    # Test add_token_pair
+    print("Adding token pair")
+
+    app_client.call(
+        CrossDelegateV4.add_token_pair,
+        id=tokenPairId666,
+        from_chain_id=2153201998,
+        from_account="0x0000000000000000000000000000000000000000",
+        to_chain_id=2147483931, # algorand
+        to_account=str(assetID),
+        boxes=[
+            (app_client.app_id,tokenPairIdBoxKey), 
+            (app_client.app_id, "pair_list")
+        ]
+    )
+    
+    print('get token pair')
+    pair = app_client.call(
+        CrossDelegateV4.get_token_pair,
+        id=tokenPairId666,
+        boxes=[(app_client.app_id, tokenPairIdBoxKey)]
+    )
+    print("pair.return_value:", pair.return_value)
+    assert pair.return_value[2] == '0x0000000000000000000000000000000000000000'
+    
+
+    # Should not be able to add_token_pair for same pair Id again
+    try:
+        app_client.call(
+            CrossDelegateV4.add_token_pair,
+            id=tokenPairId666,
+            from_chain_id=2153201998,
+            from_account="0x0000000000000000000000000000000000000000",
+            to_chain_id=2147483931, # algorand
+            to_account=str(assetID),
+            boxes=[
+                (app_client.app_id,tokenPairIdBoxKey), 
+                (app_client.app_id, "pair_list")
+            ]
+        )
+    except Exception as e:
+        print('pass')
+    
+    print_boxes(app_client)
+
+    print('update token pair')
+    app_client.call(
+        CrossDelegateV4.update_token_pair,
+        id=666,
+        from_chain_id=2153201998,
+        from_account="0xa4E62375593662E8fF92fAd0bA7FcAD25051EbCB",
+        to_chain_id=2147483931, # algorand
+        to_account=str(assetID),
+        boxes=[(app_client.app_id, tokenPairIdBoxKey)]
+    )
+
+    print('get token pair')
+    pair = app_client.call(
+        CrossDelegateV4.get_token_pair,
+        id=666,
+        boxes=[(app_client.app_id, tokenPairIdBoxKey)]
+    )
+
+    assert pair.return_value[2] == '0xa4E62375593662E8fF92fAd0bA7FcAD25051EbCB'
+
+    print_boxes(app_client)
+    return
+    print('create demo asset token')
+
+    ctxn = AssetCreateTxn(
+        owner.address,
+        sp,
+        total=100000000000000,
+        default_frozen=False,
+        unit_name="MOCK",
+        asset_name="MOCK TOKEN",
+        manager=creator.address,
+        reserve=creator.address,
+        freeze=creator.address,
+        clawback=creator.address,
+        url="https://bridge.wanchain.org",
+        decimals=6,
+    )
+    tx = owner.signer.sign_transactions([ctxn], [0])
+    txid = beaker.localnet.get_algod_client().send_transaction(tx[0])
+    print('txid', txid)
+    receipt = transaction.wait_for_confirmation(beaker.localnet.get_algod_client(), txid)
+    print('receipt', receipt['asset-index'])
+    asset_id = receipt['asset-index']
+
+    # optIn test asset
+    print("optIn test asset")
+    app_client.fund(200000) # deposit for minimum balance require
+    owner_client.call(
+        token_manager.opt_in_token_id,
+        id=asset_id,
+        foreign_assets=[asset_id],
+    )
+
+    asset_id = tokenId.return_value
+    print("mint wrapped token", asset_id)
+    
+    aitx = AssetOptInTxn(
+        owner.address,
+        sp,
+        asset_id,
+    )
+    
+    aitx = aitx.sign(owner.signer.private_key)
+    txid = beaker.localnet.get_algod_client().send_transaction(aitx)
+    
+    admin_client.call(
+        token_manager.mint_wrapped_token,
+        asset_id=asset_id,
+        amount=1000,
+        to=owner.address,
+        foreign_assets=[asset_id],
+        accounts=[owner.address],
+    )
+    
+    account_info = beaker.localnet.get_algod_client().account_info(owner.address)
+    
+    asset_balance = 0
+    if 'assets' in account_info:
+        for asset in account_info['assets']:
+            if asset['asset-id'] == asset_id:
+                asset_balance = asset['amount']
+                break
+    
+    print('balance', asset_balance)
+    assert asset_balance == 1000
+
+    print('burn wrapped token', asset_id)
+    admin_client.call(
+        token_manager.burn_wrapped_token,
+        asset_id=asset_id,
+        amount=1000,
+        holder=owner.address,
+        foreign_assets=[asset_id],
+        accounts=[owner.address],
+    )
+
+    account_info = beaker.localnet.get_algod_client().account_info(owner.address)
+    
+    asset_balance = 0
+    if 'assets' in account_info:
+        for asset in account_info['assets']:
+            if asset['asset-id'] == asset_id:
+                asset_balance = asset['amount']
+                break
+    
+    print('balance', asset_balance)
+    assert asset_balance == 0
+
+    print('done')
 
 if __name__ == "__main__":
     main()
