@@ -134,11 +134,13 @@ const config = {
       bip44ChainId: 2147492648, // TODO fake chainID.
       url: "http://gwan-testnet.wandevs.org:36891",
       accounts: [process.env.PK],
+      timeout:60000,
     },
     wanMainnet: {
       gasPrice: 2000000000,
       url: "https://gwan-ssl.wandevs.org:56891",
       accounts: [process.env.PK],
+      timeout:60000,
     },
     zkSyncTestnet: {
       url: "https://zksync2-testnet.zksync.dev",
