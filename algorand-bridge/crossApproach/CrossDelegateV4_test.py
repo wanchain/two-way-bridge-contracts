@@ -20,10 +20,15 @@ tokenPairId666 = 666
 tokenPairId888 = 888
 
 def tokenPairIdBoxKey(id):
-    tokenPairIdLength=math.ceil(((id).bit_length())/8)
+    # tokenPairIdLength=math.ceil(((id).bit_length())/8)
+    tokenPairIdLength = 8
+    # print("YYY bit_size:", id.bit_size())
     return id.to_bytes(tokenPairIdLength, 'big')
 
-
+def getPrefixKey(prefix, id):
+    value = bytes(prefix, 'utf8')+id.to_bytes(8, "big")
+    length_to_encode = len(value).to_bytes(2, byteorder="big")
+    return length_to_encode + value
 
 
 
@@ -259,7 +264,7 @@ def main() -> None:
 
         atc.add_transaction(
             TransactionWithSigner(
-                txn=PaymentTxn(acct_addr, sp_with_fees, app_client.app_addr, 600000),
+                txn=PaymentTxn(acct_addr, sp_with_fees, app_client.app_addr, 9000000),
                 signer=acct_signer,
             )
         )
@@ -284,30 +289,33 @@ def main() -> None:
     sp.fee = beaker.consts.milli_algo
 
     # #token pair fee
+    # print("XXXXXXXXXXXXXXXXXx:",getPrefixKey(bytes("mapTokenPairContractFee", "utf8"), tokenPairId666).hex())
     app_client.call(
         CrossDelegateV4.setTokenPairFee,
         tokenPairID=tokenPairId666,
         contractFee=2153201998,
-        boxes=[(app_client.app_id, tokenPairIdBoxKey(tokenPairId666))]
-    )
-
+        boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666))],
+        suggested_params=sp
+   )
+    
     # balance_before_get = app_client.client.account_info(acct_addr)
     # print("balance_before_get:", balance_before_get['amount'])
+    sp.fee += 1
     fee = app_client.call(
         CrossDelegateV4.getTokenPairFee,
         tokenPairID=tokenPairId666,
-        boxes=[(app_client.app_id, tokenPairIdBoxKey(tokenPairId666))],
+        boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666))],
         suggested_params=sp
     )
     print("fee:", fee.return_value)
-
+    
     app_client.call(
         CrossDelegateV4.setTokenPairFees,
         tokenPairID=[tokenPairId666,tokenPairId888],
         contractFee=[2153201998,9999999],
         boxes=[
-            (app_client.app_id, tokenPairIdBoxKey(tokenPairId666)),
-            (app_client.app_id, tokenPairIdBoxKey(tokenPairId888))
+            (app_client.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId666)),
+            (app_client.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId888))
         ]
     )
     
@@ -315,7 +323,7 @@ def main() -> None:
     fee = app_client.call(
         CrossDelegateV4.getTokenPairFee,
         tokenPairID=tokenPairId666,
-        boxes=[(app_client.app_id, tokenPairIdBoxKey(tokenPairId666))],
+        boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666))],
         suggested_params=sp
     )
     print("fee 6 :", fee.return_value)
@@ -323,10 +331,35 @@ def main() -> None:
     fee = app_client.call(
         CrossDelegateV4.getTokenPairFee,
         tokenPairID=tokenPairId888,
-        boxes=[(app_client.app_id, tokenPairIdBoxKey(tokenPairId888))],
+        boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId888))],
         suggested_params=sp
     )
     print("fee 8:", fee.return_value)
+    return 
+
+    app_client.call(
+        CrossDelegateV4.setFee,
+        srcChainID=tokenPairId666,
+        destChainID=tokenPairId888,
+        contractFee=222,
+        agentFee=444,
+        boxes=[
+            (app_client.app_id, tokenPairIdBoxKey(tokenPairId666*2**32+tokenPairId888)),
+        ],
+        suggested_params=sp
+    )
+    fee = app_client.call(
+        CrossDelegateV4.getFee,
+        srcChainID=tokenPairId666,
+        destChainID=tokenPairId888,
+
+        boxes=[
+            (app_client.app_id, tokenPairIdBoxKey(tokenPairId666*2**32+tokenPairId888)),
+        ],
+        suggested_params=sp
+    )
+    print("fee 6 :", fee.return_value)
+
     return
     # #currentChainID
     # app_client.call(
