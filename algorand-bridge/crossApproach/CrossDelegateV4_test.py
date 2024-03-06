@@ -289,7 +289,6 @@ def main() -> None:
     sp.fee = beaker.consts.milli_algo
 
     # #token pair fee
-    # print("XXXXXXXXXXXXXXXXXx:",getPrefixKey(bytes("mapTokenPairContractFee", "utf8"), tokenPairId666).hex())
     app_client.call(
         CrossDelegateV4.setTokenPairFee,
         tokenPairID=tokenPairId666,
@@ -335,7 +334,7 @@ def main() -> None:
         suggested_params=sp
     )
     print("fee 8:", fee.return_value)
-    return 
+     
 
     app_client.call(
         CrossDelegateV4.setFee,
@@ -344,7 +343,8 @@ def main() -> None:
         contractFee=222,
         agentFee=444,
         boxes=[
-            (app_client.app_id, tokenPairIdBoxKey(tokenPairId666*2**32+tokenPairId888)),
+            (app_client.app_id, getPrefixKey("mapContractFee", tokenPairId666*2**32+tokenPairId888)),
+            (app_client.app_id, getPrefixKey("mapAgentFee", tokenPairId666*2**32+tokenPairId888))
         ],
         suggested_params=sp
     )
@@ -354,7 +354,8 @@ def main() -> None:
         destChainID=tokenPairId888,
 
         boxes=[
-            (app_client.app_id, tokenPairIdBoxKey(tokenPairId666*2**32+tokenPairId888)),
+            (app_client.app_id, getPrefixKey("mapContractFee", tokenPairId666*2**32+tokenPairId888)),
+            (app_client.app_id, getPrefixKey("mapAgentFee", tokenPairId666*2**32+tokenPairId888))
         ],
         suggested_params=sp
     )

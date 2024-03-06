@@ -41,8 +41,8 @@ class CrossState:
     # If there may be overlap, a prefix argument MUST be set in order to provide a unique namespace.
     mapTxStatus = BoxMapping(TransactionHash, abi.Uint8)
     mapTokenPairContractFee = BoxMapping(abi.String, abi.Uint64)
-    mapContractFee = BoxMapping(abi.Uint64,abi.Uint64) # key  fromChainId*2**32+toChainID
-    mapAgentFee = BoxMapping(abi.Uint64,abi.Uint64) # key  fromChainId*2**32+toChainID
+    mapContractFee = BoxMapping(abi.String,abi.Uint64) # key  fromChainId*2**32+toChainID
+    mapAgentFee = BoxMapping(abi.String,abi.Uint64) # key  fromChainId*2**32+toChainID
 
     token_pairs = BoxMapping(abi.Uint64, TokenPairInfo)
     pair_list = BoxList(abi.Uint64, 200) # max 200 pairs
@@ -226,16 +226,21 @@ def getFee(
     *,
     output: FeeInfo
 ) -> Expr:
-    k = abi.make(abi.Uint64)
+    ID = abi.make(abi.Uint64)
+    KEY = abi.make(abi.String)
     contractFee = abi.make(abi.Uint64)
     agentFee = abi.make(abi.Uint64)
-
+    pres = abi.make(abi.String)
     return Seq(
-        getFromToChainID(srcChainID, destChainID).store_into(k),
-        app.state.mapContractFee[k].store_into(contractFee),
-        app.state.mapAgentFee[k].store_into(agentFee),
+        getFromToChainID(srcChainID, destChainID).store_into(ID),
+        pres.set(Bytes("mapContractFee")),
+        prefixKey(pres, ID).store_into(KEY),
+        app.state.mapContractFee[KEY].store_into(contractFee),
+        pres.set(Bytes("mapAgentFee")),
+        prefixKey(pres, ID).store_into(KEY),
+        app.state.mapAgentFee[KEY].store_into(agentFee),
         output.set(
-            agentFee, agentFee
+            contractFee, agentFee
         ),
     )
 
@@ -246,42 +251,45 @@ def setFee(
     contractFee: abi.Uint64,
     agentFee: abi.Uint64,
 ) -> Expr:
-    k = abi.make(abi.Uint64)
-    t = abi.make(abi.Uint64)
+    ID = abi.make(abi.Uint64)
+    KEY = abi.make(abi.String)
+    pres = abi.make(abi.String)
     return Seq(
-        getFromToChainID(srcChainID, destChainID).store_into(k),
-        t.set(1),
-        app.state.mapContractFee[k].set(t),
-        t.set(2),
-        app.state.mapAgentFee[k].set(t)
+        getFromToChainID(srcChainID, destChainID).store_into(ID),
+        pres.set(Bytes("mapContractFee")),
+        prefixKey(pres, ID).store_into(KEY),
+        app.state.mapContractFee[KEY].set(contractFee),
+        pres.set(Bytes("mapAgentFee")),
+        prefixKey(pres, ID).store_into(KEY),
+        app.state.mapAgentFee[KEY].set(agentFee)
     )
 
-@app.external
-def setFees(
-    srcChainID: abi.DynamicArray[abi.Uint64],
-    destChainID: abi.DynamicArray[abi.Uint64],
-    contractFee: abi.DynamicArray[abi.Uint64],
-    agentFee: abi.DynamicArray[abi.Uint64],
-) -> Expr:
-    k = abi.make(abi.Uint64)
+# @app.external
+# def setFees(
+#     srcChainID: abi.DynamicArray[abi.Uint64],
+#     destChainID: abi.DynamicArray[abi.Uint64],
+#     contractFee: abi.DynamicArray[abi.Uint64],
+#     agentFee: abi.DynamicArray[abi.Uint64],
+# ) -> Expr:
+#     k = abi.make(abi.Uint64)
   
-    i = ScratchVar(TealType.uint64)
-    ksrcChainID = abi.make(abi.Uint64)
-    kdestChainID = abi.make(abi.Uint64)
-    vcontractFee = abi.make(abi.Uint64)
-    vagentFee = abi.make(abi.Uint64)
+#     i = ScratchVar(TealType.uint64)
+#     ksrcChainID = abi.make(abi.Uint64)
+#     kdestChainID = abi.make(abi.Uint64)
+#     vcontractFee = abi.make(abi.Uint64)
+#     vagentFee = abi.make(abi.Uint64)
 
-    return Seq(
-        For(i.store(Int(0)), i.load() < contractFee.length(), i.store(i.load() + Int(1))).Do(
-            srcChainID[i.load()].store_into(ksrcChainID),
-            destChainID[i.load()].store_into(kdestChainID),
-            getFromToChainID(ksrcChainID, kdestChainID).store_into(k),
-            contractFee[i.load()].store_into(vcontractFee),
-            agentFee[i.load()].store_into(vagentFee),
-            app.state.mapContractFee[k].set(vcontractFee),
-            app.state.mapAgentFee[k].set(vagentFee)
-        )
-    )
+#     return Seq(
+#         For(i.store(Int(0)), i.load() < contractFee.length(), i.store(i.load() + Int(1))).Do(
+#             srcChainID[i.load()].store_into(ksrcChainID),
+#             destChainID[i.load()].store_into(kdestChainID),
+#             getFromToChainID(ksrcChainID, kdestChainID).store_into(k),
+#             contractFee[i.load()].store_into(vcontractFee),
+#             agentFee[i.load()].store_into(vagentFee),
+#             app.state.mapContractFee[k].set(vcontractFee),
+#             app.state.mapAgentFee[k].set(vagentFee)
+#         )
+#     )
 
 
 # function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
