@@ -23,6 +23,7 @@ const config = {
   },
   zksolc: {
     version: "1.3.16",
+    // version: "1.3.19", // zksync-sepolia
     compilerSource: "binary",
     settings: {
       isSystem: false, // optional.  Enables Yul instructions available only for zkSync system contracts and libraries
@@ -34,11 +35,11 @@ const config = {
       libraries: {
         "contracts/crossApproach/lib/RapidityLibV4.sol": {
           RapidityLibV4: "0x7b5ab1C1776f6c980ED4c762abd7acE5B9d5D22C",
-          // RapidityLibV4: "0x86F634D0d70F2Cdecb124d9ba8c86862e133ed24", // sepolia
+          // RapidityLibV4: "0x86F634D0d70F2Cdecb124d9ba8c86862e133ed24", // zksync-sepolia
         },
         "contracts/crossApproach/lib/NFTLibV1.sol": {
           NFTLibV1: "0x0C24Ee2FB82FE87536cdBeA2AB89e42AB1287e97",
-          // NFTLibV1: "0xaE18F47a8008ac6a5Bc7eA710424EBCD45411A01", // sepolia
+          // NFTLibV1: "0xaE18F47a8008ac6a5Bc7eA710424EBCD45411A01", // zksync-sepolia
         },
         "contracts/gpk/lib/GpkLib.sol": {
           GpkLib: "0x0000000000000000000000000000000000000000",
@@ -82,6 +83,7 @@ const config = {
     goerli: {
       url: "https://rpc.ankr.com/eth_goerli",
       accounts: [process.env.PK],
+      bip44ChainId: 2147483708,
     },
     wanchainTestnet: {
       url: "https://gwan-ssl.wandevs.org:46891",
@@ -202,7 +204,7 @@ const config = {
     },
     baseTestnet: {
       gasPrice: 1e6,
-      url: "https://goerli.base.org",
+      url: "https://sepolia.base.org",
       accounts: [process.env.PK],
       bip44ChainId: 1073741841,
     },
@@ -245,6 +247,22 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 2154655314,
     },
+    hederaTestnet: {
+      url: "https://testnet.hashio.io/api",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147486678,
+      gasPrice: 2000e9,
+    },
+    celoTestnet: {
+      url: "https://alfajores-forno.celo-testnet.org",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147536400,
+    },
+    celoMainnet: {
+      url: "https://forno.celo.org/",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147536400,
+    },
     hardhat: {
       accounts: {
         mnemonic: "skill level pulse dune pattern rival used syrup inner first balance sad",
@@ -270,11 +288,37 @@ const config = {
       arbitrumSepolia: "PLACEHOLDER_STRING",
       baseSepolia: "PLACEHOLDER_STRING",
       optimisticSepolia: "PLACEHOLDER_STRING",
-      // baseMainnet: ""
+      // baseMainnet: "PLACEHOLDER_STRING"
       baseTestnet:'PLACEHOLDER_STRING',
       lineaMainnet: 'WW4J7R5WJEET4PAWH4P2AEWWUGEGAZ23XJ',
+      celoTestnet: "PLACEHOLDER_STRING",
+      celoMainnet: "PLACEHOLDER_STRING",
     },
     customChains: [
+    {
+        network: "celoTestnet",
+        chainId: 44787,
+        urls: {
+          apiURL: "https://api-alfajores.celoscan.io/api",
+          browserURL: "https://alfajores.celoscan.io",
+        },
+      },
+      {
+        network: "celoMainnet",
+        chainId: 42220,
+        urls: {
+          apiURL: "https://api.celoscan.io/api",
+          browserURL: "https://celoscan.io",
+        },
+      },
+      {
+        network: "optimisticSepolia",
+        chainId: 11155420,
+        urls: {
+          apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
+          browserURL: "https://sepolia-optimistic.etherscan.io/",
+        },
+      },
       {
         network: "optimisticSepolia",
         chainId: 11155420,
@@ -329,6 +373,14 @@ const config = {
         urls: {
          apiURL: "https://api.lineascan.build/api",
          browserURL: "https://lineascan.build"
+        }
+      },
+      {
+        network: "hederaTestnet",
+        chainId: 296,
+        urls: {
+         apiURL: "https://verify.hashscan.io",
+         browserURL: "https://hashscan.io/testnet"
         }
       },
     ],
