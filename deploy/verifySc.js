@@ -39,23 +39,70 @@ async function main() {
     let OracleProxy = await hre.ethers.getContractFactory("OracleProxy");
     let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
 
-    await verify(hre, TokenManagerDelegateV2, scAddr.tokenManagerDelegate);
-    await verify(hre, SignatureVerifier, scAddr.signatureVerifier);
+    // add try catch for each verify,because no try catch, if fail to  verify the first, there is no way to verfiy second
+    // for example error: HardhatEtherscanPluginError: Contract source code already verified
+    try{
+        await verify(hre, TokenManagerDelegateV2, scAddr.tokenManagerDelegate);
+    }catch(e){
+        console.log(e)
+    }
+
+    try{
+        await verify(hre, SignatureVerifier, scAddr.signatureVerifier);
+    }catch(e){
+        console.log(e)
+    }
+
+
     if(scAddr.ecSchnorrVerifier) {
-        await verify(hre, EcSchnorrVerifier, scAddr.ecSchnorrVerifier);
+        try{
+            await verify(hre, EcSchnorrVerifier, scAddr.ecSchnorrVerifier);
+        }catch(e){
+            console.log(e)
+        }
     }
     if(scAddr.bn128SchnorrVerifier) {
-        await verify(hre, Bn128SchnorrVerifier, scAddr.bn128SchnorrVerifier);
+        try{
+            await verify(hre, Bn128SchnorrVerifier, scAddr.bn128SchnorrVerifier);
+        }catch(e){
+            console.log(e)
+        }
     }
-    
-    await verify(hre, CrossDelegateV4, scAddr.crossDelegate);
-    await verify(hre, OracleDelegate, scAddr.oracleDelegate);
-    await verify(hre, Multicall2, scAddr.multicall2);
-    await verify(hre, TokenManagerProxy, scAddr.tokenManagerProxy);
-    await verify(hre, CrossProxy, scAddr.crossProxy);
-    await verify(hre, OracleProxy, scAddr.oracleProxy);
-    await verify(hre, GroupApprove, scAddr.groupApprove, "contracts/GroupApprove/GroupApprove.sol:GroupApprove", [deployer, scAddr.signatureVerifier, scAddr.oracleProxy, scAddr.crossProxy]);
-
+    try{
+        await verify(hre, CrossDelegateV4, scAddr.crossDelegate);
+    }catch(e){
+        console.log(e)
+    }
+    try{
+        await verify(hre, OracleDelegate, scAddr.oracleDelegate);
+    }catch(e){
+        console.log(e)
+    }
+    try{
+        await verify(hre, Multicall2, scAddr.multicall2);
+    }catch(e){
+        console.log(e)
+    }
+    try{
+        await verify(hre, TokenManagerProxy, scAddr.tokenManagerProxy);
+    }catch(e){
+        console.log(e)
+    }
+    try{
+        await verify(hre, CrossProxy, scAddr.crossProxy);
+    }catch(e){
+        console.log(e)
+    }
+    try{
+        await verify(hre, OracleProxy, scAddr.oracleProxy);
+    }catch(e){
+        console.log(e)
+    }
+    try{
+        await verify(hre, GroupApprove, scAddr.groupApprove, "contracts/GroupApprove/GroupApprove.sol:GroupApprove", [deployer, scAddr.signatureVerifier, scAddr.oracleProxy, scAddr.crossProxy]);
+    }catch(e){
+        console.log(e)
+    }
 }
 
 
