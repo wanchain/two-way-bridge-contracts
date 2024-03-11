@@ -262,7 +262,7 @@ const config = {
       url: "https://forno.celo.org/",
       accounts: [process.env.PK],
       bip44ChainId: 2147536400,
-    }
+    },
     opBnbTestnet: {
       url: "https://opbnb-testnet-rpc.bnbchain.org",
       accounts: [process.env.PK],
@@ -275,6 +275,18 @@ const config = {
       bip44ChainId: 1073741845,
       timeout: 600000,
       gasPrice: 2e4,
+    },
+    blastTestnet: {
+      url: "https://sepolia.blast.io",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741846,
+      gasPrice: 1000000000,
+    },
+    blastMainnet: {
+      url: "https://blast.io",  // coming end of February
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741846,
+      gasPrice: 1000000000,
     },
     hardhat: {
       accounts: {
