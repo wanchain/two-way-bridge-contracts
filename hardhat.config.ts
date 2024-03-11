@@ -320,9 +320,11 @@ const config = {
       celoMainnet: "PLACEHOLDER_STRING",
       opBnbTestnet:'82d7bfafd91b433c89670b523688e6ce',
       opBnbMainnet:'db27845a41ec432a91eaa8917c4112a7',
+      blastTestnet:'PLACEHOLDER_STRING',
+      blastMainnet:'PLACEHOLDER_STRING',
     },
     customChains: [
-    {
+      {
         network: "celoTestnet",
         chainId: 44787,
         urls: {
@@ -406,10 +408,10 @@ const config = {
         network: "hederaTestnet",
         chainId: 296,
         urls: {
-         apiURL: "https://verify.hashscan.io",
-         browserURL: "https://hashscan.io/testnet"
-	}
-      }
+          apiURL: "https://verify.hashscan.io",
+          browserURL: "https://hashscan.io/testnet"
+        }
+      },
       {
         network: "opBnbTestnet",
         chainId: 5611,
@@ -424,6 +426,22 @@ const config = {
         urls: {
           apiURL: "https://open-platform.nodereal.io/db27845a41ec432a91eaa8917c4112a7/op-bnb-mainnet/contract/",
           browserURL: "https://opbnb.bscscan.com"
+        }
+      },
+      {
+        network: "blastTestnet",
+        chainId: 168587773,
+        urls: {
+          apiURL: "https://api.routescan.io/v2/network/testnet/evm/168587773/etherscan",
+          browserURL: "https://testnet.blastscan.io"
+        }
+      },
+      {
+        network: "blastMainnet",
+        chainId: 81457,
+        urls: {
+          apiURL: "",  //todo
+          browserURL: "https://blastscan.io"
         }
       },
     ],
