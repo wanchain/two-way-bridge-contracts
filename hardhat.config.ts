@@ -397,7 +397,7 @@ const config = {
          apiURL: "https://verify.hashscan.io",
          browserURL: "https://hashscan.io/testnet"
 	}
-      }
+      },
       {
         network: "opBnbTestnet",
         chainId: 5611,
