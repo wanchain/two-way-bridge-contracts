@@ -17,14 +17,56 @@ def getFromToChainID(
     return  output.set(srcChainID.get()* Int(2**32) + destChainID.get())
 
 @ABIReturnSubroutine
-def prefixKey(
-  prefix: abi.String,
-  id: abi.Uint64,
-  *,
-  output: abi.String
-) -> pt.Expr:
-  sid = abi.make(abi.String)
-  return Seq(
-    # sid.set(Itob(id.get())),
-    output.set(Concat(prefix.get(), Itob(id.get())))
-  )
+def getTokenPairFeeKey(
+    tokenPairID: abi.Uint64,
+    *,
+    output: abi.String,
+    ) -> pt.Expr:
+        return output.set(Concat(Bytes("mapTokenPairContractFee"), Itob(tokenPairID.get())))
+
+@ABIReturnSubroutine
+def getTokenPairInfoKey(
+    tokenPairID: abi.Uint64,
+    *,
+    output: abi.String,
+    ) -> pt.Expr:
+        return output.set(Concat(Bytes("mapTokenPairInfo"), Itob(tokenPairID.get())))
+
+# @ABIReturnSubroutine
+# def prefixKey(
+#   prefix: abi.String,
+#   id: abi.Uint64,
+#   *,
+#   output: abi.String
+# ) -> pt.Expr:
+#   sid = abi.make(abi.String)
+#   return Seq(
+#     # sid.set(Itob(id.get())),
+#     output.set(Concat(prefix.get(), Itob(id.get())))
+#   )
+
+@ABIReturnSubroutine
+def getContractFeeKey(
+    srcChainID: abi.Uint64,
+    destChainID: abi.Uint64,
+    *,
+    output: abi.String,
+    ) -> pt.Expr:
+    id = abi.make(abi.Uint64)
+    return Seq(
+      getFromToChainID(srcChainID, destChainID).store_into(id),
+      output.set(Concat(Bytes("mapContractFee"), Itob(id.get())))
+    )    
+
+@ABIReturnSubroutine
+def getAgentFeeKey(
+    srcChainID: abi.Uint64,
+    destChainID: abi.Uint64,
+    *,
+    output: abi.String,
+    ) -> pt.Expr:
+    id = abi.make(abi.Uint64)
+    return Seq(
+      getFromToChainID(srcChainID, destChainID).store_into(id),
+      output.set(Concat(Bytes("mapAgentFee"), Itob(id.get())))
+    )        

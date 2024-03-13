@@ -19,11 +19,10 @@ old_app_id = 0
 tokenPairId666 = 666
 tokenPairId888 = 888
 
-def tokenPairIdBoxKey(id):
-    # tokenPairIdLength=math.ceil(((id).bit_length())/8)
-    tokenPairIdLength = 8
-    # print("YYY bit_size:", id.bit_size())
-    return id.to_bytes(tokenPairIdLength, 'big')
+chainAlgo =  2147483931
+chainBase  = 1073741841
+chainMaticZk = 1073741838
+
 
 def getPrefixKey(prefix, id):
     value = bytes(prefix, 'utf8')+id.to_bytes(8, "big")
@@ -51,25 +50,36 @@ def test_userLock(app_client, acct_addr, aacct_signer) -> None:
     sp_with_fees.flat_fee = True
     sp_with_fees.fee = beaker.consts.milli_algo * 6
 
-    atc.add_transaction(
-        TransactionWithSigner(
-            txn=PaymentTxn(acct_addr, sp_with_fees, app_client.app_addr, 300000),
-            signer=aacct_signer,
-        )
+    atc = app_client.add_transaction(
+        atc,
+        txn=PaymentTxn(acct_addr, sp_with_fees, app_client.app_addr, 300000),
     )
     
     atc = app_client.add_method_call(
         atc,
         CrossDelegateV4.userLock,
         smgID=smgID,
-        tokenPairID=33, 
+        tokenPairID=tokenPairId666, 
         userAccount="0x8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6",
-        value=55, 
+        value=556, 
+        boxes=[
+            (app_client.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId666)),
+            (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId666)),
+            (app_client.app_id, getPrefixKey("mapContractFee", chainAlgo*2**32+chainBase)),
+            (app_client.app_id, getPrefixKey("mapAgentFee", chainAlgo*2**32+chainBase)),
+            (app_client.app_id, getPrefixKey("mapContractFee", chainBase*2**32+chainAlgo)),
+            (app_client.app_id, getPrefixKey("mapAgentFee", chainBase*2**32+chainAlgo)),
+        ]
     )
 
-    result = atc.execute(algod_client, 3)
+    result = app_client.execute_atc(atc)
+    print("txUserLock:", result, len(result.tx_ids))
+    for rv in result.tx_ids:
+        print("---------------------- txUserLock txid:", rv)
     for rv in result.abi_results:
-        print("---------------------- txUserLock:", rv.return_value)
+        print("---------------------- txUserLock txresult:", rv.return_value, rv.tx_id, rv.tx_info)
+
+
 def test_userBurn(app_client, acct_addr, acct_signer,assetID) -> None:
     algod_client = app_client.client
     sp = app_client.get_suggested_params()
@@ -292,7 +302,7 @@ def main() -> None:
     app_client.call(
         CrossDelegateV4.setTokenPairFee,
         tokenPairID=tokenPairId666,
-        contractFee=2153201998,
+        contractFee=1111,
         boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666))],
         suggested_params=sp
    )
@@ -311,7 +321,7 @@ def main() -> None:
     app_client.call(
         CrossDelegateV4.setTokenPairFees,
         tokenPairID=[tokenPairId666,tokenPairId888],
-        contractFee=[2153201998,9999999],
+        contractFee=[1111,9999999],
         boxes=[
             (app_client.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId666)),
             (app_client.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId888))
@@ -338,41 +348,69 @@ def main() -> None:
 
     app_client.call(
         CrossDelegateV4.setFee,
-        srcChainID=tokenPairId666,
-        destChainID=tokenPairId888,
+        srcChainID=chainBase,
+        destChainID=chainAlgo,
         contractFee=222,
         agentFee=444,
         boxes=[
-            (app_client.app_id, getPrefixKey("mapContractFee", tokenPairId666*2**32+tokenPairId888)),
-            (app_client.app_id, getPrefixKey("mapAgentFee", tokenPairId666*2**32+tokenPairId888))
+            (app_client.app_id, getPrefixKey("mapContractFee", chainBase*2**32+chainAlgo)),
+            (app_client.app_id, getPrefixKey("mapAgentFee", chainBase*2**32+chainAlgo))
         ],
         suggested_params=sp
     )
     fee = app_client.call(
         CrossDelegateV4.getFee,
-        srcChainID=tokenPairId666,
-        destChainID=tokenPairId888,
+        srcChainID=chainBase,
+        destChainID=chainAlgo,
 
         boxes=[
-            (app_client.app_id, getPrefixKey("mapContractFee", tokenPairId666*2**32+tokenPairId888)),
-            (app_client.app_id, getPrefixKey("mapAgentFee", tokenPairId666*2**32+tokenPairId888))
+            (app_client.app_id, getPrefixKey("mapContractFee", chainBase*2**32+chainAlgo)),
+            (app_client.app_id, getPrefixKey("mapAgentFee", chainBase*2**32+chainAlgo))
         ],
         suggested_params=sp
     )
     print("fee 6 :", fee.return_value)
 
-    return
-    # #currentChainID
-    # app_client.call(
-    #     CrossDelegateV4.setChainID,
-    #     chainID=2153201998,
-    # )
+    app_client.call(
+        CrossDelegateV4.setFees,
+        srcChainID=[chainBase,chainAlgo],
+        destChainID=[chainMaticZk,chainMaticZk],
+        contractFee=[222, 333],
+        agentFee=[444, 555],
+        boxes=[
+            (app_client.app_id, getPrefixKey("mapContractFee", chainBase*2**32+chainMaticZk)),
+            (app_client.app_id, getPrefixKey("mapAgentFee",    chainBase*2**32+chainMaticZk)),
+            (app_client.app_id, getPrefixKey("mapContractFee", chainAlgo*2**32+chainMaticZk)),
+            (app_client.app_id, getPrefixKey("mapAgentFee", chainAlgo*2**32+chainMaticZk)),
+        ],
+        suggested_params=sp
+    )
+    fee = app_client.call(
+        CrossDelegateV4.getFee,
+        srcChainID=chainBase,
+        destChainID=chainMaticZk,
 
-    # fee = app_client.call(
-    #     CrossDelegateV4.currentChainID,
-    # )
-    # print("fee:", fee.return_value)
+        boxes=[
+            (app_client.app_id, getPrefixKey("mapContractFee", chainBase*2**32+chainMaticZk)),
+            (app_client.app_id, getPrefixKey("mapAgentFee", chainBase*2**32+chainMaticZk))
+        ],
+        suggested_params=sp
+    )
+    print("fee 6-9 :", fee.return_value)
+    fee = app_client.call(
+        CrossDelegateV4.getFee,
+        srcChainID=chainAlgo,
+        destChainID=chainMaticZk,
 
+        boxes=[
+            (app_client.app_id, getPrefixKey("mapContractFee", chainAlgo*2**32+chainMaticZk)),
+            (app_client.app_id, getPrefixKey("mapAgentFee", chainAlgo*2**32+chainMaticZk))
+        ],
+        suggested_params=sp
+    )
+    print("fee 8-9 :", fee.return_value)    
+
+    
     # #admin
     # app_client.call(
     #     CrossDelegateV4.setAdmin,
@@ -389,12 +427,6 @@ def main() -> None:
     # )
     # print("testGetInfo:", testGetInfo.return_value)
 
-    #userLock
-    test_userLock(app_client, acct_addr, acct_signer)
-    
-    
-    test_smgRelease(app_client)
-    
     
     tx = app_client.call(
         CrossDelegateV4.create_wrapped_token,
@@ -422,12 +454,6 @@ def main() -> None:
     results = transaction.wait_for_confirmation(app_client.client, txid, 4)
 
 
-    test_smgMint(app_client, acct_addr, assetID) 
-
-    
-    test_userBurn(app_client, acct_addr, acct_signer, assetID)
-
-
 
     # Test add_token_pair
     print("Adding token pair")
@@ -435,12 +461,12 @@ def main() -> None:
     app_client.call(
         CrossDelegateV4.add_token_pair,
         id=tokenPairId666,
-        from_chain_id=2153201998,
+        from_chain_id=chainBase,
         from_account="0x0000000000000000000000000000000000000000",
-        to_chain_id=2147483931, # algorand
+        to_chain_id=chainAlgo, # algorand
         to_account=str(assetID),
         boxes=[
-            (app_client.app_id,tokenPairIdBoxKey), 
+            (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId666)),
             (app_client.app_id, "pair_list")
         ]
     )
@@ -449,7 +475,9 @@ def main() -> None:
     pair = app_client.call(
         CrossDelegateV4.get_token_pair,
         id=tokenPairId666,
-        boxes=[(app_client.app_id, tokenPairIdBoxKey)]
+        boxes=[
+            (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId666)),
+        ]
     )
     print("pair.return_value:", pair.return_value)
     assert pair.return_value[2] == '0x0000000000000000000000000000000000000000'
@@ -460,39 +488,59 @@ def main() -> None:
         app_client.call(
             CrossDelegateV4.add_token_pair,
             id=tokenPairId666,
-            from_chain_id=2153201998,
+            from_chain_id=chainBase,
             from_account="0x0000000000000000000000000000000000000000",
-            to_chain_id=2147483931, # algorand
+            to_chain_id=chainAlgo, # algorand
             to_account=str(assetID),
             boxes=[
-                (app_client.app_id,tokenPairIdBoxKey), 
+            (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId666)),
                 (app_client.app_id, "pair_list")
             ]
         )
     except Exception as e:
         print('pass')
     
-    print_boxes(app_client)
 
     print('update token pair')
     app_client.call(
         CrossDelegateV4.update_token_pair,
-        id=666,
-        from_chain_id=2153201998,
+        id=tokenPairId666,
+        from_chain_id=chainBase,
         from_account="0xa4E62375593662E8fF92fAd0bA7FcAD25051EbCB",
-        to_chain_id=2147483931, # algorand
+        to_chain_id=chainAlgo, # algorand
         to_account=str(assetID),
-        boxes=[(app_client.app_id, tokenPairIdBoxKey)]
+        boxes=[
+            (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId666)),
+        ]
     )
 
     print('get token pair')
     pair = app_client.call(
         CrossDelegateV4.get_token_pair,
         id=666,
-        boxes=[(app_client.app_id, tokenPairIdBoxKey)]
+        boxes=[
+            (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId666)),
+        ]
     )
 
+    print("pair.return_value:", pair.return_value)
     assert pair.return_value[2] == '0xa4E62375593662E8fF92fAd0bA7FcAD25051EbCB'
+
+    #userLock
+    test_userLock(app_client, acct_addr, acct_signer)
+    return
+    
+    test_smgRelease(app_client)
+    
+
+
+
+    test_smgMint(app_client, acct_addr, assetID) 
+
+    
+    test_userBurn(app_client, acct_addr, acct_signer, assetID)
+
+
 
     print_boxes(app_client)
     return
@@ -528,60 +576,6 @@ def main() -> None:
         foreign_assets=[asset_id],
     )
 
-    asset_id = tokenId.return_value
-    print("mint wrapped token", asset_id)
-    
-    aitx = AssetOptInTxn(
-        owner.address,
-        sp,
-        asset_id,
-    )
-    
-    aitx = aitx.sign(owner.signer.private_key)
-    txid = beaker.localnet.get_algod_client().send_transaction(aitx)
-    
-    admin_client.call(
-        token_manager.mint_wrapped_token,
-        asset_id=asset_id,
-        amount=1000,
-        to=owner.address,
-        foreign_assets=[asset_id],
-        accounts=[owner.address],
-    )
-    
-    account_info = beaker.localnet.get_algod_client().account_info(owner.address)
-    
-    asset_balance = 0
-    if 'assets' in account_info:
-        for asset in account_info['assets']:
-            if asset['asset-id'] == asset_id:
-                asset_balance = asset['amount']
-                break
-    
-    print('balance', asset_balance)
-    assert asset_balance == 1000
-
-    print('burn wrapped token', asset_id)
-    admin_client.call(
-        token_manager.burn_wrapped_token,
-        asset_id=asset_id,
-        amount=1000,
-        holder=owner.address,
-        foreign_assets=[asset_id],
-        accounts=[owner.address],
-    )
-
-    account_info = beaker.localnet.get_algod_client().account_info(owner.address)
-    
-    asset_balance = 0
-    if 'assets' in account_info:
-        for asset in account_info['assets']:
-            if asset['asset-id'] == asset_id:
-                asset_balance = asset['amount']
-                break
-    
-    print('balance', asset_balance)
-    assert asset_balance == 0
 
     print('done')
 

@@ -16,12 +16,20 @@ class StoremanGroupConfig(abi.NamedTuple):
     endTime: abi.Field[abi.Uint64]
     status: abi.Field[abi.Uint8]
     
+
+    # struct TokenPairInfo {
+    #   AncestorInfo aInfo;               /// TODO:
+    #   uint      fromChainID;            /// index in coinType.txt; e.g. eth=60, etc=61, wan=5718350
+    #   bytes     fromAccount;            /// from address
+    #   uint      toChainID;              ///
+    #   bytes     toAccount;              /// to token address
+    # }   
 class TokenPairInfo(abi.NamedTuple):
     id: abi.Field[abi.Uint64]
-    from_chain_id: abi.Field[abi.Uint64]
-    from_account: abi.Field[abi.String]
-    to_chain_id: abi.Field[abi.Uint64]
-    to_account: abi.Field[abi.String]
+    fromChainID: abi.Field[abi.Uint64]
+    fromAccount: abi.Field[abi.String]
+    toChainID: abi.Field[abi.Uint64]
+    toAccount: abi.Field[abi.String]
 
 
 
@@ -44,15 +52,11 @@ class CrossState:
     mapContractFee = BoxMapping(abi.String,abi.Uint64) # key  fromChainId*2**32+toChainID
     mapAgentFee = BoxMapping(abi.String,abi.Uint64) # key  fromChainId*2**32+toChainID
 
-    token_pairs = BoxMapping(abi.Uint64, TokenPairInfo)
+    mapTokenPairInfo = BoxMapping(abi.String, TokenPairInfo)
     pair_list = BoxList(abi.Uint64, 200) # max 200 pairs
     total_pair_count: Final[GlobalStateValue] = GlobalStateValue(
         TealType.uint64,
         descr="total pair count",
-    )
-    token_manager_id: Final[GlobalStateValue] = GlobalStateValue(
-        TealType.uint64,
-        descr="token manager sc of the cross chain",
     )
 
     owner: Final[GlobalStateValue] = GlobalStateValue(
@@ -63,7 +67,10 @@ class CrossState:
         TealType.bytes,
         descr="admin of the token manager",
     )
-
+    feeProxy: Final[GlobalStateValue] = GlobalStateValue(
+        abi.address,
+        descr="fee proxy address",
+    )
     initialized: Final[GlobalStateValue] = GlobalStateValue(
         TealType.uint64,
         descr="initialized flag",
@@ -160,18 +167,6 @@ def admin(
 #     return output.set(app.state.etherTransferGasLimit.get())
 
 
-# @app.external
-# def setChainID(
-#     chainID: abi.Uint64
-# )   -> Expr:
-#     return app.state.currentChainID.set(chainID.get())
-
-# @app.external
-# def currentChainID(
-#     *,
-#     output: abi.Uint64
-# )    -> Expr:
-#     return output.set(app.state.currentChainID.get())
 
 @app.external(read_only=True)
 def getTokenPairFee(
@@ -180,12 +175,8 @@ def getTokenPairFee(
     output: abi.Uint64,
 ) -> Expr:
     key = abi.make(abi.String)
-    prefix = abi.make(abi.String)
-    id = abi.make(abi.String)
     return Seq(
-        # prefix.set("mapTokenPairContractFee"),
-        # id.set(Itob(tokenPairID.get())),
-        key.set(Concat(Bytes("mapTokenPairContractFee"), Itob(tokenPairID.get()))),
+        getTokenPairFeeKey(tokenPairID).store_into(key),
         app.state.mapTokenPairContractFee[key].store_into(output)
     )
 
@@ -196,8 +187,7 @@ def setTokenPairFee(
 ) -> Expr:
     key = abi.make(abi.String)
     return Seq(
-        # prefix.set("mapTokenPairContractFee"),
-        key.set(Concat(Bytes("mapTokenPairContractFee"), Itob(tokenPairID.get()))),
+        getTokenPairFeeKey(tokenPairID).store_into(key),
         app.state.mapTokenPairContractFee[key].set(contractFee),
     )
 
@@ -208,12 +198,12 @@ def setTokenPairFees(
 ) -> Expr:
     i = ScratchVar(TealType.uint64)
     key = abi.make(abi.String)
-    k = abi.make(abi.Uint64)
+    id = abi.make(abi.Uint64)
     v = abi.make(abi.Uint64)
     return Seq(
         For(i.store(Int(0)), i.load() < tokenPairID.length(), i.store(i.load() + Int(1))).Do(
-            tokenPairID[i.load()].store_into(k),
-            key.set(Concat(Bytes("mapTokenPairContractFee"), Itob(k.get()))),
+            tokenPairID[i.load()].store_into(id),
+            getTokenPairFeeKey(id).store_into(key),
             contractFee[i.load()].store_into(v),
             app.state.mapTokenPairContractFee[key].set(v)
         )
@@ -226,19 +216,15 @@ def getFee(
     *,
     output: FeeInfo
 ) -> Expr:
-    ID = abi.make(abi.Uint64)
-    KEY = abi.make(abi.String)
+    KEYc = abi.make(abi.String)
+    KEYa = abi.make(abi.String)
     contractFee = abi.make(abi.Uint64)
     agentFee = abi.make(abi.Uint64)
-    pres = abi.make(abi.String)
     return Seq(
-        getFromToChainID(srcChainID, destChainID).store_into(ID),
-        pres.set(Bytes("mapContractFee")),
-        prefixKey(pres, ID).store_into(KEY),
-        app.state.mapContractFee[KEY].store_into(contractFee),
-        pres.set(Bytes("mapAgentFee")),
-        prefixKey(pres, ID).store_into(KEY),
-        app.state.mapAgentFee[KEY].store_into(agentFee),
+        getContractFeeKey(srcChainID, destChainID).store_into(KEYc),
+        getAgentFeeKey(srcChainID, destChainID).store_into(KEYa),
+        app.state.mapContractFee[KEYc].store_into(contractFee),
+        app.state.mapAgentFee[KEYa].store_into(agentFee),
         output.set(
             contractFee, agentFee
         ),
@@ -251,51 +237,125 @@ def setFee(
     contractFee: abi.Uint64,
     agentFee: abi.Uint64,
 ) -> Expr:
-    ID = abi.make(abi.Uint64)
-    KEY = abi.make(abi.String)
-    pres = abi.make(abi.String)
+    KEYc = abi.make(abi.String)
+    KEYa = abi.make(abi.String)
     return Seq(
-        getFromToChainID(srcChainID, destChainID).store_into(ID),
-        pres.set(Bytes("mapContractFee")),
-        prefixKey(pres, ID).store_into(KEY),
-        app.state.mapContractFee[KEY].set(contractFee),
-        pres.set(Bytes("mapAgentFee")),
-        prefixKey(pres, ID).store_into(KEY),
-        app.state.mapAgentFee[KEY].set(agentFee)
+        getContractFeeKey(srcChainID, destChainID).store_into(KEYc),
+        getAgentFeeKey(srcChainID, destChainID).store_into(KEYa),
+        app.state.mapContractFee[KEYc].set(contractFee),
+        app.state.mapAgentFee[KEYa].set(agentFee)
     )
 
-# @app.external
-# def setFees(
-#     srcChainID: abi.DynamicArray[abi.Uint64],
-#     destChainID: abi.DynamicArray[abi.Uint64],
-#     contractFee: abi.DynamicArray[abi.Uint64],
-#     agentFee: abi.DynamicArray[abi.Uint64],
-# ) -> Expr:
-#     k = abi.make(abi.Uint64)
-  
-#     i = ScratchVar(TealType.uint64)
-#     ksrcChainID = abi.make(abi.Uint64)
-#     kdestChainID = abi.make(abi.Uint64)
-#     vcontractFee = abi.make(abi.Uint64)
-#     vagentFee = abi.make(abi.Uint64)
+@app.external
+def setFees(
+    srcChainID: abi.DynamicArray[abi.Uint64],
+    destChainID: abi.DynamicArray[abi.Uint64],
+    contractFee: abi.DynamicArray[abi.Uint64],
+    agentFee: abi.DynamicArray[abi.Uint64],
+) -> Expr:
+    KEYc = abi.make(abi.String)
+    KEYa = abi.make(abi.String)
 
-#     return Seq(
-#         For(i.store(Int(0)), i.load() < contractFee.length(), i.store(i.load() + Int(1))).Do(
-#             srcChainID[i.load()].store_into(ksrcChainID),
-#             destChainID[i.load()].store_into(kdestChainID),
-#             getFromToChainID(ksrcChainID, kdestChainID).store_into(k),
-#             contractFee[i.load()].store_into(vcontractFee),
-#             agentFee[i.load()].store_into(vagentFee),
-#             app.state.mapContractFee[k].set(vcontractFee),
-#             app.state.mapAgentFee[k].set(vagentFee)
-#         )
-#     )
+    i = ScratchVar(TealType.uint64)
+    ksrcChainID = abi.make(abi.Uint64)
+    kdestChainID = abi.make(abi.Uint64)
+    vcontractFee = abi.make(abi.Uint64)
+    vagentFee = abi.make(abi.Uint64)
 
+    return Seq(
+        For(i.store(Int(0)), i.load() < contractFee.length(), i.store(i.load() + Int(1))).Do(
+            srcChainID[i.load()].store_into(ksrcChainID),
+            destChainID[i.load()].store_into(kdestChainID),
+            contractFee[i.load()].store_into(vcontractFee),
+            agentFee[i.load()].store_into(vagentFee),
 
+            getContractFeeKey(ksrcChainID, kdestChainID).store_into(KEYc),
+            app.state.mapContractFee[KEYc].set(vcontractFee),
+            getAgentFeeKey(ksrcChainID, kdestChainID).store_into(KEYa),
+            app.state.mapAgentFee[KEYa].set(vagentFee)
+        )
+    )
+
+@ABIReturnSubroutine
+def getTokenAccount(
+    tokenPairID: abi.Uint64,
+    *,
+    output: abi.String,
+    ) -> pt.Expr:
+    KEY = abi.make(abi.String)
+    tInfo = TokenPairInfo()
+    toChainID = abi.make(abi.Uint64)
+    fromChainID = abi.make(abi.Uint64)
+    return Seq(
+        getTokenPairInfoKey(tokenPairID).store_into(KEY),
+        app.state.mapTokenPairInfo[KEY].store_into(tInfo),
+        tInfo.toChainID.store_into(toChainID),
+        tInfo.fromChainID.store_into(fromChainID),
+        If(toChainID.get() ==  CurrentChainID)
+        .Then(
+            tInfo.toAccount.store_into(output)
+        )
+        .ElseIf(fromChainID.get() ==  CurrentChainID)
+        .Then(
+            tInfo.fromAccount.store_into(output) 
+        )
+        .Else(
+            Reject()
+        )
+    )
+
+@ABIReturnSubroutine
+def getContractFee(
+    tokenPairID: abi.Uint64,
+    *,
+    output: abi.Uint64,
+    ) -> pt.Expr:
+    contractFee = abi.make(abi.Uint64)
+    key = abi.make(abi.String)
+    (chain0 := abi.make(abi.Uint64)).set(0)
+    tInfo = TokenPairInfo()
+    toChainID = abi.make(abi.Uint64)
+    fromChainID = abi.make(abi.Uint64)
+    return Seq(
+        getTokenPairFeeKey(tokenPairID).store_into(key),
+        app.state.mapTokenPairContractFee[key].store_into(contractFee),
+
+        getTokenPairInfoKey(tokenPairID).store_into(key),
+        app.state.mapTokenPairInfo[key].store_into(tInfo),
+        tInfo.toChainID.store_into(toChainID),
+        tInfo.fromChainID.store_into(fromChainID),        
+        If(toChainID.get() ==  CurrentChainID)
+        .Then(
+            If(contractFee.get() == Int(0)).Then(
+                getContractFeeKey(toChainID, fromChainID).store_into(key),
+                app.state.mapContractFee[key].set(contractFee)
+            ),
+            If(contractFee.get() == Int(0)).Then(
+                getContractFeeKey(toChainID, chain0).store_into(key),
+                app.state.mapContractFee[key].set(contractFee)            
+            )
+        )
+        .ElseIf(fromChainID.get() ==  CurrentChainID)
+        .Then(
+            If(contractFee.get() == Int(0)).Then(
+                getContractFeeKey(fromChainID, toChainID).store_into(key),
+                app.state.mapContractFee[key].set(contractFee)
+            ),
+            If(contractFee.get() == Int(0)).Then(
+                getContractFeeKey(fromChainID, chain0).store_into(key),
+                app.state.mapContractFee[key].set(contractFee)            
+            )        
+        )
+        .Else(
+            Reject()
+        ),
+        output.set(contractFee)
+    )
+
+     
 # function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
 @app.external
 def userLock(
-    # seed: abi.PaymentTransaction, 
     smgID: pt.abi.StaticBytes[Literal[32]], 
     tokenPairID: abi.Uint64, 
     userAccount: abi.String,
@@ -306,35 +366,40 @@ def userLock(
 
 #   assosiated these 2 txs.  check the value is same in these 2 txs.
 
-    smgID = smgID.get()
-    tokenPairID = tokenPairID.get()
-    value = value.get()
-    userAccount = userAccount.get()
-    UserLockLogger = Concat(
-        Bytes("UserLockLogger:"), 
-        smgID, Bytes(":"),
-        Itob(tokenPairID), Bytes(":"),
-        Bytes("this_is_tokenAccount"), Bytes(":"),
-        Itob(value), Bytes(":"),
-        Itob(Int(88888888888)), Bytes(":"),
-        userAccount, Bytes(":"),
-        pt.Gtxn[0].tx_id()
-    )
-    
+    # 
 
+    contractFee = abi.make(abi.Uint64)
+    tokenAccount = abi.make(abi.String)
 
     return Seq(
+        getContractFee(tokenPairID).store_into(contractFee),
+        getTokenAccount(tokenPairID).store_into(tokenAccount),
+
         Assert(Global.group_size() == Int(2)),
-        #Log(json.dumps(UserLockLogger))
-        Log(UserLockLogger)
+        Assert(Txn.group_index() == Int(1)),
+
+        Log( Concat(
+            Bytes("UserLockLogger:"), 
+            smgID.get(), Bytes(":"),
+            Itob(tokenPairID.get()), Bytes(":"),
+            tokenAccount.get(), Bytes(":"),
+            Itob(value.get()), Bytes(":"),
+            Itob(contractFee.get()), Bytes(":"),
+            userAccount.get(), Bytes(":"), 
+            pt.Gtxn[0].tx_id()
+        ))
     )
 
 
 
 # function getSmgFeeProxy() internal view returns (address)
-# @Subroutine(TealType.uint64)
-def getSmgFeeProxy() -> Expr:
-    return 200
+@app.external
+def getSmgFeeProxy(*, output: abi.Address) -> Expr:
+    return output.set(app.state.feeProxy)
+# repleace setPartners    
+@app.external
+def getSmgFeeProxy(addr: abi.Address) -> Expr:
+    return app.state.feeProxy.set(addr)
 
 # userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes calldata userAccount)
 @app.external
@@ -563,8 +628,10 @@ def add_token_pair(
     to_chain_id: abi.Uint64,
     to_account: abi.String,
 ) -> Expr:
+    key = abi.make(abi.String)
     return Seq(
-        Assert(app.state.token_pairs[id].exists() == Int(0)),
+        getTokenPairInfoKey(id).store_into(key),
+        Assert(app.state.mapTokenPairInfo[key].exists() == Int(0)),
         (info := TokenPairInfo()).set(
             id,
             from_chain_id,
@@ -572,7 +639,7 @@ def add_token_pair(
             to_chain_id,
             to_account,
         ),
-        app.state.token_pairs[id].set(info),
+        app.state.mapTokenPairInfo[key].set(info),
         app.state.pair_list[app.state.total_pair_count.get()].set(id),
         app.state.total_pair_count.set(app.state.total_pair_count.get() + Int(1)),
         Log(Concat(
@@ -597,8 +664,10 @@ def update_token_pair(
     to_chain_id: abi.Uint64,
     to_account: abi.String,
 ) -> Expr:
+    key = abi.make(abi.String)
     return Seq(
-        Assert(app.state.token_pairs[id].exists() == Int(1)),
+        getTokenPairInfoKey(id).store_into(key),
+        Assert(app.state.mapTokenPairInfo[key].exists() == Int(1)),
         (info := TokenPairInfo()).set(
             id,
             from_chain_id,
@@ -606,7 +675,7 @@ def update_token_pair(
             to_chain_id,
             to_account,
         ),
-        app.state.token_pairs[id].set(info),
+        app.state.mapTokenPairInfo[key].set(info),
         Log(Concat(
             Bytes("update_token_pair:"),
             Itob(id.get()),
@@ -627,7 +696,11 @@ def get_token_pair(
     *,
     output: TokenPairInfo,
 ) -> Expr:
-    return app.state.token_pairs[id].store_into(output)
+    key = abi.make(abi.String)
+    return Seq(
+        getTokenPairInfoKey(id).store_into(key),
+        app.state.mapTokenPairInfo[key].store_into(output)
+    )
 
 
 ##############
