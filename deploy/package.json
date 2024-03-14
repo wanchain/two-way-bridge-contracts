@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "zksync-ethers": "^5.0.0"
+  }
+}
