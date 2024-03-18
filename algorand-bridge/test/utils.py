@@ -34,7 +34,11 @@ def print_boxes(app_client: beaker.client.ApplicationClient) -> None:
 class Provider:
     def __init__(self,isTesn=False, old_app_id=0):
         if(isTesn):
-            mn = "cost piano sample enough south bar diet garden nasty mystery mesh sadness convince bacon best patch surround protect drum actress entire vacuum begin abandon hair"
+            # private_key, address = account.generate_account()
+            # print(f"private key: {private_key}")
+            # print(f"mnemonic: {mnemonic.from_private_key(private_key)}")
+
+            mn = "art light glove rather reopen kick dose scrub okay weapon custom focus symptom build fresh runway you know pelican caution enter identify ginger ability coil"
             pk = mnemonic.to_private_key(mn)
             acctAddr = account.address_from_private_key(pk)
             print(f"testnet Address: {acctAddr}")
