@@ -16,20 +16,7 @@ import bridge
 from utils import *
 
 
-
-def main() -> None:
-    prov = Provider(False)
-
-    algod_client = prov.algod_client
-    app_client = prov.app_client
-    acct_addr = prov.acct_addr
-    acct_signer = prov.acct_signer
-    acct_private_key = prov.private_key
-
-    print("Creating app")
-    app_client.create()
-
-
+def test_feeProxy(app_client, feeProxyAddr):
     sp = app_client.get_suggested_params()
     sp.flat_fee = True
     sp.fee = beaker.consts.milli_algo
@@ -37,7 +24,7 @@ def main() -> None:
     # set fee proxy
     tx = app_client.call(
         bridge.setSmgFeeProxy,
-        proxy=acct_addr,
+        proxy=feeProxyAddr,
         suggested_params=sp
     )
     print("setSmgFeeProxy tx:", tx.return_value, tx)
@@ -47,6 +34,15 @@ def main() -> None:
         suggested_params=sp
     )
     print("getSmgFeeProxy feeproxy:", feeproxy.return_value)
+
+
+def main() -> None:
+    prov = Provider(False)
+    prov.create()
+
+    feeProxyAddr = prov.acct_addr
+    test_feeProxy(prov.app_client, feeProxyAddr)
+
 
 
 if __name__ == "__main__":

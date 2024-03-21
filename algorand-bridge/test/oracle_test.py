@@ -15,18 +15,13 @@ import beaker
 import bridge
 from utils import *
 
-# IsTestnet = False
-# old_app_id = 0
-
-IsTestnet = True
-old_app_id = 575450697
 
 def test_oracle(app_client) -> None:
     sp = app_client.get_suggested_params()
     sp.flat_fee = True
     sp.fee = beaker.consts.milli_algo +10
-    smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303632')
 
+    smgID = bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303632')
     ttt = app_client.call(
         bridge.set_storeman_group_config,
         id=smgID,
@@ -36,6 +31,19 @@ def test_oracle(app_client) -> None:
         boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
         suggested_params = sp,
     )
+
+    # smgID = bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
+    # ttt = app_client.call( # old
+    #     bridge.set_storeman_group_config,
+    #     id=smgID,
+    #     startTime=1799351111,
+    #     endTime=1799351331,
+    #     gpk=bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5'),
+    #     boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
+    #     suggested_params = sp,
+    # )
+
+
     print("------------------set_storeman_group_config:", ttt.return_value, ttt.tx_info)
 
     tx = app_client.call(
@@ -60,47 +68,11 @@ def test_oracle(app_client) -> None:
 
 
 def main() -> None:
-    prov = Provider(IsTestnet, old_app_id)
-    print("prov:", prov.acct_addr)
+    prov = Provider(False)
+    prov.create()
+    # prov.update(prov.app_client.app_id)
 
-    algod_client = prov.algod_client
-    app_client = prov.app_client
-    acct_addr = prov.acct_addr
-    acct_signer = prov.acct_signer
-    acct_private_key = prov.private_key
-
-    if old_app_id == 0:
-        print("Creating app")
-        app_client.create()
-
-        atc = AtomicTransactionComposer()
-        sp_with_fees = algod_client.suggested_params()
-        sp_with_fees.flat_fee = True
-        sp_with_fees.fee = beaker.consts.milli_algo
-
-
-
-        atc.add_transaction(
-            TransactionWithSigner(
-                txn=PaymentTxn(acct_addr, sp_with_fees, app_client.app_addr, 9000000),
-                signer=acct_signer,
-            )
-        )
-        atc = app_client.add_method_call(
-            atc,
-            bridge.initialize,
-            owner=prov.owner.address,
-            admin=prov.admin.address,
-            boxes=[(app_client.app_id, "pair_list")] * 8,
-        )
-        result = atc.execute(algod_client, 3)
-        print("app_client app_id,app_addr:", app_client.app_id, app_client.app_addr)
-
-
-
-    
-
-    test_oracle(app_client)
+    test_oracle(prov.app_client)
 
     print('done')
 

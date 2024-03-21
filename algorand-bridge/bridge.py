@@ -545,7 +545,6 @@ def smgRelease(
     tokenAccount = tokenAccount.get()
     userAccount = userAccount.get()
     feeProxy = abi.make(abi.Address)
-    feeProxy.set(app.state.feeProxy)
 
     SmgReleaseLogger = Concat(Bytes("SmgReleaseLogger:"),
         uniqueID, Bytes(":"),
@@ -561,7 +560,16 @@ def smgRelease(
     alldata = Concat(Itob(CurrentChainID), uniqueID, 
         Itob(tokenPairID), Itob(value),  Itob(fee), 
         Itob(tokenAccount), userAccount)
+    # alldata =pt.Bytes(
+    #         "base16",
+    #         "0x000000008000011b3260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e60000000000000021000000000000003700000000000000010000000000000000fae7555ec7598a8e15fec080294b837cb3e440274de38bf770ac2371ccc85795",
+    #     )
     mhash = pt.Keccak256(alldata)
+    # mhash = pt.Bytes(
+    #             "base16",
+    #             "0xa9933eee7a63a3bd74d74f8492eb39dfb0d4b5eb426ee62a884b53d6909e6756",
+    #         )
+
     status = abi.make(abi.Uint8)
     return Seq(
         status.set(0), # TODO, reset uniqueID status to 0 for test.
@@ -583,6 +591,7 @@ def smgRelease(
                 }
             ),
             If(fee > Int(0)).Then(
+                feeProxy.set(app.state.feeProxy),
                 InnerTxnBuilder.Execute(
                     {
                         TxnField.type_enum: TxnType.Payment,
@@ -594,36 +603,37 @@ def smgRelease(
         ).Else(
             do_axfer(userAccount, tokenAccount, value),
             If(fee > Int(0)).Then(
+                feeProxy.set(app.state.feeProxy),
                 do_axfer(feeProxy.get(), tokenAccount, fee)
             )
         ),
     )
 
-@app.external
-def create_wrapped_token(
-    name: abi.String,
-    symbol: abi.String,
-    decimals: abi.Uint8,
-    total_supply: abi.Uint64,
-    *,
-    output: abi.Uint64
-) -> Expr:
-    return Seq(
-        app.state.latest_wrapped_token_id.set(do_create_wrapped_token(name, symbol, decimals, total_supply)),
-        Log(Concat(Bytes("create_wrapped_token:"), 
-            Itob(app.state.latest_wrapped_token_id.get()),
-            name.get(),
-            Bytes(":"),
-            symbol.get(),
-            Bytes(":"),
-            Itob(decimals.get())),
-        ),
-        output.set(app.state.latest_wrapped_token_id)
-    )
+# @app.external
+# def create_wrapped_token(
+#     name: abi.String,
+#     symbol: abi.String,
+#     decimals: abi.Uint8,
+#     total_supply: abi.Uint64,
+#     *,
+#     output: abi.Uint64
+# ) -> Expr:
+#     return Seq(
+#         app.state.latest_wrapped_token_id.set(do_create_wrapped_token(name, symbol, decimals, total_supply)),
+#         Log(Concat(Bytes("create_wrapped_token:"), 
+#             Itob(app.state.latest_wrapped_token_id.get()),
+#             name.get(),
+#             Bytes(":"),
+#             symbol.get(),
+#             Bytes(":"),
+#             Itob(decimals.get())),
+#         ),
+#         output.set(app.state.latest_wrapped_token_id)
+#     )
 
-@app.external
-def get_latest_wrapped_token_id(*, output: abi.Uint64) -> Expr:
-    return output.set(app.state.latest_wrapped_token_id.get())
+# @app.external
+# def get_latest_wrapped_token_id(*, output: abi.Uint64) -> Expr:
+#     return output.set(app.state.latest_wrapped_token_id.get())
 
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
@@ -749,30 +759,30 @@ def do_ax_burn(holder: Expr, aid: Expr, amt: Expr) -> Expr:
 def do_opt_in(aid: Expr) -> Expr:
     return do_axfer(Global.current_application_address(), aid, Int(0))
 
-@Subroutine(TealType.uint64)
-def do_create_wrapped_token(
-    name: abi.String,
-    symbol: abi.String,
-    decimals: abi.Uint8,
-    total_supply: abi.Uint64,
-) -> Expr:
-    return Seq(
-        InnerTxnBuilder.Execute(
-            {
-                TxnField.type_enum: TxnType.AssetConfig,
-                TxnField.config_asset_name: name.get(),
-                TxnField.config_asset_unit_name: symbol.get(),
-                TxnField.config_asset_total: total_supply.get(),
-                TxnField.config_asset_decimals: decimals.get(),
-                TxnField.config_asset_manager: Global.current_application_address(),
-                TxnField.config_asset_reserve: Global.current_application_address(),
-                TxnField.config_asset_clawback: Global.current_application_address(),
-                TxnField.config_asset_url: Bytes("https://bridge.wanchain.org"),
-                TxnField.fee: Int(1000),
-            }
-        ),
-        InnerTxn.created_asset_id(),
-    )
+# @Subroutine(TealType.uint64)
+# def do_create_wrapped_token(
+#     name: abi.String,
+#     symbol: abi.String,
+#     decimals: abi.Uint8,
+#     total_supply: abi.Uint64,
+# ) -> Expr:
+#     return Seq(
+#         InnerTxnBuilder.Execute(
+#             {
+#                 TxnField.type_enum: TxnType.AssetConfig,
+#                 TxnField.config_asset_name: name.get(),
+#                 TxnField.config_asset_unit_name: symbol.get(),
+#                 TxnField.config_asset_total: total_supply.get(),
+#                 TxnField.config_asset_decimals: decimals.get(),
+#                 TxnField.config_asset_manager: Global.current_application_address(),
+#                 TxnField.config_asset_reserve: Global.current_application_address(),
+#                 TxnField.config_asset_clawback: Global.current_application_address(),
+#                 TxnField.config_asset_url: Bytes("https://bridge.wanchain.org"),
+#                 TxnField.fee: Int(1000),
+#             }
+#         ),
+#         InnerTxn.created_asset_id(),
+#     )
 
 @Subroutine(TealType.none)
 def do_axfer(rx: Expr, aid: Expr, amt: Expr) -> Expr:

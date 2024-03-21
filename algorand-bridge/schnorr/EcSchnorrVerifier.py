@@ -34,11 +34,11 @@ def check_ecSchnorr_sig(signature, px, py, e, parity, message) -> pt.Expr:
                 "0x0000000000000000000000000000000000000000",
             )  
 
-    esp = pt.Bytes("base16", "897d244de980f57d27dd8596c3a98045e8ba324f7a4e494a2e5b9b322b3a3c7f")
-    eep = pt.Bytes("base16", "8767e54ea0d7d58f5c208d8a07cdc8039843f2649fa022f79d1d441a2c70c6f2")
-    emessage = pt.Bytes("base16", "a3f181fd40cd78f056ee4afd4d1df2a3f1dfbea3c3d72eb64774b95e84fcbd09")
-    epx = pt.Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104")
-    eR =  pt.Bytes("base16", "ff68b594de944dc17d2dfe95f216e71686a75f15")
+    # esp = pt.Bytes("base16", "897d244de980f57d27dd8596c3a98045e8ba324f7a4e494a2e5b9b322b3a3c7f")
+    # eep = pt.Bytes("base16", "8767e54ea0d7d58f5c208d8a07cdc8039843f2649fa022f79d1d441a2c70c6f2")
+    # emessage = pt.Bytes("base16", "a3f181fd40cd78f056ee4afd4d1df2a3f1dfbea3c3d72eb64774b95e84fcbd09")
+    # epx = pt.Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104")
+    # eR =  pt.Bytes("base16", "ff68b594de944dc17d2dfe95f216e71686a75f15")
         # bytes32 sp = bytes32(Q - mulmod(uint256(s), uint256(px), Q));
         # bytes32 ep = bytes32(Q - mulmod(uint256(e), uint256(px), Q));
     sp = BytesMinus(Q, BytesMod(BytesMul(signature, px), Q))
