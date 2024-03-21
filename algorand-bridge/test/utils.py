@@ -105,5 +105,13 @@ class Provider:
         self.app_client = app_client
         print("app_client app_id,app_addr:", app_client.app_id, app_client.app_addr)      
 
-
+    def connect(self,old_app_id):
+        app_client = beaker.client.ApplicationClient(
+            client=self.algod_client,
+            app=bridge.app,
+            app_id=old_app_id,
+            signer=self.acct_signer,
+        )  
+        self.app_client = app_client
+        print("app_client app_id,app_addr:", app_client.app_id, app_client.app_addr)     
 
