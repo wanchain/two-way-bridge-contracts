@@ -50,7 +50,7 @@ async function main() {
         return
     }
 
-    /*
+    
     tx = await tokenManager.transferOwner(OWNER_ADDRESS);
     await tx.wait()
     tx = await oracle.transferOwner(OWNER_ADDRESS);
@@ -70,7 +70,7 @@ async function main() {
     console.log("oracle nwOwner:", nwOwner)
     nwOwner = await signatureVerifier.owner();
     console.log("signatureVerifier nwOwner:", nwOwner)
-     */
+     
 }
 
 main()

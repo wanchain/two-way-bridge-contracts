@@ -22,7 +22,8 @@ const config = {
     timeout: 600000,
   },
   zksolc: {
-    version: "1.3.16",
+    //version: "1.3.16",
+    version: "1.4.0",
     // version: "1.3.19", // zksync-sepolia
     compilerSource: "binary",
     settings: {
