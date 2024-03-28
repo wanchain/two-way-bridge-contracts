@@ -60,6 +60,36 @@ const config = {
     },
   },
   networks: {
+    meldMainnet: {
+      url: 'https://rpc-1.meld.com',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741847,
+    },
+    meldTestnet: {
+      url: 'https://testnet-rpc.meld.com',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741847,
+    },
+    telos: {
+      url: 'https://1rpc.io/telos/evm',
+      accounts: [process.env.PK],
+    },
+    clover: {
+      url:'https://api-para.clover.finance',
+      accounts: [process.env.PK],
+    },
+    fantom: {
+      url: "https://fantom.drpc.org",
+      accounts: [process.env.PK],
+    },
+    moonbeam: {
+      url: 'https://moonbeam-rpc.publicnode.com',
+      accounts: [process.env.PK],
+    },
+    moonriver: {
+      url: "https://moonriver-rpc.publicnode.com",
+      accounts: [process.env.PK],
+    },
     brockTestnet: {
       url: 'https://testnet.bit-rock.io',
       accounts: [process.env.PK],
@@ -292,11 +322,23 @@ const config = {
   },
   etherscan: {
     apiKey: {
+      fantom: 'I66N3VPZB8DYNCGGTXQ4KIBY72N541EHK4',
+      moonbeam: 'EE37GEZGJA7RHS3ZKXWW1JJVDXZ6SBYBRC',
+      moonriver: "PI7KZFKW195W1H4C69F1FIQNEAR55T37NH",
       // baseMainnet: ""
       baseTestnet:'PLACEHOLDER_STRING',
+      meldMainnet:'PLACEHOLDER_STRING',
       lineaMainnet: 'WW4J7R5WJEET4PAWH4P2AEWWUGEGAZ23XJ',
     },
     customChains: [
+      {
+        network: 'meldMainnet',
+        chainId: 333000333,
+        urls: {
+          apiURL: "https://api.meldscan.io/api",
+          browserURL: "https://meldscan.io",
+        }
+      },
       {
         network: "astar",
         chainId: 592,
@@ -329,6 +371,14 @@ const config = {
          browserURL: "https://lineascan.build"
         }
       },
+      {
+        network: 'fantom',
+        chainId: 250,
+        urls: {
+          apiURL: "https://api.ftmscan.com/api",
+          browserURL: "https://ftmscan.com",
+        }
+      }
     ],
   },
 };

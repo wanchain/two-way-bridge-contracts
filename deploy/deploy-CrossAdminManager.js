@@ -6,7 +6,8 @@ const OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
 // const CROSS = '0xfceaaaeb8d564a9d0e71ef36f027b9d162bc334e'; // eth testnet 
 // const CROSS = '0x3e18014f7c11f4d70b0023d8f61350a3ef8f0978'; // arb testnet
 // const CROSS = '0x4c200a0867753454db78af84d147bd03e567f234'; // fuji testnet
-const CROSS = '0x589e12d073020f99febf32b739e58216748c9ed4'; // sepolia testnet
+// const CROSS = '0x589e12d073020f99febf32b739e58216748c9ed4'; // sepolia testnet
+const CROSS = '0x08bad1a48b0b08bf769f83ba30c1dad0f8bb8b6b'; // arb sepolia testnet
 
 
 async function main() {
