@@ -60,6 +60,11 @@ const config = {
     },
   },
   networks: {
+    blastMainnet: {
+      url: 'https://rpc.ankr.com/blast',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741846,
+    },
     meldMainnet: {
       url: 'https://rpc-1.meld.com',
       accounts: [process.env.PK],
