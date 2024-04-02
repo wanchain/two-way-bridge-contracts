@@ -262,7 +262,7 @@ const config = {
       url: "https://forno.celo.org/",
       accounts: [process.env.PK],
       bip44ChainId: 2147536400,
-    }
+    },
     opBnbTestnet: {
       url: "https://opbnb-testnet-rpc.bnbchain.org",
       accounts: [process.env.PK],
