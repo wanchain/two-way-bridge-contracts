@@ -9,14 +9,14 @@ let urlPoly = "https://rpc.public.zkevm-test.net"
 const polyProvider = new ethers.providers.JsonRpcProvider(urlPoly);
 
 var scAddrZk = '0x9ca973044e65414D4E885D4c56De725C39Ef43D7' // by Jacob   // have TestEcRecover
-scAddrZk = '0xbd45dc9f8Ef55d41230A3e40fAB4E54a9d88fd77'
-scAddrZk='0x87947BF333068A3a9D815e9a67C864DE2A378982'
+scAddrZk='0xfC49223572c658B27642Cc64a845F95669Ab49db'
 
 var scAddrEth = '0xdE1Ae3c465354f01189150f3836C7C15A1d6671D' //zkSepolia
 scAddrEth = '0x2712Bc9F116eD06022f39950248CaD8fB22797B2' //zkSepolia, add assembly,add middle data , add getRByRecover
-scAddrEth = '0x1B680c9693f9EEcECc2c15F7dD0D97F755D4E82D' //zkSepolia, add assembly,add middle data , add getRByRecover
+scAddrEth = '0x4d1025B68d73C56774B525dA24A934dfB98041D6' //zkSepolia, add assembly,add middle data , add getRByRecover
 
 var scAddrPoly = '0x1B765Da9D2b444a76983aCEb68d1850155aeE672'
+scAddrPoly = '0x44d9F33E880F42a1DBa296818C8b55b248B3dd47'
 
 const contractAbi = [{
     "inputs": [],
@@ -268,7 +268,7 @@ async function main() {
                 console.log("middle data",e)
             }
 
-
+        // (case1) error on zkSync
         let myS = "0x41a885d245e69a5af45bc51ff0dad6e3505e45deb7de1db50fc01c69cd8bdc2c"
         let myPx = "0xaceaa17ffb7bfafe15e2c026801400564854c9839a1665b65f18b228dd55ebcd"
         let myPy = "0x2dafc900306c08a0f1c79caec116744d2ed3a16e150e8b3d4e39c9458a62c823"
@@ -276,8 +276,6 @@ async function main() {
         let myParity = "0x000000000000000000000000000000000000000000000000000000000000001c"
         let myMsg = "0xa5cd2c07cc4a833c5b55a114cfebe49e13c19039d70324cca5ad3e6e37e4b657"
         try {
-            // error on zkSync
-
             let retJacob = await contractZk.verify(myS, myPx, myPy, myE, myParity, myMsg);
             console.log("========(errorData,zkSync,verify)", retJacob)
         } catch (e) {
@@ -330,14 +328,14 @@ async function main() {
         }
 
 
-// success on zkSync
+        // (case2) success on zkSync
         let yourS = "0xa6050a51fb7ca8827181c0d855fc6b335d9fcd6895f9f672402d50b652804132"
         let yourPx = "0xaceaa17ffb7bfafe15e2c026801400564854c9839a1665b65f18b228dd55ebcd"
         let yourPy = "0x2dafc900306c08a0f1c79caec116744d2ed3a16e150e8b3d4e39c9458a62c823"
         let yourE = "0x93d84747a53a6064f38a465a66c888f7457121e20cfb3eba6869b7fbcf91dcf0"
         let yourParity = "0x000000000000000000000000000000000000000000000000000000000000001c"
         let yourMsg = "0xb7ad2a05abd8ba23607acaf4cc139f468f16d584a79f9d797f7fcdc5d8848278"
-// should sucess
+        // should sucess
 
         try {
 
@@ -402,38 +400,6 @@ async function main() {
 
     }
 
-}
-
-
-async function SignHash() {
-
-    let message = ethers.utils.keccak256([0x12, 0x34])
-    let sk = new ethers.utils.SigningKey('0x' + process.env.PK)
-    let s = sk.signDigest(message)
-    console.log("s", s, "\nm", message)
-    let pkRecovered = ethers.utils.recoverPublicKey(message, s)
-    console.log("\npkRecovered", pkRecovered, "\npkSigner", sk.publicKey)
-    let addrEcovered = ethers.utils.computeAddress(pkRecovered)
-    let addr = ethers.utils.computeAddress(sk.publicKey)
-
-    console.log("\naddrRecover", ethers.utils.computeAddress(pkRecovered))
-    console.log("\naddr", ethers.utils.computeAddress(sk.publicKey))
-    if (addr == addrEcovered) {
-        console.log("success")
-    } else {
-        console.log("XXXXXXXXXXXXXXXfailxxxxxxxxxxxxxx")
-    }
-}
-
-//Sign message , not sign hash of message.
-async function SignMessage() {
-
-    let w = ethers.Wallet.createRandom()
-    //let s1 = await w.signMessage(ethers.utils.arrayify("0x1234"))
-    let s1 = await w.signMessage("0x1234")
-    console.log("s1", s1)
-    let addrByVerify = ethers.utils.verifyMessage("0x1234", s1)
-    console.log("addr of wallet", w.address, "addr from verifyMessage", addrByVerify)
 }
 
 main()

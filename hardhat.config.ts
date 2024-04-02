@@ -310,7 +310,7 @@ const config = {
   },
   etherscan: {
     apiKey: {
-      sepolia: "PLACEHOLDER_STRING",
+      sepolia: "NXV6MRD75M9RKTPQS3ZG4I1HMW32FINEMN",
       arbitrumSepolia: "PLACEHOLDER_STRING",
       baseSepolia: "PLACEHOLDER_STRING",
       optimisticSepolia: "PLACEHOLDER_STRING",
@@ -323,8 +323,25 @@ const config = {
       opBnbMainnet:'db27845a41ec432a91eaa8917c4112a7',
       blastTestnet:'PLACEHOLDER_STRING',
       blastMainnet:'PLACEHOLDER_STRING',
+      polyZkTestnet:'BCTBB7TKERHMT7N11CTF3KB9X3HVRNW3PS',
     },
     customChains: [
+      {
+        network: "polyZkTestnet",
+        chainId: 1442,
+        urls: {
+          apiURL: "https://api-testnet-zkevm.polygonscan.com/api",
+          browserURL: "https://testnet-zkevm.polygonscan.com",
+        },
+      },
+      {
+        network: "sepolia",
+        chainId: 11155111 ,
+        urls: {
+          apiURL: "https://api-sepolia.etherscan.io/api",
+          browserURL: "https://sepolia.etherscan.io/",
+        },
+      },
       {
         network: "celoTestnet",
         chainId: 44787,
