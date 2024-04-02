@@ -43,15 +43,13 @@ contract EcSchnorrJacob{
 		}
 		address R = ecrecover(sp, parity, px, ep);
 		require(R != address(0), "ecrecover failed");
-//		return e == keccak256(
-//				abi.encodePacked(R, uint8(parity), px, message)
-//				);
 		return e == keccak256(
 			abi.encodePacked(R, uint8(parityOld), px, message)
 		);
 	}
 
 	function _verify2(
+
 			uint8 parity,
 			bytes32 px,
 			bytes32 message,
@@ -66,7 +64,8 @@ contract EcSchnorrJacob{
 		// the ecrecover precompile implementation checks that the `r` and `s`
 		// inputs are non-zero (in this case, `px` and `ep`), thus we don't need to
 		// check if they're zero.
-		address R = _ecrecover(sp, bytes32(uint256(parity)),px, ep);
+		//address R = ecrecover(sp, bytes32(uint256(parity)),px, ep);
+		address R = ecrecover(sp, parity,px, ep);
 		require(R != address(0), "ecrecover failed");
 		return e == keccak256(
 				abi.encodePacked(R, uint8(parity), px, message)
