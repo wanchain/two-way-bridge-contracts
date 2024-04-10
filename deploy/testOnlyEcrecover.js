@@ -201,6 +201,8 @@ async function sleep(time) {
     });
 }
 
+let Qstr='0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141'
+let HalfQstr='0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0'
 
 async function main() {
     while (true) {
@@ -232,6 +234,7 @@ async function main() {
         console.log("\n\n\n")
         console.log("Not handle*************************************************************")
         console.log("m,v,r,s",mym,myv,myr,mys)
+        moreThanHalfQ(mys)
         try {
 
             let retJacob = await contractEth.TestRecover(mym,myv,myr,mys);
@@ -256,7 +259,6 @@ async function main() {
         }
 
         // change mys
-        let Qstr='0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141'
         // myv = Q - s.v
         let bQ= ethers.BigNumber.from(Qstr)
         console.log("Q",bQ.toHexString())
@@ -267,18 +269,18 @@ async function main() {
         console.log("Q-s",bQMinusS.toHexString())
 
         console.log("m,v,r,s",mym,myv,myr,mys)
+        moreThanHalfQ(mys)
         try {
 
             let retJacob = await contractEth.TestRecover(mym,myv,myr,mys);
             console.log("========(sepolia handle v s,address from TestRecover)", retJacob)
 
         } catch (e) {
-
             console.log("========(sepolia handle v s,address from TestRecover)", e)
         }
         console.log("Handled*************************************************************")
 
-        break
+        //break
         await sleep(30000)
 
     }
@@ -286,6 +288,17 @@ async function main() {
 }
 
 main()
+
+
+function moreThanHalfQ(s){
+    let bs= ethers.BigNumber.from(s)
+    let bHalfQ = ethers.BigNumber.from(HalfQstr)
+    if(bs.gt(bHalfQ)){
+        console.log(">bHalfQ")
+    }else{
+        console.log("not >bHalfQ")
+    }
+}
 
 
 /*
