@@ -229,7 +229,9 @@ async function main() {
         myv = s.v
         myr = s.r
         mys = s.s
-
+        console.log("\n\n\n")
+        console.log("Not handle*************************************************************")
+        console.log("m,v,r,s",mym,myv,myr,mys)
         try {
 
             let retJacob = await contractEth.TestRecover(mym,myv,myr,mys);
@@ -239,7 +241,11 @@ async function main() {
 
             console.log("========(sepolia not handle v s,address from TestRecover)", e)
         }
+        console.log("Not handle*************************************************************")
 
+
+        console.log("\n\n\n")
+        console.log("Handled*************************************************************")
         // handled
         // change myv
         if(parseInt(s.v) == 27){
@@ -260,6 +266,7 @@ async function main() {
         mys = bQMinusS.toHexString()
         console.log("Q-s",bQMinusS.toHexString())
 
+        console.log("m,v,r,s",mym,myv,myr,mys)
         try {
 
             let retJacob = await contractEth.TestRecover(mym,myv,myr,mys);
@@ -269,6 +276,7 @@ async function main() {
 
             console.log("========(sepolia handle v s,address from TestRecover)", e)
         }
+        console.log("Handled*************************************************************")
 
         break
         await sleep(30000)
