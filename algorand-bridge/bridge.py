@@ -287,8 +287,8 @@ def getCrossTokenInfo(
                 getContractFeeKey(toChainID, chain0).store_into(key),
                 app.state.mapContractFee[key].set(contractFee)            
             ),
-            tInfo.toAccount.store_into(toAccount),
-            tInfo.fromAccount.store_into(fromAccount)            
+            tInfo.toAccount.store_into(fromAccount),
+            tInfo.fromAccount.store_into(toAccount)            
         )
         .ElseIf(fromChainID.get() ==  CurrentChainID)
         .Then(
@@ -300,8 +300,8 @@ def getCrossTokenInfo(
                 getContractFeeKey(fromChainID, chain0).store_into(key),
                 app.state.mapContractFee[key].set(contractFee)            
             ),
-            tInfo.toAccount.store_into(fromAccount),
-            tInfo.fromAccount.store_into(toAccount)
+            tInfo.toAccount.store_into(toAccount),
+            tInfo.fromAccount.store_into(fromAccount)      
         )
         .Else(
             Reject()
