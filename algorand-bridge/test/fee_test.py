@@ -14,6 +14,8 @@ import beaker
 
 import bridge
 from utils import *
+import pytest
+
 tokenPairId666 = 666
 tokenPairId888 = 888
 
@@ -22,6 +24,7 @@ chainBase  = 1073741841
 chainMaticZk = 1073741838
 
 
+@pytest.mark.fee
 def test_fee(app_client):
     sp = app_client.get_suggested_params()
     sp.flat_fee = True
@@ -147,17 +150,7 @@ def test_fee(app_client):
     assert(fee.return_value == [333, 555])
 
 
-def main() -> None:
-    prov = Provider(False)
-    prov.create()
 
-    feeProxyAddr = prov.acct_addr
-    test_fee(prov.app_client)
-
-
-
-if __name__ == "__main__":
-    main()
 
 
 

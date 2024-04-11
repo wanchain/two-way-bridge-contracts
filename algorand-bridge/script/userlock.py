@@ -14,15 +14,15 @@ import beaker
 
 import bridge
 from utils import *
-from oracle_test import test_oracle
-from feeProxy_test import test_feeProxy
-from fee_test import test_fee
-from tokenCreate_test import test_tokenCreate
-from tokenPair_test import test_tokenPair
+# from oracle_test import test_oracle
+# from feeProxy_test import test_feeProxy
+# from fee_test import test_fee
+# from tokenCreate_test import test_tokenCreate
+# from tokenPair_test import test_tokenPair
 
-IsTestnet = False
-smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
-old_app_id = 0  #updateApplication approval program too long. max len 4096 bytes
+IsTestnet = True
+smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303633')
+old_app_id = 627255629  #updateApplication approval program too long. max len 4096 bytes
 tokenPairId666 = 666
 tokenPairId888 = 888
 
@@ -98,67 +98,6 @@ def test_userLock(app_client, acct_addr, aacct_signer) -> None:
         print("---------------------- txUserLock txresult:", rv.return_value, rv.tx_id, rv.tx_info)
 
 
-def test_userBurn(app_client, acct_addr, acct_signer,assetID) -> None:
-    algod_client = app_client.client
-    sp = app_client.get_suggested_params()
-    sp.flat_fee = True
-    sp.fee = 2000
-    
-    atc = AtomicTransactionComposer()
-    # Add a payment just to cover fees
-    sp_with_fees = algod_client.suggested_params()
-    sp_with_fees.flat_fee = True
-    sp_with_fees.fee = beaker.consts.milli_algo
-
-    atc.add_transaction(
-        TransactionWithSigner(
-            txn=AssetTransferTxn(
-                acct_addr,
-                sp,
-                app_client.app_addr,
-                55,assetID,
-            ),
-            signer=acct_signer,
-        )
-    )
-
-    atc = app_client.add_method_call(
-        atc,
-        bridge.userBurn,
-        smgID=smgID,
-        tokenPairID=33, value=55, fee=55,
-        tokenAccount=assetID,
-        userAccount= acct_addr,
-        foreign_assets=[assetID],
-        accounts=[acct_addr],
-    )
-
-    result = atc.execute(algod_client, 3)
-    for rv in result.abi_results:
-        print("---------------------- txUserLock:", rv.return_value)
-
-
-def test_smgMint(app_client, acct_addr, assetID) -> None:
-    sp_big_fee = app_client.get_suggested_params()
-    sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
-    tx = app_client.call(
-        bridge.smgMint,
-        uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6'),
-        smgID=smgID,
-        tokenPairID=33, value=55, 
-        fee=1, 
-        tokenAccount=assetID,
-        userAccount=acct_addr,
-        r=bytes.fromhex('a423c56d531277a07ae3fb7ef34893c74f5d1f76fa0e1cad047497c413c3fc84000000000000000000000000000000000000000000000000000000000000001c'), 
-        s=bytes.fromhex('c23ce3a9f9bf8b4953807fdf3f0fbd7b1b7f8e08f2567515b04ac9687ea66337'),
-        foreign_assets=[assetID],
-        accounts=[acct_addr],
-        suggested_params = sp_big_fee,
-    )
-    print("------------------smgMint:", tx.return_value, tx.tx_info)
-
-
 def test_smgRelease(app_client) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
@@ -182,13 +121,38 @@ def test_smgRelease(app_client) -> None:
 
 
 
+def setStoreman(app_client) -> None:
+    global smgID
+    sp = app_client.get_suggested_params()
+    sp.flat_fee = True
+    sp.fee = beaker.consts.milli_algo +10
+
+    ttt = app_client.call(
+        bridge.set_storeman_group_config,
+        id=smgID,
+        startTime=1712635200,
+        endTime=1715227200,
+        gpk=bytes.fromhex('66e0c512ba81ea67dce73a0a886fe703e5c5c277f9dea6819827c579930852ea728d863858b50bebf3e67f37fc1eb9e8c87af1fe34a8963fd9c9c6965c3e3009'),
+        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
+    )
+
+
+
+    print("------------------set_storeman_group_config:", ttt.return_value, ttt.tx_info)
+
+    tx = app_client.call(
+        bridge.get_smg_info,
+        id=smgID,
+        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
+    )
+    print("------------------get_smg_info:", tx.return_value)
 
 
 def main() -> None:
     global AssetID
     prov = Provider(IsTestnet)
     print("deployer:", prov.acct_addr)
-
+    
 
     if old_app_id == 0:
         prov.create()
@@ -203,7 +167,8 @@ def main() -> None:
     sp_with_fees.fee = beaker.consts.milli_algo
 
     ################ oracle #######################
-    test_oracle(app_client)
+    setStoreman(app_client)
+    return
     test_feeProxy(app_client, prov.acct_addr)
     test_fee(app_client)
     if AssetID == 0:

@@ -14,8 +14,9 @@ import beaker
 
 import bridge
 from utils import *
+import pytest
 
-
+@pytest.mark.feeProxy
 def test_feeProxy(app_client, feeProxyAddr):
     sp = app_client.get_suggested_params()
     sp.flat_fee = True
@@ -24,7 +25,7 @@ def test_feeProxy(app_client, feeProxyAddr):
     # set fee proxy
     tx = app_client.call(
         bridge.setSmgFeeProxy,
-        proxy=feeProxyAddr,
+        proxy=feeProxyAddr.address,
         suggested_params=sp
     )
     print("setSmgFeeProxy tx:", tx.return_value, tx)
@@ -36,17 +37,7 @@ def test_feeProxy(app_client, feeProxyAddr):
     print("getSmgFeeProxy feeproxy:", feeproxy.return_value)
 
 
-def main() -> None:
-    prov = Provider(False)
-    prov.create()
 
-    feeProxyAddr = prov.acct_addr
-    test_feeProxy(prov.app_client, feeProxyAddr)
-
-
-
-if __name__ == "__main__":
-    main()
 
 
 
