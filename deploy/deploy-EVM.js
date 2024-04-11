@@ -20,6 +20,15 @@ const SMG_FEE_PROXY = "0x82bf94d159b15a587c45c9d70e0fab7fd87889eb";
 const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 // const BIP44_CHAIN_ID = 0x8000032a; // ASTAR
 
+const proposers = ["0x390CC3173EE7F425Fe7659df215B13959FD468E1"];
+const executors = ["0x0000000000000000000000000000000000000000"];
+const admin = CROSS_ADMIN;
+const cancellers = [
+  "0x7521eda00e2ce05ac4a9d8353d096ccb970d5188",
+  "0xae693fb903559f8856a3c21d6c0aa4a4e9682ae9",
+  CROSS_ADMIN
+];
+
 // testnet
 // const ORACLE_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
 // const CROSS_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
@@ -163,8 +172,32 @@ async function main() {
   let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
   let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.address);
 
+  // deploy time lock------------------------------
+  console.log('deploy time lock...');
+  let TimelockController = await hre.ethers.getContractFactory("TimelockController");
+  let timelockController = await TimelockController.deploy(86400, proposers, executors, deployer);
+  await timelockController.deployed();
+  console.log("TimelockController deployed to:", timelockController.address);
+  for (let i=0; i<cancellers.length; i++) {
+    console.log('adding canceller', i, cancellers[i]);
+    let tx = await timelockController.grantRole(timelockController.CANCELLER_ROLE(), cancellers[i]);
+    await tx.wait();
+    console.log('added canceller', i, cancellers[i]);
+  }
+
+  console.log('setting admin', admin);
+  tx = await timelockController.grantRole(timelockController.TIMELOCK_ADMIN_ROLE(), admin);
+  await tx.wait();
+  console.log('set admin ok', admin);
+
+  console.log('revoking deployer admin', deployer);
+  tx = await timelockController.revokeRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
+  await tx.wait();
+  console.log('revoked deployer admin', deployer);
+  //------------------------------------------------
+
   console.log('oracle set admin...')
-  tx = await oracle.setAdmin(ORACLE_ADMIN);
+  tx = await oracle.setAdmin(timelockController.address);
   await tx.wait();
   console.log('oracle set admin finished.')
   console.log('tokenManager add admin...')
@@ -220,6 +253,7 @@ async function main() {
     oracleDelegate: oracleDelegate.address,
     oracleProxy: oracleProxy.address,
     groupApprove: groupApprove.address,
+    timelock: timelockController.address,
   };
 
   fs.writeFileSync(`deployed/${hre.network.name}.json`, JSON.stringify(deployed, null, 2));
