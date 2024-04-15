@@ -39,8 +39,6 @@ def test_fee(app_client):
         suggested_params=sp
    )
     
-    # balance_before_get = app_client.client.account_info(acct_addr)
-    # print("balance_before_get:", balance_before_get['amount'])
     sp.fee += 1
     fee = app_client.call(
         bridge.getTokenPairFee,
@@ -68,7 +66,6 @@ def test_fee(app_client):
         boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666))],
         suggested_params=sp
     )
-    print("fee 6 :", fee.return_value)
     assert(fee.return_value == 1111)
     sp.fee += 1
     fee = app_client.call(
@@ -77,7 +74,6 @@ def test_fee(app_client):
         boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId888))],
         suggested_params=sp
     )
-    print("fee 8:", fee.return_value)
     assert(fee.return_value == 9999999)
      
 
@@ -104,7 +100,6 @@ def test_fee(app_client):
         ],
         suggested_params=sp
     )
-    print("fee 6 :", fee.return_value)
     assert(fee.return_value == [222, 444])
 
     app_client.call(
@@ -132,7 +127,6 @@ def test_fee(app_client):
         ],
         suggested_params=sp
     )
-    print("fee 6-9 :", fee.return_value)
     assert(fee.return_value == [222, 444])
 
     fee = app_client.call(
@@ -146,7 +140,6 @@ def test_fee(app_client):
         ],
         suggested_params=sp
     )
-    print("fee 8-9 :", fee.return_value)    
     assert(fee.return_value == [333, 555])
 
 

@@ -1,7 +1,4 @@
-import typing
 from typing import Literal
-
-import json
 from typing import Final
 from pyteal import *
 import pyteal as pt
@@ -12,7 +9,7 @@ import schnorr.EcSchnorrVerifier as ec
 from bridgelib import *
 
 class StoremanGroupConfig(abi.NamedTuple):
-    gpk: abi.Field[abi.StaticBytes[typing.Literal[64]]]
+    gpk: abi.Field[abi.StaticBytes[Literal[64]]]
     startTime: abi.Field[abi.Uint64]
     endTime: abi.Field[abi.Uint64]
     status: abi.Field[abi.Uint8]
@@ -28,14 +25,14 @@ class StoremanGroupConfig(abi.NamedTuple):
 class TokenPairInfo(abi.NamedTuple):
     id: abi.Field[abi.Uint64]
     fromChainID: abi.Field[abi.Uint64]
-    fromAccount: abi.Field[abi.String]
+    fromAccount: abi.Field[abi.DynamicBytes]
     toChainID: abi.Field[abi.Uint64]
-    toAccount: abi.Field[abi.String]
+    toAccount: abi.Field[abi.DynamicBytes]
 
 class CrossTokenInfo(abi.NamedTuple):
     contractFee: abi.Field[abi.Uint64]
-    fromAccount: abi.Field[abi.String]
-    toAccount: abi.Field[abi.String]
+    fromAccount: abi.Field[abi.DynamicBytes]
+    toAccount: abi.Field[abi.DynamicBytes]
 
 # struct GetFeesReturn {
 #     uint256 contractFee;
@@ -45,7 +42,7 @@ class FeeInfo(abi.NamedTuple):
     contractFee: abi.Field[abi.Uint64]
     agentFee: abi.Field[abi.Uint64]
 
-TransactionHash = abi.StaticBytes[typing.Literal[32]]
+TransactionHash = abi.StaticBytes[Literal[32]]
 CurrentChainID = Int(2147483931)
 
 class BridgeState:
@@ -265,8 +262,8 @@ def getCrossTokenInfo(
     tInfo = TokenPairInfo()
     toChainID = abi.make(abi.Uint64)
     fromChainID = abi.make(abi.Uint64)
-    toAccount = abi.make(abi.String)
-    fromAccount = abi.make(abi.String)
+    toAccount = abi.make(abi.DynamicBytes)
+    fromAccount = abi.make(abi.DynamicBytes)
     return Seq(
         getTokenPairFeeKey(tokenPairID).store_into(key),
         app.state.mapTokenPairContractFee[key].store_into(contractFee),
@@ -325,8 +322,8 @@ def userLock(
     # if to lock assert, there are 3 txs, 1: contractFee, 2: assert transfer, 3: sc interface call.
     #   assosiated these 2 txs.  check the value is same in these 2 txs.
     contractFee = abi.make(abi.Uint64)
-    toAccount = abi.make(abi.String)
-    fromAccount = abi.make(abi.String)
+    toAccount = abi.make(abi.DynamicBytes)
+    fromAccount = abi.make(abi.DynamicBytes)
     crossTokenInfo = CrossTokenInfo()
     left = abi.make(abi.Uint64)
     txid = abi.make(abi.String)
@@ -345,7 +342,7 @@ def userLock(
                 }
             )
         ),
-        If(toAccount.get() == Bytes("0")).Then(
+        If(fromAccount.get() == Itob(Int(0))).Then(
             Assert(Global.group_size() == Int(2)),
             Assert(Txn.group_index() == Int(1)),            
             left.set(pt.Gtxn[0].amount() - contractFee.get() - value.get()),
@@ -374,7 +371,7 @@ def userLock(
             Bytes("UserLockLogger:"), 
             smgID.get(), Bytes(":"),
             Itob(tokenPairID.get()), Bytes(":"),
-            toAccount.get(), Bytes(":"),
+            fromAccount.get(), Bytes(":"),
             Itob(value.get()), Bytes(":"),
             Itob(contractFee.get()), Bytes(":"),
             userAccount.get(), Bytes(":"), 
@@ -385,7 +382,7 @@ def userLock(
 
 
 # function getSmgFeeProxy() internal view returns (address)
-@app.external
+@app.external(read_only=True)
 def getSmgFeeProxy(*, output: abi.Address) -> Expr:
     return output.set(app.state.feeProxy)
 
@@ -445,9 +442,9 @@ def verifySignature(mhash, PK, r, s)-> pt.Expr:
 
 @ABIReturnSubroutine
 def acquireReadySmgInfo(
-    smgID: abi.StaticBytes[typing.Literal[32]],
+    smgID: abi.StaticBytes[Literal[32]],
     *,
-    output: abi.StaticBytes[typing.Literal[64]],
+    output: abi.StaticBytes[Literal[64]],
     ) -> pt.Expr:
 
     # TPK= Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5")
@@ -460,12 +457,12 @@ def acquireReadySmgInfo(
 
 @app.external(read_only=True)
 def acquireReadySmgInfoTest(
-    smgID: abi.StaticBytes[typing.Literal[32]],
+    smgID: abi.StaticBytes[Literal[32]],
     # ss: abi.Uint64,
     *,
-    output: abi.StaticBytes[typing.Literal[64]],
+    output: abi.StaticBytes[Literal[64]],
     ) -> pt.Expr:
-    tmp = abi.make(abi.StaticBytes[typing.Literal[64]])
+    tmp = abi.make(abi.StaticBytes[Literal[64]])
     return Seq(
         acquireReadySmgInfo(smgID).store_into(tmp),
         output.set(tmp),
@@ -485,7 +482,7 @@ def smgMint(
         r:pt.abi.StaticBytes[Literal[64]], 
         s:pt.abi.StaticBytes[Literal[32]]) -> Expr:
     #    event SmgMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
-    PK = abi.make(abi.StaticBytes[typing.Literal[64]])
+    PK = abi.make(abi.StaticBytes[Literal[64]])
     PK.set(acquireReadySmgInfo(smgID))
     PK = PK.get()
 
@@ -536,7 +533,7 @@ def smgRelease(
         r: abi.StaticBytes[Literal[64]], 
         s: abi.StaticBytes[Literal[32]]) -> Expr:
     #    event SmgReleaseLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
-    PK = abi.make(abi.StaticBytes[typing.Literal[64]])
+    PK = abi.make(abi.StaticBytes[Literal[64]])
 
     uniqueID = uniqueID.get()
     tokenPairID = tokenPairID.get()
@@ -646,9 +643,9 @@ def opt_in_token_id(
 def add_token_pair(
     id: abi.Uint64,
     from_chain_id: abi.Uint64,
-    from_account: abi.String,
+    from_account: abi.DynamicBytes,
     to_chain_id: abi.Uint64,
-    to_account: abi.String,
+    to_account: abi.DynamicBytes,
 ) -> Expr:
     key = abi.make(abi.String)
     return Seq(
@@ -682,9 +679,9 @@ def add_token_pair(
 def update_token_pair(
     id: abi.Uint64,
     from_chain_id: abi.Uint64,
-    from_account: abi.String,
+    from_account: abi.DynamicBytes,
     to_chain_id: abi.Uint64,
-    to_account: abi.String,
+    to_account: abi.DynamicBytes,
 ) -> Expr:
     key = abi.make(abi.String)
     return Seq(
@@ -712,7 +709,7 @@ def update_token_pair(
         )),
     )
 
-@app.external
+@app.external(read_only=True)
 def get_token_pair(
     id: abi.Uint64,
     *,
@@ -868,8 +865,8 @@ def close_out() -> Expr:
 # oracle methods
 @app.external
 def set_storeman_group_config(
-    id: abi.StaticBytes[typing.Literal[32]],
-    gpk: abi.StaticBytes[typing.Literal[64]],
+    id: abi.StaticBytes[Literal[32]],
+    gpk: abi.StaticBytes[Literal[64]],
     startTime: abi.Uint64,
     endTime: abi.Uint64,
 ) -> Expr:
@@ -882,7 +879,7 @@ def set_storeman_group_config(
 
 @app.external
 def set_storeman_group_status(
-    id: abi.StaticBytes[typing.Literal[32]],
+    id: abi.StaticBytes[Literal[32]],
     status: abi.Uint8,
 ) -> Expr:
 
@@ -901,7 +898,7 @@ def set_storeman_group_status(
 
 @app.external
 def get_smg_info(
-    id: abi.StaticBytes[typing.Literal[32]],
+    id: abi.StaticBytes[Literal[32]],
     *,
     output: StoremanGroupConfig,
 ) -> Expr:

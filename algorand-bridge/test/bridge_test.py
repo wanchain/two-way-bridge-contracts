@@ -13,12 +13,14 @@ from algosdk.atomic_transaction_composer import (
 import beaker
 
 import bridge
+
 from utils import *
 from oracle_test import test_oracle
 from feeProxy_test import test_feeProxy
 from fee_test import test_fee
 from tokenCreate_test import test_tokenCreate
 from tokenPair_test import test_tokenPair
+import pytest
 
 IsTestnet = False
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
@@ -183,7 +185,7 @@ def test_smgRelease(app_client) -> None:
 
 
 
-
+@pytest.mark.skip
 def main() -> None:
     global AssetID
     prov = Provider(IsTestnet)

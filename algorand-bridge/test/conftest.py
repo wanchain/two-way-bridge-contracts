@@ -31,7 +31,47 @@ def admin():
 @pytest.fixture
 def feeProxyAddr():
     accts = beaker.localnet.get_accounts()
-    return accts[2] 
+    return accts[2].address 
+
+@pytest.fixture
+def nativeAssetID(app_client, owner):
+    print('create demo asset token')
+    sp_with_fees = app_client.client.suggested_params()
+    sp_with_fees.flat_fee = True
+    sp_with_fees.fee = beaker.consts.milli_algo
+
+    ctxn = AssetCreateTxn(
+        owner.address,
+        sp_with_fees,
+        total=100000000000000,
+        default_frozen=False,
+        unit_name="MOCK",
+        asset_name="MOCK TOKEN",
+        manager="",
+        reserve=owner.address,
+        freeze="",
+        clawback="",
+        url="https://bridge.wanchain.org",
+        decimals=6,
+    )
+    tx = owner.signer.sign_transactions([ctxn], [0])
+    txid = app_client.client.send_transaction(tx[0])
+    print('txid', txid)
+    receipt = transaction.wait_for_confirmation(app_client.client, txid)
+    print('receipt', receipt['asset-index'])
+    asset_id = receipt['asset-index']
+
+    # optIn test asset
+    print("optIn test asset")
+    app_client.fund(200000) # deposit for minimum balance require
+    app_client.call(
+        bridge.opt_in_token_id,
+        id=asset_id,
+        foreign_assets=[asset_id],
+    )
+    print('done')
+    return asset_id
+
 
 @pytest.fixture
 def app_client(owner, admin):

@@ -1,10 +1,4 @@
-import typing
-from typing import Literal
-
-import json
-from typing import Final
 from pyteal import *
-import pyteal as pt
 from beaker import *
 
 @ABIReturnSubroutine
@@ -13,7 +7,7 @@ def getFromToChainID(
     destChainID: abi.Uint64,
     *,
     output: abi.Uint64,
-    ) -> pt.Expr:
+    ) -> Expr:
     return  output.set(srcChainID.get()* Int(2**32) + destChainID.get())
 
 @ABIReturnSubroutine
@@ -21,7 +15,7 @@ def getTokenPairFeeKey(
     tokenPairID: abi.Uint64,
     *,
     output: abi.String,
-    ) -> pt.Expr:
+    ) -> Expr:
         return output.set(Concat(Bytes("mapTokenPairContractFee"), Itob(tokenPairID.get())))
 
 @ABIReturnSubroutine
@@ -29,7 +23,7 @@ def getTokenPairInfoKey(
     tokenPairID: abi.Uint64,
     *,
     output: abi.String,
-    ) -> pt.Expr:
+    ) -> Expr:
         return output.set(Concat(Bytes("mapTokenPairInfo"), Itob(tokenPairID.get())))
 
 
@@ -39,7 +33,7 @@ def getContractFeeKey(
     destChainID: abi.Uint64,
     *,
     output: abi.String,
-    ) -> pt.Expr:
+    ) -> Expr:
     id = abi.make(abi.Uint64)
     return Seq(
       getFromToChainID(srcChainID, destChainID).store_into(id),
@@ -52,7 +46,7 @@ def getAgentFeeKey(
     destChainID: abi.Uint64,
     *,
     output: abi.String,
-    ) -> pt.Expr:
+    ) -> Expr:
     id = abi.make(abi.Uint64)
     return Seq(
       getFromToChainID(srcChainID, destChainID).store_into(id),

@@ -25,13 +25,14 @@ smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f3
 old_app_id = 627255629  #updateApplication approval program too long. max len 4096 bytes
 AssetID = 627255785       # this is minted by wanchain.
 nativeAssetID = 640706823 # this is a native token, need cross to wanchain.
-
+nativeAssetIDHex = bytes.fromhex('26306907')
 tokenPairId666 = 666
 tokenPairId888 = 888
 
 chainAlgo =  2147483931
 chainBase  = 1073741841
 chainMaticZk = 1073741838
+algoCoinId = 0
 
 def test_userLock(app_client, acct_addr, aacct_signer) -> None:
     algod_client = app_client.client
@@ -206,9 +207,9 @@ def updateTokenPair(app_client, assetID):
         bridge.update_token_pair,
         id=tokenPairId666,
         from_chain_id=chainAlgo,
-        from_account=str(0),
+        from_account=algoCoinId.to_bytes(8, 'big'),
         to_chain_id=chainBase,
-        to_account="0x0000000000000000000000000000000000000000",
+        to_account=bytes.fromhex("a4E62375593662E8fF92fAd0bA7FcAD25051EbCB"),
         boxes=[
             (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId666)),
             (app_client.app_id, "pair_list")
@@ -219,9 +220,9 @@ def updateTokenPair(app_client, assetID):
         bridge.update_token_pair,
         id=tokenPairId888,
         from_chain_id=chainAlgo,
-        from_account=str(nativeAssetID),
+        from_account=nativeAssetID.to_bytes(8, 'big'),
         to_chain_id=chainBase,
-        to_account="0x3D5950287b45F361774E5fB6e50d70eEA06Bc167",
+        to_account=bytes.fromhex("a4E62375593662E8fF92fAd0bA7FcAD25051EbCB"),
         boxes=[
             (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId888)),
             (app_client.app_id, "pair_list")
@@ -271,11 +272,11 @@ def main() -> None:
     # setFeeProxy(app_client, prov.acct_addr)
  
     # setFee(app_client)
-    # test_userLock(app_client, prov.acct_addr, prov.acct_signer)
 
     # tokenCreate(prov)
     updateTokenPair(app_client, AssetID)
-    
+    # test_userLock(app_client, prov.acct_addr, prov.acct_signer)
+
     test_userLockToken(app_client, prov.acct_addr, prov.acct_signer)
     return
 

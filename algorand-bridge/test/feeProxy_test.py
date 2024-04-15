@@ -18,23 +18,16 @@ import pytest
 
 @pytest.mark.feeProxy
 def test_feeProxy(app_client, feeProxyAddr):
-    sp = app_client.get_suggested_params()
-    sp.flat_fee = True
-    sp.fee = beaker.consts.milli_algo
-
-    # set fee proxy
     tx = app_client.call(
         bridge.setSmgFeeProxy,
-        proxy=feeProxyAddr.address,
-        suggested_params=sp
+        proxy=feeProxyAddr,
     )
-    print("setSmgFeeProxy tx:", tx.return_value, tx)
 
     feeproxy = app_client.call(
         bridge.getSmgFeeProxy,
-        suggested_params=sp
     )
-    print("getSmgFeeProxy feeproxy:", feeproxy.return_value)
+    print("feeproxy:", feeproxy, feeProxyAddr)
+    assert feeproxy.return_value == feeProxyAddr
 
 
 
