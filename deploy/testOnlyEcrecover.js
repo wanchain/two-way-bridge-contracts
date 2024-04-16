@@ -244,6 +244,16 @@ async function main() {
 
             console.log("========(sepolia not handle v s,address from TestRecover)", e)
         }
+	    try {
+
+            let retJacob = await contractZk.TestRecover(mym,myv,myr,mys);
+            console.log("========(zkSync not handle v s,address TestRecover)", retJacob)
+
+        } catch (e) {
+
+            console.log("========(zkSync not handle v s,address from TestRecover)", e)
+        }
+
         console.log("Not handle*************************************************************")
 
 
@@ -278,10 +288,19 @@ async function main() {
         } catch (e) {
             console.log("========(sepolia handle v s,address from TestRecover)", e)
         }
+       try {
+
+            let retJacob = await contractZk.TestRecover(mym,myv,myr,mys);
+            console.log("========(zkSync handle v s,address from TestRecover)", retJacob)
+
+        } catch (e) {
+            console.log("========(zkSync handle v s,address from TestRecover)", e)
+        }
+
         console.log("Handled*************************************************************")
 
-        //break
-        await sleep(30000)
+        break
+        await sleep(3000)
 
     }
 
