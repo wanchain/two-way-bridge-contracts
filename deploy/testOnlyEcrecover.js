@@ -333,27 +333,48 @@ function moreThanHalfQ(s){
 /*
 example of output:
 
+
+
+jacob@jacob-virtual-machine:~/wanchain/two-way-bridge-contracts-opBnb/deploy$ node testOnlyEcrecover.js
 s {
-  r: '0xb115b8e5260183a51af91afe242bed9be90c4dedf15529fbaea03897e3d42538',
-  s: '0x58cd30d624f4cdb90512c820dd77fdb42308ae6ff37b65f7699201d4d8c8c27c',
-  _vs: '0x58cd30d624f4cdb90512c820dd77fdb42308ae6ff37b65f7699201d4d8c8c27c',
-  recoveryParam: 0,
-  v: 27,
-  yParityAndS: '0x58cd30d624f4cdb90512c820dd77fdb42308ae6ff37b65f7699201d4d8c8c27c',
-  compact: '0xb115b8e5260183a51af91afe242bed9be90c4dedf15529fbaea03897e3d4253858cd30d624f4cdb90512c820dd77fdb42308ae6ff37b65f7699201d4d8c8c27c'
+  r: '0xf1e1caf2d5468a7061d23b70f9a0f282aa12a3071f5acc777a8f48a4ef923d59',
+  s: '0x379b1444e60e737f7af6a234482edb20a8e433c76180233a54b3063193644383',
+  _vs: '0xb79b1444e60e737f7af6a234482edb20a8e433c76180233a54b3063193644383',
+  recoveryParam: 1,
+  v: 28,
+  yParityAndS: '0xb79b1444e60e737f7af6a234482edb20a8e433c76180233a54b3063193644383',
+  compact: '0xf1e1caf2d5468a7061d23b70f9a0f282aa12a3071f5acc777a8f48a4ef923d59b79b1444e60e737f7af6a234482edb20a8e433c76180233a54b3063193644383'
 }
 m 0x56570de287d73cd1cb6092bb8fdee6173974955fdef345ae579ee9f475ea7432
 
-pkRecovered 0x0465c24bcefdf1540c5b1d0d2b68bd502e270e4b8d7d229ffb5b781f6d280b0a871dcb40c02e81470c55aafd46ec1a78a7a28f9b1f2f47567812d500c5cbc1ed62
-pkSigner 0x0465c24bcefdf1540c5b1d0d2b68bd502e270e4b8d7d229ffb5b781f6d280b0a871dcb40c02e81470c55aafd46ec1a78a7a28f9b1f2f47567812d500c5cbc1ed62
-addrRecover by function  0x5bD8BB8e262114a67509ab56ECADD855E33a3DBe
-addr of sk               0x5bD8BB8e262114a67509ab56ECADD855E33a3DBe
-addr of wallet           0x5bD8BB8e262114a67509ab56ECADD855E33a3DBe
+pkRecovered 0x049ef5c7eabc5bea98841eefac9aaef6f7c32535d493668ea3f212ed97b0c20a2a6c4803a843a03b68c80087e690a2013b06b643960cb39ac8eef0cb5afaaf6477
+pkSigner 0x049ef5c7eabc5bea98841eefac9aaef6f7c32535d493668ea3f212ed97b0c20a2a6c4803a843a03b68c80087e690a2013b06b643960cb39ac8eef0cb5afaaf6477
+addrRecover by function  0x5d4F391933840CbBAbCdb436C82794A3962AFb75
+addr of sk               0x5d4F391933840CbBAbCdb436C82794A3962AFb75
+addr of wallet           0x5d4F391933840CbBAbCdb436C82794A3962AFb75
 success
-========(sepolia not handle v s,TestRecover) 0x5bD8BB8e262114a67509ab56ECADD855E33a3DBe
+
+
+
+
+Not handle*************************************************************
+m,v,r,s 0x56570de287d73cd1cb6092bb8fdee6173974955fdef345ae579ee9f475ea7432 28 0xf1e1caf2d5468a7061d23b70f9a0f282aa12a3071f5acc777a8f48a4ef923d59 0x379b1444e60e737f7af6a234482edb20a8e433c76180233a54b3063193644383
+not >bHalfQ
+========(sepolia not handle v s,address TestRecover) 0x5d4F391933840CbBAbCdb436C82794A3962AFb75
+========(zkSync not handle v s,address TestRecover) 0x5d4F391933840CbBAbCdb436C82794A3962AFb75
+Not handle*************************************************************
+
+
+
+
+Handled*************************************************************
 Q 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
-Q-s 0xa732cf29db0b3246faed37df2288024a97a62e76bbcd3a4456405cb7f76d7ec5
-========(sepolia handle v s,TestRecover) 0x5bD8BB8e262114a67509ab56ECADD855E33a3DBe
+Q-s 0xc864ebbb19f18c8085095dcbb7d124de11caa91f4dc87d016b1f585b3cd1fdbe
+m,v,r,s 0x56570de287d73cd1cb6092bb8fdee6173974955fdef345ae579ee9f475ea7432 27 0xf1e1caf2d5468a7061d23b70f9a0f282aa12a3071f5acc777a8f48a4ef923d59 0xc864ebbb19f18c8085095dcbb7d124de11caa91f4dc87d016b1f585b3cd1fdbe
+>bHalfQ
+========(sepolia handle v s,address from TestRecover) 0x5d4F391933840CbBAbCdb436C82794A3962AFb75
+========(zkSync handle v s,address from TestRecover) 0x0000000000000000000000000000000000000000
+Handled*************************************************************
 
  */
 
