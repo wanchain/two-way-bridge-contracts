@@ -14,72 +14,86 @@ import beaker
 
 import bridge
 from utils import *
+import pytest
 
 
-def test_oracle(app_client) -> None:
-    sp = app_client.get_suggested_params()
-    sp.flat_fee = True
-    sp.fee = beaker.consts.milli_algo +10
 
-    smgID = bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303632')
-    ttt = app_client.call(
-        bridge.set_storeman_group_config,
+
+
+@pytest.mark.Author
+@pytest.mark.xfail(True, run=True, reason='not admin')
+def test_oracle_setStoremanGroupConfig_notAdmin(app_client) -> None:
+    smgID = bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
+    GPK = bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5')
+    startTime = 1799351111
+    endTime = 1799351331
+    status = 5
+    # app_client.signer = admin.signer
+    app_client.call(
+        bridge.setStoremanGroupConfig,
         id=smgID,
-        startTime=1709956800,
-        endTime=1712635200,
-        gpk=bytes.fromhex('764cf4df0b78f7d15433d927981c7467aae494bb4946d996890024a5ea8d0df61a6cd7ba9c6d6e356957de6a8d936c13a19787f26b0926c913b82d31a206e887'),
-        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
-        suggested_params = sp,
+        status=status,
+        startTime=startTime,
+        endTime=endTime,
+        gpk=GPK,
+        boxes=[
+            (app_client.app_id, smgID),
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.get_sender())),
+        ],
     )
 
-    # smgID = bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
-    # ttt = app_client.call( # old
-    #     bridge.set_storeman_group_config,
+
+
+@pytest.mark.oracle
+def test_oracle(app_client_admin) -> None:
+
+    smgID = bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
+    GPK = bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5')
+    startTime = 1799351111
+    endTime = 1799351331
+    status = 5
+    # app_client.signer = admin.signer
+    app_client_admin.call(
+        bridge.setStoremanGroupConfig,
+        id=smgID,
+        status=status,
+        startTime=startTime,
+        endTime=endTime,
+        gpk=GPK,
+        boxes=[
+            (app_client_admin.app_id, smgID),
+            (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.get_sender())),
+        ],
+    )
+
+
+    # info = app_client.call(
+    #     bridge.getStoremanGroupConfig,
     #     id=smgID,
-    #     startTime=1799351111,
-    #     endTime=1799351331,
-    #     gpk=bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5'),
-    #     boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
-    #     suggested_params = sp,
+    #     boxes=[(app_client.app_id, smgID)],
     # )
+    # assert bytes(info.return_value[0]) == GPK
+    # assert info.return_value[1] == startTime
+    # assert info.return_value[2] == endTime
+    # assert info.return_value[3] == status
+
+    # status = 7
+    # app_client.call(
+    #     bridge.setStoremanGroupStatus,
+    #     id=smgID,
+    #     status=status,
+    #     boxes=[(app_client.app_id, smgID)],
+    # )
+    # info = app_client.call(
+    #     bridge.getStoremanGroupConfig,
+    #     id=smgID,
+    #     boxes=[(app_client.app_id, smgID)],
+    # )
+    # assert bytes(info.return_value[0]) == GPK
+    # assert info.return_value[1] == startTime
+    # assert info.return_value[2] == endTime
+    # assert info.return_value[3] == status    
 
 
-    print("------------------set_storeman_group_config:", ttt.return_value, ttt.tx_info)
-
-    tx = app_client.call(
-        bridge.get_smg_info,
-        id=smgID,
-        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
-        suggested_params = sp,
-    )
-    print("------------------get_smg_info:", tx.return_value)
-
-    tx = app_client.call(
-        bridge.acquireReadySmgInfoTest,
-        smgID=smgID,
-        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
-        # ss=33,
-        suggested_params = sp,
-    )
-    print("------------------acquireReadySmgInfoTest:", tx.return_value)
+    # authorization test
     
-
-
-
-
-def main() -> None:
-    prov = Provider(False)
-    prov.create()
-    # prov.update(prov.app_client.app_id)
-
-    test_oracle(prov.app_client)
-
-    print('done')
-
-if __name__ == "__main__":
-    main()
-
-
-
-
-

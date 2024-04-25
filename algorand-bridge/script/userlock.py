@@ -274,9 +274,8 @@ def main() -> None:
     # setFee(app_client)
 
     # tokenCreate(prov)
-    updateTokenPair(app_client, AssetID)
-    # test_userLock(app_client, prov.acct_addr, prov.acct_signer)
-
+    # updateTokenPair(app_client, AssetID)
+    test_userLock(app_client, prov.acct_addr, prov.acct_signer)
     test_userLockToken(app_client, prov.acct_addr, prov.acct_signer)
     return
 

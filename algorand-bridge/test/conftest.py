@@ -15,6 +15,7 @@ import beaker
 import bridge
 
 import pytest
+from utils import *
 
 
 
@@ -27,6 +28,11 @@ def owner():
 def admin():
     accts = beaker.localnet.get_accounts()
     return accts[1] 
+
+@pytest.fixture
+def user():
+    accts = beaker.localnet.get_accounts()
+    return accts[2] 
 
 @pytest.fixture
 def feeProxyAddr():
@@ -75,7 +81,6 @@ def nativeAssetID(app_client, owner):
 
 @pytest.fixture
 def app_client(owner, admin):
-    print("11111")
     algod_client = beaker.localnet.get_algod_client()
     app_client = beaker.client.ApplicationClient(
         client=algod_client,
@@ -99,7 +104,22 @@ def app_client(owner, admin):
         bridge.initialize,
         owner=owner.address,
         admin=admin.address,
-        boxes=[(app_client.app_id, "pair_list")] * 8,
+        boxes=[
+            (app_client.app_id, "pair_list"),
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),
+        ],
     )
     result = atc.execute(algod_client, 3)    
     return app_client
+
+@pytest.fixture
+def app_client_admin(app_client, admin):
+    algod_client = beaker.localnet.get_algod_client()
+    app_client = beaker.client.ApplicationClient(
+        client=algod_client,
+        app=bridge.app,
+        app_id=app_client.app_id,
+        signer=admin.signer,
+    )
+    return  app_client
+

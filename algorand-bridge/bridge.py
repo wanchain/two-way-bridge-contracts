@@ -14,14 +14,7 @@ class StoremanGroupConfig(abi.NamedTuple):
     endTime: abi.Field[abi.Uint64]
     status: abi.Field[abi.Uint8]
     
-
-    # struct TokenPairInfo {
-    #   AncestorInfo aInfo;               /// TODO:
-    #   uint      fromChainID;            /// index in coinType.txt; e.g. eth=60, etc=61, wan=5718350
-    #   bytes     fromAccount;            /// from address
-    #   uint      toChainID;              ///
-    #   bytes     toAccount;              /// to token address
-    # }   
+ 
 class TokenPairInfo(abi.NamedTuple):
     id: abi.Field[abi.Uint64]
     fromChainID: abi.Field[abi.Uint64]
@@ -34,10 +27,6 @@ class CrossTokenInfo(abi.NamedTuple):
     fromAccount: abi.Field[abi.DynamicBytes]
     toAccount: abi.Field[abi.DynamicBytes]
 
-# struct GetFeesReturn {
-#     uint256 contractFee;
-#     uint256 agentFee;
-# }
 class FeeInfo(abi.NamedTuple):
     contractFee: abi.Field[abi.Uint64]
     agentFee: abi.Field[abi.Uint64]
@@ -52,6 +41,7 @@ class BridgeState:
     mapTokenPairContractFee = BoxMapping(abi.String, abi.Uint64)
     mapContractFee = BoxMapping(abi.String,abi.Uint64) # key  fromChainId*2**32+toChainID
     mapAgentFee = BoxMapping(abi.String,abi.Uint64) # key  fromChainId*2**32+toChainID
+    mapAdmin = BoxMapping(abi.String, abi.Uint64)
 
     mapTokenPairInfo = BoxMapping(abi.String, TokenPairInfo)
     pair_list = BoxList(abi.Uint64, 200) # max 200 pairs
@@ -64,10 +54,6 @@ class BridgeState:
         TealType.bytes,
         descr="owner of the token manager",
     )
-    admin: Final[GlobalStateValue] = GlobalStateValue(
-        TealType.bytes,
-        descr="admin of the token manager",
-    )
     feeProxy: Final[GlobalStateValue] = GlobalStateValue(
         TealType.bytes,
         descr="fee proxy address",
@@ -77,13 +63,6 @@ class BridgeState:
         descr="initialized flag",
     )
 
-    latest_wrapped_token_id: Final[GlobalStateValue] = GlobalStateValue(
-        TealType.uint64,
-        descr="latest wrapped token id",
-    )
-    # lockedTime: depercated. only for HTLC
-    # smgFeeReceiverTimeout: useless
-    ## oracle
     mapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], StoremanGroupConfig)
 
 
@@ -94,22 +73,54 @@ app = Application(
     state=BridgeState()
 )
 
-###
-# API Methods
-###
 
-@app.external
-def setAdmin(
+
+@app.external()
+def callSetCount(appId: abi.Uint64, a: abi.Uint64) -> Expr:
+    InnerTxnBuilder.Begin()
+    InnerTxnBuilder.MethodCall(
+        app_id=app_id,
+        method_signature=setCount,
+        args=[a],
+    ),
+    InnerTxnBuilder.Submit()
+
+@app.external()
+def addAdmin(
     adminAccount: abi.Address
 )   -> Expr:
-    return app.state.admin.set(adminAccount.get())
+    adminKey = abi.make(abi.String)
+    adminValue = abi.make(abi.Uint64)
+    return Seq(
+        getAdminKey(adminAccount).store_into(adminKey),
+        adminValue.set(Int(1)),
+        app.state.mapAdmin[adminKey].set(adminValue),
+    )
 
-@app.external
-def admin(
+@app.external()
+def removeAdmin(
+    adminAccount: abi.Address
+)   -> Expr:
+    adminKey = abi.make(abi.String)
+    return Seq(
+        getAdminKey(adminAccount).store_into(adminKey),
+        Pop(app.state.mapAdmin[adminKey].delete()),
+    )
+
+@app.external(read_only=True)
+def owner(
     *,
     output: abi.Address
 )    -> Expr:
-    return output.set(app.state.admin.get())
+    return output.set(app.state.owner.get())
+
+@app.external(authorize=Authorize.only(app.state.owner.get()))
+def transferOwner(
+    _newOwner: abi.Address,
+) -> Expr:
+    return Seq(
+        app.state.owner.set(_newOwner.get())
+    )
 
 
 @app.external(read_only=True)
@@ -220,33 +231,33 @@ def setFees(
         )
     )
 
-@ABIReturnSubroutine
-def getTokenAccount(
-    tokenPairID: abi.Uint64,
-    *,
-    output: abi.String,
-    ) -> pt.Expr:
-    KEY = abi.make(abi.String)
-    tInfo = TokenPairInfo()
-    toChainID = abi.make(abi.Uint64)
-    fromChainID = abi.make(abi.Uint64)
-    return Seq(
-        getTokenPairInfoKey(tokenPairID).store_into(KEY),
-        app.state.mapTokenPairInfo[KEY].store_into(tInfo),
-        tInfo.toChainID.store_into(toChainID),
-        tInfo.fromChainID.store_into(fromChainID),
-        If(toChainID.get() ==  CurrentChainID)
-        .Then(
-            tInfo.toAccount.store_into(output)
-        )
-        .ElseIf(fromChainID.get() ==  CurrentChainID)
-        .Then(
-            tInfo.fromAccount.store_into(output) 
-        )
-        .Else(
-            Reject()
-        )
-    )
+# @ABIReturnSubroutine
+# def getTokenAccount(
+#     tokenPairID: abi.Uint64,
+#     *,
+#     output: abi.String,
+#     ) -> pt.Expr:
+#     KEY = abi.make(abi.String)
+#     tInfo = TokenPairInfo()
+#     toChainID = abi.make(abi.Uint64)
+#     fromChainID = abi.make(abi.Uint64)
+#     return Seq(
+#         getTokenPairInfoKey(tokenPairID).store_into(KEY),
+#         app.state.mapTokenPairInfo[KEY].store_into(tInfo),
+#         tInfo.toChainID.store_into(toChainID),
+#         tInfo.fromChainID.store_into(fromChainID),
+#         If(toChainID.get() ==  CurrentChainID)
+#         .Then(
+#             tInfo.toAccount.store_into(output)
+#         )
+#         .ElseIf(fromChainID.get() ==  CurrentChainID)
+#         .Then(
+#             tInfo.fromAccount.store_into(output) 
+#         )
+#         .Else(
+#             Reject()
+#         )
+#     )
 
 
 
@@ -455,18 +466,18 @@ def acquireReadySmgInfo(
         output.set(info.gpk)
     ) 
 
-@app.external(read_only=True)
-def acquireReadySmgInfoTest(
-    smgID: abi.StaticBytes[Literal[32]],
-    # ss: abi.Uint64,
-    *,
-    output: abi.StaticBytes[Literal[64]],
-    ) -> pt.Expr:
-    tmp = abi.make(abi.StaticBytes[Literal[64]])
-    return Seq(
-        acquireReadySmgInfo(smgID).store_into(tmp),
-        output.set(tmp),
-    ) 
+# @app.external(read_only=True)
+# def acquireReadySmgInfoTest(
+#     smgID: abi.StaticBytes[Literal[32]],
+#     # ss: abi.Uint64,
+#     *,
+#     output: abi.StaticBytes[Literal[64]],
+#     ) -> pt.Expr:
+#     tmp = abi.make(abi.StaticBytes[Literal[64]])
+#     return Seq(
+#         acquireReadySmgInfo(smgID).store_into(tmp),
+#         output.set(tmp),
+#     ) 
     
 
     
@@ -509,6 +520,7 @@ def smgMint(
     alldata = Concat(Itob(CurrentChainID), uniqueID, 
         Itob(tokenPairID), Itob(value),  Itob(fee), 
         Itob(tokenAccount), userAccount)
+    # TODO, change to abi encode    
     mhash = pt.Keccak256(alldata)
     verifyResult = verifySignature(mhash, PK, r, s)
 
@@ -825,17 +837,15 @@ def initialize(
     owner: abi.Address, 
     admin: abi.Address,
     ) -> Expr:
-    """Initializes the global state of the app.
-
-    Args:
-        owner: address of the owner
-        admin: address of the admin
-    """
+    adminKey = abi.make(abi.String)
+    adminValue = abi.make(abi.Uint64)
     return Seq(
         Assert(app.state.initialized.get() == Int(0)),
         Pop(app.state.pair_list.create()),
         app.state.owner.set(owner.get()),
-        app.state.admin.set(admin.get()),
+        getAdminKey(admin).store_into(adminKey),
+        adminValue.set(Int(1)),
+        app.state.mapAdmin[adminKey].set(adminValue),
         app.state.initialized.set(Int(1)),
     )
 
@@ -860,29 +870,43 @@ def clear_state() -> Expr:
 def close_out() -> Expr:
     return Approve()
 
-
+@Subroutine(TealType.uint64)
+def onlyAdmin(acct: Expr):
+    adminKey = abi.make(abi.String)
+    sender = abi.make(abi.Address)
+    vv = abi.make(abi.Uint64)
+    return Seq(
+        sender.set(acct),
+        getAdminKey(sender).store_into(adminKey),
+        If(app.state.mapAdmin[adminKey].exists())
+        .Then(
+            Int(1),
+            # app.state.mapAdmin[adminKey].store_into(vv),
+            # vv.get(),
+        ).Else(
+            Int(0)
+        )
+    )
 
 # oracle methods
-@app.external
-def set_storeman_group_config(
+@app.external(authorize=onlyAdmin)
+def setStoremanGroupConfig(
     id: abi.StaticBytes[Literal[32]],
+    status: abi.Uint8,
     gpk: abi.StaticBytes[Literal[64]],
     startTime: abi.Uint64,
     endTime: abi.Uint64,
 ) -> Expr:
     return Seq(
-        (status := abi.Uint8()).set(Int(0)),
         (info := StoremanGroupConfig()).set(gpk, startTime, endTime, status),
         app.state.mapStoremanGroupConfig[id].set(info),
-        
     )
 
-@app.external
-def set_storeman_group_status(
+@app.external(authorize=onlyAdmin)
+def setStoremanGroupStatus(
     id: abi.StaticBytes[Literal[32]],
     status: abi.Uint8,
 ) -> Expr:
-
     return Seq(
         (info := StoremanGroupConfig()).decode(
             app.state.mapStoremanGroupConfig[id].get()
@@ -896,8 +920,8 @@ def set_storeman_group_status(
 
 
 
-@app.external
-def get_smg_info(
+@app.external(read_only=True)
+def getStoremanGroupConfig(
     id: abi.StaticBytes[Literal[32]],
     *,
     output: StoremanGroupConfig,

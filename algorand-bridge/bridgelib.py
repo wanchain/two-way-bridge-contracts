@@ -26,6 +26,13 @@ def getTokenPairInfoKey(
     ) -> Expr:
         return output.set(Concat(Bytes("mapTokenPairInfo"), Itob(tokenPairID.get())))
 
+@ABIReturnSubroutine
+def getAdminKey(
+    admin: abi.Address,
+    *,
+    output: abi.String,
+    ) -> Expr:
+        return output.set(Concat(Bytes("mapAdmin"), admin.get()))
 
 @ABIReturnSubroutine
 def getContractFeeKey(
