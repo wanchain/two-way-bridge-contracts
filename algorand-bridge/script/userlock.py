@@ -14,11 +14,7 @@ import beaker
 
 import bridge
 from utils import *
-# from oracle_test import test_oracle
-# from feeProxy_test import test_feeProxy
-# from fee_test import test_fee
-# from tokenCreate_test import test_tokenCreate
-# from tokenPair_test import test_tokenPair
+
 
 IsTestnet = True
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303633')

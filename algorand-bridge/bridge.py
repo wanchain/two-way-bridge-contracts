@@ -14,7 +14,28 @@ class StoremanGroupConfig(abi.NamedTuple):
     endTime: abi.Field[abi.Uint64]
     status: abi.Field[abi.Uint8]
     
- 
+class UserLockLogger(abi.NamedTuple):
+    name:         abi.Field[abi.String]
+    smgID:        abi.Field[abi.StaticBytes[Literal[32]]]
+    tokenPairID:  abi.Field[abi.Uint64]
+    fromAccount:  abi.Field[abi.Uint64]
+    value:        abi.Field[abi.Uint64]
+    contractFee:  abi.Field[abi.Uint64]
+    userAccount:  abi.Field[abi.String]
+    txid:         abi.Field[abi.StaticBytes[Literal[32]]]
+
+
+
+class SmgReleaseLogger(abi.NamedTuple):
+    name:           abi.Field[abi.String]
+    uniqueID:       abi.Field[abi.StaticBytes[Literal[32]]]
+    smgID:          abi.Field[abi.StaticBytes[Literal[32]]]
+    tokenPairID:    abi.Field[abi.Uint64]
+    value:          abi.Field[abi.Uint64]
+    tokenAccount:   abi.Field[abi.Uint64]
+    userAccount:    abi.Field[abi.Address]
+
+
 class TokenPairInfo(abi.NamedTuple):
     id: abi.Field[abi.Uint64]
     fromChainID: abi.Field[abi.Uint64]
@@ -40,7 +61,7 @@ class BridgeState:
     mapTxStatus = BoxMapping(TransactionHash, abi.Uint8)
     mapTokenPairContractFee = BoxMapping(abi.String, abi.Uint64)
     mapContractFee = BoxMapping(abi.String,abi.Uint64) # key  fromChainId*2**32+toChainID
-    mapAgentFee = BoxMapping(abi.String,abi.Uint64) # key  fromChainId*2**32+toChainID
+    mapAgentFee = BoxMapping(abi.String,abi.Uint64)
     mapAdmin = BoxMapping(abi.String, abi.Uint64)
 
     mapTokenPairInfo = BoxMapping(abi.String, TokenPairInfo)
@@ -73,17 +94,6 @@ app = Application(
     state=BridgeState()
 )
 
-
-
-@app.external()
-def callSetCount(appId: abi.Uint64, a: abi.Uint64) -> Expr:
-    InnerTxnBuilder.Begin()
-    InnerTxnBuilder.MethodCall(
-        app_id=app_id,
-        method_signature=setCount,
-        args=[a],
-    ),
-    InnerTxnBuilder.Submit()
 
 @app.external()
 def addAdmin(
@@ -231,35 +241,6 @@ def setFees(
         )
     )
 
-# @ABIReturnSubroutine
-# def getTokenAccount(
-#     tokenPairID: abi.Uint64,
-#     *,
-#     output: abi.String,
-#     ) -> pt.Expr:
-#     KEY = abi.make(abi.String)
-#     tInfo = TokenPairInfo()
-#     toChainID = abi.make(abi.Uint64)
-#     fromChainID = abi.make(abi.Uint64)
-#     return Seq(
-#         getTokenPairInfoKey(tokenPairID).store_into(KEY),
-#         app.state.mapTokenPairInfo[KEY].store_into(tInfo),
-#         tInfo.toChainID.store_into(toChainID),
-#         tInfo.fromChainID.store_into(fromChainID),
-#         If(toChainID.get() ==  CurrentChainID)
-#         .Then(
-#             tInfo.toAccount.store_into(output)
-#         )
-#         .ElseIf(fromChainID.get() ==  CurrentChainID)
-#         .Then(
-#             tInfo.fromAccount.store_into(output) 
-#         )
-#         .Else(
-#             Reject()
-#         )
-#     )
-
-
 
 @ABIReturnSubroutine
 def getCrossTokenInfo(
@@ -335,9 +316,11 @@ def userLock(
     contractFee = abi.make(abi.Uint64)
     toAccount = abi.make(abi.DynamicBytes)
     fromAccount = abi.make(abi.DynamicBytes)
+    fromAccountu = abi.make(abi.Uint64)
     crossTokenInfo = CrossTokenInfo()
     left = abi.make(abi.Uint64)
-    txid = abi.make(abi.String)
+    txid = abi.make(abi.StaticBytes[Literal[32]])
+    name = abi.make(abi.String)
     return Seq(
         getCrossTokenInfo(tokenPairID).store_into(crossTokenInfo),
         crossTokenInfo.contractFee.store_into(contractFee),
@@ -378,16 +361,10 @@ def userLock(
                 }
             )            
         ),
-        Log( Concat(
-            Bytes("UserLockLogger:"), 
-            smgID.get(), Bytes(":"),
-            Itob(tokenPairID.get()), Bytes(":"),
-            fromAccount.get(), Bytes(":"),
-            Itob(value.get()), Bytes(":"),
-            Itob(contractFee.get()), Bytes(":"),
-            userAccount.get(), Bytes(":"), 
-            txid.get()
-        ))
+        name.set("UserLockLogger"),
+        fromAccountu.set(Btoi(fromAccount.get())),
+        (logger := UserLockLogger()).set(name, smgID, tokenPairID, fromAccountu, value, contractFee,  userAccount, txid),
+        Log(logger.encode())
     )
 
 
@@ -402,40 +379,6 @@ def getSmgFeeProxy(*, output: abi.Address) -> Expr:
 def setSmgFeeProxy(proxy: abi.Address) -> Expr:
     return app.state.feeProxy.set(proxy.get())
 
-# userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes calldata userAccount)
-@app.external
-def userBurn(
-    # seed: abi.AssetTransferTransaction, 
-    smgID: pt.abi.StaticBytes[Literal[32]], 
-    tokenPairID: abi.Uint64, 
-    value: abi.Uint64,
-    fee: abi.Uint64,  
-    tokenAccount: abi.Uint64,  
-    userAccount: abi.String) -> Expr:
-    #     event UserBurnLogger(bytes32 indexed smgID, uint indexed tokenPairID, 
-    #   address indexed tokenAccount, uint value, uint contractFee, uint fee, bytes userAccount);
-
-    smgID = smgID.get()
-    tokenPairID = tokenPairID.get()
-    value = value.get()
-    fee = fee.get()
-    tokenAccount = tokenAccount.get()
-    userAccount = userAccount.get()
-
-    UserBurnLogger = Concat(
-        Bytes("UserBurnLogger:"),
-        smgID, Bytes(":"),
-        Itob(tokenPairID), Bytes(":"),
-        Itob(tokenAccount), Bytes(":"),
-        Itob(value), Bytes(":"),
-        Itob(Int(88888888888)), Bytes(":"),
-        Itob(Int(999)), Bytes(":"),
-        userAccount, Bytes(":")
-    )
-
-    return Seq(
-        Log(UserBurnLogger)
-    )
 
 # function verifySignature(uint curveID, bytes32 message, bytes memory PK, bytes memory r, bytes32 s)
 # curveID is useless here.
@@ -457,80 +400,11 @@ def acquireReadySmgInfo(
     *,
     output: abi.StaticBytes[Literal[64]],
     ) -> pt.Expr:
-
-    # TPK= Bytes("base16", "8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5")
-    # return TPK
     info = StoremanGroupConfig()
     return Seq(
         app.state.mapStoremanGroupConfig[smgID].store_into(info),
         output.set(info.gpk)
     ) 
-
-# @app.external(read_only=True)
-# def acquireReadySmgInfoTest(
-#     smgID: abi.StaticBytes[Literal[32]],
-#     # ss: abi.Uint64,
-#     *,
-#     output: abi.StaticBytes[Literal[64]],
-#     ) -> pt.Expr:
-#     tmp = abi.make(abi.StaticBytes[Literal[64]])
-#     return Seq(
-#         acquireReadySmgInfo(smgID).store_into(tmp),
-#         output.set(tmp),
-#     ) 
-    
-
-    
-
-# function smgMint(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes calldata r, bytes32 s)   
-@app.external
-def smgMint(
-        uniqueID:pt.abi.StaticBytes[Literal[32]], 
-        smgID:pt.abi.StaticBytes[Literal[32]],
-        tokenPairID:abi.Uint64, value:abi.Uint64,
-        fee: abi.Uint64, tokenAccount:abi.Uint64, 
-        userAccount:abi.Address, 
-        r:pt.abi.StaticBytes[Literal[64]], 
-        s:pt.abi.StaticBytes[Literal[32]]) -> Expr:
-    #    event SmgMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
-    PK = abi.make(abi.StaticBytes[Literal[64]])
-    PK.set(acquireReadySmgInfo(smgID))
-    PK = PK.get()
-
-    uniqueID = uniqueID.get()
-    smgID = smgID.get()
-    tokenPairID = tokenPairID.get()
-    value = value.get()
-    fee = fee.get()
-    tokenAccount = tokenAccount.get()
-    userAccount = userAccount.get()
-
-    SmgMintLogger = Concat(
-        Bytes("SmgMintLogger:"),
-        uniqueID, Bytes(":"),
-        smgID, Bytes(":"),
-        Itob(tokenPairID), Bytes(":"),
-        Itob(value), Bytes(":"),
-        Itob(tokenAccount), Bytes(":"),
-        userAccount, Bytes(":")
-    )
-
-    r = r.get()
-    s = s.get()
-    alldata = Concat(Itob(CurrentChainID), uniqueID, 
-        Itob(tokenPairID), Itob(value),  Itob(fee), 
-        Itob(tokenAccount), userAccount)
-    # TODO, change to abi encode    
-    mhash = pt.Keccak256(alldata)
-    verifyResult = verifySignature(mhash, PK, r, s)
-
-    return Seq(
-        Log(SmgMintLogger),
-        # Assert(verifyResult == Int(1)),   # TODO check the signature. here for test.
-        do_axfer(userAccount, tokenAccount, value)
-    )
-
-
 
 
 # smgRelease(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes calldata r, bytes32 s)
@@ -546,103 +420,53 @@ def smgRelease(
         s: abi.StaticBytes[Literal[32]]) -> Expr:
     #    event SmgReleaseLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
     PK = abi.make(abi.StaticBytes[Literal[64]])
-
-    uniqueID = uniqueID.get()
-    tokenPairID = tokenPairID.get()
-    value = value.get()
-    fee = fee.get()
-    tokenAccount = tokenAccount.get()
-    userAccount = userAccount.get()
+    status = abi.make(abi.Uint8)
+    name = abi.make(abi.String)
     feeProxy = abi.make(abi.Address)
 
-    SmgReleaseLogger = Concat(Bytes("SmgReleaseLogger:"),
-        uniqueID, Bytes(":"),
-        smgID.get(), Bytes(":"),
-        Itob(tokenPairID), Bytes(":"),
-        Itob(value), Bytes(":"),
-        Itob(tokenAccount), Bytes(":"),
-        userAccount
-    )
     OpUp(mode=pt.OpUpMode.OnCall).ensure_budget(Int(9000),fee_source=pt.OpUpFeeSource.GroupCredit),
-    r = r.get()
-    s = s.get()
-    alldata = Concat(Itob(CurrentChainID), uniqueID, 
-        Itob(tokenPairID), Itob(value),  Itob(fee), 
-        Itob(tokenAccount), userAccount)
-    # alldata =pt.Bytes(
-    #         "base16",
-    #         "0x000000008000011b3260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e60000000000000021000000000000003700000000000000010000000000000000fae7555ec7598a8e15fec080294b837cb3e440274de38bf770ac2371ccc85795",
-    #     )
+
+    alldata = Concat(Itob(CurrentChainID), uniqueID.get(), 
+        Itob(tokenPairID.get()), Itob(value.get()),  Itob(fee.get()), 
+        Itob(tokenAccount.get()), userAccount.get())
+
     mhash = pt.Keccak256(alldata)
-    # mhash = pt.Bytes(
-    #             "base16",
-    #             "0xa9933eee7a63a3bd74d74f8492eb39dfb0d4b5eb426ee62a884b53d6909e6756",
-    #         )
-
-    status = abi.make(abi.Uint8)
     return Seq(
-        status.set(0), # TODO, reset uniqueID status to 0 for test.
-        app.state.mapTxStatus[uniqueID].set(status),
-        app.state.mapTxStatus[uniqueID].store_into(status),
-        Assert(status.get() == Int(0)),
+        name.set("SmgReleaseLogger"),
+        (logger := SmgReleaseLogger()).set(name, uniqueID, smgID, tokenPairID, value, tokenAccount,  userAccount),
+        Log(logger.encode()),
+        # If(app.state.mapTxStatus[uniqueID.get()].exists(), Reject()), # TODO for debug
         status.set(1),
-        app.state.mapTxStatus[uniqueID].set(status),
+        app.state.mapTxStatus[uniqueID.get()].set(status),
         acquireReadySmgInfo(smgID).store_into(PK),
-        Log(SmgReleaseLogger),
-        Assert(verifySignature(mhash,  PK.get(), r, s) == Int(1)),
-
-        If(tokenAccount == Int(0)).Then(
+        Assert(verifySignature(mhash,  PK.get(), r.get(), s.get()) == Int(1)),  # TODO verify sig
+        If(tokenAccount.get() == Int(0)).Then(
             InnerTxnBuilder.Execute(
                 {
                     TxnField.type_enum: TxnType.Payment,
                     TxnField.receiver: Txn.sender(),
-                    TxnField.amount: value,
+                    TxnField.amount: value.get(),
                 }
             ),
-            If(fee > Int(0)).Then(
+            If(fee.get() > Int(0)).Then(
                 feeProxy.set(app.state.feeProxy),
                 InnerTxnBuilder.Execute(
                     {
                         TxnField.type_enum: TxnType.Payment,
                         TxnField.receiver: feeProxy.get(),
-                        TxnField.amount: fee,
+                        TxnField.amount: fee.get(),
                     }
                 )
             )
         ).Else(
-            do_axfer(userAccount, tokenAccount, value),
-            If(fee > Int(0)).Then(
+            do_axfer(userAccount.get(), tokenAccount.get(), value.get()),
+            If(fee.get() > Int(0)).Then(
                 feeProxy.set(app.state.feeProxy),
-                do_axfer(feeProxy.get(), tokenAccount, fee)
+                do_axfer(feeProxy.get(), tokenAccount.get(), fee.get())
             )
         ),
     )
 
-# @app.external
-# def create_wrapped_token(
-#     name: abi.String,
-#     symbol: abi.String,
-#     decimals: abi.Uint8,
-#     total_supply: abi.Uint64,
-#     *,
-#     output: abi.Uint64
-# ) -> Expr:
-#     return Seq(
-#         app.state.latest_wrapped_token_id.set(do_create_wrapped_token(name, symbol, decimals, total_supply)),
-#         Log(Concat(Bytes("create_wrapped_token:"), 
-#             Itob(app.state.latest_wrapped_token_id.get()),
-#             name.get(),
-#             Bytes(":"),
-#             symbol.get(),
-#             Bytes(":"),
-#             Itob(decimals.get())),
-#         ),
-#         output.set(app.state.latest_wrapped_token_id)
-#     )
-
-# @app.external
-# def get_latest_wrapped_token_id(*, output: abi.Uint64) -> Expr:
-#     return output.set(app.state.latest_wrapped_token_id.get())
 
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
@@ -768,30 +592,6 @@ def do_ax_burn(holder: Expr, aid: Expr, amt: Expr) -> Expr:
 def do_opt_in(aid: Expr) -> Expr:
     return do_axfer(Global.current_application_address(), aid, Int(0))
 
-# @Subroutine(TealType.uint64)
-# def do_create_wrapped_token(
-#     name: abi.String,
-#     symbol: abi.String,
-#     decimals: abi.Uint8,
-#     total_supply: abi.Uint64,
-# ) -> Expr:
-#     return Seq(
-#         InnerTxnBuilder.Execute(
-#             {
-#                 TxnField.type_enum: TxnType.AssetConfig,
-#                 TxnField.config_asset_name: name.get(),
-#                 TxnField.config_asset_unit_name: symbol.get(),
-#                 TxnField.config_asset_total: total_supply.get(),
-#                 TxnField.config_asset_decimals: decimals.get(),
-#                 TxnField.config_asset_manager: Global.current_application_address(),
-#                 TxnField.config_asset_reserve: Global.current_application_address(),
-#                 TxnField.config_asset_clawback: Global.current_application_address(),
-#                 TxnField.config_asset_url: Bytes("https://bridge.wanchain.org"),
-#                 TxnField.fee: Int(1000),
-#             }
-#         ),
-#         InnerTxn.created_asset_id(),
-#     )
 
 @Subroutine(TealType.none)
 def do_axfer(rx: Expr, aid: Expr, amt: Expr) -> Expr:
@@ -881,8 +681,6 @@ def onlyAdmin(acct: Expr):
         If(app.state.mapAdmin[adminKey].exists())
         .Then(
             Int(1),
-            # app.state.mapAdmin[adminKey].store_into(vv),
-            # vv.get(),
         ).Else(
             Int(0)
         )

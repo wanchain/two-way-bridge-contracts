@@ -17,7 +17,7 @@ from utils import *
 import pytest
 
 @pytest.mark.tokenCreate
-def test_tokenCreate(app_client):
+def test_tokenCreate(app_client, owner):
     print('create demo asset token')
     sp_with_fees = app_client.client.suggested_params()
     sp_with_fees.flat_fee = True
@@ -31,13 +31,13 @@ def test_tokenCreate(app_client):
         unit_name="MOCK",
         asset_name="MOCK TOKEN",
         manager="",
-        reserve=prov.app_client.app_addr,
+        reserve=app_client.app_addr,
         freeze="",
         clawback="",
         url="https://bridge.wanchain.org",
         decimals=6,
     )
-    tx = owner.sign_transactions([ctxn], [0])
+    tx = owner.signer.sign_transactions([ctxn], [0])
     txid = app_client.client.send_transaction(tx[0])
     print('txid', txid)
     receipt = transaction.wait_for_confirmation(app_client.client, txid)
