@@ -17,7 +17,7 @@ from utils import *
 
 
 IsTestnet = True
-smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303633')
+smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
 old_app_id = 627255629  #updateApplication approval program too long. max len 4096 bytes
 AssetID = 627255785       # this is minted by wanchain.
 nativeAssetID = 640706823 # this is a native token, need cross to wanchain.
@@ -117,13 +117,45 @@ def test_userLockToken(app_client, acct_addr, aacct_signer) -> None:
         print("---------------------- userLockToken txresult:", rv.return_value, rv.tx_id, rv.tx_info)
 
 
+def setOracle(app_client) -> None:
+    adminKey = getPrefixAddrKey("mapAdmin", app_client.sender)
+    tx = app_client.call(bridge.addAdmin,adminAccount=app_client.sender,boxes=[
+            (app_client.app_id, adminKey),
+        ] )
+    transaction.wait_for_confirmation(app_client.client, tx.tx_id, 1)
+    tx = app_client.call(bridge.setSmgFeeProxy,proxy=app_client.sender)
+    transaction.wait_for_confirmation(app_client.client, tx.tx_id, 1)
+    GPK = bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5')
+    startTime = 1799351111
+    endTime = 1799351331
+    status = 5
+    tx = app_client.call(
+        bridge.setStoremanGroupConfig,
+        id=smgID,
+        status=status,
+        startTime=startTime,
+        endTime=endTime,
+        gpk=GPK,
+        boxes=[
+            (app_client.app_id, smgID),
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.get_sender())),
+        ],
+    )
+    transaction.wait_for_confirmation(app_client.client, tx.tx_id, 1)
+    info =  app_client.call(
+        bridge.getStoremanGroupConfig,
+        id=smgID,
+        boxes=[
+            (app_client.app_id, smgID),
+        ],
+    )
+    print("getStoremanGroupConfig:", info.return_value)
 
 def test_smgRelease(app_client) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
     uniqueID=bytes.fromhex('3260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
-    smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
 
     ttt = app_client.call(
         bridge.smgRelease,
@@ -273,7 +305,8 @@ def main() -> None:
     # updateTokenPair(app_client, AssetID)
     test_userLock(app_client, prov.acct_addr, prov.acct_signer)
     test_userLockToken(app_client, prov.acct_addr, prov.acct_signer)
-    
+
+    setOracle(app_client)
     test_smgRelease(app_client)
     return
 

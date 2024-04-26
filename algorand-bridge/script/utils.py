@@ -19,6 +19,12 @@ def getPrefixKey(prefix, id):
     value = bytes(prefix, 'utf8')+id.to_bytes(8, "big")
     length_to_encode = len(value).to_bytes(2, byteorder="big")
     return length_to_encode + value
+    
+def getPrefixAddrKey(prefix, addr):
+    value = bytes(prefix, 'utf8')+decode_address(addr)
+    length_to_encode = len(value).to_bytes(2, byteorder="big")
+    print("getPrefixAddrKey:", prefix, value )
+    return length_to_encode + value
 
 def print_boxes(app_client: beaker.client.ApplicationClient) -> None:
     boxes = app_client.get_box_names()
