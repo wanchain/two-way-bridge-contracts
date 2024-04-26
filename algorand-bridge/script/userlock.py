@@ -155,7 +155,7 @@ def test_smgRelease(app_client) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
-    uniqueID=bytes.fromhex('3260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
+    uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
 
     ttt = app_client.call(
         bridge.smgRelease,
