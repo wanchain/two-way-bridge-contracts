@@ -19,6 +19,7 @@ contract EcSchnorrVerifier {
         bytes32 e,
         bytes32 s
     ) public pure returns (bool) {
+        uint8 parityOld=parity;
         // ecrecover = (m, v, r, s);
         bytes32 sp = bytes32(Q - mulmod(uint256(s), uint256(px), Q));
         bytes32 ep = bytes32(Q - mulmod(uint256(e), uint256(px), Q));
@@ -27,10 +28,18 @@ contract EcSchnorrVerifier {
         // the ecrecover precompile implementation checks that the `r` and `s`
         // inputs are non-zero (in this case, `px` and `ep`), thus we don't need to
         // check if they're zero.
+	if(uint256(ep)>0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0){
+		ep=bytes32(Q-uint256(ep));
+                if(parity == uint8(27)){
+			parity = 28;
+                }else{
+                        parity=27;
+                }
+        }
         address R = ecrecover(sp, parity, px, ep);
         require(R != address(0), "ecrecover failed");
         return e == keccak256(
-        abi.encodePacked(R, uint8(parity), px, message)
+		abi.encodePacked(R, uint8(parityOld), px, message)
         );
     }
 
