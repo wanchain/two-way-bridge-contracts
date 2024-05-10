@@ -1,0 +1,81 @@
+import os
+import math
+from algosdk.abi import ABIType
+from algosdk.atomic_transaction_composer import TransactionWithSigner, AccountTransactionSigner
+from algosdk.encoding import decode_address, encode_address, encode_as_bytes
+from algosdk.transaction import AssetOptInTxn, PaymentTxn, AssetCreateTxn,AssetTransferTxn
+from algosdk import account, transaction,logic, util, mnemonic, v2client
+from algosdk.atomic_transaction_composer import (
+    AtomicTransactionComposer,
+    LogicSigTransactionSigner,
+    TransactionWithSigner,
+)
+from typing import Literal
+
+import beaker
+import pyteal as pt
+import bridge
+from utils import *
+import pytest
+
+app = beaker.Application(
+    "bridgeTest", 
+    descr="Cross chain test entry point", 
+    state=bridge.BridgeState()
+)
+
+
+# function verifySignature(uint curveID, bytes32 message, bytes memory PK, bytes memory r, bytes32 s)
+# curveID is useless here.
+@app.external
+def wVerifySignature(mhash: pt.abi.StaticBytes[Literal[32]],
+        PK:pt.abi.StaticBytes[Literal[64]], 
+        r: pt.abi.StaticBytes[Literal[64]], 
+        s: pt.abi.StaticBytes[Literal[32]],
+        *,
+        output: pt.abi.Uint64
+    )-> pt.Expr:
+    return pt.Seq(
+        pt.Assert(bridge.verifySignature(mhash.get(), PK.get(), r.get(), s.get()) == pt.Int(1)),
+        output.set(bridge.verifySignature(mhash.get(), PK.get(), r.get(), s.get()))
+    )
+
+@pytest.mark.schnorr
+def test_schnorr(owner):
+    algod_client = beaker.localnet.get_algod_client()
+    app_client = beaker.client.ApplicationClient(
+        client=algod_client,
+        app=app,
+        signer=owner.signer,
+    ) 
+    app_client.create()
+    app_client.fund(2000000)
+
+    sp_big_fee = app_client.get_suggested_params()
+    sp_big_fee.flat_fee = True
+    sp_big_fee.fee = beaker.consts.milli_algo * 20
+
+    tx1 = app_client.call(
+        wVerifySignature,
+        mhash=bytes.fromhex("a5cd2c07cc4a833c5b55a114cfebe49e13c19039d70324cca5ad3e6e37e4b657"),
+        PK=bytes.fromhex('aceaa17ffb7bfafe15e2c026801400564854c9839a1665b65f18b228dd55ebcd2dafc900306c08a0f1c79caec116744d2ed3a16e150e8b3d4e39c9458a62c823'),
+        r=bytes.fromhex('d3d5f9bfc2d77ba575cc1407dae0079ebc9999b9744b77ccef3c5dcadda23643000000000000000000000000000000000000000000000000000000000000001c'), 
+        s=bytes.fromhex('41a885d245e69a5af45bc51ff0dad6e3505e45deb7de1db50fc01c69cd8bdc2c'),
+        suggested_params = sp_big_fee,
+    )
+    print("tx1:",tx1.return_value)
+
+    tx2 = app_client.call(
+        wVerifySignature,
+        mhash=bytes.fromhex("b7ad2a05abd8ba23607acaf4cc139f468f16d584a79f9d797f7fcdc5d8848278"),
+        PK=bytes.fromhex('aceaa17ffb7bfafe15e2c026801400564854c9839a1665b65f18b228dd55ebcd2dafc900306c08a0f1c79caec116744d2ed3a16e150e8b3d4e39c9458a62c823'),
+        r=bytes.fromhex('93d84747a53a6064f38a465a66c888f7457121e20cfb3eba6869b7fbcf91dcf0000000000000000000000000000000000000000000000000000000000000001c'), 
+        s=bytes.fromhex('a6050a51fb7ca8827181c0d855fc6b335d9fcd6895f9f672402d50b652804132'),
+        suggested_params = sp_big_fee,
+    )
+    print("tx2:",tx2.return_value)
+
+
+
+
+

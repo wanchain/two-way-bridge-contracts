@@ -142,14 +142,7 @@ def setOracle(app_client) -> None:
         ],
     )
     transaction.wait_for_confirmation(app_client.client, tx.tx_id, 1)
-    info =  app_client.call(
-        bridge.getStoremanGroupConfig,
-        id=smgID,
-        boxes=[
-            (app_client.app_id, smgID),
-        ],
-    )
-    print("getStoremanGroupConfig:", info.return_value)
+
 
 def test_smgRelease(app_client) -> None:
     sp_big_fee = app_client.get_suggested_params()
@@ -157,7 +150,7 @@ def test_smgRelease(app_client) -> None:
     sp_big_fee.fee = beaker.consts.milli_algo * 20
     uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
 
-    ttt = app_client.call(
+    tx = app_client.call(
         bridge.smgRelease,
         uniqueID=uniqueID,
         smgID=smgID, 
@@ -169,7 +162,7 @@ def test_smgRelease(app_client) -> None:
         suggested_params = sp_big_fee,
         boxes=[(app_client.app_id, smgID), (app_client.app_id, uniqueID)], # Must append app_id and box key for tx
     )
-    print("------------------smgRelease:", ttt.return_value, ttt.tx_info)
+    print("------------------smgRelease:", tx.return_value, tx.tx_info)
 
 
 def tokenCreate(prov):
@@ -240,7 +233,6 @@ def updateTokenPair(app_client, assetID):
         to_account=bytes.fromhex("a4E62375593662E8fF92fAd0bA7FcAD25051EbCB"),
         boxes=[
             (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId666)),
-            (app_client.app_id, "pair_list")
         ]
     )
 
@@ -253,7 +245,6 @@ def updateTokenPair(app_client, assetID):
         to_account=bytes.fromhex("a4E62375593662E8fF92fAd0bA7FcAD25051EbCB"),
         boxes=[
             (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId888)),
-            (app_client.app_id, "pair_list")
         ]
     )
 

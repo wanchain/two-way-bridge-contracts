@@ -59,3 +59,24 @@ def getAgentFeeKey(
       getFromToChainID(srcChainID, destChainID).store_into(id),
       output.set(Concat(Bytes("mapAgentFee"), Itob(id.get())))
     )        
+
+
+@Subroutine(TealType.none)
+def do_axfer(rx: Expr, aid: Expr, amt: Expr) -> Expr:
+    return InnerTxnBuilder.Execute(
+        {
+            TxnField.type_enum: TxnType.AssetTransfer,
+            # TxnField.asset_sender: Global.current_application_address(),
+            TxnField.xfer_asset: aid,
+            TxnField.asset_amount: amt,
+            TxnField.asset_receiver: rx,
+            TxnField.fee: Int(1000),
+        }
+    )
+
+
+
+@Subroutine(TealType.none)
+def do_opt_in(aid: Expr) -> Expr:
+    return do_axfer(Global.current_application_address(), aid, Int(0))
+

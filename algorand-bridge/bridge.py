@@ -3,7 +3,7 @@ from typing import Final
 from pyteal import *
 import pyteal as pt
 from beaker import *
-from beaker.lib.storage import BoxMapping, BoxList
+from beaker.lib.storage import BoxMapping
 import schnorr.EcSchnorrVerifier as ec
 
 from bridgelib import *
@@ -23,6 +23,15 @@ class UserLockLogger(abi.NamedTuple):
     contractFee:  abi.Field[abi.Uint64]
     userAccount:  abi.Field[abi.String]
     txid:         abi.Field[abi.StaticBytes[Literal[32]]]
+
+class TokenPairLogger(abi.NamedTuple):
+    name:           abi.Field[abi.String]
+    id:             abi.Field[abi.Uint64]
+    fromChainID:    abi.Field[abi.Uint64]
+    fromAccount:    abi.Field[abi.DynamicBytes]
+    toChainID:      abi.Field[abi.Uint64]
+    toAccount:      abi.Field[abi.DynamicBytes]
+
 
 
 
@@ -60,20 +69,14 @@ class BridgeState:
     # If there may be overlap, a prefix argument MUST be set in order to provide a unique namespace.
     mapTxStatus = BoxMapping(TransactionHash, abi.Uint8)
     mapTokenPairContractFee = BoxMapping(abi.String, abi.Uint64)
-    mapContractFee = BoxMapping(abi.String,abi.Uint64) # key  fromChainId*2**32+toChainID
+    mapContractFee = BoxMapping(abi.String,abi.Uint64)
     mapAgentFee = BoxMapping(abi.String,abi.Uint64)
     mapAdmin = BoxMapping(abi.String, abi.Uint64)
-
     mapTokenPairInfo = BoxMapping(abi.String, TokenPairInfo)
-    pair_list = BoxList(abi.Uint64, 200) # max 200 pairs
-    total_pair_count: Final[GlobalStateValue] = GlobalStateValue(
-        TealType.uint64,
-        descr="total pair count",
-    )
 
     owner: Final[GlobalStateValue] = GlobalStateValue(
         TealType.bytes,
-        descr="owner of the token manager",
+        descr="owner of the bridge",
     )
     feeProxy: Final[GlobalStateValue] = GlobalStateValue(
         TealType.bytes,
@@ -95,7 +98,7 @@ app = Application(
 )
 
 
-@app.external()
+@app.external(authorize=Authorize.only(app.state.owner.get()))
 def addAdmin(
     adminAccount: abi.Address
 )   -> Expr:
@@ -104,25 +107,28 @@ def addAdmin(
     return Seq(
         getAdminKey(adminAccount).store_into(adminKey),
         adminValue.set(Int(1)),
-        app.state.mapAdmin[adminKey].set(adminValue),
+        app.state.mapAdmin[adminKey].set(adminValue)
     )
 
-@app.external()
+@app.external(authorize=Authorize.only(app.state.owner.get()))
 def removeAdmin(
     adminAccount: abi.Address
 )   -> Expr:
     adminKey = abi.make(abi.String)
     return Seq(
         getAdminKey(adminAccount).store_into(adminKey),
-        Pop(app.state.mapAdmin[adminKey].delete()),
+        Pop(app.state.mapAdmin[adminKey].delete())
     )
 
-@app.external(read_only=True)
-def owner(
-    *,
-    output: abi.Address
-)    -> Expr:
-    return output.set(app.state.owner.get())
+@Subroutine(TealType.uint64)
+def onlyAdmin(acct: Expr):
+    adminKey = abi.make(abi.String)
+    sender = abi.make(abi.Address)
+    return Seq(
+        sender.set(acct),
+        getAdminKey(sender).store_into(adminKey),
+        If(app.state.mapAdmin[adminKey].exists(), Int(1), Int(0))
+    )
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
 def transferOwner(
@@ -133,19 +139,7 @@ def transferOwner(
     )
 
 
-@app.external(read_only=True)
-def getTokenPairFee(
-    tokenPairID: abi.Uint64,
-    *,
-    output: abi.Uint64,
-) -> Expr:
-    key = abi.make(abi.String)
-    return Seq(
-        getTokenPairFeeKey(tokenPairID).store_into(key),
-        app.state.mapTokenPairContractFee[key].store_into(output)
-    )
-
-@app.external
+@app.external(authorize=onlyAdmin)
 def setTokenPairFee(
     tokenPairID: abi.Uint64,
     contractFee: abi.Uint64,
@@ -156,7 +150,7 @@ def setTokenPairFee(
         app.state.mapTokenPairContractFee[key].set(contractFee),
     )
 
-@app.external
+@app.external(authorize=onlyAdmin)
 def setTokenPairFees(
     tokenPairID: abi.DynamicArray[abi.Uint64] ,
     contractFee: abi.DynamicArray[abi.Uint64] ,
@@ -174,28 +168,8 @@ def setTokenPairFees(
         )
     )
 
-@app.external(read_only=True)
-def getFee(
-    srcChainID: abi.Uint64,
-    destChainID: abi.Uint64,
-    *,
-    output: FeeInfo
-) -> Expr:
-    KEYc = abi.make(abi.String)
-    KEYa = abi.make(abi.String)
-    contractFee = abi.make(abi.Uint64)
-    agentFee = abi.make(abi.Uint64)
-    return Seq(
-        getContractFeeKey(srcChainID, destChainID).store_into(KEYc),
-        getAgentFeeKey(srcChainID, destChainID).store_into(KEYa),
-        app.state.mapContractFee[KEYc].store_into(contractFee),
-        app.state.mapAgentFee[KEYa].store_into(agentFee),
-        output.set(
-            contractFee, agentFee
-        ),
-    )
 
-@app.external
+@app.external(authorize=onlyAdmin)
 def setFee(
     srcChainID: abi.Uint64,
     destChainID: abi.Uint64,
@@ -211,7 +185,7 @@ def setFee(
         app.state.mapAgentFee[KEYa].set(agentFee)
     )
 
-@app.external
+@app.external(authorize=onlyAdmin)
 def setFees(
     srcChainID: abi.DynamicArray[abi.Uint64],
     destChainID: abi.DynamicArray[abi.Uint64],
@@ -339,27 +313,17 @@ def userLock(
         If(fromAccount.get() == Itob(Int(0))).Then(
             Assert(Global.group_size() == Int(2)),
             Assert(Txn.group_index() == Int(1)),            
-            left.set(pt.Gtxn[0].amount() - contractFee.get() - value.get()),
+            Assert(pt.Gtxn[0].amount() == contractFee.get() + value.get()),
             txid.set(pt.Gtxn[0].tx_id())
         ).Else(
             Assert(Global.group_size() == Int(3)),
             Assert(Txn.group_index() == Int(2)),            
-            left.set(pt.Gtxn[0].amount() - contractFee.get()),
+            Assert(pt.Gtxn[0].amount() == contractFee.get()),
             # check assert tx,  id, to, amount # TODO other fields need check?
             Assert(pt.Gtxn[1].asset_receiver() == Global.current_application_address()),
             Assert(pt.Gtxn[1].xfer_asset() == Btoi(fromAccount.get())),
             Assert(pt.Gtxn[1].asset_amount() == value.get()),
             txid.set(pt.Gtxn[1].tx_id())
-        ),
-        Assert(left.get() >= Int(0)),
-        If(left.get() > Int(0)).Then(
-            InnerTxnBuilder.Execute(
-                {
-                    TxnField.type_enum: TxnType.Payment,
-                    TxnField.receiver: pt.Gtxn[0].sender(),
-                    TxnField.amount: left.get(),
-                }
-            )            
         ),
         name.set("UserLockLogger"),
         fromAccountu.set(Btoi(fromAccount.get())),
@@ -368,14 +332,8 @@ def userLock(
     )
 
 
-
-# function getSmgFeeProxy() internal view returns (address)
-@app.external(read_only=True)
-def getSmgFeeProxy(*, output: abi.Address) -> Expr:
-    return output.set(app.state.feeProxy)
-
 # repleace setPartners    
-@app.external
+@app.external(authorize=Authorize.only(app.state.owner.get()))
 def setSmgFeeProxy(proxy: abi.Address) -> Expr:
     return app.state.feeProxy.set(proxy.get())
 
@@ -390,8 +348,6 @@ def verifySignature(mhash, PK, r, s)-> pt.Expr:
     px = pt.Extract(PK, pt.Int(0), pt.Int(32))
     py = pt.Extract(PK, pt.Int(32), pt.Int(32))
 
-
-    # ecResult = ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)
     return If(ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)==Int(1), Int(1), Int(0))
 
 @ABIReturnSubroutine
@@ -424,8 +380,6 @@ def smgRelease(
     name = abi.make(abi.String)
     feeProxy = abi.make(abi.Address)
 
-    OpUp(mode=pt.OpUpMode.OnCall).ensure_budget(Int(9000),fee_source=pt.OpUpFeeSource.GroupCredit),
-
     alldata = Concat(Itob(CurrentChainID), uniqueID.get(), 
         Itob(tokenPairID.get()), Itob(value.get()),  Itob(fee.get()), 
         Itob(tokenAccount.get()), userAccount.get())
@@ -435,11 +389,11 @@ def smgRelease(
         name.set("SmgReleaseLogger"),
         (logger := SmgReleaseLogger()).set(name, uniqueID, smgID, tokenPairID, value, tokenAccount,  userAccount),
         Log(logger.encode()),
-        # If(app.state.mapTxStatus[uniqueID.get()].exists(), Reject()), # TODO for debug
+        If(app.state.mapTxStatus[uniqueID.get()].exists(), Reject()),
         status.set(1),
         app.state.mapTxStatus[uniqueID.get()].set(status),
         acquireReadySmgInfo(smgID).store_into(PK),
-        Assert(verifySignature(mhash,  PK.get(), r.get(), s.get()) == Int(1)),  # TODO verify sig
+        Assert(verifySignature(mhash,  PK.get(), r.get(), s.get()) == Int(1)),
         If(tokenAccount.get() == Int(0)).Then(
             InnerTxnBuilder.Execute(
                 {
@@ -468,15 +422,14 @@ def smgRelease(
     )
 
 
-
-@app.external(authorize=Authorize.only(app.state.owner.get()))
+@app.external(authorize=onlyAdmin)
 def opt_in_token_id(
     id: abi.Uint64,
 ) -> Expr:
     return Seq(do_opt_in(id.get()))
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
-def add_token_pair(
+def addTokenPair(
     id: abi.Uint64,
     from_chain_id: abi.Uint64,
     from_account: abi.DynamicBytes,
@@ -484,6 +437,7 @@ def add_token_pair(
     to_account: abi.DynamicBytes,
 ) -> Expr:
     key = abi.make(abi.String)
+    name = abi.make(abi.String)
     return Seq(
         getTokenPairInfoKey(id).store_into(key),
         Assert(app.state.mapTokenPairInfo[key].exists() == Int(0)),
@@ -492,27 +446,26 @@ def add_token_pair(
             from_chain_id,
             from_account,
             to_chain_id,
-            to_account,
+            to_account
         ),
         app.state.mapTokenPairInfo[key].set(info),
-        app.state.pair_list[app.state.total_pair_count.get()].set(id),
-        app.state.total_pair_count.set(app.state.total_pair_count.get() + Int(1)),
-        Log(Concat(
-            Bytes("add_token_pair:"),
-            Itob(id.get()),
-            Bytes(":"),
-            Itob(from_chain_id.get()),
-            Bytes(":"),
-            from_account.get(),
-            Bytes(":"),
-            Itob(to_chain_id.get()),
-            Bytes(":"),
-            to_account.get(),
-        )),
+        name.set("addTokenPair"),
+        (logger := TokenPairLogger()).set(name, id, from_chain_id, from_account, to_chain_id, to_account),
+        Log(logger.encode())
     )
     
 @app.external(authorize=Authorize.only(app.state.owner.get()))
-def update_token_pair(
+def removeTokenPair(  
+    id: abi.Uint64,  
+) -> Expr:
+    key = abi.make(abi.String)
+    return Seq(
+        getTokenPairInfoKey(id).store_into(key),
+        Pop(app.state.mapTokenPairInfo[key].delete())
+    )
+
+@app.external(authorize=Authorize.only(app.state.owner.get()))
+def updateTokenPair(
     id: abi.Uint64,
     from_chain_id: abi.Uint64,
     from_account: abi.DynamicBytes,
@@ -520,6 +473,7 @@ def update_token_pair(
     to_account: abi.DynamicBytes,
 ) -> Expr:
     key = abi.make(abi.String)
+    name = abi.make(abi.String)
     return Seq(
         getTokenPairInfoKey(id).store_into(key),
         Assert(app.state.mapTokenPairInfo[key].exists() == Int(1)),
@@ -531,122 +485,28 @@ def update_token_pair(
             to_account,
         ),
         app.state.mapTokenPairInfo[key].set(info),
-        Log(Concat(
-            Bytes("update_token_pair:"),
-            Itob(id.get()),
-            Bytes(":"),
-            Itob(from_chain_id.get()),
-            Bytes(":"),
-            from_account.get(),
-            Bytes(":"),
-            Itob(to_chain_id.get()),
-            Bytes(":"),
-            to_account.get(),
-        )),
+        name.set("updateTokenPair"),
+        (logger := TokenPairLogger()).set(name, id, from_chain_id, from_account, to_chain_id, to_account),
+        Log(logger.encode())
     )
 
-@app.external(read_only=True)
-def get_token_pair(
-    id: abi.Uint64,
-    *,
-    output: TokenPairInfo,
-) -> Expr:
-    key = abi.make(abi.String)
-    return Seq(
-        getTokenPairInfoKey(id).store_into(key),
-        app.state.mapTokenPairInfo[key].store_into(output)
-    )
-
-
-##############
-# Utility methods for inner transactions
-##############
-
-@Subroutine(TealType.none)
-def do_axfer(rx: Expr, aid: Expr, amt: Expr) -> Expr:
-    return InnerTxnBuilder.Execute(
-        {
-            TxnField.type_enum: TxnType.AssetTransfer,
-            TxnField.xfer_asset: aid,
-            TxnField.asset_amount: amt,
-            TxnField.asset_receiver: rx,
-            TxnField.fee: Int(1000),
-        }
-    )
-
-@Subroutine(TealType.none)
-def do_ax_burn(holder: Expr, aid: Expr, amt: Expr) -> Expr:
-    return InnerTxnBuilder.Execute(
-        {
-            TxnField.type_enum: TxnType.AssetTransfer,
-            TxnField.xfer_asset: aid,
-            TxnField.asset_amount: amt,
-            TxnField.asset_sender: holder,
-            TxnField.asset_receiver: Global.current_application_address(),
-            TxnField.fee: Int(1000),
-            TxnField.sender: Global.current_application_address(),
-        }
-    )
-
-@Subroutine(TealType.none)
-def do_opt_in(aid: Expr) -> Expr:
-    return do_axfer(Global.current_application_address(), aid, Int(0))
-
-
-@Subroutine(TealType.none)
-def do_axfer(rx: Expr, aid: Expr, amt: Expr) -> Expr:
-    return InnerTxnBuilder.Execute(
-        {
-            TxnField.type_enum: TxnType.AssetTransfer,
-            TxnField.xfer_asset: aid,
-            TxnField.asset_amount: amt,
-            TxnField.asset_receiver: rx,
-            TxnField.fee: Int(1000),
-        }
-    )
-
-@Subroutine(TealType.none)
-def do_ax_burn(holder: Expr, aid: Expr, amt: Expr) -> Expr:
-    return InnerTxnBuilder.Execute(
-        {
-            TxnField.type_enum: TxnType.AssetTransfer,
-            TxnField.xfer_asset: aid,
-            TxnField.asset_amount: amt,
-            TxnField.asset_sender: holder,
-            TxnField.asset_receiver: Global.current_application_address(),
-            TxnField.fee: Int(1000),
-            TxnField.sender: Global.current_application_address(),
-        }
-    )
-
-@Subroutine(TealType.none)
-def do_opt_in(aid: Expr) -> Expr:
-    return do_axfer(Global.current_application_address(), aid, Int(0))
-
-
-###
-# App lifecycle
-###
-@app.create
-def create() -> Expr:
-    return app.initialize_global_state()
 
 @app.external(authorize=Authorize.only(Global.creator_address()))
 def initialize(
-    # seed: abi.PaymentTransaction, # pay for minimum balance
     owner: abi.Address, 
     admin: abi.Address,
+    feeProxy: abi.Address,
     ) -> Expr:
     adminKey = abi.make(abi.String)
     adminValue = abi.make(abi.Uint64)
     return Seq(
         Assert(app.state.initialized.get() == Int(0)),
-        Pop(app.state.pair_list.create()),
         app.state.owner.set(owner.get()),
+        app.state.feeProxy.set(feeProxy.get()),
         getAdminKey(admin).store_into(adminKey),
         adminValue.set(Int(1)),
         app.state.mapAdmin[adminKey].set(adminValue),
-        app.state.initialized.set(Int(1)),
+        app.state.initialized.set(Int(1))
     )
 
 
@@ -658,33 +518,8 @@ def update() -> Expr:
 def delete() -> Expr:
     return Reject()
 
-@app.opt_in
-def opt_in() -> Expr:
-    return Approve()
 
-@app.clear_state
-def clear_state() -> Expr:
-    return Approve()
 
-@app.close_out
-def close_out() -> Expr:
-    return Approve()
-
-@Subroutine(TealType.uint64)
-def onlyAdmin(acct: Expr):
-    adminKey = abi.make(abi.String)
-    sender = abi.make(abi.Address)
-    vv = abi.make(abi.Uint64)
-    return Seq(
-        sender.set(acct),
-        getAdminKey(sender).store_into(adminKey),
-        If(app.state.mapAdmin[adminKey].exists())
-        .Then(
-            Int(1),
-        ).Else(
-            Int(0)
-        )
-    )
 
 # oracle methods
 @app.external(authorize=onlyAdmin)
@@ -715,16 +550,6 @@ def setStoremanGroupStatus(
         (infoNew := StoremanGroupConfig()).set(gpk, startTime, endTime, status),
         app.state.mapStoremanGroupConfig[id].set(infoNew)
     )
-
-
-
-@app.external(read_only=True)
-def getStoremanGroupConfig(
-    id: abi.StaticBytes[Literal[32]],
-    *,
-    output: StoremanGroupConfig,
-) -> Expr:
-    return app.state.mapStoremanGroupConfig[id].store_into(output)
 
 
 if __name__ == "__main__":

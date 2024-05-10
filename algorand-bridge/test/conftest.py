@@ -41,7 +41,7 @@ def feeProxyAddr():
 
 @pytest.fixture
 def nativeAssetID(app_client, owner):
-    print('create demo asset token')
+    print('create native asset token')
     sp_with_fees = app_client.client.suggested_params()
     sp_with_fees.flat_fee = True
     sp_with_fees.fee = beaker.consts.milli_algo
@@ -66,21 +66,55 @@ def nativeAssetID(app_client, owner):
     receipt = transaction.wait_for_confirmation(app_client.client, txid)
     print('receipt', receipt['asset-index'])
     asset_id = receipt['asset-index']
+    return asset_id
 
-    # optIn test asset
-    print("optIn test asset")
-    app_client.fund(200000) # deposit for minimum balance require
-    app_client.call(
+@pytest.fixture
+def mintedAssetID(app_client,app_client_admin, owner):
+    print('create minted asset token')
+    sp_with_fees = app_client.client.suggested_params()
+    sp_with_fees.flat_fee = True
+    sp_with_fees.fee = beaker.consts.milli_algo
+
+    ctxn = AssetCreateTxn(
+        owner.address,
+        sp_with_fees,
+        total=100000000000000,
+        default_frozen=False,
+        unit_name="MOCK",
+        asset_name="MOCK TOKEN",
+        manager="",
+        reserve=app_client.app_addr,
+        freeze="",
+        clawback="",
+        url="https://bridge.wanchain.org",
+        decimals=6,
+    )
+    tx = owner.signer.sign_transactions([ctxn], [0])
+    txid = app_client.client.send_transaction(tx[0])
+    print('txid', txid)
+    receipt = transaction.wait_for_confirmation(app_client.client, txid)
+    print('receipt', receipt['asset-index'])
+    asset_id = receipt['asset-index']
+    app_client_admin.call(
         bridge.opt_in_token_id,
         id=asset_id,
         foreign_assets=[asset_id],
+        boxes = [(app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.sender))]
     )
-    print('done')
+    xfer_txn = transaction.AssetTransferTxn(
+        sender=owner.address,
+        sp=sp_with_fees,
+        receiver=app_client.app_addr,
+        amt=100000000000000,
+        index=asset_id,
+    )
+    signed_xfer_txn = xfer_txn.sign(owner.private_key)
+    txid = app_client.client.send_transaction(signed_xfer_txn)
+    results = transaction.wait_for_confirmation(app_client.client, txid, 4)
     return asset_id
 
-
 @pytest.fixture
-def app_client(owner, admin):
+def app_client(owner, admin, user):
     algod_client = beaker.localnet.get_algod_client()
     app_client = beaker.client.ApplicationClient(
         client=algod_client,
@@ -104,9 +138,9 @@ def app_client(owner, admin):
         bridge.initialize,
         owner=owner.address,
         admin=admin.address,
+        feeProxy=user.address,
         boxes=[
-            (app_client.app_id, "pair_list"),
-            (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address))
         ],
     )
     result = atc.execute(algod_client, 3)    

@@ -23,7 +23,6 @@ def getPrefixKey(prefix, id):
 def getPrefixAddrKey(prefix, addr):
     value = bytes(prefix, 'utf8')+decode_address(addr)
     length_to_encode = len(value).to_bytes(2, byteorder="big")
-    print("getPrefixAddrKey:", prefix, value )
     return length_to_encode + value
 
 def print_boxes(app_client: beaker.client.ApplicationClient) -> None:
@@ -31,10 +30,7 @@ def print_boxes(app_client: beaker.client.ApplicationClient) -> None:
     print(f"{len(boxes)} boxes found")
     for box_name in boxes:
         contents = app_client.get_box_contents(box_name)
-        if box_name == b"pair_list":
-            print(bytes.hex(contents))
-        else:
-            print(f"\t{box_name} => {contents} ")
+        print(f"\t{box_name} => {contents} ")
 
 
 class Provider:
@@ -94,7 +90,7 @@ class Provider:
             bridge.initialize,
             owner=self.acct_addr,
             admin=self.acct_addr,
-            boxes=[(app_client.app_id, "pair_list")] * 8,
+            feeProxy=self.acct_addr,
         )
         result = atc.execute(self.algod_client, 3)
         self.app_client = app_client

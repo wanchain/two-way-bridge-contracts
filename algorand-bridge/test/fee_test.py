@@ -25,58 +25,129 @@ chainMaticZk = 1073741838
 
 
 @pytest.mark.fee
-def test_fee(app_client):
-    sp = app_client.get_suggested_params()
-    sp.flat_fee = True
-    sp.fee = beaker.consts.milli_algo
+def test_fee(app_client_admin):
+    # #token pair fee
+    app_client_admin.call(
+        bridge.setTokenPairFee,
+        tokenPairID=tokenPairId666,
+        contractFee=1111,
+        boxes=[(app_client_admin.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666)),
+            (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.sender))
+        ]
+    )
 
+    codec = ABIType.from_string("uint64") 
+    bfee = app_client_admin.get_box_contents(getPrefixKey("mapTokenPairContractFee", tokenPairId666))
+    fee = codec.decode(bfee)
+    print("fee:", fee)
+    assert(fee == 1111)
+    
+    app_client_admin.call(
+        bridge.setTokenPairFees,
+        tokenPairID=[tokenPairId666,tokenPairId888],
+        contractFee=[1111,9999999],
+        boxes=[
+            (app_client_admin.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId666)),
+            (app_client_admin.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId888)),
+            (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.sender))
+        ]
+    )
+    
+    bfee = app_client_admin.get_box_contents(getPrefixKey("mapTokenPairContractFee", tokenPairId666))
+    fee = codec.decode(bfee)
+    print("fee:", fee)
+    assert(fee == 1111)
+    bfee = app_client_admin.get_box_contents(getPrefixKey("mapTokenPairContractFee", tokenPairId888))
+    fee = codec.decode(bfee)
+    print("fee:", fee)
+    assert(fee == 9999999)
+
+    app_client_admin.call(
+        bridge.setFee,
+        srcChainID=chainBase,
+        destChainID=chainAlgo,
+        contractFee=222,
+        agentFee=444,
+        boxes=[
+            (app_client_admin.app_id, getPrefixKey("mapContractFee", chainBase*2**32+chainAlgo)),
+            (app_client_admin.app_id, getPrefixKey("mapAgentFee", chainBase*2**32+chainAlgo)),
+            (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.sender))
+        ]
+    )
+    bfee = app_client_admin.get_box_contents(getPrefixKey("mapContractFee", chainBase*2**32+chainAlgo))
+    fee = codec.decode(bfee)
+    print(" contract fee:", fee)
+    assert(fee == 222)
+
+    bfee = app_client_admin.get_box_contents(getPrefixKey("mapAgentFee", chainBase*2**32+chainAlgo))
+    fee = codec.decode(bfee)
+    print(" agent fee:", fee)
+    assert(fee == 444)
+
+    app_client_admin.call(
+        bridge.setFees,
+        srcChainID=[chainBase,chainAlgo],
+        destChainID=[chainMaticZk,chainMaticZk],
+        contractFee=[222, 333],
+        agentFee=[444, 555],
+        boxes=[
+            (app_client_admin.app_id, getPrefixKey("mapContractFee", chainBase*2**32+chainMaticZk)),
+            (app_client_admin.app_id, getPrefixKey("mapAgentFee",    chainBase*2**32+chainMaticZk)),
+            (app_client_admin.app_id, getPrefixKey("mapContractFee", chainAlgo*2**32+chainMaticZk)),
+            (app_client_admin.app_id, getPrefixKey("mapAgentFee", chainAlgo*2**32+chainMaticZk)),
+            (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.sender))
+        ]
+    )
+
+    bfee = app_client_admin.get_box_contents(getPrefixKey("mapContractFee", chainBase*2**32+chainMaticZk))
+    fee = codec.decode(bfee)
+    print(" contract fee:", fee)
+    assert(fee == 222)
+    bfee = app_client_admin.get_box_contents(getPrefixKey("mapContractFee", chainAlgo*2**32+chainMaticZk))
+    fee = codec.decode(bfee)
+    print(" contract fee:", fee)
+    assert(fee == 333)
+
+    bfee = app_client_admin.get_box_contents(getPrefixKey("mapAgentFee",    chainBase*2**32+chainMaticZk))
+    fee = codec.decode(bfee)
+    print(" agent fee:", fee)
+    assert(fee == 444)
+    bfee = app_client_admin.get_box_contents(getPrefixKey("mapAgentFee",    chainAlgo*2**32+chainMaticZk))
+    fee = codec.decode(bfee)
+    print(" agent fee:", fee)
+    assert(fee == 555)
+
+
+@pytest.mark.fee
+@pytest.mark.xfail
+def test_setTokenPairFee_notadmin(app_client):
     # #token pair fee
     app_client.call(
         bridge.setTokenPairFee,
         tokenPairID=tokenPairId666,
         contractFee=1111,
-        boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666))],
-        suggested_params=sp
-   )
-    
-    sp.fee += 1
-    fee = app_client.call(
-        bridge.getTokenPairFee,
-        tokenPairID=tokenPairId666,
-        boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666))],
-        suggested_params=sp
+        boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666)),
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.sender))
+        ]
     )
-    print("fee:", fee.return_value)
-    assert(fee.return_value == 1111)
-    
+
+
+@pytest.mark.fee
+@pytest.mark.xfail
+def test_setTokenPairFees_notadmin(app_client):
     app_client.call(
         bridge.setTokenPairFees,
         tokenPairID=[tokenPairId666,tokenPairId888],
         contractFee=[1111,9999999],
         boxes=[
             (app_client.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId666)),
-            (app_client.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId888))
+            (app_client.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId888)),
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.sender))
         ]
     )
-    
-    sp.fee += 1
-    fee = app_client.call(
-        bridge.getTokenPairFee,
-        tokenPairID=tokenPairId666,
-        boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666))],
-        suggested_params=sp
-    )
-    assert(fee.return_value == 1111)
-    sp.fee += 1
-    fee = app_client.call(
-        bridge.getTokenPairFee,
-        tokenPairID=tokenPairId888,
-        boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId888))],
-        suggested_params=sp
-    )
-    assert(fee.return_value == 9999999)
-     
-
+@pytest.mark.fee
+@pytest.mark.xfail
+def test_setFee_notadmin(app_client):
     app_client.call(
         bridge.setFee,
         srcChainID=chainBase,
@@ -85,23 +156,14 @@ def test_fee(app_client):
         agentFee=444,
         boxes=[
             (app_client.app_id, getPrefixKey("mapContractFee", chainBase*2**32+chainAlgo)),
-            (app_client.app_id, getPrefixKey("mapAgentFee", chainBase*2**32+chainAlgo))
-        ],
-        suggested_params=sp
+            (app_client.app_id, getPrefixKey("mapAgentFee", chainBase*2**32+chainAlgo)),
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.sender))
+        ]
     )
-    fee = app_client.call(
-        bridge.getFee,
-        srcChainID=chainBase,
-        destChainID=chainAlgo,
 
-        boxes=[
-            (app_client.app_id, getPrefixKey("mapContractFee", chainBase*2**32+chainAlgo)),
-            (app_client.app_id, getPrefixKey("mapAgentFee", chainBase*2**32+chainAlgo))
-        ],
-        suggested_params=sp
-    )
-    assert(fee.return_value == [222, 444])
-
+@pytest.mark.fee
+@pytest.mark.xfail
+def test_setFees_notadmin(app_client):        
     app_client.call(
         bridge.setFees,
         srcChainID=[chainBase,chainAlgo],
@@ -113,39 +175,20 @@ def test_fee(app_client):
             (app_client.app_id, getPrefixKey("mapAgentFee",    chainBase*2**32+chainMaticZk)),
             (app_client.app_id, getPrefixKey("mapContractFee", chainAlgo*2**32+chainMaticZk)),
             (app_client.app_id, getPrefixKey("mapAgentFee", chainAlgo*2**32+chainMaticZk)),
-        ],
-        suggested_params=sp
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.sender))
+        ]
     )
-    fee = app_client.call(
-        bridge.getFee,
-        srcChainID=chainBase,
-        destChainID=chainMaticZk,
 
-        boxes=[
-            (app_client.app_id, getPrefixKey("mapContractFee", chainBase*2**32+chainMaticZk)),
-            (app_client.app_id, getPrefixKey("mapAgentFee", chainBase*2**32+chainMaticZk))
-        ],
-        suggested_params=sp
-    )
-    assert(fee.return_value == [222, 444])
-
-    fee = app_client.call(
-        bridge.getFee,
-        srcChainID=chainAlgo,
-        destChainID=chainMaticZk,
-
-        boxes=[
-            (app_client.app_id, getPrefixKey("mapContractFee", chainAlgo*2**32+chainMaticZk)),
-            (app_client.app_id, getPrefixKey("mapAgentFee", chainAlgo*2**32+chainMaticZk))
-        ],
-        suggested_params=sp
-    )
-    assert(fee.return_value == [333, 555])
-
-
-
-
-
-
-
-
+@pytest.mark.fee
+def test_setTokenPairFee_try(app_client):
+    try:
+        app_client.call(
+            bridge.setTokenPairFee,
+            tokenPairID=tokenPairId666,
+            contractFee=1111,
+            boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666)),
+                (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.sender))
+            ]
+        )    
+    except Exception as e: 
+        print("error:", e.message, e)

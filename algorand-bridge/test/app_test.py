@@ -16,27 +16,19 @@ import bridge
 from utils import *
 import pytest
 
-@pytest.mark.feeProxy
-@pytest.mark.xfail
-def test_feeProxy_notowner(app_client_admin, feeProxyAddr):
-    tx = app_client_admin.call(
-        bridge.setSmgFeeProxy,
-        proxy=feeProxyAddr,
-    )
+@pytest.mark.xfail(True, run=True, reason='not admin')
+@pytest.mark.app
+def test_delete(app_client):
+    tx = app_client.delete()
 
+@pytest.mark.xfail(True, run=True, reason='not admin')
+@pytest.mark.app
+def test_updateOwner(app_client_admin):
+    tx = app_client_admin.update()
 
-@pytest.mark.feeProxy
-def test_feeProxy(app_client, feeProxyAddr):
-    tx = app_client.call(
-        bridge.setSmgFeeProxy,
-        proxy=feeProxyAddr,
-    )
-    fpv = getApplicationGlobal(app_client, 'feeProxy')
-    print("fpv:", fpv)
-    assert fpv == feeProxyAddr
-
-
-
+@pytest.mark.app
+def test_updateAdmin(app_client):
+    tx = app_client.update()
 
 
 

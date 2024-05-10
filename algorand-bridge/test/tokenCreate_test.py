@@ -17,7 +17,7 @@ from utils import *
 import pytest
 
 @pytest.mark.tokenCreate
-def test_tokenCreate(app_client, owner):
+def test_tokenCreate(app_client, app_client_admin, owner):
     print('create demo asset token')
     sp_with_fees = app_client.client.suggested_params()
     sp_with_fees.flat_fee = True
@@ -47,10 +47,13 @@ def test_tokenCreate(app_client, owner):
     # optIn test asset
     print("optIn test asset")
     app_client.fund(200000) # deposit for minimum balance require
-    app_client.call(
+    app_client_admin.call(
         bridge.opt_in_token_id,
         id=asset_id,
         foreign_assets=[asset_id],
+        boxes=[
+            (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.sender)),
+        ]
     )
     print('done')
     return asset_id

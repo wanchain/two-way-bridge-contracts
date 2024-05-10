@@ -16,27 +16,25 @@ import bridge
 from utils import *
 import pytest
 
-@pytest.mark.feeProxy
+@pytest.mark.optIn
 @pytest.mark.xfail
-def test_feeProxy_notowner(app_client_admin, feeProxyAddr):
-    tx = app_client_admin.call(
-        bridge.setSmgFeeProxy,
-        proxy=feeProxyAddr,
+def test_optIn_notAdmin(app_client, nativeAssetID, owner):
+    app_client.call(
+        bridge.opt_in_token_id,
+        id=nativeAssetID,
+        foreign_assets=[nativeAssetID],
+        boxes = [(app_client.app_id, getPrefixAddrKey("mapAdmin", owner.address))]
     )
+    print('done')
 
 
-@pytest.mark.feeProxy
-def test_feeProxy(app_client, feeProxyAddr):
-    tx = app_client.call(
-        bridge.setSmgFeeProxy,
-        proxy=feeProxyAddr,
+@pytest.mark.optIn
+def test_optIn_Admin(app_client_admin, nativeAssetID, admin):
+    app_client_admin.call(
+        bridge.opt_in_token_id,
+        id=nativeAssetID,
+        foreign_assets=[nativeAssetID],
+        boxes = [(app_client_admin.app_id, getPrefixAddrKey("mapAdmin", admin.address))]
     )
-    fpv = getApplicationGlobal(app_client, 'feeProxy')
-    print("fpv:", fpv)
-    assert fpv == feeProxyAddr
-
-
-
-
-
+    print('done')
 
