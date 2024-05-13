@@ -157,3 +157,26 @@ def app_client_admin(app_client, admin):
     )
     return  app_client
 
+@pytest.fixture
+def setStoreman(app_client_admin) -> None:
+    status = app_client_admin.client.status()
+    block_info = app_client_admin.client.block_info(status['last-round'])
+    timestamp = block_info['block']['ts']
+    smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
+    GPK = bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5')
+    startTime = timestamp-1000000
+    endTime = timestamp+1000000
+    status = 5
+    tx = app_client_admin.call(
+        bridge.setStoremanGroupConfig,
+        id=smgID,
+        status=status,
+        startTime=startTime,
+        endTime=endTime,
+        gpk=GPK,
+        boxes=[
+            (app_client_admin.app_id, smgID),
+            (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.get_sender())),
+        ],
+    )
+    transaction.wait_for_confirmation(app_client_admin.client, tx.tx_id, 1)

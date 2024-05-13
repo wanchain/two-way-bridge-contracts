@@ -357,10 +357,16 @@ def acquireReadySmgInfo(
     output: abi.StaticBytes[Literal[64]],
     ) -> pt.Expr:
     info = StoremanGroupConfig()
+    startTime = abi.make(abi.Uint64)
+    endTime = abi.make(abi.Uint64)
     return Seq(
         app.state.mapStoremanGroupConfig[smgID].store_into(info),
+        info.startTime.store_into(startTime),
+        info.endTime.store_into(endTime),
+        Assert(Global.latest_timestamp() >= startTime.get()),
+        Assert(Global.latest_timestamp() < endTime.get()),
         output.set(info.gpk)
-    ) 
+    )
 
 
 # smgRelease(bytes32 uniqueID, bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, address userAccount, bytes calldata r, bytes32 s)

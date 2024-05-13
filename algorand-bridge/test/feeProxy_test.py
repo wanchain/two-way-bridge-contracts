@@ -32,9 +32,7 @@ def test_feeProxy(app_client, feeProxyAddr):
         proxy=feeProxyAddr,
     )
     fpv = getApplicationGlobal(app_client, 'feeProxy')
-    print("fpv:", fpv)
     assert fpv == feeProxyAddr
-
 
 
 

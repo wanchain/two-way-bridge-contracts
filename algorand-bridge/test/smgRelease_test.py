@@ -32,32 +32,10 @@ AssetID = 0
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
 
 
-def setOracle(app_client_admin) -> None:
-    GPK = bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5')
-    startTime = 1799351111
-    endTime = 1799351331
-    status = 5
-    tx = app_client_admin.call(
-        bridge.setStoremanGroupConfig,
-        id=smgID,
-        status=status,
-        startTime=startTime,
-        endTime=endTime,
-        gpk=GPK,
-        boxes=[
-            (app_client_admin.app_id, smgID),
-            (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.get_sender())),
-        ],
-    )
-    transaction.wait_for_confirmation(app_client_admin.client, tx.tx_id, 1)
-
-
 
 
 @pytest.mark.smgRelease
-def test_smgRelease(app_client, app_client_admin) -> None:
-    setOracle(app_client_admin)
-
+def test_smgRelease(app_client, app_client_admin,setStoreman) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
@@ -79,9 +57,7 @@ def test_smgRelease(app_client, app_client_admin) -> None:
     print("------------------smgRelease:", ttt.return_value, ttt.tx_info)
 
 @pytest.mark.smgRelease
-def test_smgRelease_noFee(app_client, app_client_admin) -> None:
-    setOracle(app_client_admin)
-
+def test_smgRelease_noFee(app_client, app_client_admin, setStoreman) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
@@ -105,9 +81,7 @@ def test_smgRelease_noFee(app_client, app_client_admin) -> None:
 
 #token
 @pytest.mark.smgRelease
-def test_smgRelease(app_client, app_client_admin, mintedAssetID, admin) -> None:
-    setOracle(app_client_admin)
-
+def test_smgRelease(app_client, app_client_admin,setStoreman, mintedAssetID, admin) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
@@ -151,9 +125,7 @@ def test_smgRelease(app_client, app_client_admin, mintedAssetID, admin) -> None:
 
 
 @pytest.mark.smgRelease
-def test_smgRelease_fee(app_client, app_client_admin, mintedAssetID, admin, user) -> None:
-    setOracle(app_client_admin)
-
+def test_smgRelease_fee(app_client, app_client_admin,setStoreman, mintedAssetID, admin, user) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
