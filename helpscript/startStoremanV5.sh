@@ -32,6 +32,7 @@ do
 		watchcontainer=watchtower_mainnet
 		dockernet=storeman-net
 		image='wanchain/openstoremanagent_mainnet:latest'
+		command_image='wanchain/openstoremanagent_mainnet'
 	elif [ "$network" == "testnet" ]; then
 		isTestnet=true
 		mongocontainer=agentmongo_testnet
@@ -39,6 +40,7 @@ do
 		watchcontainer=watchtower_testnet
 		dockernet=storeman-net
 		image='wanchain/openstoremanagent:latest'
+		command_image='wanchain/openstoremanagent'
 	else
 		echo "*********** Please make sure your select the right network!"
 		continue
@@ -46,6 +48,16 @@ do
 
 	echo "... Wait a while, docker image is updating! ..."
 	sudo docker pull $image
+	
+	read -p "*********** Do you want to use the script to clean the unnecessary docker space? (N/y): " autoClean
+	if [ "$autoClean" == "Y" ] || [ "$autoClean" == "y" ]; then
+		num_versions=5
+		echo "... Wait a while, older docker image will be pruned while the latest $num_versions images will be kept! ..."
+		timestamp=$(sudo docker image ls --filter "reference=$command_image" --format '{{.CreatedAt}}'  | head -n $num_versions | tail -n 1)
+		formatted_timestamp=$(echo "$timestamp" | awk -F'[ .]' '{print $1"T"$2"Z"}')
+		sudo docker container prune -f
+		sudo docker image prune --filter "until=$formatted_timestamp" --force
+	fi
 
 	# agent waddress
 	echo '*********** Please Enter your work address:'
@@ -226,7 +238,7 @@ echo '*********** use mongocontainer name ***********:  '$mongocontainer
 # echo "Please ignore the error 'Error: No such container: $mongocontainer' if your first start the script"
 `sudo docker rm -f $mongocontainer > /dev/null 2>&1`
 
-sudo docker run -itd --name $mongocontainer --network $dockernet -v $dbdir:/data/db --restart=always mongo:5.0
+sudo docker run -itd --name $mongocontainer --network $dockernet -v $dbdir:/data/db --restart=always --log-opt max-size=500m --log-opt max-file=3 mongo:5.0
 
 # ************************************************************************************************************ 
 # storeman agent start 
