@@ -60,6 +60,61 @@ const config = {
     },
   },
   networks: {
+    plyrTestnet: {
+      url: 'https://subnets.avax.network/plyr/testnet/rpc',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741849,
+    },
+    odysseyTestnet: {
+      url: 'https://testnode.dioneprotocol.com/ext/bc/D/rpc',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741848,
+    },
+    x1Mainnet: {
+      url: 'https://xlayerrpc.okx.com',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741835,
+    },
+    horizenMainnet: {
+      url: 'https://rpc.ankr.com/horizen_eon',
+      accounts: [process.env.PK],
+    },
+    x1: {
+      url: 'https://endpoints.omniatech.io/v1/xlayer/mainnet/public',
+      accounts: [process.env.PK],
+    },
+    metis: {
+      url: 'https://metis.drpc.org',
+      accounts: [process.env.PK],
+    },
+    xdc: {
+      url: 'https://rpc.xdc.org',
+      accounts: [process.env.PK],
+    },
+    mainnet: {
+      url: 'https://ethereum-rpc.publicnode.com',
+      accounts: [process.env.PK],
+    },
+    avalanche: {
+      url: 'https://api.avax.network/ext/bc/C/rpc',
+      accounts: [process.env.PK],
+    },
+    arbitrum: {
+      url: 'https://1rpc.io/arb',
+      accounts: [process.env.PK],
+    },
+    okt: {
+      url: 'https://1rpc.io/oktc',
+      accounts: [process.env.PK],
+    },
+    polygon: {
+      url: "https://polygon-bor-rpc.publicnode.com",
+      accounts: [process.env.PK],
+    },
+    bsc: {
+      url: 'https://bsc-dataseed2.bnbchain.org',
+      accounts: [process.env.PK],
+    },
     blastMainnet: {
       url: 'https://rpc.ankr.com/blast',
       accounts: [process.env.PK],
@@ -160,6 +215,9 @@ const config = {
     wanchainTestnet: {
       url: "https://gwan-ssl.wandevs.org:46891",
       accounts: [process.env.PK],
+      gasPrice: 2e9,
+      gasLimit: 8000000,
+      bip44ChainId: 2147483649, // fake one
     },
     shibuya: {
       url: "https://evm.shibuya.astar.network",
@@ -172,7 +230,7 @@ const config = {
       accounts: [process.env.PK],
     },
     optimisticEthereum: {
-      url: "https://opt-mainnet.g.alchemy.com/v2/EA2PhKrouVck-pDZscwY8AEGv_G-TXvj",
+      url: "https://optimism-rpc.publicnode.com",
       accounts: [process.env.PK],
     },
     telos_testnet: {
@@ -326,16 +384,58 @@ const config = {
     },  
   },
   etherscan: {
-    apiKey: {
-      fantom: 'I66N3VPZB8DYNCGGTXQ4KIBY72N541EHK4',
-      moonbeam: 'EE37GEZGJA7RHS3ZKXWW1JJVDXZ6SBYBRC',
-      moonriver: "PI7KZFKW195W1H4C69F1FIQNEAR55T37NH",
-      // baseMainnet: ""
-      baseTestnet:'PLACEHOLDER_STRING',
-      meldMainnet:'PLACEHOLDER_STRING',
-      lineaMainnet: 'WW4J7R5WJEET4PAWH4P2AEWWUGEGAZ23XJ',
-    },
+    apiKey: '64b5b282-760c-4c59-ac26-21bb41666342',
+    // apiKey: {
+    //   fantom: 'I66N3VPZB8DYNCGGTXQ4KIBY72N541EHK4',
+    //   moonbeam: 'EE37GEZGJA7RHS3ZKXWW1JJVDXZ6SBYBRC',
+    //   moonriver: "PI7KZFKW195W1H4C69F1FIQNEAR55T37NH",
+    //   // baseMainnet: ""
+    //   baseTestnet:'PLACEHOLDER_STRING',
+    //   meldMainnet:'PLACEHOLDER_STRING',
+    //   blastMainnet: 'IYY8RX5RN9QEUBU733VDRUJWBNFDHYAH2H',
+    //   lineaMainnet: 'WW4J7R5WJEET4PAWH4P2AEWWUGEGAZ23XJ',
+    //   bsc: 'X3KC4YWKNDM8N3MJ52SFJC21GT9T5DWRK6',
+    //   optimisticEthereum: 'JSYSW7GDUAAZ4U7WN3SCFE7NM62IBB6GFC',
+    //   polygon: '2AYUVE3SN2QKBF5JVXNCM6G345MWR6M4FU',
+    //   arbitrum: 'GF1T9XXJ3KSBRHV1Z234EXZNR9N1I29I75',
+    //   avalanche: 'APIKEY',
+    //   mainnet: 'HNUE7V72CI8XJ6FNZ1CDIYSEBYY6HHREAE',
+    //   astar: 'APIKEY',
+    //   x1Mainnet: '64b5b282-760c-4c59-ac26-21bb41666342'
+    // },
     customChains: [
+      {
+        network: "x1Mainnet",
+        chainId: 196, //196 for mainnet
+        urls: {
+            apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/XLAYER",
+            browserURL: "https://www.oklink.com/xlayer"
+        }
+      },
+      {
+        network: 'avalanche',
+        chainId: 43114,
+        urls: {
+          apiURL: "https://api.snowtrace.io/api",
+          browserURL: "https://snowtrace.io",
+        }
+      },
+      {
+        network: 'arbitrum',
+        chainId: 42161,
+        urls: {
+          apiURL: "https://api.arbiscan.io/api",
+          browserURL: "https://arbiscan.io",
+        }
+      },
+      {
+        network: 'blastMainnet',
+        chainId: 81457,
+        urls: {
+          apiURL: "https://api.blastscan.io/api",
+          browserURL: "https://blastscan.io",
+        }
+      },
       {
         network: 'meldMainnet',
         chainId: 333000333,
