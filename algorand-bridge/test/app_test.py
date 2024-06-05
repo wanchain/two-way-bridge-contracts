@@ -23,11 +23,11 @@ def test_delete(app_client):
 
 @pytest.mark.xfail(True, run=True, reason='not admin')
 @pytest.mark.app
-def test_updateOwner(app_client_admin):
+def test_updateAdmin(app_client_admin):
     tx = app_client_admin.update()
 
 @pytest.mark.app
-def test_updateAdmin(app_client):
+def test_updateOwner(app_client):
     tx = app_client.update()
 
 

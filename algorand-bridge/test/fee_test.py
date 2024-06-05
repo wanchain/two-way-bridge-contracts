@@ -179,16 +179,3 @@ def test_setFees_notadmin(app_client):
         ]
     )
 
-@pytest.mark.fee
-def test_setTokenPairFee_try(app_client):
-    try:
-        app_client.call(
-            bridge.setTokenPairFee,
-            tokenPairID=tokenPairId666,
-            contractFee=1111,
-            boxes=[(app_client.app_id,  getPrefixKey("mapTokenPairContractFee", tokenPairId666)),
-                (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.sender))
-            ]
-        )    
-    except Exception as e: 
-        print("error:", e.message, e)

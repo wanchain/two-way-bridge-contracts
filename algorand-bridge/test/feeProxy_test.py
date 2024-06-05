@@ -31,7 +31,10 @@ def test_feeProxy(app_client, feeProxyAddr):
         bridge.setSmgFeeProxy,
         proxy=feeProxyAddr,
     )
-    fpv = getApplicationGlobal(app_client, 'feeProxy')
+
+    stateAll = app_client.get_global_state()
+    value1 = stateAll.get('feeProxy')
+    fpv = encode_address(bytes.fromhex(value1))
     assert fpv == feeProxyAddr
 
 

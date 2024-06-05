@@ -13,6 +13,7 @@ from algosdk.atomic_transaction_composer import (
 )
 import beaker
 import bridge
+import groupApprove
 
 import pytest
 from utils import *
@@ -163,7 +164,7 @@ def setStoreman(app_client_admin) -> None:
     block_info = app_client_admin.client.block_info(status['last-round'])
     timestamp = block_info['block']['ts']
     smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
-    GPK = bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5')
+    GPK = bytes.fromhex('dacc38e9bc3a8ccf2a0642a1481ab3ba4480d9a804927c84c621ac394d556b01351f98176e1614272a242f6ca31d21b8baead46be6b0c0f354a4fbfb477f6809')
     startTime = timestamp-1000000
     endTime = timestamp+1000000
     status = 5
@@ -180,3 +181,49 @@ def setStoreman(app_client_admin) -> None:
         ],
     )
     transaction.wait_for_confirmation(app_client_admin.client, tx.tx_id, 1)
+
+@pytest.fixture
+def gpapp_client(owner, admin, user, app_client):
+    algod_client = beaker.localnet.get_algod_client()
+    gpapp_client = beaker.client.ApplicationClient(
+        client=algod_client,
+        app=groupApprove.app,
+        signer=owner.signer,
+    ) 
+    gpapp_client.create()
+    atc = AtomicTransactionComposer()
+    sp_with_fees = algod_client.suggested_params()
+    sp_with_fees.flat_fee = True
+    sp_with_fees.fee = beaker.consts.milli_algo
+
+    atc.add_transaction(
+        TransactionWithSigner(
+            txn=PaymentTxn(owner.address, sp_with_fees, gpapp_client.app_addr, 2000000),
+            signer=owner.signer,
+        )
+    )
+    atc = gpapp_client.add_method_call(
+        atc,
+        groupApprove.initialize,
+        foundation=user.address,
+        bridge=app_client.app_id
+    )
+    result = atc.execute(algod_client, 3)    
+    return gpapp_client
+
+@pytest.fixture
+def addTokenPair(app_client, nativeAssetID):
+    tokenPairId666 = 666
+    chainAlgo =  2147483931
+    chainBase  = 1073741841    
+    app_client.call(
+        bridge.addTokenPair,
+        id=tokenPairId666,
+        from_chain_id=chainBase,
+        from_account=bytes.fromhex("0000000000000000000000000000000000000000"),
+        to_chain_id=chainAlgo,
+        to_account=nativeAssetID.to_bytes(8, 'big'),
+        boxes=[
+            (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId666))
+        ]
+    )    

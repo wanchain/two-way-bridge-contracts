@@ -14,7 +14,6 @@ const symbol = "wanALGO"
 const decimal = 6
 
 const waitForReceipt = true;
-const deployedFile = `deployed/${hre.network.name}.json`
 if (!process.env.PK)
   throw "Private key not detected! Add it to the .env file!";
 
@@ -22,10 +21,6 @@ if (!process.env.PK)
 async function main() {
   let deployer = (await hre.ethers.getSigner()).address;
   console.log("deployer:", deployer)
-  let deployed = {}
-  if(fs.existsSync(deployedFile)) {
-    deployed = JSON.parse(fs.readFileSync().trim()) 
-  }
   
   let WrappedToken = await hre.ethers.getContractFactory("WrappedToken");
   let wrappedToken = await WrappedToken.deploy(name, symbol, decimal);
@@ -33,11 +28,6 @@ async function main() {
     await wrappedToken.deployed();
   }
   console.log("wrappedToken deployed to:", wrappedToken.address);
-
-
-
-  fs.writeFileSync(`deployed/${hre.network.name}.json`, JSON.stringify(deployed, null, 2));
-
 }
 
 // We recommend this pattern to be able to use async/await everywhere

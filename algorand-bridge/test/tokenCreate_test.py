@@ -55,8 +55,7 @@ def test_tokenCreate(app_client, app_client_admin, owner):
             (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.sender)),
         ]
     )
-    print('done')
-    return asset_id
+    print('asset_id:', asset_id)
 
 
 

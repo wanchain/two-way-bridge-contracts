@@ -24,19 +24,7 @@ chainBase  = 1073741841
 chainMaticZk = 1073741838
 algoCoinId = 0
  
-@pytest.fixture
-def addTokenPair(app_client, nativeAssetID):
-    app_client.call(
-        bridge.addTokenPair,
-        id=tokenPairId666,
-        from_chain_id=chainBase,
-        from_account=bytes.fromhex("0000000000000000000000000000000000000000"),
-        to_chain_id=chainAlgo,
-        to_account=nativeAssetID.to_bytes(8, 'big'),
-        boxes=[
-            (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId666))
-        ]
-    )
+
 
 @pytest.mark.tokenPair
 @pytest.mark.xfail

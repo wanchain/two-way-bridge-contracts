@@ -56,7 +56,9 @@ def test_AdminAuth2(app_client, owner, admin, user) -> None:
 
 @pytest.mark.admin
 def test_Admin(app_client, owner, admin, user) -> None:
-    ownerv = getApplicationGlobal(app_client, 'owner')
+    stateAll = app_client.get_global_state()
+    value1 = stateAll.get('owner')
+    ownerv = encode_address(bytes.fromhex(value1))    
     assert ownerv == owner.address
 
     adminKey = getPrefixAddrKey("mapAdmin", user.address)
@@ -89,7 +91,9 @@ def test_Admin(app_client, owner, admin, user) -> None:
         bridge.transferOwner,
         _newOwner=user.address,
     )
-    ownerv = getApplicationGlobal(app_client, 'owner')
+    stateAll = app_client.get_global_state()
+    value1 = stateAll.get('owner')
+    ownerv = encode_address(bytes.fromhex(value1))    
     print("-----------ownerv:", ownerv)
     assert ownerv == user.address
 
@@ -97,6 +101,55 @@ def test_Admin(app_client, owner, admin, user) -> None:
 
 @pytest.mark.initialize
 def test_initialize(owner, admin) -> None:    
+    algod_client = beaker.localnet.get_algod_client()
+    app_client = beaker.client.ApplicationClient(
+        client=algod_client,
+        app=bridge.app,
+        signer=owner.signer,
+    ) 
+    app_client.create()
+    app_client.fund(900000) # Min 768600
+
+    tx = app_client.call(
+        bridge.initialize,
+        owner=owner.address,
+        admin=admin.address,
+        feeProxy=owner.address,
+        boxes=[
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),
+        ],
+    )
+    stateAll = app_client.get_global_state()
+    value1 = stateAll.get('owner')
+    ownerv = encode_address(bytes.fromhex(value1))    
+    print("ownerv:", ownerv)
+    assert ownerv == owner.address
+
+    stateAll = app_client.get_global_state()
+    initialized = stateAll.get('initialized')
+    assert initialized == 1
+    adminKey = getPrefixAddrKey("mapAdmin", admin.address)
+    adminv = app_client.get_box_contents(adminKey)
+    assert int.from_bytes(adminv,'big') == 1
+
+    try:
+        tx = app_client.call(
+            bridge.initialize,
+            owner=owner.address,
+            admin=admin.address,
+            feeProxy=owner.address,
+            boxes=[
+                (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),
+            ],
+        )
+    except Exception as e:
+        print("only invoke initialize once, pass")
+        return    
+    assert False
+
+
+@pytest.mark.initialize
+def test_initialize_notOwner(owner, admin) -> None:    
     algod_client = beaker.localnet.get_algod_client()
     app_client = beaker.client.ApplicationClient(
         client=algod_client,
@@ -120,37 +173,6 @@ def test_initialize(owner, admin) -> None:
         assert False
     except Exception as e:
         print("only creator can initialize, pass")
-        assert True
+        return
 
-    tx = app_client.call(
-        bridge.initialize,
-        owner=owner.address,
-        admin=admin.address,
-        feeProxy=owner.address,
-        boxes=[
-            (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),
-        ],
-    )
-    ownerv = getApplicationGlobal(app_client, 'owner')
-    print("ownerv:", ownerv)
-    assert ownerv == owner.address
-    initialized = getApplicationGlobal(app_client, 'initialized')
-    assert initialized == 1
-    adminKey = getPrefixAddrKey("mapAdmin", admin.address)
-    adminv = app_client.get_box_contents(adminKey)
-    assert int.from_bytes(adminv,'big') == 1
-
-    try:
-        tx = app_client.call(
-            bridge.initialize,
-            owner=owner.address,
-            admin=admin.address,
-            feeProxy=owner.address,
-            boxes=[
-                (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),
-            ],
-        )
-    except Exception as e:
-        print("only invoke initialize once, pass")
-        return    
     assert False

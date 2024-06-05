@@ -86,7 +86,10 @@ class BridgeState:
         TealType.uint64,
         descr="initialized flag",
     )
-
+    halted: Final[GlobalStateValue] = GlobalStateValue(
+        TealType.uint64,
+        descr="halted flag",
+    )
     mapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], StoremanGroupConfig)
 
 
@@ -97,6 +100,11 @@ app = Application(
     state=BridgeState()
 )
 
+@app.external
+def TTT(
+    adminAccount: abi.Address
+)   -> Expr:
+    return Approve()
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
 def addAdmin(
@@ -138,6 +146,11 @@ def transferOwner(
         app.state.owner.set(_newOwner.get())
     )
 
+@app.external(authorize=Authorize.only(app.state.owner.get()))
+def setHalt(_halt: abi.Uint64) -> Expr:
+    return Seq(
+        app.state.halted.set(_halt.get())
+    )
 
 @app.external(authorize=onlyAdmin)
 def setTokenPairFee(
@@ -296,6 +309,7 @@ def userLock(
     txid = abi.make(abi.StaticBytes[Literal[32]])
     name = abi.make(abi.String)
     return Seq(
+        Assert(app.state.halted.get() == Int(0)),
         getCrossTokenInfo(tokenPairID).store_into(crossTokenInfo),
         crossTokenInfo.contractFee.store_into(contractFee),
         crossTokenInfo.toAccount.store_into(toAccount),
@@ -350,7 +364,7 @@ def verifySignature(mhash, PK, r, s)-> pt.Expr:
 
     return If(ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)==Int(1), Int(1), Int(0))
 
-@ABIReturnSubroutine
+@app.external
 def acquireReadySmgInfo(
     smgID: abi.StaticBytes[Literal[32]],
     *,
@@ -359,12 +373,15 @@ def acquireReadySmgInfo(
     info = StoremanGroupConfig()
     startTime = abi.make(abi.Uint64)
     endTime = abi.make(abi.Uint64)
+    status =  abi.make(abi.Uint8)
     return Seq(
         app.state.mapStoremanGroupConfig[smgID].store_into(info),
         info.startTime.store_into(startTime),
         info.endTime.store_into(endTime),
+        info.status.store_into(status),
         Assert(Global.latest_timestamp() >= startTime.get()),
         Assert(Global.latest_timestamp() < endTime.get()),
+        Assert(status.get() == Int(5)),
         output.set(info.gpk)
     )
 
@@ -392,6 +409,7 @@ def smgRelease(
 
     mhash = pt.Keccak256(alldata)
     return Seq(
+        Assert(app.state.halted.get() == Int(0)),
         name.set("SmgReleaseLogger"),
         (logger := SmgReleaseLogger()).set(name, uniqueID, smgID, tokenPairID, value, tokenAccount,  userAccount),
         Log(logger.encode()),
