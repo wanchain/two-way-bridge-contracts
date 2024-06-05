@@ -265,7 +265,7 @@ def main() -> None:
     if old_app_id == 0:
         prov.create()
     else:
-        prov.update(old_app_id, bridge.app)
+        prov.connect(old_app_id, bridge.app)
 
     algod_client = prov.algod_client
     app_client = prov.app_client
