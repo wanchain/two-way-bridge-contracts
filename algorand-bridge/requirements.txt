@@ -15,5 +15,5 @@ pyteal>=0.24
 semantic-version==2.10.0
 tomli==2.0.1
 algopytest-framework==2.0.0
-pycryptodome
+pycryptodome==3.20.0
 secp256k1==0.14.0

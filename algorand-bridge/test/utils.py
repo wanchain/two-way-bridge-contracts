@@ -155,7 +155,11 @@ class Provider:
             atc,
             bridge.initialize,
             owner=self.acct_addr,
-            admin=self.acct_addr
+            admin=self.acct_addr,
+            feeProxy=self.acct_addr,
+            boxes=[
+                (app_client.app_id, getPrefixAddrKey("mapAdmin", self.acct_addr)),
+            ],
         )
         result = atc.execute(self.algod_client, 3)
         self.app_client = app_client

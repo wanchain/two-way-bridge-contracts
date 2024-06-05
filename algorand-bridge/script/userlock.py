@@ -118,16 +118,14 @@ def test_userLockToken(app_client, acct_addr, aacct_signer) -> None:
 
 
 def setOracle(app_client) -> None:
-    adminKey = getPrefixAddrKey("mapAdmin", app_client.sender)
-    tx = app_client.call(bridge.addAdmin,adminAccount=app_client.sender,boxes=[
-            (app_client.app_id, adminKey),
-        ] )
-    transaction.wait_for_confirmation(app_client.client, tx.tx_id, 1)
-    tx = app_client.call(bridge.setSmgFeeProxy,proxy=app_client.sender)
-    transaction.wait_for_confirmation(app_client.client, tx.tx_id, 1)
-    GPK = bytes.fromhex('8cf8a402ffb0bc13acd426cb6cddef391d83fe66f27a6bde4b139e8c1d380104aad92ccde1f39bb892cdbe089a908b2b9db4627805aa52992c5c1d42993d66f5')
-    startTime = 1799351111
-    endTime = 1799351331
+    status = app_client_admin.client.status()
+    block_info = app_client_admin.client.block_info(status['last-round'])
+    timestamp = block_info['block']['ts']
+    smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
+    GPK = bytes.fromhex('dacc38e9bc3a8ccf2a0642a1481ab3ba4480d9a804927c84c621ac394d556b01351f98176e1614272a242f6ca31d21b8baead46be6b0c0f354a4fbfb477f6809')
+    startTime = timestamp-1000000
+    endTime = timestamp+1000000
+ 
     status = 5
     tx = app_client.call(
         bridge.setStoremanGroupConfig,
@@ -144,11 +142,14 @@ def setOracle(app_client) -> None:
     transaction.wait_for_confirmation(app_client.client, tx.tx_id, 1)
 
 
+
+
 def test_smgRelease(app_client) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
     uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
+    r,s = get_sign(chainAlgo, uniqueID, 33, 55, 1, 0, decode_address("7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY") )
 
     tx = app_client.call(
         bridge.smgRelease,
@@ -156,10 +157,10 @@ def test_smgRelease(app_client) -> None:
         smgID=smgID, 
         tokenPairID=33, value=55, 
         fee=1, tokenAccount=0,
-        r=bytes.fromhex('a423c56d531277a07ae3fb7ef34893c74f5d1f76fa0e1cad047497c413c3fc84000000000000000000000000000000000000000000000000000000000000001c'), 
-        s=bytes.fromhex('c23ce3a9f9bf8b4953807fdf3f0fbd7b1b7f8e08f2567515b04ac9687ea66337'),
+        r=r,s=s,
         userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
         suggested_params = sp_big_fee,
+        accounts = [app_client_admin.sender, user.address],
         boxes=[(app_client.app_id, smgID), (app_client.app_id, uniqueID)], # Must append app_id and box key for tx
     )
     print("------------------smgRelease:", tx.return_value, tx.tx_info)
@@ -203,20 +204,7 @@ def tokenCreate(prov):
     print('done')
     return asset_id
 
-def setStoreman(app_client) -> None:
-    global smgID
-    sp = app_client.get_suggested_params()
-    sp.flat_fee = True
-    sp.fee = beaker.consts.milli_algo +10
 
-    app_client.call(
-        bridge.set_storeman_group_config,
-        id=smgID,
-        startTime=1712635200,
-        endTime=1715227200,
-        gpk=bytes.fromhex('66e0c512ba81ea67dce73a0a886fe703e5c5c277f9dea6819827c579930852ea728d863858b50bebf3e67f37fc1eb9e8c87af1fe34a8963fd9c9c6965c3e3009'),
-        boxes=[(app_client.app_id, smgID)], # Must append app_id and box key for tx
-    )
 def setFeeProxy(app_client, feeProxyAddr):
     app_client.call(
         bridge.setSmgFeeProxy,
@@ -285,8 +273,6 @@ def main() -> None:
     sp_with_fees.flat_fee = True
     sp_with_fees.fee = beaker.consts.milli_algo
 
-    ################ oracle #######################
-    # setStoreman(app_client)
     
     # setFeeProxy(app_client, prov.acct_addr)
  
