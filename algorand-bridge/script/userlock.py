@@ -16,9 +16,13 @@ import bridge
 from utils import *
 
 
-IsTestnet = True
+IsTestnet = False
+old_app_id = 0
+
+# IsTestnet = True
+# old_app_id = 627255629
+
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
-old_app_id = 627255629  #updateApplication approval program too long. max len 4096 bytes
 AssetID = 627255785       # this is minted by wanchain.
 nativeAssetID = 640706823 # this is a native token, need cross to wanchain.
 nativeAssetIDHex = bytes.fromhex('26306907')
@@ -118,10 +122,9 @@ def test_userLockToken(app_client, acct_addr, aacct_signer) -> None:
 
 
 def setOracle(app_client) -> None:
-    status = app_client_admin.client.status()
-    block_info = app_client_admin.client.block_info(status['last-round'])
+    status = app_client.client.status()
+    block_info = app_client.client.block_info(status['last-round'])
     timestamp = block_info['block']['ts']
-    smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
     GPK = bytes.fromhex('dacc38e9bc3a8ccf2a0642a1481ab3ba4480d9a804927c84c621ac394d556b01351f98176e1614272a242f6ca31d21b8baead46be6b0c0f354a4fbfb477f6809')
     startTime = timestamp-1000000
     endTime = timestamp+1000000
@@ -264,7 +267,7 @@ def main() -> None:
     if old_app_id == 0:
         prov.create()
     else:
-        prov.update(old_app_id)
+        prov.update(old_app_id, bridge.app)
 
     algod_client = prov.algod_client
     app_client = prov.app_client
@@ -273,7 +276,9 @@ def main() -> None:
     sp_with_fees.flat_fee = True
     sp_with_fees.fee = beaker.consts.milli_algo
 
-    
+
+    setOracle(app_client)
+
     # setFeeProxy(app_client, prov.acct_addr)
  
     # setFee(app_client)
@@ -283,7 +288,6 @@ def main() -> None:
     test_userLock(app_client, prov.acct_addr, prov.acct_signer)
     test_userLockToken(app_client, prov.acct_addr, prov.acct_signer)
 
-    setOracle(app_client)
     test_smgRelease(app_client)
     return
 

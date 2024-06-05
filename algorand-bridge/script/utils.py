@@ -13,6 +13,7 @@ from algosdk.atomic_transaction_composer import (
 import beaker
 import base64
 import bridge
+import groupApprove
 from Crypto.Hash import keccak
 from secp256k1 import PrivateKey, PublicKey
 
@@ -165,10 +166,41 @@ class Provider:
         self.app_client = app_client
         print("app_client app_id,app_addr:", app_client.app_id, app_client.app_addr)      
 
-    def update(self,old_app_id):
+
+    def createGroupApprove(self, bridge_app_id):
+        print("Creating groupApprove")
         app_client = beaker.client.ApplicationClient(
             client=self.algod_client,
-            app=bridge.app,
+            app=groupApprove.app,
+            signer=self.acct_signer,
+        )        
+        app_client.create()
+
+        atc = AtomicTransactionComposer()
+        sp_with_fees = self.algod_client.suggested_params()
+        sp_with_fees.flat_fee = True
+        sp_with_fees.fee = beaker.consts.milli_algo
+
+        atc.add_transaction(
+            TransactionWithSigner(
+                txn=PaymentTxn(self.acct_addr, sp_with_fees, app_client.app_addr, 2000000),
+                signer=self.acct_signer,
+            )
+        )
+        atc = app_client.add_method_call(
+            atc,
+            groupApprove.initialize,
+            foundation=self.acct_addr,
+            bridge=bridge_app_id
+        )
+        result = atc.execute(self.algod_client, 3)
+        self.app_client = app_client
+        print("app_client app_id,app_addr:", app_client.app_id, app_client.app_addr)      
+
+    def update(self,old_app_id, app):
+        app_client = beaker.client.ApplicationClient(
+            client=self.algod_client,
+            app=app,
             app_id=old_app_id,
             signer=self.acct_signer,
         )  
@@ -176,10 +208,10 @@ class Provider:
         self.app_client = app_client
         print("app_client app_id,app_addr:", app_client.app_id, app_client.app_addr)      
 
-    def connect(self,old_app_id):
+    def connect(self,old_app_id, app):
         app_client = beaker.client.ApplicationClient(
             client=self.algod_client,
-            app=bridge.app,
+            app=app,
             app_id=old_app_id,
             signer=self.acct_signer,
         )  
