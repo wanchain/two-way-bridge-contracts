@@ -16,11 +16,9 @@ import bridge
 from utils import *
 
 
-IsTestnet = False
-old_app_id = 0
 
-# IsTestnet = True
-# old_app_id = 627255629
+IsTestnet = True
+old_app_id = 627255629
 
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
 AssetID = 627255785       # this is minted by wanchain.
@@ -151,7 +149,7 @@ def test_smgRelease(app_client) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
-    uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
+    uniqueID=bytes.fromhex('6260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
     r,s = get_sign(chainAlgo, uniqueID, 33, 55, 1, 0, decode_address("7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY") )
 
     tx = app_client.call(
@@ -163,7 +161,7 @@ def test_smgRelease(app_client) -> None:
         r=r,s=s,
         userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
         suggested_params = sp_big_fee,
-        accounts = [app_client_admin.sender, user.address],
+        accounts = [app_client.sender],
         boxes=[(app_client.app_id, smgID), (app_client.app_id, uniqueID)], # Must append app_id and box key for tx
     )
     print("------------------smgRelease:", tx.return_value, tx.tx_info)

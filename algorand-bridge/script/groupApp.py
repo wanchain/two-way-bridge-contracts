@@ -11,7 +11,7 @@ from algosdk.atomic_transaction_composer import (
     TransactionWithSigner,
 )
 import beaker
-
+import groupApprove
 import bridge
 from utils import *
 
@@ -19,14 +19,19 @@ from utils import *
 IsTestnet = True
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
 bridge_app_id = 627255629  #updateApplication approval program too long. max len 4096 bytes
-old_app_id = 0
+old_app_id = 677348256
 chainAlgo =  2147483931
 
 def test_groupApproveSetSmgFeeProxy(gpapp_client):
+    sp_big_fee = gpapp_client.get_suggested_params()
+    sp_big_fee.flat_fee = True
+    sp_big_fee.fee = beaker.consts.milli_algo * 20    
     codec = ABIType.from_string("(address)")
     encoded = codec.encode([gpapp_client.sender])
 
-    taskCount = 0
+    stateAll = gpapp_client.get_global_state()
+    taskCount = stateAll.get('taskCount')
+    print("taskCount:", taskCount)
     tx = gpapp_client.call(
         groupApprove.proposal,
         _chainId=chainAlgo,
@@ -57,9 +62,9 @@ def test_groupApproveSetSmgFeeProxy(gpapp_client):
     )
     print("tx:", tx.tx_info)
 
-    stateAll = app_client.get_global_state()
-    value1 = stateAll.get('feeProxy')
-    ownerAddr = encode_address(bytes.fromhex(value1))    
+    stateAll = gpapp_client.get_global_state()
+    taskCount = stateAll.get('taskCount')
+    print("new taskCount:", taskCount)
 
 
 def main() -> None:
@@ -70,13 +75,13 @@ def main() -> None:
     if old_app_id == 0:
         prov.createGroupApprove(bridge_app_id)
     else:
-        prov.update(old_app_id, groupApprove.app)
+        prov.connect(old_app_id, groupApprove.app)
 
 
     # transfer owner to groupApprove SC
     provBridge = Provider(IsTestnet)
     provBridge.connect(bridge_app_id, bridge.app)
-    provBridge.app_client.call(bridge.transferOwner, _newOwner=prov.app_client.app_addr)
+    #provBridge.app_client.call(bridge.transferOwner, _newOwner=prov.app_client.app_addr)
 
     test_groupApproveSetSmgFeeProxy(prov.app_client)
     return
