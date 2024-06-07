@@ -25,6 +25,14 @@ class Task(abi.NamedTuple):
     data:  abi.Field[abi.DynamicBytes]
     executed: abi.Field[abi.Bool]
 
+class ApprovedAndExecuted(abi.NamedTuple):
+    name:         abi.Field[abi.String]
+    smgID:        abi.Field[abi.StaticBytes[Literal[32]]]
+    to:           abi.Field[abi.Uint64]
+    proposalId:   abi.Field[abi.Uint64]
+    data:         abi.Field[abi.DynamicBytes]
+
+
 @ABIReturnSubroutine
 def getProposalKey(
     proposalId: abi.Uint64,
@@ -91,8 +99,7 @@ def _acquireReadySmgInfo(
     )
 
 
-# @app.external(authorize=Authorize.only(app.state.foundation.get()))
-@app.external
+@app.external(authorize=Authorize.only(app.state.foundation.get()))
 def proposal(
   _chainId: abi.Uint64,
   _to: abi.Uint64,
@@ -141,6 +148,7 @@ def approveAndExecute(
     addr = abi.make(abi.Address)
     number = abi.make(abi.Uint64)
     to = abi.make(abi.Uint64)
+    name = abi.make(abi.String)
     method_signature = ""
     return  Seq(
         _acquireReadySmgInfo(smgID).store_into(PK),
@@ -153,6 +161,9 @@ def approveAndExecute(
         task.proposalType.store_into(protype),
         task.data.store_into(data),
         task.to.store_into(to),
+        name.set("ApprovedAndExecuted"),
+        (logger := ApprovedAndExecuted()).set(name, smgID, proposalId, to, data),
+        Log(logger.encode()),        
         Cond(
             [protype.get() == TypeAddAdmin, Seq(
                 (addr:= abi.Address()).decode(data.get()),
@@ -234,7 +245,6 @@ def approveAndExecute(
                 transferFoundation(addr)
             )],            
         ),
-      
     )
 
 

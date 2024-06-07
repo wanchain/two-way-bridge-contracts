@@ -298,11 +298,21 @@ def test_groupApproveSetSmgFeeProxy(gpapp_client, app_client, owner, user,setSto
        ]
     )
     print("tx:", tx.tx_info)
+    logs = tx.tx_info['logs'][0]
+    codec = ABIType.from_string(str(groupApprove.ApprovedAndExecuted().type_spec())) #(string,byte[32],uint64,uint64,byte[])
+    print("str(groupApprove.ApprovedAndExecuted().type_spec()):", str(groupApprove.ApprovedAndExecuted().type_spec()))
+    loga = codec.decode(base64.b64decode(logs))
+    print("loga:", loga)
+    assert loga[0] == 'ApprovedAndExecuted'
+    assert bytes(bytearray(loga[1])) == smgID
+    assert loga[2] == taskCount
+    assert loga[3] == app_client.app_id    
+    assert encode_address(bytes(bytearray(loga[4]))) == owner.address
 
     stateAll = app_client.get_global_state()
     value1 = stateAll.get('feeProxy')
-    ownerAddr = encode_address(bytes.fromhex(value1))
-    assert ownerAddr == owner.address
+    feeProxy = encode_address(bytes.fromhex(value1))
+    assert feeProxy == owner.address
 
 
 
@@ -458,7 +468,7 @@ def test_groupApproveTokenPair(gpapp_client, app_client, owner, user,setStoreman
 
 
 @pytest.mark.groupApproveTransferFoundation
-def test_groupApproveTransferFoundation(gpapp_client, app_client, admin, user,setStoreman):
+def test_groupApproveTransferFoundation(gpapp_client, app_client, admin, owner,user,setStoreman):
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
     sp_big_fee.fee = beaker.consts.milli_algo * 20
@@ -467,7 +477,7 @@ def test_groupApproveTransferFoundation(gpapp_client, app_client, admin, user,se
     stateAll = gpapp_client.get_global_state()
     value1 = stateAll.get('foundation')
     foundation = encode_address(bytes.fromhex(value1))
-    assert foundation == user.address
+    assert foundation == owner.address
 
     codec = ABIType.from_string("(address)")
     encoded = codec.encode([admin.address])
@@ -507,6 +517,7 @@ def test_groupApproveTransferFoundation(gpapp_client, app_client, admin, user,se
     foundation = encode_address(bytes.fromhex(value1))
     assert foundation == admin.address
 
+    # transferFoundation is ABIReturnSubroutine, must be invoded via approveAndExecute
     try:
         tx = gpapp_client.call(
             groupApprove.transferFoundation,

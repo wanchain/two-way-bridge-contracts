@@ -205,7 +205,7 @@ def gpapp_client(owner, admin, user, app_client):
     atc = gpapp_client.add_method_call(
         atc,
         groupApprove.initialize,
-        foundation=user.address,
+        foundation=owner.address,
         bridge=app_client.app_id
     )
     result = atc.execute(algod_client, 3)    

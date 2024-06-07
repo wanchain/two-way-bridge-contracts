@@ -18,6 +18,7 @@ from utils import *
 
 IsTestnet = True
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
+
 bridge_app_id = 627255629  #updateApplication approval program too long. max len 4096 bytes
 old_app_id = 677348256
 chainAlgo =  2147483931
@@ -76,12 +77,20 @@ def main() -> None:
         prov.createGroupApprove(bridge_app_id)
     else:
         prov.connect(old_app_id, groupApprove.app)
+        #prov.update(old_app_id, groupApprove.app)
 
 
     # transfer owner to groupApprove SC
     provBridge = Provider(IsTestnet)
     provBridge.connect(bridge_app_id, bridge.app)
-    #provBridge.app_client.call(bridge.transferOwner, _newOwner=prov.app_client.app_addr)
+
+
+    stateAll = provBridge.app_client.get_global_state()
+    value1 = stateAll.get('owner')
+    owner = encode_address(bytes.fromhex(value1))
+    print("bridge owner:", owner, prov.app_client.app_addr)
+
+    # provBridge.app_client.call(bridge.transferOwner, _newOwner=prov.app_client.app_addr)
 
     test_groupApproveSetSmgFeeProxy(prov.app_client)
     return
