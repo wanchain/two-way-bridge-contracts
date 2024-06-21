@@ -28,8 +28,8 @@ def setOracle(app_client) -> None:
     status = app_client.client.status()
     block_info = app_client.client.block_info(status['last-round'])
     timestamp = block_info['block']['ts']
-    startTime = timestamp-1000000
-    endTime = timestamp+1000000
+    startTime = timestamp-10000000
+    endTime = timestamp+10000000
  
     tx = app_client.call(
         bridge.setStoremanGroupConfig,

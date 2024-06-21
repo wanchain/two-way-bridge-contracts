@@ -27,8 +27,12 @@ def test_updateAdmin(app_client_admin):
     tx = app_client_admin.update()
 
 @pytest.mark.app
-def test_updateOwner(app_client):
+def test_updateOwner(app_client, user):
+    app_client.prepare(signer=user.signer)
     tx = app_client.update()
 
 
-
+@pytest.mark.xfail(True, run=True, reason='not admin')
+@pytest.mark.app
+def test_updateOwner(app_client):
+    tx = app_client.update()

@@ -139,6 +139,7 @@ def app_client(owner, admin, user):
         bridge.initialize,
         owner=owner.address,
         admin=admin.address,
+        updateOwner=user.address,
         feeProxy=user.address,
         boxes=[
             (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address))

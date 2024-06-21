@@ -156,6 +156,7 @@ class Provider:
             bridge.initialize,
             owner=self.acct_addr,
             admin=self.acct_addr,
+            updateOwner=owner.address,
             feeProxy=self.acct_addr,
             boxes=[
                 (app_client.app_id, getPrefixAddrKey("mapAdmin", self.acct_addr)),

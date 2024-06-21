@@ -305,8 +305,8 @@ def test_groupApproveSetSmgFeeProxy(gpapp_client, app_client, owner, user,setSto
     print("loga:", loga)
     assert loga[0] == 'ApprovedAndExecuted'
     assert bytes(bytearray(loga[1])) == smgID
-    assert loga[2] == taskCount
-    assert loga[3] == app_client.app_id    
+    assert loga[2] == app_client.app_id
+    assert loga[3] ==      taskCount
     assert encode_address(bytes(bytearray(loga[4]))) == owner.address
 
     stateAll = app_client.get_global_state()
@@ -528,3 +528,60 @@ def test_groupApproveTransferFoundation(gpapp_client, app_client, admin, owner,u
         print("transferFoundation can not invoke, OK")
         return
     assert(False)
+
+
+
+@pytest.mark.groupApproveTransferUpdateOwner
+def test_groupApproveTransferUpdateOwner(gpapp_client, app_client, owner,setStoreman, user):
+    sp_big_fee = app_client.get_suggested_params()
+    sp_big_fee.flat_fee = True
+    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    taskCount=0
+    # transfer owner to groupApprove
+    app_client.call(
+        bridge.transferOwner,
+        _newOwner=gpapp_client.app_addr
+    )
+    stateAll = app_client.get_global_state()
+    value1 = stateAll.get('updateOwner')
+    updateOwner = encode_address(bytes.fromhex(value1))
+    assert updateOwner == user.address
+
+    codec = ABIType.from_string("(address)")
+    encoded = codec.encode([owner.address])
+
+    tx = gpapp_client.call(
+        groupApprove.proposal,
+        _chainId=chainAlgo,
+        _to=app_client.app_id,
+        _proposalType=10, # TypeTransferUpdateOwner
+        _data=encoded,
+        boxes = [(gpapp_client.app_id, getPrefixKey("mapTask", taskCount))]
+    )
+    print("tx:", tx.tx_info)
+
+    codec = ABIType.from_string(str(groupApprove.Task().type_spec())) 
+    binfo = gpapp_client.get_box_contents(getPrefixKey("mapTask", taskCount))
+    task = codec.decode(binfo)
+    print("task:", task)
+
+    r,s = get_gpsign(taskCount,chainAlgo)
+    tx = gpapp_client.call(
+        groupApprove.approveAndExecute,
+        proposalId=taskCount,
+        smgID=smgID, 
+        r=r, s=s,
+        foreign_apps=[app_client.app_id],
+        suggested_params = sp_big_fee,
+        boxes = [
+            (gpapp_client.app_id, getPrefixKey("mapTask", taskCount)),
+            (app_client.app_id, smgID),
+       ]
+    )
+    print("tx:", tx.tx_info)
+
+    stateAll = app_client.get_global_state()
+    value1 = stateAll.get('updateOwner')
+    updateOwnerAddr = encode_address(bytes.fromhex(value1))
+    assert updateOwnerAddr == owner.address
+

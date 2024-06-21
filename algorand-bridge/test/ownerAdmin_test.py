@@ -114,6 +114,7 @@ def test_initialize(owner, admin) -> None:
         bridge.initialize,
         owner=owner.address,
         admin=admin.address,
+        updateOwner=owner.address,
         feeProxy=owner.address,
         boxes=[
             (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),
@@ -137,6 +138,7 @@ def test_initialize(owner, admin) -> None:
             bridge.initialize,
             owner=owner.address,
             admin=admin.address,
+            updateOwner=owner.address,
             feeProxy=owner.address,
             boxes=[
                 (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),
@@ -165,6 +167,7 @@ def test_initialize_notOwner(owner, admin) -> None:
             bridge.initialize,
             owner=owner.address,
             admin=admin.address,
+            updateOwner=owner.address,
             feeProxy=owner.address,
             boxes=[
                 (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),

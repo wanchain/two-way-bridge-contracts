@@ -16,8 +16,9 @@ TypeSetSmgFeeProxy = Int(5)
 TypeAddTokenPair = Int(6)
 TypeRemoveTokenPair = Int(7)
 TypeUpdateTokenPair = Int(8)
-TypeTrabsferFoundation = Int(9)
-TypeMax = Int(10)
+TypeTransferFoundation = Int(9)
+TypeTransferUpdateOwner = Int(10)
+TypeMax = Int(11)
 
 class Task(abi.NamedTuple):
     to: abi.Field[abi.Uint64]
@@ -162,7 +163,7 @@ def approveAndExecute(
         task.data.store_into(data),
         task.to.store_into(to),
         name.set("ApprovedAndExecuted"),
-        (logger := ApprovedAndExecuted()).set(name, smgID, proposalId, to, data),
+        (logger := ApprovedAndExecuted()).set(name, smgID, to, proposalId,  data),
         Log(logger.encode()),        
         Cond(
             [protype.get() == TypeAddAdmin, Seq(
@@ -239,11 +240,19 @@ def approveAndExecute(
                     args=[id, fromChainID,fromAccount,toChainID,toAccount],
                 ),                  
             )],
-            [protype.get() == TypeTrabsferFoundation, Seq(
+            [protype.get() == TypeTransferFoundation, Seq(
                 (addr:= abi.Address()).decode(data.get()),
                 Assert(to.get() == Txn.application_id()),
                 transferFoundation(addr)
-            )],            
+            )],    
+            [protype.get() == TypeTransferUpdateOwner, Seq(
+                (addr:= abi.Address()).decode(data.get()),
+                InnerTxnBuilder.ExecuteMethodCall(
+                    app_id=to.get(),
+                    method_signature=bridge.transferUpdateOwner.method_signature(),
+                    args=[addr],
+                ),                  
+            )],             
         ),
     )
 

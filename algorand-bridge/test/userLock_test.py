@@ -11,7 +11,7 @@ from algosdk.atomic_transaction_composer import (
     TransactionWithSigner,
 )
 import beaker
-
+import pyteal
 import bridge
 
 from utils import *
@@ -22,7 +22,7 @@ from tokenPair_test import test_tokenPair
 import pytest
 
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
-old_app_id = 0  #updateApplication approval program too long. max len 4096 bytes
+old_app_id = 0 
 tokenPairId666 = 666
 tokenPairId888 = 888
 
@@ -34,7 +34,7 @@ algoCoinId = 0
 smgID = bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303632')
 
 
-@pytest.mark.userLock
+@pytest.mark.userLock_nofee
 def test_userLock_nofee(app_client, app_client_admin, nativeAssetID,user) -> None:
     algod_client = app_client.client
     atc = AtomicTransactionComposer()    
@@ -95,7 +95,11 @@ def test_userLock_nofee(app_client, app_client_admin, nativeAssetID,user) -> Non
         print("---------------------- txUserLock txid:", rv)
     for rv in result.abi_results:
         print("---------------------- txUserLock txresult:", rv.return_value, rv.tx_id, rv.tx_info)
-
+        logs = rv.tx_info['logs'][0]
+        codec = ABIType.from_string(str(bridge.UserLockLogger().type_spec()))  #(uint64, string, uing64)
+        print("xxxxxxxxxx:", str(bridge.UserLockLogger().type_spec()))
+        loga = codec.decode(base64.b64decode(logs))
+        print("loga:", loga)
 
 
 @pytest.mark.userLock
@@ -459,5 +463,4 @@ def test_userLock_token_fee_moreToken(app_client, app_client_admin, nativeAssetI
         print("---------------------- txUserLock txid:", rv)
     for rv in result.abi_results:
         print("---------------------- txUserLock txresult:", rv.return_value, rv.tx_id, rv.tx_info)
-
 

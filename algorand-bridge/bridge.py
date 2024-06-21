@@ -78,6 +78,10 @@ class BridgeState:
         TealType.bytes,
         descr="owner of the bridge",
     )
+    updateOwner: Final[GlobalStateValue] = GlobalStateValue(
+        TealType.bytes,
+        descr="owner to update the bridge",
+    )
     feeProxy: Final[GlobalStateValue] = GlobalStateValue(
         TealType.bytes,
         descr="fee proxy address",
@@ -100,11 +104,6 @@ app = Application(
     state=BridgeState()
 )
 
-@app.external
-def TTT(
-    adminAccount: abi.Address
-)   -> Expr:
-    return Approve()
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
 def addAdmin(
@@ -144,6 +143,13 @@ def transferOwner(
 ) -> Expr:
     return Seq(
         app.state.owner.set(_newOwner.get())
+    )
+@app.external(authorize=Authorize.only(app.state.owner.get()))
+def transferUpdateOwner(
+    _newOwner: abi.Address,
+) -> Expr:
+    return Seq(
+        app.state.updateOwner.set(_newOwner.get())
     )
 
 @app.external(authorize=Authorize.only(app.state.owner.get()))
@@ -518,6 +524,7 @@ def updateTokenPair(
 @app.external(authorize=Authorize.only(Global.creator_address()))
 def initialize(
     owner: abi.Address, 
+    updateOwner: abi.Address, 
     admin: abi.Address,
     feeProxy: abi.Address,
     ) -> Expr:
@@ -526,6 +533,7 @@ def initialize(
     return Seq(
         Assert(app.state.initialized.get() == Int(0)),
         app.state.owner.set(owner.get()),
+        app.state.updateOwner.set(updateOwner.get()),
         app.state.feeProxy.set(feeProxy.get()),
         getAdminKey(admin).store_into(adminKey),
         adminValue.set(Int(1)),
@@ -534,7 +542,7 @@ def initialize(
     )
 
 
-@app.update(authorize=Authorize.only(app.state.owner.get()))
+@app.update(authorize=Authorize.only(app.state.updateOwner.get()))
 def update() -> Expr:
     return Approve()
 
