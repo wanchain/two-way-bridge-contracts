@@ -72,6 +72,7 @@ def schnorr_sign(m):
     privx = PrivateKey(bytes(bytearray.fromhex(x)), raw=True)
     publicKey = privx.pubkey.serialize(compressed=True)
     print("publicKey:", publicKey.hex())
+    print("uncompressed publicKey:", privx.pubkey.serialize(compressed=False).hex())
 
     privk = PrivateKey(bytes(bytearray.fromhex(k)), raw=True)
     R = privk.pubkey.serialize(compressed=True)

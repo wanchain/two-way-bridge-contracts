@@ -40,6 +40,7 @@ def test_groupApproveExec(gpapp_client):
         boxes = [
             (gpapp_client.app_id, getPrefixKey("mapTask", taskCount)),
             (bridge_app_id, smgID),
+            (bridge_app_id, getPrefixKey("mapTokenPairInfo", 770)), 
         ]
     )
     print("tx:", tx.tx_info)
