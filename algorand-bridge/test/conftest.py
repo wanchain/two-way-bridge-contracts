@@ -138,9 +138,10 @@ def app_client(owner, admin, user):
         atc,
         bridge.initialize,
         owner=owner.address,
-        admin=admin.address,
         updateOwner=user.address,
+        admin=admin.address,
         feeProxy=user.address,
+        oracleAdmin=admin.address,
         boxes=[
             (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address))
         ],

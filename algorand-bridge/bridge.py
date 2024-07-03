@@ -82,6 +82,10 @@ class BridgeState:
         TealType.bytes,
         descr="owner to update the bridge",
     )
+    oracleAdmin: Final[GlobalStateValue] = GlobalStateValue(
+        TealType.bytes,
+        descr="oracle admin",
+    )
     feeProxy: Final[GlobalStateValue] = GlobalStateValue(
         TealType.bytes,
         descr="fee proxy address",
@@ -251,7 +255,12 @@ def getCrossTokenInfo(
     fromAccount = abi.make(abi.DynamicBytes)
     return Seq(
         getTokenPairFeeKey(tokenPairID).store_into(key),
-        app.state.mapTokenPairContractFee[key].store_into(contractFee),
+        If(app.state.mapTokenPairContractFee[key].exists())
+        .Then(
+            app.state.mapTokenPairContractFee[key].store_into(contractFee),
+        ).Else(
+            contractFee.set(0)
+        ),
 
         getTokenPairInfoKey(tokenPairID).store_into(key),
         app.state.mapTokenPairInfo[key].store_into(tInfo),
@@ -527,6 +536,7 @@ def initialize(
     updateOwner: abi.Address, 
     admin: abi.Address,
     feeProxy: abi.Address,
+    oracleAdmin: abi.Address
     ) -> Expr:
     adminKey = abi.make(abi.String)
     adminValue = abi.make(abi.Uint64)
@@ -534,6 +544,7 @@ def initialize(
         Assert(app.state.initialized.get() == Int(0)),
         app.state.owner.set(owner.get()),
         app.state.updateOwner.set(updateOwner.get()),
+        app.state.oracleAdmin.set(oracleAdmin.get()),
         app.state.feeProxy.set(feeProxy.get()),
         getAdminKey(admin).store_into(adminKey),
         adminValue.set(Int(1)),

@@ -23,9 +23,9 @@ old_app_id = 627255629
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
 AssetID = 627255785       # this is minted by wanchain.
 nativeAssetID = 640706823 # this is a native token, need cross to wanchain.
-nativeAssetIDHex = bytes.fromhex('26306907')
+USDCAssetID = 10458941
 tokenPairId666 = 666
-tokenPairId888 = 888
+tokenPairIdToken = 790
 
 chainAlgo =  2147483931
 chainBase  = 1073741841
@@ -86,23 +86,23 @@ def test_userLockToken(app_client, acct_addr, aacct_signer) -> None:
 
     atc = app_client.add_transaction(
         atc,
-        txn=PaymentTxn(acct_addr, sp_with_fees, app_client.app_addr, 888),
+        txn=PaymentTxn(acct_addr, sp_with_fees, app_client.app_addr, 1234),
     ) 
     atc = app_client.add_transaction(
         atc,
-        txn=AssetTransferTxn(acct_addr, sp_with_fees, app_client.app_addr, 2000, nativeAssetID),
+        txn=AssetTransferTxn(acct_addr, sp_with_fees, app_client.app_addr, 8000, USDCAssetID),
     )
    
     atc = app_client.add_method_call(
         atc,
         bridge.userLock,
         smgID=smgID,
-        tokenPairID=tokenPairId888, 
+        tokenPairID=tokenPairIdToken, 
         userAccount="0x8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6",
-        value=2000, 
+        value=8000, 
         boxes=[
-            (app_client.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairId888)),
-            (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairId888)),
+            (app_client.app_id, getPrefixKey("mapTokenPairContractFee", tokenPairIdToken)),
+            (app_client.app_id, getPrefixKey("mapTokenPairInfo", tokenPairIdToken)),
             (app_client.app_id, getPrefixKey("mapContractFee", chainAlgo*2**32+chainBase)),
             (app_client.app_id, getPrefixKey("mapContractFee", chainAlgo*2**32+0)),
             # (app_client.app_id, getPrefixKey("mapAgentFee", chainAlgo*2**32+chainBase)),
@@ -275,7 +275,7 @@ def main() -> None:
     sp_with_fees.fee = beaker.consts.milli_algo
 
 
-    setOracle(app_client)
+    # setOracle(app_client)
 
     # setFeeProxy(app_client, prov.acct_addr)
  
@@ -283,10 +283,10 @@ def main() -> None:
 
     # tokenCreate(prov)
     # updateTokenPair(app_client, AssetID)
-    test_userLock(app_client, prov.acct_addr, prov.acct_signer)
+    # test_userLock(app_client, prov.acct_addr, prov.acct_signer)
     test_userLockToken(app_client, prov.acct_addr, prov.acct_signer)
 
-    test_smgRelease(app_client)
+    # test_smgRelease(app_client)
     return
 
 
