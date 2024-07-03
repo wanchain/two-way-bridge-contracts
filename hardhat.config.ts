@@ -60,6 +60,16 @@ const config = {
     },
   },
   networks: {
+    edexaTestnet: {
+      url: 'https://testnet.edexa.network/rpc',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741850,
+    },
+    plyrMainnet: {
+      url: 'https://subnets.avax.network/plyr/mainnet/rpc',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741849,
+    },
     plyrTestnet: {
       url: 'https://subnets.avax.network/plyr/testnet/rpc',
       accounts: [process.env.PK],
