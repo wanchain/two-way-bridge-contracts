@@ -18,7 +18,8 @@ TypeRemoveTokenPair = Int(7)
 TypeUpdateTokenPair = Int(8)
 TypeTransferFoundation = Int(9)
 TypeTransferUpdateOwner = Int(10)
-TypeMax = Int(11)
+TypeTransferOracleAdmin = Int(11)
+TypeMax = Int(12)
 
 class Task(abi.NamedTuple):
     to: abi.Field[abi.Uint64]
@@ -252,7 +253,15 @@ def approveAndExecute(
                     method_signature=bridge.transferUpdateOwner.method_signature(),
                     args=[addr],
                 ),                  
-            )],             
+            )],
+            [protype.get() == TypeTransferOracleAdmin, Seq(
+                (addr:= abi.Address()).decode(data.get()),
+                InnerTxnBuilder.ExecuteMethodCall(
+                    app_id=to.get(),
+                    method_signature=bridge.transferOracleAdmin.method_signature(),
+                    args=[addr],
+                ),                  
+            )],
         ),
         eflag.set(True),
         (taskn := Task()).set(to, protype, data, eflag),

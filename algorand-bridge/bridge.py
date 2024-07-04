@@ -155,7 +155,13 @@ def transferUpdateOwner(
     return Seq(
         app.state.updateOwner.set(_newOwner.get())
     )
-
+@app.external(authorize=Authorize.only(app.state.owner.get()))
+def transferOracleAdmin(
+    _newOracleAdmin: abi.Address,
+) -> Expr:
+    return Seq(
+        app.state.oracleAdmin.set(_newOracleAdmin.get())
+    )
 @app.external(authorize=Authorize.only(app.state.owner.get()))
 def setHalt(_halt: abi.Uint64) -> Expr:
     return Seq(
@@ -565,7 +571,7 @@ def delete() -> Expr:
 
 
 # oracle methods
-@app.external(authorize=onlyAdmin)
+@app.external(authorize=Authorize.only(app.state.oracleAdmin.get()))
 def setStoremanGroupConfig(
     id: abi.StaticBytes[Literal[32]],
     status: abi.Uint8,
@@ -578,7 +584,7 @@ def setStoremanGroupConfig(
         app.state.mapStoremanGroupConfig[id].set(info),
     )
 
-@app.external(authorize=onlyAdmin)
+@app.external(authorize=Authorize.only(app.state.oracleAdmin.get()))
 def setStoremanGroupStatus(
     id: abi.StaticBytes[Literal[32]],
     status: abi.Uint8,

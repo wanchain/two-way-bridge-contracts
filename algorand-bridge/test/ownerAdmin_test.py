@@ -100,7 +100,7 @@ def test_Admin(app_client, owner, admin, user) -> None:
 
 
 @pytest.mark.initialize
-def test_initialize(owner, admin) -> None:    
+def test_initialize(owner, admin, user) -> None:    
     algod_client = beaker.localnet.get_algod_client()
     app_client = beaker.client.ApplicationClient(
         client=algod_client,
@@ -113,9 +113,10 @@ def test_initialize(owner, admin) -> None:
     tx = app_client.call(
         bridge.initialize,
         owner=owner.address,
-        admin=admin.address,
         updateOwner=owner.address,
-        feeProxy=owner.address,
+        admin=admin.address,
+        feeProxy=user.address,
+        oracleAdmin=admin.address,
         boxes=[
             (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),
         ],
@@ -137,9 +138,10 @@ def test_initialize(owner, admin) -> None:
         tx = app_client.call(
             bridge.initialize,
             owner=owner.address,
-            admin=admin.address,
             updateOwner=owner.address,
-            feeProxy=owner.address,
+            admin=admin.address,
+            feeProxy=user.address,
+            oracleAdmin=admin.address,
             boxes=[
                 (app_client.app_id, getPrefixAddrKey("mapAdmin", admin.address)),
             ],
