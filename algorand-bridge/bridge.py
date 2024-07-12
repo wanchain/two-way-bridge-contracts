@@ -278,11 +278,11 @@ def getCrossTokenInfo(
         .Then(
             If(contractFee.get() == Int(0)).Then(
                 getContractFeeKey(toChainID, fromChainID).store_into(key),
-                app.state.mapContractFee[key].set(contractFee)
+                app.state.mapContractFee[key].store_into(contractFee)
             ),
             If(contractFee.get() == Int(0)).Then(
                 getContractFeeKey(toChainID, chain0).store_into(key),
-                app.state.mapContractFee[key].set(contractFee)            
+                app.state.mapContractFee[key].store_into(contractFee)
             ),
             tInfo.toAccount.store_into(fromAccount),
             tInfo.fromAccount.store_into(toAccount)            
@@ -291,11 +291,11 @@ def getCrossTokenInfo(
         .Then(
             If(contractFee.get() == Int(0)).Then(
                 getContractFeeKey(fromChainID, toChainID).store_into(key),
-                app.state.mapContractFee[key].set(contractFee)
+                app.state.mapContractFee[key].store_into(contractFee)
             ),
             If(contractFee.get() == Int(0)).Then(
                 getContractFeeKey(fromChainID, chain0).store_into(key),
-                app.state.mapContractFee[key].set(contractFee)            
+                app.state.mapContractFee[key].store_into(contractFee)
             ),
             tInfo.toAccount.store_into(toAccount),
             tInfo.fromAccount.store_into(fromAccount)      
