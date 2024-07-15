@@ -39,7 +39,7 @@ def check_ecSchnorr_sig(signature, px, py, e, parity, message) -> Expr:
 
     v = Btoi(Extract(parity, Int(31), Int(1)) ) - Int(27)
     If(BytesGt(ep, Q2)).Then(
-        Pop(v2:=v+Int(1)%Int(2)),
+        Pop(v2:=(v+Int(1))%Int(2)),
         Pop(ep2:= BytesMinus(Q,ep))
     ).Else(
         Pop(v2:=v),
