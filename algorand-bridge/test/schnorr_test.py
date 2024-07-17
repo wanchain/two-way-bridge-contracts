@@ -53,7 +53,7 @@ def test_schnorr(owner):
 
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 40
 
     tx1 = app_client.call(
         wVerifySignature,
@@ -89,11 +89,37 @@ def test_schnorr3(owner):
 
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 40
 
     tx3 = app_client.call(
         wVerifySignature,
         mhash=bytes.fromhex("a3f181fd40cd78f056ee4afd4d1df2a3f1dfbea3c3d72eb64774b95e84fcbd09"),
+        PK=bytes.fromhex('dacc38e9bc3a8ccf2a0642a1481ab3ba4480d9a804927c84c621ac394d556b01351f98176e1614272a242f6ca31d21b8baead46be6b0c0f354a4fbfb477f6809'),
+        r= bytes.fromhex('ea3ce8d8c2aab5c02ff64a24c5ee09adfed6895b4574be6f02137838f773a5ef000000000000000000000000000000000000000000000000000000000000001c'), 
+        s= bytes.fromhex('304a0eb440eaa8cec80c859aebafb3657975e11f5cb95f7e1a2d84f93c886b4a'),
+        suggested_params = sp_big_fee,
+    )
+    print("tx3:",tx3.return_value)
+
+@pytest.mark.schnorr
+@pytest.mark.xfail
+def test_schnorr4(owner):
+    algod_client = beaker.localnet.get_algod_client()
+    app_client = beaker.client.ApplicationClient(
+        client=algod_client,
+        app=app,
+        signer=owner.signer,
+    ) 
+    app_client.create()
+    app_client.fund(2000000)
+
+    sp_big_fee = app_client.get_suggested_params()
+    sp_big_fee.flat_fee = True
+    sp_big_fee.fee = beaker.consts.milli_algo * 40
+
+    tx3 = app_client.call(
+        wVerifySignature,
+        mhash=bytes.fromhex("a3f181fd40cd78f056ee4afd4d1df2a3f1dfbea3c3d72eb64774b95e84fcbd0f"),
         PK=bytes.fromhex('dacc38e9bc3a8ccf2a0642a1481ab3ba4480d9a804927c84c621ac394d556b01351f98176e1614272a242f6ca31d21b8baead46be6b0c0f354a4fbfb477f6809'),
         r= bytes.fromhex('ea3ce8d8c2aab5c02ff64a24c5ee09adfed6895b4574be6f02137838f773a5ef000000000000000000000000000000000000000000000000000000000000001c'), 
         s= bytes.fromhex('304a0eb440eaa8cec80c859aebafb3657975e11f5cb95f7e1a2d84f93c886b4a'),

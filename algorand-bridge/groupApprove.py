@@ -126,13 +126,16 @@ def proposal(
 
 @Subroutine(TealType.uint64)
 def verifySignature(mhash, PK, r, s)-> Expr:
-    rx = Extract(r, Int(0), Int(32))
-    ry = Extract(r, Int(32), Int(32))
+    return Seq(
+        Pop(rx := Extract(r, Int(0), Int(32))),
+        Pop(ry := Extract(r, Int(32), Int(32))),
 
-    px = Extract(PK, Int(0), Int(32))
-    py = Extract(PK, Int(32), Int(32))
+        Pop(px := Extract(PK, Int(0), Int(32))),
+        Pop(py := Extract(PK, Int(32), Int(32))),
 
-    return ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)
+        ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)
+    )
+
 
 
 @app.external
@@ -144,7 +147,6 @@ def approveAndExecute(
     PK = abi.make(abi.StaticBytes[Literal[64]])
     key = abi.make(abi.String)
 
-    sigHash = Keccak256(Concat(Itob(proposalId.get()),Itob(CurrentChainID)))
     protype = abi.make(abi.Uint64)
     data = abi.make(abi.DynamicBytes)
     addr = abi.make(abi.Address)
@@ -153,6 +155,7 @@ def approveAndExecute(
     name = abi.make(abi.String)
     method_signature = ""
     return  Seq(
+        Pop(sigHash := Keccak256(Concat(Itob(proposalId.get()),Itob(CurrentChainID)))),
         _acquireReadySmgInfo(smgID).store_into(PK),
         Assert(verifySignature(sigHash,  PK.get(), r.get(), s.get()) == Int(1)),
         getProposalKey(proposalId).store_into(key),

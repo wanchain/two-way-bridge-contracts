@@ -1,8 +1,8 @@
 from typing import Literal
 from typing import Final
-from pyteal import *
+# from pyteal import *
 import pyteal as pt
-from beaker import *
+# from beaker import *
 from beaker.lib.storage import BoxMapping
 import schnorr.EcSchnorrVerifier as ec
 
@@ -56,10 +56,6 @@ class CrossTokenInfo(abi.NamedTuple):
     contractFee: abi.Field[abi.Uint64]
     fromAccount: abi.Field[abi.DynamicBytes]
     toAccount: abi.Field[abi.DynamicBytes]
-
-class FeeInfo(abi.NamedTuple):
-    contractFee: abi.Field[abi.Uint64]
-    agentFee: abi.Field[abi.Uint64]
 
 TransactionHash = abi.StaticBytes[Literal[32]]
 CurrentChainID = Int(2147483931)
@@ -253,13 +249,14 @@ def getCrossTokenInfo(
     ) -> pt.Expr:
     contractFee = abi.make(abi.Uint64)
     key = abi.make(abi.String)
-    (chain0 := abi.make(abi.Uint64)).set(0)
+    chain0 = abi.make(abi.Uint64)
     tInfo = TokenPairInfo()
     toChainID = abi.make(abi.Uint64)
     fromChainID = abi.make(abi.Uint64)
     toAccount = abi.make(abi.DynamicBytes)
     fromAccount = abi.make(abi.DynamicBytes)
     return Seq(
+        chain0.set(Int(0)),
         getTokenPairFeeKey(tokenPairID).store_into(key),
         If(app.state.mapTokenPairContractFee[key].exists())
         .Then(
@@ -278,11 +275,15 @@ def getCrossTokenInfo(
         .Then(
             If(contractFee.get() == Int(0)).Then(
                 getContractFeeKey(toChainID, fromChainID).store_into(key),
-                app.state.mapContractFee[key].store_into(contractFee)
+                If(app.state.mapContractFee[key].exists()).Then(
+                    app.state.mapContractFee[key].store_into(contractFee)
+                )
             ),
             If(contractFee.get() == Int(0)).Then(
                 getContractFeeKey(toChainID, chain0).store_into(key),
-                app.state.mapContractFee[key].store_into(contractFee)
+                If(app.state.mapContractFee[key].exists()).Then(
+                    app.state.mapContractFee[key].store_into(contractFee)
+                )
             ),
             tInfo.toAccount.store_into(fromAccount),
             tInfo.fromAccount.store_into(toAccount)            
@@ -291,11 +292,15 @@ def getCrossTokenInfo(
         .Then(
             If(contractFee.get() == Int(0)).Then(
                 getContractFeeKey(fromChainID, toChainID).store_into(key),
-                app.state.mapContractFee[key].store_into(contractFee)
+                If(app.state.mapContractFee[key].exists()).Then(
+                    app.state.mapContractFee[key].store_into(contractFee),
+                )
             ),
             If(contractFee.get() == Int(0)).Then(
                 getContractFeeKey(fromChainID, chain0).store_into(key),
-                app.state.mapContractFee[key].store_into(contractFee)
+                If(app.state.mapContractFee[key].exists()).Then(
+                    app.state.mapContractFee[key].store_into(contractFee)
+                )
             ),
             tInfo.toAccount.store_into(toAccount),
             tInfo.fromAccount.store_into(fromAccount)      
@@ -377,13 +382,14 @@ def setSmgFeeProxy(proxy: abi.Address) -> Expr:
 # curveID is useless here.
 @Subroutine(pt.TealType.uint64)
 def verifySignature(mhash, PK, r, s)-> pt.Expr:
-    rx = pt.Extract(r, pt.Int(0), pt.Int(32))
-    ry = pt.Extract(r, pt.Int(32), pt.Int(32))
+    return Seq(
+        Pop(rx := pt.Extract(r, pt.Int(0), pt.Int(32))),
+        Pop(ry := pt.Extract(r, pt.Int(32), pt.Int(32))),
+        Pop(px := pt.Extract(PK, pt.Int(0), pt.Int(32))),
+        Pop(py := pt.Extract(PK, pt.Int(32), pt.Int(32))),
+        If(ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)==Int(1), Int(1), Int(0))
+    )
 
-    px = pt.Extract(PK, pt.Int(0), pt.Int(32))
-    py = pt.Extract(PK, pt.Int(32), pt.Int(32))
-
-    return If(ec.check_ecSchnorr_sig(s, px, py, rx, ry, mhash)==Int(1), Int(1), Int(0))
 
 @app.external
 def acquireReadySmgInfo(
@@ -424,12 +430,12 @@ def smgRelease(
     name = abi.make(abi.String)
     feeProxy = abi.make(abi.Address)
 
-    alldata = Concat(Itob(CurrentChainID), uniqueID.get(), 
-        Itob(tokenPairID.get()), Itob(value.get()),  Itob(fee.get()), 
-        Itob(tokenAccount.get()), userAccount.get())
-
-    mhash = pt.Keccak256(alldata)
     return Seq(
+        Pop(alldata := Concat(Itob(CurrentChainID), uniqueID.get(), 
+            Itob(tokenPairID.get()), Itob(value.get()),  Itob(fee.get()), 
+            Itob(tokenAccount.get()), userAccount.get())),
+
+        Pop(mhash := pt.Keccak256(alldata)),
         Assert(app.state.halted.get() == Int(0)),
         name.set("SmgReleaseLogger"),
         (logger := SmgReleaseLogger()).set(name, uniqueID, smgID, tokenPairID, value, tokenAccount,  userAccount),

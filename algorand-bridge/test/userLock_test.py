@@ -22,7 +22,6 @@ from tokenPair_test import test_tokenPair
 import pytest
 
 smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303631')
-old_app_id = 0 
 tokenPairId666 = 666
 tokenPairId888 = 888
 
@@ -31,7 +30,6 @@ chainBase  = 1073741841
 chainMaticZk = 1073741838
 AssetID = 0
 algoCoinId = 0
-smgID = bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f303632')
 
 
 @pytest.mark.userLock_nofee
