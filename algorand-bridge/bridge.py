@@ -353,13 +353,18 @@ def userLock(
         If(fromAccount.get() == Itob(Int(0))).Then(
             Assert(Global.group_size() == Int(2)),
             Assert(Txn.group_index() == Int(1)),            
+            Assert(pt.Gtxn[0].type_enum() == TxnType.Payment),
+            Assert(pt.Gtxn[0].receiver() == Global.current_application_address()),
             Assert(pt.Gtxn[0].amount() == contractFee.get() + value.get()),
             txid.set(pt.Gtxn[0].tx_id())
         ).Else(
             Assert(Global.group_size() == Int(3)),
-            Assert(Txn.group_index() == Int(2)),            
+            Assert(Txn.group_index() == Int(2)),
+            Assert(pt.Gtxn[0].type_enum() == TxnType.Payment),
+            Assert(pt.Gtxn[0].receiver() == Global.current_application_address()),
             Assert(pt.Gtxn[0].amount() == contractFee.get()),
             # check assert tx,  id, to, amount # TODO other fields need check?
+            Assert(pt.Gtxn[1].type_enum() == TxnType.AssetTransfer),
             Assert(pt.Gtxn[1].asset_receiver() == Global.current_application_address()),
             Assert(pt.Gtxn[1].xfer_asset() == Btoi(fromAccount.get())),
             Assert(pt.Gtxn[1].asset_amount() == value.get()),
