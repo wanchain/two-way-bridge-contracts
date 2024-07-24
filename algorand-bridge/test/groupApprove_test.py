@@ -40,7 +40,7 @@ smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f3
 def test_groupApproveAdmin(gpapp_client, app_client, owner,setStoreman):
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
 
     # add
     taskCount=0
@@ -147,7 +147,7 @@ def test_groupApproveAdmin(gpapp_client, app_client, owner,setStoreman):
 def test_groupApproveSetHalt(gpapp_client, app_client, owner,setStoreman):
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     taskCount=0
     # transfer owner to groupApprove
     app_client.call(
@@ -198,7 +198,7 @@ def test_groupApproveSetHalt(gpapp_client, app_client, owner,setStoreman):
 def test_groupApproveTransferOwner(gpapp_client, app_client, owner,setStoreman):
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     taskCount=0
     # transfer owner to groupApprove
     app_client.call(
@@ -254,7 +254,7 @@ def test_groupApproveTransferOwner(gpapp_client, app_client, owner,setStoreman):
 def test_groupApproveSetSmgFeeProxy(gpapp_client, app_client, owner, user,setStoreman):
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     taskCount=0
     # transfer owner to groupApprove
     app_client.call(
@@ -322,7 +322,7 @@ def test_groupApproveSetSmgFeeProxy(gpapp_client, app_client, owner, user,setSto
 def test_groupApproveTokenPair(gpapp_client, app_client, owner, user,setStoreman):
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     taskCount=0
     # transfer owner to groupApprove
     app_client.call(
@@ -471,7 +471,7 @@ def test_groupApproveTokenPair(gpapp_client, app_client, owner, user,setStoreman
 def test_groupApproveTransferFoundation(gpapp_client, app_client, admin, owner,user,setStoreman):
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     taskCount=0
 
     stateAll = gpapp_client.get_global_state()
@@ -535,7 +535,7 @@ def test_groupApproveTransferFoundation(gpapp_client, app_client, admin, owner,u
 def test_groupApproveTransferUpdateOwner(gpapp_client, app_client, owner,setStoreman, user):
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     taskCount=0
     # transfer owner to groupApprove
     app_client.call(

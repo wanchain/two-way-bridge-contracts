@@ -31,7 +31,7 @@ chainAlgo =  2147483931
 def test_groupApproveTransferOwner(gpapp_client, app_client, newAddr):
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     stateAll = gpapp_client.get_global_state()
     taskCount = stateAll.get('taskCount')
     print("taskCount:", taskCount)

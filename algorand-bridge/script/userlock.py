@@ -148,7 +148,7 @@ def setOracle(app_client) -> None:
 def test_smgRelease(app_client) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     uniqueID=bytes.fromhex('6260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
     r,s = get_sign(chainAlgo, uniqueID, 33, 55, 1, 0, decode_address("7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY") )
 

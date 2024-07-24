@@ -26,7 +26,7 @@ chainAlgo =  2147483931
 def test_groupApproveExec(gpapp_client):
     sp_big_fee = gpapp_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20    
+    sp_big_fee.fee = beaker.consts.milli_algo * 22    
 
     taskCount = 10  # set the taskID
     r,s = get_gpsign(taskCount,chainAlgo)

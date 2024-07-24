@@ -26,7 +26,7 @@ chainAlgo =  2147483931
 def test_groupApproveSetSmgFeeProxy(gpapp_client):
     sp_big_fee = gpapp_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20    
+    sp_big_fee.fee = beaker.consts.milli_algo * 22    
     codec = ABIType.from_string("(address)")
     encoded = codec.encode([gpapp_client.sender])
 

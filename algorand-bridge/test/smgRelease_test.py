@@ -38,21 +38,21 @@ smgID=bytes.fromhex('000000000000000000000000000000000000000000746573746e65745f3
 def test_smgRelease(app_client, app_client_admin,setStoreman,user) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
 
-    r,s = get_sign(chainAlgo, uniqueID, 33, 55, 1, 0, decode_address("7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY") )
+    r,s = get_sign(chainAlgo, uniqueID, 33, 550000, 1, 0, decode_address("7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY") )
 
     tx = app_client.call(
         bridge.smgRelease,
         uniqueID=uniqueID,
         smgID=smgID, 
-        tokenPairID=33, value=55, 
+        tokenPairID=33, value=550000, 
         fee=1, tokenAccount=0,
         r=r,s=s,
         userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
         suggested_params = sp_big_fee,
-        accounts = [app_client_admin.sender, user.address],
+        accounts = [app_client_admin.sender, user.address, "7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY"],
         boxes=[(app_client.app_id, smgID), (app_client.app_id, uniqueID)], # Must append app_id and box key for tx
     )
     print("------------------smgRelease:", tx.return_value, tx.tx_info)
@@ -61,33 +61,32 @@ def test_smgRelease(app_client, app_client_admin,setStoreman,user) -> None:
 def test_smgRelease_noFee(app_client, app_client_admin, setStoreman) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
-    r,s = get_sign(chainAlgo, uniqueID, 33, 55, 0, 0, decode_address("7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY") )
+    r,s = get_sign(chainAlgo, uniqueID, 33, 550000, 0, 0, decode_address("7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY") )
 
     tx = app_client.call(
         bridge.smgRelease,
         uniqueID=uniqueID,
         smgID=smgID, 
-        tokenPairID=33, value=55, 
+        tokenPairID=33, value=550000, 
         fee=0, tokenAccount=0,
         r=r,s=s,
         userAccount="7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY",
         suggested_params = sp_big_fee,
-        accounts = [app_client_admin.sender],
+        accounts = [app_client_admin.sender, "7LTVKXWHLGFI4FP6YCACSS4DPSZ6IQBHJXRYX53QVQRXDTGIK6KSU4J7ZY"],
         boxes=[(app_client.app_id, smgID), (app_client.app_id, uniqueID)], # Must append app_id and box key for tx
     )
     print("------------------smgRelease:", tx.return_value, tx.tx_info)
 
 
 # token
-@pytest.mark.smgRelease
+@pytest.mark.smgRelease66
 def test_tokensmgRelease(app_client, app_client_admin,setStoreman, mintedAssetID, admin) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
-
 
     aitx = AssetOptInTxn(
         admin.address,
@@ -109,7 +108,7 @@ def test_tokensmgRelease(app_client, app_client_admin,setStoreman, mintedAssetID
 
     r,s = get_sign(chainAlgo, uniqueID, 33, 55, 0, mintedAssetID, decode_address(admin.address) )
 
-    print("xxxxxxxxxxxxxxxxxx:", app_client.app_addr)
+    print("xxxxxxxxxxxxxxxxxx:", r.hex(), s.hex())
     ttt = app_client.call(
         bridge.smgRelease,
         uniqueID=uniqueID,
@@ -130,7 +129,7 @@ def test_tokensmgRelease(app_client, app_client_admin,setStoreman, mintedAssetID
 def test_tokensmgRelease_fee(app_client, app_client_admin,setStoreman, mintedAssetID, admin, user) -> None:
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 20
+    sp_big_fee.fee = beaker.consts.milli_algo * 22
     uniqueID=bytes.fromhex('8260fca590c675be800bbcde4a9ed067ead46612e25b33bc9b6f027ef12326e6')
 
     aitx = AssetOptInTxn(
@@ -178,4 +177,5 @@ def test_tokensmgRelease_fee(app_client, app_client_admin,setStoreman, mintedAss
         boxes=[(app_client.app_id, smgID), (app_client.app_id, uniqueID)], # Must append app_id and box key for tx
     )
     print("mmmmmmmmmmmmmm------------------smgRelease:", ttt.return_value, ttt.tx_info)
+
 

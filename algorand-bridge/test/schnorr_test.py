@@ -53,7 +53,7 @@ def test_schnorr(owner):
 
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 40
+    sp_big_fee.fee = beaker.consts.milli_algo * 44
 
     tx1 = app_client.call(
         wVerifySignature,
@@ -89,7 +89,7 @@ def test_schnorr3(owner):
 
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 40
+    sp_big_fee.fee = beaker.consts.milli_algo * 44
 
     tx3 = app_client.call(
         wVerifySignature,
@@ -115,7 +115,7 @@ def test_schnorr4(owner):
 
     sp_big_fee = app_client.get_suggested_params()
     sp_big_fee.flat_fee = True
-    sp_big_fee.fee = beaker.consts.milli_algo * 40
+    sp_big_fee.fee = beaker.consts.milli_algo * 44
 
     tx3 = app_client.call(
         wVerifySignature,
@@ -130,4 +130,28 @@ def test_schnorr4(owner):
 
 
 
+# invalid sig length case, test BytesMinus32
+@pytest.mark.schnorr4
+def test_schnorr4(owner):
+    algod_client = beaker.localnet.get_algod_client()
+    app_client = beaker.client.ApplicationClient(
+        client=algod_client,
+        app=app,
+        signer=owner.signer,
+    ) 
+    app_client.create()
+    app_client.fund(2000000)
 
+    sp_big_fee = app_client.get_suggested_params()
+    sp_big_fee.flat_fee = True
+    sp_big_fee.fee = beaker.consts.milli_algo * 44
+
+    tx4 = app_client.call(
+        wVerifySignature,
+        mhash=bytes.fromhex("ce032d2532db8aed89acb0b1701f9b7313a55b1e8357e10c6c624f6b60d04c84"),
+        PK=bytes.fromhex('dacc38e9bc3a8ccf2a0642a1481ab3ba4480d9a804927c84c621ac394d556b01351f98176e1614272a242f6ca31d21b8baead46be6b0c0f354a4fbfb477f6809'),
+        r= bytes.fromhex('ed3502a3bd4c133b5bc704673f161ba79ee80f707514d0a0285729a0487ed4b3000000000000000000000000000000000000000000000000000000000000001c'), 
+        s= bytes.fromhex('11059dacbcb0b93f28b67597facf317e6d19358b81729e24f789106b1fbb2a49'),
+        suggested_params = sp_big_fee,
+    )
+    print("tx4:",tx4.return_value)

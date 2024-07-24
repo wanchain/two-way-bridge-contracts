@@ -66,7 +66,6 @@ def do_axfer(rx: Expr, aid: Expr, amt: Expr) -> Expr:
     return InnerTxnBuilder.Execute(
         {
             TxnField.type_enum: TxnType.AssetTransfer,
-            # TxnField.asset_sender: Global.current_application_address(),
             TxnField.xfer_asset: aid,
             TxnField.asset_amount: amt,
             TxnField.asset_receiver: rx,

@@ -271,7 +271,24 @@ def getCrossTokenInfo(
         tInfo.fromChainID.store_into(fromChainID),
         If(fromChainID.get() ==  Int(0)).Then(Reject()),
         If(toChainID.get() ==  Int(0)).Then(Reject()),
-        If(toChainID.get() ==  CurrentChainID)
+        If(fromChainID.get() ==  CurrentChainID)
+        .Then(
+            If(contractFee.get() == Int(0)).Then(
+                getContractFeeKey(fromChainID, toChainID).store_into(key),
+                If(app.state.mapContractFee[key].exists()).Then(
+                    app.state.mapContractFee[key].store_into(contractFee)
+                )
+            ),
+            If(contractFee.get() == Int(0)).Then(
+                getContractFeeKey(fromChainID, chain0).store_into(key),
+                If(app.state.mapContractFee[key].exists()).Then(
+                    app.state.mapContractFee[key].store_into(contractFee)
+                )
+            ),
+            tInfo.toAccount.store_into(toAccount),
+            tInfo.fromAccount.store_into(fromAccount)
+        )
+        .ElseIf(toChainID.get() ==  CurrentChainID)
         .Then(
             If(contractFee.get() == Int(0)).Then(
                 getContractFeeKey(toChainID, fromChainID).store_into(key),
@@ -286,24 +303,7 @@ def getCrossTokenInfo(
                 )
             ),
             tInfo.toAccount.store_into(fromAccount),
-            tInfo.fromAccount.store_into(toAccount)            
-        )
-        .ElseIf(fromChainID.get() ==  CurrentChainID)
-        .Then(
-            If(contractFee.get() == Int(0)).Then(
-                getContractFeeKey(fromChainID, toChainID).store_into(key),
-                If(app.state.mapContractFee[key].exists()).Then(
-                    app.state.mapContractFee[key].store_into(contractFee),
-                )
-            ),
-            If(contractFee.get() == Int(0)).Then(
-                getContractFeeKey(fromChainID, chain0).store_into(key),
-                If(app.state.mapContractFee[key].exists()).Then(
-                    app.state.mapContractFee[key].store_into(contractFee)
-                )
-            ),
-            tInfo.toAccount.store_into(toAccount),
-            tInfo.fromAccount.store_into(fromAccount)      
+            tInfo.fromAccount.store_into(toAccount)
         )
         .Else(
             Reject()
@@ -454,7 +454,7 @@ def smgRelease(
             InnerTxnBuilder.Execute(
                 {
                     TxnField.type_enum: TxnType.Payment,
-                    TxnField.receiver: Txn.sender(),
+                    TxnField.receiver: userAccount.get(),
                     TxnField.amount: value.get(),
                 }
             ),

@@ -13,7 +13,13 @@ def convertToEthAddr(X, Y):
         Extract(khash, Int(12), Int(20))
     )
 
-
+# ensure the result length is 32
+@Subroutine(TealType.bytes)
+def BytesMinus32(a, b):
+    return Seq(
+        Pop(ret := BytesMinus(a, b)),
+        Concat(BytesZero(Int(32)-Len(ret)), ret)
+    )
 
 # function verify(bytes32 signature, bytes32 px, bytes32 py, bytes32 e, bytes32 parity, bytes32 message)
 @Subroutine(TealType.uint64)
@@ -35,15 +41,15 @@ def check_ecSchnorr_sig(signature, px, py, e, parity, message) -> Expr:
                 "0x0000000000000000000000000000000000000000",
             )      
     return Seq(
-        OpUp(mode=OpUpMode.OnCall).ensure_budget(Int(13000),fee_source=OpUpFeeSource.GroupCredit),
-        Pop(sp := BytesMinus(Q, BytesMod(BytesMul(signature, px), Q))),
-        Pop(ep := BytesMinus(Q, BytesMod(BytesMul(e, px), Q))),
+        OpUp(mode=OpUpMode.OnCall).ensure_budget(Int(14000),fee_source=OpUpFeeSource.GroupCredit),
+        Pop(sp := BytesMinus32(Q, BytesMod(BytesMul(signature, px), Q))),
+        Pop(ep := BytesMinus32(Q, BytesMod(BytesMul(e, px), Q))),
         Assert(BytesNeq(sp, Z32)),
 
         Pop(v := Btoi(Extract(parity, Int(31), Int(1)) ) - Int(27)),
         If(BytesGt(ep, Q2)).Then(
             Pop(v2:=(v+Int(1))%Int(2)),
-            Pop(ep2:= BytesMinus(Q,ep))
+            Pop(ep2:= BytesMinus32(Q,ep))
         ).Else(
             Pop(v2:=v),
             Pop(ep2 := ep)
