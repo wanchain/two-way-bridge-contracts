@@ -7,7 +7,11 @@ const OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
 // const CROSS = '0x3e18014f7c11f4d70b0023d8f61350a3ef8f0978'; // arb testnet
 // const CROSS = '0x4c200a0867753454db78af84d147bd03e567f234'; // fuji testnet
 // const CROSS = '0x589e12d073020f99febf32b739e58216748c9ed4'; // sepolia testnet
-const CROSS = '0x08bad1a48b0b08bf769f83ba30c1dad0f8bb8b6b'; // arb sepolia testnet
+// const CROSS = '0x08bad1a48b0b08bf769f83ba30c1dad0f8bb8b6b'; // arb sepolia testnet
+// const CROSS = '0xb12513cfcb13b7be59ba431c040b7206b0a211b9'; // bsc
+// const CROSS = '0x08bad1a48b0b08bf769f83ba30c1dad0f8bb8b6b'; // op
+// const CROSS = '0xfb06346e587ffb494438102515d576086be750f4'; // polygon
+const CROSS = '0x1B71456BF3A0A7BEb8Ec07A8E322C0c2D088C322'; // base
 
 
 async function main() {

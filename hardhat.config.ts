@@ -203,7 +203,7 @@ const config = {
       accounts: [process.env.PK],
     },
     polygonTestnet: {
-      url: "https://rpc.ankr.com/polygon_mumbai",
+      url: "https://polygon-amoy.blockpi.network/v1/rpc/public",
       accounts: [process.env.PK],
     },
     fuji: {
@@ -327,7 +327,7 @@ const config = {
     },
     baseTestnet: {
       gasPrice: 1e6,
-      url: "https://goerli.base.org",
+      url: "https://base-sepolia.blockpi.network/v1/rpc/public",
       accounts: [process.env.PK],
       bip44ChainId: 1073741841,
     },
@@ -394,25 +394,7 @@ const config = {
     },  
   },
   etherscan: {
-    apiKey: '64b5b282-760c-4c59-ac26-21bb41666342',
-    // apiKey: {
-    //   fantom: 'I66N3VPZB8DYNCGGTXQ4KIBY72N541EHK4',
-    //   moonbeam: 'EE37GEZGJA7RHS3ZKXWW1JJVDXZ6SBYBRC',
-    //   moonriver: "PI7KZFKW195W1H4C69F1FIQNEAR55T37NH",
-    //   // baseMainnet: ""
-    //   baseTestnet:'PLACEHOLDER_STRING',
-    //   meldMainnet:'PLACEHOLDER_STRING',
-    //   blastMainnet: 'IYY8RX5RN9QEUBU733VDRUJWBNFDHYAH2H',
-    //   lineaMainnet: 'WW4J7R5WJEET4PAWH4P2AEWWUGEGAZ23XJ',
-    //   bsc: 'X3KC4YWKNDM8N3MJ52SFJC21GT9T5DWRK6',
-    //   optimisticEthereum: 'JSYSW7GDUAAZ4U7WN3SCFE7NM62IBB6GFC',
-    //   polygon: '2AYUVE3SN2QKBF5JVXNCM6G345MWR6M4FU',
-    //   arbitrum: 'GF1T9XXJ3KSBRHV1Z234EXZNR9N1I29I75',
-    //   avalanche: 'APIKEY',
-    //   mainnet: 'HNUE7V72CI8XJ6FNZ1CDIYSEBYY6HHREAE',
-    //   astar: 'APIKEY',
-    //   x1Mainnet: '64b5b282-760c-4c59-ac26-21bb41666342'
-    // },
+    apiKey: '',
     customChains: [
       {
         network: "x1Mainnet",
