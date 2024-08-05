@@ -57,7 +57,7 @@ contract CrossDelegateV5 is CrossDelegateV4 {
     {
         super.userLockNFT(smgID, tokenPairID, tokenIDs, tokenValues, userAccount);
 
-        address tokenScAddr = getLocalScByTokenPairID(tokenPairID);
+        address tokenScAddr = localTokenAddress(tokenPairID);
         uint count = tokenIDs.length;
         for (uint i = 0; i < count; i++) {
             registerNftCrossId(tokenScAddr, tokenIDs[i]);
@@ -83,7 +83,7 @@ contract CrossDelegateV5 is CrossDelegateV4 {
         }
     }
 
-    function getLocalScByTokenPairID(uint tokenPairID)
+    function localTokenAddress(uint tokenPairID)
         public
         view
         returns (address)
