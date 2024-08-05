@@ -28,8 +28,6 @@
 
 pragma solidity 0.8.18;
 
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./CrossDelegateV4.sol";
 
 contract CrossDelegateV5 is CrossDelegateV4 {
@@ -49,6 +47,23 @@ contract CrossDelegateV5 is CrossDelegateV4 {
 
     event RegisterNftCrossId(address indexed collection, uint256 indexed tokenId, uint256 indexed crossId);
 
+    function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, bytes memory userAccount)
+        public
+        payable
+        override
+        notHalted
+        nonReentrant
+        onlyReadySmg(smgID)
+    {
+        super.userLockNFT(smgID, tokenPairID, tokenIDs, tokenValues, userAccount);
+
+        address tokenScAddr = getLocalScByTokenPairID(tokenPairID);
+        uint count = tokenIDs.length;
+        for (uint i = 0; i < count; i++) {
+            registerNftCrossId(tokenScAddr, tokenIDs[i]);
+        }
+    }
+
     function registerNftCrossId(address collection, uint tokenId) internal returns (uint256) {
         if (crossId[collection][tokenId] > 0) {
             return crossId[collection][tokenId];
@@ -65,23 +80,6 @@ contract CrossDelegateV5 is CrossDelegateV4 {
         require(collection.length == tokenIds.length, "CrossDelegateV5: collection length not equal to tokenIds length");
         for (uint256 i = 0; i < tokenIds.length; i++) {
             registerNftCrossId(collection[i], tokenIds[i]);
-        }
-    }
-
-    function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, bytes memory userAccount)
-        public
-        payable
-        override
-        notHalted
-        nonReentrant
-        onlyReadySmg(smgID)
-    {
-        super.userLockNFT(smgID, tokenPairID, tokenIDs, tokenValues, userAccount);
-        
-        address tokenScAddr = getLocalScByTokenPairID(tokenPairID);
-        uint count = tokenIDs.length;
-        for (uint i = 0; i < count; i++) {
-            registerNftCrossId(tokenScAddr, tokenIDs[i]);
         }
     }
 
