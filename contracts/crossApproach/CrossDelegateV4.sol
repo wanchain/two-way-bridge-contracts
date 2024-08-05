@@ -488,6 +488,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
     function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, bytes memory userAccount)
         public
         payable
+        virtual
         notHalted
         nonReentrant
         onlyReadySmg(smgID)
