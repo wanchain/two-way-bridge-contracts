@@ -31,19 +31,14 @@ pragma solidity 0.8.18;
 import "./CrossDelegateV4.sol";
 
 contract CrossDelegateV5 is CrossDelegateV4 {
-
-    struct NftBaseInfo {
-        address collection;
-        uint256 tokenId;
-    }
-
     // NFT collection addresss => register count
     mapping(address => uint256) public nftRegisterCount;
 
     // NFT collection address => NFT id => cross chain id
     mapping(address => mapping(uint256 => uint256)) public crossId;
 
-    mapping(address => mapping(uint256 => NftBaseInfo)) public crossIdToNftBaseInfo;
+    // NFT collection address => cross chain id => NFT id
+    mapping(address => mapping(uint256 => uint256)) public crossIdToNftBaseInfo;
 
     event RegisterNftCrossId(address indexed collection, uint256 indexed tokenId, uint256 indexed crossId);
 
@@ -70,7 +65,7 @@ contract CrossDelegateV5 is CrossDelegateV4 {
         } else {
             nftRegisterCount[collection] += 1;
             crossId[collection][tokenId] = nftRegisterCount[collection];
-            crossIdToNftBaseInfo[collection][nftRegisterCount[collection]] = NftBaseInfo(collection, tokenId);
+            crossIdToNftBaseInfo[collection][nftRegisterCount[collection]] = tokenId;
             emit RegisterNftCrossId(collection, tokenId, nftRegisterCount[collection]);
             return nftRegisterCount[collection];
         }
