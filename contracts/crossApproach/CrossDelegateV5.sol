@@ -43,7 +43,7 @@ contract CrossDelegateV5 is CrossDelegateV4 {
     // NFT collection address => NFT id => cross chain id
     mapping(address => mapping(uint256 => uint256)) public crossId;
 
-    mapping(uint256 => NftBaseInfo) public crossIdToNftBaseInfo;
+    mapping(address => mapping(uint256 => NftBaseInfo)) public crossIdToNftBaseInfo;
 
     event RegisterNftCrossId(address indexed collection, uint256 indexed tokenId, uint256 indexed crossId);
 
@@ -70,7 +70,7 @@ contract CrossDelegateV5 is CrossDelegateV4 {
         } else {
             nftRegisterCount[collection] += 1;
             crossId[collection][tokenId] = nftRegisterCount[collection];
-            crossIdToNftBaseInfo[nftRegisterCount[collection]] = NftBaseInfo(collection, tokenId);
+            crossIdToNftBaseInfo[collection][nftRegisterCount[collection]] = NftBaseInfo(collection, tokenId);
             emit RegisterNftCrossId(collection, tokenId, nftRegisterCount[collection]);
             return nftRegisterCount[collection];
         }
