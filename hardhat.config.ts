@@ -60,6 +60,11 @@ const config = {
     },
   },
   networks: {
+    songbirdMainnet: {
+      url: 'https://01-gravelines-006-01.rpc.tatum.io/ext/bc/C/rpc',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741836,
+    },
     edexaTestnet: {
       url: 'https://testnet.edexa.network/rpc',
       accounts: [process.env.PK],
