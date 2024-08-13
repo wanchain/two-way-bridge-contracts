@@ -60,6 +60,11 @@ const config = {
     },
   },
   networks: {
+    waterfallMainnet: {
+      url: 'https://rpc.waterfall.network',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741851,
+    },
     songbirdMainnet: {
       url: 'https://01-gravelines-006-01.rpc.tatum.io/ext/bc/C/rpc',
       accounts: [process.env.PK],
