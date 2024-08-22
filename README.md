@@ -1,26 +1,89 @@
-# Counter
+# zkSync Hardhat project
+
+This project was scaffolded with [zksync-cli](https://github.com/matter-labs/zksync-cli).
 
 ## Project structure
 
--   `contracts` - source code of all the smart contracts of the project and their dependencies.
--   `wrappers` - wrapper classes (implementing `Contract` from ton-core) for the contracts, including any [de]serialization primitives and compilation functions.
--   `tests` - tests for the contracts.
--   `scripts` - scripts used by the project, mainly the deployment scripts.
+- `/contracts`: smart contracts.
+- `/deploy`: deployment and contract interaction scripts.
+- `/test`: test files
+- `hardhat.config.ts`: configuration file.
 
-## How to use
+## Commands
 
-### Build
+- `yarn hardhat compile` will compile the contracts.
+- `yarn run deploy` will execute the deployment script `/deploy/deploy-greeter.ts`. Requires [environment variable setup](#environment-variables).
+- `yarn run greet` will execute the script `/deploy/use-greeter.ts` which interacts with the Greeter contract deployed.
+- `yarn test`: run tests. **Check test requirements below.**
 
-`npx blueprint build` or `yarn blueprint build`
+Both `yarn run deploy` and `yarn run greet` are configured in the `package.json` file and run `yarn hardhat deploy-zksync`.
 
-### Test
+### Environment variables
 
-`npx blueprint test` or `yarn blueprint test`
+In order to prevent users to leak private keys, this project includes the `dotenv` package which is used to load environment variables. It's used to load the wallet private key, required to run the deploy script.
 
-### Deploy or run another script
+To use it, rename `.env.example` to `.env` and enter your private key.
 
-`npx blueprint run` or `yarn blueprint run`
+```
+WALLET_PRIVATE_KEY=123cde574ccff....
+```
 
-### Add a new contract
+### Local testing
 
-`npx blueprint create ContractName` or `yarn blueprint create ContractName`
+In order to run test, you need to start the zkSync local environment. Please check [this section of the docs](https://v2-docs.zksync.io/api/hardhat/testing.html#prerequisites) which contains all the details.
+
+If you do not start the zkSync local environment, the tests will fail with error `Error: could not detect network (event="noNetwork", code=NETWORK_ERROR, version=providers/5.7.2)`
+
+## Official Links
+
+- [Website](https://zksync.io/)
+- [Documentation](https://v2-docs.zksync.io/dev/)
+- [GitHub](https://github.com/matter-labs)
+- [Twitter](https://twitter.com/zksync)
+- [Discord](https://discord.gg/nMaPGrDDwk)
+
+### EVM deploy
+1. export PK='......your account PK .....'   
+2. npx hardhat --config hardhat.config.ts   run deploy/deploy-EVM.js --network wanTestnet
+
+### Zksync deploy
+1. export PK='......your account PK .....'  
+2. rm -rf artifacts-zk
+3. npx hardhat --config hardhat.config.ts compile --network zkSyncTestnet
+4. un-commit the libraries deploy code in deploy.ts file
+5. npx hardhat --config hardhat.config.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
+6. after deploy the library, commit the libraries deploy code in deploy.ts file.
+7. fill the library address in hardhat.config.ts file.
+8. rm -rf artifacts-zk
+9. npx hardhat --config hardhat.config.ts compile --network zkSyncTestnet
+10. must recompile it, otherwise it will not work
+11. npx hardhat --config hardhat.config.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
+
+### transfer owner
+
+1. check the information, the below command will display the information, please check them carefully.
+npx hardhat --config hardhat.config.ts --network zkSyncTestnet run deploy/transferOwner.js
+
+2. transfer owner and send transaction
+If the information is correct, please export NoTryRun='yes', then execute the command again.
+npx hardhat --config hardhat.config.ts --network zkSyncTestnet run deploy/transferOwner.js
+
+### verify
+see： https://hardhat.org/hardhat-runner/plugins/nomicfoundation-hardhat-verify#adding-support-for-other-networks
+
+The hardhat verify plugin supports only etherscan compatible explorer。
+Please use 'npx hardhat verify --list-networks' to check if your chain is supported。
+if you are sure your chain is etherscan compatible， please add your chain in customChains section   
+1. verify use command
+npx hardhat --network <your_network_name> verify <the_sc_address>
+2. verify use js
+npx hardhat --network <your_network_name> run deploy/verifySc.js 
+
+### transfer foundation 
+
+1. check the information, the below command will display the information, please check them carefully.
+npx hardhat --config hardhat.config.ts --network zkSyncTestnet run deploy/transferFoundation.js
+
+2. transfer owner and send transaction
+If the information is correct, please export NoTryRun='yes', then execute the command again.
+npx hardhat --config hardhat.config.ts --network zkSyncTestnet run deploy/transferFoundation.js
