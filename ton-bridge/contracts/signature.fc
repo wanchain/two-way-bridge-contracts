@@ -1,0 +1,113 @@
+#include "imports/std/stdlib.fc";
+#include "imports/common/opcode.fc";
+#include "imports/util/slice.fc";
+#include "imports/crypto/secp256k1.fc";
+
+(int, int, int, int) ecrecover(int hash, int v, int r, int s) asm "ECRECOVER";
+
+int generate_evm_address(int _x, int _y) inline {
+    slice cs = begin_cell()
+        .store_uint(_x, 256)
+        .store_uint(_y, 256)
+        .end_cell().begin_parse();
+
+    int h = slice_hash_keccak256(cs, 1);
+    slice cs_h = int_to_slice(h, 256);
+    slice cs_last_160 = cs_h.slice_last(160);
+    int addr = slice_to_int(cs_last_160, 160);
+
+    return addr;
+
+}
+
+(slice) generate_data_for_e(int evm_address, int gpk_x, int gpk_y, int e, int p, int h) {
+    return begin_cell()
+        .store_uint(evm_address, 160)       ;; address 20bytes
+        .store_uint(p, 8)                   ;; 1byte
+        .store_uint(gpk_x, 256)             ;; 32 bytes
+        .store_uint(h, 256)                 ;; 32bytes
+        .end_cell().begin_parse();
+}
+
+(int) verify_sec(int s, int gpk_x, int gpk_y, int e, int p, int h) {
+
+    int sp = secp2561k::n - mulmod(s, gpk_x, secp2561k::n);
+    int ep = secp2561k::n - mulmod(e, gpk_x, secp2561k::n);
+
+    int p_ajust = (p > 26) ? p - 27 : p;
+    (int prefix, int recover_x, int recover_y, int ret) = ecrecover(sp, p_ajust, gpk_x, ep);
+
+    if (ret == 0) {
+        ;; ecrecover error.
+        return 0;
+    }
+    int address_int = generate_evm_address(recover_x, recover_y);
+
+    slice s_e = generate_data_for_e(address_int, gpk_x, gpk_y, e, p, h);
+    int e1 = slice_hash_keccak256(s_e, 1);
+    return e1 == e;
+}
+
+(int) verify_ecdsa(int s, int gpk_x, int gpk_y, int e, int p, int h) {
+    (int prefix, int recover_x, int recover_y, int ret) = ecrecover(h, 1, e, s);
+    if (ret == 0) {
+        ;; ecrecover error.
+        return 0;
+    }
+    if (recover_y != gpk_y) {
+        return 0;
+    }
+
+    if (recover_x != gpk_x) {
+        return 0;
+    }
+    return -1;
+    ;;return (recover_y == gpk_y) && (recover_x == gpk_x); ;;todo && not work??
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) {
+        ;; ignore all empty messages
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    if (flags & 1) {
+        ;; ignore all bounced messages
+        return ();
+    }
+    int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+    int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+    if (op == op::verify) {
+        int s = in_msg_body~load_uint(256);
+        int gpk_x = in_msg_body~load_uint(256);
+        int gpk_y = in_msg_body~load_uint(256);
+        slice extra_slice = in_msg_body.preload_ref().begin_parse();
+        int e = extra_slice~load_uint(256);
+        int p = extra_slice~load_uint(256);
+        int msg = extra_slice~load_uint(256);
+        int verifyRet = verify_sec(s, gpk_x, gpk_y, e, p, msg);
+        throw_unless(0xffed, verifyRet == -1); ;;todo add error_ennum
+        return ();
+    }
+    if (op == op::verifyEcdsa) {
+
+        int s = in_msg_body~load_uint(256);
+        int gpk_x = in_msg_body~load_uint(256);
+        int gpk_y = in_msg_body~load_uint(256);
+        slice extra_slice = in_msg_body.preload_ref().begin_parse();
+        int e = extra_slice~load_uint(256);
+        int p = extra_slice~load_uint(256);
+        int msg = extra_slice~load_uint(256);
+
+
+        int verifyRet = verify_ecdsa(s, gpk_x, gpk_y, e, p, msg);
+        ;;throw(0xffee); ;;todo should delete
+        throw_unless(0xffed, verifyRet == -1); ;;todo add error_ennum
+        return ();
+    }
+
+    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}

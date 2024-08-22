@@ -1,0 +1,3 @@
+;;const op::verify = "op::verify"c; ;; create an opcode from string using the "c" prefix, this results in 0x7e8764ef opcode in this case
+const op::verify = 0x7e8764ef;
+const op::verifyEcdsa = 0x7e8764ee;

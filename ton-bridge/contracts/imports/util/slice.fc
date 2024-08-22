@@ -1,0 +1,16 @@
+;; Function to extract a slice from a cell and convert it to an integer
+int slice_to_int(slice s, int len) {
+    ;; Extract 'len' bits from the slice and convert to an integer
+    int result = s~load_uint(len);
+    return result;
+}
+
+;; Function to store an integer into a slice
+slice int_to_slice(int value, int len) {
+    return begin_cell()
+        .store_uint(value, len)
+        .end_cell().begin_parse();
+}
+
+int slice_hash_keccak256(slice s,int len) asm "HASHEXT_KECCAK256";
+slice preload_slice_offset(slice s, int offset, int len) asm "SDSUBSTR";
