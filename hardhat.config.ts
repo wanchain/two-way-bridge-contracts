@@ -60,12 +60,28 @@ const config = {
     },
   },
   networks: {
+    arbSepolia: {
+      url: 'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
+      accounts: [process.env.PK],
+    },
+    opSepolia: {
+      url: 'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+      accounts: [process.env.PK],
+    },
+    amoy: {
+      url: "https://rpc.ankr.com/polygon_amoy",
+      accounts: [process.env.PK],
+    },
+    sepolia: {
+      url: "https://rpc.ankr.com/eth_sepolia",
+      accounts: [process.env.PK],
+    },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
       accounts: [process.env.PK],
     },
     bscTestnet: {
-      url: "https://bsctestapi.terminet.io/rpc",
+      url: "https://bsc-testnet-rpc.publicnode.com",
       accounts: [process.env.PK],
     },
     moonbaseAlfa: {
