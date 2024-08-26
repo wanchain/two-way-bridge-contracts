@@ -77,12 +77,12 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
     /// @notice                                 check the admin or not
     modifier onlyAdmin() {
-        require(isAdmin[msg.sender] || msg.sender == owner, "not admin");
+        require(isAdmin[msg.sender] || msg.sender == admin || msg.sender == owner, "not admin");
         _;
     }
 
     modifier onlyOperator() {
-        require(isOperator[msg.sender] || isAdmin[msg.sender] || msg.sender == owner, "not operator");
+        require(isOperator[msg.sender] || isAdmin[msg.sender] || msg.sender == admin || msg.sender == owner, "not operator");
         _;
     }
 
