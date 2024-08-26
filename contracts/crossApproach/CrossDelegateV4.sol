@@ -65,14 +65,24 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /// @param fee                      shadow coin of the fee which the storeman group pk got it
     event WithdrawHistoryFeeLogger(bytes32 indexed smgID, uint indexed timeStamp, address indexed receiver, uint fee);
 
+    event ConfigOperator(address indexed operator, bool indexed enabled);
+
+    event ConfigAdmin(address indexed admin, bool indexed enabled);
+
     /**
      *
      * MODIFIERS
      *
      */
+
     /// @notice                                 check the admin or not
     modifier onlyAdmin() {
-        require(msg.sender == admin, "not admin");
+        require(isAdmin[msg.sender] || msg.sender == owner, "not admin");
+        _;
+    }
+
+    modifier onlyOperator() {
+        require(isOperator[msg.sender] || isAdmin[msg.sender] || msg.sender == owner, "not operator");
         _;
     }
 
@@ -219,7 +229,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
     /// @notice                             set the fee of the storeman group should get
     /// @param param                        struct of setFee parameter
-    function setFee(SetFeesParam calldata param) public onlyAdmin {
+    function setFee(SetFeesParam calldata param) public virtual onlyOperator {
         storageData.mapContractFee[param.srcChainID][param.destChainID] = param.contractFee;
         storageData.mapAgentFee[param.srcChainID][param.destChainID] = param.agentFee;
         emit SetFee(param.srcChainID, param.destChainID, param.contractFee, param.agentFee);
@@ -227,7 +237,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
     /// @notice                             set the fee of the storeman group should get
     /// @param params                        struct of setFees parameter
-    function setFees(SetFeesParam [] calldata params) public onlyAdmin {
+    function setFees(SetFeesParam [] calldata params) public virtual onlyOperator {
         for (uint i = 0; i < params.length; ++i) {
             storageData.mapContractFee[params[i].srcChainID][params[i].destChainID] = params[i].contractFee;
             storageData.mapAgentFee[params[i].srcChainID][params[i].destChainID] = params[i].agentFee;
@@ -238,21 +248,21 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /// @notice                             set the fee of the storeman group should get
     /// @param tokenPairID                  ID of token pair
     /// @param contractFee                  contractFee of token pair
-    function setTokenPairFee(uint256 tokenPairID, uint256 contractFee) external onlyAdmin {
+    function setTokenPairFee(uint256 tokenPairID, uint256 contractFee) external virtual onlyOperator {
         mapTokenPairContractFee[tokenPairID] = contractFee;
         emit SetTokenPairFee(tokenPairID, contractFee);
     }
 
     /// @notice                             set the fee of the storeman group should get
     /// @param params                       struct of setTokenPairFees parameter
-    function setTokenPairFees(SetTokenPairFeesParam [] calldata params) public onlyAdmin {
+    function setTokenPairFees(SetTokenPairFeesParam [] calldata params) public virtual onlyOperator {
         for (uint i = 0; i < params.length; ++i) {
             mapTokenPairContractFee[params[i].tokenPairID] = params[i].contractFee;
             emit SetTokenPairFee(params[i].tokenPairID, params[i].contractFee);
         }
     }
 
-    function setChainID(uint256 chainID) external onlyAdmin {
+    function setChainID(uint256 chainID) external virtual onlyAdmin {
         if (currentChainID == 0) {
             currentChainID = chainID;
         }
@@ -265,19 +275,21 @@ contract CrossDelegateV4 is CrossStorageV4 {
             return sha256(data);
         }
     }
+
     function setHashType(uint _hashType) external onlyOwner {
         hashType = _hashType;
     }
+
     function setAdmin(address adminAccount) external onlyOwner {
         admin = adminAccount;
         emit SetAdmin(adminAccount);
     }
 
-    function setUintValue(bytes calldata key, bytes calldata innerKey, uint value) external onlyAdmin {
+    function setUintValue(bytes calldata key, bytes calldata innerKey, uint value) external virtual onlyAdmin {
         return BasicStorageLib.setStorage(uintData, key, innerKey, value);
     }
 
-    function delUintValue(bytes calldata key, bytes calldata innerKey) external onlyAdmin {
+    function delUintValue(bytes calldata key, bytes calldata innerKey) external virtual onlyAdmin {
         return BasicStorageLib.delStorage(uintData, key, innerKey);
     }
 
@@ -586,6 +598,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
     function setMaxBatchSize(uint _maxBatchSize) 
       external
+      virtual
       onlyAdmin
     {
       maxBatchSize = _maxBatchSize;
@@ -614,6 +627,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
 
     function setEtherTransferGasLimit(uint _etherTransferGasLimit) 
       external
+      virtual
       onlyAdmin
     {
       etherTransferGasLimit = _etherTransferGasLimit;
@@ -630,4 +644,13 @@ contract CrossDelegateV4 is CrossStorageV4 {
       return etherTransferGasLimit;
     }
 
+    function configOperator(address _operator, bool enabled) external onlyAdmin {
+        isOperator[_operator] = enabled;
+        emit ConfigOperator(_operator, enabled);
+    }
+
+    function configAdmin(address _admin, bool enabled) external onlyOwner {
+        isAdmin[_admin] = enabled;
+        emit ConfigAdmin(_admin, enabled);
+    }
 }
