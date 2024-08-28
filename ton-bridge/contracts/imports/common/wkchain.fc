@@ -1,0 +1,5 @@
+;; ton working chain id
+const WORKING_CHAINID       = 0x00;
+
+;; chainID, used to build uniqueue ID
+const BIP44_CHAINID         = 0x00;

@@ -5,14 +5,14 @@
 -}
 const secp2561k::gx = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
 const secp2561k::gy = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
-const secp2561k::n = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141;
-const secp2561k::a = 0;
-const secp2561k::b = 7;
+const secp2561k::n  = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141;
+const secp2561k::a  = 0;
+const secp2561k::b  = 7;
 
-const I = 0;
-const Inf = 1;
-const U255_MAX_PLUS_1 = 57896044618658097711785492504343953926634992332820282019728792003956564819968;
-const U128_MAX = 340282366920938463463374607431768211455;
+const I                 = 0;
+const Inf               = 1;
+const U255_MAX_PLUS_1   = 57896044618658097711785492504343953926634992332820282019728792003956564819968;
+const U128_MAX          = 340282366920938463463374607431768211455;
 
 int mulmod(int a, int b, int m) inline { (_, int r) = muldivmod(a, b, m); return r; }
 int addmod(int a, int b, int m) inline {

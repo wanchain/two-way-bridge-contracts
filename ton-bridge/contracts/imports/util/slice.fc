@@ -13,4 +13,5 @@ slice int_to_slice(int value, int len) {
 }
 
 int slice_hash_keccak256(slice s,int len) asm "HASHEXT_KECCAK256";
+
 slice preload_slice_offset(slice s, int offset, int len) asm "SDSUBSTR";

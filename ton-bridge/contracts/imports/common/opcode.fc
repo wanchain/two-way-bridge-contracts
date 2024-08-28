@@ -1,3 +1,43 @@
 ;;const op::verify = "op::verify"c; ;; create an opcode from string using the "c" prefix, this results in 0x7e8764ef opcode in this case
-const op::verify = 0x7e8764ef;
-const op::verifyEcdsa = 0x7e8764ee;
+const op::verify                    = 0x7e8764ef;
+const op::verifyEcdsa               = 0x7e8764ee;
+
+;; op about owner ,admin and common
+const op::addAdmin                  = 0x01;
+const op::removeAdmin               = 0x02;
+const op::transferOwner             = 0x03;
+const op::setHalt                   = 0x04;
+const op::initialize                = 0x05;
+
+;; op about cross
+const op::setFee                    = 0x10;
+const op::setFees                   = 0x11;
+
+const op::userLock                  = 0x12;
+const op::smgMint                   = 0x13;
+
+const op::userBurn                  = 0x14;
+const op::userRelease               = 0x15;
+
+const op::setSmgFeeProxy            = 0x16;
+
+const op::setTokenPairFee           = 0x17;
+const op::setTokenPairFees          = 0x18;
+
+;; token manager
+const op::addTokenPair              = 0x21;
+const op::removeTokenPair           = 0x22;
+const op::updateTokenPair           = 0x23;
+
+;; op about oracle
+const op::transferOracleAdmin       = 0x31;
+const op::setStoremanGroupConfig    = 0x32;
+const op::setStoremanGroupStatus    = 0x33;
+const op::acquireReadySmgInfo       = 0x35;
+
+;; op about groupApprove
+const op::transferFoundation        = 0x41;
+const op::AcquireReadySmgInfo       = 0x42;
+const op::proposal                  = 0x43;
+const op::approveAndExecute         = 0x44;
+const op::Initialize                = 0x45;

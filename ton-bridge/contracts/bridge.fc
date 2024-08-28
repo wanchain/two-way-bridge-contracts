@@ -1,0 +1,92 @@
+#include "imports/std/stdlib.fc";
+#include "imports/common/opcode.fc";
+#include "imports/util/slice.fc";
+#include "imports/crypto/secp256k1.fc";
+#include "imports/common/wkchain.fc";
+#include "imports/common/errcode.fc";
+
+
+;; load_data populates storage variables using stored data
+(slice,slice,int,int,cell,cell,cell,cell) load_data() impure {
+    ~dump(11);
+    var ds = get_data().begin_parse();
+    ~dump(12);
+    (slice cross_owner,slice cross_admin) = (ds~load_msg_addr(),ds~load_msg_addr());
+    ~dump(13);
+    (int halt,int init) = (ds~load_uint(2),ds~load_uint(2));
+    (cell contract_fee, cell agent_fee,cell token_pair_contract_fee,cell token_manager) = (ds~load_ref(),ds~load_ref(),ds~load_ref(),ds~load_ref());
+    ds.end_parse();
+    return (cross_owner,cross_admin,halt,init,contract_fee,agent_fee,token_pair_contract_fee,token_manager);
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data(slice cross_owner, slice cross_admin,int halt,int init,cell contract_fee, cell agent_fee, cell token_pair_contract_fee,cell token_manger) impure {
+    set_data(
+        begin_cell()
+            .store_slice(cross_owner)
+            .store_slice(cross_admin)
+            .store_uint(halt,2)
+            .store_uint(init,2)
+            .store_ref(contract_fee)
+            .store_ref(agent_fee)
+            .store_ref(token_pair_contract_fee)
+            .store_ref(token_manger)
+            .end_cell()
+    );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) {
+        ;; ignore all empty messages
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    if (flags & 1) {
+        ;; ignore all bounced messages
+        return ();
+    }
+
+    slice sender_address = cs~load_msg_addr();
+    cs~load_msg_addr(); ;; skip dst
+    cs~load_coins(); ;; skip value
+    cs~skip_bits(1); ;; skip extracurrency collection
+    cs~load_coins(); ;; skip ihr_fee
+
+    ;;todo should check the rights
+
+    int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+    int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+    ~dump(1);
+
+    (slice cross_owner,slice cross_admin,int halt,int init,cell contract_fee, cell agent_fee,cell token_pair_contract_fee,cell token_manager) = load_data();
+    ~dump(2);
+    if (op == op::addAdmin) {
+        ;;int addr_wkid = in_msg_body~load_uint(32);
+        ;;int addr_hash = in_msg_body~load_uint(256);
+
+        slice cross_admin_new = in_msg_body~load_msg_addr();
+        ~dump(cross_admin_new);
+        tuple cross_admin_new_t = parse_addr(cross_admin_new);
+        ~dump(cross_admin_new_t);
+        ~dump(3);
+        ;; get wkid from parsed address
+        {-if (addr_wkid != WORKING_CHAINID) {
+            throw(ERROR::INVALID_WKID);
+        }-}
+        ;;todo how to write bits from randome position and random length?
+        ;;todo where does the ton coin of this contract store?
+        save_data(cross_owner,cross_admin_new,halt,init,contract_fee,agent_fee,token_pair_contract_fee,token_manager);
+        return ();
+    }
+
+    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+(slice, slice, int, int) get_cross_config() method_id {
+    (slice cross_owner,slice cross_admin,int halt,int init,cell contract_fee, cell agent_fee,cell token_pair_contract_fee,cell token_manager) = load_data();
+    return (cross_owner,cross_admin,halt,init);
+}

@@ -1,0 +1,9 @@
+;;GroupStatus { none, initial, curveSeted, failed, selected, ready, unregistered, dismissed }
+const groupStatus::none         = 0x01;
+const groupStatus::initial      = 0x02;
+const groupStatus::curveSeted   = 0x03;
+const groupStatus::failed       = 0x04;
+const groupStatus::selected     = 0x05;
+const groupStatus::ready        = 0x06;
+const groupStatus::unregistered = 0x07;
+const groupStatus::dismissed    = 0x08;

@@ -1,0 +1,2 @@
+const ERROR::INVALID_WKID               = 0x01;
+const ERROR::INVALID_HASH               = 0x02;
