@@ -14,21 +14,21 @@
     (slice cross_owner,slice cross_admin) = (ds~load_msg_addr(),ds~load_msg_addr());
     ~dump(13);
     (int halt,int init) = (ds~load_uint(2),ds~load_uint(2));
-    (cell contract_fee, cell agent_fee,cell token_pair_contract_fee,cell token_manager) = (ds~load_ref(),ds~load_ref(),ds~load_ref(),ds~load_ref());
+    (cell ca_fee, cell oracle,cell token_pair_contract_fee,cell token_manager) = (ds~load_ref(),ds~load_ref(),ds~load_ref(),ds~load_ref());
     ds.end_parse();
-    return (cross_owner,cross_admin,halt,init,contract_fee,agent_fee,token_pair_contract_fee,token_manager);
+    return (cross_owner,cross_admin,halt,init,ca_fee,oracle,token_pair_contract_fee,token_manager);
 }
 
 ;; save_data stores storage variables as a cell into persistent storage
-() save_data(slice cross_owner, slice cross_admin,int halt,int init,cell contract_fee, cell agent_fee, cell token_pair_contract_fee,cell token_manger) impure {
+() save_data(slice cross_owner, slice cross_admin,int halt,int init,cell ca_fee, cell oracle, cell token_pair_contract_fee,cell token_manger) impure {
     set_data(
         begin_cell()
             .store_slice(cross_owner)
             .store_slice(cross_admin)
             .store_uint(halt,2)
             .store_uint(init,2)
-            .store_ref(contract_fee)
-            .store_ref(agent_fee)
+            .store_ref(ca_fee)
+            .store_ref(oracle)
             .store_ref(token_pair_contract_fee)
             .store_ref(token_manger)
             .end_cell()
@@ -62,7 +62,7 @@
 
     ~dump(1);
 
-    (slice cross_owner,slice cross_admin,int halt,int init,cell contract_fee, cell agent_fee,cell token_pair_contract_fee,cell token_manager) = load_data();
+    (slice cross_owner,slice cross_admin,int halt,int init,cell ca_fee, cell oracle,cell token_pair_contract_fee,cell token_manager) = load_data();
     ~dump(2);
     if (op == op::addAdmin) {
         ;;int addr_wkid = in_msg_body~load_uint(32);
@@ -79,7 +79,31 @@
         }-}
         ;;todo how to write bits from randome position and random length?
         ;;todo where does the ton coin of this contract store?
-        save_data(cross_owner,cross_admin_new,halt,init,contract_fee,agent_fee,token_pair_contract_fee,token_manager);
+        save_data(cross_owner,cross_admin_new,halt,init,ca_fee,oracle,token_pair_contract_fee,token_manager);
+        return ();
+    }
+
+    if (op == op::setFee) {
+
+        (int _src_chain_id,int _dst_chain_id,int _contract_fee,int _agent_fee) = (in_msg_body~load_uint(32),in_msg_body~load_uint(32),in_msg_body~load_uint(32),in_msg_body~load_uint(32));
+
+        (_, cell ca_dic ) = load_dict(ca_fee.begin_parse());
+
+        ;;todo change key is exist
+        ;; (cell, int) udict_add?(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTUADD";
+        ;; (cell, int) idict_add?(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTIADD";
+        slice key = begin_cell().store_uint(_src_chain_id,32).store_uint(_dst_chain_id,32).end_cell().begin_parse();
+        int key_int = slice_to_int(key,64);
+        slice value = begin_cell().store_uint(_contract_fee,32).store_uint(_agent_fee,32).end_cell().begin_parse();
+        (cell ca_dic_new, int ret) = udict_add?(ca_dic,64,key_int,value);
+
+        ~dump(2);
+        ~dump(ca_dic_new);
+        ~dump(ret);
+
+        cell ca_fee_new = begin_cell().store_dict(ca_dic_new).end_cell();
+        ;;todo check ret
+        save_data(cross_owner,cross_admin,halt,init,ca_fee_new,oracle,token_pair_contract_fee,token_manager);
         return ();
     }
 
@@ -87,6 +111,23 @@
 }
 
 (slice, slice, int, int) get_cross_config() method_id {
-    (slice cross_owner,slice cross_admin,int halt,int init,cell contract_fee, cell agent_fee,cell token_pair_contract_fee,cell token_manager) = load_data();
+    (slice cross_owner,slice cross_admin,int halt,int init,cell ca_fee, cell oracle,cell token_pair_contract_fee,cell token_manager) = load_data();
     return (cross_owner,cross_admin,halt,init);
+}
+
+(int, int) get_fee(int _src_chain_id, int _dst_chain_id) method_id {
+    ~strdump("get_fee");
+    (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_pair_contract_fee, cell token_manager) = load_data();
+    ~strdump("get_fee_1");
+    (_, cell dict) = ca_fee.begin_parse().load_dict();
+    ~strdump("get_fee_2");
+    slice key = begin_cell().store_uint(_src_chain_id, 32).store_uint(_dst_chain_id, 32).end_cell().begin_parse();
+    int key_int = slice_to_int(key, 64);
+    (slice cs, int ret) = udict_get?(dict, 64, key_int);
+    if ( ret ){
+        ~strdump("get_fee_3");
+        return (cs~load_uint(32), cs~load_uint(32));
+    }
+    ~strdump("get_fee_4");
+    return (0,0);
 }

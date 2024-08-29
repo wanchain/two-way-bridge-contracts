@@ -1,5 +1,5 @@
 import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import {Address, Cell, toNano} from '@ton/core';
+import {Address, Cell, toNano,TupleItemInt} from '@ton/core';
 import { Bridge } from '../wrappers/Bridge';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
@@ -59,6 +59,7 @@ describe('Bridge', () => {
         // blockchain and counter are ready to use
     });
 
+
     it('should addAdmin success', async () => {
 
         let retCrossConfigOld = await bridge.getCrossConfig()
@@ -97,6 +98,44 @@ describe('Bridge', () => {
         expect(newAdmin.equals(user1.address));
 
     });
-    
+
+
+    it('should setFee success', async () => {
+
+        let srcChainId = 0x1234;
+        let dstChainId = 0x4567;
+        let contractFee = 0x2345;
+        let agentFee = 0x6789;
+        let retOld = await bridge.getFee(srcChainId,dstChainId);
+        console.log("retOld",retOld);
+
+        const user1 = await blockchain.treasury('user1');
+        const queryID=1;
+
+        console.log("user1.address==>",user1.address);
+        console.log("user1.address(bigInt)==>",BigInt("0x"+user1.address.hash.toString('hex')));
+
+        console.log("adminAddr",deployer.address.toRawString());
+        const ret = await bridge.sendSetFee(deployer.getSender(), {
+            value: toNano('1000'),
+            queryID,
+            srcChainId,
+            dstChainId,
+            contractFee,
+            agentFee,
+        });
+
+        console.log("ret",ret);
+
+        let retNew = await bridge.getFee(srcChainId,dstChainId);
+        console.log("retNew",retNew);
+
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+
+    });
 
 });

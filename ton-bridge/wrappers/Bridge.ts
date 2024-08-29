@@ -20,7 +20,7 @@ export function bridgeConfigToCell(config: BridgeConfig): Cell {
         .storeAddress(config.admin)
         .storeUint(config.halt,2)
         .storeUint(config.init,2)
-        .storeRef(beginCell().endCell())
+        .storeRef(beginCell().storeDict().endCell())
         .storeRef(beginCell().endCell())
         .storeRef(beginCell().endCell())
         .storeRef(beginCell().endCell())
@@ -97,8 +97,8 @@ export class Bridge implements Contract {
         via: Sender,
         opts: {
             adminAddr:Address,
-            value: bigint;
-            queryID?: number;
+            value: bigint,
+            queryID?: number,
         }
     ) {
         let isValid = Address.isAddress(opts.adminAddr)
@@ -116,6 +116,33 @@ export class Bridge implements Contract {
         });
     }
 
+    async sendSetFee(
+        provider: ContractProvider,
+        via: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            srcChainId:number,
+            dstChainId:number,
+            contractFee:number,
+            agentFee:number,
+        }
+    ) {
+
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(Opcodes.setFee, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.srcChainId, 32)
+                .storeUint(opts.dstChainId, 32)
+                .storeUint(opts.contractFee, 32)
+                .storeUint(opts.agentFee, 32)
+                .endCell(),
+        });
+    }
+
     async getCrossConfig(provider: ContractProvider) {
         const result = await provider.get('get_cross_config', []);
         return {
@@ -123,6 +150,15 @@ export class Bridge implements Contract {
             admin: result.stack.readAddress(),
             halt:result.stack.readNumber(),
             init:result.stack.readNumber()
+        }
+    }
+
+    async getFee(provider: ContractProvider,srcChainId:number,dstChainId:number) {
+        const result = await provider.get('get_fee', [{ type: 'int', value: BigInt(srcChainId) },
+            { type: 'int', value: BigInt(dstChainId)}]);
+        return {
+            contractFee:result.stack.readNumber(),
+            agentFee:result.stack.readNumber()
         }
     }
 }
