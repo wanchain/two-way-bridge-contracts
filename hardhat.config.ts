@@ -105,8 +105,8 @@ const config = {
       url: "https://evm.astar.network",
       accounts: [process.env.PK],
     },
-    optimisticEthereum: {
-      url: "https://opt-mainnet.g.alchemy.com/v2/EA2PhKrouVck-pDZscwY8AEGv_G-TXvj",
+    opMainnet: {
+      url: "https://optimism-rpc.publicnode.com	",
       accounts: [process.env.PK],
     },
     telos_testnet: {
@@ -287,6 +287,14 @@ const config = {
         urls: {
           apiURL: "https://api-sepolia.etherscan.io/api",
           browserURL: "https://sepolia.etherscan.io",
+        },
+      },
+      {
+        network: "opMainnet",
+        chainId: 10,
+        urls: {
+          apiURL: "https://api-optimistic.etherscan.io/api",
+          browserURL: "https://optimistic.etherscan.io",
         },
       },
       {
