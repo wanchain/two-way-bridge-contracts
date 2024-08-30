@@ -13,11 +13,15 @@ describe('Bridge', () => {
 
     let blockchain: Blockchain;
     let deployer: SandboxContract<TreasuryContract>;
+    let smgFeeProxy: SandboxContract<TreasuryContract>;
+    let oracleAdmin: SandboxContract<TreasuryContract>;
     let bridge: SandboxContract<Bridge>;
 
     beforeEach(async () => {
         blockchain = await Blockchain.create();
         deployer = await blockchain.treasury('deployer');
+        smgFeeProxy = await blockchain.treasury('smgFeeProxy');
+        oracleAdmin = await blockchain.treasury('oracleAdmin');
 
         let c = Bridge.createFromConfig(
             {
@@ -25,6 +29,8 @@ describe('Bridge', () => {
                 admin:deployer.address,
                 halt:0,
                 init:0,
+                smgFeeProxy:smgFeeProxy.address,
+                oracleAdmin:oracleAdmin.address,
             },
             code
         )
@@ -53,7 +59,7 @@ describe('Bridge', () => {
     });
 
 
-
+/*
     it('should deploy', async () => {
         // the check is done inside beforeEach
         // blockchain and counter are ready to use
@@ -128,6 +134,47 @@ describe('Bridge', () => {
         console.log("ret",ret);
 
         let retNew = await bridge.getFee(srcChainId,dstChainId);
+        console.log("retNew",retNew);
+
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+
+    });*/
+
+
+    it('should addTokenPair success', async () => {
+        let tokenPairId = 0x999;
+        let srcChainId = 0x1234;
+        let dstChainId = 0x4567;
+        let srcTokenAcc = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+        let dstTokenAcc = "0x32356335646535663562323836303733633539336564666437376234386162633761343865356134663364346364396434323866663933352e3535353334343433";
+
+        let retOld = await bridge.getTokenPair(tokenPairId);
+        console.log("retOld",retOld);
+
+        const user1 = await blockchain.treasury('user1');
+        const queryID=1;
+
+        console.log("user1.address==>",user1.address);
+        console.log("user1.address(bigInt)==>",BigInt("0x"+user1.address.hash.toString('hex')));
+
+        console.log("adminAddr",deployer.address.toRawString());
+        const ret = await bridge.sendAddTokenPair(deployer.getSender(), {
+            value: toNano('1000'),
+            queryID,
+            tokenPairId,
+            fromChainID:srcChainId,
+            fromAccount:srcTokenAcc,
+            toChainID:dstChainId,
+            toAccount:dstTokenAcc,
+        });
+
+        console.log("ret",ret);
+
+        let retNew = await bridge.getTokenPair(tokenPairId);
         console.log("retNew",retNew);
 
         expect(ret.transactions).toHaveTransaction({

@@ -5,6 +5,8 @@ export type BridgeConfig = {
     admin:Address,
     halt: number,
     init: number,
+    smgFeeProxy:Address,
+    oracleAdmin:Address,
 };
 
 export type CrossConfig = {
@@ -20,10 +22,25 @@ export function bridgeConfigToCell(config: BridgeConfig): Cell {
         .storeAddress(config.admin)
         .storeUint(config.halt,2)
         .storeUint(config.init,2)
-        .storeRef(beginCell().storeDict().endCell())
-        .storeRef(beginCell().endCell())
-        .storeRef(beginCell().endCell())
-        .storeRef(beginCell().endCell())
+
+        .storeRef(beginCell() // *****about fee begin*****
+            .storeAddress(config.smgFeeProxy) // feeProxyAddress
+            .storeDict() // about Contract and Agent fee
+            .storeDict() // about tokenPairFee
+            .endCell())  // *****about fee end*****
+
+        .storeRef(beginCell()  // *****about oracle begin*****
+            .storeAddress(config.oracleAdmin) // oracleAdmin
+            .storeDict() // mapSmgConfig
+            .storeDict() // mapSmgTxStatus
+            .endCell()) // *****about oracle end*****
+
+        .storeRef(beginCell() // *****about tm begin*****
+            .storeDict() // mapTokenPairInfo
+            .storeDict() // mapWrappedToken
+            .endCell()) // *****about tm end*****
+
+        .storeRef(beginCell().endCell()) // extended
         .endCell();
 }
 
@@ -143,6 +160,48 @@ export class Bridge implements Contract {
         });
     }
 
+    async sendAddTokenPair(
+        provider: ContractProvider,
+        via: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            tokenPairId:number,
+            fromChainID:number,
+            fromAccount:string,
+            toChainID:number,
+            toAccount:string,
+        }
+    ) {
+        let from = opts.fromAccount.substring(0,2).toLowerCase() == "0x"?opts.fromAccount.substring(2):opts.fromAccount
+        let to = opts.toAccount.substring(0,2).toLowerCase() == "0x"?opts.toAccount.substring(2):opts.toAccount
+
+        console.log("xxxxxfromxxxx",from);
+        console.log("xxxxxtoxxxx",to);
+
+        let fromBuffer = Buffer.from(from,'hex')
+        let toBuffer = Buffer.from(to,'hex')
+
+        console.log("fromBuffer.length",from.length);
+        console.log("toBuffer.length",to.length);
+
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(Opcodes.addTokenPair, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.tokenPairId, 32)
+                .storeUint(opts.fromChainID, 32)
+                .storeUint(opts.toChainID, 32)
+                .storeUint(fromBuffer.length, 8)
+                .storeBuffer(fromBuffer)
+                .storeUint(toBuffer.length, 8)
+                .storeBuffer(toBuffer)
+                .endCell(),
+        });
+    }
+
     async getCrossConfig(provider: ContractProvider) {
         const result = await provider.get('get_cross_config', []);
         return {
@@ -159,6 +218,17 @@ export class Bridge implements Contract {
         return {
             contractFee:result.stack.readNumber(),
             agentFee:result.stack.readNumber()
+        }
+    }
+
+    async getTokenPair(provider: ContractProvider,tokenPairId:number) {
+        const result = await provider.get('get_token_pair', [{ type: 'int', value: BigInt(tokenPairId) }]);
+        // todo getTokenPair
+        return {
+            fromChainID:result.stack.readNumber(),
+            toChainID:result.stack.readNumber(),
+            fromAccount:result.stack.readBuffer().toString('hex'),
+            toAccount:result.stack.readBuffer().toString('hex'),
         }
     }
 }

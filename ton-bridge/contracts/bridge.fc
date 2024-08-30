@@ -14,13 +14,13 @@
     (slice cross_owner,slice cross_admin) = (ds~load_msg_addr(),ds~load_msg_addr());
     ~dump(13);
     (int halt,int init) = (ds~load_uint(2),ds~load_uint(2));
-    (cell ca_fee, cell oracle,cell token_pair_contract_fee,cell token_manager) = (ds~load_ref(),ds~load_ref(),ds~load_ref(),ds~load_ref());
+    (cell ca_fee, cell oracle,cell token_manager,cell extend) = (ds~load_ref(),ds~load_ref(),ds~load_ref(),ds~load_ref());
     ds.end_parse();
-    return (cross_owner,cross_admin,halt,init,ca_fee,oracle,token_pair_contract_fee,token_manager);
+    return (cross_owner,cross_admin,halt,init,ca_fee,oracle,token_manager,extend);
 }
 
 ;; save_data stores storage variables as a cell into persistent storage
-() save_data(slice cross_owner, slice cross_admin,int halt,int init,cell ca_fee, cell oracle, cell token_pair_contract_fee,cell token_manger) impure {
+() save_data(slice cross_owner, slice cross_admin,int halt,int init,cell ca_fee, cell oracle, cell token_manager,cell extend) impure {
     set_data(
         begin_cell()
             .store_slice(cross_owner)
@@ -29,8 +29,8 @@
             .store_uint(init,2)
             .store_ref(ca_fee)
             .store_ref(oracle)
-            .store_ref(token_pair_contract_fee)
-            .store_ref(token_manger)
+            .store_ref(token_manager)
+            .store_ref(extend)
             .end_cell()
     );
 }
@@ -62,7 +62,7 @@
 
     ~dump(1);
 
-    (slice cross_owner,slice cross_admin,int halt,int init,cell ca_fee, cell oracle,cell token_pair_contract_fee,cell token_manager) = load_data();
+    (slice cross_owner,slice cross_admin,int halt,int init,cell ca_fee, cell oracle,cell token_manager,cell extend) = load_data();
     ~dump(2);
     if (op == op::addAdmin) {
         ;;int addr_wkid = in_msg_body~load_uint(32);
@@ -79,7 +79,7 @@
         }-}
         ;;todo how to write bits from randome position and random length?
         ;;todo where does the ton coin of this contract store?
-        save_data(cross_owner,cross_admin_new,halt,init,ca_fee,oracle,token_pair_contract_fee,token_manager);
+        save_data(cross_owner,cross_admin_new,halt,init,ca_fee,oracle,token_manager,token_manager);
         return ();
     }
 
@@ -87,7 +87,8 @@
 
         (int _src_chain_id,int _dst_chain_id,int _contract_fee,int _agent_fee) = (in_msg_body~load_uint(32),in_msg_body~load_uint(32),in_msg_body~load_uint(32),in_msg_body~load_uint(32));
 
-        (_, cell ca_dic ) = load_dict(ca_fee.begin_parse());
+        slice ca_fee_slice = ca_fee.begin_parse();
+        (slice smgFeeProxyAddr,cell ca_dic) = (ca_fee_slice~load_msg_addr(),ca_fee_slice~load_dict());
 
         ;;todo change key is exist
         ;; (cell, int) udict_add?(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTUADD";
@@ -97,13 +98,75 @@
         slice value = begin_cell().store_uint(_contract_fee,32).store_uint(_agent_fee,32).end_cell().begin_parse();
         (cell ca_dic_new, int ret) = udict_add?(ca_dic,64,key_int,value);
 
-        ~dump(2);
+        ~strdump("setFee2");
         ~dump(ca_dic_new);
         ~dump(ret);
 
-        cell ca_fee_new = begin_cell().store_dict(ca_dic_new).end_cell();
+        cell ca_fee_new = begin_cell()
+            .store_slice(smgFeeProxyAddr)
+            .store_dict(ca_dic_new)
+            .end_cell();
         ;;todo check ret
-        save_data(cross_owner,cross_admin,halt,init,ca_fee_new,oracle,token_pair_contract_fee,token_manager);
+        ~strdump("setFee3");
+        save_data(cross_owner,cross_admin,halt,init,ca_fee_new,oracle,token_manager,token_manager);
+        return ();
+    }
+
+    if (op == op::addTokenPair) {
+        ;;todo how to load string? load_slice?
+        (int _token_pair_id,int _src_chain_id,int _dst_chain_id,int _from_account_len) =
+        (in_msg_body~load_uint(32),in_msg_body~load_uint(32),in_msg_body~load_uint(32),in_msg_body~load_uint(8));
+        slice _from_account = in_msg_body~load_bits(8 * _from_account_len);
+
+        int _to_account_len = in_msg_body~load_uint(8);
+        slice _to_account = in_msg_body~load_bits(8 * _to_account_len);
+
+        ~strdump("addTokenPair _from_account");
+        ~dump(_from_account_len);
+        ~dump(slice_refs(_from_account));
+        ~dump(slice_bits(_from_account));
+
+        ~strdump("addTokenPair _to_account");
+        ~dump(_to_account_len);
+        ~dump(slice_refs(_to_account));
+        ~dump(slice_bits(_to_account));
+
+        slice tm_slice = token_manager.begin_parse();
+        (cell tm_dic, cell wt_dic) = (tm_slice~load_dict(),tm_slice~load_dict());
+
+        ;;todo change key is exist
+
+        ;; cell udict_set_ref(cell dict, int key_len, int index, cell value) asm(value index dict key_len) "DICTUSETREF";
+        ;; (cell, ()) ~udict_set_ref(cell dict, int key_len, int index, cell value) asm(value index dict key_len) "DICTUSETREF";
+
+        int key_int = _token_pair_id;
+        cell value = begin_cell()
+            .store_uint(_src_chain_id,32)
+            .store_uint(_dst_chain_id,32)
+            .store_uint(_from_account_len,8)
+            .store_slice(_from_account)
+            .store_uint(_to_account_len,8)
+            .store_slice(_to_account)
+            .end_cell();
+        ~strdump("addTokenPair value");
+        ~dump(slice_refs(value.begin_parse()));
+        ~dump(slice_bits(value.begin_parse()));
+        ~strdump("addTokenPair value end");
+
+        cell dic_new = udict_set_ref(tm_dic,32,key_int,value);
+
+        ~strdump("addTokenPair2");
+        ~dump(dic_new);
+        ~dump(slice_refs(dic_new.begin_parse()));
+        ~dump(slice_bits(dic_new.begin_parse()));
+
+        cell token_manager_new = begin_cell()
+            .store_dict(dic_new)
+            .store_dict(wt_dic)
+            .end_cell();
+        ;;todo check ret
+        ~strdump("addTokenPair3");
+        save_data(cross_owner,cross_admin,halt,init,ca_fee,oracle,token_manager_new,extend);
         return ();
     }
 
@@ -111,15 +174,17 @@
 }
 
 (slice, slice, int, int) get_cross_config() method_id {
-    (slice cross_owner,slice cross_admin,int halt,int init,cell ca_fee, cell oracle,cell token_pair_contract_fee,cell token_manager) = load_data();
+    (slice cross_owner,slice cross_admin,int halt,int init,cell ca_fee, cell oracle,cell token_manager,cell extend) = load_data();
     return (cross_owner,cross_admin,halt,init);
 }
 
 (int, int) get_fee(int _src_chain_id, int _dst_chain_id) method_id {
     ~strdump("get_fee");
-    (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_pair_contract_fee, cell token_manager) = load_data();
+    (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     ~strdump("get_fee_1");
-    (_, cell dict) = ca_fee.begin_parse().load_dict();
+    ;;todo load smgFeeProxy first
+    slice ca_fee_slice = ca_fee.begin_parse();
+    (_,cell dict) = (ca_fee_slice~load_msg_addr(),ca_fee_slice~load_dict());
     ~strdump("get_fee_2");
     slice key = begin_cell().store_uint(_src_chain_id, 32).store_uint(_dst_chain_id, 32).end_cell().begin_parse();
     int key_int = slice_to_int(key, 64);
@@ -130,4 +195,44 @@
     }
     ~strdump("get_fee_4");
     return (0,0);
+}
+
+(int, int,slice,slice) get_token_pair(int _token_paird_id) method_id {
+    ~strdump("get_token_pair");
+    (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    ~strdump("get_token_pair_1");
+    slice tm_slice = token_manager.begin_parse();
+    ~strdump("get_token_pair_11");
+    (cell tm_dic, cell wt_dic) = (tm_slice~load_dict(),tm_slice~load_dict());
+    ~strdump("get_token_pair_12");
+    slice from_account = begin_cell().end_cell().begin_parse();
+    slice to_account = begin_cell().end_cell().begin_parse();
+    ~strdump("get_token_pair_13");
+    (cell dic_new, int ret) = udict_get_ref?(tm_dic,32,_token_paird_id);
+    if (cell_null?(dic_new)){
+        ~strdump("get_token_pair_14");
+        return (0,0,from_account,to_account);
+    }
+    slice cs = dic_new.begin_parse();
+    ~strdump("get_token_pair_15");
+    if ( ret ){
+        ~strdump("get_token_pair_16");
+        ~dump(slice_refs(cs));
+        ~dump(slice_bits(cs));
+        (int _src_chain_id,int _dst_chain_id,int _from_account_len) =
+        (cs~load_uint(32),cs~load_uint(32),cs~load_uint(8));
+        ~strdump("_from_account_len");
+        ~dump(_from_account_len);
+
+
+        slice _from_account = cs~load_bits(8 * _from_account_len);
+        int _to_account_len = cs~load_uint(8);
+        slice _to_account = cs~load_bits(8 * _to_account_len);
+
+        ~strdump("_to_account_len");
+        ~dump(_to_account_len);
+        return (_src_chain_id,_dst_chain_id,_from_account,_to_account);
+    }
+    ~strdump("get_token_pair_17");
+    return (0,0,from_account,to_account);
 }
