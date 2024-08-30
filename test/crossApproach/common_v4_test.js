@@ -314,6 +314,64 @@ exports.testCases = () => {
       );
     });
 
+    it("configAdmin  -> Success", async () => {
+      const { CrossDelegate } = getContractArtifacts();
+      const wanchain = chainTypes.WAN;
+
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      let owner = await wanCross.owner();
+
+      let isAdmin = await wanCross.isAdmin(global.adminAccount[wanchain]);
+      assert.equal(isAdmin, false, "check isAdmin failed");
+      
+      await wanCross.configAdmin(global.adminAccount[wanchain], true, {from: owner});
+
+      isAdmin = await wanCross.isAdmin(global.adminAccount[wanchain]);
+      assert.equal(isAdmin, true, "check isAdmin failed");
+    });
+
+    it("configOperator  -> Success", async () => {
+      const { CrossDelegate } = getContractArtifacts();
+      const wanchain = chainTypes.WAN;
+
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+      console.log('1');
+      let isOperator = await wanCross.isOperator(global.adminAccount[wanchain]);
+      console.log('2');
+      assert.equal(isOperator, false, "check isOperator failed");
+      console.log('3');
+      let owner = await wanCross.owner();
+      await wanCross.configAdmin(global.adminAccount[wanchain], true, {from: owner});
+      console.log('4');
+
+      await wanCross.configOperator(global.adminAccount[wanchain], true, {from: global.adminAccount[wanchain]});
+      console.log('5');
+      isOperator = await wanCross.isOperator(global.adminAccount[wanchain]);
+      console.log('6');
+      assert.equal(isOperator, true, "check isOperator failed");
+    });
+
+    it("configOperator  -> Not admin", async () => {
+      const { CrossDelegate } = getContractArtifacts();
+      const wanchain = chainTypes.WAN;
+
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+      
+      try {
+        await wanCross.configOperator(global.operatorAccount[wanchain], true, {from: global.aliceAccount.WAN});
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not admin");
+      }
+    }); 
+
     it("setChainID  -> Success", async () => {
       const { CrossDelegate, RapidityLib, NFTLib } = getContractArtifacts();
 
@@ -341,7 +399,7 @@ exports.testCases = () => {
       );
 
       try {
-        await wanCross.setChainID(3000);
+        await wanCross.setChainID(3000, {from: global.aliceAccount.WAN});
         assert.fail(ERROR_INFO);
       } catch (err) {
         assert.include(err.toString(), "not admin");
@@ -370,7 +428,7 @@ exports.testCases = () => {
       );
 
       try {
-        await wanCross.setEtherTransferGasLimit(3000);
+        await wanCross.setEtherTransferGasLimit(3000, {from: global.aliceAccount.WAN});
         assert.fail(ERROR_INFO);
       } catch (err) {
         assert.include(err.toString(), "not admin");
@@ -422,7 +480,7 @@ exports.testCases = () => {
       );
 
       try {
-        await wanCross.setUintValue("0x1","0x2","3");
+        await wanCross.setUintValue("0x1","0x2","3", {from: global.aliceAccount.WAN});
         assert.fail(ERROR_INFO);
       } catch (err) {
         assert.include(err.toString(), "not admin");
@@ -439,7 +497,7 @@ exports.testCases = () => {
       );
 
       try {
-        await wanCross.delUintValue("0x1","0x2");
+        await wanCross.delUintValue("0x1","0x2", {from: global.aliceAccount.WAN});
         assert.fail(ERROR_INFO);
       } catch (err) {
         assert.include(err.toString(), "not admin");
@@ -498,7 +556,7 @@ exports.testCases = () => {
       }
     });
 
-    it("setTokenPairFees  -> not admin", async () => {
+    it("setTokenPairFees  -> not operator", async () => {
       const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
@@ -508,14 +566,14 @@ exports.testCases = () => {
       );
 
       try {
-        await wanCross.setTokenPairFees([["0","1"]]);
+        await wanCross.setTokenPairFees([["0","1"]], {from: global.aliceAccount.WAN});
         assert.fail(ERROR_INFO);
       } catch (err) {
-        assert.include(err.toString(), "not admin");
+        assert.include(err.toString(), "not operator");
       }
     });
 
-    it("setTokenPairFee  -> not admin", async () => {
+    it("setTokenPairFee  -> not operator", async () => {
       const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
@@ -525,10 +583,10 @@ exports.testCases = () => {
       );
 
       try {
-        await wanCross.setTokenPairFee("0","1");
+        await wanCross.setTokenPairFee("0","1", {from: global.aliceAccount.WAN});
         assert.fail(ERROR_INFO);
       } catch (err) {
-        assert.include(err.toString(), "not admin");
+        assert.include(err.toString(), "not operator");
       }
     });
 
@@ -566,7 +624,7 @@ exports.testCases = () => {
       );
     });
 
-    it("setFee  -> not admin", async () => {
+    it("setFee  -> not operator", async () => {
       const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
@@ -576,10 +634,10 @@ exports.testCases = () => {
       );
 
       try {
-        await wanCross.setFee(["0","1","2","3"]);
+        await wanCross.setFee(["0","1","2","3"], {from: global.aliceAccount.WAN});
         assert.fail(ERROR_INFO);
       } catch (err) {
-        assert.include(err.toString(), "not admin");
+        assert.include(err.toString(), "not operator");
       }
     });
 
@@ -633,7 +691,7 @@ exports.testCases = () => {
       );
     });
 
-    it("setFees  -> not admin", async () => {
+    it("setFees  -> not operator", async () => {
       const { CrossDelegate } = getContractArtifacts();
       const wanchain = chainTypes.WAN;
 
@@ -643,10 +701,10 @@ exports.testCases = () => {
       );
 
       try {
-        await wanCross.setFees([["0","1","2","3"]]);
+        await wanCross.setFees([["0","1","2","3"]], {from: global.aliceAccount.ETH});
         assert.fail(ERROR_INFO);
       } catch (err) {
-        assert.include(err.toString(), "not admin");
+        assert.include(err.toString(), "not operator");
       }
     });
 
@@ -711,7 +769,7 @@ exports.testCases = () => {
       );
 
       try {
-        await wanCross.setMaxBatchSize(maxBatchSize);
+        await wanCross.setMaxBatchSize(maxBatchSize, {from: global.aliceAccount.WAN});
         assert.fail(ERROR_INFO);
       } catch (err) {
         assert.include(err.toString(), "not admin");
