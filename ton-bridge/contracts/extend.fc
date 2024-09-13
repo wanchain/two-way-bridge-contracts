@@ -1,0 +1,31 @@
+#pragma version >=0.2.0;
+
+#include "imports/std/stdlib.fc";
+#include "imports/common/opcode.fc";
+
+
+const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
+(cell) ext_load_data(cell ref) impure {
+    var ds = ref.begin_parse();
+    cell cross_admin = ds~load_dict();
+    ds.end_parse();
+    return (cross_admin);
+}
+
+(cell) ext_generate_data(cell cross_admin) impure {
+    return begin_cell()
+            .store_dict(cross_admin)
+            .end_cell();
+}
+
+;; Example of how to use in recv_internal
+(cell) ext_recv_internal(int op, cell refcell, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    ~strdump("ext_recv_internal");
+    (cell cross_admin) = ext_load_data(refcell);
+    if (op == OP_EXTEND_AddCrossAdmin) {
+        slice admin = in_msg_body~load_msg_addr();
+        cross_admin~udict_set_builder(CROSSADMIN_DICTIONARY_KEY_LEN, admin~load_uint(256), begin_cell().store_int(1, 1));
+        return ext_generate_data(cross_admin);
+    }
+    return refcell;
+}

@@ -4,27 +4,26 @@
 #include "imports/crypto/secp256k1.fc";
 #include "imports/common/wkchain.fc";
 #include "imports/common/errcode.fc";
-
+#include "tokenManager.fc";
+#include "fee.fc";
+#include "extend.fc";
+#include "oracle.fc";
 
 ;; load_data populates storage variables using stored data
-(slice, slice, int, int, cell, cell, cell, cell) load_data() impure {
-    ~dump(11);
+(slice, int, int, cell, cell, cell, cell) load_data() impure {
     var ds = get_data().begin_parse();
-    ~dump(12);
-    (slice cross_owner, slice cross_admin) = (ds~load_msg_addr(), ds~load_msg_addr());
-    ~dump(13);
+    slice cross_owner = ds~load_msg_addr();
     (int halt, int init) = (ds~load_uint(2), ds~load_uint(2));
     (cell ca_fee, cell oracle, cell token_manager, cell extend) = (ds~load_ref(), ds~load_ref(), ds~load_ref(), ds~load_ref());
     ds.end_parse();
-    return (cross_owner, cross_admin, halt, init, ca_fee, oracle, token_manager, extend);
+    return (cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
 }
 
 ;; save_data stores storage variables as a cell into persistent storage
-() save_data(slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) impure {
+() save_data(slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) impure {
     set_data(
         begin_cell()
             .store_slice(cross_owner)
-            .store_slice(cross_admin)
             .store_uint(halt, 2)
             .store_uint(init, 2)
             .store_ref(ca_fee)
@@ -60,179 +59,78 @@
     int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
     int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
 
-    ~dump(1);
-
-    (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    ~dump(2);
-    if (op == op::addAdmin) {
-        ;;int addr_wkid = in_msg_body~load_uint(32);
-        ;;int addr_hash = in_msg_body~load_uint(256);
-
-        slice cross_admin_new = in_msg_body~load_msg_addr();
-        ~dump(cross_admin_new);
-        tuple cross_admin_new_t = parse_addr(cross_admin_new);
-        ~dump(cross_admin_new_t);
-        ~dump(3);
-        ;; get wkid from parsed address
-        {-if (addr_wkid != WORKING_CHAINID) {
-            throw(ERROR::INVALID_WKID);
-        }-}
-        ;;todo how to write bits from randome position and random length?
-        ;;todo where does the ton coin of this contract store?
-        save_data(cross_owner, cross_admin_new, halt, init, ca_fee, oracle, token_manager, token_manager);
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    if(op & 0xFF000000 == OP_COMMON) {
+        if(op == OP_COMMON_SetHalt) {
+            int _halt = in_msg_body~load_uint(2);
+            save_data(cross_owner, _halt, init, ca_fee, oracle, token_manager, extend);
+            return ();
+        }
+        if(op == OP_COMMON_Initialize) {
+            int _init = in_msg_body~load_uint(2);
+            save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
+            return ();
+        }
+        if(op == OP_COMMON_TransferOwner) {
+            slice _cross_owner = in_msg_body~load_msg_addr();
+            save_data(_cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
+            return ();
+        }        
+    }
+    if (op & 0xFF000000 == OP_FEE) {
+        var _ca_fee = fee_recv_internal(op, ca_fee, msg_value, in_msg_full, in_msg_body);
+        save_data(cross_owner, halt, init, _ca_fee, oracle, token_manager, extend);
         return ();
     }
-
-    if (op == op::setFee) {
-
-        (int _src_chain_id, int _dst_chain_id, int _contract_fee, int _agent_fee) = (in_msg_body~load_uint(32), in_msg_body~load_uint(32), in_msg_body~load_uint(32), in_msg_body~load_uint(32));
-
-        slice ca_fee_slice = ca_fee.begin_parse();
-        (slice smgFeeProxyAddr, cell ca_dic) = (ca_fee_slice~load_msg_addr(), ca_fee_slice~load_dict());
-
-        ;;todo change key is exist
-        ;; (cell, int) udict_add?(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTUADD";
-        ;; (cell, int) idict_add?(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTIADD";
-        slice key = begin_cell().store_uint(_src_chain_id, 32).store_uint(_dst_chain_id, 32).end_cell().begin_parse();
-        int key_int = slice_to_int(key, 64);
-        slice value = begin_cell().store_uint(_contract_fee, 32).store_uint(_agent_fee, 32).end_cell().begin_parse();
-        (cell ca_dic_new, int ret) = udict_add?(ca_dic, 64, key_int, value);
-
-        ~strdump("setFee2");
-        ~dump(ca_dic_new);
-        ~dump(ret);
-
-        cell ca_fee_new = begin_cell()
-            .store_slice(smgFeeProxyAddr)
-            .store_dict(ca_dic_new)
-            .end_cell();
-        ;;todo check ret
-        ~strdump("setFee3");
-        save_data(cross_owner, cross_admin, halt, init, ca_fee_new, oracle, token_manager, token_manager);
+    if (op & 0xFF000000 == OP_ORACLE) {
+        var _oracle = oracle_recv_internal(op, oracle, msg_value, in_msg_full, in_msg_body);
+        save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
+        return ();
+    }    
+    if (op & 0xFF000000 == OP_TOKENPAIR) {
+        var _token_manager = tm_recv_internal(op, token_manager, msg_value, in_msg_full, in_msg_body);
+        save_data(cross_owner, halt, init, ca_fee, oracle, _token_manager, extend);
         return ();
     }
-
-    if (op == op::addTokenPair) {
-        ;;todo how to load string? load_slice?
-        (int _token_pair_id, int _src_chain_id, int _dst_chain_id, int _from_account_len) =
-        (in_msg_body~load_uint(32), in_msg_body~load_uint(32), in_msg_body~load_uint(32), in_msg_body~load_uint(8));
-        slice _from_account = in_msg_body~load_bits(8 * _from_account_len);
-
-        int _to_account_len = in_msg_body~load_uint(8);
-        slice _to_account = in_msg_body~load_bits(8 * _to_account_len);
-
-        ~strdump("addTokenPair _from_account");
-        ~dump(_from_account_len);
-        ~dump(slice_refs(_from_account));
-        ~dump(slice_bits(_from_account));
-
-        ~strdump("addTokenPair _to_account");
-        ~dump(_to_account_len);
-        ~dump(slice_refs(_to_account));
-        ~dump(slice_bits(_to_account));
-
-        slice tm_slice = token_manager.begin_parse();
-        (cell tm_dic, cell wt_dic) = (tm_slice~load_dict(), tm_slice~load_dict());
-
-        ;;todo change key is exist
-
-        ;; cell udict_set_ref(cell dict, int key_len, int index, cell value) asm(value index dict key_len) "DICTUSETREF";
-        ;; (cell, ()) ~udict_set_ref(cell dict, int key_len, int index, cell value) asm(value index dict key_len) "DICTUSETREF";
-
-        int key_int = _token_pair_id;
-        cell value = begin_cell()
-            .store_uint(_src_chain_id, 32)
-            .store_uint(_dst_chain_id, 32)
-            .store_uint(_from_account_len, 8)
-            .store_slice(_from_account)
-            .store_uint(_to_account_len, 8)
-            .store_slice(_to_account)
-            .end_cell();
-        ~strdump("addTokenPair value");
-        ~dump(slice_refs(value.begin_parse()));
-        ~dump(slice_bits(value.begin_parse()));
-        ~strdump("addTokenPair value end");
-
-        cell dic_new = udict_set_ref(tm_dic, 32, key_int, value);
-
-        ~strdump("addTokenPair2");
-        ~dump(dic_new);
-        ~dump(slice_refs(dic_new.begin_parse()));
-        ~dump(slice_bits(dic_new.begin_parse()));
-
-        cell token_manager_new = begin_cell()
-            .store_dict(dic_new)
-            .store_dict(wt_dic)
-            .end_cell();
-        ;;todo check ret
-        ~strdump("addTokenPair3");
-        save_data(cross_owner, cross_admin, halt, init, ca_fee, oracle, token_manager_new, extend);
+    if (op & 0xFF000000 == OP_EXTEND) {
+        var _extend = ext_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
+        save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
         return ();
     }
-
     throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
 }
 
-(slice, slice, int, int) get_cross_config() method_id {
-    (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return (cross_owner, cross_admin, halt, init);
+(slice, int, int) get_cross_config() method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return (cross_owner, halt, init);
 }
 
-(int, int) get_fee(int _src_chain_id, int _dst_chain_id) method_id {
-    ~strdump("get_fee");
-    (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    ~strdump("get_fee_1");
-    ;;todo load smgFeeProxy first
-    slice ca_fee_slice = ca_fee.begin_parse();
-    (_, cell dict) = (ca_fee_slice~load_msg_addr(), ca_fee_slice~load_dict());
-    ~strdump("get_fee_2");
-    slice key = begin_cell().store_uint(_src_chain_id, 32).store_uint(_dst_chain_id, 32).end_cell().begin_parse();
-    int key_int = slice_to_int(key, 64);
-    (slice cs, int ret) = udict_get?(dict, 64, key_int);
-    if (ret) {
-        ~strdump("get_fee_3");
-        return (cs~load_uint(32), cs~load_uint(32));
-    }
-    ~strdump("get_fee_4");
-    return (0, 0);
+
+
+;; getter for oracle
+(int, int, int) get_oracle_smgConfig(int id) method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return oracle_get_smg(oracle, id);
+}
+(int) get_oracle_first_smg_id() method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return oracle_get_first_smg_id(oracle);    
+}
+(int) get_next_smg_id(int id) method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return oracle_get_next_smg_id(oracle, id);
 }
 
-(int, int, slice, slice) get_token_pair(int _token_paird_id) method_id {
-    ~strdump("get_token_pair");
-    (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    ~strdump("get_token_pair_1");
-    slice tm_slice = token_manager.begin_parse();
-    ~strdump("get_token_pair_11");
-    (cell tm_dic, cell wt_dic) = (tm_slice~load_dict(), tm_slice~load_dict());
-    ~strdump("get_token_pair_12");
-    slice from_account = begin_cell().end_cell().begin_parse();
-    slice to_account = begin_cell().end_cell().begin_parse();
-    ~strdump("get_token_pair_13");
-    (cell dic_new, int ret) = udict_get_ref?(tm_dic, 32, _token_paird_id);
-    if (cell_null?(dic_new)) {
-        ~strdump("get_token_pair_14");
-        return (0, 0, from_account, to_account);
-    }
-    slice cs = dic_new.begin_parse();
-    ~strdump("get_token_pair_15");
-    if (ret) {
-        ~strdump("get_token_pair_16");
-        ~dump(slice_refs(cs));
-        ~dump(slice_bits(cs));
-        (int _src_chain_id, int _dst_chain_id, int _from_account_len) =
-        (cs~load_uint(32), cs~load_uint(32), cs~load_uint(8));
-        ~strdump("_from_account_len");
-        ~dump(_from_account_len);
-
-
-        slice _from_account = cs~load_bits(8 * _from_account_len);
-        int _to_account_len = cs~load_uint(8);
-        slice _to_account = cs~load_bits(8 * _to_account_len);
-
-        ~strdump("_to_account_len");
-        ~dump(_to_account_len);
-        return (_src_chain_id, _dst_chain_id, _from_account, _to_account);
-    }
-    ~strdump("get_token_pair_17");
-    return (0, 0, from_account, to_account);
+;; getter for tokenManager
+(int, slice, int, slice) get_tm_token_pair(int id) method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return tm_get_token_pair(token_manager, id);
+}
+(int) get_tm_first_tokenpair_id() method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return tm_get_first_tokenpair_id(token_manager);    
+}
+(int) get_tm_next_tokenpair_id(int id) method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return tm_get_next_tokenpair_id(token_manager, id);
 }

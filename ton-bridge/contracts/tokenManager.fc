@@ -1,0 +1,111 @@
+#pragma version >=0.2.0;
+
+#include "imports/std/stdlib.fc";
+#include "imports/common/opcode.fc";
+
+
+
+{-
+        uint    id,     32b
+
+        uint           fromChainID, 32b
+        uint           toChainID,   32b
+        uint           fromAccountLen 8b
+        uint           toAccountLen 8b
+
+        bytes calldata fromAccount, slice
+        bytes calldata toAccount    slice
+-}
+
+;; Constants
+const int DICTIONARY_KEY_LEN = 32;
+
+(cell) tm_load_data(cell ca_tm) impure {
+    var ds = ca_tm.begin_parse();
+    cell tokenPairs = ds~load_dict();
+    ds.end_parse();
+    return (tokenPairs);
+}
+
+(cell) tm_generate_data(cell tokenPair) impure {
+    return begin_cell()
+            .store_dict(tokenPair)
+            .end_cell();
+}
+
+
+;; Helper functions for tokenPair struct
+(int, slice, int, slice) load_tokenPair(slice cs) inline {
+    var fromChainID = cs~load_uint(32);
+    var toChainID = cs~load_uint(32);
+    var fromAccountLen = cs~load_uint(8);
+    var toAccountLen = cs~load_uint(8);
+    var fromAccount = cs~load_bits(8 * fromAccountLen);
+    var toAccount = cs~load_bits(8 * toAccountLen);
+    return (fromChainID, fromAccount, toChainID, toAccount);
+}
+
+
+;; Get a tokenPair by ID
+(int, slice, int, slice) tm_get_token_pair(cell refcell, int id) method_id {
+    cell tokenPairs = tm_load_data(refcell);
+    var (tokenPair_slice, found?) = tokenPairs.udict_get?(DICTIONARY_KEY_LEN, id);
+    if (found?) {
+        var (fromChainID, fromAccount, toChainID, toAccount) = load_tokenPair(tokenPair_slice);
+        return (fromChainID, fromAccount, toChainID, toAccount);
+    } else {
+        return (0, "", 0,""); ;; Return default values if not found
+    }
+}
+
+
+;; Get the first tokenPair in the dictionary
+(int) tm_get_first_tokenpair_id(cell refcell) method_id {
+    (cell tokenPairs) = tm_load_data(refcell);
+    (int id, slice value, int success) = tokenPairs.udict_get_min?(DICTIONARY_KEY_LEN);
+    if (success) {
+        return id;
+    } else {
+        return 0;
+    }
+}
+;; Get the first tokenPair in the dictionary
+(int) tm_get_next_tokenpair_id(cell refcell, int id) method_id {
+    (cell tokenPairs) = tm_load_data(refcell);
+    (int id, slice value, int success) = tokenPairs.udict_get_next?(DICTIONARY_KEY_LEN, id);
+    if (success) {
+        return id;
+    } else {
+        return 0;
+    }
+}
+
+;; Example of how to use in recv_internal
+(cell) tm_recv_internal(int op, cell refcell, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    (cell tokenPairs) = tm_load_data(refcell);
+    if (op == OP_TOKENPAIR_Upsert) {
+        int id = in_msg_body~load_uint(32);
+        int fromChainID = in_msg_body~load_uint(32);
+        int toChainID = in_msg_body~load_uint(32);
+        int fromAccountLen = in_msg_body~load_uint(8);
+        int toAccountLen = in_msg_body~load_uint(8);
+        slice fromAccount = in_msg_body~load_bits(8 * fromAccountLen);
+        slice toAccount = in_msg_body~load_bits(8 * toAccountLen);
+    
+        tokenPairs~udict_set_builder(DICTIONARY_KEY_LEN, id, 
+            begin_cell().store_uint(fromChainID, 32)
+            .store_uint(toChainID, 32)
+            .store_uint(fromAccountLen, 32)
+            .store_uint(toAccountLen, 32)
+            .store_slice(fromAccount)
+            .store_slice(toAccount)
+        );
+        return tm_generate_data(tokenPairs);
+    }  ;; there  is no elseif 
+    if (op == OP_TOKENPAIR_Remove) { ;; Delete tokenPair operation
+        int id = in_msg_body~load_uint(32);
+        tokenPairs~udict_delete?(DICTIONARY_KEY_LEN, id);
+        return tm_generate_data(tokenPairs);
+    }
+    return refcell;
+}

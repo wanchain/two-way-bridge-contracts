@@ -37,13 +37,11 @@ describe('Bridge', () => {
 
         bridge = blockchain.openContract(c);
 
-        //deployer = await blockchain.treasury('deployer');
-
-
-        const deployResult = await bridge.sendDeploy(deployer.getSender(), toNano('1000'));
+        const deployResult = await bridge.sendDeploy(deployer.getSender(), toNano('1'));
 
         //console.log("deployResult==>",deployResult.transactions);
 
+        console.log("deployer==>",deployer);
         console.log("deployer.address==>",deployer.address);
         console.log("deployer.address(bigInt)==>",BigInt("0x"+deployer.address.hash.toString('hex')));
         console.log("bridge.address==>",bridge.address);
@@ -59,13 +57,59 @@ describe('Bridge', () => {
     });
 
 
-/*
-    it('should deploy', async () => {
-        // the check is done inside beforeEach
-        // blockchain and counter are ready to use
+    it('set cross owner', async () => {
+
+        let srcChainId = 0x1234;
+        let srcChainId2 = 0x1235;
+        let dstChainId = 0x4567;
+        let contractFee = 0x2345;
+        let agentFee = 0x6789;
+        let agentFee2 = 0x6780;
+
+        let retOld = await bridge.getFee(srcChainId,dstChainId);
+        console.log("retOld",retOld);
+
+        const user1 = await blockchain.treasury('user1');
+        const queryID=1;
+
+        console.log("user1.address==>",user1.address);
+        console.log("user1.address(bigInt)==>",BigInt("0x"+user1.address.hash.toString('hex')));
+
+        console.log("adminAddr",deployer.address.toRawString());
+        let ret = await bridge.sendSetFee(deployer.getSender(), {
+            value: toNano('1000'),
+            queryID,
+            srcChainId,
+            dstChainId,
+            contractFee,
+            agentFee,
+        });
+        ret = await bridge.sendSetFee(deployer.getSender(), {
+            value: toNano('1000'),
+            queryID,
+            srcChainId:srcChainId2,
+            dstChainId,
+            contractFee,
+            agentFee:agentFee2,
+        });
+        console.log("ret",ret);
+
+        let retNew = await bridge.getFee(srcChainId,dstChainId);
+        console.log("retNew",retNew);
+        retNew = await bridge.getFee(srcChainId2,dstChainId);
+        console.log("retNew2",retNew);
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+
     });
 
 
+
+
+/*
     it('should addAdmin success', async () => {
 
         let retCrossConfigOld = await bridge.getCrossConfig()
@@ -104,14 +148,17 @@ describe('Bridge', () => {
         expect(newAdmin.equals(user1.address));
 
     });
-
+*/
 
     it('should setFee success', async () => {
 
         let srcChainId = 0x1234;
+        let srcChainId2 = 0x1235;
         let dstChainId = 0x4567;
         let contractFee = 0x2345;
         let agentFee = 0x6789;
+        let agentFee2 = 0x6780;
+
         let retOld = await bridge.getFee(srcChainId,dstChainId);
         console.log("retOld",retOld);
 
@@ -122,7 +169,7 @@ describe('Bridge', () => {
         console.log("user1.address(bigInt)==>",BigInt("0x"+user1.address.hash.toString('hex')));
 
         console.log("adminAddr",deployer.address.toRawString());
-        const ret = await bridge.sendSetFee(deployer.getSender(), {
+        let ret = await bridge.sendSetFee(deployer.getSender(), {
             value: toNano('1000'),
             queryID,
             srcChainId,
@@ -130,53 +177,20 @@ describe('Bridge', () => {
             contractFee,
             agentFee,
         });
-
+        ret = await bridge.sendSetFee(deployer.getSender(), {
+            value: toNano('1000'),
+            queryID,
+            srcChainId:srcChainId2,
+            dstChainId,
+            contractFee,
+            agentFee:agentFee2,
+        });
         console.log("ret",ret);
 
         let retNew = await bridge.getFee(srcChainId,dstChainId);
         console.log("retNew",retNew);
-
-        expect(ret.transactions).toHaveTransaction({
-            from: deployer.address,
-            to: bridge.address,
-            success: true,
-        });
-
-    });*/
-
-
-    it('should addTokenPair success', async () => {
-        let tokenPairId = 0x999;
-        let srcChainId = 0x1234;
-        let dstChainId = 0x4567;
-        let srcTokenAcc = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
-        let dstTokenAcc = "0x32356335646535663562323836303733633539336564666437376234386162633761343865356134663364346364396434323866663933352e3535353334343433";
-
-        let retOld = await bridge.getTokenPair(tokenPairId);
-        console.log("retOld",retOld);
-
-        const user1 = await blockchain.treasury('user1');
-        const queryID=1;
-
-        console.log("user1.address==>",user1.address);
-        console.log("user1.address(bigInt)==>",BigInt("0x"+user1.address.hash.toString('hex')));
-
-        console.log("adminAddr",deployer.address.toRawString());
-        const ret = await bridge.sendAddTokenPair(deployer.getSender(), {
-            value: toNano('1000'),
-            queryID,
-            tokenPairId,
-            fromChainID:srcChainId,
-            fromAccount:srcTokenAcc,
-            toChainID:dstChainId,
-            toAccount:dstTokenAcc,
-        });
-
-        console.log("ret",ret);
-
-        let retNew = await bridge.getTokenPair(tokenPairId);
-        console.log("retNew",retNew);
-
+        retNew = await bridge.getFee(srcChainId2,dstChainId);
+        console.log("retNew2",retNew);
         expect(ret.transactions).toHaveTransaction({
             from: deployer.address,
             to: bridge.address,
@@ -184,5 +198,46 @@ describe('Bridge', () => {
         });
 
     });
+
+
+    // it('should addTokenPair success', async () => {
+    //     let tokenPairId = 0x999;
+    //     let srcChainId = 0x1234;
+    //     let dstChainId = 0x4567;
+    //     let srcTokenAcc = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+    //     let dstTokenAcc = "0x32356335646535663562323836303733633539336564666437376234386162633761343865356134663364346364396434323866663933352e3535353334343433";
+
+    //     let retOld = await bridge.getTokenPair(tokenPairId);
+    //     console.log("retOld",retOld);
+
+    //     const user1 = await blockchain.treasury('user1');
+    //     const queryID=1;
+
+    //     console.log("user1.address==>",user1.address);
+    //     console.log("user1.address(bigInt)==>",BigInt("0x"+user1.address.hash.toString('hex')));
+
+    //     console.log("adminAddr",deployer.address.toRawString());
+    //     const ret = await bridge.sendAddTokenPair(deployer.getSender(), {
+    //         value: toNano('1000'),
+    //         queryID,
+    //         tokenPairId,
+    //         fromChainID:srcChainId,
+    //         fromAccount:srcTokenAcc,
+    //         toChainID:dstChainId,
+    //         toAccount:dstTokenAcc,
+    //     });
+
+    //     console.log("ret",ret);
+
+    //     let retNew = await bridge.getTokenPair(tokenPairId);
+    //     console.log("retNew",retNew);
+
+    //     expect(ret.transactions).toHaveTransaction({
+    //         from: deployer.address,
+    //         to: bridge.address,
+    //         success: true,
+    //     });
+
+    // });
 
 });

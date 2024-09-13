@@ -1,0 +1,133 @@
+#pragma version >=0.2.0;
+
+#include "imports/std/stdlib.fc";
+#include "imports/common/opcode.fc";
+
+
+
+{-
+id: UINT 256
+--
+gpk: uint 256
+startTime: uint 64
+endTime: uint 64
+-}
+
+;; Constants
+const int SMGID_DICTIONARY_KEY_LEN = 256;
+const int MAX_CLEAN_COUNT = 100;
+
+(slice, cell, cell) oracle_load_data(cell refcell) impure {
+    var ds = refcell.begin_parse();
+    slice oracleAdmin = ds~load_msg_addr();
+    cell smgConfig = ds~load_dict();
+    cell smgTxUniqueId = ds~load_dict();
+    ds.end_parse();
+    return (oracleAdmin, smgConfig, smgTxUniqueId);
+}
+
+(cell) oracle_generate_data(slice oracleAdmin, cell smgConfig, cell smgTxUniqueId) impure {
+    return begin_cell()
+            .store_slice(oracleAdmin)
+            .store_dict(smgConfig)
+            .store_dict(smgTxUniqueId)
+            .end_cell();
+}
+
+;; Helper functions for smg struct
+(int, int, int) load_smg(slice cs) inline {
+    return (cs~load_uint(256), cs~load_uint(64), cs~load_uint(64));
+}
+
+builder store_smg(builder b, int gpk, int startTime, int endTime)  {
+    return b.store_uint(gpk, 256)
+            .store_uint(startTime, 64)
+            .store_uint(endTime, 64);
+}
+
+
+
+;; Get a smg by ID
+(int, int, int) oracle_get_smg(cell refcell, int id) method_id {
+    (_, cell smgConfig, _) = oracle_load_data(refcell);
+    var (smg_slice, found?) = smgConfig.udict_get?(SMGID_DICTIONARY_KEY_LEN, id);
+    if (found?) {
+        var (gpk, startTime, endTime) = load_smg(smg_slice);
+        return (gpk, startTime, endTime);
+    } else {
+        return (0, 0, 0); ;; Return default values if not found
+    }
+}
+;; Get the first smg in the dictionary
+(int) oracle_get_first_smg_id(cell refcell) method_id {
+    (_, cell smgConfig, _) = oracle_load_data(refcell);
+    (int id, _, int success) = smgConfig.udict_get_min?(SMGID_DICTIONARY_KEY_LEN);
+    if (success) {
+        return id;
+    } else {
+        return 0;
+    }
+}
+;; Get the first smg in the dictionary
+(int) oracle_get_next_smg_id(cell refcell, int id) method_id {
+    (_, cell smgConfig, _) = oracle_load_data(refcell);
+    (int id, _, int success) = smgConfig.udict_get_next?(SMGID_DICTIONARY_KEY_LEN, id);
+    if (success) {
+        return id;
+    } else {
+        return 0;
+    }
+}
+
+
+() clean_expired_smgs(smgs) impure {
+    int count = 0;
+    int current_id = 0;
+    
+    (int id, slice value, int success) = smgs.udict_get_min?(DICTIONARY_KEY_LEN);
+    if (success) {
+        (int gpk, int startTime, int endTime) = load_smg(value);
+        if(now() > endTime) {
+            smgs~udict_delete?(DICTIONARY_KEY_LEN, id);
+        }
+        ;;
+        count += 1;
+        current_id = id;
+    } else {
+        return ();
+    }
+    while(count < MAX_CLEAN_COUNT)  {
+        (current_id, slice value, int success) = smgs.udict_get_next?(DICTIONARY_KEY_LEN, current_id);
+        if (success) {
+            (int gpk, int startTime, int endTime) = load_smg(value);
+            if(now() > endTime) {
+                smgs~udict_delete?(DICTIONARY_KEY_LEN, id);
+            }
+            count += 1;
+        } else {
+            return ();
+        }
+    }
+    return ();    
+}
+
+;; Example of how to use in recv_internal
+(cell) oracle_recv_internal(int op, cell refcell, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    (slice oracleAdmin, cell smgConfig, cell smgTxUniqueId) = oracle_load_data(refcell);
+    if (op == OP_ORACLE_SetSMG) {
+        int id = in_msg_body~load_uint(256);
+        int gpk = in_msg_body~load_uint(256);
+        int startTime = in_msg_body~load_uint(64);
+        int endTime = in_msg_body~load_uint(64);
+        
+        clean_expired_smgs(smgConfig);
+        smgConfig~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpk, startTime, endTime));
+        return oracle_generate_data(oracleAdmin, smgConfig, smgTxUniqueId);
+    }  ;; there  is no elseif 
+    if (op == OP_ORACLE_DeleteSMG) { ;; Delete smg operation
+        int id = in_msg_body~load_uint(256);
+        smgConfig~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
+        return oracle_generate_data(oracleAdmin, smgConfig, smgTxUniqueId);
+    }
+    return refcell;
+}
