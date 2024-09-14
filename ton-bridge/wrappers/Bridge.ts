@@ -1,4 +1,8 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from '@ton/core';
+import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode} from '@ton/core';
+import * as fs from "fs";
+import { getHttpEndpoint } from "@orbs-network/ton-access";
+import { mnemonicToWalletKey } from "ton-crypto";
+import { TonClient,  WalletContractV4 } from "@ton/ton";
 
 export type BridgeConfig = {
     owner:Address,
@@ -94,20 +98,61 @@ export class Bridge implements Contract {
     static createFromAddress(address: Address) {
         return new Bridge(address);
     }
-
-    static createFromConfig(config: BridgeConfig, code: Cell, workchain = 0) {
-        const data = bridgeConfigToCell(config);
+    static async createFromDeploy() {
+        const workchain = 0; // deploy to workchain 0
+        const fileContent: string = fs.readFileSync(__dirname+"/../build/Bridge.compiled.json", 'utf8');
+        const cimpiledJson = JSON.parse(fileContent)
+        console.log("cimpiledJson:", cimpiledJson)
+        const code = Cell.fromBoc(Buffer.from(cimpiledJson.hex,'hex'))[0];
+        let initialCounterValue =  Date.now()
+        const data = beginCell()
+        .storeUint(initialCounterValue, 64)
+        .endCell();
         const init = { code, data };
-        return new Bridge(contractAddress(workchain, init), init);
+        let SC = new Bridge(contractAddress(workchain, init), init);
+
+          // open wallet v4 (notice the correct wallet version here)
+        let mnemonic = process.env.WALLET_MNEMONIC?  process.env.WALLET_MNEMONIC : ""
+        
+        const key = await mnemonicToWalletKey(mnemonic.split(" "));
+        const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
+
+
+        const endpoint = await getHttpEndpoint({ network: "testnet" });
+        const client = new TonClient({ endpoint });
+        // open wallet and read the current seqno of the wallet
+        const walletContract = client.open(wallet);
+        const walletSender = walletContract.sender(key.secretKey);
+        const seqno = await walletContract.getSeqno();
+
+
+        // send the deploy transaction
+        const bridge = client.open(SC);
+        //   await counterContract.sendDeploy(walletSender);
+
+        // wait until confirmed
+        let currentSeqno = seqno;
+        while (currentSeqno == seqno) {
+            console.log("waiting for deploy transaction to confirm...");
+            currentSeqno = await walletContract.getSeqno();
+        }
+        console.log("deploy transaction confirmed:", bridge.address);
+        return bridge.address
     }
 
-    async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
-        await provider.internal(via, {
-            value,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().endCell(),
-        });
-    }
+    // static createFromConfig(config: BridgeConfig, code: Cell, workchain = 0) {
+    //     const data = bridgeConfigToCell(config);
+    //     const init = { code, data };
+    //     return new Bridge(contractAddress(workchain, init), init);
+    // }
+
+    // async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
+    //     await provider.internal(via, {
+    //         value,
+    //         sendMode: SendMode.PAY_GAS_SEPARATELY,
+    //         body: beginCell().endCell(),
+    //     });
+    // }
 
     async sendAddAdmin(
         provider: ContractProvider,

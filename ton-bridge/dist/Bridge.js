@@ -1,7 +1,34 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bridge = exports.Opcodes = exports.bridgeConfigToCell = void 0;
 const core_1 = require("@ton/core");
+const fs = __importStar(require("fs"));
+const ton_access_1 = require("@orbs-network/ton-access");
+const ton_crypto_1 = require("ton-crypto");
+const ton_1 = require("@ton/ton");
 function bridgeConfigToCell(config) {
     return (0, core_1.beginCell)()
         .storeAddress(config.owner)
@@ -67,18 +94,52 @@ class Bridge {
     static createFromAddress(address) {
         return new Bridge(address);
     }
-    static createFromConfig(config, code, workchain = 0) {
-        const data = bridgeConfigToCell(config);
+    static async createFromDeploy() {
+        const workchain = 0; // deploy to workchain 0
+        const fileContent = fs.readFileSync(__dirname + "/../build/Bridge.compiled.json", 'utf8');
+        const cimpiledJson = JSON.parse(fileContent);
+        console.log("cimpiledJson:", cimpiledJson);
+        const code = core_1.Cell.fromBoc(Buffer.from(cimpiledJson.hex, 'hex'))[0];
+        let initialCounterValue = Date.now();
+        const data = (0, core_1.beginCell)()
+            .storeUint(initialCounterValue, 64)
+            .endCell();
         const init = { code, data };
-        return new Bridge((0, core_1.contractAddress)(workchain, init), init);
+        let SC = new Bridge((0, core_1.contractAddress)(workchain, init), init);
+        // open wallet v4 (notice the correct wallet version here)
+        let mnemonic = process.env.WALLET_MNEMONIC ? process.env.WALLET_MNEMONIC : "";
+        const key = await (0, ton_crypto_1.mnemonicToWalletKey)(mnemonic.split(" "));
+        const wallet = ton_1.WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
+        const endpoint = await (0, ton_access_1.getHttpEndpoint)({ network: "testnet" });
+        const client = new ton_1.TonClient({ endpoint });
+        // open wallet and read the current seqno of the wallet
+        const walletContract = client.open(wallet);
+        const walletSender = walletContract.sender(key.secretKey);
+        const seqno = await walletContract.getSeqno();
+        // send the deploy transaction
+        const bridge = client.open(SC);
+        //   await counterContract.sendDeploy(walletSender);
+        // wait until confirmed
+        let currentSeqno = seqno;
+        while (currentSeqno == seqno) {
+            console.log("waiting for deploy transaction to confirm...");
+            currentSeqno = await walletContract.getSeqno();
+        }
+        console.log("deploy transaction confirmed:", bridge.address);
+        return bridge.address;
     }
-    async sendDeploy(provider, via, value) {
-        await provider.internal(via, {
-            value,
-            sendMode: core_1.SendMode.PAY_GAS_SEPARATELY,
-            body: (0, core_1.beginCell)().endCell(),
-        });
-    }
+    // static createFromConfig(config: BridgeConfig, code: Cell, workchain = 0) {
+    //     const data = bridgeConfigToCell(config);
+    //     const init = { code, data };
+    //     return new Bridge(contractAddress(workchain, init), init);
+    // }
+    // async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
+    //     await provider.internal(via, {
+    //         value,
+    //         sendMode: SendMode.PAY_GAS_SEPARATELY,
+    //         body: beginCell().endCell(),
+    //     });
+    // }
     async sendAddAdmin(provider, via, opts) {
         let isValid = core_1.Address.isAddress(opts.adminAddr);
         if (!isValid) {

@@ -55,8 +55,7 @@ export declare class Bridge implements Contract {
         data: Cell;
     } | undefined);
     static createFromAddress(address: Address): Bridge;
-    static createFromConfig(config: BridgeConfig, code: Cell, workchain?: number): Bridge;
-    sendDeploy(provider: ContractProvider, via: Sender, value: bigint): Promise<void>;
+    static createFromDeploy(): Promise<Address>;
     sendAddAdmin(provider: ContractProvider, via: Sender, opts: {
         adminAddr: Address;
         value: bigint;
