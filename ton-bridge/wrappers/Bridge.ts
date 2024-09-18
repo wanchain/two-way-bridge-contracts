@@ -98,7 +98,7 @@ export class Bridge implements Contract {
     static createFromAddress(address: Address) {
         return new Bridge(address);
     }
-    static async createFromDeploy() {
+    static async deploy() {
         const workchain = 0; // deploy to workchain 0
         const fileContent: string = fs.readFileSync(__dirname+"/../build/Bridge.compiled.json", 'utf8');
         const cimpiledJson = JSON.parse(fileContent)
@@ -116,7 +116,6 @@ export class Bridge implements Contract {
         
         const key = await mnemonicToWalletKey(mnemonic.split(" "));
         const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
-
 
         const endpoint = await getHttpEndpoint({ network: "testnet" });
         const client = new TonClient({ endpoint });
@@ -137,7 +136,7 @@ export class Bridge implements Contract {
             currentSeqno = await walletContract.getSeqno();
         }
         console.log("deploy transaction confirmed:", bridge.address);
-        return bridge.address
+        return bridge
     }
 
     // static createFromConfig(config: BridgeConfig, code: Cell, workchain = 0) {

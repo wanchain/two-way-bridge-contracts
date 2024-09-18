@@ -94,7 +94,7 @@ class Bridge {
     static createFromAddress(address) {
         return new Bridge(address);
     }
-    static async createFromDeploy() {
+    static async deploy() {
         const workchain = 0; // deploy to workchain 0
         const fileContent = fs.readFileSync(__dirname + "/../build/Bridge.compiled.json", 'utf8');
         const cimpiledJson = JSON.parse(fileContent);
@@ -126,7 +126,7 @@ class Bridge {
             currentSeqno = await walletContract.getSeqno();
         }
         console.log("deploy transaction confirmed:", bridge.address);
-        return bridge.address;
+        return bridge;
     }
     // static createFromConfig(config: BridgeConfig, code: Cell, workchain = 0) {
     //     const data = bridgeConfigToCell(config);

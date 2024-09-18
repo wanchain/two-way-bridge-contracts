@@ -55,7 +55,7 @@ export declare class Bridge implements Contract {
         data: Cell;
     } | undefined);
     static createFromAddress(address: Address): Bridge;
-    static createFromDeploy(): Promise<Address>;
+    static deploy(): Promise<import("@ton/core").OpenedContract<Bridge>>;
     sendAddAdmin(provider: ContractProvider, via: Sender, opts: {
         adminAddr: Address;
         value: bigint;
