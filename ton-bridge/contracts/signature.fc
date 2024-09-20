@@ -80,7 +80,7 @@ int generate_evm_address(int _x, int _y) inline {
     }
     int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
     int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
-    if (op == op::verify) {
+    if (op == OP_SIG_Verify) {
         int s = in_msg_body~load_uint(256);
         int gpk_x = in_msg_body~load_uint(256);
         int gpk_y = in_msg_body~load_uint(256);
@@ -92,7 +92,7 @@ int generate_evm_address(int _x, int _y) inline {
         throw_unless(0xffed, verifyRet == -1); ;;todo add error_ennum
         return ();
     }
-    if (op == op::verifyEcdsa) {
+    if (op == OP_SIG_VerifyEcdsa) {
 
         int s = in_msg_body~load_uint(256);
         int gpk_x = in_msg_body~load_uint(256);

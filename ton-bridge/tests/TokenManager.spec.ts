@@ -1,92 +1,99 @@
 import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { Cell, toNano } from '@ton/core';
-import { TokenManager } from '../wrappers/TokenManager';
+import {Address, Cell, toNano,TupleItemInt} from '@ton/core';
+import { Bridge } from '../wrappers/Bridge';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 
-describe('TokenManager', () => {
+describe('Bridge', () => {
     let code: Cell;
 
     beforeAll(async () => {
-        code = await compile('TokenManager');
+        code = await compile('Bridge');
     });
 
     let blockchain: Blockchain;
     let deployer: SandboxContract<TreasuryContract>;
-    let tokenManager: SandboxContract<TokenManager>;
+    let smgFeeProxy: SandboxContract<TreasuryContract>;
+    let oracleAdmin: SandboxContract<TreasuryContract>;
+    let bridge: SandboxContract<Bridge>;
 
     beforeEach(async () => {
         blockchain = await Blockchain.create();
-
-        let c = TokenManager.createForDeploy(
-            code,0
-        )
-
-        tokenManager = blockchain.openContract(c);
-
         deployer = await blockchain.treasury('deployer');
+        smgFeeProxy = await blockchain.treasury('smgFeeProxy');
+        oracleAdmin = await blockchain.treasury('oracleAdmin');
 
+        let c = Bridge.createFromConfig(
+            {
+                owner: deployer.address,
+                halt:0,
+                init:0,
+                smgFeeProxy:smgFeeProxy.address,
+                oracleAdmin:oracleAdmin.address,
+            },
+            code
+        )
+        bridge = blockchain.openContract(c);
 
-        const deployResult = await tokenManager.sendDeploy(deployer.getSender());
+        const deployResult = await bridge.sendDeploy(deployer.getSender());
 
-        // console.log("deployResult==>",deployResult.transactions);
+        //console.log("deployResult==>",deployResult.transactions);
 
+        console.log("deployer==>",deployer);
         console.log("deployer.address==>",deployer.address);
-        console.log("tokenManager.address==>",tokenManager.address);
+        console.log("deployer.address(bigInt)==>",BigInt("0x"+deployer.address.hash.toString('hex')));
+        console.log("bridge.address==>",bridge.address);
+        console.log("bridge.address(bigInt)==>",BigInt("0x"+bridge.address.hash.toString('hex')));
+
 
         expect(deployResult.transactions).toHaveTransaction({
             from: deployer.address,
-            to: tokenManager.address,
+            to: bridge.address,
             deploy: true,
             success: true,
         });
     });
 
-    it('initial: get_first_smg_id', async () => {
-        const first_smg_id = await tokenManager.get_first_smg_id();
-        console.log("first_smg_id:",first_smg_id);
-    });
-    it('add first smg', async () => {
-        let user1 = await blockchain.treasury('user1');
-        let txRet = await tokenManager.sendUpdateSmg(user1.getSender(), {
-            id:112n, gpk:2n, startTime:3, endTime:4
-        })
-        expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
-            to: tokenManager.address,
+
+
+    it('should addTokenPair success', async () => {
+        let tokenPairId = 0x999;
+        let fromChainID = 0x1234;
+        let toChainID = 0x4567;
+        let fromAccount = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+        let toAccount = "kQDwf9dYB-a40vYJsmSGD5RBxLhaiagIGOBoP3EGfyV5O7gA";
+
+        let firstTokenPair = await bridge.getFirstTokenPairID()
+        console.log("firstTokenPair:", firstTokenPair);
+
+        const user1 = await blockchain.treasury('user1');
+        const queryID=1;
+
+        console.log("user1.address==>",user1.address);
+        console.log("user1.address(bigInt)==>",BigInt("0x"+user1.address.hash.toString('hex')));
+
+        console.log("adminAddr",deployer.address.toRawString());
+        const ret = await bridge.sendAddTokenPair(tokenPairId, fromChainID,fromAccount,toChainID,toAccount, {
+            sender: deployer.getSender(),
+            value: toNano('1'),
+            queryID,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
             success: true,
         });
-        const first_smg_id = await tokenManager.get_first_smg_id();
-        console.log("first_smg_id:",first_smg_id);
-        expect(first_smg_id).toEqual(112n);
+        // console.log("ret",ret);
+        firstTokenPair = await bridge.getFirstTokenPairID()
+        console.log("firstTokenPair:", firstTokenPair);
+        expect(firstTokenPair).toBe(tokenPairId)
 
-        const next_smg_id = await tokenManager.get_next_smg_id(first_smg_id);
-        console.log("next_smg_id:",next_smg_id);
-        expect(next_smg_id).toEqual(0n);
+        let retNew = await bridge.getTokenPair(tokenPairId);
+        console.log("retNew",retNew);
+        expect(retNew.fromChainID).toBe(fromChainID)
+        expect(retNew.toChainID).toBe(toChainID)
+        expect(retNew.fromAccount).toBe(fromAccount)
+        expect(retNew.toAccount).toBe(toAccount)
     });
-    it('add second smg', async () => {
-        let user1 = await blockchain.treasury('user1');
-        let txRet
-        txRet = await tokenManager.sendUpdateSmg(user1.getSender(), {
-            id:112n, gpk:2n, startTime:3, endTime:4
-        })
-        txRet = await tokenManager.sendUpdateSmg(user1.getSender(), {
-            id:111n, gpk:2n, startTime:3, endTime:4
-        })
-        expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
-            to: tokenManager.address,
-            success: true,
-        });
-        const first_smg_id = await tokenManager.get_first_smg_id();
-        console.log("first_smg_id:",first_smg_id);
-        expect(first_smg_id).toEqual(111n);
 
-        const next_smg_id = await tokenManager.get_next_smg_id(first_smg_id);
-        console.log("next_smg_id:",next_smg_id);
-        expect(next_smg_id).toEqual(112n);
-
-        let smg = await tokenManager.get_smg(next_smg_id)
-        console.log("smg:", smg)
-    });
 });

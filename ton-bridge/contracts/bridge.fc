@@ -84,7 +84,7 @@
     }
     if (op & 0xFF000000 == OP_ORACLE) {
         var _oracle = oracle_recv_internal(op, oracle, msg_value, in_msg_full, in_msg_body);
-        save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
+        save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
         return ();
     }    
     if (op & 0xFF000000 == OP_TOKENPAIR) {
@@ -106,13 +106,12 @@
 }
 
 
-
 ;; getter for oracle
-(int, int, int) get_oracle_smgConfig(int id) method_id {
+(int, int, int) get_smgConfig(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_smg(oracle, id);
 }
-(int) get_oracle_first_smg_id() method_id {
+(int) get_first_smg_id() method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_first_smg_id(oracle);    
 }
@@ -122,15 +121,15 @@
 }
 
 ;; getter for tokenManager
-(int, slice, int, slice) get_tm_token_pair(int id) method_id {
+(int, slice, int, slice) get_token_pair(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return tm_get_token_pair(token_manager, id);
 }
-(int) get_tm_first_tokenpair_id() method_id {
+(int) get_first_tokenpair_id() method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return tm_get_first_tokenpair_id(token_manager);    
 }
-(int) get_tm_next_tokenpair_id(int id) method_id {
+(int) get_next_tokenpair_id(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return tm_get_next_tokenpair_id(token_manager, id);
 }

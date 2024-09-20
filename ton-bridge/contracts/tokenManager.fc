@@ -39,8 +39,8 @@ const int DICTIONARY_KEY_LEN = 32;
     var fromChainID = cs~load_uint(32);
     var toChainID = cs~load_uint(32);
     var fromAccountLen = cs~load_uint(8);
-    var toAccountLen = cs~load_uint(8);
     var fromAccount = cs~load_bits(8 * fromAccountLen);
+    var toAccountLen = cs~load_uint(8);
     var toAccount = cs~load_bits(8 * toAccountLen);
     return (fromChainID, fromAccount, toChainID, toAccount);
 }
@@ -88,16 +88,16 @@ const int DICTIONARY_KEY_LEN = 32;
         int fromChainID = in_msg_body~load_uint(32);
         int toChainID = in_msg_body~load_uint(32);
         int fromAccountLen = in_msg_body~load_uint(8);
-        int toAccountLen = in_msg_body~load_uint(8);
         slice fromAccount = in_msg_body~load_bits(8 * fromAccountLen);
+        int toAccountLen = in_msg_body~load_uint(8);
         slice toAccount = in_msg_body~load_bits(8 * toAccountLen);
     
         tokenPairs~udict_set_builder(DICTIONARY_KEY_LEN, id, 
             begin_cell().store_uint(fromChainID, 32)
             .store_uint(toChainID, 32)
-            .store_uint(fromAccountLen, 32)
-            .store_uint(toAccountLen, 32)
+            .store_uint(fromAccountLen, 8)
             .store_slice(fromAccount)
+            .store_uint(toAccountLen, 8)
             .store_slice(toAccount)
         );
         return tm_generate_data(tokenPairs);
