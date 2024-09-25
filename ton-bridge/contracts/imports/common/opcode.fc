@@ -45,3 +45,6 @@ const OP_GP_Initialize                = 0x70000005;
 const OP_EXTEND         = 0x80000000;
 const OP_EXTEND_AddCrossAdmin = 0x80000001;
 const OP_EXTEND_DelCrossAdmin = 0x80000002;
+const OP_EXTEND_UpdateAddInt  = 0x80000007;
+
+const OP_UPGRADE = 0x90000000;

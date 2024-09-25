@@ -73,6 +73,7 @@
         }
         if(op == OP_COMMON_TransferOwner) {
             slice _cross_owner = in_msg_body~load_msg_addr();
+            ~strdump(_cross_owner);
             save_data(_cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
             return ();
         }        
@@ -95,6 +96,11 @@
     if (op & 0xFF000000 == OP_EXTEND) {
         var _extend = ext_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
         save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
+        return ();
+    } 
+    if (op == OP_UPGRADE) {
+        var new_code = in_msg_body~load_ref();
+        set_code(new_code);
         return ();
     }
     throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
@@ -132,4 +138,24 @@
 (int) get_next_tokenpair_id(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return tm_get_next_tokenpair_id(token_manager, id);
+}
+
+;; getter for extend
+(slice) get_first_crossAdmin() method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return ext_get_first_crossAdmin(extend);
+}
+(slice) get_next_crossAdmin(slice adminAddr) method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return ext_get_next_crossAdmin(extend, adminAddr);
+}
+
+;; for test. 
+(int) get_updated_int() method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return ext_get_updated_int(extend);
+}
+
+(slice) version() method_id {
+    return "0.1";
 }

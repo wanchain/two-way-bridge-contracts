@@ -55,7 +55,7 @@ describe('Bridge', () => {
     });
 
 
-    it.only('set cross owner', async () => {
+    it('set cross owner', async () => {
         let retCrossConfigOld = await bridge.getCrossConfig()
         console.log("retCrossConfigOld",retCrossConfigOld);
 

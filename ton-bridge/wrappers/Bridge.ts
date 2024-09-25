@@ -1,7 +1,7 @@
-import { Address, beginCell, BitString, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode} from '@ton/core';
+import { Address, beginCell, BitString, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode, Slice} from '@ton/core';
 import * as fs from "fs";
 import { compile } from '@ton/blueprint';
-
+import * as opcodes from "./opcodes"
 
 export type BridgeConfig = {
     owner:Address,
@@ -41,56 +41,12 @@ export function bridgeConfigToCell(config: BridgeConfig): Cell {
             .storeDict() // mapTokenPairInfo
             .endCell()) // *****about tm end*****
 
-        .storeRef(beginCell().endCell()) // extended
+        .storeRef(beginCell()
+            .storeDict() // cross_admin
+            .endCell()) // extended
         .endCell();
 }
-///////////// The opcode copy from fc file /////////////////////////////////
-const OP_SIG                          = 0x10000000;
-const OP_SIG_Verify                    = 0x10000001;
-const OP_SIG_VerifyEcdsa               = 0x10000002;
 
-const OP_COMMON                           = 0x20000000;  
-const OP_COMMON_TransferOwner             = 0x20000003;
-const OP_COMMON_SetHalt                   = 0x20000004;
-const OP_COMMON_Initialize                = 0x20000005;
-
-const OP_FEE                            = 0x30000000;
-const OP_FEE_SetChainFee                        = 0x30000001;
-const OP_FEE_SetChainFees                       = 0x30000002;
-const OP_FEE_SetSmgFeeProxy             = 0x30000003;
-const OP_FEE_SetRobotAdmin             = 0x30000003;
-
-const OP_FEE_SetTokenPairFee               = 0x30000004;
-const OP_FEE_SetTokenPairFees              = 0x30000005;
-
-const OP_CROSS                  = 0x40000000;
-const OP_CROSS_UserLock                  = 0x40000001;
-const OP_CROSS_SmgMint                   = 0x40000002;
-const OP_CROSS_UserBurn                  = 0x40000003;
-const OP_CROSS_UserRelease               = 0x40000004;
-
-
-const OP_TOKENPAIR              = 0x50000000;
-const OP_TOKENPAIR_Add              = 0x50000001;
-const OP_TOKENPAIR_Remove           = 0x50000002;
-const OP_TOKENPAIR_Upsert           = 0x50000003;
-
-const OP_ORACLE         = 0x60000000;
-const OP_ORACLE_TransferOracleAdmin         = 0x60000001;
-const OP_ORACLE_SetSMG                      = 0x60000002;
-const OP_ORACLE_DeleteSMG                   = 0x60000002;
-const OP_ORACLE_AcquireReadySmgInfo         = 0x60000004;
-
-const OP_GP_TransferFoundation        = 0x70000001;
-const OP_GP_AcquireReadySmgInfo       = 0x70000002;
-const OP_GP_Proposal                  = 0x70000003;
-const OP_GP_ApproveAndExecute         = 0x70000004;
-const OP_GP_Initialize                = 0x70000005;
-
-const OP_EXTEND         = 0x80000000;
-const OP_EXTEND_AddCrossAdmin = 0x80000001;
-const OP_EXTEND_DelCrossAdmin = 0x80000002;
-/////////////////////////////////////////////////////////////
 export class Bridge implements Contract {
     constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
 
@@ -119,29 +75,6 @@ export class Bridge implements Contract {
         });
     }
 
-    // async sendAddAdmin(
-    //     provider: ContractProvider,
-    //     via: Sender,
-    //     opts: {
-    //         adminAddr:Address,
-    //         value: bigint,
-    //         queryID?: number,
-    //     }
-    // ) {
-    //     let isValid = Address.isAddress(opts.adminAddr)
-    //     if (!isValid){
-    //         await Promise.reject("in valid address")
-    //     }
-    //     await provider.internal(via, {
-    //         value: opts.value,
-    //         sendMode: SendMode.PAY_GAS_SEPARATELY,
-    //         body: beginCell()
-    //             .storeUint(Opcodes.addAdmin, 32)
-    //             .storeUint(opts.queryID ?? 0, 64)
-    //             .storeAddress(opts.adminAddr)
-    //             .endCell(),
-    //     });
-    // }
 
     // async sendSetFee(
     //     provider: ContractProvider,
@@ -182,7 +115,7 @@ export class Bridge implements Contract {
         await provider.internal(opts.sender, {
             value: opts.value,
             body: beginCell()
-                .storeUint(OP_TOKENPAIR_Upsert, 32)
+                .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeUint(tokenPairId, 32)
                 .storeUint(fromChainID, 32)
@@ -210,7 +143,7 @@ export class Bridge implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                .storeUint(OP_COMMON_TransferOwner, 32)
+                .storeUint(opcodes.OP_COMMON_TransferOwner, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeAddress(newOwner)
                 .endCell(),
@@ -283,7 +216,7 @@ export class Bridge implements Contract {
         await provider.internal(opts.sender, {
             value: opts.value,
             body: beginCell()
-            .storeUint(OP_ORACLE_SetSMG, 32) // op (op #1 = increment)
+            .storeUint(opcodes.OP_ORACLE_SetSMG, 32) // op (op #1 = increment)
             .storeUint(0, 64) // query id
             .storeUint(id, 256)
             .storeUint(gpk, 256)
@@ -292,4 +225,79 @@ export class Bridge implements Contract {
             .endCell()
         });
     }    
+
+    async sendAddAdmin(
+        provider: ContractProvider, admin:string,
+        opts: {
+            sender: Sender,
+            value: bigint,
+            queryID?: number,
+        }
+    ) {
+        // let isValid = Address.isFriendly(admin)
+        // if (!isValid){
+        //     await Promise.reject("not valid address")
+        // }
+        await provider.internal(opts.sender, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(opcodes.OP_EXTEND_AddCrossAdmin, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeBuffer(Buffer.from(admin,'hex'))
+                .endCell(),
+        });
+    }
+    async getFirstAdmin(provider: ContractProvider,){
+        const { stack } = await provider.get("get_first_crossAdmin", []);
+        console.log("stack:", stack)
+        return stack.readBuffer().toString('hex');
+    }
+    async getNextAdmin(provider: ContractProvider,adminAddr:Address){
+        const { stack } = await provider.get("get_next_crossAdmin", [{ type: 'slice', cell: beginCell().storeAddress(adminAddr).endCell()}]);
+        return stack.readBuffer().toString('hex');
+    }
+
+
+
+    // for upgrade sc test
+    async getUpdatedInt(provider: ContractProvider) {
+        const result = await provider.get('get_updated_int', []);
+        return result.stack.readNumber()        
+    }
+    async sendUpdateInt(provider: ContractProvider,
+        opts: {
+            sender: Sender,
+            value: bigint,
+            queryID?: number,
+        }
+    ) {
+        await provider.internal(opts.sender, {
+            value: opts.value,
+            body: beginCell()
+            .storeUint(opcodes.OP_EXTEND_UpdateAddInt, 32) // op (op #1 = increment)
+            .storeUint(0, 64) // query id
+            .endCell()
+        });
+    }
+    async sendUpgradeSC(provider: ContractProvider, code: Cell,
+        opts: {
+            sender: Sender,
+            value: bigint,
+            queryID?: number,
+        }
+    ) {
+        await provider.internal(opts.sender, {
+            value: opts.value,
+            body: beginCell()
+            .storeUint(opcodes.OP_UPGRADE, 32) // op (op #1 = increment)
+            .storeUint(0, 64) // query id
+            .storeRef(code)
+            .endCell()
+        });
+    }   
+    async getVersion(provider: ContractProvider) {
+        const result = await provider.get('version', []);
+        return result.stack.readString()     
+    } 
 }
