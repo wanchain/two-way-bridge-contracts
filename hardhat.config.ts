@@ -216,12 +216,39 @@ const config = {
       url: "https://polygon-amoy.blockpi.network/v1/rpc/public",
       accounts: [process.env.PK],
     },
+    "5ireTestnet": {
+      url: "https://rpc.testnet.5ire.network",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741853,
+    },
+    "5ireMainnet": {
+      url: "https://rpc.5ire.network",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741853,
+    },
+    dioneTestnet:{
+      url: "https://testnode.dioneprotocol.com/ext/bc/D/rpc",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741848,
+    },
+    opSepolia: {
+      url: 'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+      accounts: [process.env.PK],
+    },
+    amoy: {
+      url: "https://rpc.ankr.com/polygon_amoy",
+      accounts: [process.env.PK],
+    },
+    sepolia: {
+      url: "https://rpc.ankr.com/eth_sepolia",
+      accounts: [process.env.PK],
+    },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
       accounts: [process.env.PK],
     },
     bscTestnet: {
-      url: "https://bsc-testnet.publicnode.com",
+      url: "https://bsc-testnet-rpc.publicnode.com",
       accounts: [process.env.PK],
     },
     moonbaseAlfa: {
@@ -468,6 +495,46 @@ const config = {
         urls: {
           apiURL: "https://api.basescan.org/api",
           browserURL: "https://basescan.org",
+        },
+      },
+      {
+        network: "arbSepolia",
+        chainId: 421614,
+        urls: {
+          apiURL: "https://api-sepolia.arbiscan.io/api",
+          browserURL: "https://sepolia.arbiscan.io",
+        },
+      },
+      {
+        network: "sepolia",
+        chainId: 11155111,
+        urls: {
+          apiURL: "https://api-sepolia.etherscan.io/api",
+          browserURL: "https://sepolia.etherscan.io",
+        },
+      },
+      {
+        network: "opMainnet",
+        chainId: 10,
+        urls: {
+          apiURL: "https://api-optimistic.etherscan.io/api",
+          browserURL: "https://optimistic.etherscan.io",
+        },
+      },
+      {
+        network: "opSepolia",
+        chainId: 11155420,
+        urls: {
+          apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
+          browserURL: "https://sepolia-optimism.etherscan.io",
+        },
+      },
+      {
+        network: "amoy",
+        chainId: 80002,
+        urls: {
+          apiURL: "https://api-amoy.polygonscan.com/api",
+          browserURL: "https://amoy.polygonscan.com",
         },
       },
       {
