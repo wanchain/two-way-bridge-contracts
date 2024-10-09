@@ -60,6 +60,21 @@ const config = {
     },
   },
   networks: {
+    "5ireTestnet": {
+      url: "https://rpc.testnet.5ire.network",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741853,
+    },
+    "5ireMainnet": {
+      url: "https://rpc.5ire.network",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741853,
+    },
+    dioneTestnet:{
+      url: "https://testnode.dioneprotocol.com/ext/bc/D/rpc",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741848,
+    },
     arbSepolia: {
       url: 'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
       accounts: [process.env.PK],
@@ -247,7 +262,7 @@ const config = {
     },  
   },
   etherscan: {
-    apiKey: '',
+    apiKey: 'X3KC4YWKNDM8N3MJ52SFJC21GT9T5DWRK6',
     customChains: [
       {
         network: "astar",
