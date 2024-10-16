@@ -17,7 +17,7 @@ const op::userLock                  = 0x12;
 const op::smgMint                   = 0x13;
 
 const op::userBurn                  = 0x14;
-const op::userRelease               = 0x15;
+const op::smgRelease                = 0x15;
 
 const op::setSmgFeeProxy            = 0x16;
 

@@ -1,4 +1,17 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from '@ton/core';
+import {
+    Address,
+    beginCell,
+    Cell,
+    Contract,
+    contractAddress,
+    ContractProvider,
+    Sender,
+    SendMode,
+    toNano
+} from '@ton/core';
+import {JettonMinter} from "./JettonMinter";
+import {JettonWallet} from "./JettonWallet";
+import {HexStringToBuffer,BufferrToHexString} from "../tests/utils";
 
 export type BridgeConfig = {
     owner:Address,
@@ -62,7 +75,7 @@ export const Opcodes = {
     smgMint: 0x13,
 
     userBurn: 0x14,
-    userRelease: 0x15,
+    smgRelease: 0x15,
 
     setSmgFeeProxy: 0x16,
 
@@ -87,6 +100,10 @@ export const Opcodes = {
     approveAndExecute: 0x44,
     Initialize: 0x45,
 };
+
+export const BIP44_CHAINID = 0x4567; //todo change later
+export const ZERO_ACCOUNT = "0x0000000000000000000000000000000000000000";
+
 
 export class Bridge implements Contract {
     constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
@@ -199,6 +216,149 @@ export class Bridge implements Contract {
                 .storeUint(toBuffer.length, 8)
                 .storeBuffer(toBuffer)
                 .endCell(),
+        });
+    }
+
+    async sendUserLock(
+        provider: ContractProvider,
+        via: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            smgID:string,
+            tokenPairID:number,
+            crossValue:bigint,
+            dstUserAccount:Address,
+        }
+    ) {
+
+        // 1. get tokenpair from bridge
+        let tokePairInfo = await this.getTokenPair(provider,opts.tokenPairID);
+        console.log("tokePairInfo",tokePairInfo);
+
+        // 2. check src account and dst account
+        let tokenAccount = "";
+        if (tokePairInfo.fromChainID == BIP44_CHAINID){
+            tokenAccount = tokePairInfo.fromAccount;
+        }else{
+            if(tokePairInfo.toChainID == BIP44_CHAINID){
+                tokenAccount = tokePairInfo.toAccount;
+            }else{
+                throw "TokenPair not support"
+            }
+        }
+
+        console.log("tokenAccount",tokenAccount);
+        // 3.1 ton
+        if(tokenAccount === ZERO_ACCOUNT.substring(2) ){
+            //todo handle ton
+            console.log("entering ton coin........");
+            return; //todo
+        }
+
+        /*if(!Address.isAddress("0x"+tokenAccount)){
+            throw "invalid tokenAccount";
+        }*/
+
+        let addrFriedly = Address.parseFriendly(HexStringToBuffer(tokenAccount));
+        let c = JettonMinter.createFromAddress(addrFriedly.address);
+        let jp =  await provider.open(c);
+        // 3.2 original Token
+        let admin = await jp.getAdminAddress();
+        console.log("JettonMinter address , admin address, bridge address", jp.address,admin, this.address)
+        if (admin != this.address){
+            console.log("entering original Token........");
+            let JwBridgeAddr = await jp.getWalletAddress(this.address);
+            console.log("JwBridge address, bridge address",JwBridgeAddr,this.address);
+
+            console.log("via....",via);
+
+            if(!Address.isAddress(via.address)){
+                throw "invalid via.address"
+            }
+            let JwUserAddr = await jp.getWalletAddress(via.address);
+            console.log("JwUserAddr address, via.address",JwUserAddr,via.address);
+
+            let JwUser = await JettonWallet.createFromAddress(JwUserAddr);
+            let JwBridge = await JettonWallet.createFromAddress(JwBridgeAddr);
+
+            let jwu =  await provider.open(JwUser);
+            let jwb =  await provider.open(JwBridge);
+
+            console.log("before lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
+                await jwu.getJettonBalance(),
+                await jwb.getJettonBalance())
+
+            let forwardAmount = toNano('0.05');
+            const sendResult = await jwu.sendTransfer(via,
+                toNano('0.1'), //tons
+                opts.crossValue, this.address,
+                this.address, beginCell().endCell(), forwardAmount, beginCell().endCell());
+
+            console.log("After lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
+                await jwu.getJettonBalance(),
+                await jwb.getJettonBalance());
+
+            return; //todo
+        }
+
+        // 3.3 wrapped Token
+        if (admin == this.address){
+            console.log("entering wrapped Token........");
+            return; //todo
+        }
+
+        // 3.
+        /*await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(Opcodes.userLock, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(BigInt(opts.smgID), 256)
+                .storeUint(opts.tokenPairID, 32)
+                .storeUint(opts.crossValue, 256)
+                .storeAddress(opts.dstUserAccount)
+                .endCell()
+        });*/
+    }
+
+    async sendSmgRelease(
+        provider: ContractProvider,
+        via: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            uniqueID:bigint,
+            smgID:string,
+            tokenPairID:number,
+            releaseValue:bigint,
+            fee:bigint,
+            tokenAccount:Address,
+            userAccount:Address,
+            e:bigint,
+            p:bigint,
+            s:bigint,
+        }
+    ) {
+
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(Opcodes.smgRelease, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(BigInt(opts.uniqueID), 256)
+                .storeUint(BigInt(opts.smgID), 256)
+                .storeUint(opts.tokenPairID, 32)
+                .storeUint(opts.releaseValue, 256)
+                .storeUint(opts.fee, 256)
+                .storeAddress(opts.tokenAccount)
+                .storeAddress(opts.userAccount)
+                .storeUint(opts.e, 256)
+                .storeUint(opts.p, 256)
+                .storeUint(opts.s, 256)
+                .endCell()
         });
     }
 

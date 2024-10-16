@@ -11,7 +11,7 @@
     ~dump(11);
     var ds = get_data().begin_parse();
     ~dump(12);
-    (slice cross_owner, slice cross_admin) = (ds~load_msg_addr(), ds~load_msg_addr());
+    (slice cross_owner, slice cross_admin) = (ds~load_msg_addr(), ds~load_msg_addr());  ;;todo  change cross_admin to map type.
     ~dump(13);
     (int halt, int init) = (ds~load_uint(2), ds~load_uint(2));
     (cell ca_fee, cell oracle, cell token_manager, cell extend) = (ds~load_ref(), ds~load_ref(), ds~load_ref(), ds~load_ref());
@@ -33,6 +33,72 @@
             .store_ref(extend)
             .end_cell()
     );
+}
+
+() smgRelease_ton(int _uniqId, int _smgId, int _token_pair_id, int _release_value, int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s) impure {
+
+    return ();
+}
+
+() smgRelease_org_jetton(int _uniqId, int _smgId, int _token_pair_id, int _release_value, int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s) impure {
+    return ();
+}
+
+() smgRelease_wrapped_jetton(int _uniqId, int _smgId, int _token_pair_id, int _release_value, int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s) impure {
+    return ();
+}
+
+() userLock_ton(int _smgId, int _token_pair_id, int _lock_value, int _fee, slice _token_account, slice _user_account) impure {
+    return ();
+}
+
+() userLock_org_jetton(int _smgId, int _token_pair_id, int _lock_value, int _fee, slice _token_account, slice _user_account) impure {
+    return ();
+}
+
+() userLock_wrapped_jetton(int _smgId, int _token_pair_id, int _lock_value, int _fee, slice _token_account, slice _user_account) impure {
+    return ();
+}
+
+
+(int, int, slice, slice) get_token_pair(int _token_paird_id) method_id {
+    ~strdump("get_token_pair");
+    (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    ~strdump("get_token_pair_1");
+    slice tm_slice = token_manager.begin_parse();
+    ~strdump("get_token_pair_11");
+    (cell tm_dic, cell wt_dic) = (tm_slice~load_dict(), tm_slice~load_dict());
+    ~strdump("get_token_pair_12");
+    slice from_account = begin_cell().end_cell().begin_parse();
+    slice to_account = begin_cell().end_cell().begin_parse();
+    ~strdump("get_token_pair_13");
+    (cell dic_new, int ret) = udict_get_ref?(tm_dic, 32, _token_paird_id);
+    if (cell_null?(dic_new)) {
+        ~strdump("get_token_pair_14");
+        return (0, 0, from_account, to_account);
+    }
+    slice cs = dic_new.begin_parse();
+    ~strdump("get_token_pair_15");
+    if (ret) {
+        ~strdump("get_token_pair_16");
+        ~dump(slice_refs(cs));
+        ~dump(slice_bits(cs));
+        (int _src_chain_id, int _dst_chain_id, int _from_account_len) =
+        (cs~load_uint(32), cs~load_uint(32), cs~load_uint(8));
+        ~strdump("_from_account_len");
+        ~dump(_from_account_len);
+
+
+        slice _from_account = cs~load_bits(8 * _from_account_len);
+        int _to_account_len = cs~load_uint(8);
+        slice _to_account = cs~load_bits(8 * _to_account_len);
+
+        ~strdump("_to_account_len");
+        ~dump(_to_account_len);
+        return (_src_chain_id, _dst_chain_id, _from_account, _to_account);
+    }
+    ~strdump("get_token_pair_17");
+    return (0, 0, from_account, to_account);
 }
 
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
@@ -112,6 +178,22 @@
         return ();
     }
 
+    if (op == op::setSmgFeeProxy) {
+
+        (slice _smgFeeProxyAddr) = in_msg_body~load_msg_addr();
+
+        slice ca_fee_slice = ca_fee.begin_parse();
+        (slice oldSmgFeeProxyAddr, cell ca_dic) = (ca_fee_slice~load_msg_addr(), ca_fee_slice~load_dict());
+
+        cell ca_fee_new = begin_cell()
+            .store_slice(_smgFeeProxyAddr)
+            .store_dict(ca_dic)
+            .end_cell();
+        ;;todo check ret
+        save_data(cross_owner, cross_admin, halt, init, ca_fee_new, oracle, token_manager, token_manager);
+        return ();
+    }
+
     if (op == op::addTokenPair) {
         ;;todo how to load string? load_slice?
         (int _token_pair_id, int _src_chain_id, int _dst_chain_id, int _from_account_len) =
@@ -170,6 +252,98 @@
         return ();
     }
 
+    if (op == op::userLock) {
+        slice ZERO_ACCOUNT = begin_cell().store_int(0, 160).end_cell().begin_parse();
+        ~strdump("1111111111111111111111111111111111111111111111");
+        throw(0x01); ;; todo should delete
+        return();   ;; todo should delete
+
+        ~strdump("2222222222222222222222222222222222222222222222");
+
+        (int _smgId, int _token_pair_id, int _cross_value, slice _user_account) =
+        (in_msg_body~load_uint(256), in_msg_body~load_uint(32), in_msg_body~load_uint(256), in_msg_body~load_msg_addr());
+
+        ~strdump("userLock  _smgId");
+        ~dump(_smgId);
+        ~dump(_token_pair_id);
+        ~dump(_cross_value);
+        ~dump(_user_account);
+
+        (int _src_chainId, int _dst_chainId, slice _from_account, slice _dst_account) = get_token_pair(_token_pair_id);
+
+        slice _token_account = begin_cell().end_cell().begin_parse();
+        if (_src_chainId == BIP44_CHAINID) {
+            _token_account = _from_account;
+        } else {
+            if (_dst_chainId == BIP44_CHAINID) {
+                _token_account = _dst_account;
+            } else {
+                ;;todo throw error
+            }
+        }
+
+        int _fee = 0;
+        ;; todo get _fee from the input message?
+
+        if (equal_slices(_token_account, ZERO_ACCOUNT)) {
+            ;; coin
+            ;; user lock has not fee parameter, but user_burn has this parameter
+            userLock_ton(_smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+        } else {
+            ;; myaddress == jetton_admin_addr
+            ;; todo get jetton_admin_addr from jetton_admin
+            if (-1) {
+                userLock_org_jetton(_smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+            } else {
+                userLock_wrapped_jetton(_smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+            }
+        }
+
+        ;; todo should delete begin
+        userLock_ton(_smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+        userLock_org_jetton(_smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+        userLock_wrapped_jetton(_smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+        ;; todo should delete end
+        return ();
+    }
+
+    if (op == op::smgRelease) {
+        (int _uniqId,
+            int _smgId,
+            int _token_pair_id,
+            int _release_value,
+            int _fee,
+            slice _token_account,
+            slice _user_account,
+            int _r,
+            int _p,
+            int _s) =
+        (in_msg_body~load_uint(256),
+            in_msg_body~load_uint(256),
+            in_msg_body~load_uint(32),
+            in_msg_body~load_uint(256),
+            in_msg_body~load_uint(256),
+            in_msg_body~load_msg_addr(),
+            in_msg_body~load_msg_addr(),
+            in_msg_body~load_uint(256),
+            in_msg_body~load_uint(256),
+            in_msg_body~load_uint(256));
+        ~strdump("smgRelease  ...");
+        ~dump(_uniqId);
+        ~dump(_smgId);
+        ~dump(_token_pair_id);
+        ~dump(_release_value);
+        ~dump(_fee);
+        ~dump(_token_account);
+        ~dump(_user_account);
+        ~dump(_r);
+        ~dump(_p);
+        ~dump(_s);
+        return ();
+    }
+
+
+
     throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
 }
 
@@ -197,42 +371,3 @@
     return (0, 0);
 }
 
-(int, int, slice, slice) get_token_pair(int _token_paird_id) method_id {
-    ~strdump("get_token_pair");
-    (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    ~strdump("get_token_pair_1");
-    slice tm_slice = token_manager.begin_parse();
-    ~strdump("get_token_pair_11");
-    (cell tm_dic, cell wt_dic) = (tm_slice~load_dict(), tm_slice~load_dict());
-    ~strdump("get_token_pair_12");
-    slice from_account = begin_cell().end_cell().begin_parse();
-    slice to_account = begin_cell().end_cell().begin_parse();
-    ~strdump("get_token_pair_13");
-    (cell dic_new, int ret) = udict_get_ref?(tm_dic, 32, _token_paird_id);
-    if (cell_null?(dic_new)) {
-        ~strdump("get_token_pair_14");
-        return (0, 0, from_account, to_account);
-    }
-    slice cs = dic_new.begin_parse();
-    ~strdump("get_token_pair_15");
-    if (ret) {
-        ~strdump("get_token_pair_16");
-        ~dump(slice_refs(cs));
-        ~dump(slice_bits(cs));
-        (int _src_chain_id, int _dst_chain_id, int _from_account_len) =
-        (cs~load_uint(32), cs~load_uint(32), cs~load_uint(8));
-        ~strdump("_from_account_len");
-        ~dump(_from_account_len);
-
-
-        slice _from_account = cs~load_bits(8 * _from_account_len);
-        int _to_account_len = cs~load_uint(8);
-        slice _to_account = cs~load_bits(8 * _to_account_len);
-
-        ~strdump("_to_account_len");
-        ~dump(_to_account_len);
-        return (_src_chain_id, _dst_chain_id, _from_account, _to_account);
-    }
-    ~strdump("get_token_pair_17");
-    return (0, 0, from_account, to_account);
-}

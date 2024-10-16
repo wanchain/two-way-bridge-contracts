@@ -172,7 +172,7 @@ contract CrossDelegateV4 is CrossStorageV4 {
         smgID: smgID,
         tokenPairID: tokenPairID,
         value: value,
-        fee: fee,
+        fee: fee,a
         destTokenAccount: tokenAccount,
         destUserAccount: userAccount,
         smgFeeProxy: (storageData.smgFeeProxy == address(0)) ? owner : storageData.smgFeeProxy // fix: Stack too deep
