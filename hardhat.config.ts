@@ -231,6 +231,11 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 1073741848,
     },
+    dioneMainnet:{
+      url: "https://node.dioneprotocol.com/ext/bc/D/rpc",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741848,
+    },
     opSepolia: {
       url: 'https://optimism-sepolia.blockpi.network/v1/rpc/public',
       accounts: [process.env.PK],
