@@ -267,9 +267,9 @@
         save_data(cross_owner, cross_admin, halt, init, ca_fee, oracle, token_manager_new, extend);
         return ();
     }
+    slice ZERO_ACCOUNT = begin_cell().store_int(0, 160).end_cell().begin_parse();
 
     if (op == op::userLock) {
-        slice ZERO_ACCOUNT = begin_cell().store_int(0, 160).end_cell().begin_parse();
         ~strdump("1111111111111111111111111111111111111111111111");
         throw(0x01); ;; todo should delete
         return ();   ;; todo should delete
@@ -379,7 +379,34 @@
             2. wrapped token => smgMint
             3. Jetton token => send transfer message to JW_BRIDGE contract.
         -}
-        smgRelease_ton(queryId, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s);
+
+        (int _src_chainId, int _dst_chainId, slice _from_account, slice _dst_account) = get_token_pair(_token_pair_id);
+
+        slice _token_account = begin_cell().end_cell().begin_parse();
+        if (_src_chainId == BIP44_CHAINID) {
+            _token_account = _from_account;
+        } else {
+            if (_dst_chainId == BIP44_CHAINID) {
+                _token_account = _dst_account;
+            } else {
+                ;;todo throw error
+            }
+        }
+
+        if (equal_slices(_token_account, ZERO_ACCOUNT)) {
+            ;; coin
+            ;; user lock has not fee parameter, but user_burn has this parameter
+            smgRelease_ton(queryId, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s);
+        } else {
+            ;; myaddress == jetton_admin_addr
+            ;; todo get jetton_admin_addr from jetton_admin
+            if (-1) {
+                smgRelease_wrapped_jetton(queryId, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s);
+            } else {
+                smgRelease_org_jetton(queryId, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s);
+            }
+        }
+        ;;smgRelease_ton(queryId, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s);
         return ();
     }
 
