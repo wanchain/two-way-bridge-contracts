@@ -1,6 +1,6 @@
 import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell} from '@ton/core';
-import { Bridge } from '../wrappers/Bridge';
+import {Bridge, ZERO_ACCOUNT} from '../wrappers/Bridge';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import {JettonMinter} from "../wrappers/JettonMinter";
@@ -55,6 +55,7 @@ describe('Bridge', () => {
 
         bridge = blockchain.openContract(c);
         const deployResult = await bridge.sendDeploy(deployer.getSender(), toNano('1000'));
+
         console.log("deployer.address==>",deployer.address);
         console.log("deployer.address(bigInt)==>",BigInt("0x"+deployer.address.hash.toString('hex')));
         console.log("bridge.address==>",bridge.address);
@@ -483,6 +484,36 @@ describe('Bridge', () => {
 
     });
 
+    it('should Mint wrapped token success', async () => {
+
+        // mint  100 usdt to alice
+        let initialTotalSupply = await jettonMinter_dog.getTotalSupply();
+        const aliceJettonWallet = await userWallet_dog(alice.address);
+        const bobJettonWallet = await userWallet_dog(bob.address);
+
+        let initialJettonBalance = toNano('100');
+
+        //todo mint should call from bridge
+        // unauthorized_mint_request
+        const mintResult = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), alice.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+        console.log("mintResult.....",mintResult);
+
+        expect(await aliceJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+        expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+        initialTotalSupply += initialJettonBalance;
+        // mint  100 usdt to bob
+        //todo mint should call from bridge
+        // unauthorized_mint_request
+        const mintResult2 = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), bob.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+        console.log("mintResult2.....",mintResult2);
+
+
+        expect(await bobJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+        expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+        initialTotalSupply += initialJettonBalance;
+
+    });
+
     it('[userLock original_token] should userLock success', async () => {
         let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
         let tokenPairID = 0x1;
@@ -503,72 +534,27 @@ describe('Bridge', () => {
         });
     });
 
- /*   it('[userLock wrapped_token ] should userLock success', async () => {
+    /*it('[userLock wrapped_token ] should userLock success', async () => {
         let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
         let tokenPairID = 0x2;
         let crossValue = BigInt(toNano(1));
         let value = BigInt(toNano (2));
         console.log("smgID(bigInt)==>",BigInt(smgID));
-
-        const user1 = await blockchain.treasury('user1');
-        const user2 = await blockchain.treasury('user2');
         const queryID=1;
 
         console.log("before user lock");
 
-        let beforeBridge = (await blockchain.getContract(bridge.address)).balance;
-        let beforeUser1 = await user1.getBalance();
-        let beforeUser2 = await user2.getBalance();
-
-        const ret = await bridge.sendUserLock(user1.getSender(), {
+        const ret = await bridge.sendUserLock(alice.getSender(), {
             value: value,
             queryID,
             tokenPairID,
             smgID,
             crossValue,
-            dstUserAccount:user2.address,
+            dstUserAccount:bob.address,
         });
-        // console.log("after user lock");
-        // console.log("user1.address==>",user1.address);
-        // console.log("user1.address(bigInt)==>",BigInt("0x"+user1.address.hash.toString('hex')));
-        // console.log("user1.balance(bigInt)==>",await user1.getBalance());
-        //
-        // console.log("user2.address==>",user2.address);
-        // console.log("user2.address(bigInt)==>",BigInt("0x"+user2.address.hash.toString('hex')));
-        // console.log("user2.balance(bigInt)==>",await user2.getBalance());
-        //
-        // console.log("bridge.address==>",bridge.address);
-        // console.log("bridge.address(bigInt)==>",BigInt("0x"+bridge.address.hash.toString('hex')));
-        // console.log("bridge.balance(bigInt)==>",(await blockchain.getContract(bridge.address)).balance);
+    });*/
 
-        let afterBridge = (await blockchain.getContract(bridge.address)).balance;
-        let afterUser1 = await user1.getBalance();
-        let afterUser2 = await user2.getBalance();
-
-        console.log("user1AddrInt,user2AddrInt,bridgeAddrInt",
-            BigInt("0x"+user1.address.hash.toString('hex')),
-            BigInt("0x"+user2.address.hash.toString('hex')),
-            BigInt("0x"+bridge.address.hash.toString('hex')));
-        console.log("beforeBridge, afterBridge, crossValue, value, delta(bridge)",
-            fromNano(beforeBridge),
-            fromNano(afterBridge),
-            fromNano(crossValue),
-            fromNano(value),
-            afterBridge-beforeBridge);
-        console.log("beforeUser1, afterUser1, delta",fromNano(beforeUser1),fromNano(afterUser1),afterUser1-beforeUser1);
-        console.log("beforeUser2, afterUser2,delta",fromNano(beforeUser2),fromNano(afterUser2),afterUser2-beforeUser2);
-
-        console.log("ret.transaction=>",ret.transactions);
-        for (let t of ret.transactions){
-            console.log("trans detailed",t.inMessage);
-        }
-        // console.log("ret=====>",ret);
-        expect(true).toEqual(afterBridge == (beforeBridge + crossValue) );
-        expect( true).toEqual(afterUser1 == (beforeUser1 - crossValue) );
-        expect( true).toEqual(afterUser2 == afterUser1);
-    });
-
-    it('[userLock ton] should userLock success', async () => {
+    /*it('[userLock ton] should userLock success', async () => {
         let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
         let tokenPairID = 0x3;
         let crossValue = BigInt(toNano(1));
@@ -632,5 +618,56 @@ describe('Bridge', () => {
         expect( true).toEqual(afterUser1 == (beforeUser1 - crossValue) );
         expect( true).toEqual(afterUser2 == afterUser1);
     });*/
+
+    it('[smgRelease ton] should msgRelease success', async () => {
+        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+        let tokenPairID = 0x3;
+        let releaseValue = BigInt(toNano(1));
+        let value = BigInt(toNano (2));
+        console.log("smgID(bigInt)==>",BigInt(smgID));
+
+        const queryID=1;
+        const uniqueID=BigInt(1);
+        const fee = BigInt(1000);
+
+        const e = BigInt(0);
+        const p = BigInt(0);
+        const s = BigInt(0);
+
+        console.log("before smgRelease ton");
+
+        let beforeBridge = (await blockchain.getContract(bridge.address)).balance;
+        let beforeAlice = await alice.getBalance();
+
+        const ret = await bridge.sendSmgRelease(alice.getSender(), {
+            value: value,
+            queryID,
+            uniqueID,
+            smgID,
+            tokenPairID,
+            releaseValue,
+            fee,
+            //tokenAccount:ZERO_ACCOUNT,// todo how to get zero address of TON? or not use this parameter, use address from tokenPair?
+            tokenAccount:alice.address,// todo how to get zero address of TON? or not use this parameter, use address from tokenPair?
+            userAccount:alice.address,
+            e,
+            p,
+            s
+        });
+
+        let afterBridge = (await blockchain.getContract(bridge.address)).balance;
+        let afterAlice = await alice.getBalance();
+
+
+        console.log("beforeAlice, afterAlice, delta",fromNano(beforeAlice),fromNano(afterAlice),afterAlice-beforeAlice);
+        console.log("beforeBridge, afterBridge,delta",fromNano(beforeBridge),fromNano(afterBridge),afterBridge-beforeBridge);
+
+        console.log("ret.transaction=>",ret.transactions);
+        for (let t of ret.transactions){
+            console.log("trans detailed",t.inMessage);
+        }
+        // console.log("ret=====>",ret);
+        // todo add expect later
+    });
 
 });

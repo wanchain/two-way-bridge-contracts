@@ -256,10 +256,6 @@ export class Bridge implements Contract {
             return; //todo
         }
 
-        /*if(!Address.isAddress("0x"+tokenAccount)){
-            throw "invalid tokenAccount";
-        }*/
-
         let addrFriedly = Address.parseFriendly(HexStringToBuffer(tokenAccount));
         let c = JettonMinter.createFromAddress(addrFriedly.address);
         let jp =  await provider.open(c);
@@ -279,11 +275,11 @@ export class Bridge implements Contract {
             let JwUserAddr = await jp.getWalletAddress(via.address);
             console.log("JwUserAddr address, via.address",JwUserAddr,via.address);
 
-            let JwUser = await JettonWallet.createFromAddress(JwUserAddr);
-            let JwBridge = await JettonWallet.createFromAddress(JwBridgeAddr);
+            let JwUserSc = await JettonWallet.createFromAddress(JwUserAddr);
+            let JwBridgeSc = await JettonWallet.createFromAddress(JwBridgeAddr);
 
-            let jwu =  await provider.open(JwUser);
-            let jwb =  await provider.open(JwBridge);
+            let jwu =  await provider.open(JwUserSc);
+            let jwb =  await provider.open(JwBridgeSc);
 
             console.log("before lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
                 await jwu.getJettonBalance(),
@@ -299,12 +295,14 @@ export class Bridge implements Contract {
                 await jwu.getJettonBalance(),
                 await jwb.getJettonBalance());
 
+            // todo send userLock
             return; //todo
         }
 
         // 3.3 wrapped Token
         if (admin == this.address){
             console.log("entering wrapped Token........");
+
             return; //todo
         }
 
@@ -342,6 +340,16 @@ export class Bridge implements Contract {
         }
     ) {
 
+        let part2Cell = beginCell()
+            .storeUint(opts.fee, 256)
+            .storeAddress(opts.tokenAccount)
+            .storeAddress(opts.userAccount)
+            .endCell();
+        let part3Cell = beginCell()
+            .storeUint(opts.e, 256)
+            .storeUint(opts.p, 256)
+            .storeUint(opts.s, 256)
+            .endCell();
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
@@ -352,12 +360,8 @@ export class Bridge implements Contract {
                 .storeUint(BigInt(opts.smgID), 256)
                 .storeUint(opts.tokenPairID, 32)
                 .storeUint(opts.releaseValue, 256)
-                .storeUint(opts.fee, 256)
-                .storeAddress(opts.tokenAccount)
-                .storeAddress(opts.userAccount)
-                .storeUint(opts.e, 256)
-                .storeUint(opts.p, 256)
-                .storeUint(opts.s, 256)
+                .storeRef(part2Cell)
+                .storeRef(part3Cell)
                 .endCell()
         });
     }
