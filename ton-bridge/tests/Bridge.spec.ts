@@ -7,6 +7,10 @@ import {JettonMinter} from "../wrappers/JettonMinter";
 import {JettonWallet} from "../wrappers/JettonWallet";
 import {BufferrToHexString,HexStringToBuffer} from "./utils";
 
+function AccountToBig(addr: Address){
+    return BigInt("0x"+addr.hash.toString('hex'));
+};
+
 describe('Bridge', () => {
     let code: Cell;
 
@@ -631,6 +635,7 @@ describe('Bridge', () => {
         const fee = BigInt(1000);
 
         const e = BigInt(0);
+
         const p = BigInt(0);
         const s = BigInt(0);
 
@@ -650,6 +655,8 @@ describe('Bridge', () => {
             //tokenAccount:ZERO_ACCOUNT,// todo how to get zero address of TON? or not use this parameter, use address from tokenPair?
             tokenAccount:alice.address,// todo how to get zero address of TON? or not use this parameter, use address from tokenPair?
             userAccount:alice.address,
+            jettonAdminAddr:alice.address,  //todo  ZERO_ACCOUNT
+            bridgeJettonWalletAddr: alice.address, //todo ZERO_ACCOUNT
             e,
             p,
             s
@@ -663,9 +670,77 @@ describe('Bridge', () => {
         console.log("beforeBridge, afterBridge,delta",fromNano(beforeBridge),fromNano(afterBridge),afterBridge-beforeBridge);
 
         console.log("ret.transaction=>",ret.transactions);
+        /*for (let t of ret.transactions){
+            console.log("trans detailed",t.inMessage);
+        }*/
+        // console.log("ret=====>",ret);
+        // todo add expect later
+    });
+
+    it('[smgRelease original_token] should msgRelease success', async () => {
+        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+        let tokenPairID = 0x2;
+        let releaseValue = BigInt(toNano(1));
+        let value = BigInt(toNano (2));
+        console.log("smgID(bigInt)==>",BigInt(smgID));
+
+        const queryID=1;
+        const uniqueID=BigInt(1);
+        const fee = BigInt(1000);
+
+        const e = BigInt(0);
+
+        const p = BigInt(0);
+        const s = BigInt(0);
+
+
+
+        console.log("before smgRelease original_token");
+
+        let initialTotalSupply = await jettonMinter.getTotalSupply();
+        const bridgeJettonWallet = await userWallet(bridge.address);
+        const bobJettonWallet = await userWallet(bob.address);
+
+        let beforeBridgeUsdt = await bridgeJettonWallet.getJettonBalance();
+        let beforeBobUsdt = await bobJettonWallet.getJettonBalance();
+
+        const ret = await bridge.sendSmgRelease(alice.getSender(), {
+            value: value,
+            queryID,
+            uniqueID,
+            smgID,
+            tokenPairID,
+            releaseValue,
+            fee,
+            tokenAccount:jettonMinter.address,
+            userAccount:bob.address,
+            jettonAdminAddr:deployer_jetton.address,
+            bridgeJettonWalletAddr: bridgeJettonWallet.address,
+            e,
+            p,
+            s
+        });
+
+        let afterBridgeUsdt = await bridgeJettonWallet.getJettonBalance();
+        let afterBobUsdt = await bobJettonWallet.getJettonBalance();
+
+        console.log("tokenAccount,userAccount,jettonAdminAddr,bridgeJettonWalletAddr, alice,bob,bridge",
+            AccountToBig(jettonMinter.address),
+            AccountToBig(bob.address),
+            AccountToBig(deployer_jetton.address),
+            AccountToBig(bridgeJettonWallet.address),
+            AccountToBig(alice.address),
+            AccountToBig(bob.address),
+            AccountToBig(bridge.address));
+
+        console.log("beforeBob, afterBob, delta",fromNano(beforeBobUsdt),fromNano(afterBobUsdt),afterBobUsdt-beforeBobUsdt);
+        console.log("beforeBridge, afterBridge,delta",fromNano(beforeBridgeUsdt),fromNano(afterBridgeUsdt),afterBridgeUsdt-beforeBridgeUsdt);
+
+       console.log("ret.transaction=>",ret.transactions);
+       /*
         for (let t of ret.transactions){
             console.log("trans detailed",t.inMessage);
-        }
+        }*/
         // console.log("ret=====>",ret);
         // todo add expect later
     });

@@ -307,6 +307,8 @@ const int gas_consumption = 14000000;
             );
     return send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS);
   }
+
+    ~strdump("...........invalid action code ...........");
   throw(error::unknown_action);
 }
 

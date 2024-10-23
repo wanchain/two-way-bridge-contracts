@@ -334,6 +334,8 @@ export class Bridge implements Contract {
             fee:bigint,
             tokenAccount:Address,
             userAccount:Address,
+            jettonAdminAddr:Address,        // used to check whether wrapped token or original token
+            bridgeJettonWalletAddr: Address, // used to send wrapped token
             e:bigint,
             p:bigint,
             s:bigint,
@@ -345,11 +347,18 @@ export class Bridge implements Contract {
             .storeAddress(opts.tokenAccount)
             .storeAddress(opts.userAccount)
             .endCell();
+
         let part3Cell = beginCell()
             .storeUint(opts.e, 256)
             .storeUint(opts.p, 256)
             .storeUint(opts.s, 256)
             .endCell();
+
+        let part4Cell  = beginCell()
+            .storeAddress(opts.jettonAdminAddr)
+            .storeAddress(opts.bridgeJettonWalletAddr)
+            .endCell();
+
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
@@ -362,6 +371,7 @@ export class Bridge implements Contract {
                 .storeUint(opts.releaseValue, 256)
                 .storeRef(part2Cell)
                 .storeRef(part3Cell)
+                .storeRef(part4Cell)
                 .endCell()
         });
     }
