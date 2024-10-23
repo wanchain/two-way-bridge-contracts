@@ -251,9 +251,7 @@ export class Bridge implements Contract {
         console.log("tokenAccount",tokenAccount);
         // 3.1 ton
         if(tokenAccount === ZERO_ACCOUNT.substring(2) ){
-            //todo handle ton
             console.log("entering ton coin........");
-            return; //todo
         }
 
         let addrFriedly = Address.parseFriendly(HexStringToBuffer(tokenAccount));
@@ -294,20 +292,45 @@ export class Bridge implements Contract {
             console.log("After lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
                 await jwu.getJettonBalance(),
                 await jwb.getJettonBalance());
-
-            // todo send userLock
-            return; //todo
         }
 
         // 3.3 wrapped Token
         if (admin == this.address){
             console.log("entering wrapped Token........");
+            let JwBridgeAddr = await jp.getWalletAddress(this.address);
+            console.log("JwBridge address, bridge address",JwBridgeAddr,this.address);
 
-            return; //todo
+            console.log("via....",via);
+
+            if(!Address.isAddress(via.address)){
+                throw "invalid via.address"
+            }
+            let JwUserAddr = await jp.getWalletAddress(via.address);
+            console.log("JwUserAddr address, via.address",JwUserAddr,via.address);
+
+            let JwUserSc = await JettonWallet.createFromAddress(JwUserAddr);
+            let JwBridgeSc = await JettonWallet.createFromAddress(JwBridgeAddr);
+
+            let jwu =  await provider.open(JwUserSc);
+            let jwb =  await provider.open(JwBridgeSc);
+
+            console.log("before lock  user(dog_balance) = %d, bridge(dog_balance)  = %d",
+                await jwu.getJettonBalance(),
+                await jwb.getJettonBalance())
+
+            let forwardAmount = toNano('0.05');
+            const sendResult = await jwu.sendBurn(via,
+                toNano('0.1'), //tons
+                opts.crossValue, this.address,
+                beginCell().endCell());
+
+            console.log("After lock  user(dog_balance) = %d, bridge(dog_balance)  = %d",
+                await jwu.getJettonBalance(),
+                await jwb.getJettonBalance());
         }
 
         // 3.
-        /*await provider.internal(via, {
+        await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
@@ -318,7 +341,7 @@ export class Bridge implements Contract {
                 .storeUint(opts.crossValue, 256)
                 .storeAddress(opts.dstUserAccount)
                 .endCell()
-        });*/
+        });
     }
 
     async sendSmgRelease(

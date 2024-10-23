@@ -77,12 +77,12 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
 
     var msg = begin_cell()
         .store_msg_flag(msg_flag::bounceable)
-        ;;.store_slice(my_address()) ;;todo check again , think it over.
+    ;;.store_slice(my_address()) ;;todo check again , think it over.
         .store_slice(_jetton_wallet_bridge_addr)
         .store_coins(total_ton_amount)
         .store_msgbody_prefix_ref(mint_request);
-        ;;.store_msgbody_prefix_ref(begin_cell().end_cell()); ;;todo use the real mint request
-        ;;.store_msgbody_prefix_slice();
+    ;;.store_msgbody_prefix_ref(begin_cell().end_cell()); ;;todo use the real mint request
+    ;;.store_msgbody_prefix_slice();
     ~strdump("smgRelease_org_jetton.....before send_raw_message");
     send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY); ;; revert on errors
     return ();
@@ -449,7 +449,7 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             smgRelease_ton(queryId, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
         } else {
             ;; todo get jetton_admin_addr from jetton_admin
-            if (equal_slices(_jetton_admin_addr,my_address())) {
+            if (equal_slices(_jetton_admin_addr, my_address())) {
                 smgRelease_wrapped_jetton(queryId, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
             } else {
                 smgRelease_org_jetton(queryId, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
@@ -484,4 +484,3 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
     ~strdump("get_fee_4");
     return (0, 0);
 }
-
