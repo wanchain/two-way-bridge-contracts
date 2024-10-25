@@ -95,6 +95,64 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
     1. bridge send mint message to _token_account
     -}
     ~strdump("smgRelease_wrapped_jetton.....");
+    int forward_ton_amount = 4000000;                         ;;todo get from input message
+    int total_ton_amount = 5000000;                   ;;todo get from input message
+    int total_ton_fee = 100000000;                   ;;todo get from input message
+    int fwd_ton_fee = 50000000;                   ;;todo get from input message
+    cell mint_request = begin_cell()
+        .store_op(op::mint).store_query_id(_queryId)
+        .store_slice(_user_account)
+        .store_coins(_release_value)
+        .store_coins(forward_ton_amount)
+        .store_coins(total_ton_amount)
+        .end_cell();
+
+   {- var msg = begin_cell()
+        .store_msg_flag(msg_flag::bounceable)
+        .store_slice(my_address()) ;; sender todo why jetton-minter need this field, but op::transfer not need?
+        .store_slice(_token_account)   ;; dst
+        .store_coins(total_ton_amount) ;; value
+        .store_int(0,1) ;; extracurrency collection
+        .store_coins(0) ;; ihr_fee
+        .store_coins(total_ton_fee) ;; fwd_fee
+        .store_msgbody_prefix_ref(mint_request);-}
+
+    {-~strdump("^^^^^^^^^^_token_account  begin .....");
+    ;;tuple tup_token_accout = parse_addr(_token_account);
+    tuple tup_user_accout = parse_addr(_user_account);
+
+    ;;~dump(tup_token_accout);
+    ~dump(tup_user_accout);
+    ~strdump("^^^^^^^^^^_token_account  end .....");-}
+
+    var msg = begin_cell()
+        .store_uint(0, 1) ;; tag
+        .store_uint(1, 1) ;; ihr_disabled
+        .store_uint(1, 1) ;; allow bounces
+        .store_uint(0, 1) ;; not bounced itself
+        .store_slice(my_address())  ;; src
+        .store_slice(_token_account) ;; dst
+        ;;.store_slice(_user_account) ;; dst
+        .store_coins(total_ton_fee)  ;; value
+        .store_uint(0, 1) ;;
+        .store_coins(0) ;; ihr_fee
+        .store_coins(fwd_ton_fee) ;; fwd_fee
+        .store_uint(cur_lt(), 64) ;; lt of transaction
+        .store_uint(now(), 32) ;; unixtime of transaction
+        .store_uint(0,  1) ;; no init-field flag (Maybe)
+        .store_uint(1,  1) ;;
+        .store_ref(mint_request);
+
+    {-var msg = begin_cell()
+        .store_uint(0x18, 6)
+        .store_slice(_user_account)
+        .store_coins(total_ton_fee)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_slice(begin_cell().end_cell().begin_parse());-}
+
+    ~strdump("smgRelease_wrapped_jetton.....before send_raw_message");
+    send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY); ;; revert on errors
+    ~strdump("smgRelease_wrapped_jetton.....after send_raw_message");
     return ();
 }
 
@@ -432,16 +490,21 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
 
         (int _src_chainId, int _dst_chainId, slice _from_account, slice _dst_account) = get_token_pair(_token_pair_id);
 
-        slice _token_account = begin_cell().end_cell().begin_parse();
+        slice _token_account_from_tk = begin_cell().end_cell().begin_parse();
         if (_src_chainId == BIP44_CHAINID) {
-            _token_account = _from_account;
+            _token_account_from_tk = _from_account;
         } else {
             if (_dst_chainId == BIP44_CHAINID) {
-                _token_account = _dst_account;
+                _token_account_from_tk = _dst_account;
             } else {
                 ;;todo throw error
             }
         }
+
+        ~strdump("dump _token_account_from_tk **********************");
+        ~dump(_token_account_from_tk);
+        ~strdump("dump _token_account **************************");
+        ~dump(_token_account);
 
         if (equal_slices(_token_account, ZERO_ACCOUNT)) {
             ;; coin

@@ -132,19 +132,23 @@ const int gas_consumption = 14000000;
 () receive_tokens (slice in_msg_body, slice sender_address, int my_ton_balance, int fwd_fee, int msg_value) impure inline_ref {
   ;; NOTE we can not allow fails in action phase since in that case there will be
   ;; no bounce. Thus check and throw in computation phase.
+    ~strdump("receive_tokens...");
   (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code) = load_data();
+    ~strdump("before receive balance");
+    ~dump(balance);
   int query_id = in_msg_body~load_query_id();
   int jetton_amount = in_msg_body~load_coins();
   balance += jetton_amount;
   slice from_address = in_msg_body~load_msg_addr();
   slice response_address = in_msg_body~load_msg_addr();
+    ~strdump("receive_tokens...1");
   throw_unless(error::unauthorized_incoming_transfer,
       equal_slice_bits(jetton_master_address, sender_address)
       |
       equal_slice_bits(calc_user_wallet(from_address, jetton_master_address, jetton_wallet_code), sender_address)
   );
   int forward_ton_amount = in_msg_body~load_coins();
-
+    ~strdump("receive_tokens...2");
   int ton_balance_before_msg = my_ton_balance - msg_value;
   ;;int storage_fee = min_tons_for_storage - min(ton_balance_before_msg, min_tons_for_storage);
   ;;msg_value -= (storage_fee + gas_consumption);
@@ -166,6 +170,7 @@ const int gas_consumption = 14000000;
       .store_coins(forward_ton_amount)
       .store_msgbody_prefix_ref(msg_body);
 
+      ~strdump("before send op::transfer_notification...");
     send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY);
   }
   raw_reserve(max(ton_balance_before_msg, min_tons_for_storage), 2);
@@ -177,9 +182,11 @@ const int gas_consumption = 14000000;
             .store_msgbody_prefix_slice()
             .store_op(op::excesses)
             .store_query_id(query_id);
+      ~strdump("before send op::excesses...");
     send_raw_message(msg.end_cell(), CARRY_REMAINING_BALANCE | IGNORE_ERRORS);
   }
-
+  ~strdump("before save balance...");
+    ~dump(balance);
   save_data(balance, owner_address, jetton_master_address, jetton_wallet_code);
 }
 

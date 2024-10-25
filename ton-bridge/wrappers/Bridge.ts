@@ -248,10 +248,28 @@ export class Bridge implements Contract {
             }
         }
 
+
+        let sendUserLock = async ()=>{
+            let ret = await provider.internal(via, {
+                value: opts.value,
+                sendMode: SendMode.PAY_GAS_SEPARATELY,
+                body: beginCell()
+                    .storeUint(Opcodes.userLock, 32)
+                    .storeUint(opts.queryID ?? 0, 64)
+                    .storeUint(BigInt(opts.smgID), 256)
+                    .storeUint(opts.tokenPairID, 32)
+                    .storeUint(opts.crossValue, 256)
+                    .storeAddress(opts.dstUserAccount)
+                    .endCell()
+            });
+            return ret;
+        }
         console.log("tokenAccount",tokenAccount);
         // 3.1 ton
         if(tokenAccount === ZERO_ACCOUNT.substring(2) ){
             console.log("entering ton coin........");
+            let ret = await sendUserLock();
+            return;
         }
 
         let addrFriedly = Address.parseFriendly(HexStringToBuffer(tokenAccount));
@@ -292,6 +310,8 @@ export class Bridge implements Contract {
             console.log("After lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
                 await jwu.getJettonBalance(),
                 await jwb.getJettonBalance());
+            let ret = await sendUserLock();
+            return;
         }
 
         // 3.3 wrapped Token
@@ -327,21 +347,9 @@ export class Bridge implements Contract {
             console.log("After lock  user(dog_balance) = %d, bridge(dog_balance)  = %d",
                 await jwu.getJettonBalance(),
                 await jwb.getJettonBalance());
+            let ret = await sendUserLock();
+            return;
         }
-
-        // 3.
-        await provider.internal(via, {
-            value: opts.value,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(Opcodes.userLock, 32)
-                .storeUint(opts.queryID ?? 0, 64)
-                .storeUint(BigInt(opts.smgID), 256)
-                .storeUint(opts.tokenPairID, 32)
-                .storeUint(opts.crossValue, 256)
-                .storeAddress(opts.dstUserAccount)
-                .endCell()
-        });
     }
 
     async sendSmgRelease(
