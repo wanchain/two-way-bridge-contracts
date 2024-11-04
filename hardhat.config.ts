@@ -276,6 +276,11 @@ const config = {
       timeout: 600000,
       gasPrice: 2e4,
     },
+    bahamutTestnet: {
+      url: "https://rpc1-horizon.bahamut.io",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741852,
+    },
     hardhat: {
       accounts: {
         mnemonic: "skill level pulse dune pattern rival used syrup inner first balance sad",
@@ -308,6 +313,7 @@ const config = {
       celoMainnet: "PLACEHOLDER_STRING",
       opBnbTestnet:'82d7bfafd91b433c89670b523688e6ce',
       opBnbMainnet:'db27845a41ec432a91eaa8917c4112a7',
+      bahamutTestnet: "PLACEHOLDER_STRING",
     },
     customChains: [
     {
@@ -396,7 +402,7 @@ const config = {
         urls: {
          apiURL: "https://verify.hashscan.io",
          browserURL: "https://hashscan.io/testnet"
-	}
+	      }
       },
       {
         network: "opBnbTestnet",
@@ -412,6 +418,14 @@ const config = {
         urls: {
           apiURL: "https://open-platform.nodereal.io/db27845a41ec432a91eaa8917c4112a7/op-bnb-mainnet/contract/",
           browserURL: "https://opbnb.bscscan.com"
+        }
+      },
+      {
+        network: "bahamutTestnet",
+        chainId: 2552,
+        urls: {
+         apiURL: "https://horizon.ftnscan.com/api",
+         browserURL: "https://horizon.ftnscan.com/"
         }
       },
     ],
