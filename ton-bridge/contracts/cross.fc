@@ -1,0 +1,273 @@
+#pragma version >=0.2.0;
+
+#include "imports/std/stdlib.fc";
+#include "imports/common/opcode.fc";
+#include "imports/util/slice.fc";
+#include "imports/crypto/secp256k1.fc";
+#include "imports/common/wkchain.fc";
+#include "imports/common/errcode.fc";
+#include "jetton/messages.func";
+#include "tokenManager.fc";
+
+() smgRelease_ton(int _queryId, int _uniqId, int _smgId, int _token_pair_id, int _release_value,
+int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s,
+slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
+    ~strdump("smgRelease_ton.....");
+    {--
+    1. bridge send normal internal message to _user_account
+    2. how to handle _qureyId in normal transaction.
+    -}
+    var msg = begin_cell()
+        .store_msg_flag(msg_flag::bounceable)
+        .store_slice(_user_account)
+        .store_coins(_release_value) ;;todo handle fee
+        .store_msgbody_prefix_slice();
+    send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS); ;; revert on errors
+    ;;todo delete begin
+    ;;throw(0x111);  ;; rollback ton to bridge if error occurs.
+    ;;todo delete end
+    return ();
+}
+
+() smgRelease_org_jetton(int _queryId, int _uniqId, int _smgId, int _token_pair_id, int _release_value,
+int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s,
+slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
+    {--
+    1. bridge send inter_transfer to JW_bridge address
+    -}
+    int forward_ton_amount = 2;                         ;;todo get from input message
+    int total_ton_amount = 200000000;                   ;;todo get from input message
+    cell mint_request = begin_cell()
+        .store_op(op::transfer).store_query_id(_queryId)
+        .store_coins(_release_value).store_slice(_user_account)
+        .store_slice(my_address())                  ;; todo check response address
+        .store_maybe_ref(begin_cell().end_cell())   ;; customPayload
+        .store_coins(forward_ton_amount)            ;; forward_amount, 4 bit if zero
+        .store_maybe_ref(begin_cell().end_cell())   ;; forwardPayload
+        .end_cell();
+
+    var msg = begin_cell()
+        .store_msg_flag(msg_flag::bounceable)
+    ;;.store_slice(my_address()) ;;todo check again , think it over.
+        .store_slice(_jetton_wallet_bridge_addr)
+        .store_coins(total_ton_amount)
+        .store_msgbody_prefix_ref(mint_request);
+    ;;.store_msgbody_prefix_ref(begin_cell().end_cell()); ;;todo use the real mint request
+    ;;.store_msgbody_prefix_slice();
+    send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY); ;; revert on errors
+    return ();
+}
+
+() smgRelease_wrapped_jetton(int _queryId, int _uniqId, int _smgId, int _token_pair_id, int _release_value,
+int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s,
+slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
+    {--
+    1. bridge send mint message to _token_account
+    -}
+    int forward_ton_amount = 4000000;                         ;;todo get from input message
+    int total_ton_amount = 5000000;                   ;;todo get from input message
+    int total_ton_fee = 100000000;                   ;;todo get from input message
+    int fwd_ton_fee = 50000000;                   ;;todo get from input message
+    cell mint_request = begin_cell()
+        .store_op(op::mint).store_query_id(_queryId)
+        .store_slice(_user_account)
+        .store_coins(_release_value)
+        .store_coins(forward_ton_amount)
+        .store_coins(total_ton_amount)
+        .end_cell();
+
+    {- var msg = begin_cell()
+         .store_msg_flag(msg_flag::bounceable)
+         .store_slice(my_address()) ;; sender todo why jetton-minter need this field, but op::transfer not need?
+         .store_slice(_token_account)   ;; dst
+         .store_coins(total_ton_amount) ;; value
+         .store_int(0,1) ;; extracurrency collection
+         .store_coins(0) ;; ihr_fee
+         .store_coins(total_ton_fee) ;; fwd_fee
+         .store_msgbody_prefix_ref(mint_request);-}
+
+    ;;tuple tup_token_accout = parse_addr(_token_account);
+    tuple tup_user_accout = parse_addr(_user_account);
+
+
+    var msg = begin_cell()
+        .store_uint(0, 1) ;; tag
+        .store_uint(1, 1) ;; ihr_disabled
+        .store_uint(1, 1) ;; allow bounces
+        .store_uint(0, 1) ;; not bounced itself
+        .store_slice(my_address())  ;; src
+        .store_slice(_token_account) ;; dst
+    ;;.store_slice(_user_account) ;; dst
+        .store_coins(total_ton_fee)  ;; value
+        .store_uint(0, 1) ;;
+        .store_coins(0) ;; ihr_fee
+        .store_coins(fwd_ton_fee) ;; fwd_fee
+        .store_uint(cur_lt(), 64) ;; lt of transaction
+        .store_uint(now(), 32) ;; unixtime of transaction
+        .store_uint(0, 1) ;; no init-field flag (Maybe)
+        .store_uint(1, 1) ;;
+        .store_ref(mint_request);
+
+    {-var msg = begin_cell()
+        .store_uint(0x18, 6)
+        .store_slice(_user_account)
+        .store_coins(total_ton_fee)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_slice(begin_cell().end_cell().begin_parse());-}
+
+    send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY); ;; revert on errors
+    return ();
+}
+
+() userLock_ton(int _queryId, int _smgId, int _token_pair_id, int _lock_value, int _fee, slice _token_account, slice _user_account) impure {
+    return ();
+}
+
+() userLock_org_jetton(int _queryId, int _smgId, int _token_pair_id, int _lock_value, int _fee, slice _token_account, slice _user_account) impure {
+    return ();
+}
+
+() userLock_wrapped_jetton(int _queryId, int _smgId, int _token_pair_id, int _lock_value, int _fee, slice _token_account, slice _user_account) impure {
+    return ();
+}
+
+() cross_recv_internal(int op, int query_id, cell token_manager,int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    ~strdump("cross_recv_internal....");
+    slice ZERO_ACCOUNT = begin_cell().store_int(0, 160).end_cell().begin_parse();
+    if (op == OP_CROSS_UserLock) {
+        throw(0x01); ;; todo should delete
+        return ();   ;; todo should delete
+        (int _smgId, int _token_pair_id, int _cross_value, slice _user_account) =
+        (in_msg_body~load_uint(256),
+            in_msg_body~load_uint(32),
+            in_msg_body~load_uint(256),
+            in_msg_body~load_msg_addr()
+        );
+
+        (int _src_chainId, slice _from_account, int _dst_chainId, slice _dst_account) = tm_get_token_pair(token_manager,_token_pair_id);
+
+        slice _token_account = begin_cell().end_cell().begin_parse();
+        if (_src_chainId == BIP44_CHAINID) {
+            _token_account = _from_account;
+        } else {
+            if (_dst_chainId == BIP44_CHAINID) {
+                _token_account = _dst_account;
+            } else {
+                ;;todo throw error
+            }
+        }
+
+        int _fee = 0;
+        ;; todo get _fee from the input message?
+
+        if (equal_slices(_token_account, ZERO_ACCOUNT)) {
+            ;; coin
+            ;; user lock has not fee parameter, but user_burn has this parameter
+            userLock_ton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+        } else {
+            ;; myaddress == jetton_admin_addr
+            ;; todo get jetton_admin_addr from jetton_admin
+            if (-1) {
+                userLock_org_jetton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+            } else {
+                userLock_wrapped_jetton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+            }
+        }
+
+        ;; todo should delete begin
+        userLock_ton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+        userLock_org_jetton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+        userLock_wrapped_jetton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+        ;; todo should delete end
+        return ();
+    }
+
+    if (op == OP_CROSS_SmgRelease) {
+        ~strdump("entering OP_CROSS_SmgRelease...");
+        (int _uniqId,
+            int _smgId,
+            int _token_pair_id,
+            int _release_value) =
+        (in_msg_body~load_uint(256),
+            in_msg_body~load_uint(256),
+            in_msg_body~load_uint(32),
+            in_msg_body~load_uint(256));
+
+        slice part1 = in_msg_body~load_ref().begin_parse();
+        (int _fee,
+            slice _token_account,
+            slice _user_account) =
+        (part1~load_uint(256),
+            part1~load_msg_addr(),
+            part1~load_msg_addr());
+        part1.end_parse();
+
+        slice part2 = in_msg_body~load_ref().begin_parse();
+        (
+            int _r,
+            int _p,
+            int _s) =
+        (
+            part2~load_uint(256),
+            part2~load_uint(256),
+            part2~load_uint(256));
+        part2.end_parse();
+
+        slice part3 = in_msg_body~load_ref().begin_parse();
+        (
+            slice _jetton_admin_addr,
+            slice _jetton_wallet_bridge_addr) =
+        (
+            part3~load_msg_addr(),
+            part3~load_msg_addr());
+        part3.end_parse();
+
+
+
+        ;;todo check tokenaccount == ZERO?  coin
+        ;;todo check admin of the tokenaccount == this.address? wrapped token
+        ;;todo else JettonToken
+
+        ;;todo get gpkInfo
+        ;;todo compute sumhash
+        ;;todo check signature
+        ;;todo check the fee
+        {--
+            1. coin => normal transfer coin
+            2. wrapped token => smgMint
+            3. Jetton token => send transfer message to JW_BRIDGE contract.
+        -}
+
+        (int _src_chainId, slice _from_account,int _dst_chainId, slice _dst_account) = tm_get_token_pair(token_manager,_token_pair_id);
+
+        slice _token_account_from_tk = begin_cell().end_cell().begin_parse();
+        if (_src_chainId == BIP44_CHAINID) {
+            _token_account_from_tk = _from_account;
+        } else {
+            if (_dst_chainId == BIP44_CHAINID) {
+                _token_account_from_tk = _dst_account;
+            } else {
+                ;;todo throw error
+            }
+        }
+        ;; todo why _token_account_from_tk is not same as the one from parameter?
+
+        if (equal_slices(_token_account, ZERO_ACCOUNT)) {
+            ~strdump("before entering smgRelease_ton...");
+            ;; coin
+            ;; user lock has not fee parameter, but user_burn has this parameter
+            smgRelease_ton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+        } else {
+            ;; todo get jetton_admin_addr from jetton_admin
+            if (equal_slices(_jetton_admin_addr, my_address())) {
+                ~strdump("before entering smgRelease_wrapped_jetton...");
+                smgRelease_wrapped_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+            } else {
+                ~strdump("before entering smgRelease_org_jetton...");
+                smgRelease_org_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+            }
+        }
+        return ();
+    }
+    throw(0xffff);
+}
