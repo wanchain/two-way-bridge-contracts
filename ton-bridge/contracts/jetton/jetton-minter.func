@@ -68,14 +68,11 @@ const int provide_address_gas_consumption = 10000000;
     (int total_supply, slice admin_address, cell content, cell jetton_wallet_code) = load_data();
 
     if (op == op::mint) {
-        ~strdump("op::mint recieved .....");
         throw_unless(error::unauthorized_mint_request, equal_slice_bits(sender_address, admin_address));
         slice to_address = in_msg_body~load_msg_addr();
         int jetton_amount = in_msg_body~load_coins();
         int forward_ton_amount = in_msg_body~load_coins();
         int total_ton_amount = in_msg_body~load_coins();
-        ~dump(total_ton_amount);
-        ~dump(forward_ton_amount);
         throw_unless(error::discovery_fee_not_matched, total_ton_amount > forward_ton_amount);
         cell mint_request = begin_cell()
                 .store_op(op::internal_transfer)

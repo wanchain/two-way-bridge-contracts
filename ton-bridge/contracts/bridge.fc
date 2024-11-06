@@ -10,11 +10,8 @@
 
 ;; load_data populates storage variables using stored data
 (slice, slice, int, int, cell, cell, cell, cell) load_data() impure {
-    ~dump(11);
     var ds = get_data().begin_parse();
-    ~dump(12);
     (slice cross_owner, slice cross_admin) = (ds~load_msg_addr(), ds~load_msg_addr());  ;;todo  change cross_admin to map type.
-    ~dump(13);
     (int halt, int init) = (ds~load_uint(2), ds~load_uint(2));
     (cell ca_fee, cell oracle, cell token_manager, cell extend) = (ds~load_ref(), ds~load_ref(), ds~load_ref(), ds~load_ref());
     ds.end_parse();
@@ -44,7 +41,6 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
     1. bridge send normal internal message to _user_account
     2. how to handle _qureyId in normal transaction.
     -}
-    ~strdump("smgRelease_ton.....");
     var msg = begin_cell()
         .store_msg_flag(msg_flag::bounceable)
         .store_slice(_user_account)
@@ -63,7 +59,6 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
     {--
     1. bridge send inter_transfer to JW_bridge address
     -}
-    ~strdump("smgRelease_org_jetton.....");
     int forward_ton_amount = 2;                         ;;todo get from input message
     int total_ton_amount = 200000000;                   ;;todo get from input message
     cell mint_request = begin_cell()
@@ -83,7 +78,6 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
         .store_msgbody_prefix_ref(mint_request);
     ;;.store_msgbody_prefix_ref(begin_cell().end_cell()); ;;todo use the real mint request
     ;;.store_msgbody_prefix_slice();
-    ~strdump("smgRelease_org_jetton.....before send_raw_message");
     send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY); ;; revert on errors
     return ();
 }
@@ -94,7 +88,6 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
     {--
     1. bridge send mint message to _token_account
     -}
-    ~strdump("smgRelease_wrapped_jetton.....");
     int forward_ton_amount = 4000000;                         ;;todo get from input message
     int total_ton_amount = 5000000;                   ;;todo get from input message
     int total_ton_fee = 100000000;                   ;;todo get from input message
@@ -117,13 +110,9 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
          .store_coins(total_ton_fee) ;; fwd_fee
          .store_msgbody_prefix_ref(mint_request);-}
 
-    {-~strdump("^^^^^^^^^^_token_account  begin .....");
     ;;tuple tup_token_accout = parse_addr(_token_account);
     tuple tup_user_accout = parse_addr(_user_account);
 
-    ;;~dump(tup_token_accout);
-    ~dump(tup_user_accout);
-    ~strdump("^^^^^^^^^^_token_account  end .....");-}
 
     var msg = begin_cell()
         .store_uint(0, 1) ;; tag
@@ -150,9 +139,7 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
         .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
         .store_slice(begin_cell().end_cell().begin_parse());-}
 
-    ~strdump("smgRelease_wrapped_jetton.....before send_raw_message");
     send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY); ;; revert on errors
-    ~strdump("smgRelease_wrapped_jetton.....after send_raw_message");
     return ();
 }
 
@@ -170,42 +157,27 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
 
 
 (int, int, slice, slice) get_token_pair(int _token_paird_id) method_id {
-    ~strdump("get_token_pair");
     (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    ~strdump("get_token_pair_1");
     slice tm_slice = token_manager.begin_parse();
-    ~strdump("get_token_pair_11");
     (cell tm_dic, cell wt_dic) = (tm_slice~load_dict(), tm_slice~load_dict());
-    ~strdump("get_token_pair_12");
     slice from_account = begin_cell().end_cell().begin_parse();
     slice to_account = begin_cell().end_cell().begin_parse();
-    ~strdump("get_token_pair_13");
     (cell dic_new, int ret) = udict_get_ref?(tm_dic, 32, _token_paird_id);
     if (cell_null?(dic_new)) {
-        ~strdump("get_token_pair_14");
         return (0, 0, from_account, to_account);
     }
     slice cs = dic_new.begin_parse();
-    ~strdump("get_token_pair_15");
     if (ret) {
-        ~strdump("get_token_pair_16");
-        ~dump(slice_refs(cs));
-        ~dump(slice_bits(cs));
         (int _src_chain_id, int _dst_chain_id, int _from_account_len) =
         (cs~load_uint(32), cs~load_uint(32), cs~load_uint(8));
-        ~strdump("_from_account_len");
-        ~dump(_from_account_len);
 
 
         slice _from_account = cs~load_bits(8 * _from_account_len);
         int _to_account_len = cs~load_uint(8);
         slice _to_account = cs~load_bits(8 * _to_account_len);
 
-        ~strdump("_to_account_len");
-        ~dump(_to_account_len);
         return (_src_chain_id, _dst_chain_id, _from_account, _to_account);
     }
-    ~strdump("get_token_pair_17");
     return (0, 0, from_account, to_account);
 }
 
@@ -234,19 +206,14 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
     int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
     int queryId = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
 
-    ~dump(1);
 
     (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    ~dump(2);
     if (op == op::addAdmin) {
         ;;int addr_wkid = in_msg_body~load_uint(32);
         ;;int addr_hash = in_msg_body~load_uint(256);
 
         slice cross_admin_new = in_msg_body~load_msg_addr();
-        ~dump(cross_admin_new);
         tuple cross_admin_new_t = parse_addr(cross_admin_new);
-        ~dump(cross_admin_new_t);
-        ~dump(3);
         ;; get wkid from parsed address
         {-if (addr_wkid != WORKING_CHAINID) {
             throw(ERROR::INVALID_WKID);
@@ -272,16 +239,12 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
         slice value = begin_cell().store_uint(_contract_fee, 32).store_uint(_agent_fee, 32).end_cell().begin_parse();
         (cell ca_dic_new, int ret) = udict_add?(ca_dic, 64, key_int, value);
 
-        ~strdump("setFee2");
-        ~dump(ca_dic_new);
-        ~dump(ret);
 
         cell ca_fee_new = begin_cell()
             .store_slice(smgFeeProxyAddr)
             .store_dict(ca_dic_new)
             .end_cell();
         ;;todo check ret
-        ~strdump("setFee3");
         save_data(cross_owner, cross_admin, halt, init, ca_fee_new, oracle, token_manager, token_manager);
         return ();
     }
@@ -311,15 +274,7 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
         int _to_account_len = in_msg_body~load_uint(8);
         slice _to_account = in_msg_body~load_bits(8 * _to_account_len);
 
-        ~strdump("addTokenPair _from_account");
-        ~dump(_from_account_len);
-        ~dump(slice_refs(_from_account));
-        ~dump(slice_bits(_from_account));
 
-        ~strdump("addTokenPair _to_account");
-        ~dump(_to_account_len);
-        ~dump(slice_refs(_to_account));
-        ~dump(slice_bits(_to_account));
 
         slice tm_slice = token_manager.begin_parse();
         (cell tm_dic, cell wt_dic) = (tm_slice~load_dict(), tm_slice~load_dict());
@@ -338,44 +293,28 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             .store_uint(_to_account_len, 8)
             .store_slice(_to_account)
             .end_cell();
-        ~strdump("addTokenPair value");
-        ~dump(slice_refs(value.begin_parse()));
-        ~dump(slice_bits(value.begin_parse()));
-        ~strdump("addTokenPair value end");
 
         cell dic_new = udict_set_ref(tm_dic, 32, key_int, value);
 
-        ~strdump("addTokenPair2");
-        ~dump(dic_new);
-        ~dump(slice_refs(dic_new.begin_parse()));
-        ~dump(slice_bits(dic_new.begin_parse()));
 
         cell token_manager_new = begin_cell()
             .store_dict(dic_new)
             .store_dict(wt_dic)
             .end_cell();
         ;;todo check ret
-        ~strdump("addTokenPair3");
         save_data(cross_owner, cross_admin, halt, init, ca_fee, oracle, token_manager_new, extend);
         return ();
     }
     slice ZERO_ACCOUNT = begin_cell().store_int(0, 160).end_cell().begin_parse();
 
     if (op == op::userLock) {
-        ~strdump("1111111111111111111111111111111111111111111111");
         throw(0x01); ;; todo should delete
         return ();   ;; todo should delete
 
-        ~strdump("2222222222222222222222222222222222222222222222");
 
         (int _smgId, int _token_pair_id, int _cross_value, slice _user_account) =
         (in_msg_body~load_uint(256), in_msg_body~load_uint(32), in_msg_body~load_uint(256), in_msg_body~load_msg_addr());
 
-        ~strdump("userLock  _smgId");
-        ~dump(_smgId);
-        ~dump(_token_pair_id);
-        ~dump(_cross_value);
-        ~dump(_user_account);
 
         (int _src_chainId, int _dst_chainId, slice _from_account, slice _dst_account) = get_token_pair(_token_pair_id);
 
@@ -456,23 +395,6 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
         part3.end_parse();
 
 
-        ~strdump("smgRelease  ...");
-        ~dump(_uniqId);
-        ~dump(_smgId);
-        ~dump(_token_pair_id);
-        ~dump(_release_value);
-        ~dump(_fee);
-        ~dump(_token_account);
-        ~dump(_user_account);
-        ~dump(_jetton_admin_addr);
-        ~dump(_jetton_wallet_bridge_addr);
-        ~dump(_r);
-        ~dump(_p);
-        ~dump(_s);
-        ~strdump(".............");
-        ~strdump(_jetton_admin_addr);
-        ~strdump(my_address());
-        ~strdump(_jetton_wallet_bridge_addr);
 
         ;;todo check tokenaccount == ZERO?  coin
         ;;todo check admin of the tokenaccount == this.address? wrapped token
@@ -501,10 +423,6 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             }
         }
         ;; todo why _token_account_from_tk is not same as the one from parameter?
-        ~strdump("dump _token_account_from_tk **********************");
-        ~dump(_token_account_from_tk);
-        ~strdump("dump _token_account **************************");
-        ~dump(_token_account);
 
         if (equal_slices(_token_account, ZERO_ACCOUNT)) {
             ;; coin
@@ -530,20 +448,15 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
 }
 
 (int, int) get_fee(int _src_chain_id, int _dst_chain_id) method_id {
-    ~strdump("get_fee");
     (slice cross_owner, slice cross_admin, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    ~strdump("get_fee_1");
     ;;todo load smgFeeProxy first
     slice ca_fee_slice = ca_fee.begin_parse();
     (_, cell dict) = (ca_fee_slice~load_msg_addr(), ca_fee_slice~load_dict());
-    ~strdump("get_fee_2");
     slice key = begin_cell().store_uint(_src_chain_id, 32).store_uint(_dst_chain_id, 32).end_cell().begin_parse();
     int key_int = slice_to_int(key, 64);
     (slice cs, int ret) = udict_get?(dict, 64, key_int);
     if (ret) {
-        ~strdump("get_fee_3");
         return (cs~load_uint(32), cs~load_uint(32));
     }
-    ~strdump("get_fee_4");
     return (0, 0);
 }

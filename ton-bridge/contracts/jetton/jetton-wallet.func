@@ -84,27 +84,14 @@ const int gas_consumption = 14000000;
 
 
   int fwd_count = forward_ton_amount ? 2 : 1;
-    ~strdump("*************************************************");
 
 
-    ~strdump("msg_value");
-    ~dump(msg_value);
-
-    ~strdump("forward_ton_amount");
-    ~dump(forward_ton_amount);
-
-    ~strdump("fw_count");
-    ~dump(fwd_count);
-
-    ~strdump("fwd_fee");
-    ~dump(fwd_fee);
 
 
-    ~strdump("gas_consumption");
-    ~dump(gas_consumption);
 
-    ~strdump("min_tons_for_storage");
-    ~dump(min_tons_for_storage);
+
+
+
 
   throw_unless(error::not_enough_tons, msg_value >
                      forward_ton_amount +
@@ -132,23 +119,18 @@ const int gas_consumption = 14000000;
 () receive_tokens (slice in_msg_body, slice sender_address, int my_ton_balance, int fwd_fee, int msg_value) impure inline_ref {
   ;; NOTE we can not allow fails in action phase since in that case there will be
   ;; no bounce. Thus check and throw in computation phase.
-    ~strdump("receive_tokens...");
   (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code) = load_data();
-    ~strdump("before receive balance");
-    ~dump(balance);
   int query_id = in_msg_body~load_query_id();
   int jetton_amount = in_msg_body~load_coins();
   balance += jetton_amount;
   slice from_address = in_msg_body~load_msg_addr();
   slice response_address = in_msg_body~load_msg_addr();
-    ~strdump("receive_tokens...1");
   throw_unless(error::unauthorized_incoming_transfer,
       equal_slice_bits(jetton_master_address, sender_address)
       |
       equal_slice_bits(calc_user_wallet(from_address, jetton_master_address, jetton_wallet_code), sender_address)
   );
   int forward_ton_amount = in_msg_body~load_coins();
-    ~strdump("receive_tokens...2");
   int ton_balance_before_msg = my_ton_balance - msg_value;
   ;;int storage_fee = min_tons_for_storage - min(ton_balance_before_msg, min_tons_for_storage);
   ;;msg_value -= (storage_fee + gas_consumption);
@@ -170,7 +152,6 @@ const int gas_consumption = 14000000;
       .store_coins(forward_ton_amount)
       .store_msgbody_prefix_ref(msg_body);
 
-      ~strdump("before send op::transfer_notification...");
     send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY);
   }
   raw_reserve(max(ton_balance_before_msg, min_tons_for_storage), 2);
@@ -182,11 +163,8 @@ const int gas_consumption = 14000000;
             .store_msgbody_prefix_slice()
             .store_op(op::excesses)
             .store_query_id(query_id);
-      ~strdump("before send op::excesses...");
     send_raw_message(msg.end_cell(), CARRY_REMAINING_BALANCE | IGNORE_ERRORS);
   }
-  ~strdump("before save balance...");
-    ~dump(balance);
   save_data(balance, owner_address, jetton_master_address, jetton_wallet_code);
 }
 
@@ -254,13 +232,9 @@ const int gas_consumption = 14000000;
   cs~skip_bits(1); ;; skip extracurrency collection
   cs~load_coins(); ;; skip ihr_fee
   int fwd_fee = muldiv(cs~load_coins(), 3, 2); ;; we use message fwd_fee for estimation of forward_payload costs
-      ~strdump("fw_fee from message>>>>>>>>>");
-      ~dump(fwd_fee);
   int op = in_msg_body~load_op();
 
   if (op == op::transfer) { ;; outgoing transfer
-      ~strdump("before send_tokens fw_fee from message>>>>>>>>>");
-      ~dump(fwd_fee);
     send_tokens(in_msg_body, sender_address, msg_value, fwd_fee);
     return ();
   }
@@ -315,7 +289,6 @@ const int gas_consumption = 14000000;
     return send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS);
   }
 
-    ~strdump("...........invalid action code ...........");
   throw(error::unknown_action);
 }
 
