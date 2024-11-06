@@ -1,4 +1,5 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from '@ton/core';
+import * as opcodes from  "./opcodes";
 
 export type SignatureConfig = {
     id: number;
@@ -58,7 +59,7 @@ export class Signature implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                .storeUint(Opcodes.verify, 32)
+                .storeUint(opcodes.OP_SIG_Verify, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeUint(opts.s, 256)
                 .storeUint(opts.gpk_x, 256)
@@ -91,7 +92,7 @@ export class Signature implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                .storeUint(Opcodes.verifyEcdsa, 32)
+                .storeUint(opcodes.OP_SIG_VerifyEcdsa, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeUint(opts.s, 256)
                 .storeUint(opts.gpk_x, 256)

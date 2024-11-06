@@ -1,0 +1,73 @@
+#pragma version >=0.2.0;
+
+#include "imports/std/stdlib.fc";
+#include "imports/common/opcode.fc";
+
+const int DICTIONARY_KEY_LEN = 32;
+(slice, slice, cell, cell) fee_load_data(cell refcell) impure {
+    var ds = refcell.begin_parse();
+    slice smgFeeProxy = ds~load_msg_addr();
+    slice robotAdmin = ds~load_msg_addr();
+    cell tokenPairFee = ds~load_dict();
+    cell contractFee = ds~load_dict();
+    ds.end_parse();
+    return (smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+}
+
+(cell) fee_generate_data(slice smgFeeProxy, slice robotAdmin, cell tokenPairFee, cell contractFee) impure {
+    return begin_cell()
+            .store_slice(smgFeeProxy)
+            .store_slice(robotAdmin)
+            .store_dict(tokenPairFee)
+            .store_dict(contractFee)
+            .end_cell();
+}
+
+;; Example of how to use in recv_internal
+(cell) fee_recv_internal(int op, cell refcell, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    ~strdump("fee_recv_internal");
+    (slice smgFeeProxy, slice robotAdmin, cell tokenPairFee, cell contractFee) = fee_load_data(refcell);
+    if (op == OP_FEE_SetSmgFeeProxy) {
+        slice _smgFeeProxy = in_msg_body~load_msg_addr();
+        return fee_generate_data(_smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+    }
+    if (op == OP_FEE_SetRobotAdmin) {
+        slice _robotAdmin = in_msg_body~load_msg_addr();
+        return fee_generate_data(smgFeeProxy, _robotAdmin, tokenPairFee, contractFee);
+    }
+    if (op == OP_FEE_SetTokenPairFee) {
+        int tpId = in_msg_body~load_uint(32);
+        int fee = in_msg_body~load_uint(256);
+        tokenPairFee~udict_set_builder(DICTIONARY_KEY_LEN, tpId, begin_cell().store_int(fee, 256));
+        return fee_generate_data(smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+    }
+    if (op == OP_FEE_SetTokenPairFees) {
+        int count = in_msg_body~load_uint(32); ;;TODO. only support 3 for cell size limit
+        while(count > 0) {
+            int tpId = in_msg_body~load_uint(32);
+            int fee = in_msg_body~load_uint(256);
+            tokenPairFee~udict_set_builder(DICTIONARY_KEY_LEN, tpId, begin_cell().store_int(fee, 256));
+            count -= 1;
+        }
+        return fee_generate_data(smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+    }
+    if (op == OP_FEE_SetChainFee) {
+        int fromChain = in_msg_body~load_uint(32);
+        int toChain = in_msg_body~load_uint(32);
+        int fee = in_msg_body~load_uint(256);
+        contractFee~udict_set_builder(DICTIONARY_KEY_LEN, fromChain << 32 + toChain, begin_cell().store_int(fee, 256));
+        return fee_generate_data(smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+    }
+    if (op == OP_FEE_SetChainFees) {
+        int count = in_msg_body~load_uint(32); ;;TODO. only support 3 for cell size limit
+        while(count > 0) {
+            int fromChain = in_msg_body~load_uint(32);
+            int toChain = in_msg_body~load_uint(32);
+            int fee = in_msg_body~load_uint(256);
+            contractFee~udict_set_builder(DICTIONARY_KEY_LEN, fromChain << 32 + toChain, begin_cell().store_int(fee, 256));
+            count -= 1;
+        }
+        return fee_generate_data(smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+    }    
+    return refcell;
+}

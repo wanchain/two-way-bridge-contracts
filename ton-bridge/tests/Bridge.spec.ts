@@ -48,7 +48,7 @@ describe('Bridge', () => {
         let c = Bridge.createFromConfig(
             {
                 owner: deployer.address,
-                admin: deployer.address,
+                //admin: deployer.address,
                 halt: 0,
                 init: 0,
                 smgFeeProxy: smgFeeProxy.address,

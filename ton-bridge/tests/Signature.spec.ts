@@ -73,7 +73,7 @@ describe('Signature', () => {
             queryID,
         });
 
-        console.log("verifyRet",verifyRet);
+        // console.log("verifyRet",verifyRet);
 
         expect(verifyRet.transactions).toHaveTransaction({
             from: user1.address,
@@ -103,7 +103,7 @@ describe('Signature', () => {
             queryID,
         });
 
-        console.log("verifyRet",verifyRet);
+        // console.log("verifyRet",verifyRet);
 
         expect(verifyRet.transactions).toHaveTransaction({
             from: user1.address,
@@ -164,7 +164,7 @@ describe('Signature', () => {
             queryID,
         });
 
-        console.log("verifyRet",verifyRet);
+        // console.log("verifyRet",verifyRet);
         console.log("user1.address",user1.address);
 
         expect(verifyRet.transactions).toHaveTransaction({

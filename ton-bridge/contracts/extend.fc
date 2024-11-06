@@ -1,0 +1,72 @@
+#pragma version >=0.2.0;
+
+#include "imports/std/stdlib.fc";
+#include "imports/common/opcode.fc";
+
+
+const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
+(cell) ext_load_data(cell ref) impure {
+    var ds = ref.begin_parse();
+    cell cross_admin = ds~load_dict();
+    ds.end_parse();
+    return (cross_admin);
+}
+
+(cell) ext_generate_data(cell cross_admin) impure {
+    return begin_cell()
+            .store_dict(cross_admin)
+            .end_cell();
+}
+
+;; Example of how to use in recv_internal
+(cell) ext_recv_internal(int op, cell refcell, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    ~strdump("ext_recv_internal");
+    (cell cross_admin) = ext_load_data(refcell);
+    if (op == OP_EXTEND_AddCrossAdmin) {
+        int admin = in_msg_body~load_uint(CROSSADMIN_DICTIONARY_KEY_LEN);
+        cross_admin~udict_set_builder(CROSSADMIN_DICTIONARY_KEY_LEN, admin, begin_cell().store_int(1, 256));
+        return ext_generate_data(cross_admin);
+    }
+
+    ;; for testing. it will be deleted later
+    if (op == OP_EXTEND_UpdateAddInt) {
+        return begin_cell()
+            .store_dict(cross_admin)
+            .store_uint(12345678, 32)
+            .end_cell();
+    }    
+    return refcell;
+}
+;; Get the first tokenPair in the dictionary
+(slice) ext_get_first_crossAdmin(cell refcell) method_id {
+    (cell cross_admin) = ext_load_data(refcell);
+
+    (int id, slice value, int success) = cross_admin.udict_get_min?(CROSSADMIN_DICTIONARY_KEY_LEN);
+    if (success) {
+        return begin_cell().store_uint(id, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
+    } else {
+        return "";
+    }
+}
+;; Get the first tokenPair in the dictionary
+(slice) ext_get_next_crossAdmin(cell refcell, slice adminAddr) method_id {
+    (cell cross_admin) = ext_load_data(refcell);
+    int id = adminAddr~load_uint(CROSSADMIN_DICTIONARY_KEY_LEN);
+    (int id, slice value, int success) = cross_admin.udict_get_next?(CROSSADMIN_DICTIONARY_KEY_LEN, id);
+    if (success) {
+        return begin_cell().store_uint(id, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
+    } else {
+        return "";
+    }
+}
+
+
+
+
+(int) ext_get_updated_int(cell refcell) method_id {
+    var ds = refcell.begin_parse();
+    cell admin = ds~load_dict();
+    int u = ds~load_uint(32);
+    ds.end_parse();
+    return u;
+}

@@ -12,10 +12,16 @@ import {
 import {JettonMinter} from "./JettonMinter";
 import {JettonWallet} from "./JettonWallet";
 import {HexStringToBuffer,BufferrToHexString} from "../tests/utils";
+import * as fs from "fs";
+import { compile } from '@ton/blueprint';
+import * as opcodes from "./opcodes"
+import {OP_CROSS_SmgRelease} from "./opcodes";
+
+export const BIP44_CHAINID = 0x4567; //todo change later
+export const ZERO_ACCOUNT = "0x0000000000000000000000000000000000000000";
 
 export type BridgeConfig = {
     owner:Address,
-    admin:Address,
     halt: number,
     init: number,
     smgFeeProxy:Address,
@@ -32,7 +38,7 @@ export type CrossConfig = {
 export function bridgeConfigToCell(config: BridgeConfig): Cell {
     return beginCell()
         .storeAddress(config.owner)
-        .storeAddress(config.admin)
+        // .storeAddress(config.admin)
         .storeUint(config.halt,2)
         .storeUint(config.init,2)
 
@@ -50,66 +56,28 @@ export function bridgeConfigToCell(config: BridgeConfig): Cell {
 
         .storeRef(beginCell() // *****about tm begin*****
             .storeDict() // mapTokenPairInfo
-            .storeDict() // mapWrappedToken
+            //.storeDict() // mapWrappedToken
             .endCell()) // *****about tm end*****
 
-        .storeRef(beginCell().endCell()) // extended
+        .storeRef(beginCell()
+            .storeDict() // cross_admin
+            .endCell()) // extended
         .endCell();
 }
-
-export const Opcodes = {    
-    verify: 0x7e8764ef,
-    verifyEcdsa: 0x7e8764ee,
-
-    addAdmin: 0x01,
-    removeAdmin: 0x02,
-    transferOwner: 0x03,
-    setHalt: 0x04,
-    initialize: 0x05,
-
-
-    setFee: 0x10,
-    setFees: 0x11,
-
-    userLock: 0x12,
-    smgMint: 0x13,
-
-    userBurn: 0x14,
-    smgRelease: 0x15,
-
-    setSmgFeeProxy: 0x16,
-
-    setTokenPairFee: 0x17,
-    setTokenPairFees: 0x18,
-
-// token manager
-    addTokenPair: 0x21,
-    removeTokenPair: 0x22,
-    updateTokenPair: 0x23,
-
-// op about oracle
-    transferOracleAdmin: 0x31,
-    setStoremanGroupConfig: 0x32,
-    setStoremanGroupStatus: 0x33,
-    acquireReadySmgInfo: 0x35,
-
-// op about groupApprove
-    transferFoundation: 0x41,
-    AcquireReadySmgInfo: 0x42,
-    proposal: 0x43,
-    approveAndExecute: 0x44,
-    Initialize: 0x45,
-};
-
-export const BIP44_CHAINID = 0x4567; //todo change later
-export const ZERO_ACCOUNT = "0x0000000000000000000000000000000000000000";
-
 
 export class Bridge implements Contract {
     constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
 
     static createFromAddress(address: Address) {
         return new Bridge(address);
+    }
+    static async createForDeploy(config: BridgeConfig) {
+        const workchain = 0; // deploy to workchain 0
+        const code = await compile('Bridge');
+        const data = bridgeConfigToCell(config);
+        const init = { code, data };
+        let SC = new Bridge(contractAddress(workchain, init), init);
+        return SC
     }
 
     static createFromConfig(config: BridgeConfig, code: Cell, workchain = 0) {
@@ -123,30 +91,6 @@ export class Bridge implements Contract {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().endCell(),
-        });
-    }
-
-    async sendAddAdmin(
-        provider: ContractProvider,
-        via: Sender,
-        opts: {
-            adminAddr:Address,
-            value: bigint,
-            queryID?: number,
-        }
-    ) {
-        let isValid = Address.isAddress(opts.adminAddr)
-        if (!isValid){
-            await Promise.reject("in valid address")
-        }
-        await provider.internal(via, {
-            value: opts.value,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(Opcodes.addAdmin, 32)
-                .storeUint(opts.queryID ?? 0, 64)
-                .storeAddress(opts.adminAddr)
-                .endCell(),
         });
     }
 
@@ -167,7 +111,7 @@ export class Bridge implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                .storeUint(Opcodes.setFee, 32)
+                .storeUint(opcodes.OP_FEE_SetTokenPairFee, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeUint(opts.srcChainId, 32)
                 .storeUint(opts.dstChainId, 32)
@@ -206,7 +150,8 @@ export class Bridge implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                .storeUint(Opcodes.addTokenPair, 32)
+                //.storeUint(opcodes.OP_TOKENPAIR_Add, 32)
+                .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeUint(opts.tokenPairId, 32)
                 .storeUint(opts.fromChainID, 32)
@@ -254,7 +199,7 @@ export class Bridge implements Contract {
                 value: opts.value,
                 sendMode: SendMode.PAY_GAS_SEPARATELY,
                 body: beginCell()
-                    .storeUint(Opcodes.userLock, 32)
+                    .storeUint(opcodes.OP_CROSS_UserLock, 32)
                     .storeUint(opts.queryID ?? 0, 64)
                     .storeUint(BigInt(opts.smgID), 256)
                     .storeUint(opts.tokenPairID, 32)
@@ -394,7 +339,7 @@ export class Bridge implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                .storeUint(Opcodes.smgRelease, 32)
+                .storeUint(opcodes.OP_CROSS_SmgRelease, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeUint(BigInt(opts.uniqueID), 256)
                 .storeUint(BigInt(opts.smgID), 256)
@@ -431,9 +376,130 @@ export class Bridge implements Contract {
         // todo getTokenPair
         return {
             fromChainID:result.stack.readNumber(),
-            toChainID:result.stack.readNumber(),
             fromAccount:result.stack.readBuffer().toString('hex'),
+            toChainID:result.stack.readNumber(),
             toAccount:result.stack.readBuffer().toString('hex'),
         }
+    }
+    async getFirstTokenPairID(provider: ContractProvider) {
+        const result = await provider.get('get_first_tokenpair_id', []);
+        // todo getTokenPair
+        return result.stack.readNumber()
+    }
+    async getNextTokenPairID(provider: ContractProvider) {
+        const result = await provider.get('get_next_tokenpair_id', []);
+        // todo getTokenPair
+        return result.stack.readNumber()
+    }
+    async getFirstStoremanGroupID(provider: ContractProvider) {
+        const { stack } = await provider.get("get_first_smg_id", []);
+        return stack.readBigNumber();
+    }
+    async getNextStoremanGroupID(provider: ContractProvider, id: bigint) {
+        const { stack } = await provider.get("get_next_smg_id", [{ type: 'int', value: id }]);
+        return stack.readBigNumber();
+    }
+    async getStoremanGroupConfig(provider: ContractProvider, id: bigint) {
+        const { stack } = await provider.get("get_smgConfig", [{ type: 'int', value: id }]);
+        return {
+            gpk:stack.readBigNumber(),
+            startTime:stack.readBigNumber(),
+            endTime:stack.readBigNumber(),
+        }
+    }
+    async sendSetStoremanGroupConfig(provider: ContractProvider, id: bigint, gpk: bigint, startTime: number, endTime: number,
+        opts: {
+            sender: Sender,
+            value: bigint,
+            queryID?: number,
+        }
+    ) {
+        await provider.internal(opts.sender, {
+            value: opts.value,
+            body: beginCell()
+            .storeUint(opcodes.OP_ORACLE_SetSMG, 32) // op (op #1 = increment)
+            .storeUint(0, 64) // query id
+            .storeUint(id, 256)
+            .storeUint(gpk, 256)
+            .storeUint(startTime, 64)
+            .storeUint(endTime, 64)
+            .endCell()
+        });
+    }
+
+    async sendAddAdmin(
+        provider: ContractProvider,
+        via:Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            adminAddr:string,
+        }
+    ) {
+        let isValid = Address.isAddress(opts.adminAddr)
+        if (!isValid){
+            await Promise.reject("in valid address")
+        }
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(opcodes.OP_EXTEND_AddCrossAdmin, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeBuffer(Buffer.from(opts.adminAddr,'hex'))
+                .endCell(),
+        });
+    }
+    async getFirstAdmin(provider: ContractProvider,){
+        const { stack } = await provider.get("get_first_crossAdmin", []);
+        console.log("stack:", stack)
+        return stack.readBuffer().toString('hex');
+    }
+    async getNextAdmin(provider: ContractProvider,adminAddr:Address){
+        const { stack } = await provider.get("get_next_crossAdmin", [{ type: 'slice', cell: beginCell().storeAddress(adminAddr).endCell()}]);
+        return stack.readBuffer().toString('hex');
+    }
+
+
+
+    // for upgrade sc test
+    async getUpdatedInt(provider: ContractProvider) {
+        const result = await provider.get('get_updated_int', []);
+        return result.stack.readNumber()
+    }
+    async sendUpdateInt(provider: ContractProvider,
+        opts: {
+            sender: Sender,
+            value: bigint,
+            queryID?: number,
+        }
+    ) {
+        await provider.internal(opts.sender, {
+            value: opts.value,
+            body: beginCell()
+            .storeUint(opcodes.OP_EXTEND_UpdateAddInt, 32) // op (op #1 = increment)
+            .storeUint(0, 64) // query id
+            .endCell()
+        });
+    }
+    async sendUpgradeSC(provider: ContractProvider, code: Cell,
+        opts: {
+            sender: Sender,
+            value: bigint,
+            queryID?: number,
+        }
+    ) {
+        await provider.internal(opts.sender, {
+            value: opts.value,
+            body: beginCell()
+            .storeUint(opcodes.OP_UPGRADE, 32) // op (op #1 = increment)
+            .storeUint(0, 64) // query id
+            .storeRef(code)
+            .endCell()
+        });
+    }
+    async getVersion(provider: ContractProvider) {
+        const result = await provider.get('version', []);
+        return result.stack.readString()
     }
 }
