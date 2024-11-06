@@ -165,7 +165,7 @@ library RapidityLibV4 {
         (fromChainID,fromTokenAccount,toChainID,toTokenAccount) = tokenManager.getTokenPairInfo(params.tokenPairID);
         require(fromChainID != 0, "Token does not exist");
 
-        uint a = params.tokenPairContractFee;
+        uint contractFee = params.tokenPairContractFee;
         address tokenScAddr;
         if (params.currentChainID == fromChainID) {
             if (contractFee == 0) {
