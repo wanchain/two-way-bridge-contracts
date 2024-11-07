@@ -309,7 +309,6 @@ export class Bridge implements Contract {
             tokenPairID:number,
             releaseValue:bigint,
             fee:bigint,
-            tokenAccount:Address,
             userAccount:Address,
             jettonAdminAddr:Address,        // used to check whether wrapped token or original token
             bridgeJettonWalletAddr: Address, // used to send wrapped token
@@ -321,7 +320,6 @@ export class Bridge implements Contract {
 
         let part2Cell = beginCell()
             .storeUint(opts.fee, 256)
-            .storeAddress(opts.tokenAccount)
             .storeAddress(opts.userAccount)
             .endCell();
 

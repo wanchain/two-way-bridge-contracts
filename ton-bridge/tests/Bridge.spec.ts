@@ -429,8 +429,7 @@ describe('Bridge', () => {
             tokenPairID,
             releaseValue,
             fee,
-            //tokenAccount:ZERO_ACCOUNT,// todo how to get zero address of TON? or not use this parameter, use address from tokenPair?
-            tokenAccount: alice.address,// todo how to get zero address of TON? or not use this parameter, use address from tokenPair?
+
             userAccount: bob.address,
             jettonAdminAddr: alice.address,  //todo  ZERO_ACCOUNT
             bridgeJettonWalletAddr: alice.address, //todo ZERO_ACCOUNT
@@ -490,7 +489,6 @@ describe('Bridge', () => {
             tokenPairID,
             releaseValue,
             fee,
-            tokenAccount: jettonMinter.address,
             userAccount: bob.address,
             jettonAdminAddr: deployer_jetton.address,
             bridgeJettonWalletAddr: bridgeJettonWallet.address,
@@ -556,8 +554,6 @@ describe('Bridge', () => {
             tokenPairID,
             releaseValue,
             fee,
-            //tokenAccount: jettonMinter.address, // todo should throw error unauthorized_mint_request, but not throw.
-            tokenAccount: jettonMinter_dog.address,
             userAccount: bob.address,
             jettonAdminAddr: bridge.address, // admin is bridge address, wrapped token
             bridgeJettonWalletAddr: bridgeJettonWalletDog.address,

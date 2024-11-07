@@ -196,10 +196,8 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
 
         slice part1 = in_msg_body~load_ref().begin_parse();
         (int _fee,
-            slice _token_account,
             slice _user_account) =
         (part1~load_uint(256),
-            part1~load_msg_addr(),
             part1~load_msg_addr());
         part1.end_parse();
 
