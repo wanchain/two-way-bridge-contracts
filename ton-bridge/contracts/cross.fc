@@ -8,6 +8,7 @@
 #include "imports/common/errcode.fc";
 #include "jetton/messages.func";
 #include "tokenManager.fc";
+#include "jetton/op-codes.func";
 
 () smgRelease_ton(int _queryId, int _uniqId, int _smgId, int _token_pair_id, int _release_value,
 int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s,
@@ -250,21 +251,29 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
                 ;;todo throw error
             }
         }
+
+
         ;; todo why _token_account_from_tk is not same as the one from parameter?
 
-        if (equal_slices(_token_account, ZERO_ACCOUNT)) {
+        if (equal_slices(_token_account_from_tk, ZERO_ACCOUNT)) {
             ~strdump("before entering smgRelease_ton...");
             ;; coin
             ;; user lock has not fee parameter, but user_burn has this parameter
-            smgRelease_ton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+            smgRelease_ton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account_from_tk, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
         } else {
+
+            _token_account_from_tk~load_bits(8);
+            int wk_chain = _token_account_from_tk~load_uint(8);
+            int hash = _token_account_from_tk~load_uint(256);
+            slice token_account_int = get_serialized_address(wk_chain,hash);
+
             ;; todo get jetton_admin_addr from jetton_admin
             if (equal_slices(_jetton_admin_addr, my_address())) {
                 ~strdump("before entering smgRelease_wrapped_jetton...");
-                smgRelease_wrapped_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+                smgRelease_wrapped_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
             } else {
                 ~strdump("before entering smgRelease_org_jetton...");
-                smgRelease_org_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+                smgRelease_org_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
             }
         }
         return ();

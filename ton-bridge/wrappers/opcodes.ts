@@ -44,3 +44,6 @@ export const OP_EXTEND_AddCrossAdmin            = 0x80000001;
 export const OP_EXTEND_DelCrossAdmin            = 0x80000002;
 export const OP_EXTEND_UpdateAddInt             = 0x80000007;
 export const OP_UPGRADE                         = 0x90000000;
+
+
+export const OP_TEST_ParseAddr                   = 0x90000000; //for test

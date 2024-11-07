@@ -71,6 +71,7 @@ export class Bridge implements Contract {
     static createFromAddress(address: Address) {
         return new Bridge(address);
     }
+
     static async createForDeploy(config: BridgeConfig) {
         const workchain = 0; // deploy to workchain 0
         const code = await compile('Bridge');
@@ -381,24 +382,29 @@ export class Bridge implements Contract {
             toAccount:result.stack.readBuffer().toString('hex'),
         }
     }
+
     async getFirstTokenPairID(provider: ContractProvider) {
         const result = await provider.get('get_first_tokenpair_id', []);
         // todo getTokenPair
         return result.stack.readNumber()
     }
+
     async getNextTokenPairID(provider: ContractProvider) {
         const result = await provider.get('get_next_tokenpair_id', []);
         // todo getTokenPair
         return result.stack.readNumber()
     }
+
     async getFirstStoremanGroupID(provider: ContractProvider) {
         const { stack } = await provider.get("get_first_smg_id", []);
         return stack.readBigNumber();
     }
+
     async getNextStoremanGroupID(provider: ContractProvider, id: bigint) {
         const { stack } = await provider.get("get_next_smg_id", [{ type: 'int', value: id }]);
         return stack.readBigNumber();
     }
+
     async getStoremanGroupConfig(provider: ContractProvider, id: bigint) {
         const { stack } = await provider.get("get_smgConfig", [{ type: 'int', value: id }]);
         return {
@@ -407,6 +413,7 @@ export class Bridge implements Contract {
             endTime:stack.readBigNumber(),
         }
     }
+
     async sendSetStoremanGroupConfig(provider: ContractProvider, id: bigint, gpk: bigint, startTime: number, endTime: number,
         opts: {
             sender: Sender,
@@ -450,11 +457,13 @@ export class Bridge implements Contract {
                 .endCell(),
         });
     }
+
     async getFirstAdmin(provider: ContractProvider,){
         const { stack } = await provider.get("get_first_crossAdmin", []);
         console.log("stack:", stack)
         return stack.readBuffer().toString('hex');
     }
+
     async getNextAdmin(provider: ContractProvider,adminAddr:Address){
         const { stack } = await provider.get("get_next_crossAdmin", [{ type: 'slice', cell: beginCell().storeAddress(adminAddr).endCell()}]);
         return stack.readBuffer().toString('hex');
@@ -467,6 +476,7 @@ export class Bridge implements Contract {
         const result = await provider.get('get_updated_int', []);
         return result.stack.readNumber()
     }
+
     async sendUpdateInt(provider: ContractProvider,
         opts: {
             sender: Sender,
@@ -482,6 +492,7 @@ export class Bridge implements Contract {
             .endCell()
         });
     }
+
     async sendUpgradeSC(provider: ContractProvider, code: Cell,
         opts: {
             sender: Sender,
@@ -498,6 +509,7 @@ export class Bridge implements Contract {
             .endCell()
         });
     }
+
     async getVersion(provider: ContractProvider) {
         const result = await provider.get('version', []);
         return result.stack.readString()
