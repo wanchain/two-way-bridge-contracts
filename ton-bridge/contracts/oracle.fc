@@ -35,12 +35,14 @@ const int MAX_CLEAN_COUNT = 100;
 }
 
 ;; Helper functions for smg struct
-(int, int, int) load_smg(slice cs) inline {
-    return (cs~load_uint(256), cs~load_uint(64), cs~load_uint(64));
+;; gpkx gpky startTime endTime
+(int, int, int,int) load_smg(slice cs) inline {
+    return (cs~load_uint(256), cs~load_uint(256), cs~load_uint(64), cs~load_uint(64));
 }
 
-builder store_smg(builder b, int gpk, int startTime, int endTime)  {
-    return b.store_uint(gpk, 256)
+builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime)  {
+    return b.store_uint(gpkX, 256)
+            .store_uint(gpkY, 256)
             .store_uint(startTime, 64)
             .store_uint(endTime, 64);
 }
@@ -48,14 +50,14 @@ builder store_smg(builder b, int gpk, int startTime, int endTime)  {
 
 
 ;; Get a smg by ID
-(int, int, int) oracle_get_smg(cell refcell, int id) method_id {
+(int, int, int, int) oracle_get_smg(cell refcell, int id) method_id {
     (_, cell smgConfig, _) = oracle_load_data(refcell);
     var (smg_slice, found?) = smgConfig.udict_get?(SMGID_DICTIONARY_KEY_LEN, id);
     if (found?) {
-        var (gpk, startTime, endTime) = load_smg(smg_slice);
-        return (gpk, startTime, endTime);
+        var (gpkX, gpkY, startTime, endTime) = load_smg(smg_slice);
+        return (gpkX, gpkY, startTime, endTime);
     } else {
-        return (0, 0, 0); ;; Return default values if not found
+        return (0, 0, 0, 0); ;; Return default values if not found
     }
 }
 ;; Get the first smg in the dictionary
@@ -86,7 +88,7 @@ builder store_smg(builder b, int gpk, int startTime, int endTime)  {
     
     (int id, slice value, int success) = smgs.udict_get_min?(DICTIONARY_KEY_LEN);
     if (success) {
-        (int gpk, int startTime, int endTime) = load_smg(value);
+        (int gpkX, int gpkY, int startTime, int endTime) = load_smg(value);
         if(now() > endTime) {
             smgs~udict_delete?(DICTIONARY_KEY_LEN, id);
         }
@@ -99,7 +101,7 @@ builder store_smg(builder b, int gpk, int startTime, int endTime)  {
     while(count < MAX_CLEAN_COUNT)  {
         (current_id, slice value, int success) = smgs.udict_get_next?(DICTIONARY_KEY_LEN, current_id);
         if (success) {
-            (int gpk, int startTime, int endTime) = load_smg(value);
+            (int gpkX, int gpkY, int startTime, int endTime) = load_smg(value);
             if(now() > endTime) {
                 smgs~udict_delete?(DICTIONARY_KEY_LEN, id);
             }
@@ -116,12 +118,13 @@ builder store_smg(builder b, int gpk, int startTime, int endTime)  {
     (slice oracleAdmin, cell smgConfig, cell smgTxUniqueId) = oracle_load_data(refcell);
     if (op == OP_ORACLE_SetSMG) {
         int id = in_msg_body~load_uint(256);
-        int gpk = in_msg_body~load_uint(256);
+        int gpkX = in_msg_body~load_uint(256);
+        int gpkY = in_msg_body~load_uint(256);
         int startTime = in_msg_body~load_uint(64);
         int endTime = in_msg_body~load_uint(64);
         
         clean_expired_smgs(smgConfig);
-        smgConfig~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpk, startTime, endTime));
+        smgConfig~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime));
         return oracle_generate_data(oracleAdmin, smgConfig, smgTxUniqueId);
     }  ;; there  is no elseif 
     if (op == OP_ORACLE_DeleteSMG) { ;; Delete smg operation

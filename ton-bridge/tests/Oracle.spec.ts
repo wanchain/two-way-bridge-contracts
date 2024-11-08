@@ -60,7 +60,7 @@ describe('Oracle', () => {
     });
     it('add first smg', async () => {
         let user1 = await blockchain.treasury('user1');
-        let txRet = await bridge.sendSetStoremanGroupConfig(112n, 2n, 3, 4, {
+        let txRet = await bridge.sendSetStoremanGroupConfig(112n, 2n, 3n, 3, 4, {
             sender: user1.getSender(),
             value: toNano('0.01'),
             queryID:1,
@@ -80,12 +80,12 @@ describe('Oracle', () => {
     });
     it('add second smg', async () => {
         let user1 = await blockchain.treasury('user1');
-        let txRet = await bridge.sendSetStoremanGroupConfig(112n, 2n, 3, 4, {
+        let txRet = await bridge.sendSetStoremanGroupConfig(112n, 2n, 3n, 3, 4, {
             sender: user1.getSender(),
             value: toNano('0.01'),
             queryID:1,
         })
-        txRet = await bridge.sendSetStoremanGroupConfig(111n, 2n, 3, 4, {
+        txRet = await bridge.sendSetStoremanGroupConfig(111n, 2n, 3n,3, 4, {
             sender: user1.getSender(),
             value: toNano('0.01'),
             queryID:1,

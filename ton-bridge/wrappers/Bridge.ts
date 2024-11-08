@@ -412,7 +412,7 @@ export class Bridge implements Contract {
         }
     }
 
-    async sendSetStoremanGroupConfig(provider: ContractProvider, id: bigint, gpk: bigint, startTime: number, endTime: number,
+    async sendSetStoremanGroupConfig(provider: ContractProvider, id: bigint, gpkX: bigint, gpkY:bigint, startTime: number, endTime: number,
         opts: {
             sender: Sender,
             value: bigint,
@@ -422,13 +422,14 @@ export class Bridge implements Contract {
         await provider.internal(opts.sender, {
             value: opts.value,
             body: beginCell()
-            .storeUint(opcodes.OP_ORACLE_SetSMG, 32) // op (op #1 = increment)
-            .storeUint(0, 64) // query id
-            .storeUint(id, 256)
-            .storeUint(gpk, 256)
-            .storeUint(startTime, 64)
-            .storeUint(endTime, 64)
-            .endCell()
+                .storeUint(opcodes.OP_ORACLE_SetSMG, 32) // op (op #1 = increment)
+                .storeUint(0, 64) // query id
+                .storeUint(id, 256)
+                .storeUint(gpkX, 256)
+                .storeUint(gpkY, 256)
+                .storeUint(startTime, 64)
+                .storeUint(endTime, 64)
+                .endCell()
         });
     }
 

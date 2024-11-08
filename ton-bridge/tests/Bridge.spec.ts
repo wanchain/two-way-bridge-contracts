@@ -235,6 +235,11 @@ describe('Bridge', () => {
         });
         // 4. todo set gpk (used to check sig)
 
+        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+        let gpk = "";
+        let retNew4 = await bridge.sendSetStoremanGroupConfig(tokenPairId3);
+        console.log("retNew4", retNew4);
+
     });
 
     beforeEach(async () => {
