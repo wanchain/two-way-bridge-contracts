@@ -154,9 +154,9 @@
 }
 
 ;; getter for oracle
-(int, int, int,int ) get_smgConfig(int id) method_id {
+(int, int, int,int,int) get_smgConfig(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return oracle_get_smg(oracle, id);
+    return oracle_get_smg(oracle, id, 0);
 }
 (int, int) get_fee(int _src_chain_id, int _dst_chain_id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
@@ -173,13 +173,24 @@
 }
 (int) get_first_smg_id() method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return oracle_get_first_smg_id(oracle);
+    return oracle_get_first_smg_id(oracle,0);
 }
 (int) get_next_smg_id(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return oracle_get_next_smg_id(oracle, id);
+    return oracle_get_next_smg_id(oracle, id,0);
 }
-
+(int, int, int, int, int) get_smgConfigCommited(int id) method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return oracle_get_smg(oracle, id, 1);
+}
+(int) get_first_smg_id_Commited() method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return oracle_get_first_smg_id(oracle, 1);    
+}
+(int) get_next_smg_id_Commited(int id) method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return oracle_get_next_smg_id(oracle, id, 1);
+}
 ;; getter for tokenManager
 (int, slice, int, slice) get_token_pair(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();

@@ -51,6 +51,7 @@ export function bridgeConfigToCell(config: BridgeConfig): Cell {
         .storeRef(beginCell()  // *****about oracle begin*****
             .storeAddress(config.oracleAdmin) // oracleAdmin
             .storeDict() // mapSmgConfig
+            .storeDict() // mapSmgConfigCommit
             .storeDict() // mapSmgTxStatus
             .endCell()) // *****about oracle end*****
 
@@ -432,7 +433,10 @@ export class Bridge implements Contract {
                 .endCell()
         });
     }
-
+    async getBalance(provider: ContractProvider) {
+        let state = await provider.getState();
+        return state.balance;
+    }
     async sendAddAdmin(
         provider: ContractProvider,
         via:Sender,

@@ -33,8 +33,9 @@ const OP_TOKENPAIR_Upsert               = 0x50000003;
 const OP_ORACLE                         = 0x60000000;
 const OP_ORACLE_TransferOracleAdmin     = 0x60000001;
 const OP_ORACLE_SetSMG                  = 0x60000002;
-const OP_ORACLE_DeleteSMG               = 0x60000002;
-const OP_ORACLE_AcquireReadySmgInfo     = 0x60000004;
+const OP_ORACLE_CommitSMG               = 0x60000003;
+const OP_ORACLE_DeleteSMG               = 0x60000004;
+const OP_ORACLE_AcquireReadySmgInfo     = 0x60000005;
 
 const OP_GP_TransferFoundation          = 0x70000001;
 const OP_GP_AcquireReadySmgInfo         = 0x70000002;
