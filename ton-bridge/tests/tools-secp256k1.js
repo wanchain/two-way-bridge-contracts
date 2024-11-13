@@ -1,0 +1,1 @@
+../../utils/schnorr/tools-secp256k1.js
