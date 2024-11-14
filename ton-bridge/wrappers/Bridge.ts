@@ -18,7 +18,8 @@ import * as opcodes from "./opcodes"
 import {OP_CROSS_SmgRelease} from "./opcodes";
 
 export const BIP44_CHAINID = 0x4567; //todo change later
-export const ZERO_ACCOUNT = "0x0000000000000000000000000000000000000000";
+export const TON_COIN_ACCOUT = "0x0000000000000000000000000000000000000000000000000000000000000000"; // 32 bytes
+export const WK_CHIANID = "0";
 
 export type BridgeConfig = {
     owner:Address,
@@ -211,16 +212,18 @@ export class Bridge implements Contract {
             });
             return ret;
         }
-        console.log("tokenAccount",tokenAccount);
+        console.log("tokenAccount",tokenAccount,"TON_COIN_ACCOUT",TON_COIN_ACCOUT);
+        console.log("(len)tokenAccount",tokenAccount.length,"(len)TON_COIN_ACCOUT",TON_COIN_ACCOUT.length);
         // 3.1 ton
-        if(tokenAccount === ZERO_ACCOUNT.substring(2) ){
+        if(tokenAccount === TON_COIN_ACCOUT.substring(2) ){
             console.log("entering ton coin........");
             let ret = await sendUserLock();
             return;
         }
 
-        let addrFriedly = Address.parseFriendly(HexStringToBuffer(tokenAccount));
-        let c = JettonMinter.createFromAddress(addrFriedly.address);
+        //let addrFriedly = Address.parseFriendly(HexStringToBuffer(tokenAccount));
+        let addRaw = Address.parse(WK_CHIANID+":"+ tokenAccount);
+        let c = JettonMinter.createFromAddress(addRaw);
         let jp =  await provider.open(c);
         // 3.2 original Token
         let admin = await jp.getAdminAddress();
@@ -407,7 +410,8 @@ export class Bridge implements Contract {
     async getStoremanGroupConfig(provider: ContractProvider, id: bigint) {
         const { stack } = await provider.get("get_smgConfig", [{ type: 'int', value: id }]);
         return {
-            gpk:stack.readBigNumber(),
+            gpkX:stack.readBigNumber(),
+            gpkY:stack.readBigNumber(),
             startTime:stack.readBigNumber(),
             endTime:stack.readBigNumber(),
         }

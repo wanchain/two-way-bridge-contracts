@@ -9,6 +9,8 @@
 #include "jetton/messages.func";
 #include "tokenManager.fc";
 #include "jetton/op-codes.func";
+#include "./oracle.fc";
+#include "imports/signature/sig-header.fc";
 
 () smgRelease_ton(int _queryId, int _uniqId, int _smgId, int _token_pair_id, int _release_value,
 int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s,
@@ -132,9 +134,25 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
     return ();
 }
 
-() cross_recv_internal(int op, int query_id, cell token_manager,int msg_value, cell in_msg_full, slice in_msg_body) impure {
+(int) compute_hash(int current_chain_id, int unique_id, int token_pair_id, int value, int fee, slice token_account, slice user_account) {
+    var msg = begin_cell()
+        .store_uint(current_chain_id, 64)
+        .store_uint(unique_id, 256)
+        .store_uint(token_pair_id, 32)
+        .store_uint(value, 256)
+        .store_uint(fee, 256)
+        .store_ref(begin_cell()
+            .store_slice(user_account)
+            .store_slice(token_account)
+            .end_cell());
+
+    ;;return slice_hash_keccak256(msg.begin_parse(), 1);
+    return msg.end_cell().cell_hash();
+}
+
+() cross_recv_internal(int op, int query_id, cell token_manager, int msg_value, cell in_msg_full, slice in_msg_body, cell oracle) impure {
     ~strdump("cross_recv_internal....");
-    slice ZERO_ACCOUNT = begin_cell().store_int(0, 160).end_cell().begin_parse();
+    slice ZERO_ACCOUNT = begin_cell().store_int(0, 256).end_cell().begin_parse();
     if (op == OP_CROSS_UserLock) {
         throw(0x01); ;; todo should delete
         return ();   ;; todo should delete
@@ -145,7 +163,7 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             in_msg_body~load_msg_addr()
         );
 
-        (int _src_chainId, slice _from_account, int _dst_chainId, slice _dst_account) = tm_get_token_pair(token_manager,_token_pair_id);
+        (int _src_chainId, slice _from_account, int _dst_chainId, slice _dst_account) = tm_get_token_pair(token_manager, _token_pair_id);
 
         slice _token_account = begin_cell().end_cell().begin_parse();
         if (_src_chainId == BIP44_CHAINID) {
@@ -203,7 +221,7 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
 
         slice part2 = in_msg_body~load_ref().begin_parse();
         (
-            int _r,
+            int _e,
             int _p,
             int _s) =
         (
@@ -221,23 +239,18 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             part3~load_msg_addr());
         part3.end_parse();
 
+        ~strdump("before oracle_get_msg");
+        ;; check gpk working time
+        ;;(int gpk_x, int gpk_y, int start_time, int endTime, int timestamp) = oracle_get_smg(oracle, _smgId, 1);
+        (int gpk_x, int gpk_y, int start_time, int endTime, int timestamp) = oracle_get_smg(oracle, _smgId, 0);
+        throw_unless(0xffed, (now() > start_time) & (now() < endTime));
 
+        ~strdump("end oracle_get_msg");
 
-        ;;todo check tokenaccount == ZERO?  coin
-        ;;todo check admin of the tokenaccount == this.address? wrapped token
-        ;;todo else JettonToken
+        ;; check unique tx
 
-        ;;todo get gpkInfo
-        ;;todo compute sumhash
-        ;;todo check signature
-        ;;todo check the fee
-        {--
-            1. coin => normal transfer coin
-            2. wrapped token => smgMint
-            3. Jetton token => send transfer message to JW_BRIDGE contract.
-        -}
-
-        (int _src_chainId, slice _from_account,int _dst_chainId, slice _dst_account) = tm_get_token_pair(token_manager,_token_pair_id);
+        ;; todo check the fee
+        (int _src_chainId, slice _from_account, int _dst_chainId, slice _dst_account) = tm_get_token_pair(token_manager, _token_pair_id);
 
         slice _token_account_from_tk = begin_cell().end_cell().begin_parse();
         if (_src_chainId == BIP44_CHAINID) {
@@ -250,28 +263,37 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             }
         }
 
+        ;; check signature
+        ~strdump("before compute_hash");
+        int msg_hash = compute_hash(BIP44_CHAINID, _uniqId, _token_pair_id, _release_value, _fee, _token_account_from_tk, _user_account);
+        ~strdump("end compute_hash");
 
-        ;; todo why _token_account_from_tk is not same as the one from parameter?
+        ~strdump("before verify_sec");
+        throw_unless(0xffee, verify_sec(_s, gpk_x, gpk_y, _e, _p, msg_hash));
+        ~strdump("after verify_sec");
 
         if (equal_slices(_token_account_from_tk, ZERO_ACCOUNT)) {
             ~strdump("before entering smgRelease_ton...");
             ;; coin
             ;; user lock has not fee parameter, but user_burn has this parameter
-            smgRelease_ton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account_from_tk, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+            smgRelease_ton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account_from_tk, _user_account, _e, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
         } else {
 
-            _token_account_from_tk~load_bits(8);
+            {- _token_account_from_tk~load_bits(8);
             int wk_chain = _token_account_from_tk~load_uint(8);
             int hash = _token_account_from_tk~load_uint(256);
-            slice token_account_int = get_serialized_address(wk_chain,hash);
+            -}
+
+            int hash = _token_account_from_tk~load_uint(256);
+            slice token_account_int = get_serialized_address(WORKING_CHAINID, hash);
 
             ;; todo get jetton_admin_addr from jetton_admin
             if (equal_slices(_jetton_admin_addr, my_address())) {
                 ~strdump("before entering smgRelease_wrapped_jetton...");
-                smgRelease_wrapped_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+                smgRelease_wrapped_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _e, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
             } else {
                 ~strdump("before entering smgRelease_org_jetton...");
-                smgRelease_org_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _r, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+                smgRelease_org_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _e, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
             }
         }
         return ();

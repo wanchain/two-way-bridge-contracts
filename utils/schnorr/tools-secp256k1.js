@@ -176,6 +176,25 @@ function getSecSchnorrS(sk, typesArray, parameters) {
         msgHash: bufferToHexString(M1Buff),
     }
 }
+// msgHash: buffer
+function getSecSchnorrSByMsgHash(sk, msgHash) {
+    // let MBuff = computeM(typesArray, parameters);
+    // let M1Buff = computeM1(MBuff);
+
+    let pk = getPKBySk(sk);
+    let pkBuf = Buffer.from(pk.substring(2), 'hex');
+    let eBuffHexStr = computeE(R, getPararity(pkBuf), getXBytesFromPk(pkBuf), msgHash);
+    console.log("eBuf after hash", eBuffHexStr);
+    let sBuff = getSBuff(sk, Buffer.from(eBuffHexStr.substring(2), 'hex'));
+    return {
+        s: bufferToHexString(sBuff),
+        e: eBuffHexStr,
+        p: bufferToHexString(getPararity(pkBuf)),
+        pkX: bufferToHexString(getXBytesFromPk(pkBuf)),
+        pkY: bufferToHexString(getYBytesFromPk(pkBuf)),
+        msgHash: bufferToHexString(msgHash),
+    }
+}
 
 module.exports = {
     getS: getS,
@@ -184,4 +203,5 @@ module.exports = {
     computeE: computeE,
     getPararity: getPararity,
     getSecSchnorrS: getSecSchnorrS,
+    getSecSchnorrSByMsgHash:getSecSchnorrSByMsgHash,
 };

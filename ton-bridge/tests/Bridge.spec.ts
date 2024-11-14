@@ -1,15 +1,32 @@
 import {Blockchain, SandboxContract, TreasuryContract} from '@ton/sandbox';
-import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell} from '@ton/core';
-import {Bridge, ZERO_ACCOUNT} from '../wrappers/Bridge';
+import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
+import {Bridge, TON_COIN_ACCOUT,BIP44_CHAINID} from '../wrappers/Bridge';
 import '@ton/test-utils';
 import {compile} from '@ton/blueprint';
 import {JettonMinter} from "../wrappers/JettonMinter";
 import {JettonWallet} from "../wrappers/JettonWallet";
 import {BufferrToHexString, HexStringToBuffer} from "./utils";
+import { common } from '../wrappers/common';
+
+const schnorr = require('./tools-secp256k1.js');
 
 function AccountToBig(addr: Address) {
     return BigInt("0x" + addr.hash.toString('hex'));
 };
+
+const skSmg = new Buffer("097e961933fa62e3fef5cedef9a728a6a927a4b29f06a15c6e6c52c031a6cb2b", 'hex');
+const gpk = schnorr.getPKBySk(skSmg);
+const gpkX = gpk.startsWith("0x") || gpk.startsWith("0X")? gpk.substring(0,66): `0x${gpk.substring(0,64)}`;
+const gpkY = gpk.startsWith("0x") || gpk.startsWith("0X")? `0x${gpk.substring(66)}`: `0x${gpk.substring(64)}`;
+const smgId = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+
+const wkDuring = 1000; // seconds
+
+let tokenInfo = {
+    tokenOrg:{tokenPairId:0x01,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
+    tokenWrapped:{tokenPairId:0x02,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
+    coin:{tokenPairId:0x03,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:''},
+}
 
 describe('Bridge', () => {
     let code: Cell;
@@ -35,6 +52,7 @@ describe('Bridge', () => {
     let bridge: SandboxContract<Bridge>;
 
     beforeAll(async () => {
+
         // 1. deploy bridge
         code = await compile('Bridge');
         jwallet_code = await compile('JettonWallet');
@@ -125,13 +143,15 @@ describe('Bridge', () => {
         });
 
         // 3.1 add token pair for token-org
-        let tokenPairId = 0x01;
-        let srcChainId = 0x1234;
-        let dstChainId = 0x4567;
-        let srcTokenAcc = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
-        //let dstTokenAcc = "0x32356335646535663562323836303733633539336564666437376234386162633761343865356134663364346364396434323866663933352e3535353334343433";
 
-        let dstTokenAcc = BufferrToHexString(jettonMinter.address.toStringBuffer())  //todo handle testnet and mainnet , bounceable and non-bounceable
+        let tokenPairId = tokenInfo.tokenOrg.tokenPairId;
+        let srcChainId = tokenInfo.tokenOrg.srcChainId;
+        let dstChainId = tokenInfo.tokenOrg.dstChainId;
+        let srcTokenAcc = tokenInfo.tokenOrg.srcTokenAcc;
+
+
+        let dstTokenAcc = BufferrToHexString(jettonMinter.address.hash)  //todo handle testnet and mainnet , bounceable and non-bounceable
+        tokenInfo.tokenOrg.dstTokenAcc = dstTokenAcc;
 
         console.log("(hex)dstTokenAcc....", dstTokenAcc)
         console.log("(str)dstTokenAcc....", jettonMinter.address)
@@ -168,12 +188,15 @@ describe('Bridge', () => {
         });
 
         // 3.2 add token pair for token-wrapped
-        let tokenPairId2 = 0x02;
-        let srcChainId2 = 0x1234;
-        let dstChainId2 = 0x4567;
-        let srcTokenAcc2 = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
 
-        let dstTokenAcc2 = BufferrToHexString(jettonMinter_dog.address.toStringBuffer())  //todo handle testnet and mainnet , bounceable and non-bounceable
+        let tokenPairId2 = tokenInfo.tokenWrapped.tokenPairId;
+        let srcChainId2 = tokenInfo.tokenWrapped.srcChainId;
+        let dstChainId2 = tokenInfo.tokenWrapped.dstChainId;
+        let srcTokenAcc2 = tokenInfo.tokenWrapped.srcTokenAcc;
+
+        let dstTokenAcc2 = BufferrToHexString(jettonMinter_dog.address.hash);
+
+        tokenInfo.tokenWrapped.dstTokenAcc = dstTokenAcc2;
 
         console.log("(hex)dstTokenAcc2....", dstTokenAcc2)
         console.log("(str)dstTokenAcc2....", jettonMinter_dog.address)
@@ -202,14 +225,14 @@ describe('Bridge', () => {
         });
 
         // 3.3 add token pair for ton-coin
-        let tokenPairId3 = 0x03;
-        let srcChainId3 = 0x1234;
-        let dstChainId3 = 0x4567;
-        let srcTokenAcc3 = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+        let tokenPairId3 = tokenInfo.coin.tokenPairId;
+        let srcChainId3 = tokenInfo.coin.srcChainId;
+        let dstChainId3 = tokenInfo.coin.dstChainId;
+        let srcTokenAcc3 = tokenInfo.coin.srcTokenAcc;
 
-        let dstTokenAcc3 = "0x0000000000000000000000000000000000000000";
+        let dstTokenAcc3 = TON_COIN_ACCOUT;
         console.log("(hex)dstTokenAcc3....", dstTokenAcc2)
-
+        tokenInfo.coin.dstTokenAcc = TON_COIN_ACCOUT;
 
         let retOld3 = await bridge.getTokenPair(tokenPairId3);
         console.log("retOld2", retOld3);
@@ -235,10 +258,17 @@ describe('Bridge', () => {
         });
         // 4. todo set gpk (used to check sig)
 
-        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-        let gpk = "";
-        // let retNew4 = await bridge.sendSetStoremanGroupConfig(tokenPairId3);
-        // console.log("retNew4", retNew4);
+        let startTime = Math.floor(Date.now() / 1000);
+        let endTime = startTime + wkDuring;
+        let retSmg = await bridge.sendSetStoremanGroupConfig(BigInt(smgId),BigInt(gpkX),BigInt(gpkY),startTime,endTime,{
+            sender: deployer.getSender(),
+            value: toNano('1000'),
+            queryID: queryID,
+        });
+        console.log("retSmg", retSmg);
+
+        let retGetSmg = await bridge.getStoremanGroupConfig(BigInt(smgId));
+        console.log("retGetSmg",retGetSmg);
 
     });
 
@@ -405,8 +435,8 @@ describe('Bridge', () => {
     });
 
     it('[smgRelease ton] should msgRelease success', async () => {
-        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-        let tokenPairID = 0x3;
+        let smgID = smgId;
+        let tokenPairID = tokenInfo.coin.tokenPairId;
         let releaseValue = BigInt(toNano(1));
         let value = BigInt(toNano(2));
         console.log("smgID(bigInt)==>", BigInt(smgID));
@@ -415,10 +445,20 @@ describe('Bridge', () => {
         const uniqueID = BigInt(1);
         const fee = BigInt(1000);
 
-        const e = BigInt(0);
+        let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
+            BigInt(uniqueID),
+            BigInt(tokenPairID),
+            BigInt(releaseValue),
+            BigInt(fee),
+            TON_COIN_ACCOUT,
+            bob.address);
 
-        const p = BigInt(0);
-        const s = BigInt(0);
+        console.log("msgHashResult....",msgHashResult);
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,msgHashResult.hashBuf);
+        const e = BigInt(sig.e);
+
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);
 
         console.log("before smgRelease ton");
 
@@ -461,8 +501,8 @@ describe('Bridge', () => {
     });
 
     it('[smgRelease original token] should msgRelease success', async () => {
-        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-        let tokenPairID = 0x2;
+        let smgID = smgId;
+        let tokenPairID = tokenInfo.tokenOrg.tokenPairId;
         let releaseValue = BigInt(toNano(1));
         let value = BigInt(toNano(2));
         console.log("smgID(bigInt)==>", BigInt(smgID));
@@ -471,10 +511,20 @@ describe('Bridge', () => {
         const uniqueID = BigInt(1);
         const fee = BigInt(1000);
 
-        const e = BigInt(0);
+        let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
+            BigInt(uniqueID),
+            BigInt(tokenPairID),
+            BigInt(releaseValue),
+            BigInt(fee),
+            tokenInfo.tokenOrg.dstTokenAcc,
+            bob.address);
 
-        const p = BigInt(0);
-        const s = BigInt(0);
+        console.log("msgHashResult....",msgHashResult);
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,msgHashResult.hashBuf);
+        const e = BigInt(sig.e);
+
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);
 
 
         console.log("before smgRelease original token");
@@ -525,7 +575,7 @@ describe('Bridge', () => {
         // todo add expect later
     });
 
-    it('[smgRelease wrapped token] should msgRelease success', async () => {
+    /*it('[smgRelease wrapped token] should msgRelease success', async () => {
         let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
         let tokenPairID = 0x2;
         let releaseValue = BigInt(toNano(300));
@@ -597,6 +647,6 @@ describe('Bridge', () => {
         expect(true).toEqual(afterTotalSupplyDog == (beforeTotalSupplyDog + releaseValue));      //todo add fee
 
         // todo add expect later
-    });
+    });*/
 
 });

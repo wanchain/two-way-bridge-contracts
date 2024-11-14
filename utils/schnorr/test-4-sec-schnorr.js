@@ -15,6 +15,12 @@ function test() {
     console.log("=====s===hex");
     console.log(s);
 
+
+    let msgHash = "0x12345678123456781234567812345678"
+
+    s = schnorr.getSecSchnorrSByMsgHash(skSmg, Buffer.from(msgHash.substring(2),'hex'));
+    console.log("=====getSecSchnorrSByMsgHash===hex");
+    console.log(s);
 }
 
 test();
