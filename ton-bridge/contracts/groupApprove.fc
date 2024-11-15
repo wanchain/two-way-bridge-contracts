@@ -1,0 +1,163 @@
+#include "imports/std/stdlib.fc";
+#include "imports/util/slice.fc";
+#include "imports/common/opcode.fc";
+
+#pragma version >=0.2.0;
+
+const int MIN_TON_FOR_GAS = 50000000;  ;; 0.05 TON for return message
+const int TON_CHAIN_ID = 1; ;; TODO
+const int GP_TASK_DICTIONARY_KEY_LEN = 256;
+(int, slice, cell) load_data() inline {
+    var ds = get_data().begin_parse();
+    return (
+        ds~load_uint(256),  ;; taskCount
+        ds~load_msg_addr(), ;; foundation
+        ds~load_dict()      ;; task
+    );
+}
+
+() save_data(int taskCount, slice foundation, cell taskDict) impure inline {
+    set_data(begin_cell()
+        .store_uint(taskCount, 256)
+        .store_slice(foundation)
+        .store_dict(taskDict)
+        .end_cell());
+}
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    int current_balance  = get_balance().pair_first();
+    int initial_balance = current_balance - msg_value;
+    ;; ~dump(initial_balance);
+    ;; ~dump(current_balance);
+    if (in_msg_body.slice_empty?()) {
+        ;; ignore all empty messages
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    if (flags & 1) {
+        ;; ignore all bounced messages
+        return ();
+    }
+
+    slice sender_address = cs~load_msg_addr();
+    slice dest_address = cs~load_msg_addr(); ;; skip dst
+    ~strdump("dest_address"); ~dump(dest_address);
+    cs~load_coins(); ;; skip value
+    cs~skip_bits(1); ;; skip extracurrency collection
+    cs~load_coins(); ;; skip ihr_fee
+
+    ;;todo should check the rights
+
+    (int taskCount, slice foundation, cell taskDict) = load_data();
+
+    int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+    int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+    ~strdump("op:");~dump(op);
+
+    if (op == OP_GROUPAPPROVE_Proposol) {
+        int chainId = in_msg_body~load_uint(64);
+        slice toAddr = in_msg_body~load_msg_addr();
+        slice gpAddr = in_msg_body~load_msg_addr();
+        cell msg = in_msg_body~load_ref();
+        ~dump(toAddr);
+        throw_unless(0xffff, chainId == TON_CHAIN_ID);
+
+
+        taskDict~udict_set_builder(GP_TASK_DICTIONARY_KEY_LEN, taskCount, begin_cell()
+            .store_slice(toAddr)
+            .store_slice(gpAddr)
+            .store_ref(msg)
+            .store_uint(0, 2)
+            );
+        
+        taskCount += 1;
+        save_data(taskCount, foundation, taskDict);
+       
+        return ();
+    }
+    if (op == OP_GROUPAPPROVE_Execute) {
+        int proposalId = in_msg_body~load_uint(64);
+        slice SmgID = in_msg_body~load_bits(256);
+
+        
+        ;; check if the task has existed
+        var (task_slice, found?) = taskDict.udict_get?(GP_TASK_DICTIONARY_KEY_LEN, proposalId);
+        if (found?) {
+            ~strdump("proposalId"); ~dump(proposalId);
+            var toAddr = task_slice~load_msg_addr();
+            var gpAddr = task_slice~load_msg_addr();
+            var msg_cell = task_slice~load_ref();
+            var msg_slice = msg_cell.begin_parse();
+            int bitsLength = slice_bits(msg_slice);
+            ~strdump("bitsLength"); ~dump(bitsLength);
+            ~strdump("toAddr"); ~dump(toAddr);
+            int op2 = msg_slice~load_uint(32);
+            ~strdump("op2"); ~dump(op2);
+            slice paras = msg_slice~load_bits(bitsLength - 32);
+            ~strdump("paras"); ~dump(paras);
+            var msg = begin_cell()
+                .store_uint(0x10, 6)     ;;
+                .store_slice(toAddr)
+                .store_coins(10000000)
+                .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+                .store_uint(op2, 32)
+                .store_uint(proposalId, 64) ;; used as query id
+                .store_slice(gpAddr)
+                .store_slice(paras)
+                .end_cell();
+            send_raw_message(msg,0);
+
+            return ();
+        } else {
+            ~strdump("proposalId not found"); 
+            throw(0xffff);
+        }
+
+    }
+    if (op == OP_COMMON_Finished) {
+        var (task_slice, found?) = taskDict.udict_get?(GP_TASK_DICTIONARY_KEY_LEN, query_id);
+        ~strdump("execut cb query_id"); ~dump(query_id);
+        if (found?) {
+            slice toAddr = task_slice~load_msg_addr();
+            ~strdump("execut cb toAddr"); ~dump(toAddr);
+            slice gpAddr = task_slice~load_msg_addr();
+            ~strdump("execut cb gpAddr"); ~dump(gpAddr);
+            cell msg = task_slice~load_ref();
+            taskDict~udict_set_builder(GP_TASK_DICTIONARY_KEY_LEN, query_id, begin_cell()
+                    .store_slice(toAddr)   
+                    .store_slice(gpAddr)      
+                    .store_ref(msg)
+                    .store_uint(1, 2)
+                    );
+            ~strdump("before save_data");
+
+            save_data(taskCount, foundation, taskDict);
+            return ();
+        } else {
+            throw(0xffff);
+        }
+    }
+    throw(0xffff);
+}
+
+(slice, slice, int) get_proposol(int proposalId) method_id {
+    (int taskCount, slice foundation, cell taskDict) = load_data();
+    var (task_slice, found?) = taskDict.udict_get?(GP_TASK_DICTIONARY_KEY_LEN, proposalId);
+    if (found?) {
+        ~strdump("get_proposol proposalId"); ~dump(proposalId);
+        var toAddr = task_slice~load_msg_addr();
+        var gpAddr = task_slice~load_msg_addr();
+        var msg_cell = task_slice~load_ref();
+        var executed = task_slice~load_uint(2);
+        return (toAddr, msg_cell.begin_parse(), executed);
+    } else {
+        ~strdump("proposalId not found"); 
+        return ("","",0);
+    }    
+}
+
+(int) get_proposol_count() method_id {
+    (int taskCount, slice foundation, cell taskDict) = load_data();
+    return taskCount;
+}

@@ -355,11 +355,28 @@ export class Bridge implements Contract {
         });
     }
 
+    async sendHalt(        
+        provider: ContractProvider,
+        via: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            halt:number,
+        }){
+            await provider.internal(via, {
+                value: opts.value,
+                sendMode: SendMode.PAY_GAS_SEPARATELY,
+                body: beginCell()
+                    .storeUint(opcodes.OP_COMMON_SetHalt, 32)
+                    .storeUint(opts.queryID ?? 0, 64)
+                    .storeUint(opts.halt, 2)
+                    .endCell(),
+            });
+    }
     async getCrossConfig(provider: ContractProvider) {
         const result = await provider.get('get_cross_config', []);
         return {
             owner: result.stack.readAddress(),
-            admin: result.stack.readAddress(),
             halt:result.stack.readNumber(),
             init:result.stack.readNumber()
         }

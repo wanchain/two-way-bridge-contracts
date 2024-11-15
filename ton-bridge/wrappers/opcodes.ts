@@ -21,7 +21,7 @@ export const OP_CROSS_SmgMint                   = 0x40000002;
 export const OP_CROSS_UserBurn                  = 0x40000003;
 export const OP_CROSS_UserRelease               = 0x40000004;
 export const OP_CROSS_SmgRelease                = 0x40000005;
-
+export const OP_CROSS_TransOwner                = 0x40000006;
 export const OP_TOKENPAIR                       = 0x50000000;
 export const OP_TOKENPAIR_Add                   = 0x50000001;
 export const OP_TOKENPAIR_Remove                = 0x50000002;
@@ -30,8 +30,9 @@ export const OP_TOKENPAIR_Upsert                = 0x50000003;
 export const OP_ORACLE                          = 0x60000000;
 export const OP_ORACLE_TransferOracleAdmin      = 0x60000001;
 export const OP_ORACLE_SetSMG                   = 0x60000002;
-export const OP_ORACLE_DeleteSMG                = 0x60000002;
-export const OP_ORACLE_AcquireReadySmgInfo      = 0x60000004;
+export const OP_ORACLE_CommitSMG               = 0x60000003;
+export const OP_ORACLE_DeleteSMG               = 0x60000004;
+export const OP_ORACLE_AcquireReadySmgInfo     = 0x60000005;
 
 export const OP_GP_TransferFoundation           = 0x70000001;
 export const OP_GP_AcquireReadySmgInfo          = 0x70000002;
@@ -46,4 +47,7 @@ export const OP_EXTEND_UpdateAddInt             = 0x80000007;
 export const OP_UPGRADE                         = 0x90000000;
 
 
-export const OP_TEST_ParseAddr                   = 0x90000000; //for test
+export const OP_UPGRADE_Code                    = 0x90000001;
+export const OP_GROUPAPPROVE_Proposol           = 0xa0000001;
+export const OP_GROUPAPPROVE_Execute            = 0xa0000002;
+export const OP_GROUPAPPROVE_Executed_CB            = 0xa0000002;
