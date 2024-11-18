@@ -8,6 +8,7 @@ const OP_COMMON                         = 0x20000000;
 const OP_COMMON_TransferOwner           = 0x20000003;
 const OP_COMMON_SetHalt                 = 0x20000004;
 const OP_COMMON_Initialize              = 0x20000005;
+const OP_COMMON_Finished                = 0x2000000F;
 
 const OP_FEE                            = 0x30000000;
 const OP_FEE_SetChainFee                = 0x30000001;
@@ -24,6 +25,8 @@ const OP_CROSS_SmgMint                  = 0x40000002;
 const OP_CROSS_UserBurn                 = 0x40000003;
 const OP_CROSS_UserRelease              = 0x40000004;
 const OP_CROSS_SmgRelease               = 0x40000005;
+const OP_CROSS_TransOwner               = 0x40000006;
+
 
 const OP_TOKENPAIR                      = 0x50000000;
 const OP_TOKENPAIR_Add                  = 0x50000001;
@@ -50,3 +53,7 @@ const OP_EXTEND_UpdateAddInt            = 0x80000007;
 
 const OP_UPGRADE                         = 0x90000000;
 const OP_UPGRADE_Code                    = 0x90000001;
+
+const OP_GROUPAPPROVE_Proposol           = 0xa0000001;
+const OP_GROUPAPPROVE_Execute            = 0xa0000002;
+const OP_GROUPAPPROVE_Executed_CB            = 0xa0000003;
