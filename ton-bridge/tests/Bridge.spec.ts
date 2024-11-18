@@ -9,6 +9,7 @@ import {BufferrToHexString, HexStringToBuffer} from "./utils";
 import { common } from '../wrappers/common';
 
 const schnorr = require('./tools-secp256k1.js');
+import { slimSndMsgResult} from "./transaction";
 
 function AccountToBig(addr: Address) {
     return BigInt("0x" + addr.hash.toString('hex'));
@@ -135,7 +136,7 @@ describe('Bridge', () => {
         );
 
         const deployResultJetton_dog = await jettonMinter_dog.sendDeploy(deployer_jetton.getSender(), toNano('1'));
-        console.log("deployResultJetton_dog==>", deployResultJetton_dog.transactions);
+        console.log("deployResultJetton_dog==>", slimSndMsgResult(deployResultJetton_dog));
         expect(deployResultJetton_dog.transactions).toHaveTransaction({
             from: deployer_jetton.address,
             to: jettonMinter_dog.address,
@@ -176,7 +177,7 @@ describe('Bridge', () => {
             toAccount: dstTokenAcc,
         });
 
-        console.log("ret", ret);
+        console.log("ret", slimSndMsgResult(ret));
 
         let retNew = await bridge.getTokenPair(tokenPairId);
         console.log("retNew", retNew);
@@ -213,7 +214,7 @@ describe('Bridge', () => {
             toAccount: dstTokenAcc2,
         });
 
-        console.log("ret2", ret2);
+        console.log("ret2", slimSndMsgResult(ret2));
 
         let retNew2 = await bridge.getTokenPair(tokenPairId2);
         console.log("retNew", retNew2);
@@ -246,7 +247,7 @@ describe('Bridge', () => {
             toAccount: dstTokenAcc3,
         });
 
-        console.log("ret3", ret3);
+        console.log("ret3", slimSndMsgResult(ret3));
 
         let retNew3 = await bridge.getTokenPair(tokenPairId3);
         console.log("retNew3", retNew3);
@@ -265,7 +266,7 @@ describe('Bridge', () => {
             value: toNano('1000'),
             queryID: queryID,
         });
-        console.log("retSmg", retSmg);
+        console.log("retSmg", slimSndMsgResult(retSmg));
 
         let retGetSmg = await bridge.getStoremanGroupConfig(BigInt(smgId));
         console.log("retGetSmg",retGetSmg);
@@ -312,7 +313,7 @@ describe('Bridge', () => {
         //todo mint should call from bridge
         // unauthorized_mint_request
         const mintResult = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), alice.address, initialJettonBalance, toNano('0.05'), toNano('1'));
-        console.log("mintResultDog.....", mintResult);
+        console.log("mintResultDog.....", slimSndMsgResult(mintResult));
 
         expect(await aliceJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
         expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
@@ -321,7 +322,7 @@ describe('Bridge', () => {
         //todo mint should call from bridge
         // unauthorized_mint_request
         const mintResult2 = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), bob.address, initialJettonBalance, toNano('0.05'), toNano('1'));
-        console.log("mintResult2Dog.....", mintResult2);
+        console.log("mintResult2Dog.....", slimSndMsgResult(mintResult2));
 
 
         expect(await bobJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
@@ -422,7 +423,7 @@ describe('Bridge', () => {
         console.log("beforeUser1, afterUser1, delta", fromNano(beforeUser1), fromNano(afterUser1), afterUser1 - beforeUser1);
         console.log("beforeUser2, afterUser2,delta", fromNano(beforeUser2), fromNano(afterUser2), afterUser2 - beforeUser2);
 
-        console.log("ret.transaction=>", ret.transactions);
+        console.log("ret.transaction=>", slimSndMsgResult(ret));
         for (let t of ret.transactions) {
             console.log("trans detailed", t.inMessage);
         }
@@ -492,7 +493,7 @@ describe('Bridge', () => {
         console.log("beforeBob, afterBob, delta", fromNano(beforeBob), fromNano(afterBob), afterBob - beforeBob);
         console.log("beforeBridge, afterBridge,delta", fromNano(beforeBridge), fromNano(afterBridge), afterBridge - beforeBridge);
 
-        console.log("ret.transaction=>", ret.transactions);
+        console.log("ret.transaction=>", slimSndMsgResult(ret));
         // console.log("ret=====>",ret);
         // todo add expect later
         expect(true).toEqual(afterBridge <= (beforeBridge)); //todo add fee
@@ -570,14 +571,14 @@ describe('Bridge', () => {
         expect(true).toEqual(afterBobUsdt == (beforeBobUsdt + releaseValue)); //todo add fee
         expect(true).toEqual(afterBridgeUsdt == (beforeBridgeUsdt - releaseValue));      //todo add fee
 
-        console.log("ret.transaction=>", ret.transactions);
+        console.log("ret.transaction=>", slimSndMsgResult(ret));
         // console.log("ret=====>",ret);
         // todo add expect later
     });
 
-    /*it('[smgRelease wrapped token] should msgRelease success', async () => {
-        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-        let tokenPairID = 0x2;
+    it('[smgRelease wrapped token] should msgRelease success', async () => {
+        let smgID = smgId;
+        let tokenPairID = tokenInfo.tokenWrapped.tokenPairId;
         let releaseValue = BigInt(toNano(300));
         //let value = BigInt(toNano(4));
         let value = BigInt(toNano(400));
@@ -587,10 +588,20 @@ describe('Bridge', () => {
         const uniqueID = BigInt(1);
         const fee = BigInt(1000);
 
-        const e = BigInt(0);
+        let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
+            BigInt(uniqueID),
+            BigInt(tokenPairID),
+            BigInt(releaseValue),
+            BigInt(fee),
+            tokenInfo.tokenWrapped.dstTokenAcc,
+            bob.address);
 
-        const p = BigInt(0);
-        const s = BigInt(0);
+        console.log("msgHashResult....",msgHashResult);
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,msgHashResult.hashBuf);
+        const e = BigInt(sig.e);
+
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);
 
 
         console.log("before smgRelease wrapped token...........................");
@@ -617,14 +628,9 @@ describe('Bridge', () => {
             s
         });
 
-        console.log("retSmgReleaseWrappedToken.transaction=>");
-
-        retSmgReleaseWrappedToken.transactions.map((tran)=>{
-            console.log(tran.address,"\n",tran.description,"\n",tran.blockchainLogs,"\n",tran.vmLogs);
-        })
+        console.log("retSmgReleaseWrappedToken.transaction=>",slimSndMsgResult(retSmgReleaseWrappedToken));
 
         console.log("retSmgReleaseWrappedToken.transaction.length=>>>>>>>>>>>>>=>", retSmgReleaseWrappedToken.transactions.length);
-
         let afterTotalSupplyDog = await jettonMinter_dog.getTotalSupply();
         let afterBobDog = await bobJettonWalletDog.getJettonBalance();
 
@@ -647,6 +653,6 @@ describe('Bridge', () => {
         expect(true).toEqual(afterTotalSupplyDog == (beforeTotalSupplyDog + releaseValue));      //todo add fee
 
         // todo add expect later
-    });*/
+    });
 
 });
