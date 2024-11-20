@@ -38,8 +38,7 @@ interface ICross {
 contract CrossWrapper {
     ICross public cross;
 
-    event PartnerCross(string partner, bytes32 smgID, uint tokenPairID, uint value, bytes userAccount);
-    event PartnerCrossNFT(string partner, bytes32 smgID, uint tokenPairID, uint[] tokenIDs, uint[] tokenValues, bytes userAccount);
+    event PartnerCross(string partner);
 
     constructor(address _cross) {
         cross = ICross(_cross);
@@ -47,21 +46,21 @@ contract CrossWrapper {
 
     function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount, string memory partner) external payable {
         cross.userLock{value: msg.value}(smgID, tokenPairID, value, userAccount);
-        emit PartnerCross(partner, smgID, tokenPairID, value, userAccount);
+        emit PartnerCross(partner);
     }
 
     function userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes calldata userAccount, string memory partner) external payable {
         cross.userBurn{value: msg.value}(smgID, tokenPairID, value, fee, tokenAccount, userAccount);
-        emit PartnerCross(partner, smgID, tokenPairID, value, userAccount);
+        emit PartnerCross(partner);
     }
 
     function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, bytes memory userAccount, string memory partner) external payable {
         cross.userLockNFT{value: msg.value}(smgID, tokenPairID, tokenIDs, tokenValues, userAccount);
-        emit PartnerCrossNFT(partner, smgID, tokenPairID, tokenIDs, tokenValues, userAccount);
+        emit PartnerCross(partner);
     }
 
     function userBurnNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, address tokenAccount, bytes memory userAccount, string memory partner) external payable {
         cross.userBurnNFT{value: msg.value}(smgID, tokenPairID, tokenIDs, tokenValues, tokenAccount, userAccount);
-        emit PartnerCrossNFT(partner, smgID, tokenPairID, tokenIDs, tokenValues, userAccount);
+        emit PartnerCross(partner);
     }
 }
