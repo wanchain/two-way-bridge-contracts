@@ -60,6 +60,16 @@ const config = {
     },
   },
   networks: {
+    polygonZkEvmTestnet: {
+      url: "https://rpc.cardona.zkevm-rpc.com",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741838,
+    },
+    polygonZkEvmMainnet: {
+      url: "https://rpc.ankr.com/polygon_zkevm",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741838,
+    },
     waterfallMainnet: {
       url: 'https://rpc.waterfall.network',
       accounts: [process.env.PK],
