@@ -51,7 +51,7 @@ describe("CrossWrapper", function () {
 
       await expect(tx)
         .to.emit(crossWrapper, "PartnerCross")
-        .withArgs(partner, smgID, tokenPairID, value, userAccount);
+        .withArgs(partner);
     });
   });
 
@@ -70,7 +70,7 @@ describe("CrossWrapper", function () {
 
       await expect(tx)
         .to.emit(crossWrapper, "PartnerCross")
-        .withArgs(partner, smgID, tokenPairID, value, userAccount);
+        .withArgs(partner);
     });
   });
 
@@ -87,15 +87,8 @@ describe("CrossWrapper", function () {
       );
 
       await expect(tx)
-        .to.emit(crossWrapper, "PartnerCrossNFT")
-        .withArgs(
-          partner,
-          smgID,
-          tokenPairID,
-          tokenIDs,
-          tokenValues,
-          userAccount
-        );
+        .to.emit(crossWrapper, "PartnerCross")
+        .withArgs(partner);
     });
   });
 
@@ -113,15 +106,8 @@ describe("CrossWrapper", function () {
       );
 
       await expect(tx)
-        .to.emit(crossWrapper, "PartnerCrossNFT")
-        .withArgs(
-          partner,
-          smgID,
-          tokenPairID,
-          tokenIDs,
-          tokenValues,
-          userAccount
-        );
+        .to.emit(crossWrapper, "PartnerCross")
+        .withArgs(partner);
     });
   });
 });
