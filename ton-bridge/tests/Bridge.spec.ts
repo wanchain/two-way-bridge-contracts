@@ -72,6 +72,7 @@ describe('Bridge', () => {
                 init: 0,
                 smgFeeProxy: smgFeeProxy.address,
                 oracleAdmin: oracleAdmin.address,
+                robotAdmin: oracleAdmin.address,
             },
             code
         )
