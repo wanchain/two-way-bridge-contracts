@@ -15,6 +15,7 @@ describe('Bridge', () => {
     let deployer: SandboxContract<TreasuryContract>;
     let smgFeeProxy: SandboxContract<TreasuryContract>;
     let oracleAdmin: SandboxContract<TreasuryContract>;
+    let robotAdmin: SandboxContract<TreasuryContract>;
     let bridge: SandboxContract<Bridge>;
 
     beforeEach(async () => {
@@ -22,6 +23,7 @@ describe('Bridge', () => {
         deployer = await blockchain.treasury('deployer');
         smgFeeProxy = await blockchain.treasury('smgFeeProxy');
         oracleAdmin = await blockchain.treasury('oracleAdmin');
+        robotAdmin = await blockchain.treasury('robotAdmin');
 
         let c = Bridge.createFromConfig(
             {
@@ -30,6 +32,7 @@ describe('Bridge', () => {
                 init:0,
                 smgFeeProxy:smgFeeProxy.address,
                 oracleAdmin:oracleAdmin.address,
+                robotAdmin:robotAdmin.address,
             },
             code
         )

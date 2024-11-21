@@ -27,6 +27,7 @@ export type BridgeConfig = {
     init: number,
     smgFeeProxy:Address,
     oracleAdmin:Address,
+    robotAdmin:Address,
 };
 
 export type CrossConfig = {
@@ -45,6 +46,7 @@ export function bridgeConfigToCell(config: BridgeConfig): Cell {
 
         .storeRef(beginCell() // *****about fee begin*****
             .storeAddress(config.smgFeeProxy) // feeProxyAddress
+            .storeAddress(config.robotAdmin) // robotAdmin
             .storeDict() // about Contract and Agent fee
             .storeDict() // about tokenPairFee
             .endCell())  // *****about fee end*****

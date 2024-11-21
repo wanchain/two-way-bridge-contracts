@@ -57,3 +57,7 @@ const OP_UPGRADE_Code                    = 0x90000001;
 const OP_GROUPAPPROVE_Proposol           = 0xa0000001;
 const OP_GROUPAPPROVE_Execute            = 0xa0000002;
 const OP_GROUPAPPROVE_Executed_CB            = 0xa0000003;
+const OP_GROUPAPPROVE_TranferFoundation  = 0xa0000004;
+const OP_GROUPAPPROVE_Execute_WithGPK    = 0xa0000005;
+
+const OP_FETCH_GPK                         = 0xb0000001;

@@ -63,10 +63,10 @@
     return (0, 0, from_account, to_account);
 }-}
 
-() cb_executed(slice toAddr, int query_id) {
+() cb_executed(slice sender_address, int query_id) {
     var msg = begin_cell()
         .store_uint(0x18, 6)     ;;
-        .store_slice(toAddr)
+        .store_slice(sender_address)
         .store_coins(10000000)
         .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
         .store_uint(OP_COMMON_Finished, 32)
@@ -100,14 +100,35 @@
     int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
 
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    if( op == OP_FETCH_GPK) {
+        var smgID = in_msg_body~load_uint(256);
+        ;; TODO, set gpk first
+        ;; (int gpkx, int gpky, int startTime, int endTime, int timestamp) = get_smgConfigCommited(smgID);
+        ;; throw_unless(0xffed, (now() > start_time) & (now() < endTime)); ;; TODO why eerrror?
+        var gpkx = 0xcb54bc900646fe8de5c8db04e4120e38cb61b3e000ae37e4ecdaf71b777f7ec7 ;
+        var gpky = 0x1f81f87d21eb46e372105a3d123af9a94e0760f9c13738b8ca1abf248a9104f2;
+        ~strdump("OP_FETCH_GPK"); ~dump(slice_bits(in_msg_body));
+        var msg = begin_cell()
+            .store_uint(0x18, 6)     ;;
+            .store_slice(sender_address)
+            .store_coins(10000000)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(OP_GROUPAPPROVE_Execute_WithGPK, 32)
+            .store_uint(query_id, 64)
+            .store_uint(gpkx, 256)
+            .store_uint(gpky, 256)
+            .store_ref(in_msg_body~load_ref())
+            .end_cell();
+        send_raw_message(msg,0);
+
+        return ();
+    }
     if(op & 0xFF000000 == OP_COMMON) {
         if(op == OP_COMMON_SetHalt) {
-            slice gpAddr = in_msg_body~load_msg_addr();
             int _halt = in_msg_body~load_uint(2);
             save_data(cross_owner, _halt, init, ca_fee, oracle, token_manager, extend);
             (int workchain, int hash) = parse_std_addr(sender_address);
             ~strdump("bridge execut cb query_id"); ~dump(query_id);~dump(hash );
-            ;; cb_executed(gpAddr, query_id);
 
             var msg = begin_cell()
                 .store_uint(0x18, 6)     ;;
@@ -124,11 +145,21 @@
         if(op == OP_COMMON_Initialize) {
             int _init = in_msg_body~load_uint(2);
             save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
+
             return ();
         }
         if(op == OP_COMMON_TransferOwner) {
             slice _cross_owner = in_msg_body~load_msg_addr();
             save_data(_cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
+            var msg = begin_cell()
+                .store_uint(0x18, 6)     ;;
+                .store_slice(sender_address)
+                .store_coins(10000000)
+                .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+                .store_uint(OP_COMMON_Finished, 32)
+                .store_uint(query_id, 64)
+                .end_cell();
+            send_raw_message(msg,0);
             return ();
         }
     }
@@ -144,24 +175,61 @@
     if (op & 0xFF000000 == OP_FEE) {
         var _ca_fee = fee_recv_internal(op, ca_fee, msg_value, in_msg_full, in_msg_body);
         save_data(cross_owner, halt, init, _ca_fee, oracle, token_manager, extend);
+        var msg = begin_cell()
+            .store_uint(0x18, 6)     ;;
+            .store_slice(sender_address)
+            .store_coins(10000000)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(OP_COMMON_Finished, 32)
+            .store_uint(query_id, 64)
+            .end_cell();
+        send_raw_message(msg,0);
         return ();
     }
 
     if (op & 0xFF000000 == OP_ORACLE) {
         var _oracle = oracle_recv_internal(op, oracle, msg_value, in_msg_full, in_msg_body);
         save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
+        var msg = begin_cell()
+            .store_uint(0x18, 6)     ;;
+            .store_slice(sender_address)
+            .store_coins(10000000)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(OP_COMMON_Finished, 32)
+            .store_uint(query_id, 64)
+            .end_cell();
+        send_raw_message(msg,0);        
         return ();
     }
 
     if (op & 0xFF000000 == OP_TOKENPAIR) {
         var _token_manager = tm_recv_internal(op, token_manager, msg_value, in_msg_full, in_msg_body);
         save_data(cross_owner, halt, init, ca_fee, oracle, _token_manager, extend);
+        var msg = begin_cell()
+            .store_uint(0x18, 6)     ;;
+            .store_slice(sender_address)
+            .store_coins(10000000)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(OP_COMMON_Finished, 32)
+            .store_uint(query_id, 64)
+            .end_cell();
+        send_raw_message(msg,0);  
         return ();
     }
 
     if (op & 0xFF000000 == OP_EXTEND) {
         var _extend = ext_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
         save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
+        ;; cb_executed(sender_address, query_id);
+        var msg = begin_cell()
+            .store_uint(0x18, 6)     ;;
+            .store_slice(sender_address)
+            .store_coins(10000000)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(OP_COMMON_Finished, 32)
+            .store_uint(query_id, 64)
+            .end_cell();
+        send_raw_message(msg,0);
         return ();
     }
 
