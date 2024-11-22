@@ -376,11 +376,16 @@ export class Bridge implements Contract {
             });
     }
     async getCrossConfig(provider: ContractProvider) {
-        const result = await provider.get('get_cross_config', []);
+        const common = await provider.get('get_cross_config', []);
+        let oracleAdmin = await provider.get('get_oracle_admin', [])
+        let feeConfig = await provider.get('get_fee_config', [])
         return {
-            owner: result.stack.readAddress(),
-            halt:result.stack.readNumber(),
-            init:result.stack.readNumber()
+            owner: common.stack.readAddress(),
+            halt:common.stack.readNumber(),
+            init:common.stack.readNumber(),
+            oracleAdmin: oracleAdmin.stack.readAddress(),
+            feeProxyAdmin: feeConfig.stack.readAddress(),
+            robotAdmin: feeConfig.stack.readAddress(),
         }
     }
 
@@ -435,27 +440,55 @@ export class Bridge implements Contract {
             endTime:stack.readBigNumber(),
         }
     }
-
-    async sendSetStoremanGroupConfig(provider: ContractProvider, id: bigint, gpkX: bigint, gpkY:bigint, startTime: number, endTime: number,
+    async getStoremanGroupConfigCommited(provider: ContractProvider, id: bigint) {
+        const { stack } = await provider.get("get_smgConfigCommited", [{ type: 'int', value: id }]);
+        return {
+            gpkX:stack.readBigNumber(),
+            gpkY:stack.readBigNumber(),
+            startTime:stack.readBigNumber(),
+            endTime:stack.readBigNumber(),
+        }
+    }
+    async sendSetStoremanGroupConfig(provider: ContractProvider, sender: Sender,
         opts: {
-            sender: Sender,
+            id: bigint, gpkX: bigint, gpkY:bigint, startTime: number, endTime: number,
             value: bigint,
             queryID?: number,
         }
     ) {
-        await provider.internal(opts.sender, {
+        await provider.internal(sender, {
             value: opts.value,
             body: beginCell()
                 .storeUint(opcodes.OP_ORACLE_SetSMG, 32) // op (op #1 = increment)
                 .storeUint(0, 64) // query id
-                .storeUint(id, 256)
-                .storeUint(gpkX, 256)
-                .storeUint(gpkY, 256)
-                .storeUint(startTime, 64)
-                .storeUint(endTime, 64)
+                .storeUint(opts.id, 256)
+                .storeUint(opts.gpkX, 256)
+                .storeUint(opts.gpkY, 256)
+                .storeUint(opts.startTime, 64)
+                .storeUint(opts.endTime, 64)
                 .endCell()
         });
     }
+    async sendSetStoremanGroupConfigCommit(provider: ContractProvider, sender: Sender,
+        opts: {
+            id: bigint, gpkX: bigint, gpkY:bigint, startTime: number, endTime: number,
+            value: bigint,
+            queryID?: number,
+        }
+    ) {
+        await provider.internal(sender, {
+            value: opts.value,
+            body: beginCell()
+                .storeUint(opcodes.OP_ORACLE_CommitSMG, 32) // op (op #1 = increment)
+                .storeUint(0, 64) // query id
+                .storeUint(opts.id, 256)
+                .storeUint(opts.gpkX, 256)
+                .storeUint(opts.gpkY, 256)
+                .storeUint(opts.startTime, 64)
+                .storeUint(opts.endTime, 64)
+                .endCell()
+        });
+    }    
     async getBalance(provider: ContractProvider) {
         let state = await provider.getState();
         return state.balance;

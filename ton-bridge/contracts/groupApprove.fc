@@ -150,9 +150,13 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
                 .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
                 .store_uint(op2, 32)
                 .store_uint(proposalId, 64) ;; used as query id
-                .store_slice(paras)
-                .end_cell();
-            send_raw_message(msg,0);
+                .store_slice(paras);
+            if( op2 == OP_UPGRADE_Code) {
+                cell refm = msg_slice~load_ref();
+                msg = msg.store_ref(refm);
+            }
+
+            send_raw_message(msg.end_cell(),0);
 
             return ();
         } else {

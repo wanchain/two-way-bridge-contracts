@@ -17,7 +17,7 @@ endTime: uint 64
 const int SMGID_DICTIONARY_KEY_LEN = 256;
 const int UNIQ_DICTIONARY_KEY_LEN = 256;
 const int MAX_CLEAN_COUNT = 100;
-const int TIMELOCK = 86400;
+const int TIMELOCK = 1;  ;; TODO  for test  86400;
 
 (slice, cell, cell, cell) oracle_load_data(cell refcell) impure {
     var ds = refcell.begin_parse();
@@ -49,7 +49,7 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
             .store_uint(gpkY, 256)
             .store_uint(startTime, 64)
 	        .store_uint(endTime, 64)
-            .store_uint(endTime, 64);
+            .store_uint(timestamp, 64);
 }
 
 
@@ -133,7 +133,10 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
         return 0;
     }
 }
-
+(slice) oracle_get_OracleAdmin(cell refcell) method_id {
+    (slice oracleAdmin, _, _, _) = oracle_load_data(refcell);
+    return oracleAdmin;
+}
 
 () clean_expired_smgs(smgs, smgTxUniqueId) impure {
     int count = 0;
@@ -171,6 +174,10 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
 ;; Example of how to use in recv_internal
 (cell) oracle_recv_internal(int op, cell refcell, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     (slice oracleAdmin, cell smgConfig, cell smgConfigCommit, cell smgTxUniqueId) = oracle_load_data(refcell);
+    if(op == OP_ORACLE_TransferOracleAdmin) {
+        slice oracleAdmin_ = in_msg_body~load_msg_addr();
+        return oracle_generate_data(oracleAdmin_, smgConfig, smgConfigCommit, smgTxUniqueId);
+    }
     if (op == OP_ORACLE_SetSMG) {
         int id = in_msg_body~load_uint(256);
         int gpkX = in_msg_body~load_uint(256);
@@ -195,8 +202,8 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
         var (smg_slice, found?) = smgConfig.udict_get?(SMGID_DICTIONARY_KEY_LEN, id);
         if (found?) {
             var (gpkX1, gpkY1, startTime1, endTime1, timestamp1) = load_smg(smg_slice);
-            throw_unless(0xffff, timestamp > timestamp1 + TIMELOCK);
-            ;; throw_unless(0xffff, gpkX1==gpkX && gpkY1==gpkY && startTime==startTime1 && endTime==endTime1);
+            throw_unless(0xffff, timestamp >= timestamp1 + TIMELOCK);
+            throw_unless(0xffff, (gpkX1 == gpkX) & (gpkY1 == gpkY) & (startTime == startTime1) & (endTime == endTime1));
             clean_expired_smgs(smgConfig,smgTxUniqueId);
             smgConfigCommit~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime, timestamp));
             return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);

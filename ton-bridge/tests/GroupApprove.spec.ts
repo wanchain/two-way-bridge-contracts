@@ -8,10 +8,6 @@ import { common } from '../wrappers/common';
 
 const schnorr = require('./tools-secp256k1.js');
 
-function AccountToBig(addr: Address) {
-    return BigInt("0x" + addr.hash.toString('hex'));
-};
-
 const skSmg = Buffer.from("097e961933fa62e3fef5cedef9a728a6a927a4b29f06a15c6e6c52c031a6cb2b", 'hex');
 const gpk = schnorr.getPKBySk(skSmg);
 const gpkX = gpk.startsWith("0x") || gpk.startsWith("0X")? gpk.substring(0,66): `0x${gpk.substring(0,64)}`;
@@ -21,16 +17,17 @@ const smgId = "0x000000000000000000000000000000000000000000746573746e65745f30363
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
+}
 
 describe('GroupApprove', () => {
     let code: Cell;
     let codeBridge: Cell;
+    let fakeCode : Cell;
 
     beforeAll(async () => {
         code = await compile('GroupApprove');
         codeBridge = await compile('Bridge');
-
+        fakeCode = await compile('Fake');
     });
 
     let blockchain: Blockchain;
@@ -50,12 +47,9 @@ describe('GroupApprove', () => {
         robotAdmin = await blockchain.treasury('robotAdmin');
         owner2 = await blockchain.treasury('owner2');
 
-
-
         let c_bridge = Bridge.createFromConfig(
             {
                 owner: deployer.address,
-                //admin: deployer.address,
                 halt: 0,
                 init: 0,
                 smgFeeProxy: smgFeeProxy.address,
@@ -78,7 +72,7 @@ describe('GroupApprove', () => {
 
         let c = GroupApprove.createFromConfig(
             {
-                chainId: 1,
+                chainId: BIP44_CHAINID,
                 taskId:  0,
                 foundation: oracleAdmin.address,
                 bridge: bridge.address,
@@ -88,57 +82,620 @@ describe('GroupApprove', () => {
         groupApprove = blockchain.openContract(c);
 
         const deployResult = await groupApprove.sendDeploy(deployer.getSender());
-
-        //console.log("deployResult==>",deployResult.transactions);
-
-        // console.log("deployer==>",deployer);
-        // console.log("deployer.address==>",deployer.address);
-        // console.log("deployer.address(bigInt)==>",BigInt("0x"+deployer.address.hash.toString('hex')));
         console.log("GroupApprove.address==>",groupApprove.address);
         console.log("GroupApprove.address(bigInt)==>",BigInt("0x"+groupApprove.address.hash.toString('hex')));
-
-
         expect(deployResult.transactions).toHaveTransaction({
             from: deployer.address,
             to: groupApprove.address,
             deploy: true,
             success: true,
-        });        
-
+        });     
+        
+        // add smg
+        let startTime = Math.floor(Date.now()/1000)
+        let endTime = Math.floor(Date.now()/1000) + 3600*24
+        let ret = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
+            id: BigInt(smgId),
+            gpkX:BigInt(gpkX), gpkY:BigInt(gpkY), 
+            startTime,
+            endTime,
+            value: toNano('1000'),
+            queryID: 1,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: oracleAdmin.address,
+            to: bridge.address,
+            success: true,
+        });  
+        await sleep(1000 * 1);
+        let smg = await bridge.getStoremanGroupConfig(BigInt(smgId))
+        console.log("getStoremanGroupConfig:", smg)
+        ret = await bridge.sendSetStoremanGroupConfigCommit(oracleAdmin.getSender(),{
+            id: BigInt(smgId),
+            gpkX:BigInt(gpkX), gpkY:BigInt(gpkY), 
+            startTime,
+            endTime,
+            value: toNano('1000'),
+            queryID: 1,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: oracleAdmin.address,
+            to: bridge.address,
+            success: true,
+        }); 
     });
 
 
-    it('add first smg', async () => {
+
+    it('group approve set halt', async () => {
         let user1 = await blockchain.treasury('user1');
 
+        let info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.halt).toEqual(0)
+        const balance = await user1.getBalance();
+        console.log("balance before tx:", fromNano(balance))
+        let taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
 
-        // 获取余额（返回的是nano TON）
+
+        let txRet = await groupApprove.sendCrossHalt(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            chainId: BIP44_CHAINID,
+            toAddr: bridge.address,
+            halt: 1,
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+
+
+        const balance2 = await user1.getBalance();
+        console.log("balance after tx:", fromNano(balance2))
+
+        // get task
+        taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("task:", task)
+        expect(task.executed).toEqual(0)
+
+        // send approve and exec
+
+        // let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
+        let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
+        console.log("hashBuf:", hashBuf, BigInt(`0x${hashBuf.toString('hex')}`))
+
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,hashBuf);
+        const e = BigInt(sig.e);
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);        
+        txRet = await groupApprove.sendApproveExec(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            taskId: 0,
+            smgId: BigInt(smgId),
+            e, p, s
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.halt).toEqual(1)
+        task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("msg task:", task)
+        expect(task.executed).toEqual(1)
+    });    
+
+    it('group approve transfer cross owner', async () => {
+        let user1 = await blockchain.treasury('user1');
+
+        let info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.halt).toEqual(0)
         const balance = await user1.getBalance();
         
-        // 转换为TON单位
-        console.log("balance 00000000:", fromNano(balance))
+        console.log("balance before tx:", fromNano(balance))
+        // get task
+        let taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(0)
 
-        // let txRet = await groupApprove.sendTransferCrossOwner(smgFeeProxy.address, {
-        //     sender: user1.getSender(),
-        //     value: toNano('97'),
-        //     queryID:1,
-        // })
-        // expect(txRet.transactions).toHaveTransaction({
-        //     from: user1.address,
-        //     to: groupApprove.address,
-        //     success: true,
-        // });
+        let txRet = await groupApprove.sendTransferCrossOwner(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            chainId: BIP44_CHAINID,
+            toAddr: bridge.address,
+            owner: owner2.address,
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+
+        const balance2 = await user1.getBalance();
+        console.log("balance after tx:", fromNano(balance2))
+
+        // get task
+        taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(1)
+
+        let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("task:", task)
+        expect(task.executed).toEqual(0)
+        // send approve and exec
+        let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
+        console.log("hashBuf:", hashBuf, BigInt(`0x${hashBuf.toString('hex')}`))
+
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,hashBuf);
+        const e = BigInt(sig.e);
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);        
+        txRet = await groupApprove.sendApproveExec(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            taskId: 0,
+            smgId: BigInt(smgId),
+            e, p, s
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+
+        info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.owner.toString()).toEqual(owner2.address.toString())
+        task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("msg task:", task)
+        expect(task.executed).toEqual(1)
+    });    
+    
+    it('group approve transfer oracle admin', async () => {
+        let user1 = await blockchain.treasury('user1');
+
+        let info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.halt).toEqual(0)
+        const balance = await user1.getBalance();
+        
+        console.log("balance before tx:", fromNano(balance))
+        // get task
+        let taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(0)    
+
+        let txRet = await groupApprove.sendTransferOracleAdmin(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            chainId: BIP44_CHAINID,
+            toAddr: bridge.address,
+            oracleAdmin: owner2.address,
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+
+        const balance2 = await user1.getBalance();
+        console.log("balance after tx:", fromNano(balance2))
+
+        // get task
+        taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(1) 
+
+        let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("task:", task)
+
+        // send approve and exec
+        let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
+        console.log("hashBuf:", hashBuf, BigInt(`0x${hashBuf.toString('hex')}`))
+
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,hashBuf);
+        const e = BigInt(sig.e);
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);        
+        txRet = await groupApprove.sendApproveExec(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            taskId: 0,
+            smgId: BigInt(smgId),
+            e, p, s
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.oracleAdmin.toString()).toEqual(owner2.address.toString())
+
+        task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("msg task:", task)
+        expect(task.executed).toEqual(1)
+    });     
+    it('group approve transfer robot admin', async () => {
+        let user1 = await blockchain.treasury('user1');
+
+        let info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.halt).toEqual(0)
+        const balance = await user1.getBalance();
+        console.log("balance before tx:", fromNano(balance))
+
+        let txRet = await groupApprove.sendTransferRobotAdmin(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            chainId: BIP44_CHAINID,
+            toAddr: bridge.address,
+            robotAdmin: owner2.address,
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+
+
+        const balance2 = await user1.getBalance();
+        console.log("balance after tx:", fromNano(balance2))
+
+        // get task
+        let taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(1) 
+
+        let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("task:", task)
+
+        // send approve and exec
+        let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
+        console.log("hashBuf:", hashBuf, BigInt(`0x${hashBuf.toString('hex')}`))
+
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,hashBuf);
+        const e = BigInt(sig.e);
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);        
+        txRet = await groupApprove.sendApproveExec(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            taskId: 0,
+            smgId: BigInt(smgId),
+            e, p, s
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.robotAdmin.toString()).toEqual(owner2.address.toString())
+        task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("msg task:", task)
+        expect(task.executed).toEqual(1)
+    });       
+    it('group approve set fee proxy', async () => {
+        let user1 = await blockchain.treasury('user1');
+
+        let info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.halt).toEqual(0)
+        const balance = await user1.getBalance();
+        
+        console.log("balance before tx:", fromNano(balance))
+        // get task
+        let taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(0) 
+
+
+        let txRet = await groupApprove.sendSetFeeProxy(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            chainId: BIP44_CHAINID,
+            toAddr: bridge.address,
+            feeProxy: owner2.address,
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+
+        const balance2 = await user1.getBalance();
+        console.log("balance after tx:", fromNano(balance2))
+
+        // get task
+        taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+
+        let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("task:", task)
+
+        // send approve and exec
+        let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
+        console.log("hashBuf:", hashBuf, BigInt(`0x${hashBuf.toString('hex')}`))
+
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,hashBuf);
+        const e = BigInt(sig.e);
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);        
+        txRet = await groupApprove.sendApproveExec(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            taskId: 0,
+            smgId: BigInt(smgId),
+            e, p, s
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.feeProxyAdmin.toString()).toEqual(owner2.address.toString())
+
+        task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("msg task:", task)
+        expect(task.executed).toEqual(1)
+    }); 
+    it('group approve add cross admin', async () => {
+        let user1 = await blockchain.treasury('user1');
+
+        let info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.halt).toEqual(0)
+        const balance = await user1.getBalance();
+        
+        console.log("balance before tx:", fromNano(balance))
+        // get task
+        let taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(0) 
+
+
+        let txRet = await groupApprove.sendAddCrossAdmin(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            chainId: BIP44_CHAINID,
+            toAddr: bridge.address,
+            admin: owner2.address,
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
         // console.log("txRet:", txRet.transactions)
         // console.log("txRet:", txRet.transactions[1].totalFees)
         // console.log("txRet:", txRet.transactions[2].totalFees)
 
         const balance2 = await user1.getBalance();
         
-        // 转换为TON单位
-        console.log("balance 1111111:", fromNano(balance2))
-    });
+        console.log("balance after tx:", fromNano(balance2))
 
-    it.only('group approve set halt', async () => {
+        // get task
+        taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(1) 
+
+        let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("task:", task)
+
+        // send approve and exec
+        let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
+        console.log("hashBuf:", hashBuf, BigInt(`0x${hashBuf.toString('hex')}`))
+
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,hashBuf);
+        const e = BigInt(sig.e);
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);        
+        txRet = await groupApprove.sendApproveExec(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            taskId: 0,
+            smgId: BigInt(smgId),
+            e, p, s
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        // expect(info.halt).toEqual(1)
+        // await sleep(2500);
+        task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("msg task:", task)
+        expect(task.executed).toEqual(1)
+    });        
+
+    it('group approve remove cross admin', async () => {
+        let user1 = await blockchain.treasury('user1');
+
+        let info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.halt).toEqual(0)
+        const balance = await user1.getBalance();
+        
+        console.log("balance before tx:", fromNano(balance))
+        // get task
+        let taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(0) 
+
+
+        let txRet = await groupApprove.sendAddCrossAdmin(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            chainId: BIP44_CHAINID,
+            toAddr: bridge.address,
+            admin: owner2.address,
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        // console.log("txRet:", txRet.transactions)
+        // console.log("txRet:", txRet.transactions[1].totalFees)
+        // console.log("txRet:", txRet.transactions[2].totalFees)
+
+        const balance2 = await user1.getBalance();
+        
+        console.log("balance after tx:", fromNano(balance2))
+
+        // get task
+        taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(1) 
+
+        let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("task:", task)
+
+        // send approve and exec
+        let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
+        console.log("hashBuf:", hashBuf, BigInt(`0x${hashBuf.toString('hex')}`))
+
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,hashBuf);
+        const e = BigInt(sig.e);
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);        
+        txRet = await groupApprove.sendApproveExec(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            taskId: 0,
+            smgId: BigInt(smgId),
+            e, p, s
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        // expect(info.halt).toEqual(1)
+        // await sleep(2500);
+        task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("msg task:", task)
+        expect(task.executed).toEqual(1)
+    });       
+    
+    it('group approve transfer foundation', async () => {
+        let user1 = await blockchain.treasury('user1');
+
+        const balance = await user1.getBalance();
+        console.log("balance before tx:", fromNano(balance))
+
+        let txRet = await groupApprove.sendTransferFoundation(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            chainId: BIP44_CHAINID,
+            toAddr: bridge.address,
+            foundation: owner2.address,
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        // console.log("txRet:", txRet.transactions)
+        // console.log("txRet:", txRet.transactions[1].totalFees)
+        // console.log("txRet:", txRet.transactions[2].totalFees)
+
+        const balance2 = await user1.getBalance();
+        
+        console.log("balance after tx:", fromNano(balance2))
+
+
+    });   
+
+    it('group approve upgrade', async () => {
+        let user1 = await blockchain.treasury('user1');
+
+        let info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.halt).toEqual(0)
+        let version = await bridge.getVersion()
+        console.log("getVersion:", version)
+        expect(version).toEqual("0.1")
+        const balance = await user1.getBalance();
+        
+        console.log("balance before tx:", fromNano(balance))
+        // get task
+        let taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+        expect(taskCount).toEqual(0) 
+
+
+        let txRet = await groupApprove.sendUpgradeSC(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            chainId: BIP44_CHAINID,
+            toAddr: bridge.address,
+            code: fakeCode,
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+
+        const balance2 = await user1.getBalance();
+        console.log("balance after tx:", fromNano(balance2))
+
+        // get task
+        taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+
+        let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("task:", task)
+
+        // send approve and exec
+        let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
+        console.log("hashBuf:", hashBuf, BigInt(`0x${hashBuf.toString('hex')}`))
+
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,hashBuf);
+        const e = BigInt(sig.e);
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);        
+        txRet = await groupApprove.sendApproveExec(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            taskId: 0,
+            smgId: BigInt(smgId),
+            e, p, s
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        version = await bridge.getVersion()
+        console.log("getVersion:", version)
+        expect(version).toEqual("Fake")
+
+        task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("msg task:", task)
+        expect(task.executed).toEqual(1)
+    });     
+    it('group approve add token pair', async () => {
         let user1 = await blockchain.treasury('user1');
 
         let info = await bridge.getCrossConfig()
@@ -151,13 +708,21 @@ describe('GroupApprove', () => {
         let taskCount = await groupApprove.getProposolCount()
         console.log("taskCount:", taskCount)
 
-
-        let txRet = await groupApprove.sendCrossHalt(user1.getSender(), {
+        let tokenPairId = 0x999;
+        let fromChainID = 0x1234;
+        let toChainID = 0x4567;
+        let fromAccount = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+        let toAccount = "kQDwf9dYB-a40vYJsmSGD5RBxLhaiagIGOBoP3EGfyV5O7gA";
+        let txRet = await groupApprove.sendAddTokenPair(user1.getSender(), {
             value: toNano('97'),
             queryID:1,
             chainId: BIP44_CHAINID,
             toAddr: bridge.address,
-            halt: 1,
+            tokenPairId, 
+            fromChainID,
+            fromAccount,
+            toChainID,
+            toAccount,
         })
         expect(txRet.transactions).toHaveTransaction({
             from: user1.address,
@@ -180,14 +745,11 @@ describe('GroupApprove', () => {
         console.log("task:", task)
 
         // send approve and exec
-
-        // let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
-        let hashBuf = GroupApprove.computeHash(BigInt(0), BigInt(BIP44_CHAINID));
+        let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
         console.log("hashBuf:", hashBuf, BigInt(`0x${hashBuf.toString('hex')}`))
 
         let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,hashBuf);
         const e = BigInt(sig.e);
-
         const p = BigInt(sig.p);
         const s = BigInt(sig.s);        
         txRet = await groupApprove.sendApproveExec(user1.getSender(), {
@@ -204,616 +766,83 @@ describe('GroupApprove', () => {
         });
         info = await bridge.getCrossConfig()
         console.log("getCrossConfig:", info)
-        expect(info.halt).toEqual(1)
+        // expect(info.halt).toEqual(1)
+        // await sleep(2500);
         task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-        console.log("halt msg task:", task)
-    });    
+        console.log("msg task:", task)
+        expect(task.executed).toEqual(1)
+    });         
+    it('group approve remove token pair', async () => {
+        let user1 = await blockchain.treasury('user1');
 
-
-
-    // it('group approve transfer owner', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-    //     let info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     expect(info.halt).toEqual(0)
-    //     const balance = await user1.getBalance();
+        let info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        expect(info.halt).toEqual(0)
+        const balance = await user1.getBalance();
         
-    //     console.log("balance before tx:", fromNano(balance))
-    //     // get task
-    //     let taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
+        console.log("balance before tx:", fromNano(balance))
+        // get task
+        let taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
 
+        let tokenPairId = 0x999;
+        let fromChainID = 0x1234;
+        let toChainID = 0x4567;
+        let fromAccount = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+        let toAccount = "kQDwf9dYB-a40vYJsmSGD5RBxLhaiagIGOBoP3EGfyV5O7gA";
+        let txRet = await groupApprove.sendRemoveTokenPair(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            chainId: BIP44_CHAINID,
+            toAddr: bridge.address,
+            tokenPairId, 
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        // console.log("txRet:", txRet.transactions)
+        // console.log("txRet:", txRet.transactions[1].totalFees)
+        // console.log("txRet:", txRet.transactions[2].totalFees)
 
-    //     let txRet = await groupApprove.sendTransferCrossOwner(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         chainId: 1,
-    //         toAddr: bridge.address,
-    //         owner: owner2.address,
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     // console.log("txRet:", txRet.transactions)
-    //     // console.log("txRet:", txRet.transactions[1].totalFees)
-    //     // console.log("txRet:", txRet.transactions[2].totalFees)
-
-    //     const balance2 = await user1.getBalance();
+        const balance2 = await user1.getBalance();
         
-    //     console.log("balance after tx:", fromNano(balance2))
-
-    //     // get task
-    //     taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("task:", task)
-
-    //     // send approve and exec
-    //     txRet = await groupApprove.sendApproveExec(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         taskId: 0,
-    //         smgId: beginCell().endCell().beginParse(),
-    //         r: beginCell().endCell().beginParse(),
-    //         s: beginCell().endCell().beginParse(),
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     // expect(info.halt).toEqual(1)
-    //     // await sleep(2500);
-    //     task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("halt msg task:", task)
-    // });    
-    
-    // it('group approve transfer oracle admin', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-    //     let info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     expect(info.halt).toEqual(0)
-    //     const balance = await user1.getBalance();
-        
-    //     console.log("balance before tx:", fromNano(balance))
-    //     // get task
-    //     let taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-
-    //     let txRet = await groupApprove.sendTransferOracleAdmin(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         chainId: 1,
-    //         toAddr: bridge.address,
-    //         oracleAdmin: owner2.address,
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     // console.log("txRet:", txRet.transactions)
-    //     // console.log("txRet:", txRet.transactions[1].totalFees)
-    //     // console.log("txRet:", txRet.transactions[2].totalFees)
-
-    //     const balance2 = await user1.getBalance();
-        
-    //     console.log("balance after tx:", fromNano(balance2))
-
-    //     // get task
-    //     taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("task:", task)
-
-    //     // send approve and exec
-    //     txRet = await groupApprove.sendApproveExec(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         taskId: 0,
-    //         smgId: beginCell().endCell().beginParse(),
-    //         r: beginCell().endCell().beginParse(),
-    //         s: beginCell().endCell().beginParse(),
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     // expect(info.halt).toEqual(1)
-    //     // await sleep(2500);
-    //     task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("halt msg task:", task)
-    // });     
-    // it('group approve transfer robot admin', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-    //     let info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     expect(info.halt).toEqual(0)
-    //     const balance = await user1.getBalance();
-        
-    //     console.log("balance before tx:", fromNano(balance))
-    //     // get task
-    //     let taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-
-    //     let txRet = await groupApprove.sendTransferRobotAdmin(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         chainId: 1,
-    //         toAddr: bridge.address,
-    //         robotAdmin: owner2.address,
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     // console.log("txRet:", txRet.transactions)
-    //     // console.log("txRet:", txRet.transactions[1].totalFees)
-    //     // console.log("txRet:", txRet.transactions[2].totalFees)
-
-    //     const balance2 = await user1.getBalance();
-        
-    //     console.log("balance after tx:", fromNano(balance2))
-
-    //     // get task
-    //     taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("task:", task)
-
-    //     // send approve and exec
-    //     txRet = await groupApprove.sendApproveExec(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         taskId: 0,
-    //         smgId: beginCell().endCell().beginParse(),
-    //         r: beginCell().endCell().beginParse(),
-    //         s: beginCell().endCell().beginParse(),
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     // expect(info.halt).toEqual(1)
-    //     // await sleep(2500);
-    //     task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("halt msg task:", task)
-    // });       
-
-    // it('group approve add cross admin', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-    //     let info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     expect(info.halt).toEqual(0)
-    //     const balance = await user1.getBalance();
-        
-    //     console.log("balance before tx:", fromNano(balance))
-    //     // get task
-    //     let taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-
-    //     let txRet = await groupApprove.sendAddCrossAdmin(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         chainId: 1,
-    //         toAddr: bridge.address,
-    //         admin: owner2.address,
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     // console.log("txRet:", txRet.transactions)
-    //     // console.log("txRet:", txRet.transactions[1].totalFees)
-    //     // console.log("txRet:", txRet.transactions[2].totalFees)
-
-    //     const balance2 = await user1.getBalance();
-        
-    //     console.log("balance after tx:", fromNano(balance2))
-
-    //     // get task
-    //     taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("task:", task)
-
-    //     // send approve and exec
-    //     txRet = await groupApprove.sendApproveExec(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         taskId: 0,
-    //         smgId: beginCell().endCell().beginParse(),
-    //         r: beginCell().endCell().beginParse(),
-    //         s: beginCell().endCell().beginParse(),
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     // expect(info.halt).toEqual(1)
-    //     // await sleep(2500);
-    //     task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("halt msg task:", task)
-    // });        
-
-    // it('group approve remove cross admin', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-    //     let info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     expect(info.halt).toEqual(0)
-    //     const balance = await user1.getBalance();
-        
-    //     console.log("balance before tx:", fromNano(balance))
-    //     // get task
-    //     let taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-
-    //     let txRet = await groupApprove.sendAddCrossAdmin(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         chainId: 1,
-    //         toAddr: bridge.address,
-    //         admin: owner2.address,
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     // console.log("txRet:", txRet.transactions)
-    //     // console.log("txRet:", txRet.transactions[1].totalFees)
-    //     // console.log("txRet:", txRet.transactions[2].totalFees)
-
-    //     const balance2 = await user1.getBalance();
-        
-    //     console.log("balance after tx:", fromNano(balance2))
-
-    //     // get task
-    //     taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("task:", task)
-
-    //     // send approve and exec
-    //     txRet = await groupApprove.sendApproveExec(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         taskId: 0,
-    //         smgId: beginCell().endCell().beginParse(),
-    //         r: beginCell().endCell().beginParse(),
-    //         s: beginCell().endCell().beginParse(),
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     // expect(info.halt).toEqual(1)
-    //     // await sleep(2500);
-    //     task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("halt msg task:", task)
-    // });       
-    
-    // it('group approve set fee proxy', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-    //     let info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     expect(info.halt).toEqual(0)
-    //     const balance = await user1.getBalance();
-        
-    //     console.log("balance before tx:", fromNano(balance))
-    //     // get task
-    //     let taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-
-    //     let txRet = await groupApprove.sendSetFeeProxy(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         chainId: 1,
-    //         toAddr: bridge.address,
-    //         feeProxy: owner2.address,
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     // console.log("txRet:", txRet.transactions)
-    //     // console.log("txRet:", txRet.transactions[1].totalFees)
-    //     // console.log("txRet:", txRet.transactions[2].totalFees)
-
-    //     const balance2 = await user1.getBalance();
-        
-    //     console.log("balance after tx:", fromNano(balance2))
-
-    //     // get task
-    //     taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("task:", task)
-
-    //     // send approve and exec
-    //     txRet = await groupApprove.sendApproveExec(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         taskId: 0,
-    //         smgId: beginCell().endCell().beginParse(),
-    //         r: beginCell().endCell().beginParse(),
-    //         s: beginCell().endCell().beginParse(),
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     // expect(info.halt).toEqual(1)
-    //     // await sleep(2500);
-    //     task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("halt msg task:", task)
-    // }); 
-    
-    // it('group approve transfer foundation', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-    //     const balance = await user1.getBalance();
-    //     console.log("balance before tx:", fromNano(balance))
-
-    //     let txRet = await groupApprove.sendTransferFoundation(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         chainId: 1,
-    //         toAddr: bridge.address,
-    //         foundation: owner2.address,
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     // console.log("txRet:", txRet.transactions)
-    //     // console.log("txRet:", txRet.transactions[1].totalFees)
-    //     // console.log("txRet:", txRet.transactions[2].totalFees)
-
-    //     const balance2 = await user1.getBalance();
-        
-    //     console.log("balance after tx:", fromNano(balance2))
-
-
-    // });   
-    
-    // it('group approve add cross admin', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-    //     let info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     expect(info.halt).toEqual(0)
-    //     const balance = await user1.getBalance();
-        
-    //     console.log("balance before tx:", fromNano(balance))
-    //     // get task
-    //     let taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-
-    //     let txRet = await groupApprove.sendAddCrossAdmin(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         chainId: 1,
-    //         toAddr: bridge.address,
-    //         admin: owner2.address,
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     // console.log("txRet:", txRet.transactions)
-    //     // console.log("txRet:", txRet.transactions[1].totalFees)
-    //     // console.log("txRet:", txRet.transactions[2].totalFees)
-
-    //     const balance2 = await user1.getBalance();
-        
-    //     console.log("balance after tx:", fromNano(balance2))
-
-    //     // get task
-    //     taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("task:", task)
-
-    //     // send approve and exec
-    //     txRet = await groupApprove.sendApproveExec(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         taskId: 0,
-    //         smgId: beginCell().endCell().beginParse(),
-    //         r: beginCell().endCell().beginParse(),
-    //         s: beginCell().endCell().beginParse(),
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     // expect(info.halt).toEqual(1)
-    //     // await sleep(2500);
-    //     task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("halt msg task:", task)
-    // });   
-    
-    // it('group approve add token pair', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-    //     let info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     expect(info.halt).toEqual(0)
-    //     const balance = await user1.getBalance();
-        
-    //     console.log("balance before tx:", fromNano(balance))
-    //     // get task
-    //     let taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let tokenPairId = 0x999;
-    //     let fromChainID = 0x1234;
-    //     let toChainID = 0x4567;
-    //     let fromAccount = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
-    //     let toAccount = "kQDwf9dYB-a40vYJsmSGD5RBxLhaiagIGOBoP3EGfyV5O7gA";
-    //     let txRet = await groupApprove.sendAddTokenPair(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         chainId: 1,
-    //         toAddr: bridge.address,
-    //         tokenPairId, 
-    //         fromChainID,
-    //         fromAccount,
-    //         toChainID,
-    //         toAccount,
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     // console.log("txRet:", txRet.transactions)
-    //     // console.log("txRet:", txRet.transactions[1].totalFees)
-    //     // console.log("txRet:", txRet.transactions[2].totalFees)
-
-    //     const balance2 = await user1.getBalance();
-        
-    //     console.log("balance after tx:", fromNano(balance2))
-
-    //     // get task
-    //     taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("task:", task)
-
-    //     // send approve and exec
-    //     txRet = await groupApprove.sendApproveExec(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         taskId: 0,
-    //         smgId: beginCell().endCell().beginParse(),
-    //         r: beginCell().endCell().beginParse(),
-    //         s: beginCell().endCell().beginParse(),
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     // expect(info.halt).toEqual(1)
-    //     // await sleep(2500);
-    //     task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("halt msg task:", task)
-    // });         
-    // it('group approve remove token pair', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-    //     let info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     expect(info.halt).toEqual(0)
-    //     const balance = await user1.getBalance();
-        
-    //     console.log("balance before tx:", fromNano(balance))
-    //     // get task
-    //     let taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let tokenPairId = 0x999;
-    //     let fromChainID = 0x1234;
-    //     let toChainID = 0x4567;
-    //     let fromAccount = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
-    //     let toAccount = "kQDwf9dYB-a40vYJsmSGD5RBxLhaiagIGOBoP3EGfyV5O7gA";
-    //     let txRet = await groupApprove.sendRemoveTokenPair(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         chainId: 1,
-    //         toAddr: bridge.address,
-    //         tokenPairId, 
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     // console.log("txRet:", txRet.transactions)
-    //     // console.log("txRet:", txRet.transactions[1].totalFees)
-    //     // console.log("txRet:", txRet.transactions[2].totalFees)
-
-    //     const balance2 = await user1.getBalance();
-        
-    //     console.log("balance after tx:", fromNano(balance2))
-
-    //     // get task
-    //     taskCount = await groupApprove.getProposolCount()
-    //     console.log("taskCount:", taskCount)
-
-    //     let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("task:", task)
-
-    //     // send approve and exec
-    //     txRet = await groupApprove.sendApproveExec(user1.getSender(), {
-    //         value: toNano('97'),
-    //         queryID:1,
-    //         taskId: 0,
-    //         smgId: beginCell().endCell().beginParse(),
-    //         r: beginCell().endCell().beginParse(),
-    //         s: beginCell().endCell().beginParse(),
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: user1.address,
-    //         to: groupApprove.address,
-    //         success: true,
-    //     });
-    //     info = await bridge.getCrossConfig()
-    //     console.log("getCrossConfig:", info)
-    //     // expect(info.halt).toEqual(1)
-    //     // await sleep(2500);
-    //     task = await groupApprove.getProposolById(BigInt(taskCount - 1))
-    //     console.log("halt msg task:", task)
-    // });       
+        console.log("balance after tx:", fromNano(balance2))
+
+        // get task
+        taskCount = await groupApprove.getProposolCount()
+        console.log("taskCount:", taskCount)
+
+        let task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("task:", task)
+
+        // send approve and exec
+        let hashBuf = GroupApprove.computeHash(BigInt(taskCount - 1), BigInt(BIP44_CHAINID));
+        console.log("hashBuf:", hashBuf, BigInt(`0x${hashBuf.toString('hex')}`))
+
+        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,hashBuf);
+        const e = BigInt(sig.e);
+        const p = BigInt(sig.p);
+        const s = BigInt(sig.s);        
+        txRet = await groupApprove.sendApproveExec(user1.getSender(), {
+            value: toNano('97'),
+            queryID:1,
+            taskId: 0,
+            smgId: BigInt(smgId),
+            e, p, s
+        })
+        expect(txRet.transactions).toHaveTransaction({
+            from: user1.address,
+            to: groupApprove.address,
+            success: true,
+        });
+        info = await bridge.getCrossConfig()
+        console.log("getCrossConfig:", info)
+        // expect(info.halt).toEqual(1)
+        // await sleep(2500);
+        task = await groupApprove.getProposolById(BigInt(taskCount - 1))
+        console.log("msg task:", task)
+        expect(task.executed).toEqual(1)
+    });       
 });

@@ -100,7 +100,7 @@ export class GroupApprove implements Contract {
         }
     ) {
         let msg = beginCell()
-            .storeUint(opcodes.OP_ORACLE_TransferOracleAdmin, 32) // op (op #1 = increment)
+            .storeUint(opcodes.OP_FEE_SetRobotAdmin, 32) // op (op #1 = increment)
             .storeAddress(opts.robotAdmin)
             .endCell()
         await provider.internal(sender, {
@@ -294,6 +294,31 @@ export class GroupApprove implements Contract {
                 .endCell()
         });
     }        
+    async sendUpgradeSC(provider: ContractProvider, sender: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            chainId:number,
+            toAddr: Address,            
+            code: Cell,
+        }
+    ) {
+        let msg = beginCell()
+        .storeUint(opcodes.OP_UPGRADE_Code, 32) // op (op #1 = increment)
+        .storeRef(opts.code)
+        .endCell()
+        await provider.internal(sender, {
+            value: opts.value,
+            body: beginCell()
+            .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+            .storeUint(0, 64) // query id
+            .storeUint(opts.chainId, 64)  // chainId
+            .storeAddress(opts.toAddr)                
+            .storeRef(msg)
+            .endCell()
+        });
+    }   
+
     async sendApproveExec(
         provider: ContractProvider, sender: Sender,
         opts: {
@@ -317,7 +342,7 @@ export class GroupApprove implements Contract {
             body: beginCell()
                 .storeUint(opcodes.OP_GROUPAPPROVE_Execute, 32)
                 .storeUint(opts.queryID ?? 0, 64)
-                .storeUint(0, 256) // smgid
+                .storeUint(opts.smgId, 256)
                 .storeUint(opts.taskId,64)
                 .storeRef(proof)
                 .endCell(),

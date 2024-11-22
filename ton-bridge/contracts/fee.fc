@@ -71,3 +71,10 @@ const int DICTIONARY_KEY_LEN = 32;
     }    
     return refcell;
 }
+
+
+
+(slice, slice) fee_get_config(cell refcell) method_id {
+    (slice smgFeeProxy, slice robotAdmin, _, _) = fee_load_data(refcell);
+    return (smgFeeProxy, robotAdmin);
+}

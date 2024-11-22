@@ -103,11 +103,11 @@
     if( op == OP_FETCH_GPK) {
         var smgID = in_msg_body~load_uint(256);
         ;; TODO, set gpk first
-        ;; (int gpkx, int gpky, int startTime, int endTime, int timestamp) = get_smgConfigCommited(smgID);
-        ;; throw_unless(0xffed, (now() > start_time) & (now() < endTime)); ;; TODO why eerrror?
-        var gpkx = 0xcb54bc900646fe8de5c8db04e4120e38cb61b3e000ae37e4ecdaf71b777f7ec7 ;
-        var gpky = 0x1f81f87d21eb46e372105a3d123af9a94e0760f9c13738b8ca1abf248a9104f2;
-        ~strdump("OP_FETCH_GPK"); ~dump(slice_bits(in_msg_body));
+        ~strdump("OP_FETCH_GPK"); ~dump(smgID);
+        (int gpkx, int gpky, int startTime, int endTime, int timestamp) = get_smgConfigCommited(smgID);
+        ~strdump("OP_FETCH_GPK"); ~dump(gpkx);~dump(gpky);
+        throw_unless(0xffed, (now() > startTime) & (now() < endTime)); ;; TODO why eerrror?
+
         var msg = begin_cell()
             .store_uint(0x18, 6)     ;;
             .store_slice(sender_address)
@@ -239,6 +239,15 @@
     if (op == OP_UPGRADE_Code) {
         var new_code = in_msg_body~load_ref();
         set_code(new_code);
+        var msg = begin_cell()
+            .store_uint(0x18, 6)     ;;
+            .store_slice(sender_address)
+            .store_coins(10000000)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(OP_COMMON_Finished, 32)
+            .store_uint(query_id, 64)
+            .end_cell();
+        send_raw_message(msg,0);
         return ();
     }
 
@@ -251,9 +260,22 @@
 }
 
 ;; getter for oracle
+(slice) get_oracle_admin() method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return oracle_get_OracleAdmin(oracle);
+}
+(slice, slice) get_fee_config() method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return fee_get_config(ca_fee);
+}
+
 (int, int, int,int,int) get_smgConfig(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_smg(oracle, id, 0);
+}
+(int, int, int, int, int) get_smgConfigCommited(int id) method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return oracle_get_smg(oracle, id, 1);
 }
 (int, int) get_fee(int _src_chain_id, int _dst_chain_id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
@@ -276,10 +298,7 @@
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_next_smg_id(oracle, id,0);
 }
-(int, int, int, int, int) get_smgConfigCommited(int id) method_id {
-    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return oracle_get_smg(oracle, id, 1);
-}
+
 (int) get_first_smg_id_Commited() method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_first_smg_id(oracle, 1);    
