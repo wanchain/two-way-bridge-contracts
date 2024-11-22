@@ -135,7 +135,7 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
 }
 
 
-() clean_expired_smgs(smgs) impure {
+() clean_expired_smgs(smgs, smgTxUniqueId) impure {
     int count = 0;
     int current_id = 0;
     
@@ -144,6 +144,7 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
         (int gpkX, int gpkY, int startTime, int endTime, int timestamp) = load_smg(value);
         if(now() > endTime) {
             smgs~udict_delete?(DICTIONARY_KEY_LEN, id);
+            smgTxUniqueId~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
         }
         ;;
         count += 1;
@@ -157,6 +158,7 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
             (int gpkX, int gpkY, int startTime, int endTime, int timestamp) = load_smg(value);
             if(now() > endTime) {
                 smgs~udict_delete?(DICTIONARY_KEY_LEN, id);
+                smgTxUniqueId~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
             }
             count += 1;
         } else {
@@ -177,7 +179,7 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
         int endTime = in_msg_body~load_uint(64);
         int timestamp = now();
         
-        clean_expired_smgs(smgConfig);
+        clean_expired_smgs(smgConfig,smgTxUniqueId);
         smgConfig~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime, timestamp));
         return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
     }  ;; there  is no elseif 
@@ -195,7 +197,7 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
             var (gpkX1, gpkY1, startTime1, endTime1, timestamp1) = load_smg(smg_slice);
             throw_unless(0xffff, timestamp > timestamp1 + TIMELOCK);
             ;; throw_unless(0xffff, gpkX1==gpkX && gpkY1==gpkY && startTime==startTime1 && endTime==endTime1);
-            clean_expired_smgs(smgConfig);
+            clean_expired_smgs(smgConfig,smgTxUniqueId);
             smgConfigCommit~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime, timestamp));
             return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
         } else {
