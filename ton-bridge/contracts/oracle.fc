@@ -15,6 +15,7 @@ endTime: uint 64
 
 ;; Constants
 const int SMGID_DICTIONARY_KEY_LEN = 256;
+const int UNIQ_DICTIONARY_KEY_LEN = 256;
 const int MAX_CLEAN_COUNT = 100;
 const int TIMELOCK = 86400;
 
@@ -68,6 +69,42 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
         return (0, 0, 0, 0, 0); ;; Return default values if not found
     }
 }
+
+;; check uniqid exisit or not
+(cell, int ) oracle_handle_uniqid(cell refcell, int smg_id, int uniqid ) impure {
+    ;; smg_id->dict(uniqid->int(0))
+    (slice oracleAdmin, cell smgConfig, cell smgConfigCommit, cell smg_dict) = oracle_load_data(refcell);
+    ;;var dict_smg = smgTxUniqueId;
+    var (smg_cell, smg_found?) = smg_dict.udict_get_ref?(SMGID_DICTIONARY_KEY_LEN, smg_id);
+
+    if (smg_found?){
+        ~strdump("111");
+        var ds = smg_cell.begin_parse();
+        var uniq_dict = ds~load_dict();
+        ds.end_parse();
+
+        var (_, unique_found?) = uniq_dict.udict_get?(UNIQ_DICTIONARY_KEY_LEN, uniqid);
+        if (unique_found?) {
+            ~strdump("222");
+            return ( refcell, -1);
+        } else {
+            ~strdump("333");
+            ;;todo maybe dict_msg is not changed.
+            uniq_dict~udict_set(UNIQ_DICTIONARY_KEY_LEN,uniqid,begin_cell().end_cell().begin_parse());
+            cell smg_cell_new = begin_cell().store_dict(uniq_dict).end_cell();
+            smg_dict~udict_set_ref( SMGID_DICTIONARY_KEY_LEN, smg_id,smg_cell_new);
+            return ( oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smg_dict),0 );
+        }
+    } else {
+        ~strdump("444");
+        cell dict_unique = new_dict();
+        dict_unique~udict_set(UNIQ_DICTIONARY_KEY_LEN,uniqid,begin_cell().end_cell().begin_parse());
+        cell smg_cell_new = begin_cell().store_dict(dict_unique).end_cell();
+        smg_dict~udict_set_ref( SMGID_DICTIONARY_KEY_LEN, smg_id,smg_cell_new);
+        return ( oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smg_dict),0 );
+    }
+}
+
 ;; Get the first smg in the dictionary
 (int) oracle_get_first_smg_id(cell refcell, int commited) method_id {
     (_, cell smgConfig, cell smgConfigCommit, _) = oracle_load_data(refcell);

@@ -150,12 +150,12 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
     return msg.end_cell().cell_hash();
 }
 
-() cross_recv_internal(int op, int query_id, cell token_manager, int msg_value, cell in_msg_full, slice in_msg_body, cell oracle) impure {
+(cell) cross_recv_internal(int op, int query_id, cell token_manager, int msg_value, cell in_msg_full, slice in_msg_body, cell oracle) impure {
     ~strdump("cross_recv_internal....");
     slice ZERO_ACCOUNT = begin_cell().store_int(0, 256).end_cell().begin_parse();
     if (op == OP_CROSS_UserLock) {
         throw(0x01); ;; todo should delete
-        return ();   ;; todo should delete
+        return oracle;
         (int _smgId, int _token_pair_id, int _cross_value, slice _user_account) =
         (in_msg_body~load_uint(256),
             in_msg_body~load_uint(32),
@@ -183,25 +183,23 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             ;; coin
             ;; user lock has not fee parameter, but user_burn has this parameter
             userLock_ton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+
         } else {
             ;; myaddress == jetton_admin_addr
             ;; todo get jetton_admin_addr from jetton_admin
             if (-1) {
                 userLock_org_jetton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+
             } else {
                 userLock_wrapped_jetton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
+
             }
         }
-
-        ;; todo should delete begin
-        userLock_ton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
-        userLock_org_jetton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
-        userLock_wrapped_jetton(query_id, _smgId, _token_pair_id, _cross_value, _fee, _token_account, _user_account);
-        ;; todo should delete end
-        return ();
+        return oracle;
     }
 
     if (op == OP_CROSS_SmgRelease) {
+        ;;(slice oracleAdmin, cell smgConfig, cell smgConfigCommit, cell smgTxUniqueId) = oracle_load_data(oracle);
         ~strdump("entering OP_CROSS_SmgRelease...");
         (int _uniqId,
             int _smgId,
@@ -239,15 +237,22 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             part3~load_msg_addr());
         part3.end_parse();
 
-        ~strdump("before oracle_get_msg");
+        ~strdump("before oracle_get_smg");
         ;; check gpk working time
         ;;(int gpk_x, int gpk_y, int start_time, int endTime, int timestamp) = oracle_get_smg(oracle, _smgId, 1);
         (int gpk_x, int gpk_y, int start_time, int endTime, int timestamp) = oracle_get_smg(oracle, _smgId, 0);
         throw_unless(0xffed, (now() > start_time) & (now() < endTime));
 
-        ~strdump("end oracle_get_msg");
+        ~strdump("end oracle_get_smg");
 
         ;; check unique tx
+        ~strdump("before oracle_handle_uniqid");
+        var (new_oracle,unique_found?) = oracle_handle_uniqid(oracle,_smgId,_uniqId);
+        ~strdump("after oracle_handle_uniqid");
+        if (unique_found?){
+            ~strdump("duplicated......................................................");
+            throw(0xffff);
+        }
 
         ;; todo check the fee
         (int _src_chainId, slice _from_account, int _dst_chainId, slice _dst_account) = tm_get_token_pair(token_manager, _token_pair_id);
@@ -296,7 +301,8 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
                 smgRelease_org_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _e, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
             }
         }
-        return ();
+        return (new_oracle);
     }
     throw(0xffff);
+    return (oracle);
 }

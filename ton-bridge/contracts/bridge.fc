@@ -168,7 +168,10 @@
         ;; var _extend = cross_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
         ;; save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
         ~strdump("Entering op_cross...");
-        cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle);
+
+        var _oracle = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle);
+        save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
+
         return ();
     }
 

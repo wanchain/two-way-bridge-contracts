@@ -510,7 +510,7 @@ describe('Bridge', () => {
         console.log("smgID(bigInt)==>", BigInt(smgID));
 
         const queryID = 1;
-        const uniqueID = BigInt(1);
+        const uniqueID = BigInt(2);
         const fee = BigInt(1000);
 
         let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
@@ -586,7 +586,7 @@ describe('Bridge', () => {
         console.log("smgID(bigInt)==>", BigInt(smgID));
 
         const queryID = 1;
-        const uniqueID = BigInt(1);
+        const uniqueID = BigInt(3);
         const fee = BigInt(1000);
 
         let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
