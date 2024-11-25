@@ -17,6 +17,7 @@ contract MockTokenManager {
         if (id == 1) tokenAddr = mockERC20;
         else if (id == 2) tokenAddr = mockERC721;
         else if (id == 3) tokenAddr = mockERC1155;
+        else revert("Invalid token pair ID");
         
         fromChainID = 1;
         fromAccount = abi.encodePacked(tokenAddr);
