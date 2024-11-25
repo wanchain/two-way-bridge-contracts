@@ -84,9 +84,7 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
 
     function userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes calldata userAccount, string memory partner) external payable {
         address tokenAddress = _getTokenAddressFromPairID(tokenPairID);
-        if (tokenAddress != address(0)) {
-            IERC20(tokenAddress).safeTransferFrom(msg.sender, address(this), value);
-        }
+        IERC20(tokenAddress).safeTransferFrom(msg.sender, address(this), value);
         cross.userBurn{value: msg.value}(smgID, tokenPairID, value, fee, tokenAccount, userAccount);
         emit PartnerCross(partner, partner);
     }
