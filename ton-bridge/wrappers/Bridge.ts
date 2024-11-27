@@ -69,6 +69,7 @@ export function bridgeConfigToCell(config: BridgeConfig): Cell {
         .endCell();
 }
 
+
 export class Bridge implements Contract {
     constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
 
@@ -400,13 +401,25 @@ export class Bridge implements Contract {
 
     async getTokenPair(provider: ContractProvider,tokenPairId:number) {
         const result = await provider.get('get_token_pair', [{ type: 'int', value: BigInt(tokenPairId) }]);
-        // todo getTokenPair
-        return {
-            fromChainID:result.stack.readNumber(),
-            fromAccount:result.stack.readBuffer().toString('hex'),
-            toChainID:result.stack.readNumber(),
-            toAccount:result.stack.readBuffer().toString('hex'),
+        let fromChainID = result.stack.readNumber();
+        let fromAccount = result.stack.readBuffer();
+        let toChainID = result.stack.readNumber();
+        let toAccount = result.stack.readBuffer();
+        let pair =  {fromChainID, toChainID, fromAccount:"", toAccount:""}
+        console.log("pair:", pair)
+        if(pair.fromChainID == 0 || pair.toChainID == 0) {
+            return pair
         }
+        if(BIP44_CHAINID == fromChainID) {
+            let addr = new Address(0, fromAccount)
+            pair['fromAccount'] = addr.toString()
+            pair['toAccount'] = toAccount.toString()
+        } else {
+            let addr = new Address(0, toAccount)
+            pair['toAccount'] = addr.toString()
+            pair['fromAccount'] = fromAccount.toString()
+        }
+        return pair
     }
 
     async getFirstTokenPairID(provider: ContractProvider) {
@@ -519,13 +532,22 @@ export class Bridge implements Contract {
 
     async getFirstAdmin(provider: ContractProvider,){
         const { stack } = await provider.get("get_first_crossAdmin", []);
-        console.log("stack:", stack)
-        return stack.readBuffer().toString('hex');
+        let s = stack.readBuffer();
+        if(s.length == 0) {
+            return ""
+        }
+        let addr = new Address(0, s)
+        return addr.toString()
     }
 
     async getNextAdmin(provider: ContractProvider,adminAddr:Address){
         const { stack } = await provider.get("get_next_crossAdmin", [{ type: 'slice', cell: beginCell().storeAddress(adminAddr).endCell()}]);
-        return stack.readBuffer().toString('hex');
+        let s = stack.readBuffer();
+        if(s.length == 0) {
+            return ""
+        }
+        let addr = new Address(0, s)
+        return addr.toString()
     }
 
 

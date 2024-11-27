@@ -28,7 +28,7 @@ const OP_CROSS_TransOwner               = 0x40000006;
 
 
 const OP_TOKENPAIR                      = 0x50000000;
-const OP_TOKENPAIR_Add                  = 0x50000001;
+;; const OP_TOKENPAIR_Add                  = 0x50000001;
 const OP_TOKENPAIR_Remove               = 0x50000002;
 const OP_TOKENPAIR_Upsert               = 0x50000003;
 

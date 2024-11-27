@@ -4,6 +4,10 @@ import { HttpApi } from '@ton/ton';
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import internal from 'stream';
 
+import {BIP44_CHAINID} from './Bridge';
+
+
+
 export type GroupApproveConfig = {
     chainId: number;
     taskId:  number;
@@ -123,14 +127,21 @@ export class GroupApprove implements Contract {
             foundation: Address,
         }
     ) {
+        let msg = beginCell()
+            .storeUint(opcodes.OP_GROUPAPPROVE_TranferFoundation, 32) // op (op #1 = increment)
+            .storeAddress(opts.foundation)
+            .endCell()
         await provider.internal(sender, {
             value: opts.value,
             body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_TranferFoundation, 32) // op (op #1 = increment)
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
                 .storeUint(0, 64) // query id
-                .storeAddress(opts.foundation)                
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)                
+                .storeRef(msg)
                 .endCell()
         });
+        
     }       
     async sendCrossHalt(
         provider: ContractProvider, sender: Sender,
@@ -219,21 +230,28 @@ export class GroupApprove implements Contract {
             toChainID:number,
             toAccount:string,        }
     ) {
-        let from = opts.fromAccount.substring(0,2).toLowerCase() == "0x"?opts.fromAccount.substring(2):opts.fromAccount
-        let to = opts.toAccount.substring(0,2).toLowerCase() == "0x"?opts.toAccount.substring(2):opts.toAccount
-
-        let fromBuffer = Buffer.from(from,'hex')
-        let toBuffer = Buffer.from(to,'hex')
-     
+        let toBuffer, fromBuffer
+        if(opts.fromChainID == BIP44_CHAINID) {
+            let fromAddr = Address.parseFriendly(opts.fromAccount)
+            fromBuffer = fromAddr.address.hash
+            toBuffer = Buffer.from(opts.toAccount,'utf8')
+        } else if(opts.toChainID == BIP44_CHAINID) {
+            let toAddr = Address.parseFriendly(opts.toAccount)
+            toBuffer = toAddr.address.hash
+            fromBuffer = Buffer.from(opts.fromAccount,'utf8')
+        } else {
+            throw("Error chain ID.")
+        }
+        console.log("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex'))
         let msg = beginCell()
             .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
             .storeUint(opts.tokenPairId, 32)
             .storeUint(opts.fromChainID, 32)
             .storeUint(opts.toChainID, 32)
             .storeUint(fromBuffer.length, 8)
-            .storeBuffer(fromBuffer)
             .storeUint(toBuffer.length, 8)
-            .storeBuffer(toBuffer)        
+            .storeRef(beginCell().storeBuffer(fromBuffer).endCell())
+            .storeRef(beginCell().storeBuffer(toBuffer).endCell())
             .endCell()
         await provider.internal(sender, {
             value: opts.value,
@@ -352,6 +370,17 @@ export class GroupApprove implements Contract {
         const result = await provider.get('get_proposol_count', []);
         return result.stack.readNumber()
     }
+    async getConfig(provider: ContractProvider) {
+        const result = await provider.get('get_config', []);
+        console.log("xxxxxxxxxxxxxxxx:", result.stack)
+        let foundation = result.stack.readAddress();
+        let bridge = result.stack.readAddress();
+        // let foundation = (new Address(0, s1)).toString();
+        // let bridge = (new Address(0, s2)).toString();
+        return {
+            foundation, bridge
+        }
+    }    
     async getProposolById(provider: ContractProvider, id: bigint) {
         const result = await provider.get('get_proposol', [{ type: 'int', value: id }]);
         return {
