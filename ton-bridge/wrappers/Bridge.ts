@@ -443,7 +443,15 @@ export class Bridge implements Contract {
         const { stack } = await provider.get("get_next_smg_id", [{ type: 'int', value: id }]);
         return stack.readBigNumber();
     }
+    async getFirstStoremanGroupIDCommited(provider: ContractProvider) {
+        const { stack } = await provider.get("get_first_smg_id_Commited", []);
+        return stack.readBigNumber();
+    }
 
+    async getNextStoremanGroupIDCommited(provider: ContractProvider, id: bigint) {
+        const { stack } = await provider.get("get_next_smg_id_Commited", [{ type: 'int', value: id }]);
+        return stack.readBigNumber();
+    }
     async getStoremanGroupConfig(provider: ContractProvider, id: bigint) {
         const { stack } = await provider.get("get_smgConfig", [{ type: 'int', value: id }]);
         return {
@@ -472,13 +480,29 @@ export class Bridge implements Contract {
         await provider.internal(sender, {
             value: opts.value,
             body: beginCell()
-                .storeUint(opcodes.OP_ORACLE_SetSMG, 32) // op (op #1 = increment)
+                .storeUint(opcodes.OP_ORACLE_SetSMG, 32)
                 .storeUint(0, 64) // query id
                 .storeUint(opts.id, 256)
                 .storeUint(opts.gpkX, 256)
                 .storeUint(opts.gpkY, 256)
                 .storeUint(opts.startTime, 64)
                 .storeUint(opts.endTime, 64)
+                .endCell()
+        });
+    }
+    async sendRemoveStoremanGroup(provider: ContractProvider, sender: Sender,
+        opts: {
+            id: bigint,
+            value: bigint,
+            queryID?: number,
+        }
+    ) {
+        await provider.internal(sender, {
+            value: opts.value,
+            body: beginCell()
+                .storeUint(opcodes.OP_ORACLE_DeleteSMG, 32)
+                .storeUint(0, 64) // query id
+                .storeUint(opts.id, 256)
                 .endCell()
         });
     }
@@ -492,7 +516,7 @@ export class Bridge implements Contract {
         await provider.internal(sender, {
             value: opts.value,
             body: beginCell()
-                .storeUint(opcodes.OP_ORACLE_CommitSMG, 32) // op (op #1 = increment)
+                .storeUint(opcodes.OP_ORACLE_CommitSMG, 32)
                 .storeUint(0, 64) // query id
                 .storeUint(opts.id, 256)
                 .storeUint(opts.gpkX, 256)
@@ -512,7 +536,7 @@ export class Bridge implements Contract {
         opts: {
             value: bigint,
             queryID?: number,
-            adminAddr:string,
+            adminAddr:Address,
         }
     ) {
         let isValid = Address.isAddress(opts.adminAddr)
@@ -525,7 +549,30 @@ export class Bridge implements Contract {
             body: beginCell()
                 .storeUint(opcodes.OP_EXTEND_AddCrossAdmin, 32)
                 .storeUint(opts.queryID ?? 0, 64)
-                .storeBuffer(Buffer.from(opts.adminAddr,'hex'))
+                .storeAddress(opts.adminAddr)
+                .endCell(),
+        });
+    }
+    async sendRemoveAdmin(
+        provider: ContractProvider,
+        via:Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            adminAddr:Address,
+        }
+    ) {
+        let isValid = Address.isAddress(opts.adminAddr)
+        if (!isValid){
+            await Promise.reject("in valid address")
+        }
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(opcodes.OP_EXTEND_DelCrossAdmin, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeAddress(opts.adminAddr)
                 .endCell(),
         });
     }

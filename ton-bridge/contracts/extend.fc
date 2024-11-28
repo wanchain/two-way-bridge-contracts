@@ -26,7 +26,7 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
         slice admin = in_msg_body~load_msg_addr();
         (int workchain, int hash) = parse_std_addr(admin);
         ~strdump("exec OP_EXTEND_AddCrossAdmin"); ~dump(workchain);~dump(hash);
-        cross_admin~udict_set_builder(CROSSADMIN_DICTIONARY_KEY_LEN, hash, begin_cell().store_int(1, 256));
+        cross_admin~udict_set_builder(CROSSADMIN_DICTIONARY_KEY_LEN, hash, begin_cell().store_int(1, 2));
         return ext_generate_data(cross_admin);
     }
     if (op == OP_EXTEND_DelCrossAdmin) {

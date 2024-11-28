@@ -1,6 +1,6 @@
 import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import {Address, Cell, toNano,TupleItemInt} from '@ton/core';
-import { Bridge } from '../wrappers/Bridge';
+import {Bridge, TON_COIN_ACCOUT,BIP44_CHAINID} from '../wrappers/Bridge';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 
@@ -16,12 +16,14 @@ describe('Bridge', () => {
     let smgFeeProxy: SandboxContract<TreasuryContract>;
     let oracleAdmin: SandboxContract<TreasuryContract>;
     let bridge: SandboxContract<Bridge>;
+    let robotAdmin:  SandboxContract<TreasuryContract>;
 
     beforeEach(async () => {
         blockchain = await Blockchain.create();
         deployer = await blockchain.treasury('deployer');
         smgFeeProxy = await blockchain.treasury('smgFeeProxy');
         oracleAdmin = await blockchain.treasury('oracleAdmin');
+        robotAdmin = await blockchain.treasury('robotAdmin');
 
         let c = Bridge.createFromConfig(
             {
@@ -30,6 +32,7 @@ describe('Bridge', () => {
                 init:0,
                 smgFeeProxy:smgFeeProxy.address,
                 oracleAdmin:oracleAdmin.address,
+                robotAdmin:robotAdmin.address,
             },
             code
         )
@@ -57,11 +60,11 @@ describe('Bridge', () => {
 
 
     it('should addTokenPair success', async () => {
-        let tokenPairId = 0x999;
-        let fromChainID = 0x1234;
-        let toChainID = 0x4567;
+        let tokenPairId = 999;
+        let fromChainID = 1234;
+        let toChainID = BIP44_CHAINID;
         let fromAccount = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
-        let toAccount = "kQDwf9dYB-a40vYJsmSGD5RBxLhaiagIGOBoP3EGfyV5O7gA";
+        let toAccount = "EQB6Ipa85lD-LVxypTA3xQs2dmdcM_VeUUQexul6_TDOPu_d";
 
         let firstTokenPair = await bridge.getFirstTokenPairID()
         console.log("firstTokenPair:", firstTokenPair);

@@ -16,6 +16,9 @@ describe('Bridge', () => {
     let smgFeeProxy: SandboxContract<TreasuryContract>;
     let oracleAdmin: SandboxContract<TreasuryContract>;
     let robotAdmin: SandboxContract<TreasuryContract>;
+    let admin1: SandboxContract<TreasuryContract>;
+    let admin2: SandboxContract<TreasuryContract>;
+
     let bridge: SandboxContract<Bridge>;
 
     beforeEach(async () => {
@@ -24,7 +27,8 @@ describe('Bridge', () => {
         smgFeeProxy = await blockchain.treasury('smgFeeProxy');
         oracleAdmin = await blockchain.treasury('oracleAdmin');
         robotAdmin = await blockchain.treasury('robotAdmin');
-
+        admin1 = await blockchain.treasury('admin1');
+        admin2 = await blockchain.treasury('admin2');
         let c = Bridge.createFromConfig(
             {
                 owner: deployer.address,
@@ -60,17 +64,15 @@ describe('Bridge', () => {
 
 
     it('should addAdmin success', async () => {
-        let adminAddr = "EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G";
-        console.log("Address.parse=================",Address.parse(adminAddr).toRawString().split(':')[1]);
         let firstAdmin = await bridge.getFirstAdmin()
         console.log("firstAdmin 00:", firstAdmin);
         expect(firstAdmin).toBe('')
 
-        const queryID=1;
-        const ret = await bridge.sendAddAdmin(deployer.getSender(),{
-            adminAddr:Address.parse(adminAddr).toRawString().split(':')[1],
+        let queryID=1;
+        let ret = await bridge.sendAddAdmin(deployer.getSender(),{
             value: toNano('1'),
             queryID,
+            adminAddr:admin1.address,
         });
         expect(ret.transactions).toHaveTransaction({
             from: deployer.address,
@@ -78,10 +80,62 @@ describe('Bridge', () => {
             success: true,
         });
         // console.log("ret",ret);
-        let firstAdmin2 = await bridge.getFirstAdmin()
-        console.log("firstAdmin:", firstAdmin2);
-        expect(Address.parse("0:"+firstAdmin2).toString()).toBe(adminAddr)
+        let firstAdmin1 = await bridge.getFirstAdmin()
+        console.log("firstAdmin:", firstAdmin1);
+        expect(firstAdmin1).toEqual(admin1.address.toString())
 
+        queryID=2;
+        ret = await bridge.sendAddAdmin(deployer.getSender(),{
+            value: toNano('1'),
+            queryID,
+            adminAddr:admin2.address,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+        // console.log("ret",ret);
+        firstAdmin1 = await bridge.getFirstAdmin()
+        console.log("firstAdmin:", firstAdmin1);
+        expect(firstAdmin1).toEqual(admin2.address.toString())
+        let nextAdmin = await bridge.getNextAdmin(admin1.address)
+        console.log("nextAdmin:", nextAdmin);
+        expect(nextAdmin).toEqual(admin1.address.toString())
+
+        // remove
+        queryID=3;
+        ret = await bridge.sendRemoveAdmin(deployer.getSender(),{
+            value: toNano('1'),
+            queryID,
+            adminAddr:admin2.address,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+        // console.log("ret",ret);
+        firstAdmin1 = await bridge.getFirstAdmin()
+        console.log("firstAdmin:", firstAdmin1);
+        expect(firstAdmin1).toEqual(admin1.address.toString())
+
+        // remove
+        queryID=4;
+        ret = await bridge.sendRemoveAdmin(deployer.getSender(),{
+            value: toNano('1'),
+            queryID,
+            adminAddr:admin1.address,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+        // console.log("ret",ret);
+        firstAdmin1 = await bridge.getFirstAdmin()
+        console.log("firstAdmin:", firstAdmin1);
+        expect(firstAdmin1).toEqual("")
     });
 
 });

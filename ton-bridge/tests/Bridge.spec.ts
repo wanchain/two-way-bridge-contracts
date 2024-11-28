@@ -15,7 +15,7 @@ function AccountToBig(addr: Address) {
     return BigInt("0x" + addr.hash.toString('hex'));
 };
 
-const skSmg = new Buffer("097e961933fa62e3fef5cedef9a728a6a927a4b29f06a15c6e6c52c031a6cb2b", 'hex');
+const skSmg = Buffer.from("097e961933fa62e3fef5cedef9a728a6a927a4b29f06a15c6e6c52c031a6cb2b", 'hex');
 const gpk = schnorr.getPKBySk(skSmg);
 const gpkX = gpk.startsWith("0x") || gpk.startsWith("0X")? gpk.substring(0,66): `0x${gpk.substring(0,64)}`;
 const gpkY = gpk.startsWith("0x") || gpk.startsWith("0X")? `0x${gpk.substring(66)}`: `0x${gpk.substring(64)}`;
@@ -67,7 +67,6 @@ describe('Bridge', () => {
         let c = Bridge.createFromConfig(
             {
                 owner: deployer.address,
-                //admin: deployer.address,
                 halt: 0,
                 init: 0,
                 smgFeeProxy: smgFeeProxy.address,
@@ -262,10 +261,14 @@ describe('Bridge', () => {
 
         let startTime = Math.floor(Date.now() / 1000);
         let endTime = startTime + wkDuring;
-        let retSmg = await bridge.sendSetStoremanGroupConfig(BigInt(smgId),BigInt(gpkX),BigInt(gpkY),startTime,endTime,{
-            sender: deployer.getSender(),
+
+        let retSmg = await bridge.sendSetStoremanGroupConfig(deployer.getSender(),{
+            id: BigInt(smgId),
+            gpkX:BigInt(gpkX), gpkY:BigInt(gpkY), 
+            startTime,
+            endTime,
             value: toNano('1000'),
-            queryID: queryID,
+            queryID,
         });
         console.log("retSmg", slimSndMsgResult(retSmg));
 

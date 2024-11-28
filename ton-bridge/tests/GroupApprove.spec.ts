@@ -125,8 +125,6 @@ describe('GroupApprove', () => {
         }); 
     });
 
-
-
     it('group approve set halt', async () => {
         let user1 = await blockchain.treasury('user1');
 
@@ -582,8 +580,6 @@ describe('GroupApprove', () => {
         console.log("msg task:", task)
         expect(task.executed).toEqual(1)
     });        
-
-     
     
     it('group approve transfer foundation', async () => {
         let user1 = await blockchain.treasury('user1');
@@ -716,7 +712,7 @@ describe('GroupApprove', () => {
         console.log("msg task:", task)
         expect(task.executed).toEqual(1)
     });     
-    it.only('group approve add token pair', async () => {
+    it('group approve add token pair', async () => {
         let user1 = await blockchain.treasury('user1');
 
         let info = await bridge.getCrossConfig()

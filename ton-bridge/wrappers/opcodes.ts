@@ -30,6 +30,7 @@ export const OP_ORACLE_SetSMG                  = 0x60000002;
 export const OP_ORACLE_CommitSMG               = 0x60000003;
 export const OP_ORACLE_DeleteSMG               = 0x60000004;
 export const OP_ORACLE_AcquireReadySmgInfo     = 0x60000005;
+
 export const OP_GP_TransferFoundation          = 0x70000001;
 export const OP_GP_AcquireReadySmgInfo         = 0x70000002;
 export const OP_GP_Proposal                    = 0x70000003;

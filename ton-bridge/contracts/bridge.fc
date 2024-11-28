@@ -38,41 +38,18 @@
     );
 }
 
-{-(int, int, slice, slice) get_token_pair(int _token_paird_id) method_id {
-    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    slice tm_slice = token_manager.begin_parse();
-    (cell tm_dic, cell wt_dic) = (tm_slice~load_dict(), tm_slice~load_dict());
-    slice from_account = begin_cell().end_cell().begin_parse();
-    slice to_account = begin_cell().end_cell().begin_parse();
-    (cell dic_new, int ret) = udict_get_ref?(tm_dic, 32, _token_paird_id);
-    if (cell_null?(dic_new)) {
-        return (0, 0, from_account, to_account);
-    }
-    slice cs = dic_new.begin_parse();
-    if (ret) {
-        (int _src_chain_id, int _dst_chain_id, int _from_account_len) =
-        (cs~load_uint(32), cs~load_uint(32), cs~load_uint(8));
 
-
-        slice _from_account = cs~load_bits(8 * _from_account_len);
-        int _to_account_len = cs~load_uint(8);
-        slice _to_account = cs~load_bits(8 * _to_account_len);
-
-        return (_src_chain_id, _dst_chain_id, _from_account, _to_account);
-    }
-    return (0, 0, from_account, to_account);
-}-}
-
-() cb_executed(slice sender_address, int query_id) {
+() cb_executed(slice sender_address, int query_id) impure {
     var msg = begin_cell()
         .store_uint(0x18, 6)     ;;
         .store_slice(sender_address)
-        .store_coins(10000000)
+        .store_coins(0)
         .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
         .store_uint(OP_COMMON_Finished, 32)
         .store_uint(query_id, 64)
         .end_cell();
-    send_raw_message(msg,0);
+    send_raw_message(msg,64);
+    return ();
 }
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -111,7 +88,7 @@
         var msg = begin_cell()
             .store_uint(0x18, 6)     ;;
             .store_slice(sender_address)
-            .store_coins(10000000)
+            .store_coins(0)
             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_uint(OP_GROUPAPPROVE_Execute_WithGPK, 32)
             .store_uint(query_id, 64)
@@ -119,48 +96,24 @@
             .store_uint(gpky, 256)
             .store_ref(in_msg_body~load_ref())
             .end_cell();
-        send_raw_message(msg,0);
-
-        return ();
+        return send_raw_message(msg,64);
     }
     if(op & 0xFF000000 == OP_COMMON) {
         if(op == OP_COMMON_SetHalt) {
             int _halt = in_msg_body~load_uint(2);
             save_data(cross_owner, _halt, init, ca_fee, oracle, token_manager, extend);
             (int workchain, int hash) = parse_std_addr(sender_address);
-            ~strdump("bridge execut cb query_id"); ~dump(query_id);~dump(hash );
-
-            var msg = begin_cell()
-                .store_uint(0x18, 6)     ;;
-                .store_slice(sender_address)
-                .store_coins(10000000)
-                .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-                .store_uint(OP_COMMON_Finished, 32)
-                .store_uint(query_id, 64)
-                .end_cell();
-            send_raw_message(msg,0);
-
-            return ();
+            return cb_executed(sender_address, query_id);
         }
-        if(op == OP_COMMON_Initialize) {
-            int _init = in_msg_body~load_uint(2);
-            save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
-
-            return ();
-        }
+        ;; if(op == OP_COMMON_Initialize) { ;; TODO need not?
+        ;;     int _init = in_msg_body~load_uint(2);
+        ;;     save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
+        ;;     return ();
+        ;; }
         if(op == OP_COMMON_TransferOwner) {
             slice _cross_owner = in_msg_body~load_msg_addr();
             save_data(_cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
-            var msg = begin_cell()
-                .store_uint(0x18, 6)     ;;
-                .store_slice(sender_address)
-                .store_coins(10000000)
-                .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-                .store_uint(OP_COMMON_Finished, 32)
-                .store_uint(query_id, 64)
-                .end_cell();
-            send_raw_message(msg,0);
-            return ();
+            return cb_executed(sender_address, query_id);
         }
     }
 
@@ -178,77 +131,31 @@
     if (op & 0xFF000000 == OP_FEE) {
         var _ca_fee = fee_recv_internal(op, ca_fee, msg_value, in_msg_full, in_msg_body);
         save_data(cross_owner, halt, init, _ca_fee, oracle, token_manager, extend);
-        var msg = begin_cell()
-            .store_uint(0x18, 6)     ;;
-            .store_slice(sender_address)
-            .store_coins(10000000)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_uint(OP_COMMON_Finished, 32)
-            .store_uint(query_id, 64)
-            .end_cell();
-        send_raw_message(msg,0);
-        return ();
+        return cb_executed(sender_address, query_id);
     }
 
     if (op & 0xFF000000 == OP_ORACLE) {
         var _oracle = oracle_recv_internal(op, oracle, msg_value, in_msg_full, in_msg_body);
         save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
-        var msg = begin_cell()
-            .store_uint(0x18, 6)     ;;
-            .store_slice(sender_address)
-            .store_coins(10000000)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_uint(OP_COMMON_Finished, 32)
-            .store_uint(query_id, 64)
-            .end_cell();
-        send_raw_message(msg,0);        
-        return ();
+        return cb_executed(sender_address, query_id);
     }
 
     if (op & 0xFF000000 == OP_TOKENPAIR) {
         var _token_manager = tm_recv_internal(op, token_manager, msg_value, in_msg_full, in_msg_body);
         save_data(cross_owner, halt, init, ca_fee, oracle, _token_manager, extend);
-        var msg = begin_cell()
-            .store_uint(0x18, 6)     ;;
-            .store_slice(sender_address)
-            .store_coins(10000000)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_uint(OP_COMMON_Finished, 32)
-            .store_uint(query_id, 64)
-            .end_cell();
-        send_raw_message(msg,0);  
-        return ();
+        return cb_executed(sender_address, query_id);
     }
 
     if (op & 0xFF000000 == OP_EXTEND) {
         var _extend = ext_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
         save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
-        ;; cb_executed(sender_address, query_id);
-        var msg = begin_cell()
-            .store_uint(0x18, 6)     ;;
-            .store_slice(sender_address)
-            .store_coins(10000000)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_uint(OP_COMMON_Finished, 32)
-            .store_uint(query_id, 64)
-            .end_cell();
-        send_raw_message(msg,0);
-        return ();
+        return cb_executed(sender_address, query_id);
     }
 
     if (op == OP_UPGRADE_Code) {
         var new_code = in_msg_body~load_ref();
         set_code(new_code);
-        var msg = begin_cell()
-            .store_uint(0x18, 6)     ;;
-            .store_slice(sender_address)
-            .store_coins(10000000)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_uint(OP_COMMON_Finished, 32)
-            .store_uint(query_id, 64)
-            .end_cell();
-        send_raw_message(msg,0);
-        return ();
+        return cb_executed(sender_address, query_id);
     }
 
     throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
