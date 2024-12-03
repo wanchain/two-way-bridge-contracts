@@ -19,6 +19,7 @@ import {OP_CROSS_SmgRelease} from "./opcodes";
 
 export const BIP44_CHAINID = 0x4567; //todo change later
 export const TON_COIN_ACCOUT = "0x0000000000000000000000000000000000000000000000000000000000000000"; // 32 bytes
+export const TON_COIN_ACCOUNT_STR = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c'
 export const WK_CHIANID = "0";
 
 export type BridgeConfig = {
@@ -142,12 +143,20 @@ export class Bridge implements Contract {
     ) {
         let toBuffer, fromBuffer
         if(opts.fromChainID == BIP44_CHAINID) {
-            let fromAddr = Address.parseFriendly(opts.fromAccount)
-            fromBuffer = fromAddr.address.hash
+            if(opts.fromAccount == "") {
+                fromBuffer = Buffer.from(TON_COIN_ACCOUT.slice(2), 'hex')
+            } else {
+                let fromAddr = Address.parseFriendly(opts.fromAccount)
+                fromBuffer = fromAddr.address.hash
+            }
             toBuffer = Buffer.from(opts.toAccount,'utf8')
         } else if(opts.toChainID == BIP44_CHAINID) {
-            let toAddr = Address.parseFriendly(opts.toAccount)
-            toBuffer = toAddr.address.hash
+            if(opts.toAccount == "") {
+                toBuffer = Buffer.from(TON_COIN_ACCOUT.slice(2), 'hex')
+            } else {
+                let toAddr = Address.parseFriendly(opts.toAccount)
+                toBuffer = toAddr.address.hash
+            }
             fromBuffer = Buffer.from(opts.fromAccount,'utf8')
         } else {
             throw("Error chain ID.")
@@ -239,14 +248,14 @@ export class Bridge implements Contract {
         console.log("tokenAccount",tokenAccount,"TON_COIN_ACCOUT",TON_COIN_ACCOUT);
         console.log("(len)tokenAccount",tokenAccount.length,"(len)TON_COIN_ACCOUT",TON_COIN_ACCOUT.length);
         // 3.1 ton
-        if(tokenAccount === TON_COIN_ACCOUT.substring(2) ){
+        if(tokenAccount === TON_COIN_ACCOUNT_STR ){
             console.log("entering ton coin........");
             let ret = await sendUserLock();
             return;
         }
 
         //let addrFriedly = Address.parseFriendly(HexStringToBuffer(tokenAccount));
-        let addRaw = Address.parse(WK_CHIANID+":"+ tokenAccount);
+        let addRaw = Address.parse(tokenAccount);
         let c = JettonMinter.createFromAddress(addRaw);
         let jp =  await provider.open(c);
         // 3.2 original Token

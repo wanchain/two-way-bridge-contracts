@@ -151,10 +151,10 @@ describe('Bridge', () => {
         let srcTokenAcc = tokenInfo.tokenOrg.srcTokenAcc;
 
 
-        let dstTokenAcc = BufferrToHexString(jettonMinter.address.hash)  //todo handle testnet and mainnet , bounceable and non-bounceable
-        tokenInfo.tokenOrg.dstTokenAcc = dstTokenAcc;
+        let dstTokenAcc = jettonMinter.address.toString() //BufferrToHexString(jettonMinter.address.hash)  //todo handle testnet and mainnet , bounceable and non-bounceable
 
         console.log("(hex)dstTokenAcc....", dstTokenAcc)
+        tokenInfo.tokenOrg.dstTokenAcc = dstTokenAcc;
         console.log("(str)dstTokenAcc....", jettonMinter.address)
 
         let retOld = await bridge.getTokenPair(tokenPairId);
@@ -195,12 +195,12 @@ describe('Bridge', () => {
         let dstChainId2 = tokenInfo.tokenWrapped.dstChainId;
         let srcTokenAcc2 = tokenInfo.tokenWrapped.srcTokenAcc;
 
-        let dstTokenAcc2 = BufferrToHexString(jettonMinter_dog.address.hash);
+        let dstTokenAcc2 = jettonMinter_dog.address.toString() //BufferrToHexString(jettonMinter_dog.address.hash);
 
-        tokenInfo.tokenWrapped.dstTokenAcc = dstTokenAcc2;
 
         console.log("(hex)dstTokenAcc2....", dstTokenAcc2)
         console.log("(str)dstTokenAcc2....", jettonMinter_dog.address)
+        tokenInfo.tokenWrapped.dstTokenAcc = jettonMinter_dog.address.toString();
 
         let retOld2 = await bridge.getTokenPair(tokenPairId2);
         console.log("retOld2", retOld2);
@@ -231,9 +231,9 @@ describe('Bridge', () => {
         let dstChainId3 = tokenInfo.coin.dstChainId;
         let srcTokenAcc3 = tokenInfo.coin.srcTokenAcc;
 
-        let dstTokenAcc3 = TON_COIN_ACCOUT;
+        let dstTokenAcc3 = "";
         console.log("(hex)dstTokenAcc3....", dstTokenAcc2)
-        tokenInfo.coin.dstTokenAcc = TON_COIN_ACCOUT;
+        tokenInfo.coin.dstTokenAcc = "";
 
         let retOld3 = await bridge.getTokenPair(tokenPairId3);
         console.log("retOld2", retOld3);
@@ -521,7 +521,7 @@ describe('Bridge', () => {
             BigInt(tokenPairID),
             BigInt(releaseValue),
             BigInt(fee),
-            tokenInfo.tokenOrg.dstTokenAcc,
+            Address.parseFriendly(tokenInfo.tokenOrg.dstTokenAcc).address,
             bob.address);
 
         console.log("msgHashResult....",msgHashResult);
@@ -597,7 +597,7 @@ describe('Bridge', () => {
             BigInt(tokenPairID),
             BigInt(releaseValue),
             BigInt(fee),
-            tokenInfo.tokenWrapped.dstTokenAcc,
+            Address.parseFriendly(tokenInfo.tokenWrapped.dstTokenAcc).address,
             bob.address);
 
         console.log("msgHashResult....",msgHashResult);
