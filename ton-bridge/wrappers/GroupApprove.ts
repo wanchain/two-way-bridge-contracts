@@ -100,12 +100,12 @@ export class GroupApprove implements Contract {
             queryID?: number,
             chainId:number,
             toAddr: Address,
-            robotAdmin: Address,
+            operator: Address,
         }
     ) {
         let msg = beginCell()
-            .storeUint(opcodes.OP_FEE_SetRobotAdmin, 32) // op (op #1 = increment)
-            .storeAddress(opts.robotAdmin)
+            .storeUint(opcodes.OP_FEE_SetFeeOperator, 32) // op (op #1 = increment)
+            .storeAddress(opts.operator)
             .endCell()
         await provider.internal(sender, {
             value: opts.value,
@@ -180,7 +180,7 @@ export class GroupApprove implements Contract {
         }
     ) {
         let msg = beginCell()
-            .storeUint(opcodes.OP_EXTEND_AddCrossAdmin, 32) // op (op #1 = increment)
+            .storeUint(opcodes.OP_FEE_AddCrossAdmin, 32) // op (op #1 = increment)
             .storeAddress(opts.admin)
             .endCell()
         await provider.internal(sender, {
@@ -204,7 +204,7 @@ export class GroupApprove implements Contract {
         }
     ) {
         let msg = beginCell()
-            .storeUint(opcodes.OP_EXTEND_DelCrossAdmin, 32) // op (op #1 = increment)
+            .storeUint(opcodes.OP_FEE_DelCrossAdmin, 32) // op (op #1 = increment)
             .storeAddress(opts.admin)
             .endCell()
         await provider.internal(sender, {

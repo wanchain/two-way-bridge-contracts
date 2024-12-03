@@ -16,14 +16,14 @@ describe('Bridge', () => {
     let smgFeeProxy: SandboxContract<TreasuryContract>;
     let oracleAdmin: SandboxContract<TreasuryContract>;
     let bridge: SandboxContract<Bridge>;
-    let robotAdmin:  SandboxContract<TreasuryContract>;
+    let operator:  SandboxContract<TreasuryContract>;
 
     beforeEach(async () => {
         blockchain = await Blockchain.create();
         deployer = await blockchain.treasury('deployer');
         smgFeeProxy = await blockchain.treasury('smgFeeProxy');
         oracleAdmin = await blockchain.treasury('oracleAdmin');
-        robotAdmin = await blockchain.treasury('robotAdmin');
+        operator = await blockchain.treasury('operator');
 
         let c = Bridge.createFromConfig(
             {
@@ -32,7 +32,7 @@ describe('Bridge', () => {
                 init:0,
                 smgFeeProxy:smgFeeProxy.address,
                 oracleAdmin:oracleAdmin.address,
-                robotAdmin:robotAdmin.address,
+                operator:operator.address,
             },
             code
         )
@@ -76,7 +76,7 @@ describe('Bridge', () => {
         console.log("user1.address(bigInt)==>",BigInt("0x"+user1.address.hash.toString('hex')));
 
         console.log("adminAddr",deployer.address.toRawString());
-        const ret = await bridge.sendAddTokenPair(deployer.getSender(),{
+        let ret = await bridge.sendAddTokenPair(deployer.getSender(),{
             tokenPairId, fromChainID,fromAccount,toChainID,toAccount,
             value: toNano('1'),
             queryID,
@@ -97,6 +97,22 @@ describe('Bridge', () => {
         expect(retNew.toChainID).toBe(toChainID)
         expect(retNew.fromAccount).toBe(fromAccount)
         expect(retNew.toAccount).toBe(toAccount)
+
+
+        ret = await bridge.sendRemoveTokenPair(deployer.getSender(),{
+            tokenPairId,
+            value: toNano('1'),
+            queryID,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+        // console.log("ret",ret);
+        firstTokenPair = await bridge.getFirstTokenPairID()
+        console.log("firstTokenPair:", firstTokenPair);
+        expect(firstTokenPair).toBe(0)
     });
 
 });

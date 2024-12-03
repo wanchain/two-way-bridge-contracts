@@ -17,6 +17,7 @@ describe('Bridge', () => {
     let deployer: SandboxContract<TreasuryContract>;
     let smgFeeProxy: SandboxContract<TreasuryContract>;
     let oracleAdmin: SandboxContract<TreasuryContract>;
+    let operator:  SandboxContract<TreasuryContract>;
     let bridge: SandboxContract<Bridge>;
 
     beforeEach(async () => {
@@ -24,6 +25,7 @@ describe('Bridge', () => {
         deployer = await blockchain.treasury('deployer');
         smgFeeProxy = await blockchain.treasury('smgFeeProxy');
         oracleAdmin = await blockchain.treasury('oracleAdmin');
+        operator = await blockchain.treasury('operator');
 
         let c = Bridge.createFromConfig(
             {
@@ -32,6 +34,7 @@ describe('Bridge', () => {
                 init:0,
                 smgFeeProxy:smgFeeProxy.address,
                 oracleAdmin:oracleAdmin.address,
+                operator:operator.address,
             },
             code
         )
@@ -73,34 +76,4 @@ describe('Bridge', () => {
         let v2 = await bridge.getVersion()
         expect(v2).toBe('Fake')
     })
-
-    it('should addTokenPair success', async () => {
-        let getFailed = 0;
-        try{
-            await bridge.getUpdatedInt()
-        }catch(err){
-            getFailed = 1
-        }
-        expect(getFailed).toBe(1)
-
-        
-        const user1 = await blockchain.treasury('user1');
-        const queryID=1;
-
-        const ret = await bridge.sendUpdateInt({
-            sender: deployer.getSender(),
-            value: toNano('1'),
-            queryID,
-        });
-        expect(ret.transactions).toHaveTransaction({
-            from: deployer.address,
-            to: bridge.address,
-            success: true,
-        });
-        // console.log("ret",ret);
-        let updatedInt = await bridge.getUpdatedInt()
-        console.log("updatedInt2:", updatedInt);
-        expect(updatedInt).toBe(12345678)
-    });
-
 });

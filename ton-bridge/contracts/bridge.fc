@@ -51,6 +51,54 @@
     send_raw_message(msg,64);
     return ();
 }
+
+() check_privilege(int op, slice sender_address, slice cross_owner, cell oracle, cell feeCell ) impure {
+    if((op & 0xFF000000 == OP_CROSS) | (op == OP_FETCH_GPK)){
+        return ();
+    }
+    if((op == OP_COMMON_TransferOwner) | (op == OP_COMMON_SetHalt)) {
+        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
+        return ();
+    }
+    if ((op == OP_FEE_SetSmgFeeProxy) | (op == OP_FEE_SetFeeOperator)) {
+        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
+        return ();
+    }
+    if((op == OP_FEE_AddCrossAdmin) | (op == OP_FEE_DelCrossAdmin)) {
+        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
+        return ();
+    }
+
+    if ((op == OP_FEE_SetChainFee) | (op == OP_FEE_SetChainFees) | (op == OP_FEE_SetTokenPairFee) | (op == OP_FEE_SetTokenPairFees)) {
+        (_, slice feeOperator) = fee_get_config(feeCell);
+        if(equal_slices(sender_address, feeOperator)) {
+            return ();
+        }
+        if( 1 == fee_isCrodsAdmin(feeCell, sender_address)) {
+            return ();
+        }
+        throw(0xff);
+    }
+
+    if(op == OP_ORACLE_TransferOracleAdmin) {
+        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
+        return ();        
+    }
+
+    if((op == OP_ORACLE_SetSMG) | (op == OP_ORACLE_CommitSMG) |(op == OP_ORACLE_DeleteSMG)) {
+        slice oracleAdmin = oracle_get_OracleAdmin(oracle);
+        throw_unless(0xffff, equal_slices(sender_address, oracleAdmin));
+        return ();        
+    }
+    if (op & 0xFF000000 == OP_TOKENPAIR) {
+        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
+        return ();             
+    }
+    if (op == OP_UPGRADE_Code) {
+        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
+        return ();                
+    }
+}
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     if (in_msg_body.slice_empty?()) {
@@ -75,8 +123,8 @@
 
     int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
     int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
-
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    check_privilege(op, sender_address, cross_owner, oracle, ca_fee ); 
     if( op == OP_FETCH_GPK) {
         var smgID = in_msg_body~load_uint(256);
         ;; TODO, set gpk first
@@ -128,7 +176,7 @@
         return ();
     }
 
-    if (op & 0xFF000000 == OP_FEE) {
+    if (op & 0xFF000000 == OP_FEE ) {
         var _ca_fee = fee_recv_internal(op, ca_fee, msg_value, in_msg_full, in_msg_body);
         save_data(cross_owner, halt, init, _ca_fee, oracle, token_manager, extend);
         return cb_executed(sender_address, query_id);
@@ -146,11 +194,11 @@
         return cb_executed(sender_address, query_id);
     }
 
-    if (op & 0xFF000000 == OP_EXTEND) {
-        var _extend = ext_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
-        save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
-        return cb_executed(sender_address, query_id);
-    }
+    ;; if (op & 0xFF000000 == OP_EXTEND) {
+    ;;     var _extend = ext_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
+    ;;     save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
+    ;;     return cb_executed(sender_address, query_id);
+    ;; }
 
     if (op == OP_UPGRADE_Code) {
         var new_code = in_msg_body~load_ref();
@@ -239,10 +287,10 @@
 }
 
 ;; for test.
-(int) get_updated_int() method_id {
-    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return ext_get_updated_int(extend);
-}
+;; (int) get_updated_int() method_id {
+;;     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+;;     return ext_get_updated_int(extend);
+;; }
 
 (slice) version() method_id {
     return "0.1";

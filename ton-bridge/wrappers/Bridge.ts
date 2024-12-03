@@ -27,7 +27,7 @@ export type BridgeConfig = {
     init: number,
     smgFeeProxy:Address,
     oracleAdmin:Address,
-    robotAdmin:Address,
+    operator:Address,
 };
 
 export type CrossConfig = {
@@ -46,9 +46,10 @@ export function bridgeConfigToCell(config: BridgeConfig): Cell {
 
         .storeRef(beginCell() // *****about fee begin*****
             .storeAddress(config.smgFeeProxy) // feeProxyAddress
-            .storeAddress(config.robotAdmin) // robotAdmin
+            .storeAddress(config.operator) // operator
             .storeDict() // about Contract and Agent fee
             .storeDict() // about tokenPairFee
+            .storeDict() // cross_admin
             .endCell())  // *****about fee end*****
 
         .storeRef(beginCell()  // *****about oracle begin*****
@@ -64,7 +65,6 @@ export function bridgeConfigToCell(config: BridgeConfig): Cell {
             .endCell()) // *****about tm end*****
 
         .storeRef(beginCell()
-            .storeDict() // cross_admin
             .endCell()) // extended
         .endCell();
 }
@@ -140,35 +140,56 @@ export class Bridge implements Contract {
             toAccount:string,
         }
     ) {
-        let from = opts.fromAccount.substring(0,2).toLowerCase() == "0x"?opts.fromAccount.substring(2):opts.fromAccount
-        let to = opts.toAccount.substring(0,2).toLowerCase() == "0x"?opts.toAccount.substring(2):opts.toAccount
-
-        console.log("xxxxxfromxxxx",from);
-        console.log("xxxxxtoxxxx",to);
-
-        let fromBuffer = Buffer.from(from,'hex')
-        let toBuffer = Buffer.from(to,'hex')
-
-        console.log("fromBuffer.length",from.length);
-        console.log("toBuffer.length",to.length);
-
+        let toBuffer, fromBuffer
+        if(opts.fromChainID == BIP44_CHAINID) {
+            let fromAddr = Address.parseFriendly(opts.fromAccount)
+            fromBuffer = fromAddr.address.hash
+            toBuffer = Buffer.from(opts.toAccount,'utf8')
+        } else if(opts.toChainID == BIP44_CHAINID) {
+            let toAddr = Address.parseFriendly(opts.toAccount)
+            toBuffer = toAddr.address.hash
+            fromBuffer = Buffer.from(opts.fromAccount,'utf8')
+        } else {
+            throw("Error chain ID.")
+        }
+        console.log("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex'))
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                //.storeUint(opcodes.OP_TOKENPAIR_Add, 32)
                 .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeUint(opts.tokenPairId, 32)
                 .storeUint(opts.fromChainID, 32)
                 .storeUint(opts.toChainID, 32)
                 .storeUint(fromBuffer.length, 8)
-                .storeBuffer(fromBuffer)
                 .storeUint(toBuffer.length, 8)
-                .storeBuffer(toBuffer)
+                .storeUint(toBuffer.length, 8)
+                .storeRef(beginCell().storeBuffer(fromBuffer).endCell())
+                .storeRef(beginCell().storeBuffer(toBuffer).endCell())
                 .endCell(),
         });
     }
+    async sendRemoveTokenPair(
+        provider: ContractProvider,
+        via: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            tokenPairId:number,
+        }
+    ) {
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(opcodes.OP_TOKENPAIR_Remove, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.tokenPairId, 32)
+                .endCell(),
+        });
+    }
+
 
     async sendUserLock(
         provider: ContractProvider,
@@ -386,7 +407,7 @@ export class Bridge implements Contract {
             init:common.stack.readNumber(),
             oracleAdmin: oracleAdmin.stack.readAddress(),
             feeProxyAdmin: feeConfig.stack.readAddress(),
-            robotAdmin: feeConfig.stack.readAddress(),
+            operator: feeConfig.stack.readAddress(),
         }
     }
 
@@ -406,7 +427,6 @@ export class Bridge implements Contract {
         let toChainID = result.stack.readNumber();
         let toAccount = result.stack.readBuffer();
         let pair =  {fromChainID, toChainID, fromAccount:"", toAccount:""}
-        console.log("pair:", pair)
         if(pair.fromChainID == 0 || pair.toChainID == 0) {
             return pair
         }
@@ -547,7 +567,7 @@ export class Bridge implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                .storeUint(opcodes.OP_EXTEND_AddCrossAdmin, 32)
+                .storeUint(opcodes.OP_FEE_AddCrossAdmin, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeAddress(opts.adminAddr)
                 .endCell(),
@@ -570,7 +590,7 @@ export class Bridge implements Contract {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
-                .storeUint(opcodes.OP_EXTEND_DelCrossAdmin, 32)
+                .storeUint(opcodes.OP_FEE_DelCrossAdmin, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeAddress(opts.adminAddr)
                 .endCell(),
@@ -631,7 +651,7 @@ export class Bridge implements Contract {
         await provider.internal(opts.sender, {
             value: opts.value,
             body: beginCell()
-            .storeUint(opcodes.OP_UPGRADE, 32) // op (op #1 = increment)
+            .storeUint(opcodes.OP_UPGRADE_Code, 32) // op (op #1 = increment)
             .storeUint(0, 64) // query id
             .storeRef(code)
             .endCell()

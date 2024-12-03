@@ -19,8 +19,10 @@ describe('Oracle', () => {
     let deployer: SandboxContract<TreasuryContract>;
     let smgFeeProxy: SandboxContract<TreasuryContract>;
     let oracleAdmin: SandboxContract<TreasuryContract>;
-    let robotAdmin:  SandboxContract<TreasuryContract>;
+    let operator:  SandboxContract<TreasuryContract>;
     let bridge: SandboxContract<Bridge>;
+    let admin1: SandboxContract<TreasuryContract>;
+    let admin2: SandboxContract<TreasuryContract>;
 
     let smgID1: string = "0x000000000000000000000000000000000000000000000041726965735f303438";
     let smgID2: string = "0x000000000000000000000000000000000000000000000041726965735f303437";
@@ -30,8 +32,9 @@ describe('Oracle', () => {
         deployer = await blockchain.treasury('deployer');
         smgFeeProxy = await blockchain.treasury('smgFeeProxy');
         oracleAdmin = await blockchain.treasury('oracleAdmin');
-        robotAdmin = await blockchain.treasury('robotAdmin');
-
+        operator = await blockchain.treasury('operator');
+        admin1 = await blockchain.treasury('admin1');
+        admin2 = await blockchain.treasury('admin2');
         let c = Bridge.createFromConfig(
             {
                 owner: deployer.address,
@@ -39,7 +42,7 @@ describe('Oracle', () => {
                 init:0,
                 smgFeeProxy:smgFeeProxy.address,
                 oracleAdmin:oracleAdmin.address,
-                robotAdmin:robotAdmin.address,
+                operator:operator.address,
             },
             code
         )
@@ -187,26 +190,26 @@ describe('Oracle', () => {
 
     it.only('add second smg commited, remove', async () => {
         let user1 = await blockchain.treasury('user1');
-        let txRet = await bridge.sendSetStoremanGroupConfig(user1.getSender(),{
+        let txRet = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
             id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
             startTime: 3, endTime: 4,
             value: toNano('0.01'),
             queryID:1,
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: oracleAdmin.address,
             to: bridge.address,
             success: true,
         });
 
-        let txRet2 = await bridge.sendSetStoremanGroupConfig(user1.getSender(),{
+        let txRet2 = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
             id: BigInt(smgID2), gpkX: 2n, gpkY:3n, 
             startTime: 3, endTime: 4,
             value: toNano('0.01'),
             queryID:1,
         })
         expect(txRet2.transactions).toHaveTransaction({
-            from: user1.address,
+            from: oracleAdmin.address,
             to: bridge.address,
             success: true,
         });
@@ -219,14 +222,14 @@ describe('Oracle', () => {
         expect(next_smg_id).toEqual(BigInt(smgID1));
 
         await sleep(2000)
-        let txRet3 = await bridge.sendSetStoremanGroupConfigCommit(user1.getSender(),{
+        let txRet3 = await bridge.sendSetStoremanGroupConfigCommit(oracleAdmin.getSender(),{
             id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
             startTime: 3, endTime: 4,
             value: toNano('0.1'),
             queryID:1,
         })
         expect(txRet3.transactions).toHaveTransaction({
-            from: user1.address,
+            from: oracleAdmin.address,
             to: bridge.address,
             success: true,
         });
@@ -240,13 +243,13 @@ describe('Oracle', () => {
         expect(next_smg_idCommited).toEqual(BigInt(0));
 
         // remove
-        let txRet4 = await bridge.sendRemoveStoremanGroup(user1.getSender(),{
+        let txRet4 = await bridge.sendRemoveStoremanGroup(oracleAdmin.getSender(),{
             id: BigInt(smgID2), 
             value: toNano('0.01'),
             queryID:1,
         })
         expect(txRet4.transactions).toHaveTransaction({
-            from: user1.address,
+            from: oracleAdmin.address,
             to: bridge.address,
             success: true,
         });
@@ -256,13 +259,13 @@ describe('Oracle', () => {
         first_smg_idCommited = await bridge.getFirstStoremanGroupIDCommited();
         console.log("first_smg_idCommited:",first_smg_idCommited);
         expect(first_smg_idCommited).toEqual(BigInt(smgID1));
-        txRet4 = await bridge.sendRemoveStoremanGroup(user1.getSender(),{
+        txRet4 = await bridge.sendRemoveStoremanGroup(oracleAdmin.getSender(),{
             id: BigInt(smgID1), 
             value: toNano('0.01'),
             queryID:1,
         })
         expect(txRet4.transactions).toHaveTransaction({
-            from: user1.address,
+            from: oracleAdmin.address,
             to: bridge.address,
             success: true,
         });
@@ -273,4 +276,79 @@ describe('Oracle', () => {
         console.log("first_smg_idCommited:",first_smg_idCommited);
         expect(first_smg_idCommited).toEqual(BigInt(0));
     });
+    it('should addAdmin success', async () => {
+        let firstAdmin = await bridge.getFirstAdmin()
+        console.log("firstAdmin 00:", firstAdmin);
+        expect(firstAdmin).toBe('')
+
+        let queryID=1;
+        let ret = await bridge.sendAddAdmin(deployer.getSender(),{
+            value: toNano('1'),
+            queryID,
+            adminAddr:admin1.address,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+        // console.log("ret",ret);
+        let firstAdmin1 = await bridge.getFirstAdmin()
+        console.log("firstAdmin:", firstAdmin1);
+        expect(firstAdmin1).toEqual(admin1.address.toString())
+
+        queryID=2;
+        ret = await bridge.sendAddAdmin(deployer.getSender(),{
+            value: toNano('1'),
+            queryID,
+            adminAddr:admin2.address,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+        // console.log("ret",ret);
+        firstAdmin1 = await bridge.getFirstAdmin()
+        console.log("firstAdmin:", firstAdmin1);
+        expect(firstAdmin1).toEqual(admin2.address.toString())
+        let nextAdmin = await bridge.getNextAdmin(admin1.address)
+        console.log("nextAdmin:", nextAdmin);
+        expect(nextAdmin).toEqual(admin1.address.toString())
+
+        // remove
+        queryID=3;
+        ret = await bridge.sendRemoveAdmin(deployer.getSender(),{
+            value: toNano('1'),
+            queryID,
+            adminAddr:admin2.address,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+        // console.log("ret",ret);
+        firstAdmin1 = await bridge.getFirstAdmin()
+        console.log("firstAdmin:", firstAdmin1);
+        expect(firstAdmin1).toEqual(admin1.address.toString())
+
+        // remove
+        queryID=4;
+        ret = await bridge.sendRemoveAdmin(deployer.getSender(),{
+            value: toNano('1'),
+            queryID,
+            adminAddr:admin1.address,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+        // console.log("ret",ret);
+        firstAdmin1 = await bridge.getFirstAdmin()
+        console.log("firstAdmin:", firstAdmin1);
+        expect(firstAdmin1).toEqual("")
+    });
+
 });

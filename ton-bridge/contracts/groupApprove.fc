@@ -64,6 +64,8 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
         cell msg = in_msg_body~load_ref();
         ~dump(toAddr);
         throw_unless(0xffff, chainId == BIP44_CHAINID);
+        throw_unless(0xffff, sender_address == foundation);
+
 
 
         taskDict~udict_set_builder(GP_TASK_DICTIONARY_KEY_LEN, taskCount, begin_cell()
@@ -97,6 +99,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
         return();
     }
     if (op == OP_GROUPAPPROVE_Execute_WithGPK) {
+        throw_unless(0xffff, sender_address == bridge);
         var gpkx = in_msg_body~load_uint(256);
         var gpky = in_msg_body~load_uint(256);
         slice old_in_msg_body = in_msg_body~load_ref().begin_parse();
@@ -181,6 +184,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
     }
     if (op == OP_COMMON_Finished) {
         var (task_slice, found?) = taskDict.udict_get?(GP_TASK_DICTIONARY_KEY_LEN, query_id);
+        throw_unless(0xffff, sender_address == bridge);
         ~strdump("execut cb query_id"); ~dump(query_id);
         if (found?) {
             slice toAddr = task_slice~load_msg_addr();

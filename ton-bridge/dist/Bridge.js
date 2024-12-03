@@ -44,7 +44,7 @@ const OP_FEE = 0x30000000;
 const OP_FEE_SetChainFee = 0x30000001;
 const OP_FEE_SetChainFees = 0x30000002;
 const OP_FEE_SetSmgFeeProxy = 0x30000003;
-const OP_FEE_SetRobotAdmin = 0x30000003;
+const OP_FEE_SetFeeOperator = 0x30000003;
 const OP_FEE_SetTokenPairFee = 0x30000004;
 const OP_FEE_SetTokenPairFees = 0x30000005;
 const OP_CROSS = 0x40000000;
@@ -67,8 +67,8 @@ const OP_GP_Proposal = 0x70000003;
 const OP_GP_ApproveAndExecute = 0x70000004;
 const OP_GP_Initialize = 0x70000005;
 const OP_EXTEND = 0x80000000;
-const OP_EXTEND_AddCrossAdmin = 0x80000001;
-const OP_EXTEND_DelCrossAdmin = 0x80000002;
+const OP_FEE_AddCrossAdmin = 0x80000001;
+const OP_FEE_DelCrossAdmin = 0x80000002;
 /////////////////////////////////////////////////////////////
 class Bridge {
     constructor(address, init) {

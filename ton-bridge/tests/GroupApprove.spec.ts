@@ -34,7 +34,7 @@ describe('GroupApprove', () => {
     let deployer: SandboxContract<TreasuryContract>;
     let smgFeeProxy: SandboxContract<TreasuryContract>;
     let oracleAdmin: SandboxContract<TreasuryContract>;
-    let robotAdmin: SandboxContract<TreasuryContract>;
+    let operator: SandboxContract<TreasuryContract>;
     let groupApprove: SandboxContract<GroupApprove>;
     let bridge: SandboxContract<Bridge>;
     let owner2: SandboxContract<TreasuryContract>;
@@ -44,7 +44,7 @@ describe('GroupApprove', () => {
         deployer = await blockchain.treasury('deployer');
         smgFeeProxy = await blockchain.treasury('smgFeeProxy');
         oracleAdmin = await blockchain.treasury('oracleAdmin');
-        robotAdmin = await blockchain.treasury('robotAdmin');
+        operator = await blockchain.treasury('operator');
         owner2 = await blockchain.treasury('owner2');
 
         let c_bridge = Bridge.createFromConfig(
@@ -54,7 +54,7 @@ describe('GroupApprove', () => {
                 init: 0,
                 smgFeeProxy: smgFeeProxy.address,
                 oracleAdmin: oracleAdmin.address,
-                robotAdmin: robotAdmin.address,
+                operator: operator.address,
             },
             codeBridge
         )
@@ -338,7 +338,7 @@ describe('GroupApprove', () => {
             queryID:1,
             chainId: BIP44_CHAINID,
             toAddr: bridge.address,
-            robotAdmin: owner2.address,
+            operator: owner2.address,
         })
         expect(txRet.transactions).toHaveTransaction({
             from: user1.address,
@@ -380,7 +380,7 @@ describe('GroupApprove', () => {
         });
         info = await bridge.getCrossConfig()
         console.log("getCrossConfig:", info)
-        expect(info.robotAdmin.toString()).toEqual(owner2.address.toString())
+        expect(info.operator.toString()).toEqual(owner2.address.toString())
         task = await groupApprove.getProposolById(BigInt(taskCount - 1))
         console.log("msg task:", task)
         expect(task.executed).toEqual(1)
