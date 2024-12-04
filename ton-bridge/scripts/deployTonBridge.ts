@@ -27,6 +27,7 @@ export async function run() {
         init:0,
         smgFeeProxy:wallet.address,
         oracleAdmin:wallet.address,
+        operator: wallet.address,
     });
 
     // send the deploy transaction

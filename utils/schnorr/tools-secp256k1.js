@@ -6,7 +6,7 @@ const ecparams = ecurve.getCurveByName('secp256k1');
 const Web3Utils = require("web3-utils");
 
 // buffer
-const r = new Buffer("e7e59bebdcee876e84d03832544f5a517e96a9e3f60cd8f564bece6719d5af52", 'hex');
+const r = Buffer.from("e7e59bebdcee876e84d03832544f5a517e96a9e3f60cd8f564bece6719d5af52", 'hex');
 // buffer
 let R = baseScarMulti(r);
 

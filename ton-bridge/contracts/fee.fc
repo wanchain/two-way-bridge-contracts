@@ -4,42 +4,57 @@
 #include "imports/common/opcode.fc";
 
 const int DICTIONARY_KEY_LEN = 32;
-(slice, slice, cell, cell) fee_load_data(cell refcell) impure {
+const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
+
+(slice, slice, cell, cell, cell) fee_load_data(cell refcell) impure {
     var ds = refcell.begin_parse();
     slice smgFeeProxy = ds~load_msg_addr();
-    slice robotAdmin = ds~load_msg_addr();
+    slice feeOperator = ds~load_msg_addr();
     cell tokenPairFee = ds~load_dict();
     cell contractFee = ds~load_dict();
+    cell crossAdmin = ds~load_dict();
     ds.end_parse();
-    return (smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+    return (smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);
 }
 
-(cell) fee_generate_data(slice smgFeeProxy, slice robotAdmin, cell tokenPairFee, cell contractFee) impure {
+(cell) fee_generate_data(slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee,cell crossAdmin) impure {
     return begin_cell()
             .store_slice(smgFeeProxy)
-            .store_slice(robotAdmin)
+            .store_slice(feeOperator)
             .store_dict(tokenPairFee)
             .store_dict(contractFee)
+            .store_dict(crossAdmin)
             .end_cell();
+}
+
+(int) fee_isCrodsAdmin(cell refcell, slice addr) impure {
+    (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
+    (_, int hash) = parse_std_addr(addr);
+    (_,_, int success) = crossAdmin.udict_get_next?(CROSSADMIN_DICTIONARY_KEY_LEN, hash);
+    if (success) {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 ;; Example of how to use in recv_internal
 (cell) fee_recv_internal(int op, cell refcell, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     ~strdump("fee_recv_internal");
-    (slice smgFeeProxy, slice robotAdmin, cell tokenPairFee, cell contractFee) = fee_load_data(refcell);
+    (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
     if (op == OP_FEE_SetSmgFeeProxy) {
         slice _smgFeeProxy = in_msg_body~load_msg_addr();
-        return fee_generate_data(_smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+        return fee_generate_data(_smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);
     }
-    if (op == OP_FEE_SetRobotAdmin) {
-        slice _robotAdmin = in_msg_body~load_msg_addr();
-        return fee_generate_data(smgFeeProxy, _robotAdmin, tokenPairFee, contractFee);
+    if (op == OP_FEE_SetFeeOperator) {
+        slice _feeOperator = in_msg_body~load_msg_addr();
+        return fee_generate_data(smgFeeProxy, _feeOperator, tokenPairFee, contractFee, crossAdmin);
     }
     if (op == OP_FEE_SetTokenPairFee) {
         int tpId = in_msg_body~load_uint(32);
         int fee = in_msg_body~load_uint(256);
         tokenPairFee~udict_set_builder(DICTIONARY_KEY_LEN, tpId, begin_cell().store_int(fee, 256));
-        return fee_generate_data(smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);
     }
     if (op == OP_FEE_SetTokenPairFees) {
         int count = in_msg_body~load_uint(32); ;;TODO. only support 3 for cell size limit
@@ -49,14 +64,14 @@ const int DICTIONARY_KEY_LEN = 32;
             tokenPairFee~udict_set_builder(DICTIONARY_KEY_LEN, tpId, begin_cell().store_int(fee, 256));
             count -= 1;
         }
-        return fee_generate_data(smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);
     }
     if (op == OP_FEE_SetChainFee) {
         int fromChain = in_msg_body~load_uint(32);
         int toChain = in_msg_body~load_uint(32);
         int fee = in_msg_body~load_uint(256);
         contractFee~udict_set_builder(DICTIONARY_KEY_LEN, fromChain << 32 + toChain, begin_cell().store_int(fee, 256));
-        return fee_generate_data(smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);
     }
     if (op == OP_FEE_SetChainFees) {
         int count = in_msg_body~load_uint(32); ;;TODO. only support 3 for cell size limit
@@ -67,14 +82,50 @@ const int DICTIONARY_KEY_LEN = 32;
             contractFee~udict_set_builder(DICTIONARY_KEY_LEN, fromChain << 32 + toChain, begin_cell().store_int(fee, 256));
             count -= 1;
         }
-        return fee_generate_data(smgFeeProxy, robotAdmin, tokenPairFee, contractFee);
+        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee,crossAdmin);
     }    
+    if (op == OP_FEE_AddCrossAdmin) {
+        slice admin = in_msg_body~load_msg_addr();
+        (int workchain, int hash) = parse_std_addr(admin);
+        ~strdump("exec OP_FEE_AddCrossAdmin"); ~dump(workchain);~dump(hash);
+        crossAdmin~udict_set_builder(CROSSADMIN_DICTIONARY_KEY_LEN, hash, begin_cell().store_int(1, 2));
+        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee,crossAdmin);
+    }
+    if (op == OP_FEE_DelCrossAdmin) {
+        slice admin = in_msg_body~load_msg_addr();
+        (int workchain, int hash) = parse_std_addr(admin);
+        ~strdump("exec OP_FEE_DelCrossAdmin"); ~dump(workchain);~dump(hash);
+        crossAdmin~udict_delete?(CROSSADMIN_DICTIONARY_KEY_LEN, hash);
+        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee,crossAdmin);
+    }
     return refcell;
 }
 
 
+;; Get the first tokenPair in the dictionary
+(slice) fee_get_first_crossAdmin(cell refcell) method_id {
+    (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
+    (int id, slice value, int success) = crossAdmin.udict_get_min?(CROSSADMIN_DICTIONARY_KEY_LEN);
+    if (success) {
+        return begin_cell().store_uint(id, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
+    } else {
+        return begin_cell().store_uint(0, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
+    }
+}
+;; Get the first tokenPair in the dictionary
+(slice) fee_get_next_crossAdmin(cell refcell, slice adminAddr) method_id {
+    (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
+    int id = adminAddr~load_uint(CROSSADMIN_DICTIONARY_KEY_LEN);
+    (int id, slice value, int success) = crossAdmin.udict_get_next?(CROSSADMIN_DICTIONARY_KEY_LEN, id);
+    if (success) {
+        return begin_cell().store_uint(id, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
+    } else {
+        return begin_cell().store_uint(0, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
+    }
+}
+
 
 (slice, slice) fee_get_config(cell refcell) method_id {
-    (slice smgFeeProxy, slice robotAdmin, _, _) = fee_load_data(refcell);
-    return (smgFeeProxy, robotAdmin);
+    (slice smgFeeProxy, slice feeOperator, _, _, _) = fee_load_data(refcell);
+    return (smgFeeProxy, feeOperator);
 }

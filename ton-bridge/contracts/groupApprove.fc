@@ -64,6 +64,8 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
         cell msg = in_msg_body~load_ref();
         ~dump(toAddr);
         throw_unless(0xffff, chainId == BIP44_CHAINID);
+        ;;throw_unless(0xffff, equal_slices(sender_address, foundation) );
+
 
 
         taskDict~udict_set_builder(GP_TASK_DICTIONARY_KEY_LEN, taskCount, begin_cell()
@@ -77,11 +79,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
        
         return ();
     }
-    if (op == OP_GROUPAPPROVE_TranferFoundation) {
-        slice _foundation = in_msg_body~load_msg_addr();
-        save_data(taskCount, foundation, bridge, taskDict);
-        return ();
-    }    
+ 
     if (op == OP_GROUPAPPROVE_Execute) {
         var SmgID = in_msg_body~load_uint(256);
         var taskID = in_msg_body~load_uint(64);
@@ -90,17 +88,18 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
         var msg = begin_cell()
             .store_uint(0x10, 6)     ;;
             .store_slice(bridge)
-            .store_coins(10000000)
+            .store_coins(0)
             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_uint(OP_FETCH_GPK, 32)
             .store_uint(query_id, 64)
             .store_uint(SmgID, 256)
             .store_ref(begin_cell().store_uint(taskID, 64).store_ref(proof).end_cell())
             .end_cell();
-        send_raw_message(msg,0);
+        send_raw_message(msg,64);
         return();
     }
     if (op == OP_GROUPAPPROVE_Execute_WithGPK) {
+        ;;throw_unless(0xffff, equal_slices(sender_address, bridge));
         var gpkx = in_msg_body~load_uint(256);
         var gpky = in_msg_body~load_uint(256);
         slice old_in_msg_body = in_msg_body~load_ref().begin_parse();
@@ -119,7 +118,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
             proof~load_uint(256),
             proof~load_uint(256));
         proof.end_parse();
-        ~strdump("OP_GROUPAPPROVE_Execute_WithGPK op3"); ~dump(op);
+        ~strdump("OP_GROUPAPPROVE_Execute_WithGPK op3"); ~dump(op);~dump(proposalId);
 
 
         ;; check signature
@@ -133,9 +132,9 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
         var (task_slice, found?) = taskDict.udict_get?(GP_TASK_DICTIONARY_KEY_LEN, proposalId);
         if (found?) {
             ~strdump("proposalId"); ~dump(proposalId);
-            var toAddr = task_slice~load_msg_addr();
-            var msg_cell = task_slice~load_ref();
-            var msg_slice = msg_cell.begin_parse();
+            var toAddr = task_slice~load_msg_addr();~strdump("111");
+            var msg_cell = task_slice~load_ref();~strdump("222");
+            var msg_slice = msg_cell.begin_parse();~strdump("333");
             int bitsLength = slice_bits(msg_slice);
             ~strdump("bitsLength"); ~dump(bitsLength);
             ~strdump("toAddr"); ~dump(toAddr);
@@ -143,6 +142,20 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
             ~strdump("op2"); ~dump(op2);
             slice paras = msg_slice~load_bits(bitsLength - 32);
             ~strdump("paras"); ~dump(paras);
+            ~strdump("before op2 == OP_GROUPAPPROVE_TranferFoundation");
+            if(op2 == OP_GROUPAPPROVE_TranferFoundation) {
+                ~strdump("op2 == OP_GROUPAPPROVE_TranferFoundation");
+                slice _foundation = paras~load_msg_addr();
+                ~strdump("_foundation"); ~strdump(_foundation);
+                taskDict~udict_set_builder(GP_TASK_DICTIONARY_KEY_LEN, proposalId, begin_cell()
+                        .store_slice(toAddr)   
+                        .store_ref(msg_cell)
+                        .store_uint(1, 2)
+                        );
+                save_data(taskCount, _foundation, bridge, taskDict);
+                return ();
+            }
+            ~strdump("end OP_GROUPAPPROVE_Execute_WithGPK   1");
             var msg = begin_cell()
                 .store_uint(0x10, 6)     ;;
                 .store_slice(toAddr)
@@ -151,13 +164,19 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
                 .store_uint(op2, 32)
                 .store_uint(proposalId, 64) ;; used as query id
                 .store_slice(paras);
+            ~strdump("end OP_GROUPAPPROVE_Execute_WithGPK   2");
             if( op2 == OP_UPGRADE_Code) {
                 cell refm = msg_slice~load_ref();
                 msg = msg.store_ref(refm);
             }
+            if( op2 == OP_TOKENPAIR_Upsert) {
+                cell fromb = msg_slice~load_ref();
+                cell tob = msg_slice~load_ref();
+                msg = msg.store_ref(fromb).store_ref(tob);                
+            }
 
             send_raw_message(msg.end_cell(),0);
-
+            ~strdump("end OP_GROUPAPPROVE_Execute_WithGPK");
             return ();
         } else {
             ~strdump("proposalId not found"); 
@@ -167,6 +186,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
     }
     if (op == OP_COMMON_Finished) {
         var (task_slice, found?) = taskDict.udict_get?(GP_TASK_DICTIONARY_KEY_LEN, query_id);
+        ;;throw_unless(0xffff, equal_slices(sender_address, bridge));
         ~strdump("execut cb query_id"); ~dump(query_id);
         if (found?) {
             slice toAddr = task_slice~load_msg_addr();
@@ -179,7 +199,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
                     );
             ~strdump("before save_data");
 
-        save_data(taskCount, foundation, bridge, taskDict);
+            save_data(taskCount, foundation, bridge, taskDict);
             return ();
         } else {
             throw(0xffff);
@@ -206,4 +226,8 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
 (int) get_proposol_count() method_id {
     (int taskCount, slice foundation, slice bridge, cell taskDict) = load_data();
     return taskCount;
+}
+(slice, slice) get_config() method_id {
+    (int taskCount, slice foundation, slice bridge, cell taskDict) = load_data();
+    return (foundation, bridge);
 }

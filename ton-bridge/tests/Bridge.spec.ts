@@ -15,7 +15,7 @@ function AccountToBig(addr: Address) {
     return BigInt("0x" + addr.hash.toString('hex'));
 };
 
-const skSmg = new Buffer("097e961933fa62e3fef5cedef9a728a6a927a4b29f06a15c6e6c52c031a6cb2b", 'hex');
+const skSmg = Buffer.from("097e961933fa62e3fef5cedef9a728a6a927a4b29f06a15c6e6c52c031a6cb2b", 'hex');
 const gpk = schnorr.getPKBySk(skSmg);
 const gpkX = gpk.startsWith("0x") || gpk.startsWith("0X")? gpk.substring(0,66): `0x${gpk.substring(0,64)}`;
 const gpkY = gpk.startsWith("0x") || gpk.startsWith("0X")? `0x${gpk.substring(66)}`: `0x${gpk.substring(64)}`;
@@ -28,7 +28,9 @@ let tokenInfo = {
     tokenWrapped:{tokenPairId:0x02,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
     coin:{tokenPairId:0x03,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:''},
 }
-
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 describe('Bridge', () => {
     let code: Cell;
 
@@ -67,12 +69,11 @@ describe('Bridge', () => {
         let c = Bridge.createFromConfig(
             {
                 owner: deployer.address,
-                //admin: deployer.address,
                 halt: 0,
                 init: 0,
                 smgFeeProxy: smgFeeProxy.address,
                 oracleAdmin: oracleAdmin.address,
-                robotAdmin: oracleAdmin.address,
+                operator: oracleAdmin.address,
             },
             code
         )
@@ -152,10 +153,10 @@ describe('Bridge', () => {
         let srcTokenAcc = tokenInfo.tokenOrg.srcTokenAcc;
 
 
-        let dstTokenAcc = BufferrToHexString(jettonMinter.address.hash)  //todo handle testnet and mainnet , bounceable and non-bounceable
-        tokenInfo.tokenOrg.dstTokenAcc = dstTokenAcc;
+        let dstTokenAcc = jettonMinter.address.toString() //BufferrToHexString(jettonMinter.address.hash)  //todo handle testnet and mainnet , bounceable and non-bounceable
 
         console.log("(hex)dstTokenAcc....", dstTokenAcc)
+        tokenInfo.tokenOrg.dstTokenAcc = dstTokenAcc;
         console.log("(str)dstTokenAcc....", jettonMinter.address)
 
         let retOld = await bridge.getTokenPair(tokenPairId);
@@ -196,12 +197,12 @@ describe('Bridge', () => {
         let dstChainId2 = tokenInfo.tokenWrapped.dstChainId;
         let srcTokenAcc2 = tokenInfo.tokenWrapped.srcTokenAcc;
 
-        let dstTokenAcc2 = BufferrToHexString(jettonMinter_dog.address.hash);
+        let dstTokenAcc2 = jettonMinter_dog.address.toString() //BufferrToHexString(jettonMinter_dog.address.hash);
 
-        tokenInfo.tokenWrapped.dstTokenAcc = dstTokenAcc2;
 
         console.log("(hex)dstTokenAcc2....", dstTokenAcc2)
         console.log("(str)dstTokenAcc2....", jettonMinter_dog.address)
+        tokenInfo.tokenWrapped.dstTokenAcc = jettonMinter_dog.address.toString();
 
         let retOld2 = await bridge.getTokenPair(tokenPairId2);
         console.log("retOld2", retOld2);
@@ -232,9 +233,9 @@ describe('Bridge', () => {
         let dstChainId3 = tokenInfo.coin.dstChainId;
         let srcTokenAcc3 = tokenInfo.coin.srcTokenAcc;
 
-        let dstTokenAcc3 = TON_COIN_ACCOUT;
+        let dstTokenAcc3 = "";
         console.log("(hex)dstTokenAcc3....", dstTokenAcc2)
-        tokenInfo.coin.dstTokenAcc = TON_COIN_ACCOUT;
+        tokenInfo.coin.dstTokenAcc = "";
 
         let retOld3 = await bridge.getTokenPair(tokenPairId3);
         console.log("retOld2", retOld3);
@@ -262,11 +263,15 @@ describe('Bridge', () => {
 
         let startTime = Math.floor(Date.now() / 1000);
         let endTime = startTime + wkDuring;
-        let retSmg = await bridge.sendSetStoremanGroupConfig(deployer.getSender(),
-            {id:BigInt(smgId),
-                gpkX:BigInt(gpkX),
-                gpkY:BigInt(gpkY),startTime,endTime,
-            value:toNano('1000'),queryID:queryID});
+
+        let retSmg = await bridge.sendSetStoremanGroupConfig(deployer.getSender(),{
+            id: BigInt(smgId),
+            gpkX:BigInt(gpkX), gpkY:BigInt(gpkY), 
+            startTime,
+            endTime,
+            value: toNano('1000'),
+            queryID,
+        });
         console.log("retSmg", slimSndMsgResult(retSmg));
 
         let retGetSmg = await bridge.getStoremanGroupConfig(BigInt(smgId));
@@ -484,7 +489,8 @@ describe('Bridge', () => {
             p,
             s
         });
-
+        // console.log("sendSmgRelease ret:", ret)
+        await sleep(2000)
         let afterBridge = (await blockchain.getContract(bridge.address)).balance;
         let afterAlice = await alice.getBalance();
         let afterBob = await bob.getBalance();
@@ -499,6 +505,7 @@ describe('Bridge', () => {
         // todo add expect later
         expect(true).toEqual(afterBridge <= (beforeBridge)); //todo add fee
         console.log("beforeBridge(wei), afterBridge(wei), releaseValue(wei)", beforeBridge, afterBridge, releaseValue);
+        console.log("debug: afterBob >= (beforeBob + releaseValue):", afterBob ,beforeBob , releaseValue)
         expect(true).toEqual(afterBob >= (beforeBob + releaseValue));      //todo add fee should equal , not >=
     });
 
@@ -518,7 +525,7 @@ describe('Bridge', () => {
             BigInt(tokenPairID),
             BigInt(releaseValue),
             BigInt(fee),
-            tokenInfo.tokenOrg.dstTokenAcc,
+            Address.parseFriendly(tokenInfo.tokenOrg.dstTokenAcc).address,
             bob.address);
 
         console.log("msgHashResult....",msgHashResult);
@@ -594,7 +601,7 @@ describe('Bridge', () => {
             BigInt(tokenPairID),
             BigInt(releaseValue),
             BigInt(fee),
-            tokenInfo.tokenWrapped.dstTokenAcc,
+            Address.parseFriendly(tokenInfo.tokenWrapped.dstTokenAcc).address,
             bob.address);
 
         console.log("msgHashResult....",msgHashResult);
