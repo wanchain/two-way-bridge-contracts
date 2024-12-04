@@ -28,7 +28,9 @@ let tokenInfo = {
     tokenWrapped:{tokenPairId:0x02,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
     coin:{tokenPairId:0x03,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:''},
 }
-
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 describe('Bridge', () => {
     let code: Cell;
 
@@ -487,7 +489,8 @@ describe('Bridge', () => {
             p,
             s
         });
-
+        // console.log("sendSmgRelease ret:", ret)
+        await sleep(2000)
         let afterBridge = (await blockchain.getContract(bridge.address)).balance;
         let afterAlice = await alice.getBalance();
         let afterBob = await bob.getBalance();
@@ -502,6 +505,7 @@ describe('Bridge', () => {
         // todo add expect later
         expect(true).toEqual(afterBridge <= (beforeBridge)); //todo add fee
         console.log("beforeBridge(wei), afterBridge(wei), releaseValue(wei)", beforeBridge, afterBridge, releaseValue);
+        console.log("debug: afterBob >= (beforeBob + releaseValue):", afterBob ,beforeBob , releaseValue)
         expect(true).toEqual(afterBob >= (beforeBob + releaseValue));      //todo add fee should equal , not >=
     });
 

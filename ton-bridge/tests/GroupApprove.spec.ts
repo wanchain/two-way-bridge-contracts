@@ -74,7 +74,7 @@ describe('GroupApprove', () => {
             {
                 chainId: BIP44_CHAINID,
                 taskId:  0,
-                foundation: oracleAdmin.address,
+                foundation: deployer.address,
                 bridge: bridge.address,
             },
             code
@@ -123,6 +123,11 @@ describe('GroupApprove', () => {
             to: bridge.address,
             success: true,
         }); 
+        // await bridge.sendTransferCrossOwner(deployer.getSender(),  {
+        //     value: toNano('1000'),
+        //     queryID: 1,
+        //     owner: groupApprove.address
+        // });
     });
 
     it('group approve set halt', async () => {
@@ -137,7 +142,7 @@ describe('GroupApprove', () => {
         console.log("taskCount:", taskCount)
 
 
-        let txRet = await groupApprove.sendCrossHalt(user1.getSender(), {
+        let txRet = await groupApprove.sendCrossHalt(deployer.getSender(), {
             value: toNano('97'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -145,13 +150,13 @@ describe('GroupApprove', () => {
             halt: 1,
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });
 
 
-        const balance2 = await user1.getBalance();
+        const balance2 = await deployer.getBalance();
         console.log("balance after tx:", fromNano(balance2))
 
         // get task
@@ -464,6 +469,8 @@ describe('GroupApprove', () => {
         let taskCount = await groupApprove.getProposolCount()
         console.log("taskCount:", taskCount)
         expect(taskCount).toEqual(0) 
+        let a0 = await bridge.getFirstAdmin()
+        console.log("first admin:", a0)
 
         console.log("owner2.address(bigInt)==>", "0x" + bridge.address.hash.toString('hex'));
 
@@ -517,7 +524,7 @@ describe('GroupApprove', () => {
 
         console.log("owner2:", owner2.address)
         console.log("owner2.address(bigInt)==>", BigInt("0x" + owner2.address.hash.toString('hex')));
-        let a0 = await bridge.getFirstAdmin()
+        a0 = await bridge.getFirstAdmin()
         console.log("first admin:", a0)
 
         expect(a0).toEqual(owner2.address.toString())

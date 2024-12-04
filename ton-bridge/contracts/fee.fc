@@ -103,25 +103,24 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
 
 
 ;; Get the first tokenPair in the dictionary
-(slice) ext_get_first_crossAdmin(cell refcell) method_id {
+(slice) fee_get_first_crossAdmin(cell refcell) method_id {
     (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
-
     (int id, slice value, int success) = crossAdmin.udict_get_min?(CROSSADMIN_DICTIONARY_KEY_LEN);
     if (success) {
         return begin_cell().store_uint(id, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
     } else {
-        return "";
+        return begin_cell().store_uint(0, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
     }
 }
 ;; Get the first tokenPair in the dictionary
-(slice) ext_get_next_crossAdmin(cell refcell, slice adminAddr) method_id {
+(slice) fee_get_next_crossAdmin(cell refcell, slice adminAddr) method_id {
     (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
     int id = adminAddr~load_uint(CROSSADMIN_DICTIONARY_KEY_LEN);
     (int id, slice value, int success) = crossAdmin.udict_get_next?(CROSSADMIN_DICTIONARY_KEY_LEN, id);
     if (success) {
         return begin_cell().store_uint(id, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
     } else {
-        return "";
+        return begin_cell().store_uint(0, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
     }
 }
 

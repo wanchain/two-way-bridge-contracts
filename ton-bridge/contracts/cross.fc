@@ -240,8 +240,9 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
         ~strdump("before oracle_get_smg");
         ;; check gpk working time
         ;;(int gpk_x, int gpk_y, int start_time, int endTime, int timestamp) = oracle_get_smg(oracle, _smgId, 1);
-        (int gpk_x, int gpk_y, int start_time, int endTime, int timestamp) = oracle_get_smg(oracle, _smgId, 0);
-        throw_unless(0xffed, (now() > start_time) & (now() < endTime));
+        (int gpk_x, int gpk_y, int start_time, int endTime, int timestamp) = oracle_get_smg(oracle, _smgId, 0); ;; TODO, use commited.
+        ~strdump("ssssssss oracle_get_smg"); ~dump(now()); ~dump(start_time); ~dump(endTime);
+        throw_unless(0xffed, (now() >= start_time) & (now() <= endTime));
 
         ~strdump("end oracle_get_smg");
 

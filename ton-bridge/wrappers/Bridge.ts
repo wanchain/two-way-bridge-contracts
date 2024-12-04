@@ -406,6 +406,23 @@ export class Bridge implements Contract {
                     .endCell(),
             });
     }
+    async sendTransferCrossOwner(provider: ContractProvider, sender: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            owner: Address,
+        }
+    ) {
+        await provider.internal(sender, {
+            value: opts.value,
+            body: beginCell()
+                .storeUint(opcodes.OP_COMMON_TransferOwner, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID?opts.queryID:0, 64) // query id
+                .storeAddress(opts.owner)                
+                .endCell()
+        });
+    }
+    
     async getCrossConfig(provider: ContractProvider) {
         const common = await provider.get('get_cross_config', []);
         let oracleAdmin = await provider.get('get_oracle_admin', [])
@@ -609,7 +626,7 @@ export class Bridge implements Contract {
     async getFirstAdmin(provider: ContractProvider,){
         const { stack } = await provider.get("get_first_crossAdmin", []);
         let s = stack.readBuffer();
-        if(s.length == 0) {
+        if(s.toString('hex') == '0000000000000000000000000000000000000000000000000000000000000000') {
             return ""
         }
         let addr = new Address(0, s)
