@@ -262,11 +262,11 @@ describe('Bridge', () => {
 
         let startTime = Math.floor(Date.now() / 1000);
         let endTime = startTime + wkDuring;
-        let retSmg = await bridge.sendSetStoremanGroupConfig(BigInt(smgId),BigInt(gpkX),BigInt(gpkY),startTime,endTime,{
-            sender: deployer.getSender(),
-            value: toNano('1000'),
-            queryID: queryID,
-        });
+        let retSmg = await bridge.sendSetStoremanGroupConfig(deployer.getSender(),
+            {id:BigInt(smgId),
+                gpkX:BigInt(gpkX),
+                gpkY:BigInt(gpkY),startTime,endTime,
+            value:toNano('1000'),queryID:queryID});
         console.log("retSmg", slimSndMsgResult(retSmg));
 
         let retGetSmg = await bridge.getStoremanGroupConfig(BigInt(smgId));
