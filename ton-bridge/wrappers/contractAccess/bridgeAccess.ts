@@ -25,6 +25,7 @@ export class BridgeAccess {
                 let  cOpened =  this.client.open(c);
                 return await cOpened[methodName](via,opts);
             }catch(err){
+                console.log("err=>",err);
                 throw new Error(`${methodName} is not supported Non send method`);
             }
     }

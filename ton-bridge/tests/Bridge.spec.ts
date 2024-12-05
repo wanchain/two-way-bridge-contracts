@@ -1,6 +1,7 @@
 import {Blockchain, SandboxContract, TreasuryContract} from '@ton/sandbox';
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
-import {Bridge, TON_COIN_ACCOUT,BIP44_CHAINID} from '../wrappers/Bridge';
+import {TON_COIN_ACCOUT,BIP44_CHAINID} from '../wrappers/const/const-value';
+import {Bridge} from '../wrappers/Bridge';
 import '@ton/test-utils';
 import {compile} from '@ton/blueprint';
 import {JettonMinter} from "../wrappers/JettonMinter";

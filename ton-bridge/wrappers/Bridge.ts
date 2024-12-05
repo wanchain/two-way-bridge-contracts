@@ -11,16 +11,13 @@ import {
 } from '@ton/core';
 import {JettonMinter} from "./JettonMinter";
 import {JettonWallet} from "./JettonWallet";
-import {HexStringToBuffer,BufferrToHexString} from "../tests/utils";
+import {HexStringToBuffer,BufferrToHexString} from "./utils/utils";
 import * as fs from "fs";
 import { compile } from '@ton/blueprint';
 import * as opcodes from "./opcodes"
 import {OP_CROSS_SmgRelease} from "./opcodes";
-
-export const BIP44_CHAINID = 0x4567; //todo change later
-export const TON_COIN_ACCOUT = "0x0000000000000000000000000000000000000000000000000000000000000000"; // 32 bytes
-export const TON_COIN_ACCOUNT_STR = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c'
-export const WK_CHIANID = "0";
+import {codeTable} from "./code/encode-decode";
+import {BIP44_CHAINID,TON_COIN_ACCOUT,TON_COIN_ACCOUNT_STR,WK_CHIANID} from "./const/const-value";
 
 export type BridgeConfig = {
     owner:Address,
@@ -117,14 +114,7 @@ export class Bridge implements Contract {
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(opcodes.OP_FEE_SetTokenPairFee, 32)
-                .storeUint(opts.queryID ?? 0, 64)
-                .storeUint(opts.srcChainId, 32)
-                .storeUint(opts.dstChainId, 32)
-                .storeUint(opts.contractFee, 32)
-                .storeUint(opts.agentFee, 32)
-                .endCell(),
+            body: codeTable.OP_FEE_SetTokenPairFee.enCode(opts),
         });
     }
 
@@ -141,42 +131,11 @@ export class Bridge implements Contract {
             toAccount:string,
         }
     ) {
-        let toBuffer, fromBuffer
-        if(opts.fromChainID == BIP44_CHAINID) {
-            if(opts.fromAccount == "") {
-                fromBuffer = Buffer.from(TON_COIN_ACCOUT.slice(2), 'hex')
-            } else {
-                let fromAddr = Address.parseFriendly(opts.fromAccount)
-                fromBuffer = fromAddr.address.hash
-            }
-            toBuffer = Buffer.from(opts.toAccount,'utf8')
-        } else if(opts.toChainID == BIP44_CHAINID) {
-            if(opts.toAccount == "") {
-                toBuffer = Buffer.from(TON_COIN_ACCOUT.slice(2), 'hex')
-            } else {
-                let toAddr = Address.parseFriendly(opts.toAccount)
-                toBuffer = toAddr.address.hash
-            }
-            fromBuffer = Buffer.from(opts.fromAccount,'utf8')
-        } else {
-            throw("Error chain ID.")
-        }
-        console.log("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex'))
+
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
-                .storeUint(opts.queryID ?? 0, 64)
-                .storeUint(opts.tokenPairId, 32)
-                .storeUint(opts.fromChainID, 32)
-                .storeUint(opts.toChainID, 32)
-                .storeUint(fromBuffer.length, 8)
-                .storeUint(toBuffer.length, 8)
-                .storeUint(toBuffer.length, 8)
-                .storeRef(beginCell().storeBuffer(fromBuffer).endCell())
-                .storeRef(beginCell().storeBuffer(toBuffer).endCell())
-                .endCell(),
+            body: codeTable.OP_TOKENPAIR_Upsert.enCode(opts),
         });
     }
     async sendRemoveTokenPair(
@@ -354,38 +313,11 @@ export class Bridge implements Contract {
             s:bigint,
         }
     ) {
-
-        let part2Cell = beginCell()
-            .storeUint(opts.fee, 256)
-            .storeAddress(opts.userAccount)
-            .endCell();
-
-        let part3Cell = beginCell()
-            .storeUint(opts.e, 256)
-            .storeUint(opts.p, 256)
-            .storeUint(opts.s, 256)
-            .endCell();
-
-        let part4Cell  = beginCell()
-            .storeAddress(opts.jettonAdminAddr)
-            .storeAddress(opts.bridgeJettonWalletAddr)
-            .endCell();
-
+        let body = codeTable.OP_CROSS_SmgRelease.enCode(opts);
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(opcodes.OP_CROSS_SmgRelease, 32)
-                .storeUint(opts.queryID ?? 0, 64)
-                .storeUint(BigInt(opts.uniqueID), 256)
-                .storeUint(BigInt(opts.smgID), 256)
-                .storeUint(opts.tokenPairID, 32)
-                .storeUint(opts.releaseValue, 256)
-                .storeRef(part2Cell)
-                .storeRef(part3Cell)
-                .storeRef(part4Cell)
-                .endCell()
-        });
+            body: body});
     }
 
     async sendHalt(        
@@ -459,11 +391,11 @@ export class Bridge implements Contract {
         if(BIP44_CHAINID == fromChainID) {
             let addr = new Address(0, fromAccount)
             pair['fromAccount'] = addr.toString()
-            pair['toAccount'] = toAccount.toString()
+            pair['toAccount'] = toAccount.toString('hex')
         } else {
             let addr = new Address(0, toAccount)
             pair['toAccount'] = addr.toString()
-            pair['fromAccount'] = fromAccount.toString()
+            pair['fromAccount'] = fromAccount.toString('hex')
         }
         return pair
     }
