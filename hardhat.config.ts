@@ -60,6 +60,11 @@ const config = {
     },
   },
   networks: {
+    fiveireMainnet: {
+      url: "https://rpc.5ire.network",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741853,
+    },
     polygonZkEvmTestnet: {
       url: "https://rpc.cardona.zkevm-rpc.com",
       accounts: [process.env.PK],
