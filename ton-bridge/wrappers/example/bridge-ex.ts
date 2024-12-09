@@ -1,5 +1,8 @@
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
-import {Bridge, TON_COIN_ACCOUT,BIP44_CHAINID} from '../Bridge';
+
+import {Bridge} from '../Bridge';
+import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
+
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
 import {getClient} from "../client/client";
 
@@ -8,7 +11,6 @@ let tokenInfo = {
     tokenWrapped:{tokenPairId:0x02,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
     coin:{tokenPairId:0x03,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:''},
 }
-
 
 const prvList = require('../testData/prvlist')
 const addressList = require('../testData/addressList')

@@ -1,5 +1,6 @@
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
-import {Bridge, TON_COIN_ACCOUT, BIP44_CHAINID} from '../Bridge';
+import {Bridge} from '../Bridge';
+import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
 import {getClient} from "../client/client";
 import {compileContract, CR, writeCR} from "../utils/compileContract";
