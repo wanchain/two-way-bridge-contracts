@@ -1,6 +1,6 @@
 import core_1, { Address, Cell, Contract, ContractProvider, MessageRelaxed, Sender, SendMode } from "@ton/core";
 import {TonClient} from "@ton/ton";
-import {Bridge, TON_COIN_ACCOUT,BIP44_CHAINID} from '../Bridge';
+import {Bridge} from '../Bridge';
 
 export class BridgeAccess {
     private client: TonClient;

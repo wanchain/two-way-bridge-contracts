@@ -2,9 +2,9 @@ import {OP_CROSS_SmgRelease} from "../opcodes";
 import {Address, beginCell, Cell, SendMode} from "@ton/core";
 import * as opcodes from "../opcodes";
 import {BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR, WK_CHIANID} from "../const/const-value";
-
 export const codeTable = {
-    OP_CROSS_SmgRelease: {
+
+    [opcodes.OP_CROSS_SmgRelease]: {
         "enCode": function (opts: any): Cell {
             console.log("Entering enCode Function OP_CROSS_SmgRelease");
             let part2Cell = beginCell()
@@ -90,7 +90,7 @@ export const codeTable = {
         }
     },
 
-    OP_FEE_SetTokenPairFee: {
+    [opcodes.OP_FEE_SetTokenPairFee]: {
         "enCode": function (opts: any): Cell {
             console.log("Entering enCode Function OP_CROSS_SmgRelease");
             return beginCell()
@@ -107,7 +107,7 @@ export const codeTable = {
         }
     },
 
-    OP_TOKENPAIR_Upsert: {
+    [opcodes.OP_TOKENPAIR_Upsert]: {
         "enCode": function (opts: any): Cell {
             let toBuffer, fromBuffer
             if (opts.fromChainID == BIP44_CHAINID) {
@@ -117,7 +117,8 @@ export const codeTable = {
                     let fromAddr = Address.parseFriendly(opts.fromAccount)
                     fromBuffer = fromAddr.address.hash
                 }
-                toBuffer = Buffer.from(opts.toAccount, 'utf8')
+                toBuffer = Buffer.from(opts.toAccount.startsWith("0x")?opts.toAccount.substring(2):opts.toAccount, 'hex')
+
             } else if (opts.toChainID == BIP44_CHAINID) {
                 if (opts.toAccount == "") {
                     toBuffer = Buffer.from(TON_COIN_ACCOUT.slice(2), 'hex')
@@ -125,7 +126,7 @@ export const codeTable = {
                     let toAddr = Address.parseFriendly(opts.toAccount)
                     toBuffer = toAddr.address.hash
                 }
-                fromBuffer = Buffer.from(opts.fromAccount, 'utf8')
+                fromBuffer = Buffer.from(opts.fromAccount.startsWith("0x")?opts.fromAccount.substring(2):opts.fromAccount, 'hex')
             } else {
                 throw ("Error chain ID.")
             }
@@ -150,20 +151,36 @@ export const codeTable = {
             let fromChainID = slice.loadUint(32);
             let toChainID = slice.loadUint(32);
             let fromLen = slice.loadUint(8);
-            let toLen = slice.loadUint(8);
+            //let fBuf = slice.loadBits(8*fromLen);
+            let toLength = slice.loadUint(8);
+            //let tBuf = slice.loadBits(8*toLength);
+
+            console.log({
+                slice,
+                opCode,
+                queryID,
+                tokenPairID,
+                fromChainID,
+                toChainID,
+                fromLen,
+                toLength,
+                //fBuf:fBuf.toString(),
+                //tBuf:tBuf.toString()
+            });
 
             let sliceFrom = slice.loadRef().beginParse();
             let fromBuffer = sliceFrom.loadBits(8*fromLen);
             sliceFrom.endParse();
+            console.log("fromBuffer=>",fromBuffer);
 
             let sliceTo = slice.loadRef().beginParse();
-            let ToBuffer = sliceFrom.loadBits(8*fromLen);
+            let toBuffer = sliceTo.loadBits(8*toLength);
             sliceTo.endParse();
-
+            console.log("toBuffer=>",toBuffer);
             slice.endParse();
 
             return {
-                opCode,queryID,tokenPairID,fromChainID,toChainID,fromAccount:fromBuffer,toAccount:ToBuffer
+                opCode,queryID,tokenPairID,fromChainID,toChainID,fromAccount:fromBuffer,toAccount:toBuffer
             }
         },
         "emitEvent": function(opts){

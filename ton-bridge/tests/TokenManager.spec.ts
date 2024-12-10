@@ -1,6 +1,7 @@
 import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import {Address, Cell, toNano,TupleItemInt} from '@ton/core';
-import {Bridge, TON_COIN_ACCOUT,BIP44_CHAINID} from '../wrappers/Bridge';
+import {Bridge } from '../wrappers/Bridge';
+import {TON_COIN_ACCOUT,BIP44_CHAINID} from '../wrappers/const/const-value';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 

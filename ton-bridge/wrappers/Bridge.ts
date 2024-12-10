@@ -114,7 +114,7 @@ export class Bridge implements Contract {
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: codeTable.OP_FEE_SetTokenPairFee.enCode(opts),
+            body: codeTable[opcodes.OP_FEE_SetTokenPairFee].enCode(opts),
         });
     }
 
@@ -132,10 +132,12 @@ export class Bridge implements Contract {
         }
     ) {
 
+        let bodyHex = codeTable[opcodes.OP_TOKENPAIR_Upsert].enCode(opts).toBoc().toString('hex');
+        console.log("bodyHex=>",bodyHex);
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: codeTable.OP_TOKENPAIR_Upsert.enCode(opts),
+            body: codeTable[opcodes.OP_TOKENPAIR_Upsert].enCode(opts),
         });
     }
     async sendRemoveTokenPair(
@@ -313,7 +315,7 @@ export class Bridge implements Contract {
             s:bigint,
         }
     ) {
-        let body = codeTable.OP_CROSS_SmgRelease.enCode(opts);
+        let body = codeTable[opcodes.OP_CROSS_SmgRelease].enCode(opts);
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
@@ -391,11 +393,11 @@ export class Bridge implements Contract {
         if(BIP44_CHAINID == fromChainID) {
             let addr = new Address(0, fromAccount)
             pair['fromAccount'] = addr.toString()
-            pair['toAccount'] = toAccount.toString('hex')
+            pair['toAccount'] = "0x"+toAccount.toString('hex')
         } else {
             let addr = new Address(0, toAccount)
             pair['toAccount'] = addr.toString()
-            pair['fromAccount'] = fromAccount.toString('hex')
+            pair['fromAccount'] = "0x"+fromAccount.toString('hex')
         }
         return pair
     }

@@ -1,4 +1,4 @@
-import {Address, Cell, openContract, Transaction} from "@ton/core";
+import {Address, Cell, loadTransaction, openContract, Transaction} from "@ton/core";
 import {TonClient} from "@ton/ton";
 import {codeTable} from "../code/encode-decode";
 const MAX_LIMIT = 1000;
@@ -36,21 +36,36 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
 
 async function getTransactions(client:TonClient,scAddress:string,limit:number,lt_start:bigint,lt_end:bigint):Promise<any> {
     let scAddr = Address.parse(scAddress);
+    console.log("contractAddr=>",scAddress);
     //todo how to build lt parameter? how to get the first lt of the contract?
     //return await client.getTransactions(scAddr,{limit,lt:lt_start.toString(10),to_lt:lt_end.toString(10)})
-    return await client.getTransactions(scAddr,{limit})
+    let base64 = Buffer.from("733468fe18811c179c9746344b539478821fb585896ad160abf06c3f42974e02",'hex').toString('base64');
+    console.log("base64=>",base64);
+    //return await client.getTransactions(scAddr,{limit,hash:"H2qhVz+GyFhpO0fGvTMen+tkzhMuMAeHqhR3YSwh6oY="})
+    //return await client.getTransactions(scAddr,{limit,hash:'H2qhVz+GyFhpO0fGvTMen+tkzhMuMAeHqhR3YSwh6oY=',lt:'28733542000001'});
+    //return [await client.getTransaction(scAddr,'28733542000001','H2qhVz+GyFhpO0fGvTMen+tkzhMuMAeHqhR3YSwh6oY=')];
+
+    console.log("base64.2=>",base64);
+    return [await client.getTransaction(scAddr,'28698552000001',base64)];
+    //return await client.getTransactions(scAddr,{limit})
 }
 
 async function getEventFromTran(tran:Transaction){
     let bodyCell = tran.inMessage?.body;
+    let raw = loadTransaction(tran.raw.asSlice())
+    let bodyCellByRaw = raw.inMessage?.body;
+    if(bodyCellByRaw.equals(bodyCell)){
+        console.log("bodyCell=>",bodyCell);
+        console.log("bodyCellByRaw=>",bodyCellByRaw);
+    }
     if(!bodyCell){
         return null;
     }
     try{
         let opCode = await getOpCodeFromCell(bodyCell);
         console.log("opCode=>",opCode);
-        console.log("codeTable=>",codeTable);
         console.log("codeTable[opCode]=>",codeTable[opCode]);
+        //todo delete following
         if(!codeTable[opCode]){
             return null;
         }
@@ -68,7 +83,8 @@ async function getOpCodeFromCell(cell:Cell){
     }
     let slice = cell.beginParse();
     try{
-        return slice.preloadUint(32).toString(16);
+        //return "0x"+slice.preloadUint(32).toString(16);
+        return slice.preloadUint(32);
     }catch(err){
         console.log("getOpCodeFromCell(err)=>",err);
         throw new Error("no opCode find");
