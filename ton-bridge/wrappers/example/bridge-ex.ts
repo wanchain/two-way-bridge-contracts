@@ -62,6 +62,21 @@ async function addTokenPair(){
     console.log("sendAddTokenPair",ret3);
 }
 
+async function removeTokenPair(){
+
+    let ba = BridgeAccess.create(client,scAddresses.bridgeAddress);
+    // write contract
+    let opt = {
+        value: toNano('0.005'),
+        queryID,
+        tokenPairId: tokenPairId3,
+    }
+    console.log("opt=>",opt);
+    let via = await getSenderByPrvKey(client,Buffer.from(prvList[0],'hex'));
+    let ret3 = await ba.writeContract('sendRemoveTokenPair',via,opt);
+    console.log("sendRemoveTokenPair",ret3);
+}
+
 async function getTokenPair(){
     // read contract
     let ba = BridgeAccess.create(client,scAddresses.bridgeAddress);
@@ -73,9 +88,10 @@ async function getTokenPair(){
 async function main(){
     console.log("Entering main function");
     await init();
+    await removeTokenPair();
     await getTokenPair();
     await addTokenPair();
-
+    await getTokenPair();
 };
 
 main();

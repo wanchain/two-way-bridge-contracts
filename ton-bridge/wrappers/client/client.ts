@@ -2,7 +2,7 @@ import { TonClient,  WalletContractV4, Address } from "@ton/ton";
 import { getHttpEndpoints , getHttpEndpoint,Network} from "@orbs-network/ton-access";
 import {getSecureRandomNumber} from "@ton/crypto";
 
-const TONCLINET_TIMEOUT = 60 * 1000;
+const TONCLINET_TIMEOUT = 60 * 1000 * 1000;
 export async function getClient(network:Network):Promise<TonClient> {
     const endpoints = await getHttpEndpoints({ network:network });
     const total = endpoints.length;
