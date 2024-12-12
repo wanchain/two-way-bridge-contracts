@@ -3,8 +3,9 @@ import {Bridge} from '../Bridge';
 import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
 import {getClient} from "../client/client";
-import {compileContract, CR, writeCR} from "../utils/compileContract";
+import {compileContract, CR, writeCR,doCompile} from "../utils/compileContract";
 import fs_1 from "fs";
+
 
 const prvList = require('../testData/prvlist')
 const addressList = require('../testData/addressList')
@@ -17,7 +18,9 @@ let bridgeOpened = null;
 
 let deployerValue = toNano('0.05');
 
+
 async function buildCodeCell(){
+    await doCompile();
     let filePath = "../testData/bridge.compiled.json";
 
     let cr:CR = JSON.parse(fs_1.readFileSync(filePath,'utf-8'));

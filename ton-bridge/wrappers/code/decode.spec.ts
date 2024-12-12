@@ -52,8 +52,16 @@ describe('decode', () => {
         console.log(event);
     });
 
-    it('cell under flow',async () =>{
+    it('cell under flow (tonview)',async () =>{
         let bodyCelStr = "b5ee9c72010103010056000234500000030000000000000001000000030000123400004567142001020028833589fcd6edb6e08f4c7c32d4f71b54bda0291300400000000000000000000000000000000000000000000000000000000000000000";
+        let bodyCell = Cell.fromBoc(Buffer.from(bodyCelStr,'hex'))[0];
+        let opCode = 0x50000003;
+        let decode = codeTable[opCode]["deCode"](bodyCell);
+        console.log(decode);
+    })
+
+    it('cell under flow (sdk)',async () =>{
+        let bodyCelStr = "b5ee9c72410103010056000234500000030000000000000001000000030000123400004567142001020028833589fcd6edb6e08f4c7c32d4f71b54bda02913004000000000000000000000000000000000000000000000000000000000000000008b8d7029";
         let bodyCell = Cell.fromBoc(Buffer.from(bodyCelStr,'hex'))[0];
         let opCode = 0x50000003;
         let decode = codeTable[opCode]["deCode"](bodyCell);

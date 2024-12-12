@@ -149,9 +149,10 @@
     if(op & 0xFF000000 == OP_COMMON) {
         if(op == OP_COMMON_SetHalt) {
             int _halt = in_msg_body~load_uint(2);
-            save_data(cross_owner, _halt, init, ca_fee, oracle, token_manager, extend);
             (int workchain, int hash) = parse_std_addr(sender_address);
-            return cb_executed(sender_address, query_id);
+            cb_executed(sender_address, query_id);
+            save_data(cross_owner, _halt, init, ca_fee, oracle, token_manager, extend);
+            return ();
         }
         ;; if(op == OP_COMMON_Initialize) { ;; TODO need not?
         ;;     int _init = in_msg_body~load_uint(2);
@@ -160,8 +161,9 @@
         ;; }
         if(op == OP_COMMON_TransferOwner) {
             slice _cross_owner = in_msg_body~load_msg_addr();
+            cb_executed(sender_address, query_id);
             save_data(_cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
-            return cb_executed(sender_address, query_id);
+            return ();
         }
     }
 
@@ -178,26 +180,30 @@
 
     if (op & 0xFF000000 == OP_FEE ) {
         var _ca_fee = fee_recv_internal(op, ca_fee, msg_value, in_msg_full, in_msg_body);
+        cb_executed(sender_address, query_id);
         save_data(cross_owner, halt, init, _ca_fee, oracle, token_manager, extend);
-        return cb_executed(sender_address, query_id);
+        return ();
     }
 
     if (op & 0xFF000000 == OP_ORACLE) {
         var _oracle = oracle_recv_internal(op, oracle, msg_value, in_msg_full, in_msg_body);
+        cb_executed(sender_address, query_id);
         save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
-        return cb_executed(sender_address, query_id);
+        return ();
     }
 
     if (op & 0xFF000000 == OP_TOKENPAIR) {
         var _token_manager = tm_recv_internal(op, token_manager, msg_value, in_msg_full, in_msg_body);
+        cb_executed(sender_address, query_id);
         save_data(cross_owner, halt, init, ca_fee, oracle, _token_manager, extend);
-        return cb_executed(sender_address, query_id);
+        return ();
     }
 
     ;; if (op & 0xFF000000 == OP_EXTEND) {
     ;;     var _extend = ext_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
+    ;;     cb_executed(sender_address, query_id);
     ;;     save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
-    ;;     return cb_executed(sender_address, query_id);
+    ;;     return ();
     ;; }
 
     if (op == OP_UPGRADE_Code) {

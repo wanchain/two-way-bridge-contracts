@@ -33,7 +33,7 @@ export function writeCR(filePath:string,cr:CR){
 }
 
 import {conf } from "../testData/bridge.compile.func"
-async function doCompile(){
+export async function doCompile(){
     let ret = await compileContract(conf);
     //console.log(ret?.toBoc().toString('base64'));
     let filePath = "../testData/bridge.compiled.json";

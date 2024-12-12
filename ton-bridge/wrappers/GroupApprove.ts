@@ -4,7 +4,8 @@ import { HttpApi } from '@ton/ton';
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import internal from 'stream';
 
-import {BIP44_CHAINID} from './Bridge';
+import {BIP44_CHAINID} from './const/const-value';
+import {codeTable} from "./code/encode-decode";
 
 
 
@@ -234,11 +235,11 @@ export class GroupApprove implements Contract {
         if(opts.fromChainID == BIP44_CHAINID) {
             let fromAddr = Address.parseFriendly(opts.fromAccount)
             fromBuffer = fromAddr.address.hash
-            toBuffer = Buffer.from(opts.toAccount,'utf8')
+            toBuffer = Buffer.from(opts.toAccount.startsWith("0x")?opts.toAccount.slice(2):opts.toAccount,'hex')
         } else if(opts.toChainID == BIP44_CHAINID) {
             let toAddr = Address.parseFriendly(opts.toAccount)
             toBuffer = toAddr.address.hash
-            fromBuffer = Buffer.from(opts.fromAccount,'utf8')
+            fromBuffer = Buffer.from(opts.fromAccount.startsWith("0x")?opts.fromAccount.slice(2):opts.fromAccount,'hex')
         } else {
             throw("Error chain ID.")
         }

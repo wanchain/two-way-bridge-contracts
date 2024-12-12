@@ -22,6 +22,7 @@ export class BridgeAccess {
         }
         try{
                 let  c =  Bridge.createFromAddress(this.contractAddr);
+                console.log("writeContract contractAddress",this.contractAddr);
                 let  cOpened =  this.client.open(c);
                 return await cOpened[methodName](via,opts);
             }catch(err){
