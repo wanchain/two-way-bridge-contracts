@@ -24,3 +24,7 @@ export const BufferrToHexString = (buff:Buffer): string =>{
 export const HexStringToBuffer = (str:String): Buffer =>{
     return Buffer.from(str,'hex')
 }
+
+export async function sleep(ms:number)  {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
