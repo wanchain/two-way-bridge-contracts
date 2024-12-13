@@ -12,7 +12,6 @@ export async function getClient(network:Network):Promise<TonClient> {
     const indexUsed = await getSecureRandomNumber(0,total)
     console.log("http endpoint is =>",endpoints[indexUsed]);
     return  new TonClient({ endpoint:endpoints[indexUsed],timeout:TONCLINET_TIMEOUT });
-
     /*const endpoint = await getHttpEndpoint({ network:network });
     return  new TonClient({ endpoint });*/
 }

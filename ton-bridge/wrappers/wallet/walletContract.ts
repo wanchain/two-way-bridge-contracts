@@ -18,6 +18,8 @@ export function openWallet(client:TonClient,wallet:WalletContractV4):OpenedContr
     return client.open(wallet);
 }
 
+
+
 export function getSender(provider: OpenedContract<WalletContractV4>,secretKey:Buffer):Sender{
     return provider.sender(secretKey);
 }
@@ -41,6 +43,10 @@ export async function getSenderByPrvKey(client:TonClient,privateKey: Buffer):Pro
     return getSender(openWallet(client,wallet),privateKey);
 }
 
+export async function openWalletByPrvKey(client:TonClient,privateKey: Buffer){
+    return await openWallet(client,await getWalletByPrvKey(privateKey));
+}
+
 
 // for evm private key
 export async function getWalletBySecPrvKey(privateKey: Buffer):Promise<WalletContractV4>{
@@ -59,6 +65,10 @@ export async function getSenderBySecPrvKey(client:TonClient,privateKey: Buffer):
     let wallet = await getWalletBySecPrvKey(privateKey);
     const key =  keyPairFromSeed(privateKey);
     return getSender(openWallet(client,wallet),key.secretKey);
+}
+
+export async function openWalletBySecPrvKey(client:TonClient,privateKey: Buffer){
+    return await openWallet(client,await getWalletBySecPrvKey(privateKey));
 }
 
 
