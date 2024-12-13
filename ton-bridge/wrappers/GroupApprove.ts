@@ -3,6 +3,7 @@ import * as opcodes from  "./opcodes";
 import { HttpApi } from '@ton/ton';
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import internal from 'stream';
+import { compile } from '@ton/blueprint';
 
 import {BIP44_CHAINID} from './const/const-value';
 import {codeTable} from "./code/encode-decode";
@@ -38,11 +39,18 @@ export class GroupApprove implements Contract {
         const init = { code, data };
         return new GroupApprove(contractAddress(0, init), init);
     }
+    static async createForDeploy(config: GroupApproveConfig) {
+        const workchain = 0; // deploy to workchain 0
+        const code = await compile('GroupApprove');
+        const data = GroupApproveConfigToCell(config);
+        const init = { code, data };
+        let SC = new GroupApprove(contractAddress(workchain, init), init);
+        return SC
+    }
 
-
-    async sendDeploy(provider: ContractProvider, via: Sender) {
+    async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
         await provider.internal(via, {
-            value:"0.1",
+            value,
             body: beginCell().endCell(),
         });
     }
@@ -373,11 +381,8 @@ export class GroupApprove implements Contract {
     }
     async getConfig(provider: ContractProvider) {
         const result = await provider.get('get_config', []);
-        console.log("xxxxxxxxxxxxxxxx:", result.stack)
         let foundation = result.stack.readAddress();
         let bridge = result.stack.readAddress();
-        // let foundation = (new Address(0, s1)).toString();
-        // let bridge = (new Address(0, s2)).toString();
         return {
             foundation, bridge
         }
