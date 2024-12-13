@@ -86,6 +86,8 @@ export const codeTable = {
                 value:opts.releaseValue,
                 fee:opts.fee,
                 userAccount:opts.userAccount,
+                txHashBase64:opts.txHashBase64,
+                txHash:opts.txHash,
             }
         }
     },
@@ -151,22 +153,7 @@ export const codeTable = {
             let fromChainID = slice.loadUint(32);
             let toChainID = slice.loadUint(32);
             let fromLen = slice.loadUint(8);
-            //let fBuf = slice.loadBits(8*fromLen);
             let toLength = slice.loadUint(8);
-            //let tBuf = slice.loadBits(8*toLength);
-
-            console.log({
-                slice,
-                opCode,
-                queryID,
-                tokenPairID,
-                fromChainID,
-                toChainID,
-                fromLen,
-                toLength,
-                //fBuf:fBuf.toString(),
-                //tBuf:tBuf.toString()
-            });
 
             let sliceFrom = slice.loadRef().beginParse();
             let fromBuffer = sliceFrom.loadBits(8*fromLen);
@@ -191,7 +178,38 @@ export const codeTable = {
                 fromAccount:opts.fromAccount,
                 toChainID:opts.toChainID,
                 toAccount:opts.toAccount,
+                txHashBase64:opts.txHashBase64,
+                txHash:opts.txHash,
             }
         }
     },
+
+    [opcodes.OP_TOKENPAIR_Remove]: {
+        "enCode": function (opts: any): Cell {
+            return beginCell()
+                .storeUint(opcodes.OP_TOKENPAIR_Remove, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.tokenPairId, 32)
+                .endCell();
+        },
+        "deCode": function (cell: Cell): any {
+            let slice = cell.beginParse();
+            let opCode = slice.loadUint(32);
+            let queryID = slice.loadUint(64);
+            let tokenPairID = slice.loadUint(32);
+            slice.endParse();
+
+            return {
+                opCode,queryID,tokenPairID
+            }
+        },
+        "emitEvent": function(opts){
+            return {
+                eventName:"RemoveTokenPair",
+                id:opts.tokenPairID,
+                txHashBase64:opts.txHashBase64,
+                txHash:opts.txHash,
+            }
+        }
+    }
 }

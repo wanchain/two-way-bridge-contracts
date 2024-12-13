@@ -149,14 +149,11 @@ export class Bridge implements Contract {
             tokenPairId:number,
         }
     ) {
+        let bodyCell = codeTable[opcodes.OP_TOKENPAIR_Remove].enCode(opts);
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(opcodes.OP_TOKENPAIR_Remove, 32)
-                .storeUint(opts.queryID ?? 0, 64)
-                .storeUint(opts.tokenPairId, 32)
-                .endCell(),
+            body: bodyCell,
         });
     }
 

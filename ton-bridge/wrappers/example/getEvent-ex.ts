@@ -2,9 +2,7 @@ import {getClient} from "../client/client";
 import {getEvents} from "../event/getEvents";
 
 const scAddress = require('../testData/contractAddress.json');
-//const LIMIT=100;
-const LIMIT=3;
-
+const LIMIT=100;
 async function main(){
     let client = await getClient('testnet');
     let scBridgeAddr = scAddress.bridgeAddress;

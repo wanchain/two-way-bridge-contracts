@@ -10,7 +10,7 @@ import {
     getWalletByPrvKey,
     getWalletByMnemonic,
     getTonAddrBySecPrvKey, getSenderBySecPrvKey, getWalletBySecPrvKey
-} from "../wallet/walletContract";
+} from "./walletContract";
 
 import {KeyPair, mnemonicNew, mnemonicToWalletKey} from '@ton/crypto';
 import {CommonMessageInfoRelaxedInternal, WalletContractV4} from "@ton/ton";

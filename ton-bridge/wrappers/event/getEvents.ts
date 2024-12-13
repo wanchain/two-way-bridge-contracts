@@ -23,9 +23,9 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
     }
 
     console.log("trans.length=>",trans.length);
-    console.log("trans=>",trans);
 
     for(let tran of trans){
+        console.log("tran=>",tran.hash().toString('base64'));
         let event = await getEventFromTran(tran);
         if(event != null){
             events.push(event);
@@ -38,26 +38,11 @@ async function getTransactions(client:TonClient,scAddress:string,limit:number,lt
     let scAddr = Address.parse(scAddress);
     console.log("contractAddr=>",scAddress);
     //todo how to build lt parameter? how to get the first lt of the contract?
-    //return await client.getTransactions(scAddr,{limit,lt:lt_start.toString(10),to_lt:lt_end.toString(10)})
-    let base64 = Buffer.from("733468fe18811c179c9746344b539478821fb585896ad160abf06c3f42974e02",'hex').toString('base64');
-    console.log("base64=>",base64);
-    //return await client.getTransactions(scAddr,{limit,hash:"H2qhVz+GyFhpO0fGvTMen+tkzhMuMAeHqhR3YSwh6oY="})
-    //return await client.getTransactions(scAddr,{limit,hash:'H2qhVz+GyFhpO0fGvTMen+tkzhMuMAeHqhR3YSwh6oY=',lt:'28733542000001'});
-    //return [await client.getTransaction(scAddr,'28733542000001','H2qhVz+GyFhpO0fGvTMen+tkzhMuMAeHqhR3YSwh6oY=')];
-
-    console.log("base64.2=>",base64);
-    return [await client.getTransaction(scAddr,'28698552000001',base64)];
-    //return await client.getTransactions(scAddr,{limit})
+    return await client.getTransactions(scAddr,{limit})
 }
 
 async function getEventFromTran(tran:Transaction){
     let bodyCell = tran.inMessage?.body;
-    let raw = loadTransaction(tran.raw.asSlice())
-    let bodyCellByRaw = raw.inMessage?.body;
-    if(bodyCellByRaw.equals(bodyCell)){
-        console.log("bodyCell=>",bodyCell);
-        console.log("bodyCellByRaw=>",bodyCellByRaw);
-    }
     if(!bodyCell){
         return null;
     }
@@ -70,9 +55,11 @@ async function getEventFromTran(tran:Transaction){
             return null;
         }
         let decoded = await codeTable[opCode]["deCode"](bodyCell);
+        decoded.txHashBase64 = tran.hash().toString("base64");
+        decoded.txHash = tran.hash().toString("hex");
         return await codeTable[opCode]["emitEvent"](decoded);
     }catch(err){
-        console.log("err=>",err);
+        console.log("err=>",err.message);
         return null;
     }
 }
