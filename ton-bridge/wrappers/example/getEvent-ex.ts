@@ -1,6 +1,7 @@
 import {getClient} from "../client/client";
 import {getEvents} from "../event/getEvents";
 
+const logger = require('../utils/logger.js')
 const scAddress = require('../testData/contractAddress.json');
 const LIMIT=100;
 async function main(){
@@ -12,7 +13,9 @@ async function main(){
     let  events = await getEvents(client,scBridgeAddr,LIMIT,lt_start,lt_end);
 
     for(let event of events){
-        console.log(event);
+        //console.log(event);
+        logger.log(event);
+
     }
     client = null;
 }
