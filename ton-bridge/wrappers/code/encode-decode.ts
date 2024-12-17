@@ -2,11 +2,15 @@ import {OP_CROSS_SmgRelease} from "../opcodes";
 import {Address, beginCell, Cell, SendMode} from "@ton/core";
 import * as opcodes from "../opcodes";
 import {BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR, WK_CHIANID} from "../const/const-value";
+
+import {logger} from '../utils/logger'
+const formatUtil = require('util');
+
 export const codeTable = {
 
     [opcodes.OP_CROSS_SmgRelease]: {
         "enCode": function (opts: any): Cell {
-            console.log("Entering enCode Function OP_CROSS_SmgRelease");
+            logger.info(formatUtil.format("Entering enCode Function OP_CROSS_SmgRelease"));
             let part2Cell = beginCell()
                 .storeUint(opts.fee, 256)
                 .storeAddress(opts.userAccount)
@@ -94,7 +98,7 @@ export const codeTable = {
 
     [opcodes.OP_FEE_SetTokenPairFee]: {
         "enCode": function (opts: any): Cell {
-            console.log("Entering enCode Function OP_CROSS_SmgRelease");
+            logger.info(formatUtil.format("Entering enCode Function OP_CROSS_SmgRelease"));
             return beginCell()
                 .storeUint(opcodes.OP_FEE_SetTokenPairFee, 32)
                 .storeUint(opts.queryID ?? 0, 64)
@@ -132,7 +136,7 @@ export const codeTable = {
             } else {
                 throw ("Error chain ID.")
             }
-            console.log("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex'))
+            logger.info(formatUtil.format("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex')));
             return beginCell()
                 .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
                 .storeUint(opts.queryID ?? 0, 64)
@@ -158,12 +162,12 @@ export const codeTable = {
             let sliceFrom = slice.loadRef().beginParse();
             let fromBuffer = sliceFrom.loadBits(8*fromLen);
             sliceFrom.endParse();
-            console.log("fromBuffer=>",fromBuffer);
+            logger.info(formatUtil.format("fromBuffer=>",fromBuffer));
 
             let sliceTo = slice.loadRef().beginParse();
             let toBuffer = sliceTo.loadBits(8*toLength);
             sliceTo.endParse();
-            console.log("toBuffer=>",toBuffer);
+            logger.info(formatUtil.format("toBuffer=>",toBuffer));
             slice.endParse();
 
             return {

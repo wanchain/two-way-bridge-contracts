@@ -8,6 +8,9 @@ import { compile } from '@ton/blueprint';
 import {BIP44_CHAINID} from './const/const-value';
 import {codeTable} from "./code/encode-decode";
 
+import {logger} from './utils/logger'
+const formatUtil = require('util');
+
 
 
 export type GroupApproveConfig = {
@@ -162,12 +165,12 @@ export class GroupApprove implements Contract {
             halt: number,
         }
     ) {
-        console.log("send crosss bridge address:", opts.toAddr)
+        logger.info(formatUtil.format("send crosss bridge address:%s",opts.toAddr));
         let msg = beginCell()
         .storeUint(opcodes.OP_COMMON_SetHalt, 32)
         .storeUint(opts.halt, 2)
         .endCell();
-        console.log("sendCrossHalt msg:", msg)
+        logger.info(formatUtil.format("sendCrossHalt msg:", msg));
         await provider.internal(sender, {
             value: opts.value,
             body: beginCell()
@@ -251,7 +254,8 @@ export class GroupApprove implements Contract {
         } else {
             throw("Error chain ID.")
         }
-        console.log("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex'))
+        logger.info(formatUtil.format("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex')));
+
         let msg = beginCell()
             .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
             .storeUint(opts.tokenPairId, 32)

@@ -10,6 +10,10 @@ import {
     toNano
 } from '@ton/core';
 
+import {logger} from './utils/logger'
+const formatUtil = require('util');
+
+
 export class common {
     static createFromAddress(address: Address) {
         return address;
@@ -40,14 +44,14 @@ export class common {
                     .storeBuffer(tokenAccountBuf)
                     .endCell()
             );
-        console.log("jacob tokenAccount...",tokenAccount);
-        console.log("jacob tokenAccountBuf......",tokenAccountBuf.toString('hex'),tokenAccountBuf.length);
-        console.log("(bigInt)jacob tokenAccountBuf......",BigInt("0x" + tokenAccountBuf.toString('hex')));
+        logger.info(formatUtil.format(" tokenAccount...",tokenAccount));
+        logger.info(formatUtil.format(" tokenAccountBuf......",tokenAccountBuf.toString('hex'),tokenAccountBuf.length));
+        logger.info(formatUtil.format("(bigInt) tokenAccountBuf......",BigInt("0x" + tokenAccountBuf.toString('hex'))));
 
-        console.log("jacob userAccount...",userAccount);
-        console.log("jacob userAccountBuf......",userAccountBuf.toString('hex'),userAccountBuf.length);
-        console.log("(bigInt)jacob userAccountBuf......",BigInt("0x" + userAccountBuf.toString('hex')));
-        console.log("user_account_cell(cell)",msg.endCell());
+        logger.info(formatUtil.format(" userAccount...",userAccount));
+        logger.info(formatUtil.format(" userAccountBuf......",userAccountBuf.toString('hex'),userAccountBuf.length));
+        logger.info(formatUtil.format("(bigInt) userAccountBuf......",BigInt("0x" + userAccountBuf.toString('hex'))));
+        logger.info(formatUtil.format("user_account_cell(cell)",msg.endCell()));
         let hashBuf = msg.endCell().hash();
         return {
             hashHex: hashBuf.toString('hex'),

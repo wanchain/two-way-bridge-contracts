@@ -5,6 +5,9 @@ const Web3EthAbi = require('web3-eth-abi');
 const ecparams = ecurve.getCurveByName('secp256k1');
 const Web3Utils = require("web3-utils");
 
+import {logger} from '../utils/logger'
+const formatUtil = require('util');
+
 // buffer
 const r = new Buffer("e7e59bebdcee876e84d03832544f5a517e96a9e3f60cd8f564bece6719d5af52", 'hex');
 // buffer
@@ -74,7 +77,7 @@ function getPararity(pk) {
 // pk: Buffer
 // return buffer (20bytes)
 function getAddrFromPk(pk) {
-    console.log("len of pk", pk.length);
+    logger.info(formatUtil.format("len of pk", pk.length));
     const publicKeyToAddress = require('ethereum-public-key-to-address')
     return publicKeyToAddress(pk)
 }
@@ -96,27 +99,27 @@ function getYBytesFromPk(pk) {
 function computeE(RBuf, pararityBuf, gpkXBuf, MBuf) {
     let list = [];
     //list.push(RBuf);
-    console.log("RBuf", bufferToHexString(RBuf));
+    logger.info(formatUtil.format("RBuf", bufferToHexString(RBuf)));
     let RAddr = getAddrFromPk(Buffer.concat([Buffer.from("04", 'hex'), RBuf]));
-    console.log("RAddr", RAddr)
+    logger.info(formatUtil.format("RAddr", RAddr))
 
 
     let RAddrBytes = Buffer.from(RAddr.substring(2), 'hex');
 
     list.push(RAddrBytes);
-    console.log("R_addr", bufferToHexString(RAddrBytes))
+    logger.info(formatUtil.format("R_addr", bufferToHexString(RAddrBytes)))
 
     list.push(pararityBuf);
-    console.log("pararityBuf", bufferToHexString(pararityBuf));
+    logger.info(formatUtil.format("pararityBuf", bufferToHexString(pararityBuf)));
 
     list.push(gpkXBuf);
-    console.log("gpkXBuf", bufferToHexString(gpkXBuf));
+    logger.info(formatUtil.format("gpkXBuf", bufferToHexString(gpkXBuf)));
 
     list.push(MBuf);
-    console.log("MBuf", bufferToHexString(MBuf));
+    logger.info(formatUtil.format("MBuf", bufferToHexString(MBuf)));
 
     let eBuffer = Buffer.concat(list);
-    console.log("eBuf before hash", bufferToHexString(eBuffer));
+    logger.info(formatUtil.format("eBuf before hash", bufferToHexString(eBuffer)));
     return (Web3Utils.keccak256(eBuffer))
 }
 
@@ -165,7 +168,7 @@ function getSecSchnorrS(sk, typesArray, parameters) {
     let pk = getPKBySk(sk);
     let pkBuf = Buffer.from(pk.substring(2), 'hex');
     let eBuffHexStr = computeE(R, getPararity(pkBuf), getXBytesFromPk(pkBuf), M1Buff);
-    console.log("eBuf after hash", eBuffHexStr);
+    logger.info(formatUtil.format("eBuf after hash", eBuffHexStr));
     let sBuff = getSBuff(sk, Buffer.from(eBuffHexStr.substring(2), 'hex'));
     return {
         s: bufferToHexString(sBuff),
@@ -184,7 +187,7 @@ function getSecSchnorrSByMsgHash(sk, msgHash) {
     let pk = getPKBySk(sk);
     let pkBuf = Buffer.from(pk.substring(2), 'hex');
     let eBuffHexStr = computeE(R, getPararity(pkBuf), getXBytesFromPk(pkBuf), msgHash);
-    console.log("eBuf after hash", eBuffHexStr);
+    logger.info(formatUtil.format("eBuf after hash", eBuffHexStr));
     let sBuff = getSBuff(sk, Buffer.from(eBuffHexStr.substring(2), 'hex'));
     return {
         s: bufferToHexString(sBuff),

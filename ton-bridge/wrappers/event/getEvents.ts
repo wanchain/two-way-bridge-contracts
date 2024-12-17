@@ -1,6 +1,11 @@
 import {Address, Cell, loadTransaction, openContract, Transaction} from "@ton/core";
 import {TonClient} from "@ton/ton";
 import {codeTable} from "../code/encode-decode";
+
+
+import {logger} from '../utils/logger'
+const formatUtil = require('util');
+
 const MAX_LIMIT = 1000;
 export async function getEvents(client: TonClient,scAddress:string,limit:number,lt_start:bigint,lt_end:bigint):Promise<any> {
     if (!client){
@@ -22,10 +27,10 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
         throw new Error("transaction length is more than limit, decrease the during [lt_start,lt_end]");
     }
 
-    console.log("trans.length=>",trans.length);
+    logger.info(formatUtil.format("trans.length=>",trans.length));
 
     for(let tran of trans){
-        console.log("tran=>",tran.hash().toString('base64'));
+        logger.info(formatUtil.format("tran=>",tran.hash().toString('base64')));
         let event = await getEventFromTran(tran);
         if(event != null){
             events.push(event);
@@ -36,7 +41,7 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
 
 async function getTransactions(client:TonClient,scAddress:string,limit:number,lt_start:bigint,lt_end:bigint):Promise<any> {
     let scAddr = Address.parse(scAddress);
-    console.log("contractAddr=>",scAddress);
+    logger.info(formatUtil.format("contractAddr=>",scAddress));
     //todo how to build lt parameter? how to get the first lt of the contract?
     return await client.getTransactions(scAddr,{limit})
 }
@@ -48,8 +53,8 @@ async function getEventFromTran(tran:Transaction){
     }
     try{
         let opCode = await getOpCodeFromCell(bodyCell);
-        console.log("opCode=>",opCode);
-        console.log("codeTable[opCode]=>",codeTable[opCode]);
+        logger.info(formatUtil.format("opCode=>",opCode));
+        logger.info(formatUtil.format("codeTable[opCode]=>",codeTable[opCode]));
         //todo delete following
         if(!codeTable[opCode]){
             return null;
@@ -59,7 +64,7 @@ async function getEventFromTran(tran:Transaction){
         decoded.txHash = tran.hash().toString("hex");
         return await codeTable[opCode]["emitEvent"](decoded);
     }catch(err){
-        console.log("err=>",err.message);
+        logger.error(formatUtil.format("err=>",err.message));
         return null;
     }
 }
@@ -73,7 +78,7 @@ async function getOpCodeFromCell(cell:Cell){
         //return "0x"+slice.preloadUint(32).toString(16);
         return slice.preloadUint(32);
     }catch(err){
-        console.log("getOpCodeFromCell(err)=>",err);
+        logger.error(formatUtil.format("getOpCodeFromCell(err)=>",err));
         throw new Error("no opCode find");
     }
 }

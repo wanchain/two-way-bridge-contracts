@@ -3,6 +3,9 @@ import {
     beginCell,
 } from '@ton/core';
 
+import {logger} from '../utils/logger'
+const formatUtil = require('util');
+
 export function computeHash(currentChainId: bigint, uniqueId: bigint, tokenPairId: bigint, value: bigint, fee: bigint, tokenAccount: Address | string, userAccount: Address) {
 
     let tokenAccountBuf: Buffer
@@ -27,14 +30,14 @@ export function computeHash(currentChainId: bigint, uniqueId: bigint, tokenPairI
                 .storeBuffer(tokenAccountBuf)
                 .endCell()
         );
-    console.log("jacob tokenAccount...", tokenAccount);
-    console.log("jacob tokenAccountBuf......", tokenAccountBuf.toString('hex'), tokenAccountBuf.length);
-    console.log("(bigInt)jacob tokenAccountBuf......", BigInt("0x" + tokenAccountBuf.toString('hex')));
+    logger.info(formatUtil.format("jacob tokenAccount...", tokenAccount));
+    logger.info(formatUtil.format("jacob tokenAccountBuf......", tokenAccountBuf.toString('hex'), tokenAccountBuf.length));
+    logger.info(formatUtil.format("(bigInt)jacob tokenAccountBuf......", BigInt("0x" + tokenAccountBuf.toString('hex'))));
 
-    console.log("jacob userAccount...", userAccount);
-    console.log("jacob userAccountBuf......", userAccountBuf.toString('hex'), userAccountBuf.length);
-    console.log("(bigInt)jacob userAccountBuf......", BigInt("0x" + userAccountBuf.toString('hex')));
-    console.log("user_account_cell(cell)", msg.endCell());
+    logger.info(formatUtil.format("jacob userAccount...", userAccount));
+    logger.info(formatUtil.format("jacob userAccountBuf......", userAccountBuf.toString('hex'), userAccountBuf.length));
+    logger.info(formatUtil.format("(bigInt)jacob userAccountBuf......", BigInt("0x" + userAccountBuf.toString('hex'))));
+    logger.info(formatUtil.format("user_account_cell(cell)", msg.endCell()));
     let hashBuf = msg.endCell().hash();
     return {
         hashHex: hashBuf.toString('hex'),

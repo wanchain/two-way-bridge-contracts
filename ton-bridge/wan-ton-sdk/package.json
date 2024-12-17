@@ -6,11 +6,8 @@
     "test": "jest --verbose"
   },
   "devDependencies": {
-    "@ton/blueprint": "^0.22.0",
     "@ton/core": "~0",
     "@ton/crypto": "^3.2.0",
-    "@ton/sandbox": "^0.20.0",
-    "@ton/test-utils": "^0.4.2",
     "@ton/ton": "^13.11.2",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.14.10",
@@ -23,6 +20,8 @@
   "dependencies": {
     "bigi": "^1.4.2",
     "json-bigint": "^1.0.0",
-    "winston": "^3.17.0"
+    "moment": "^2.30.1",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
   }
 }

@@ -2,6 +2,9 @@ import {compileFunc, compilerVersion, CompilerConfig, CompilerVersion} from '@to
 import {Cell} from '@ton/core';
 import fs_1 from "fs";
 
+import {logger} from '../utils/logger'
+const formatUtil = require('util');
+
 export interface CR {
     version:CompilerVersion,
     hashHex:string,
@@ -19,7 +22,7 @@ export async function compileContract(conf: CompilerConfig) {
     }
 
     let codeCell = Cell.fromBoc(Buffer.from(result.codeBoc, "base64"))[0];
-    console.log("hash=>",codeCell.hash().toString('hex'));
+    logger.info(formatUtil.format("hash=>",codeCell.hash().toString('hex')));
     let cr:CR = {
         version,
         hashHex:codeCell.hash().toString('hex'),
@@ -35,9 +38,9 @@ export function writeCR(filePath:string,cr:CR){
 import {conf } from "../testData/bridge.compile.func"
 export async function doCompile(){
     let ret = await compileContract(conf);
-    //console.log(ret?.toBoc().toString('base64'));
+    //logger.info(formatUtil.format(ret?.toBoc().toString('base64'));
     let filePath = "../testData/bridge.compiled.json";
-    console.log(filePath);
+    logger.info(formatUtil.format(filePath));
     writeCR(filePath,ret);
 
     let cr:CR = JSON.parse(fs_1.readFileSync(filePath,'utf-8'));
@@ -47,6 +50,6 @@ export async function doCompile(){
 
 async function main(){
     let ret = await doCompile();
-    console.log("ret=>",ret);
+    logger.info(formatUtil.format("ret=>",ret));
 }
 main();

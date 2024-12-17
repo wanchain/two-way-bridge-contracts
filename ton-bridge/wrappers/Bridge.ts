@@ -1,3 +1,6 @@
+import {logger} from './utils/logger'
+const formatUtil = require('util');
+
 import {
     Address,
     beginCell,
@@ -133,7 +136,7 @@ export class Bridge implements Contract {
     ) {
 
         let bodyHex = codeTable[opcodes.OP_TOKENPAIR_Upsert].enCode(opts).toBoc().toString('hex');
-        console.log("bodyHex=>",bodyHex);
+        logger.info(formatUtil.format("bodyHex %s",bodyHex));
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
@@ -173,7 +176,7 @@ export class Bridge implements Contract {
 
         // 1. get tokenpair from bridge
         let tokePairInfo = await this.getTokenPair(provider,opts.tokenPairID);
-        console.log("tokePairInfo",tokePairInfo);
+        logger.info(formatUtil.format("tokePairInfo",tokePairInfo));
 
         // 2. check src account and dst account
         let tokenAccount = "";
@@ -203,11 +206,11 @@ export class Bridge implements Contract {
             });
             return ret;
         }
-        console.log("tokenAccount",tokenAccount,"TON_COIN_ACCOUT",TON_COIN_ACCOUT);
-        console.log("(len)tokenAccount",tokenAccount.length,"(len)TON_COIN_ACCOUT",TON_COIN_ACCOUT.length);
+        logger.info(formatUtil.format("tokenAccount",tokenAccount,"TON_COIN_ACCOUT",TON_COIN_ACCOUT));
+        logger.info(formatUtil.format("(len)tokenAccount",tokenAccount.length,"(len)TON_COIN_ACCOUT",TON_COIN_ACCOUT.length));
         // 3.1 ton
         if(tokenAccount === TON_COIN_ACCOUNT_STR ){
-            console.log("entering ton coin........");
+            logger.info(formatUtil.format("entering ton coin........"));
             let ret = await sendUserLock();
             return;
         }
@@ -218,19 +221,19 @@ export class Bridge implements Contract {
         let jp =  await provider.open(c);
         // 3.2 original Token
         let admin = await jp.getAdminAddress();
-        console.log("JettonMinter address , admin address, bridge address", jp.address,admin, this.address)
+        logger.info(formatUtil.format("JettonMinter address , admin address, bridge address", jp.address,admin, this.address))
         if (admin != this.address){
-            console.log("entering original Token........");
+            logger.info(formatUtil.format("entering original Token........"));
             let JwBridgeAddr = await jp.getWalletAddress(this.address);
-            console.log("JwBridge address, bridge address",JwBridgeAddr,this.address);
+            logger.info(formatUtil.format("JwBridge address, bridge address",JwBridgeAddr,this.address));
 
-            console.log("via....",via);
+            logger.info(formatUtil.format("via....",via));
 
             if(!Address.isAddress(via.address)){
                 throw "invalid via.address"
             }
             let JwUserAddr = await jp.getWalletAddress(via.address);
-            console.log("JwUserAddr address, via.address",JwUserAddr,via.address);
+            logger.info(formatUtil.format("JwUserAddr address, via.address",JwUserAddr,via.address));
 
             let JwUserSc = await JettonWallet.createFromAddress(JwUserAddr);
             let JwBridgeSc = await JettonWallet.createFromAddress(JwBridgeAddr);
@@ -238,9 +241,9 @@ export class Bridge implements Contract {
             let jwu =  await provider.open(JwUserSc);
             let jwb =  await provider.open(JwBridgeSc);
 
-            console.log("before lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
+            logger.info(formatUtil.format("before lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
                 await jwu.getJettonBalance(),
-                await jwb.getJettonBalance())
+                await jwb.getJettonBalance()))
 
             let forwardAmount = toNano('0.05');
             const sendResult = await jwu.sendTransfer(via,
@@ -248,26 +251,26 @@ export class Bridge implements Contract {
                 opts.crossValue, this.address,
                 this.address, beginCell().endCell(), forwardAmount, beginCell().endCell());
 
-            console.log("After lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
+            logger.info(formatUtil.format("After lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
                 await jwu.getJettonBalance(),
-                await jwb.getJettonBalance());
+                await jwb.getJettonBalance()));
             let ret = await sendUserLock();
             return;
         }
 
         // 3.3 wrapped Token
         if (admin == this.address){
-            console.log("entering wrapped Token........");
+            logger.info(formatUtil.format("entering wrapped Token........"));
             let JwBridgeAddr = await jp.getWalletAddress(this.address);
-            console.log("JwBridge address, bridge address",JwBridgeAddr,this.address);
+            logger.info(formatUtil.format("JwBridge address, bridge address",JwBridgeAddr,this.address));
 
-            console.log("via....",via);
+            logger.info(formatUtil.format("via....",via));
 
             if(!Address.isAddress(via.address)){
                 throw "invalid via.address"
             }
             let JwUserAddr = await jp.getWalletAddress(via.address);
-            console.log("JwUserAddr address, via.address",JwUserAddr,via.address);
+            logger.info(formatUtil.format("JwUserAddr address, via.address",JwUserAddr,via.address));
 
             let JwUserSc = await JettonWallet.createFromAddress(JwUserAddr);
             let JwBridgeSc = await JettonWallet.createFromAddress(JwBridgeAddr);
@@ -275,9 +278,9 @@ export class Bridge implements Contract {
             let jwu =  await provider.open(JwUserSc);
             let jwb =  await provider.open(JwBridgeSc);
 
-            console.log("before lock  user(dog_balance) = %d, bridge(dog_balance)  = %d",
+            logger.info(formatUtil.format("before lock  user(dog_balance) = %d, bridge(dog_balance)  = %d",
                 await jwu.getJettonBalance(),
-                await jwb.getJettonBalance())
+                await jwb.getJettonBalance()));
 
             let forwardAmount = toNano('0.05');
             const sendResult = await jwu.sendBurn(via,
@@ -285,9 +288,9 @@ export class Bridge implements Contract {
                 opts.crossValue, this.address,
                 beginCell().endCell());
 
-            console.log("After lock  user(dog_balance) = %d, bridge(dog_balance)  = %d",
+            logger.info(formatUtil.format("After lock  user(dog_balance) = %d, bridge(dog_balance)  = %d",
                 await jwu.getJettonBalance(),
-                await jwb.getJettonBalance());
+                await jwb.getJettonBalance()));
             let ret = await sendUserLock();
             return;
         }

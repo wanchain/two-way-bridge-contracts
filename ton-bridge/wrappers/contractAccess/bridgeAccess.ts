@@ -2,6 +2,9 @@ import core_1, { Address, Cell, Contract, ContractProvider, MessageRelaxed, Send
 import {TonClient} from "@ton/ton";
 import {Bridge} from '../Bridge';
 
+import {logger} from '../utils/logger'
+const formatUtil = require('util');
+
 export class BridgeAccess {
     private client: TonClient;
     private readonly contractAddr: Address;
@@ -22,11 +25,11 @@ export class BridgeAccess {
         }
         try{
                 let  c =  Bridge.createFromAddress(this.contractAddr);
-                console.log("writeContract contractAddress",this.contractAddr);
+                logger.info(formatUtil.format("writeContract contractAddress",this.contractAddr));
                 let  cOpened =  this.client.open(c);
                 return await cOpened[methodName](via,opts);
             }catch(err){
-                console.log("err=>",err);
+                logger.info(formatUtil.format("err=>",err));
                 throw new Error(`${methodName} is not supported Non send method`);
             }
     }
@@ -38,10 +41,10 @@ export class BridgeAccess {
         try{
             let  c =  Bridge.createFromAddress(this.contractAddr);
             let  cOpened = this.client.open(c);
-            console.log("methodName=>",methodName);
+            logger.info(formatUtil.format("methodName=>",methodName));
             return await cOpened[methodName](...parameters);
         }catch(err){
-            console.log(err);
+            logger.info(formatUtil.format(err));
             throw new Error(`${methodName} is not supported Non send method`);
         }
     }
