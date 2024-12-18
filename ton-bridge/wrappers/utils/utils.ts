@@ -32,5 +32,5 @@ export async function sleep(ms:number)  {
 
 
 export async function getQueryID(){
-    return await getSecureRandomNumber(Number.MIN_VALUE,Number.MAX_VALUE);
+    return await getSecureRandomNumber(1,Number.MAX_VALUE);
 }

@@ -43,6 +43,15 @@ export async function getSenderByPrvKey(client:TonClient,privateKey: Buffer):Pro
     return getSender(openWallet(client,wallet),privateKey);
 }
 
+// example addr:        EQDKbjIcfM6ezt8KjKJJLshZJJSqX7XOA4ff-W72r5gqPrHF
+// example rawAddr:     0:ca6e321c7cce9ecedf0a8ca2492ec8592494aa5fb5ce0387dff96ef6af982a3e
+export async function getWalletAddrByPrvKey(privateKey: Buffer){
+    return {
+        addr: (await getWalletByPrvKey(privateKey)).address.toString(),
+        rawAddr: (await getWalletByPrvKey(privateKey)).address.toRawString()
+    }
+}
+
 export async function openWalletByPrvKey(client:TonClient,privateKey: Buffer){
     return await openWallet(client,await getWalletByPrvKey(privateKey));
 }
@@ -68,6 +77,13 @@ export async function getSenderBySecPrvKey(client:TonClient,privateKey: Buffer):
 
 export async function openWalletBySecPrvKey(client:TonClient,privateKey: Buffer){
     return await openWallet(client,await getWalletBySecPrvKey(privateKey));
+}
+
+export async function getWalletAddrBySecPrvKey(privateKey: Buffer){
+    return {
+        addr: (await getWalletBySecPrvKey(privateKey)).address.toString(),
+        rawAddr: (await getWalletBySecPrvKey(privateKey)).address.toRawString()
+    }
 }
 
 // others
