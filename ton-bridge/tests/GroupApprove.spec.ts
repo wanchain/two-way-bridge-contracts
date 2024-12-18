@@ -82,7 +82,7 @@ describe('GroupApprove', () => {
         )
         groupApprove = blockchain.openContract(c);
 
-        const deployResult = await groupApprove.sendDeploy(deployer.getSender());
+        const deployResult = await groupApprove.sendDeploy(deployer.getSender(), toNano('0.1'));
         console.log("GroupApprove.address==>",groupApprove.address);
         console.log("GroupApprove.address(bigInt)==>",BigInt("0x"+groupApprove.address.hash.toString('hex')));
         expect(deployResult.transactions).toHaveTransaction({

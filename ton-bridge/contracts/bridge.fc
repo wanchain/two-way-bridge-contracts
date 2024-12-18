@@ -51,7 +51,10 @@
     send_raw_message(msg,64);
     return ();
 }
-
+(int, int, int, int, int) get_smgConfigCommited(int id) method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    return oracle_get_smg(oracle, id, 1);
+}
 () check_privilege(int op, slice sender_address, slice cross_owner, cell oracle, cell feeCell ) impure {
     if((op & 0xFF000000 == OP_CROSS) | (op == OP_FETCH_GPK)){
         return ();
@@ -234,22 +237,29 @@
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_smg(oracle, id, 0);
 }
-(int, int, int, int, int) get_smgConfigCommited(int id) method_id {
-    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return oracle_get_smg(oracle, id, 1);
-}
-(int, int) get_fee(int _src_chain_id, int _dst_chain_id) method_id {
+
+(int, int) get_chain_fee(int _src_chain_id, int _dst_chain_id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     ;;todo load smgFeeProxy first
     slice ca_fee_slice = ca_fee.begin_parse();
-    (_, cell dict) = (ca_fee_slice~load_msg_addr(), ca_fee_slice~load_dict());
-    slice key = begin_cell().store_uint(_src_chain_id, 32).store_uint(_dst_chain_id, 32).end_cell().begin_parse();
-    int key_int = slice_to_int(key, 64);
-    (slice cs, int ret) = udict_get?(dict, 64, key_int);
-    if (ret) {
+    (_,_,_, cell chainFee,_) = fee_load_data(ca_fee);
+    int key_int = (_src_chain_id << 32) + _dst_chain_id;
+    (slice cs, int find) = udict_get?(chainFee, 64, key_int);
+    if (find) {
         return (cs~load_uint(32), cs~load_uint(32));
     }
     return (0, 0);
+}
+(int) get_tokenpair_fee(int tokenpairID) method_id {
+    (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
+    ;;todo load smgFeeProxy first
+    slice ca_fee_slice = ca_fee.begin_parse();
+    (cell dict) = (ca_fee_slice~load_dict());
+    (slice cs, int find) = udict_get?(dict, 32, tokenpairID);
+    if (find) {
+        return (cs~load_uint(256));
+    }
+    return (0);
 }
 (int) get_first_smg_id() method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();

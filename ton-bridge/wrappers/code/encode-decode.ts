@@ -102,6 +102,38 @@ export const codeTable = {
             return beginCell()
                 .storeUint(opcodes.OP_FEE_SetTokenPairFee, 32)
                 .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.tokenPairID, 32)
+                .storeUint(opts.fee, 256)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_FEE_SetTokenPairFees]: {
+        "enCode": function (opts: any): Cell {
+            console.log("Entering enCode Function OP_CROSS_SmgReleases");
+            let count = opts.tokenPairID.length
+            let data = beginCell()
+            .storeUint(opcodes.OP_FEE_SetTokenPairFees, 32)
+            .storeUint(opts.queryID ?? 0, 64)
+            .storeUint(count, 32)
+            for(let i=0; i<count; i++) {
+                data.storeUint(opts.tokenPairID[i], 32)
+                .storeUint(opts.fee[i], 256)
+            }
+            return data.endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_FEE_SetChainFee]: {
+        "enCode": function (opts: any): Cell {
+            console.log("Entering enCode Function OP_FEE_SetChainFees");
+            return beginCell()
+                .storeUint(opcodes.OP_FEE_SetChainFee, 32)
+                .storeUint(opts.queryID ?? 0, 64)
                 .storeUint(opts.srcChainId, 32)
                 .storeUint(opts.dstChainId, 32)
                 .storeUint(opts.contractFee, 32)
@@ -112,7 +144,28 @@ export const codeTable = {
             return 0;
         }
     },
+    [opcodes.OP_FEE_SetChainFees]: {
+        "enCode": function (opts: any): Cell {
+            console.log("Entering enCode Function OP_FEE_SetChainFee");
+            let count = opts.srcChainId.length
 
+            let data =  beginCell()
+                .storeUint(opcodes.OP_FEE_SetChainFees, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(count, 32)
+            for(let i=0; i<count; i++) {
+                data.storeUint(opts.srcChainId[i], 32)
+                .storeUint(opts.dstChainId[i], 32)
+                .storeUint(opts.contractFee[i], 32)
+                .storeUint(opts.agentFee[i], 32)
+            }
+
+            return data.endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
     [opcodes.OP_TOKENPAIR_Upsert]: {
         "enCode": function (opts: any): Cell {
             let toBuffer, fromBuffer
