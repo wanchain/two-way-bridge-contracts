@@ -55,7 +55,6 @@ async function getEventFromTran(tran:Transaction){
         let opCode = await getOpCodeFromCell(bodyCell);
         logger.info(formatUtil.format("opCode=>",opCode));
         logger.info(formatUtil.format("codeTable[opCode]=>",codeTable[opCode]));
-        //todo delete following
         if(!codeTable[opCode]){
             return null;
         }
