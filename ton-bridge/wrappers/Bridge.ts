@@ -101,7 +101,41 @@ export class Bridge implements Contract {
         });
     }
 
-    async sendSetFee(
+    async sendSetTokenPairFee(
+        provider: ContractProvider,
+        via: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            tokenPairID:number,
+            fee:number,
+        }
+    ) {
+
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: codeTable[opcodes.OP_FEE_SetTokenPairFee].enCode(opts),
+        });
+    }
+    async sendSetTokenPairFees(
+        provider: ContractProvider,
+        via: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            tokenPairID:number[],
+            fee:number[],
+        }
+    ) {
+
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: codeTable[opcodes.OP_FEE_SetTokenPairFees].enCode(opts),
+        });
+    }
+    async sendSetChainFee(
         provider: ContractProvider,
         via: Sender,
         opts: {
@@ -117,7 +151,26 @@ export class Bridge implements Contract {
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: codeTable[opcodes.OP_FEE_SetTokenPairFee].enCode(opts),
+            body: codeTable[opcodes.OP_FEE_SetChainFee].enCode(opts),
+        });
+    }
+    async sendSetChainFees(
+        provider: ContractProvider,
+        via: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            srcChainId:number[],
+            dstChainId:number[],
+            contractFee:number[],
+            agentFee:number[],
+        }
+    ) {
+
+        await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: codeTable[opcodes.OP_FEE_SetChainFees].enCode(opts),
         });
     }
 
@@ -371,13 +424,17 @@ export class Bridge implements Contract {
         }
     }
 
-    async getFee(provider: ContractProvider,srcChainId:number,dstChainId:number) {
-        const result = await provider.get('get_fee', [{ type: 'int', value: BigInt(srcChainId) },
+    async getChainFee(provider: ContractProvider,srcChainId:number,dstChainId:number) {
+        const result = await provider.get('get_chain_fee', [{ type: 'int', value: BigInt(srcChainId) },
             { type: 'int', value: BigInt(dstChainId)}]);
         return {
             contractFee:result.stack.readNumber(),
             agentFee:result.stack.readNumber()
         }
+    }
+    async getTokenPairFee(provider: ContractProvider,tokenpair:number) {
+        const result = await provider.get('get_tokenpair_fee', [{ type: 'int', value: BigInt(tokenpair) }]);
+        return result.stack.readNumber()
     }
 
     async getTokenPair(provider: ContractProvider,tokenPairId:number) {
@@ -408,8 +465,8 @@ export class Bridge implements Contract {
         return result.stack.readNumber()
     }
 
-    async getNextTokenPairID(provider: ContractProvider) {
-        const result = await provider.get('get_next_tokenpair_id', []);
+    async getNextTokenPairID(provider: ContractProvider, id: number) {
+        const result = await provider.get('get_next_tokenpair_id', [{ type: 'int', value: BigInt(id) }]);
         // todo getTokenPair
         return result.stack.readNumber()
     }
