@@ -53,16 +53,16 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
     }
     if (op == OP_FEE_SetTokenPairFee) {
         int tpId = in_msg_body~load_uint(32);
-        int fee = in_msg_body~load_uint(256);
-        tokenPairFee~udict_set_builder(TOKENPAIR_DICTIONARY_KEY_LEN, tpId, begin_cell().store_int(fee, 256));
+        int fee = in_msg_body~load_uint(32);
+        tokenPairFee~udict_set_builder(TOKENPAIR_DICTIONARY_KEY_LEN, tpId, begin_cell().store_int(fee, 32));
         return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);
     }
     if (op == OP_FEE_SetTokenPairFees) {
         int count = in_msg_body~load_uint(32); ;;TODO. only support 3 for cell size limit
         while(count > 0) {
             int tpId = in_msg_body~load_uint(32);
-            int fee = in_msg_body~load_uint(256);
-            tokenPairFee~udict_set_builder(TOKENPAIR_DICTIONARY_KEY_LEN, tpId, begin_cell().store_int(fee, 256));
+            int fee = in_msg_body~load_uint(32);
+            tokenPairFee~udict_set_builder(TOKENPAIR_DICTIONARY_KEY_LEN, tpId, begin_cell().store_int(fee, 32));
             count -= 1;
         }
         return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);

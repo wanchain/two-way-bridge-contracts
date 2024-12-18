@@ -103,7 +103,7 @@ export const codeTable = {
                 .storeUint(opcodes.OP_FEE_SetTokenPairFee, 32)
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeUint(opts.tokenPairID, 32)
-                .storeUint(opts.fee, 256)
+                .storeUint(opts.fee, 32)
                 .endCell()
         },
         "deCode": function (cell: Cell): any {
@@ -120,7 +120,7 @@ export const codeTable = {
             .storeUint(count, 32)
             for(let i=0; i<count; i++) {
                 data.storeUint(opts.tokenPairID[i], 32)
-                .storeUint(opts.fee[i], 256)
+                .storeUint(opts.fee[i], 32)
             }
             return data.endCell()
         },

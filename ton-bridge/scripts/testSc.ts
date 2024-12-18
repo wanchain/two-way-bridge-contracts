@@ -26,14 +26,24 @@ export async function run() {
     let CrossConfig = await bridge.getCrossConfig();
     console.log("CrossConfig:",CrossConfig)
 
-    let tokenPair = await bridge.getTokenPair(100)
-    console.log("tokenPair 100:", tokenPair)
 
     const SCGP = await GroupApprove.createFromAddress(Address.parseFriendly(scAddr.groupApprove).address);
     const groupApprove = client.open(SCGP);
     console.log("groupApprove contract address:", groupApprove.address.toString());
     let GpConfig = await groupApprove.getConfig();
-    console.log("GpConfig:",GpConfig) 
+    console.log("GpConfig:",GpConfig)
+
+    // list tokenpair
+    let firstTokenPairId = await bridge.getFirstTokenPairID()
+    console.log("firstToken pair:", firstTokenPairId)
+    let curTokenPairId =   firstTokenPairId
+    if(curTokenPairId != 0) {
+        let tokenPair = await bridge.getTokenPair(curTokenPairId);
+        console.log("token pair:", tokenPair)
+        let tokenPairFee = await bridge.getTokenPairFee(curTokenPairId)
+        console.log("token pair fee:", tokenPairFee)
+        curTokenPairId = await bridge.getNextTokenPairID(curTokenPairId)
+    }
 }
 
 

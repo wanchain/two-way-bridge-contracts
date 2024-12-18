@@ -253,11 +253,11 @@
 (int) get_tokenpair_fee(int tokenpairID) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     ;;todo load smgFeeProxy first
-    slice ca_fee_slice = ca_fee.begin_parse();
-    (cell dict) = (ca_fee_slice~load_dict());
-    (slice cs, int find) = udict_get?(dict, 32, tokenpairID);
+    (_,_, cell tpFee, _,_) = fee_load_data(ca_fee);
+
+    (slice cs, int find) = udict_get?(tpFee, 32, tokenpairID);
     if (find) {
-        return (cs~load_uint(256));
+        return (cs~load_uint(32));
     }
     return (0);
 }
