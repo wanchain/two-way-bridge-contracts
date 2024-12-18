@@ -35,47 +35,8 @@ async function init(){
     console.log("client=>",client);
 }
 
-let queryID = 1;
 let tokenPairId3 = tokenInfo.coin.tokenPairId;
-let srcChainId3 = tokenInfo.coin.srcChainId;
-let dstChainId3 = tokenInfo.coin.dstChainId;
-let srcTokenAcc3 = tokenInfo.coin.srcTokenAcc;
-let dstTokenAcc3 = tokenInfo.coin.dstTokenAcc;
 tokenInfo.coin.dstTokenAcc = TON_COIN_ACCOUT;
-
-async function addTokenPair(){
-
-    let ba = BridgeAccess.create(client,scAddresses.bridgeAddress);
-    // write contract
-    let opt = {
-        value: toNano('0.005'),
-        queryID,
-        tokenPairId: tokenPairId3,
-        fromChainID: srcChainId3,
-        fromAccount: srcTokenAcc3,
-        toChainID: dstChainId3,
-        toAccount: dstTokenAcc3,
-    }
-    console.log("opt=>",opt);
-    let via = await getSenderByPrvKey(client,Buffer.from(prvList[0],'hex'));
-    let ret3 = await ba.writeContract('sendAddTokenPair',via,opt);
-    console.log("sendAddTokenPair",ret3);
-}
-
-async function removeTokenPair(){
-
-    let ba = BridgeAccess.create(client,scAddresses.bridgeAddress);
-    // write contract
-    let opt = {
-        value: toNano('0.005'),
-        queryID,
-        tokenPairId: tokenPairId3,
-    }
-    console.log("opt=>",opt);
-    let via = await getSenderByPrvKey(client,Buffer.from(prvList[0],'hex'));
-    let ret3 = await ba.writeContract('sendRemoveTokenPair',via,opt);
-    console.log("sendRemoveTokenPair",ret3);
-}
 
 async function getTokenPair(){
     // read contract

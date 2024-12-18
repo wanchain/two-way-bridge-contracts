@@ -6,6 +6,8 @@ import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
 import {getClient} from "../client/client";
 
+import {getQueryID} from "../utils/utils";
+
 let tokenInfo = {
     tokenOrg:{tokenPairId:0x01,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
     tokenWrapped:{tokenPairId:0x02,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
@@ -26,6 +28,7 @@ let deployerValue = toNano('0.05');
 const scAddresses = require('../testData/contractAddress.json');
 import { BridgeAccess } from "../contractAccess/bridgeAccess";
 
+let queryID;
 async function init(){
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     smgFeeProxy = deployer;
@@ -33,9 +36,10 @@ async function init(){
     robotAdmin = deployer;
     client = await getClient('testnet');
     console.log("client=>",client);
+    queryID = await getQueryID();
 }
 
-let queryID = 1;
+
 let tokenPairId3 = tokenInfo.coin.tokenPairId;
 let srcChainId3 = tokenInfo.coin.srcChainId;
 let dstChainId3 = tokenInfo.coin.dstChainId;

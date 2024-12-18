@@ -1,5 +1,6 @@
 
 import { Address, toNano, fromNano } from "@ton/core";
+import {getSecureRandomNumber} from '@ton/crypto';
 
 export const randomAddress = (wc: number = 0) => {
     const buf = Buffer.alloc(32);
@@ -27,4 +28,9 @@ export const HexStringToBuffer = (str:String): Buffer =>{
 
 export async function sleep(ms:number)  {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+export async function getQueryID(){
+    return await getSecureRandomNumber(Number.MIN_VALUE,Number.MAX_VALUE);
 }

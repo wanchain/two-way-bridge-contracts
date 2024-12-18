@@ -6,6 +6,7 @@ import {logger} from '../utils/logger'
 const formatUtil = require('util');
 
 const TONCLINET_TIMEOUT = 60 * 1000 * 1000;
+
 export async function getClient(network:Network):Promise<TonClient> {
     const endpoints = await getHttpEndpoints({ network:network });
     const total = endpoints.length;

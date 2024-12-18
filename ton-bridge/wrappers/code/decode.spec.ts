@@ -2,6 +2,7 @@ import {Cell, toNano} from "@ton/core";
 import {codeTable} from "./encode-decode";
 import {OP_FEE_SetTokenPairFee, OP_TOKENPAIR_Upsert} from "../opcodes"
 import {BIP44_CHAINID, TON_COIN_ACCOUT} from "../const/const-value";
+import {getQueryID} from "../utils/utils";
 
 let rawCellStr = "b5ee9c7201010101005000009c50000003000000000000000100000003000012340000456714833589fcd6edb6e08f4c7c32d4f71b54bda02913200000000000000000000000000000000000000000000000000000000000000000"
 let rawCellStr1 = 'b5ee9c7241010301006c0002345000000300000000000000010000000300001234000045672a200102005430783833333538396663643665646236653038663463376333326434663731623534626461303239313300400000000000000000000000000000000000000000000000000000000000000000e249552b'
@@ -11,7 +12,7 @@ let tokenInfo = {
     tokenWrapped:{tokenPairId:0x02,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
     coin:{tokenPairId:0x03,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:''},
 }
-let queryID = 1;
+let queryID;
 let tokenPairId3 = tokenInfo.coin.tokenPairId;
 let srcChainId3 = tokenInfo.coin.srcChainId;
 let dstChainId3 = tokenInfo.coin.dstChainId;
@@ -22,7 +23,7 @@ tokenInfo.coin.dstTokenAcc = TON_COIN_ACCOUT;
 describe('decode', () => {
 
     beforeAll(async () => {
-
+        queryID = await getQueryID();
     });
 
    it('decode AddTokenPair', async () => {

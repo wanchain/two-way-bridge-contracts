@@ -7,13 +7,14 @@ import {getClient} from "../client/client";
 import {getSenderByPrvKey, getWalletByPrvKey, openWalletByPrvKey} from "../wallet/walletContract";
 import {sign} from "@ton/crypto";
 import {SendMode} from "@ton/core";
+import {getQueryID} from "../utils/utils";
 
 let tokenInfo = {
     tokenOrg:{tokenPairId:0x01,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
     tokenWrapped:{tokenPairId:0x02,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
     coin:{tokenPairId:0x03,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:''},
 }
-let queryID = 1;
+let queryID ;
 let tokenPairId3 = tokenInfo.coin.tokenPairId;
 let srcChainId3 = tokenInfo.coin.srcChainId;
 let dstChainId3 = tokenInfo.coin.dstChainId;
@@ -35,6 +36,7 @@ describe('decode', () => {
         client = await getClient('testnet');
         wallet = await getWalletByPrvKey(privateKey);
         walletOpenned = await openWalletByPrvKey(client , privateKey);
+        queryID = await getQueryID();
     },50000);
 
     it('build rawTrans, sign, and send rawTrans', async () => {
