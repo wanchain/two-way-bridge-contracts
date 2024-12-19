@@ -1,6 +1,6 @@
+global.TON_NETORK = "testnet";
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 import {Bridge} from '../Bridge';
-import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
 import {getClient} from "../client/client";
 import {compileContract, CR, writeCR,doCompile} from "../utils/compileContract";
@@ -33,7 +33,7 @@ async function init(){
     oracleAdmin = deployer;
     robotAdmin = deployer;
 
-    client = await getClient('testnet');
+    client = await getClient();
     console.log("client=>",client);
     let code = await buildCodeCell();
     bridge = Bridge.createFromConfig(

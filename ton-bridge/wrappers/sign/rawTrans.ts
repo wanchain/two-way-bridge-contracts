@@ -1,3 +1,4 @@
+global.TON_NETORK = "testnet";
 import {Address, beginCell, Builder, Cell, MessageRelaxed, storeMessageRelaxed} from "@ton/core";
 import {Maybe} from "@ton/ton/dist/utils/maybe";
 import {sign} from "@ton/crypto";
@@ -60,7 +61,7 @@ export async function buildRawTransaction(signature:Buffer, rawDataBuilder:Build
 }
 
 export async function sendRawTransaction(senderAddress:Address,rawTrans:Cell){
-    let client = await getClient("testnet");
+    let client = await getClient();
     let provider =  client.provider(senderAddress)
     return await provider.external(rawTrans)
 }

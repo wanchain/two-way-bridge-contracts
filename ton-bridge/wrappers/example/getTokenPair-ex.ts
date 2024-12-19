@@ -1,9 +1,8 @@
-import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
+global.TON_NETORK = "testnet";
 
-import {Bridge} from '../Bridge';
 import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
 
-import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
+import {getWalletByPrvKey} from "../wallet/walletContract";
 import {getClient} from "../client/client";
 
 let tokenInfo = {
@@ -13,15 +12,9 @@ let tokenInfo = {
 }
 
 const prvList = require('../testData/prvlist')
-const addressList = require('../testData/addressList')
 
 let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let client = null;
-let bridge = null;
-let deployerOpened = null;
-let bridgeOpened = null;
-
-let deployerValue = toNano('0.05');
 
 const scAddresses = require('../testData/contractAddress.json');
 import { BridgeAccess } from "../contractAccess/bridgeAccess";
@@ -31,7 +24,7 @@ async function init(){
     smgFeeProxy = deployer;
     oracleAdmin = deployer;
     robotAdmin = deployer;
-    client = await getClient('testnet');
+    client = await getClient();
     console.log("client=>",client);
 }
 

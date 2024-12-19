@@ -1,3 +1,4 @@
+global.TON_NETORK = "testnet";
 import '@ton/test-utils';
 import {sleep} from "../utils/utils";
 
@@ -15,12 +16,8 @@ import {
 import {KeyPair, mnemonicNew, mnemonicToWalletKey} from '@ton/crypto';
 import {CommonMessageInfoRelaxedInternal, WalletContractV4} from "@ton/ton";
 import {getClient} from "../client/client";
-import * as util from "node:util";
 import {Address, beginCell, ContractProvider, MessageRelaxed, SendMode, toNano} from "@ton/core";
-import {Maybe} from "@ton/ton/dist/utils/maybe";
-import {CommonMessageInfoRelaxed} from "@ton/core/src/types/CommonMessageInfoRelaxed";
-import {StateInit} from "@ton/core/src/types/StateInit";
-import {Cell} from "@ton/core/src/boc/Cell";
+
 
 describe('walletContract', () => {
     let mnemonics: string[][] = [[""],[""],[""],[""],[""]];
@@ -87,7 +84,7 @@ describe('walletContract', () => {
         let rawAddr = "0:19dc7b6d850bd27b74b46017b8a23b014acd02f1fc324ad6f4a46159f024a8d1";
         let addr = "EQAZ3HtthQvSe3S0YBe4ojsBSs0C8fwyStb0pGFZ8CSo0QSE";
 
-        let client = await getClient("testnet");
+        let client = await getClient();
         let wallet = await getWalletBySecPrvKey(skSmg)
         let walletOpened = await client.open(wallet);
         let seq = await walletOpened.getSeqno();

@@ -1,3 +1,4 @@
+global.TON_NETORK = "testnet";
 import {Cell, toNano} from "@ton/core";
 import {buildInternalMessageRelaxed,buildSignData,signData,buildRawTransaction,sendRawTransaction} from "./rawTrans";
 import {OP_FEE_SetTokenPairFee, OP_TOKENPAIR_Upsert} from "../opcodes"
@@ -33,7 +34,7 @@ let privateKey = Buffer.from(prvList[0],'hex')
 describe('decode', () => {
 
     beforeAll(async () => {
-        client = await getClient('testnet');
+        client = await getClient();
         wallet = await getWalletByPrvKey(privateKey);
         walletOpenned = await openWalletByPrvKey(client , privateKey);
         queryID = await getQueryID();

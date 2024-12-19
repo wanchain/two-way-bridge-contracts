@@ -92,6 +92,7 @@ export const codeTable = {
                 userAccount:opts.userAccount,
                 txHashBase64:opts.txHashBase64,
                 txHash:opts.txHash,
+                lt:opts?.lt,
             }
         }
     },
@@ -110,6 +111,7 @@ export const codeTable = {
             return 0;
         }
     },
+
     [opcodes.OP_FEE_SetTokenPairFees]: {
         "enCode": function (opts: any): Cell {
             console.log("Entering enCode Function OP_CROSS_SmgReleases");
@@ -128,6 +130,7 @@ export const codeTable = {
             return 0;
         }
     },
+
     [opcodes.OP_FEE_SetChainFee]: {
         "enCode": function (opts: any): Cell {
             console.log("Entering enCode Function OP_FEE_SetChainFees");
@@ -144,6 +147,7 @@ export const codeTable = {
             return 0;
         }
     },
+
     [opcodes.OP_FEE_SetChainFees]: {
         "enCode": function (opts: any): Cell {
             console.log("Entering enCode Function OP_FEE_SetChainFee");
@@ -166,6 +170,7 @@ export const codeTable = {
             return 0;
         }
     },
+
     [opcodes.OP_TOKENPAIR_Upsert]: {
         "enCode": function (opts: any): Cell {
             let toBuffer, fromBuffer
@@ -237,6 +242,7 @@ export const codeTable = {
                 toAccount:opts.toAccount,
                 txHashBase64:opts.txHashBase64,
                 txHash:opts.txHash,
+                lt:opts?.lt,
             }
         }
     },
@@ -266,6 +272,7 @@ export const codeTable = {
                 id:opts.tokenPairID,
                 txHashBase64:opts.txHashBase64,
                 txHash:opts.txHash,
+                lt:opts?.lt,
             }
         }
     }

@@ -1,3 +1,5 @@
+global.TON_NETWORK = "testnet";
+console.log("global.TON_NETWORK",global.TON_NETWORK);
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 
 import {Bridge} from '../Bridge';
@@ -13,15 +15,9 @@ let tokenInfo = {
 }
 
 const prvList = require('../testData/prvlist')
-const addressList = require('../testData/addressList')
 
 let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let client = null;
-let bridge = null;
-let deployerOpened = null;
-let bridgeOpened = null;
-
-let deployerValue = toNano('0.05');
 
 const scAddresses = require('../testData/contractAddress.json');
 import { BridgeAccess } from "../contractAccess/bridgeAccess";
@@ -34,7 +30,7 @@ async function init(){
     smgFeeProxy = deployer;
     oracleAdmin = deployer;
     robotAdmin = deployer;
-    client = await getClient('testnet');
+    client = await getClient();
     console.log("client=>",client);
     queryID = await getQueryID();
 }
