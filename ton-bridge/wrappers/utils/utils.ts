@@ -32,5 +32,10 @@ export async function sleep(ms:number)  {
 
 
 export async function getQueryID(){
-    return await getSecureRandomNumber(1,Number.MAX_VALUE);
+    while(true){
+        let queryID = await getSecureRandomNumber(1,Math.pow(2,52)-1);
+        if(queryID>0){
+            return queryID;
+        }
+    }
 }
