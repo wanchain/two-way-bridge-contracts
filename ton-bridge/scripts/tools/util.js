@@ -47,7 +47,7 @@ async function waitTransactionbyExternalIn(client, from,  msgHash, allTransactio
             console.log("call getTransactions, para:", myAddress.toString({testOnly:true}), to_lt);
             const transactions = await client.getTransactions(myAddress, {
                 to_lt ,
-                limit: 100,
+                limit: 10,
             });
             console.log("transactions length:", transactions.length)
             for (let i=0; i<transactions.length; i++) {
@@ -90,7 +90,7 @@ async function findTransactionbyMsgHash(client, from,  msgHash, allTransactions)
         limit: 10
     }
     while(maxRetry-- > 0){
-        console.log("call findTransactionbyMsgHash, para:", myAddress.toString({testOnly:true, bounceable:true}));
+        console.log("call findTransactionbyMsgHash, para:", from, txOpts);
         const transactions = await client.getTransactions(from, txOpts);
         console.log("transactions length:", transactions.length)
         for (let i=0; i<transactions.length; i++) {

@@ -44,7 +44,7 @@ async function sendAndMonitorTransaction(mnemonic, toAddress, amount) {
 }
 
 let mnemonic = process.env.WALLET_MNEMONIC?  process.env.WALLET_MNEMONIC : ""
-const toAddress = '0QCc-Jy-Jw-oSPzEZlfDc7jspd-5huZFjXBe2MGgGG4fQYAC'; // 
+const toAddress = '0QB6vfpR5XNDj5uDl81wSkxzqtJzmSIB6tcnJ0fGVRGmWb8A'; //
 const amount = BigInt(10000000); // 1 TON
 
 
