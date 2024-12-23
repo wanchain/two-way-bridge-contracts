@@ -1,8 +1,11 @@
-global.TON_NETORK = "testnet";
+const config:TonClientConfig =  {
+    network:"testnet", // testnet|mainnet
+    tonClientTimeout: 60 * 1000 * 1000,
+}
 import {Address, beginCell, Builder, Cell, MessageRelaxed, storeMessageRelaxed} from "@ton/core";
 import {Maybe} from "@ton/ton/dist/utils/maybe";
 import {sign} from "@ton/crypto";
-import {getClient} from "../client/client";
+import {getClient, TonClientConfig} from "../client/client";
 import {internal} from "@ton/core";
 import {StateInit} from "@ton/core";
 
@@ -61,7 +64,7 @@ export async function buildRawTransaction(signature:Buffer, rawDataBuilder:Build
 }
 
 export async function sendRawTransaction(senderAddress:Address,rawTrans:Cell){
-    let client = await getClient();
+    let client = await getClient(config);
     let provider =  client.provider(senderAddress)
     return await provider.external(rawTrans)
 }

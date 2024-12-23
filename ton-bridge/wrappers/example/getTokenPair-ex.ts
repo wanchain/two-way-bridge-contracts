@@ -1,9 +1,12 @@
-global.TON_NETORK = "testnet";
+const config:TonClientConfig =  {
+    network:"testnet", // testnet|mainnet
+    tonClientTimeout: 60 * 1000 * 1000,
+}
 
 import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
 
 import {getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient} from "../client/client";
+import {getClient, TonClientConfig} from "../client/client";
 
 let tokenInfo = {
     tokenOrg:{tokenPairId:0x01,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
@@ -24,7 +27,7 @@ async function init(){
     smgFeeProxy = deployer;
     oracleAdmin = deployer;
     robotAdmin = deployer;
-    client = await getClient();
+    client = await getClient(config);
     console.log("client=>",client);
 }
 

@@ -8,19 +8,25 @@ import {logger} from '../utils/logger'
 
 const formatUtil = require('util');
 
-export async function getClient():Promise<TonClient> {
-    logger.info(formatUtil.format("getClient global.TON_NETWORK %s",global.TON_NETWORK));
-    const config = await import("../config/config");
-    console.log("WAN_TON_SDK_CONFIG",config.WAN_TON_SDK_CONFIG);
-    logger.info(formatUtil.format("getClient WAN_TON_SDK_CONFIG %s",config.WAN_TON_SDK_CONFIG));
+export interface TonClientConfig {
+    network: Network;
+    tonClientTimeout?:number;
+}
 
-    const endpoints = await getHttpEndpoints({ network:config.WAN_TON_SDK_CONFIG.NETWORK });
+export async function getClient(config:TonClientConfig,url?:string):Promise<TonClient> {
+    logger.info(formatUtil.format("getClient config %s",JSON.stringify(config)));
+    if(url?.length > 0){
+        logger.info(formatUtil.format("(url)http endpoint is =>%s",url));
+        return  new TonClient({ endpoint:url,timeout:config?.tonClientTimeout });
+    }
+
+    const endpoints = await getHttpEndpoints({ network:config.network });
     const total = endpoints.length;
     if(!total){
         throw new Error("no http endpoint found!");
     }
     const indexUsed = await getSecureRandomNumber(0,total)
     logger.info(formatUtil.format("http endpoint is =>",endpoints[indexUsed]));
-    return  new TonClient({ endpoint:endpoints[indexUsed],timeout:config.WAN_TON_SDK_CONFIG.TON_CLIENT_TIMEOUT });
+    return  new TonClient({ endpoint:endpoints[indexUsed],timeout:config.tonClientTimeout });
     //return  new TonClient({ endpoint:"https://testnet.toncenter.com/api/v2/jsonRPC",timeout:TONCLINET_TIMEOUT,apiKey:toncenter_testnet_apikey});
 }

@@ -1,8 +1,11 @@
-global.TON_NETORK = "testnet";
+const config:TonClientConfig =  {
+    network:"testnet", // testnet|mainnet
+    tonClientTimeout: 60 * 1000 * 1000,
+}
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 import {Bridge} from '../Bridge';
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient} from "../client/client";
+import {getClient, TonClientConfig} from "../client/client";
 import {compileContract, CR, writeCR,doCompile} from "../utils/compileContract";
 import fs_1 from "fs";
 
@@ -33,7 +36,7 @@ async function init(){
     oracleAdmin = deployer;
     robotAdmin = deployer;
 
-    client = await getClient();
+    client = await getClient(config);
     console.log("client=>",client);
     let code = await buildCodeCell();
     bridge = Bridge.createFromConfig(

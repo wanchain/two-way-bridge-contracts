@@ -1,10 +1,14 @@
-global.TON_NETORK = "testnet";
+const config:TonClientConfig =  {
+    network:"testnet", // testnet|mainnet
+    tonClientTimeout: 60 * 1000 * 1000,
+}
+
 import {Cell, toNano} from "@ton/core";
 import {buildInternalMessageRelaxed,buildSignData,signData,buildRawTransaction,sendRawTransaction} from "./rawTrans";
 import {OP_FEE_SetTokenPairFee, OP_TOKENPAIR_Upsert} from "../opcodes"
 import {BIP44_CHAINID, TON_COIN_ACCOUT} from "../const/const-value";
 import {codeTable} from "../code/encode-decode";
-import {getClient} from "../client/client";
+import {getClient, TonClientConfig} from "../client/client";
 import {getSenderByPrvKey, getWalletByPrvKey, openWalletByPrvKey} from "../wallet/walletContract";
 import {sign} from "@ton/crypto";
 import {SendMode} from "@ton/core";
@@ -34,7 +38,7 @@ let privateKey = Buffer.from(prvList[0],'hex')
 describe('decode', () => {
 
     beforeAll(async () => {
-        client = await getClient();
+        client = await getClient(config);
         wallet = await getWalletByPrvKey(privateKey);
         walletOpenned = await openWalletByPrvKey(client , privateKey);
         queryID = await getQueryID();
