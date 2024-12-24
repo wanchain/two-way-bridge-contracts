@@ -27,7 +27,7 @@ example of ret:
 //todo  block number (seq)
 //todo  from (first layer user, origin user.), and first layer hash.
 //todo  gas used (accumuted, summary.)
-//todo  message boday-> txhash.
+//todo  in send Message, message body-> txhash.
 
 export async function getEvents(client: TonClient,scAddress:string,limit:number,lt?:string,to_lt?:string):Promise<any> {
     if (!client){
