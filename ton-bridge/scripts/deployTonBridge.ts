@@ -6,6 +6,7 @@ import { Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/cor
 import {GroupApprove} from "../wrappers/GroupApprove";
 import fs from "fs"
 import {BIP44_CHAINID} from "../wrappers/const/const-value";
+import {compile} from "@ton/blueprint";
 
 
 function sleep(ms: number) {
@@ -25,14 +26,15 @@ export async function run() {
     const walletSender = walletContract.sender(key.secretKey);
     const seqno = await walletContract.getSeqno();
 
-    const SC = await Bridge.createForDeploy({
+    const BridgeCode = await compile('Bridge');
+    const SC = Bridge.createFromConfig({
         owner: wallet.address,
         halt:0,
         init:0,
         smgFeeProxy:wallet.address,
         oracleAdmin:wallet.address,
         operator: wallet.address,
-    });
+    }, BridgeCode, 0);
 
     // send the deploy transaction
     const bridge = client.open(SC);
@@ -49,13 +51,13 @@ export async function run() {
     console.log("deploy transaction confirmed:", bridge.address);
     console.log("bridge contract address:", bridge.address.toString());
 
-
-    const SCGP = await GroupApprove.createForDeploy({
+    const GroupApproveCode = await compile('GroupApprove');
+    const SCGP = GroupApprove.createFromConfig({
         chainId: BIP44_CHAINID,
         taskId:  0,
         foundation: wallet.address,
         bridge: bridge.address,
-    });
+    }, GroupApproveCode);
 
     // send the deploy transaction
     const groupApprove = client.open(SCGP);
