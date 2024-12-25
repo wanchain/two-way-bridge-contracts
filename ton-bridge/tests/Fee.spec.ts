@@ -118,7 +118,7 @@ describe('Bridge', () => {
 
     it('should set feeProxy address success', async () => {
         const queryID=1;
-        let ret = await bridge.sendSetFeeProxy(operator.getSender(),{
+        let ret = await bridge.sendSetFeeProxy(deployer.getSender(),{
             feeProxy:operator.address,
             value: toNano('1'),
             queryID,
@@ -131,7 +131,7 @@ describe('Bridge', () => {
         // console.log("ret",ret);
         let crossConfig = await bridge.getCrossConfig()
         console.log("crossConfig:", crossConfig);
-        expect(crossConfig.feeProxyAdmin).toBe(operator.address)
+        expect(crossConfig.feeProxyAdmin.toString()).toBe(operator.address.toString())
 
     });
 
