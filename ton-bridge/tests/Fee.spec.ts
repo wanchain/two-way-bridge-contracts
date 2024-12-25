@@ -91,11 +91,6 @@ describe('Bridge', () => {
         });
     });
 
-
-
-
-
-
     it('should set tokenpair fee success', async () => {
         let tokenPairId = 999;
         let tokenPairId2 = 888;
@@ -121,6 +116,24 @@ describe('Bridge', () => {
 
     });
 
+    it('should set feeProxy address success', async () => {
+        const queryID=1;
+        let ret = await bridge.sendSetFeeProxy(operator.getSender(),{
+            feeProxy:operator.address,
+            value: toNano('1'),
+            queryID,
+        });
+        expect(ret.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
+        // console.log("ret",ret);
+        let crossConfig = await bridge.getCrossConfig()
+        console.log("crossConfig:", crossConfig);
+        expect(crossConfig.feeProxyAdmin).toBe(operator.address)
+
+    });
 
 
     it('should set tokenpair fees success', async () => {

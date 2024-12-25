@@ -1,4 +1,4 @@
-import {OP_CROSS_SmgRelease} from "../opcodes";
+import {OP_CROSS_SmgRelease, OP_FEE_SetSmgFeeProxy} from "../opcodes";
 import {Address, beginCell, Cell, SendMode} from "@ton/core";
 import * as opcodes from "../opcodes";
 import {BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR, WK_CHIANID} from "../const/const-value";
@@ -111,7 +111,19 @@ export const codeTable = {
             return 0;
         }
     },
-
+    [opcodes.OP_FEE_SetSmgFeeProxy]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_FEE_SetSmgFeeProxy"));
+            return beginCell()
+                .storeUint(opcodes.OP_FEE_SetSmgFeeProxy, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeAddress(opts.feeProxy)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
     [opcodes.OP_FEE_SetTokenPairFees]: {
         "enCode": function (opts: any): Cell {
             console.log("Entering enCode Function OP_CROSS_SmgReleases");
