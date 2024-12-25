@@ -12,7 +12,8 @@ import {getClient, TonClientConfig} from "../client/client";
 import {getSenderByPrvKey, getWalletByPrvKey, openWalletByPrvKey} from "../wallet/walletContract";
 import {sign} from "@ton/crypto";
 import {SendMode} from "@ton/core";
-import {getQueryID} from "../utils/utils";
+import {getQueryID, sleep} from "../utils/utils";
+import {getTranResultByMsgHash} from "../transResult/transResult";
 
 let tokenInfo = {
     tokenOrg:{tokenPairId:0x01,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
@@ -58,7 +59,7 @@ describe('decode', () => {
         let bodyCell = codeTable[OP_TOKENPAIR_Upsert]["enCode"](opt);
 
         // build message
-        let message = await buildInternalMessageRelaxed({
+        let message = await buildInternalMessageRelaxed(wallet.address,{
             to:scAddresses.bridgeAddress,
             value:toNano('0.005'),
             bounce:true,
@@ -75,6 +76,10 @@ describe('decode', () => {
             messages:[message]
         });
 
+        for(let msgHash of dataNeedSign.msgHashs){
+            console.log("msgHash is ",msgHash);
+        }
+
         // sign data
         let signature = sign(dataNeedSign.hash,privateKey);
 
@@ -85,6 +90,12 @@ describe('decode', () => {
         console.log("wallet.address=>",wallet.address);
         let ret = await sendRawTransaction(wallet.address,rawTrans);
         console.log(ret);
+
+        await sleep(10000);
+        for(let msgHash of dataNeedSign.msgHashs){
+            let ret1 = await getTranResultByMsgHash(client,scAddresses.bridgeAddress,msgHash);
+            console.log(ret1);
+        }
 
     },500000);
 

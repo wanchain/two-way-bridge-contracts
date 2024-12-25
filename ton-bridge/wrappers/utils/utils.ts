@@ -39,3 +39,18 @@ export async function getQueryID(){
         }
     }
 }
+
+
+export function bigIntReviver(key, value) {
+    if (typeof value === "string" && value.endsWith("n")) {
+        return BigInt(value.slice(0, -1));
+    }
+    return value;
+}
+
+export function bigIntReplacer(key, value) {
+    if (typeof value === "bigint") {
+        return value.toString() + "n";
+    }
+    return value;
+}

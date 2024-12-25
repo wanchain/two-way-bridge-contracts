@@ -1,29 +1,33 @@
+import {bigIntReplacer} from "../utils/utils";
+
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
 }
-import {Address, beginCell, Builder, Cell, MessageRelaxed, storeMessageRelaxed} from "@ton/core";
+import {Address, beginCell, Builder, Cell, MessageRelaxed, storeMessage, Message,storeMessageRelaxed} from "@ton/core";
 import {Maybe} from "@ton/ton/dist/utils/maybe";
 import {sign} from "@ton/crypto";
 import {getClient, TonClientConfig} from "../client/client";
 import {internal} from "@ton/core";
 import {StateInit} from "@ton/core";
 
-export async function buildInternalMessageRelaxed(src: {
+export async function buildInternalMessageRelaxed(from:Address,src: {
     to: Address | string,
     value: bigint | string,
     bounce?: Maybe<boolean>,
     init?: Maybe<StateInit>,
     body?: Maybe<Cell | string>
 }){
-    return internal(src);
+    let msgRelaxed = await internal(src);
+    msgRelaxed.info.src = from;
+    return msgRelaxed as unknown as Message;
 }
 
 export async function buildSignData(args: {
     seqno: number;
     sendMode: number;
     walletId: number;
-    messages: MessageRelaxed[];
+    messages: Message[];
     timeout?: Maybe<number>;
 }){
     // Check number of messages
@@ -44,12 +48,14 @@ export async function buildSignData(args: {
     signingMessage.storeUint(0, 8); // Simple order
     for (let m of args.messages) {
         signingMessage.storeUint(args.sendMode, 8);
-        signingMessage.storeRef(beginCell().store(storeMessageRelaxed(m)));
+        //signingMessage.storeRef(beginCell().store(storeMessageRelaxed(m)));
+        signingMessage.storeRef(beginCell().store(storeMessage(m)));
     }
     return {
         rawData: signingMessage.endCell(),
         hash:signingMessage.endCell().hash(),
-        rawDataBuilder:signingMessage
+        rawDataBuilder:signingMessage,
+        msgHashs:await getMsgHash(args.messages),
     }
 }
 
@@ -67,4 +73,13 @@ export async function sendRawTransaction(senderAddress:Address,rawTrans:Cell){
     let client = await getClient(config);
     let provider =  client.provider(senderAddress)
     return await provider.external(rawTrans)
+}
+
+export function getMsgHash(msgs:Message[]){
+    let ret = [];
+    for(let m of msgs){
+        console.log("==========msg=>",JSON.stringify(m,bigIntReplacer));
+        ret.push(beginCell().store(storeMessage(m)).endCell().hash().toString('hex'));
+    }
+    return ret;
 }

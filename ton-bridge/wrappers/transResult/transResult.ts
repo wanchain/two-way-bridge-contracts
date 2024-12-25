@@ -1,7 +1,8 @@
-import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
+import {Address, beginCell, storeMessage, storeMessageRelaxed, Transaction} from "@ton/core";
 import {TonClient} from "@ton/ton";
 import {TransactionDescriptionGeneric} from "@ton/core/src/types/TransactionDescription";
 import {TransactionComputeVm} from "@ton/core/src/types/TransactionComputePhase";
+import {bigIntReplacer} from "../utils/utils";
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -210,13 +211,29 @@ async function getTranPathInfoByPivotTran(client:TonClient,scAddr:Address,pivotT
 }
 
 export async function getTranByMsgHash(client:TonClient, scAddr:Address,  msgHash:string):Promise<Transaction> {
-    let maxRetry = 30;
-    let txOpts = {
+    let maxRetry = 5;
+
+    let txOpts: {
+        limit: number;
+        lt?: string;
+        hash?: string;
+        to_lt?: string;
+        inclusive?: boolean;
+        archival?: boolean;
+    }={
         limit: 10
     }
+
     while(maxRetry-- > 0){
         console.log("call findTransactionbyMsgHash, para:", scAddr, txOpts);
-        const transactions = await client.getTransactions(scAddr, txOpts);
+        let transactions:Transaction[] = [];
+        try{
+            transactions = await client.getTransactions(scAddr, txOpts);
+        }catch (e) {
+            console.log(e);
+            await sleep(3000);
+            continue;
+        }
         console.log("transactions length:", transactions.length)
         for (let i=0; i<transactions.length; i++) {
             let tx = transactions[i]
@@ -224,8 +241,8 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address,  msgHas
             const transactionHash = tx.hash().toString('hex');
             console.log("tx hash is:",i, tx.lt, transactionHash)
             const inMessage = tx.inMessage;
-            let inMessageHash
-            // if (inMessage?.info.type === 'external-in') {
+            console.log("---------------tx.inMessage==>",JSON.stringify(tx.inMessage,bigIntReplacer));
+            let inMessageHash:string = "";
             const inMessageCell = beginCell().store(storeMessage(inMessage)).endCell();
             inMessageHash = inMessageCell.hash().toString('hex');
             //   console.log("inMessageHash", inMessageHash, msgHash);
@@ -235,11 +252,16 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address,  msgHas
             }
         }
 
-        txOpts.hash = transactions[transactions.length - 1].hash().toString('base64')
-        txOpts.to_lt =  transactions[transactions.length - 1].lt.toString()
+        if(transactions.length > 0){
+            //txOpts.hash = transactions[transactions.length - 1].hash().toString('base64')
+            txOpts.to_lt =  transactions[transactions.length - 1].lt.toString()
+        }
+        await sleep(3000);
     }
 }
 
+
+/*
 
 async function monitorTransactionbyHash(client, addr, txhash, txlt) {
     let allTransactions = []
@@ -355,6 +377,5 @@ async function findTransactionbyMsgHash(client:TonClient, from:Address,  msgHash
         txOpts.lt =  transactions[transactions.length - 1].lt.toString()
     }
 }
-module.exports = {
-    monitorTransactionbyExternalIn,monitorTransactionbyHash
-}
+
+*/
