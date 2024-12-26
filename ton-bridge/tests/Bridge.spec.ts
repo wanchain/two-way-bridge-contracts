@@ -100,7 +100,7 @@ describe('Bridge', () => {
         bob = await blockchain.treasury('bob');
         defaultContent = beginCell().endCell();
         jettonMinter = blockchain.openContract(
-            await JettonMinter.createFromConfig(
+            JettonMinter.createFromConfig(
                 {
                     admin: deployer_jetton.address,
                     content: defaultContent,
@@ -124,7 +124,7 @@ describe('Bridge', () => {
         // 3. deploy wrapped Token dog
         defaultContent_dog = beginCell().storeUint(1, 1).endCell();
         jettonMinter_dog = blockchain.openContract(
-            await JettonMinter.createFromConfig(
+            JettonMinter.createFromConfig(
                 {
                     admin: deployer_jetton.address,
                     //admin: bridge.address,

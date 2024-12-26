@@ -18,7 +18,7 @@ import {HexStringToBuffer,BufferrToHexString} from "./utils/utils";
 import * as fs from "fs";
 import { compile } from '@ton/blueprint';
 import * as opcodes from "./opcodes"
-import {OP_CROSS_SmgRelease} from "./opcodes";
+import {OP_CROSS_SmgRelease, OP_FEE_SetSmgFeeProxy} from "./opcodes";
 import {codeTable} from "./code/encode-decode";
 import {BIP44_CHAINID,TON_COIN_ACCOUT,TON_COIN_ACCOUNT_STR,WK_CHIANID} from "./const/const-value";
 
@@ -603,7 +603,7 @@ export class Bridge implements Contract {
         if (!isValid){
             await Promise.reject("in valid address")
         }
-        await provider.internal(via, {
+        return await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
@@ -613,7 +613,29 @@ export class Bridge implements Contract {
                 .endCell(),
         });
     }
-
+    async sendSetFeeProxy(
+        provider: ContractProvider,
+        via:Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            feeProxy:Address,
+        }
+    ) {
+        let isValid = Address.isAddress(opts.feeProxy)
+        if (!isValid){
+            await Promise.reject("in valid address")
+        }
+        return await provider.internal(via, {
+            value: opts.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(opcodes.OP_FEE_SetSmgFeeProxy, 32)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeAddress(opts.feeProxy)
+                .endCell(),
+        });
+    }
     async getFirstAdmin(provider: ContractProvider,){
         const { stack } = await provider.get("get_first_crossAdmin", []);
         let s = stack.readBuffer();
