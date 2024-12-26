@@ -14,7 +14,7 @@
 
 () smgRelease_ton(int _queryId, int _uniqId, int _smgId, int _token_pair_id, int _release_value,
 int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s,
-slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
+ slice _jetton_wallet_bridge_addr) impure {
     ~strdump("smgRelease_ton.....");
     {--
     1. bridge send normal internal message to _user_account
@@ -34,7 +34,7 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
 
 () smgRelease_org_jetton(int _queryId, int _uniqId, int _smgId, int _token_pair_id, int _release_value,
 int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s,
-slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
+ slice _jetton_wallet_bridge_addr) impure {
     {--
     1. bridge send inter_transfer to JW_bridge address
     -}
@@ -63,7 +63,7 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
 
 () smgRelease_wrapped_jetton(int _queryId, int _uniqId, int _smgId, int _token_pair_id, int _release_value,
 int _fee, slice _token_account, slice _user_account, int _r, int _p, int _s,
-slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
+ slice _jetton_wallet_bridge_addr) impure {
     {--
     1. bridge send mint message to _token_account
     -}
@@ -230,10 +230,8 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
 
         slice part3 = in_msg_body~load_ref().begin_parse();
         (
-            slice _jetton_admin_addr,
             slice _jetton_wallet_bridge_addr) =
         (
-            part3~load_msg_addr(),
             part3~load_msg_addr());
         part3.end_parse();
 
@@ -282,7 +280,7 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             ~strdump("before entering smgRelease_ton...");
             ;; coin
             ;; user lock has not fee parameter, but user_burn has this parameter
-            smgRelease_ton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account_from_tk, _user_account, _e, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+            smgRelease_ton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, _token_account_from_tk, _user_account, _e, _p, _s,  _jetton_wallet_bridge_addr);
         } else {
 
             {- _token_account_from_tk~load_bits(8);
@@ -296,13 +294,12 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             ;; todo get jetton_admin_addr from jetton_admin
             (_,hash) = parse_std_addr(my_address());
             slice my_address_hash_slice = int_to_slice(hash,256);
-            ;;if (equal_slices(_jetton_admin_addr, my_address())) {
             if (equal_slices(_jetton_admin_addr, my_address_hash_slice)) {
                 ~strdump("before entering smgRelease_wrapped_jetton...");
-                smgRelease_wrapped_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _e, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+                smgRelease_wrapped_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _e, _p, _s,  _jetton_wallet_bridge_addr);
             } else {
                 ~strdump("before entering smgRelease_org_jetton...");
-                smgRelease_org_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _e, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
+                smgRelease_org_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _e, _p, _s,  _jetton_wallet_bridge_addr);
             }
         }
         return (new_oracle);

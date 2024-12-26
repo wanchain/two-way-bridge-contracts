@@ -23,7 +23,6 @@ export const codeTable = {
                 .endCell();
 
             let part4Cell = beginCell()
-                .storeAddress(opts.jettonAdminAddr)
                 .storeAddress(opts.bridgeJettonWalletAddr)
                 .endCell();
 
@@ -60,7 +59,6 @@ export const codeTable = {
             part3Slice.endParse();
 
             let part4Slice = slice.loadRef().beginParse();
-            let jettonAdminAddr = part4Slice.loadAddress();
             let bridgeJettonWalletAddr = part4Slice.loadAddress();
             part4Slice.endParse();
 
@@ -77,7 +75,6 @@ export const codeTable = {
                 e,
                 p,
                 s,
-                jettonAdminAddr,
                 bridgeJettonWalletAddr,
             };
         },

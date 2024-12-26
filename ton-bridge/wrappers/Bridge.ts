@@ -362,7 +362,6 @@ export class Bridge implements Contract {
             releaseValue:bigint,
             fee:bigint,
             userAccount:Address,
-            jettonAdminAddr:Address,        // used to check whether wrapped token or original token
             bridgeJettonWalletAddr: Address, // used to send wrapped token
             e:bigint,
             p:bigint,

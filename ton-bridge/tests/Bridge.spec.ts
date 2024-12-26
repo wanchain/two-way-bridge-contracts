@@ -526,9 +526,7 @@ describe('Bridge', () => {
             tokenPairID,
             releaseValue,
             fee,
-
             userAccount: bob.address,
-            jettonAdminAddr: alice.address,  //todo  ZERO_ACCOUNT
             bridgeJettonWalletAddr: alice.address, //todo ZERO_ACCOUNT
             e,
             p,
@@ -599,7 +597,6 @@ describe('Bridge', () => {
             releaseValue,
             fee,
             userAccount: bob.address,
-            jettonAdminAddr: deployer_jetton.address,
             bridgeJettonWalletAddr: bridgeJettonWallet.address,
             e,
             p,
@@ -674,7 +671,6 @@ describe('Bridge', () => {
             releaseValue,
             fee,
             userAccount: bob.address,
-            jettonAdminAddr: bridge.address, // admin is bridge address, wrapped token
             bridgeJettonWalletAddr: bridgeJettonWalletDog.address,
             e,
             p,
