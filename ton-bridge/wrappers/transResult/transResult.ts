@@ -120,6 +120,8 @@ async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, p
     const inMessageCell = beginCell().store(storeMessage( tran.inMessage)).endCell();
     let tranInMsgHash = inMessageCell.hash().toString('hex');
 
+    let tranInMsgBodyCellHash = tran.inMessage.body.hash().toString('hex');
+
     let upperAddress = tran.inMessage.info.src as Address;
     let to_lt:string = "0";
     let maxTrans = 1000;
@@ -141,7 +143,8 @@ async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, p
             for(let outMsgKey of outMessages.keys()){
                 let outMsg = outMessages.get(outMsgKey);
                 let outMsgHash = beginCell().store(storeMessage(outMsg)).endCell().hash().toString('hex');
-                if (outMsg.info.dest == scAddr && outMsgHash == tranInMsgHash){
+                let outMsgBodyHash = outMsg.body.hash().toString('hex');
+                if (outMsg.info.dest == scAddr && (outMsgHash == tranInMsgHash || outMsgBodyHash == tranInMsgBodyCellHash)){
                     let stepInfoTemp :TranStepInfo = {
                         addr:upperAddress as Address,
                         txHash:tx.hash().toString('base64'),
@@ -157,6 +160,7 @@ async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, p
             if (foundInOutMsgs){
                 console.log("found upper tx",tx.hash().toString('base64'));
                 await getUpperSteps(client,upperAddress,tx,path);
+                break; // find the upper tx
             }
         }
 
@@ -207,6 +211,9 @@ async function getTranPathInfoByPivotTran(client:TonClient,scAddr:Address,pivotT
     await getLowerSteps(client,scAddr,pivotTran,beforePivotTranPathInfo);
     await getUpperSteps(client,scAddr,pivotTran,afterPivotTranPathInfo);
 
+    console.log("[pivoltTranStepInfo]====>",[pivoltTranStepInfo]);
+    console.log("[beforePivotTranPathInfo]====>",beforePivotTranPathInfo);
+    console.log("[afterPivotTranPathInfo]====>",afterPivotTranPathInfo);
     return allTranPathInfo.concat(beforePivotTranPathInfo,[pivoltTranStepInfo],afterPivotTranPathInfo);
 }
 
