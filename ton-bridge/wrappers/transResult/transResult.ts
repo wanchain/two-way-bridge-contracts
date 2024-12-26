@@ -27,6 +27,39 @@ export interface TranResult {
 
 export type TranPathInfo = TranStepInfo[]
 
+// example of result
+/*
+TranResult=> {
+        addr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
+        msgInHash: '8a2fdd9e5508f06c94ff55f0d367fdaaca82207c52ed03008680319b2424bfed',
+        path: [
+        {
+            addr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
+            txHash: '3bc0e57c110eab0a0ad1d282df89a99f3c2a3aa71fcd27d2ff897bc45febd3bb',
+            gasUsed: 2577471n,
+            status: true,
+            lt: '29498261000001'
+        },
+        {
+            addr: EQBsdoNazbwI9ybbsgufhRocWBPm7emo7cZQxojqzNuvNRcC,
+            txHash: '9e4f815609fa16591648b08d186cda0d81175e3a45ee17a91754f83fe013136d',
+            gasUsed: 4319392n,
+            status: true,
+            lt: '29498264000001'
+        },
+        {
+            addr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
+            txHash: '78b3031ffed07ec7b147f24db7a80e6fda5338d1d9fdbf5e9a845dbcf12de67f',
+            gasUsed: 396405n,
+            status: true,
+            lt: '29498268000001'
+        }
+    ],
+        success: true,
+        originAddr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
+        gasUsed: 7293268n
+}
+*/
 export async function getTranResultByMsgHash(client:TonClient,scAddr:Address,msgBodyCellHash:string,msgInHash:string):Promise<TranResult>{
 
     let path = await getTranPathInfoByMsgHash(client,scAddr,msgBodyCellHash,msgInHash);
