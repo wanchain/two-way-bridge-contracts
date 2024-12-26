@@ -13,6 +13,7 @@ export interface TranStepInfo {
     txHash: string;
     gasUsed: bigint;
     status: boolean;
+    lt:string;
 }
 
 export interface TranResult {
@@ -147,9 +148,10 @@ async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, p
                 if (outMsg.info.dest == scAddr && (outMsgHash == tranInMsgHash || outMsgBodyHash == tranInMsgBodyCellHash)){
                     let stepInfoTemp :TranStepInfo = {
                         addr:upperAddress as Address,
-                        txHash:tx.hash().toString('base64'),
+                        txHash:tx.hash().toString('hex'),
                         gasUsed:tx.totalFees.coins,
                         status:await isTranSuccess(tx),
+                        lt:tx.lt.toString(),
                     }
                     path.unshift(stepInfoTemp);
                     foundInOutMsgs = true;
@@ -186,9 +188,10 @@ async function getLowerSteps(client:TonClient,scAddr:Address,tran:Transaction, p
 
         let stepInfoTemp :TranStepInfo = {
             addr:lowerAddr as Address,
-            txHash:lowerTx.hash().toString('base64'),
+            txHash:lowerTx.hash().toString('hex'),
             gasUsed:lowerTx.totalFees.coins,
             status:await isTranSuccess(lowerTx),
+            lt:lowerTx.lt.toString(),
         }
         path.push(stepInfoTemp);
 
@@ -203,13 +206,14 @@ async function getTranPathInfoByPivotTran(client:TonClient,scAddr:Address,pivotT
 
     let pivoltTranStepInfo: TranStepInfo = {
         addr: scAddr,
-        txHash: pivotTran.hash().toString('base64'),
+        txHash: pivotTran.hash().toString('hex'),
         gasUsed: pivotTran.totalFees.coins,
         status: await isTranSuccess(pivotTran),
+        lt:pivotTran.lt.toString(),
     }
 
-    await getLowerSteps(client,scAddr,pivotTran,beforePivotTranPathInfo);
-    await getUpperSteps(client,scAddr,pivotTran,afterPivotTranPathInfo);
+    await getLowerSteps(client,scAddr,pivotTran,afterPivotTranPathInfo);   // find children tx
+    await getUpperSteps(client,scAddr,pivotTran,beforePivotTranPathInfo);  // find parent tx
 
     console.log("[pivoltTranStepInfo]====>",[pivoltTranStepInfo]);
     console.log("[beforePivotTranPathInfo]====>",beforePivotTranPathInfo);
