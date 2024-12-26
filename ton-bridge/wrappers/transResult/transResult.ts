@@ -26,9 +26,9 @@ export interface TranResult {
 
 export type TranPathInfo = TranStepInfo[]
 
-export async function getTranResultByMsgHash(client:TonClient,scAddr:Address,msgInHash:string):Promise<TranResult>{
+export async function getTranResultByMsgHash(client:TonClient,scAddr:Address,msgBodyCellHash:string,msgInHash:string):Promise<TranResult>{
 
-    let path = await getTranPathInfoByMsgHash(client,scAddr,msgInHash);
+    let path = await getTranPathInfoByMsgHash(client,scAddr,msgBodyCellHash,msgInHash);
     let success = await isTranPathSuccess(path);
     return {
         addr: scAddr,
@@ -68,8 +68,8 @@ return
 ]
  */
 
-async function getTranPathInfoByMsgHash(client: TonClient, scAddr: Address, msgInHash: string): Promise<TranPathInfo> {
-    let pivotTran = await getTranByMsgHash(client, scAddr, msgInHash);
+async function getTranPathInfoByMsgHash(client: TonClient, scAddr: Address, msgBodyCellHash:string, msgInHash: string): Promise<TranPathInfo> {
+    let pivotTran = await getTranByMsgHash(client, scAddr, msgBodyCellHash,msgInHash);
     let path = await getTranPathInfoByPivotTran(client, scAddr, pivotTran);
     return path;
 }
@@ -177,7 +177,7 @@ async function getLowerSteps(client:TonClient,scAddr:Address,tran:Transaction, p
     for(let outMsgKey of outMessages.keys()){
         let outMsg = outMessages.get(outMsgKey);
         let lowerAddr = outMsg.info.dest as Address;
-        let lowerAddrMsgInHash = outMsg.body.hash().toString('base64');
+        let lowerAddrMsgInHash = outMsg.body.hash().toString('hex');
         let lowerTx = await getTranByMsgHash(client,lowerAddr,lowerAddrMsgInHash);
 
         let stepInfoTemp :TranStepInfo = {
@@ -210,7 +210,7 @@ async function getTranPathInfoByPivotTran(client:TonClient,scAddr:Address,pivotT
     return allTranPathInfo.concat(beforePivotTranPathInfo,[pivoltTranStepInfo],afterPivotTranPathInfo);
 }
 
-export async function getTranByMsgHash(client:TonClient, scAddr:Address,  msgHash:string):Promise<Transaction> {
+export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgBodyCellHash:string, msgHash:string=''):Promise<Transaction> {
     let maxRetry = 5;
 
     let txOpts: {
@@ -225,7 +225,7 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address,  msgHas
     }
 
     while(maxRetry-- > 0){
-        console.log("call findTransactionbyMsgHash, para:", scAddr, txOpts);
+        console.log("call getTranByMsgHash, para:", scAddr, txOpts);
         let transactions:Transaction[] = [];
         try{
             transactions = await client.getTransactions(scAddr, txOpts);
@@ -242,13 +242,24 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address,  msgHas
             console.log("tx hash is:",i, tx.lt, transactionHash)
             const inMessage = tx.inMessage;
             console.log("---------------tx.inMessage==>",JSON.stringify(tx.inMessage,bigIntReplacer));
+            console.log("---------------tx.inMessage==>",tx.inMessage);
             let inMessageHash:string = "";
+            let inMessageBodyCellHash:string = "";
+
             const inMessageCell = beginCell().store(storeMessage(inMessage)).endCell();
             inMessageHash = inMessageCell.hash().toString('hex');
-            //   console.log("inMessageHash", inMessageHash, msgHash);
+            inMessageBodyCellHash = inMessage.body.hash().toString('hex');
+
+            console.log("inMessageCell.hash",inMessageHash);
+            console.log("inMessageBody.hash",inMessage.body.hash().toString('hex'));
             if(inMessageHash == msgHash) {
-                console.log("found:", tx.lt, tx.hash().toString('hex'))
+                console.log("********************************** external-in message found:", tx.lt, tx.hash().toString('hex'))
                 return transactions[i];
+            }else{
+                if(inMessageBodyCellHash == msgBodyCellHash) {
+                    console.log("********************************** internal-in message found:", tx.lt, tx.hash().toString('hex'))
+                    return transactions[i];
+                }
             }
         }
 

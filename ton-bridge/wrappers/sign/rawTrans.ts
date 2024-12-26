@@ -4,14 +4,24 @@ const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
 }
-import {Address, beginCell, Builder, Cell, MessageRelaxed, storeMessage, Message,storeMessageRelaxed} from "@ton/core";
+import {
+    Address,
+    beginCell,
+    Builder,
+    Cell,
+    MessageRelaxed,
+    storeMessage,
+    Message,
+    storeMessageRelaxed,
+    external
+} from "@ton/core";
 import {Maybe} from "@ton/ton/dist/utils/maybe";
 import {sign} from "@ton/crypto";
 import {getClient, TonClientConfig} from "../client/client";
 import {internal} from "@ton/core";
 import {StateInit} from "@ton/core";
 
-export async function buildInternalMessageRelaxed(from:Address,src: {
+export async function buildInternalMessage(from:Address,src: {
     to: Address | string,
     value: bigint | string,
     bounce?: Maybe<boolean>,
@@ -21,6 +31,14 @@ export async function buildInternalMessageRelaxed(from:Address,src: {
     let msgRelaxed = await internal(src);
     msgRelaxed.info.src = from;
     return msgRelaxed as unknown as Message;
+}
+
+export async function buildExternalMessage(src: {
+    to: Address | string,
+    init?: Maybe<StateInit>,
+    body?: Maybe<Cell>
+}){
+    return await external(src);
 }
 
 export async function buildSignData(args: {
@@ -69,11 +87,32 @@ export async function buildRawTransaction(signature:Buffer, rawDataBuilder:Build
         .endCell();
 }
 
+/*
+external_message = {
+				to: <wallet_sc_address>,
+                init?: neededInit,
+                body: rawTransactionCell
+}
+ */
 export async function sendRawTransaction(senderAddress:Address,rawTrans:Cell){
     let client = await getClient(config);
     let provider =  client.provider(senderAddress)
-    return await provider.external(rawTrans)
+    await provider.external(rawTrans)
+
+
+    let externalInMessage = await buildExternalMessage({
+        to:senderAddress,
+        body:rawTrans,
+    })
+    return {
+        scAddr:senderAddress,
+        msgBodyCellHash:rawTrans.hash().toString('hex'),
+        externalInMessageHash:beginCell().store(storeMessage(externalInMessage)).endCell().hash().toString('hex'),
+    }
 }
+
+
+
 
 export function getMsgHash(msgs:Message[]){
     let ret = [];

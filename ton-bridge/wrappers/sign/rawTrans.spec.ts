@@ -4,7 +4,13 @@ const config:TonClientConfig =  {
 }
 
 import {Cell, toNano} from "@ton/core";
-import {buildInternalMessageRelaxed,buildSignData,signData,buildRawTransaction,sendRawTransaction} from "./rawTrans";
+import {
+    buildSignData,
+    signData,
+    buildRawTransaction,
+    sendRawTransaction,
+    buildInternalMessage
+} from "./rawTrans";
 import {OP_FEE_SetTokenPairFee, OP_TOKENPAIR_Upsert} from "../opcodes"
 import {BIP44_CHAINID, TON_COIN_ACCOUT} from "../const/const-value";
 import {codeTable} from "../code/encode-decode";
@@ -59,7 +65,7 @@ describe('decode', () => {
         let bodyCell = codeTable[OP_TOKENPAIR_Upsert]["enCode"](opt);
 
         // build message
-        let message = await buildInternalMessageRelaxed(wallet.address,{
+        let message = await buildInternalMessage(wallet.address,{
             to:scAddresses.bridgeAddress,
             value:toNano('0.005'),
             bounce:true,
@@ -80,6 +86,8 @@ describe('decode', () => {
             console.log("msgHash is ",msgHash);
         }
 
+        console.log("hash of signData =>",dataNeedSign.hash.toString('hex'));
+
         // sign data
         let signature = sign(dataNeedSign.hash,privateKey);
 
@@ -89,13 +97,16 @@ describe('decode', () => {
         // send raw trans
         console.log("wallet.address=>",wallet.address);
         let ret = await sendRawTransaction(wallet.address,rawTrans);
-        console.log(ret);
+        console.log("ret of sendRawTransaction ==>",ret);
 
         await sleep(10000);
-        for(let msgHash of dataNeedSign.msgHashs){
-            let ret1 = await getTranResultByMsgHash(client,scAddresses.bridgeAddress,msgHash);
-            console.log(ret1);
-        }
+        // for(let msgHash of dataNeedSign.msgHashs){
+        //     let ret1 = await getTranResultByMsgHash(client,scAddresses.bridgeAddress,msgHash);
+        //     console.log(ret1);
+        // }
+
+        let ret1 = await getTranResultByMsgHash(client,ret.scAddr,ret.msgBodyCellHash, ret.externalInMessageHash);
+        console.log("*******************TranResult=>",ret1);
 
     },500000);
 
