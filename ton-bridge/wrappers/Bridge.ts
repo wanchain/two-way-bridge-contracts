@@ -185,6 +185,7 @@ export class Bridge implements Contract {
             fromAccount:string,
             toChainID:number,
             toAccount:string,
+            jettonAdminAddr:string,
         }
     ) {
 
@@ -443,7 +444,8 @@ export class Bridge implements Contract {
         let fromAccount = result.stack.readBuffer();
         let toChainID = result.stack.readNumber();
         let toAccount = result.stack.readBuffer();
-        let pair =  {fromChainID, toChainID, fromAccount:"", toAccount:""}
+        let jettonAdminAddr = result.stack.readBuffer();
+        let pair =  {fromChainID, toChainID, fromAccount:"", toAccount:"", jettonAdminAddr:""}
         if(pair.fromChainID == 0 || pair.toChainID == 0) {
             return pair
         }
@@ -456,6 +458,7 @@ export class Bridge implements Contract {
             pair['toAccount'] = addr.toString()
             pair['fromAccount'] = "0x"+fromAccount.toString('hex')
         }
+        pair['jettonAdminAddr'] = (new Address(0, jettonAdminAddr)).toString()
         return pair
     }
 

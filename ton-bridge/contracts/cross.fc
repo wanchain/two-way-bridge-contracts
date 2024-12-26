@@ -163,7 +163,7 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             in_msg_body~load_msg_addr()
         );
 
-        (int _src_chainId, slice _from_account, int _dst_chainId, slice _dst_account) = tm_get_token_pair(token_manager, _token_pair_id);
+        (int _src_chainId, slice _from_account, int _dst_chainId, slice _dst_account, slice _jetton_admin_addr) = tm_get_token_pair(token_manager, _token_pair_id);
 
         slice _token_account = begin_cell().end_cell().begin_parse();
         if (_src_chainId == BIP44_CHAINID) {
@@ -256,7 +256,7 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
         }
 
         ;; todo check the fee
-        (int _src_chainId, slice _from_account, int _dst_chainId, slice _dst_account) = tm_get_token_pair(token_manager, _token_pair_id);
+        (int _src_chainId, slice _from_account, int _dst_chainId, slice _dst_account, slice _jetton_admin_addr) = tm_get_token_pair(token_manager, _token_pair_id);
 
         slice _token_account_from_tk = begin_cell().end_cell().begin_parse();
         if (_src_chainId == BIP44_CHAINID) {
@@ -294,7 +294,10 @@ slice _jetton_admin_addr, slice _jetton_wallet_bridge_addr) impure {
             slice token_account_int = get_serialized_address(WORKING_CHAINID, hash);
 
             ;; todo get jetton_admin_addr from jetton_admin
-            if (equal_slices(_jetton_admin_addr, my_address())) {
+            (_,hash) = parse_std_addr(my_address());
+            slice my_address_hash_slice = int_to_slice(hash,256);
+            ;;if (equal_slices(_jetton_admin_addr, my_address())) {
+            if (equal_slices(_jetton_admin_addr, my_address_hash_slice)) {
                 ~strdump("before entering smgRelease_wrapped_jetton...");
                 smgRelease_wrapped_jetton(query_id, _uniqId, _smgId, _token_pair_id, _release_value, _fee, token_account_int, _user_account, _e, _p, _s, _jetton_admin_addr, _jetton_wallet_bridge_addr);
             } else {

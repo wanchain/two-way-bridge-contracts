@@ -66,6 +66,7 @@ describe('Bridge', () => {
         let toChainID = BIP44_CHAINID;
         let fromAccount = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
         let toAccount = "EQB6Ipa85lD-LVxypTA3xQs2dmdcM_VeUUQexul6_TDOPu_d";
+        let jettonAdminAddr= "EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30";
 
         let firstTokenPair = await bridge.getFirstTokenPairID()
         console.log("firstTokenPair:", firstTokenPair);
@@ -78,7 +79,7 @@ describe('Bridge', () => {
 
         console.log("adminAddr",deployer.address.toRawString());
         let ret = await bridge.sendAddTokenPair(deployer.getSender(),{
-            tokenPairId, fromChainID,fromAccount,toChainID,toAccount,
+            tokenPairId, fromChainID,fromAccount,toChainID,toAccount,jettonAdminAddr,
             value: toNano('1'),
             queryID,
         });
@@ -98,6 +99,7 @@ describe('Bridge', () => {
         expect(retNew.toChainID).toBe(toChainID)
         expect(retNew.fromAccount).toBe(fromAccount)
         expect(retNew.toAccount).toBe(toAccount)
+        expect(retNew.jettonAdminAddr).toBe(jettonAdminAddr)
 
 
         ret = await bridge.sendRemoveTokenPair(deployer.getSender(),{

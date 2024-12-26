@@ -15,6 +15,7 @@
 
         bytes calldata fromAccount, slice
         bytes calldata toAccount    slice
+        bytes calldata jettonAdminAddr 256b
 -}
 
 ;; Constants
@@ -35,29 +36,30 @@ const int DICTIONARY_KEY_LEN = 32;
 
 
 ;; Helper functions for tokenPair struct
-(int, slice, int, slice) load_tokenPair(slice cs) inline {
+(int, slice, int, slice,slice) load_tokenPair(slice cs) inline {
     var fromChainID = cs~load_uint(32);
     var toChainID = cs~load_uint(32);
     var fromAccountLen = cs~load_uint(8);
     var fromAccount = cs~load_bits(8 * fromAccountLen);
     var toAccountLen = cs~load_uint(8);
     var toAccount = cs~load_bits(8 * toAccountLen);
-    return (fromChainID, fromAccount, toChainID, toAccount);
+    var jettonAdminAddr = cs~load_bits(256);
+    return (fromChainID, fromAccount, toChainID, toAccount,jettonAdminAddr);
 }
 
 
 ;; Get a tokenPair by ID
-(int, slice, int, slice) tm_get_token_pair(cell refcell, int id) method_id {
+(int, slice, int, slice,slice) tm_get_token_pair(cell refcell, int id) method_id {
     cell tokenPairs = tm_load_data(refcell);
     if (cell_null?(tokenPairs)) {
-        return (0, "", 0,"");
+        return (0, "", 0,"","");
     }
     var (tokenPair_slice, found?) = tokenPairs.udict_get?(DICTIONARY_KEY_LEN, id);
     if (found?) {
-        var (fromChainID, fromAccount, toChainID, toAccount) = load_tokenPair(tokenPair_slice);
-        return (fromChainID, fromAccount, toChainID, toAccount);
+        var (fromChainID, fromAccount, toChainID, toAccount, jettonAdminAddr) = load_tokenPair(tokenPair_slice);
+        return (fromChainID, fromAccount, toChainID, toAccount,jettonAdminAddr);
     } else {
-        return (0, "", 0,""); ;; Return default values if not found
+        return (0, "", 0,"",""); ;; Return default values if not found
     }
 }
 
@@ -105,6 +107,7 @@ const int DICTIONARY_KEY_LEN = 32;
         slice fromAccount = fromAccountSlice~load_bits(8 * fromAccountLen);
         slice toAccountSlice = in_msg_body~load_ref().begin_parse();
         slice toAccount = toAccountSlice~load_bits(8 * toAccountLen);
+        slice jettonAdminAddr = in_msg_body~load_bits(256);
 
         tokenPairs~udict_set_builder(DICTIONARY_KEY_LEN, id, 
             begin_cell().store_uint(fromChainID, 32)
@@ -113,6 +116,7 @@ const int DICTIONARY_KEY_LEN = 32;
             .store_slice(fromAccount)
             .store_uint(toAccountLen, 8)
             .store_slice(toAccount)
+            .store_slice(jettonAdminAddr)
         );
         return tm_generate_data(tokenPairs);
     }  ;; there  is no elseif 

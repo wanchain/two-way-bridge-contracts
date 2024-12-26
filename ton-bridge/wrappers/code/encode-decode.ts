@@ -206,6 +206,14 @@ export const codeTable = {
             } else {
                 throw ("Error chain ID.")
             }
+
+            let jettonAdminBuffer;
+            if (opts.jettonAdminAddr == "") {
+                jettonAdminBuffer = Buffer.from(TON_COIN_ACCOUT.slice(2), 'hex')
+            } else {
+                jettonAdminBuffer = Address.parseFriendly(opts.jettonAdminAddr).address.hash
+            }
+
             logger.info(formatUtil.format("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex')));
             return beginCell()
                 .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
@@ -217,6 +225,7 @@ export const codeTable = {
                 .storeUint(toBuffer.length, 8)
                 .storeRef(beginCell().storeBuffer(fromBuffer).endCell())
                 .storeRef(beginCell().storeBuffer(toBuffer).endCell())
+                .storeBuffer(jettonAdminBuffer)
                 .endCell()
         },
         "deCode": function (cell: Cell): any {

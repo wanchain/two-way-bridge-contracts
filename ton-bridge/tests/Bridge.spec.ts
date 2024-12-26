@@ -11,6 +11,7 @@ import { common } from '../wrappers/common';
 
 const schnorr = require('./tools-secp256k1.js');
 import { slimSndMsgResult} from "./transaction";
+import {getQueryID} from "../wrappers/utils/utils";
 
 function AccountToBig(addr: Address) {
     return BigInt("0x" + addr.hash.toString('hex'));
@@ -23,11 +24,11 @@ const gpkY = gpk.startsWith("0x") || gpk.startsWith("0X")? `0x${gpk.substring(66
 const smgId = "0x000000000000000000000000000000000000000000746573746e65745f303638";
 
 const wkDuring = 1000; // seconds
-
+let initJettonAdmin;
 let tokenInfo = {
-    tokenOrg:{tokenPairId:0x01,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
-    tokenWrapped:{tokenPairId:0x02,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
-    coin:{tokenPairId:0x03,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:''},
+    tokenOrg:{tokenPairId:0x01,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
+    tokenWrapped:{tokenPairId:0x02,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
+    coin:{tokenPairId:0x03,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
 }
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -102,7 +103,7 @@ describe('Bridge', () => {
         jettonMinter = blockchain.openContract(
             JettonMinter.createFromConfig(
                 {
-                    admin: deployer_jetton.address,
+                    admin: deployer_jetton.address,  // set admin  and deploy token in one step.
                     content: defaultContent,
                     wallet_code: jwallet_code,
                 },
@@ -120,6 +121,7 @@ describe('Bridge', () => {
             deploy: true,
         });
 
+        tokenInfo.tokenOrg.jettonAdminAddr = deployer_jetton.address.toString();
 
         // 3. deploy wrapped Token dog
         defaultContent_dog = beginCell().storeUint(1, 1).endCell();
@@ -146,6 +148,7 @@ describe('Bridge', () => {
             deploy: true,
         });
 
+        tokenInfo.tokenWrapped.jettonAdminAddr = deployer_jetton.address.toString();
         // 3.1 add token pair for token-org
 
         let tokenPairId = tokenInfo.tokenOrg.tokenPairId;
@@ -178,6 +181,7 @@ describe('Bridge', () => {
             fromAccount: srcTokenAcc,
             toChainID: dstChainId,
             toAccount: dstTokenAcc,
+            jettonAdminAddr:tokenInfo.tokenOrg.jettonAdminAddr,
         });
 
         console.log("ret", slimSndMsgResult(ret));
@@ -215,12 +219,13 @@ describe('Bridge', () => {
             fromAccount: srcTokenAcc2,
             toChainID: dstChainId2,
             toAccount: dstTokenAcc2,
+            jettonAdminAddr:tokenInfo.tokenWrapped.jettonAdminAddr,
         });
 
         console.log("ret2", slimSndMsgResult(ret2));
 
         let retNew2 = await bridge.getTokenPair(tokenPairId2);
-        console.log("retNew", retNew2);
+        console.log("retNew2", retNew2);
 
         expect(ret2.transactions).toHaveTransaction({
             from: deployer.address,
@@ -235,8 +240,10 @@ describe('Bridge', () => {
         let srcTokenAcc3 = tokenInfo.coin.srcTokenAcc;
 
         let dstTokenAcc3 = "";
-        console.log("(hex)dstTokenAcc3....", dstTokenAcc2)
+        console.log("(hex)dstTokenAcc3....", dstTokenAcc3)
         tokenInfo.coin.dstTokenAcc = "";
+
+        tokenInfo.coin.jettonAdminAddr = "";
 
         let retOld3 = await bridge.getTokenPair(tokenPairId3);
         console.log("retOld2", retOld3);
@@ -248,6 +255,7 @@ describe('Bridge', () => {
             fromAccount: srcTokenAcc3,
             toChainID: dstChainId3,
             toAccount: dstTokenAcc3,
+            jettonAdminAddr:tokenInfo.coin.jettonAdminAddr,
         });
 
         console.log("ret3", slimSndMsgResult(ret3));
@@ -344,6 +352,42 @@ describe('Bridge', () => {
         let newAdmin = await jettonMinter_dog.getAdminAddress()
         expect(true).toEqual(Address.isAddress(newAdmin));
         expect(true).toEqual(bridge.address.equals(newAdmin));
+    });
+
+    it('should update tokenpair success', async () => {
+
+        // 3.2 add token pair for token-wrapped
+        let queryID = await getQueryID();
+        let tokenPairId2 = tokenInfo.tokenWrapped.tokenPairId;
+        let srcChainId2 = tokenInfo.tokenWrapped.srcChainId;
+        let dstChainId2 = tokenInfo.tokenWrapped.dstChainId;
+        let srcTokenAcc2 = tokenInfo.tokenWrapped.srcTokenAcc;
+
+        let dstTokenAcc2 = jettonMinter_dog.address.toString()
+
+        let retOld2 = await bridge.getTokenPair(tokenPairId2);
+        console.log("retOld2", retOld2);
+        const ret2 = await bridge.sendAddTokenPair(deployer.getSender(), {
+            value: toNano('1000'),
+            queryID,
+            tokenPairId: tokenPairId2,
+            fromChainID: srcChainId2,
+            fromAccount: srcTokenAcc2,
+            toChainID: dstChainId2,
+            toAccount: dstTokenAcc2,
+            jettonAdminAddr:bridge.address.toString(),
+        });
+
+        console.log("ret2", slimSndMsgResult(ret2));
+
+        let retNew2 = await bridge.getTokenPair(tokenPairId2);
+        console.log("retNew2", retNew2);
+
+        expect(ret2.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: bridge.address,
+            success: true,
+        });
     });
 
     it('[userLock original token] should userLock success', async () => {
