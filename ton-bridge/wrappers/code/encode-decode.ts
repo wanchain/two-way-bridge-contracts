@@ -1,4 +1,9 @@
-import {OP_CROSS_SmgRelease, OP_FEE_SetSmgFeeProxy} from "../opcodes";
+import {
+    OP_CROSS_SmgRelease,
+    OP_FEE_SetSmgFeeProxy,
+    OP_GROUPAPPROVE_Execute,
+    OP_GROUPAPPROVE_Proposol_SetSmgFeeProxy
+} from "../opcodes";
 import {Address, beginCell, Cell, SendMode} from "@ton/core";
 import * as opcodes from "../opcodes";
 import {BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR, WK_CHIANID} from "../const/const-value";
@@ -116,6 +121,46 @@ export const codeTable = {
                 .storeUint(opts.queryID ?? 0, 64)
                 .storeAddress(opts.feeProxy)
                 .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Proposol_SetSmgFeeProxy]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_SetSmgFeeProxy"));
+            let msg = beginCell()
+                .storeUint(opcodes.OP_FEE_SetSmgFeeProxy, 32) // op (op #1 = increment)
+                .storeAddress(opts.feeProxy)
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Execute]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Execute"));
+
+            let proof = beginCell()
+                .storeUint(opts.e, 256)
+                .storeUint(opts.p, 256)
+                .storeUint(opts.s, 256)
+                .endCell();
+            return beginCell()
+                    .storeUint(opcodes.OP_GROUPAPPROVE_Execute, 32)
+                    .storeUint(opts.queryID ?? 0, 64)
+                    .storeUint(opts.smgId, 256)
+                    .storeUint(opts.taskId,64)
+                    .storeRef(proof)
+                    .endCell()
         },
         "deCode": function (cell: Cell): any {
             return 0;

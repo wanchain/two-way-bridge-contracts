@@ -38,4 +38,7 @@ export const OP_GROUPAPPROVE_Execute            = 0xa0000002;
 export const OP_GROUPAPPROVE_Executed_CB            = 0xa0000003;
 export const OP_GROUPAPPROVE_TranferFoundation  = 0xa0000004;
 export const OP_GROUPAPPROVE_Execute_WithGPK    = 0xa0000005;
+export const OP_GROUPAPPROVE_Proposol_SetSmgFeeProxy =0xa0000010
+
+
 export const OP_FETCH_GPK                         = 0xb0000001;

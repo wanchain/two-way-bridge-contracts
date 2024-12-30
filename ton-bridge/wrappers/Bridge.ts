@@ -16,7 +16,6 @@ import {JettonMinter} from "./JettonMinter";
 import {JettonWallet} from "./JettonWallet";
 import {HexStringToBuffer,BufferrToHexString} from "./utils/utils";
 import * as fs from "fs";
-import { compile } from '@ton/blueprint';
 import * as opcodes from "./opcodes"
 import {OP_CROSS_SmgRelease, OP_FEE_SetSmgFeeProxy} from "./opcodes";
 import {codeTable} from "./code/encode-decode";
@@ -76,15 +75,6 @@ export class Bridge implements Contract {
 
     static createFromAddress(address: Address) {
         return new Bridge(address);
-    }
-
-    static async createForDeploy(config: BridgeConfig) {
-        const workchain = 0; // deploy to workchain 0
-        const code = await compile('Bridge');
-        const data = bridgeConfigToCell(config);
-        const init = { code, data };
-        let SC = new Bridge(contractAddress(workchain, init), init);
-        return SC
     }
 
     static createFromConfig(config: BridgeConfig, code: Cell, workchain = 0) {

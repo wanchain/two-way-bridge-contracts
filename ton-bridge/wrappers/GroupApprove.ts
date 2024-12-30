@@ -3,7 +3,6 @@ import * as opcodes from  "./opcodes";
 import { HttpApi } from '@ton/ton';
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import internal from 'stream';
-import { compile } from '@ton/blueprint';
 
 import {BIP44_CHAINID} from './const/const-value';
 import {codeTable} from "./code/encode-decode";
@@ -42,14 +41,7 @@ export class GroupApprove implements Contract {
         const init = { code, data };
         return new GroupApprove(contractAddress(0, init), init);
     }
-    static async createForDeploy(config: GroupApproveConfig) {
-        const workchain = 0; // deploy to workchain 0
-        const code = await compile('GroupApprove');
-        const data = GroupApproveConfigToCell(config);
-        const init = { code, data };
-        let SC = new GroupApprove(contractAddress(workchain, init), init);
-        return SC
-    }
+
 
     async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
         await provider.internal(via, {
@@ -310,19 +302,9 @@ export class GroupApprove implements Contract {
             feeProxy: Address,
         }
     ) {
-        let msg = beginCell()
-            .storeUint(opcodes.OP_FEE_SetSmgFeeProxy, 32) // op (op #1 = increment)
-            .storeAddress(opts.feeProxy)
-            .endCell()
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)                
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_SetSmgFeeProxy].enCode(opts)
         });
     }        
     async sendUpgradeSC(provider: ContractProvider, sender: Sender,
