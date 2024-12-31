@@ -19,9 +19,10 @@ export async function run() {
     let mnemonic = process.env.WALLET_MNEMONIC?  process.env.WALLET_MNEMONIC : ""
     const key = await mnemonicToWalletKey(mnemonic.split(" "));
     const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
-    const endpoint = await getHttpEndpoint({ network: "testnet" });
-    // const endpoint = 'https://testnet.toncenter.com/api/v2/jsonRPC'
-    const client = new TonClient({ endpoint, timeout:60000 });
+    // const endpoint = await getHttpEndpoint({ network: "testnet"});
+    const endpoint = 'https://testnet.toncenter.com/api/v2/jsonRPC'
+    const client = new TonClient({ endpoint, timeout:60000,
+        apiKey: 'b70dc1b6d3c1b95acfe5c04c6f0489a7c4f407fd2218cd4a763df295711f2e2e' });
     const walletContract = client.open(wallet);
     const walletSender = walletContract.sender(key.secretKey);
 
@@ -33,29 +34,35 @@ export async function run() {
     const gpkX = "0xcb54bc900646fe8de5c8db04e4120e38cb61b3e000ae37e4ecdaf71b777f7ec7"
     const gpkY = "0x1f81f87d21eb46e372105a3d123af9a94e0760f9c13738b8ca1abf248a9104f2"
     const smgId = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-    let startTime = Math.floor(Date.now()/1000)
-    let endTime = Math.floor(Date.now()/1000) + 3600*24*300
-    let ret = await bridge.sendSetStoremanGroupConfig(walletSender,{
+    let cur = new Date("2024-12-30 00:00:00")
+    let startTime = Math.floor(cur.getTime()/1000)
+    let endTime = Math.floor(cur.getTime()/1000) + 3600*24*365
+    let ret
+    ret = await bridge.sendSetStoremanGroupConfig(walletSender,{
         id: BigInt(smgId),
         gpkX:BigInt(gpkX), gpkY:BigInt(gpkY),
         startTime,
         endTime,
-        value: toNano('0.05'),
+        value: toNano('0.051'),
         queryID: 1,
     });
-    await sleep(1000);
+    console.log("ret:", ret)
+    await sleep(12000);
     ret = await bridge.sendSetStoremanGroupConfigCommit(walletSender,{
         id: BigInt(smgId),
         gpkX:BigInt(gpkX), gpkY:BigInt(gpkY),
         startTime,
         endTime,
-        value: toNano('0.05'),
+        value: toNano('0.061'),
         queryID: 1,
     });
     await sleep(1000);
-    let smgInfo = await bridge.getStoremanGroupConfigCommited(BigInt(smgId))
-    console.log("smgInfo", smgInfo)
-
+    let smgInfo = await bridge.getStoremanGroupConfig(BigInt(smgId))
+    console.log("smgInfo1", smgInfo)
+    let get_first_smg_id_Commited = await bridge.getFirstStoremanGroupIDCommited();
+    console.log("get_first_smg_id_Commited:",get_first_smg_id_Commited);
+    let smgInfo2 = await bridge.getStoremanGroupConfigCommited(BigInt(smgId))
+    console.log("smgInfo2", smgInfo2)
 
     // 2. add tokenPair to bridge
 

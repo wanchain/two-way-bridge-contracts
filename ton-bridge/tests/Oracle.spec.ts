@@ -123,7 +123,7 @@ describe('Oracle', () => {
 
     });
 
-    it('add first smg commit, with sleep, should success', async () => {
+    it.only('add first smg commit, with sleep, should success', async () => {
         let user1 = await blockchain.treasury('user1');
         await bridge.sendSetStoremanGroupConfig(user1.getSender(),{
             id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
@@ -153,6 +153,10 @@ describe('Oracle', () => {
         console.log("get_first_smg_id_Commited:",get_first_smg_id_Commited);
         expect(get_first_smg_id_Commited).toEqual(BigInt(smgID1));
 
+        let smg = await bridge.getStoremanGroupConfig(first_smg_id)
+        console.log("smg:",smg)
+        let smgc = await bridge.getStoremanGroupConfigCommited(first_smg_id)
+        console.log("smgc:",smgc)
     });
 
 
@@ -188,7 +192,7 @@ describe('Oracle', () => {
 
     });
 
-    it.only('add second smg commited, remove', async () => {
+    it('add second smg commited, remove', async () => {
         let user1 = await blockchain.treasury('user1');
         let txRet = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
             id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 

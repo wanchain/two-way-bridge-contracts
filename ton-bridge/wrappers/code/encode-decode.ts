@@ -145,6 +145,219 @@ export const codeTable = {
             return 0;
         }
     },
+    [opcodes.OP_GROUPAPPROVE_Proposol_AddCrossAdmin]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_AddCrossAdmin"));
+            let msg = beginCell()
+                .storeUint(opcodes.OP_FEE_AddCrossAdmin, 32) // op (op #1 = increment)
+                .storeAddress(opts.admin)
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Proposol_DelCrossAdmin]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_AddCrossAdmin"));
+            let msg = beginCell()
+                .storeUint(opcodes.OP_FEE_DelCrossAdmin, 32) // op (op #1 = increment)
+                .storeAddress(opts.admin)
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Proposol_TransferOwner]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_AddCrossAdmin"));
+            let msg = beginCell()
+                .storeUint(opcodes.OP_COMMON_TransferOwner, 32) // op (op #1 = increment)
+                .storeAddress(opts.owner)
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Proposol_TransferOperator]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_TransferOperator"));
+            let msg = beginCell()
+                .storeUint(opcodes.OP_FEE_SetFeeOperator, 32) // op (op #1 = increment)
+                .storeAddress(opts.operator)
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Proposol_SetHalt]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_AddCrossAdmin"));
+            let msg = beginCell()
+                .storeUint(opcodes.OP_COMMON_SetHalt, 32)
+                .storeUint(opts.halt, 2)
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Proposol_TOKENPAIR_Upsert]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_TOKENPAIR_Upsert"));
+            let toBuffer, fromBuffer
+            if(opts.fromChainID == BIP44_CHAINID) {
+                let fromAddr = Address.parseFriendly(opts.fromAccount)
+                fromBuffer = fromAddr.address.hash
+                toBuffer = Buffer.from(opts.toAccount.startsWith("0x")?opts.toAccount.slice(2):opts.toAccount,'hex')
+            } else if(opts.toChainID == BIP44_CHAINID) {
+                let toAddr = Address.parseFriendly(opts.toAccount)
+                toBuffer = toAddr.address.hash
+                fromBuffer = Buffer.from(opts.fromAccount.startsWith("0x")?opts.fromAccount.slice(2):opts.fromAccount,'hex')
+            } else {
+                throw("Error chain ID.")
+            }
+            let jettonAdminAddr = Address.parseFriendly(opts.jettonAdminAddr)
+            let jettonAdminAddrBuffer = jettonAdminAddr.address.hash
+            logger.info(formatUtil.format("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex')));
+
+            let msg = beginCell()
+                .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
+                .storeUint(opts.tokenPairId, 32)
+                .storeUint(opts.fromChainID, 32)
+                .storeUint(opts.toChainID, 32)
+                .storeUint(fromBuffer.length, 8)
+                .storeUint(toBuffer.length, 8)
+                .storeBuffer(jettonAdminAddrBuffer)
+                .storeRef(beginCell().storeBuffer(fromBuffer).endCell())
+                .storeRef(beginCell().storeBuffer(toBuffer).endCell())
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Proposol_TOKENPAIR_Remove]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_TOKENPAIR_Remove"));
+            let msg = beginCell()
+                .storeUint(opcodes.OP_TOKENPAIR_Remove, 32) // op (op #1 = increment)
+                .storeUint(opts.tokenPairId, 32)
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Proposol_TranferFoundation]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_TranferFoundation"));
+            let msg = beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_TranferFoundation, 32) // op (op #1 = increment)
+                .storeAddress(opts.foundation)
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Proposol_TransferOracleAdmin]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_TransferOracleAdmin"));
+            let msg = beginCell()
+                .storeUint(opcodes.OP_ORACLE_TransferOracleAdmin, 32) // op (op #1 = increment)
+                .storeAddress(opts.oracleAdmin)
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
+    [opcodes.OP_GROUPAPPROVE_Proposol_UpgradeSc]: {
+        "enCode": function (opts: any): Cell {
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_TranferFoundation"));
+            let msg = beginCell()
+                .storeUint(opcodes.OP_UPGRADE_Code, 32) // op (op #1 = increment)
+                .storeRef(opts.code)
+                .endCell()
+            return beginCell()
+                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
+                .storeUint(opts.queryID ?? 0, 64)
+                .storeUint(opts.chainId, 64)  // chainId
+                .storeAddress(opts.toAddr)
+                .storeRef(msg)
+                .endCell()
+        },
+        "deCode": function (cell: Cell): any {
+            return 0;
+        }
+    },
     [opcodes.OP_GROUPAPPROVE_Execute]: {
         "enCode": function (opts: any): Cell {
             logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Execute"));

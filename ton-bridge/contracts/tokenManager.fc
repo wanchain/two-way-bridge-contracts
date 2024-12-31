@@ -97,18 +97,21 @@ const int DICTIONARY_KEY_LEN = 32;
     ~strdump("tm_recv_internal"); ~dump(op);
 
     if (op == OP_TOKENPAIR_Upsert) {
+        ~strdump("111");
         int id = in_msg_body~load_uint(32);
         int fromChainID = in_msg_body~load_uint(32);
         int toChainID = in_msg_body~load_uint(32);
         int fromAccountLen = in_msg_body~load_uint(8);
         int toAccountLen = in_msg_body~load_uint(8);
-        
+
+        ~strdump("222");
         slice fromAccountSlice = in_msg_body~load_ref().begin_parse(); 
         slice fromAccount = fromAccountSlice~load_bits(8 * fromAccountLen);
         slice toAccountSlice = in_msg_body~load_ref().begin_parse();
         slice toAccount = toAccountSlice~load_bits(8 * toAccountLen);
         slice jettonAdminAddr = in_msg_body~load_bits(256);
 
+        ~strdump("333");
         tokenPairs~udict_set_builder(DICTIONARY_KEY_LEN, id, 
             begin_cell().store_uint(fromChainID, 32)
             .store_uint(toChainID, 32)
@@ -118,6 +121,7 @@ const int DICTIONARY_KEY_LEN = 32;
             .store_slice(toAccount)
             .store_slice(jettonAdminAddr)
         );
+        ~strdump("444");
         return tm_generate_data(tokenPairs);
     }  ;; there  is no elseif 
     if (op == OP_TOKENPAIR_Remove) { ;; Delete tokenPair operation
