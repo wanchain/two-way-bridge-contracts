@@ -66,8 +66,9 @@ describe('Bridge', () => {
 
 
 
+        let jettonAdminAddr = "EQB6Ipa85lD-LVxypTA3xQs2dmdcM_VeUUQexul6_TDOPu_d";
         let ret = await bridge.sendAddTokenPair(deployer.getSender(),{
-            tokenPairId, fromChainID,fromAccount,toChainID,toAccount,
+            tokenPairId, fromChainID,fromAccount,toChainID,toAccount,jettonAdminAddr,
             value: toNano('1'),
             queryID,
         });
@@ -80,7 +81,7 @@ describe('Bridge', () => {
         // add tokenPair 2
         tokenPairId = 999;
         ret = await bridge.sendAddTokenPair(deployer.getSender(),{
-            tokenPairId, fromChainID,fromAccount,toChainID,toAccount,
+            tokenPairId, fromChainID,fromAccount,toChainID,toAccount,jettonAdminAddr,
             value: toNano('1'),
             queryID,
         });

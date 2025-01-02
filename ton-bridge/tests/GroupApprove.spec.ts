@@ -124,11 +124,11 @@ describe('GroupApprove', () => {
             to: bridge.address,
             success: true,
         }); 
-        // await bridge.sendTransferCrossOwner(deployer.getSender(),  {
-        //     value: toNano('1000'),
-        //     queryID: 1,
-        //     owner: groupApprove.address
-        // });
+        await bridge.sendTransferCrossOwner(deployer.getSender(),  {
+            value: toNano('1000'),
+            queryID: 1,
+            owner: groupApprove.address
+        });
     });
 
     it('group approve set halt', async () => {

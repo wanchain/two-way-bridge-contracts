@@ -641,7 +641,7 @@ export class Bridge implements Contract {
     async getNextAdmin(provider: ContractProvider,adminAddr:Address){
         const { stack } = await provider.get("get_next_crossAdmin", [{ type: 'slice', cell: beginCell().storeAddress(adminAddr).endCell()}]);
         let s = stack.readBuffer();
-        if(s.length == 0) {
+        if (s.toString('hex') == '0000000000000000000000000000000000000000000000000000000000000000') {
             return ""
         }
         let addr = new Address(0, s)
