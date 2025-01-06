@@ -3,12 +3,12 @@ import * as opcodes from  "./opcodes";
 import { HttpApi } from '@ton/ton';
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import internal from 'stream';
-import { compile } from '@ton/blueprint';
 
 import {BIP44_CHAINID} from './const/const-value';
 import {codeTable} from "./code/encode-decode";
 
 import {logger} from './utils/logger'
+import {OP_GROUPAPPROVE_Proposol_TransferOwner} from "./opcodes";
 const formatUtil = require('util');
 
 
@@ -42,14 +42,7 @@ export class GroupApprove implements Contract {
         const init = { code, data };
         return new GroupApprove(contractAddress(0, init), init);
     }
-    static async createForDeploy(config: GroupApproveConfig) {
-        const workchain = 0; // deploy to workchain 0
-        const code = await compile('GroupApprove');
-        const data = GroupApproveConfigToCell(config);
-        const init = { code, data };
-        let SC = new GroupApprove(contractAddress(workchain, init), init);
-        return SC
-    }
+
 
     async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
         await provider.internal(via, {
@@ -67,19 +60,9 @@ export class GroupApprove implements Contract {
             owner: Address,
         }
     ) {
-        let msg = beginCell()
-            .storeUint(opcodes.OP_COMMON_TransferOwner, 32) // op (op #1 = increment)
-            .storeAddress(opts.owner)
-            .endCell()
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)                
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_TransferOwner].enCode(opts)
         });
     }
     async sendTransferOracleAdmin(provider: ContractProvider, sender: Sender,
@@ -91,19 +74,9 @@ export class GroupApprove implements Contract {
             oracleAdmin: Address,
         }
     ) {
-        let msg = beginCell()
-            .storeUint(opcodes.OP_ORACLE_TransferOracleAdmin, 32) // op (op #1 = increment)
-            .storeAddress(opts.oracleAdmin)
-            .endCell()
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)                
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_TransferOracleAdmin].enCode(opts)
         });
     }    
     async sendTransferRobotAdmin(provider: ContractProvider, sender: Sender,
@@ -115,19 +88,9 @@ export class GroupApprove implements Contract {
             operator: Address,
         }
     ) {
-        let msg = beginCell()
-            .storeUint(opcodes.OP_FEE_SetFeeOperator, 32) // op (op #1 = increment)
-            .storeAddress(opts.operator)
-            .endCell()
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)                
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_TransferOperator].enCode(opts)
         });
     }      
     async sendTransferFoundation(provider: ContractProvider, sender: Sender,
@@ -139,19 +102,9 @@ export class GroupApprove implements Contract {
             foundation: Address,
         }
     ) {
-        let msg = beginCell()
-            .storeUint(opcodes.OP_GROUPAPPROVE_TranferFoundation, 32) // op (op #1 = increment)
-            .storeAddress(opts.foundation)
-            .endCell()
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)                
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_TranferFoundation].enCode(opts)
         });
         
     }       
@@ -165,21 +118,9 @@ export class GroupApprove implements Contract {
             halt: number,
         }
     ) {
-        logger.info(formatUtil.format("send crosss bridge address:%s",opts.toAddr));
-        let msg = beginCell()
-        .storeUint(opcodes.OP_COMMON_SetHalt, 32)
-        .storeUint(opts.halt, 2)
-        .endCell();
-        logger.info(formatUtil.format("sendCrossHalt msg:", msg));
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_SetHalt].enCode(opts)
         });
     }    
     async sendAddCrossAdmin(provider: ContractProvider, sender: Sender,
@@ -191,19 +132,9 @@ export class GroupApprove implements Contract {
             admin: Address,
         }
     ) {
-        let msg = beginCell()
-            .storeUint(opcodes.OP_FEE_AddCrossAdmin, 32) // op (op #1 = increment)
-            .storeAddress(opts.admin)
-            .endCell()
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)                
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_AddCrossAdmin].enCode(opts)
         });
     }    
     async sendRemoveCrossAdmin(provider: ContractProvider, sender: Sender,
@@ -215,19 +146,9 @@ export class GroupApprove implements Contract {
             admin: Address,
         }
     ) {
-        let msg = beginCell()
-            .storeUint(opcodes.OP_FEE_DelCrossAdmin, 32) // op (op #1 = increment)
-            .storeAddress(opts.admin)
-            .endCell()
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)                
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_DelCrossAdmin].enCode(opts)
         });
     }   
     async sendAddTokenPair(provider: ContractProvider, sender: Sender,
@@ -240,41 +161,13 @@ export class GroupApprove implements Contract {
             fromChainID:number,
             fromAccount:string,
             toChainID:number,
-            toAccount:string,        }
-    ) {
-        let toBuffer, fromBuffer
-        if(opts.fromChainID == BIP44_CHAINID) {
-            let fromAddr = Address.parseFriendly(opts.fromAccount)
-            fromBuffer = fromAddr.address.hash
-            toBuffer = Buffer.from(opts.toAccount.startsWith("0x")?opts.toAccount.slice(2):opts.toAccount,'hex')
-        } else if(opts.toChainID == BIP44_CHAINID) {
-            let toAddr = Address.parseFriendly(opts.toAccount)
-            toBuffer = toAddr.address.hash
-            fromBuffer = Buffer.from(opts.fromAccount.startsWith("0x")?opts.fromAccount.slice(2):opts.fromAccount,'hex')
-        } else {
-            throw("Error chain ID.")
+            toAccount:string,
+            jettonAdminAddr:string
         }
-        logger.info(formatUtil.format("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex')));
-
-        let msg = beginCell()
-            .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
-            .storeUint(opts.tokenPairId, 32)
-            .storeUint(opts.fromChainID, 32)
-            .storeUint(opts.toChainID, 32)
-            .storeUint(fromBuffer.length, 8)
-            .storeUint(toBuffer.length, 8)
-            .storeRef(beginCell().storeBuffer(fromBuffer).endCell())
-            .storeRef(beginCell().storeBuffer(toBuffer).endCell())
-            .endCell()
+    ) {
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)                
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_TOKENPAIR_Upsert].enCode(opts)
         });
     }    
     async sendRemoveTokenPair(provider: ContractProvider, sender: Sender,
@@ -286,19 +179,9 @@ export class GroupApprove implements Contract {
             tokenPairId: number,
         }
     ) {
-        let msg = beginCell()
-            .storeUint(opcodes.OP_TOKENPAIR_Remove, 32) // op (op #1 = increment)
-            .storeUint(opts.tokenPairId, 32)
-            .endCell()
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)                
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_TOKENPAIR_Remove].enCode(opts)
         });
     }      
     async sendSetFeeProxy(provider: ContractProvider, sender: Sender,
@@ -310,19 +193,9 @@ export class GroupApprove implements Contract {
             feeProxy: Address,
         }
     ) {
-        let msg = beginCell()
-            .storeUint(opcodes.OP_FEE_SetSmgFeeProxy, 32) // op (op #1 = increment)
-            .storeAddress(opts.feeProxy)
-            .endCell()
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-                .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-                .storeUint(0, 64) // query id
-                .storeUint(opts.chainId, 64)  // chainId
-                .storeAddress(opts.toAddr)                
-                .storeRef(msg)
-                .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_SetSmgFeeProxy].enCode(opts)
         });
     }        
     async sendUpgradeSC(provider: ContractProvider, sender: Sender,
@@ -334,19 +207,9 @@ export class GroupApprove implements Contract {
             code: Cell,
         }
     ) {
-        let msg = beginCell()
-        .storeUint(opcodes.OP_UPGRADE_Code, 32) // op (op #1 = increment)
-        .storeRef(opts.code)
-        .endCell()
         await provider.internal(sender, {
             value: opts.value,
-            body: beginCell()
-            .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)
-            .storeUint(0, 64) // query id
-            .storeUint(opts.chainId, 64)  // chainId
-            .storeAddress(opts.toAddr)                
-            .storeRef(msg)
-            .endCell()
+            body: codeTable[opcodes.OP_GROUPAPPROVE_Proposol_UpgradeSc].enCode(opts)
         });
     }   
 

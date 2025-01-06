@@ -54,5 +54,17 @@ const OP_GROUPAPPROVE_Execute            = 0xa0000002;
 const OP_GROUPAPPROVE_Executed_CB            = 0xa0000003;
 const OP_GROUPAPPROVE_TranferFoundation  = 0xa0000004;
 const OP_GROUPAPPROVE_Execute_WithGPK    = 0xa0000005;
+const OP_GROUPAPPROVE_Proposol_SetSmgFeeProxy    = 0xa0000010;
+const OP_GROUPAPPROVE_Proposol_AddCrossAdmin    = 0xa0000011;
+const OP_GROUPAPPROVE_Proposol_DelCrossAdmin    = 0xa0000012;
+const OP_GROUPAPPROVE_Proposol_TransferOwner    = 0xa0000013;
+const OP_GROUPAPPROVE_Proposol_SetHalt    = 0xa0000014;
+const OP_GROUPAPPROVE_Proposol_TOKENPAIR_Upsert    = 0xa0000015;
+const OP_GROUPAPPROVE_Proposol_TOKENPAIR_Remove    = 0xa0000016;
+const OP_GROUPAPPROVE_Proposol_TranferFoundation    = 0xa0000017;
+const OP_GROUPAPPROVE_Proposol_TransferOracleAdmin    = 0xa0000018;
+const OP_GROUPAPPROVE_Proposol_TransferOperator    = 0xa000001;
+const OP_GROUPAPPROVE_Proposol_UpgradeSc    = 0xa000001a;
+
 
 const OP_FETCH_GPK                         = 0xb0000001;

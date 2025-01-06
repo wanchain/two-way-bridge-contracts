@@ -20,6 +20,7 @@ import {sign} from "@ton/crypto";
 import {getClient, TonClientConfig} from "../client/client";
 import {internal} from "@ton/core";
 import {StateInit} from "@ton/core";
+import {TonClient} from "@ton/ton";
 
 export async function buildInternalMessage(from:Address,src: {
     to: Address | string,
@@ -94,8 +95,8 @@ external_message = {
                 body: rawTransactionCell
 }
  */
-export async function sendRawTransaction(senderAddress:Address,rawTrans:Cell){
-    let client = await getClient(config);
+export async function sendRawTransaction(client:TonClient, senderAddress:Address,rawTrans:Cell){
+    // let client = await getClient(config);
     let provider =  client.provider(senderAddress)
     await provider.external(rawTrans)
 

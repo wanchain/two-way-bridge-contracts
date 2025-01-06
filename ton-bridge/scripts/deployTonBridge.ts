@@ -19,8 +19,10 @@ export async function run() {
 
     const key = await mnemonicToWalletKey(mnemonic.split(" "));
     const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
-    const endpoint = await getHttpEndpoint({ network: "testnet" });
-    const client = new TonClient({ endpoint, timeout:60000 });
+    // const endpoint = await getHttpEndpoint({ network: "testnet"});
+    const endpoint = 'https://testnet.toncenter.com/api/v2/jsonRPC'
+    const client = new TonClient({ endpoint, timeout:60000,
+        apiKey: 'b70dc1b6d3c1b95acfe5c04c6f0489a7c4f407fd2218cd4a763df295711f2e2e' });
     // open wallet and read the current seqno of the wallet
     const walletContract = client.open(wallet);
     const walletSender = walletContract.sender(key.secretKey);

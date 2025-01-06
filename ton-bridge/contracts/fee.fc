@@ -31,7 +31,7 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
 (int) fee_isCrodsAdmin(cell refcell, slice addr) impure {
     (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
     (_, int hash) = parse_std_addr(addr);
-    (_,_, int success) = crossAdmin.udict_get_next?(CROSSADMIN_DICTIONARY_KEY_LEN, hash);
+    (_, int success) = crossAdmin.udict_get?(CROSSADMIN_DICTIONARY_KEY_LEN, hash);
     if (success) {
         return 1;
     } else {
@@ -118,11 +118,16 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
 ;; Get the first tokenPair in the dictionary
 (slice) fee_get_next_crossAdmin(cell refcell, slice adminAddr) method_id {
     (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
-    int id = adminAddr~load_uint(CROSSADMIN_DICTIONARY_KEY_LEN);
-    (int id, slice value, int success) = crossAdmin.udict_get_next?(CROSSADMIN_DICTIONARY_KEY_LEN, id);
+    slice admin = adminAddr~load_msg_addr();
+    (int workchain, int hash) = parse_std_addr(admin);
+    ~strdump("fee_get_next_crossAdmin");~dump(hash);
+    (int id, slice value, int success) = crossAdmin.udict_get_next?(CROSSADMIN_DICTIONARY_KEY_LEN, hash);
+    ~strdump("33333");
     if (success) {
+        ~strdump("fee_get_next_crossAdmin found");
         return begin_cell().store_uint(id, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
     } else {
+        ~strdump("fee_get_next_crossAdmin not found");
         return begin_cell().store_uint(0, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
     }
 }

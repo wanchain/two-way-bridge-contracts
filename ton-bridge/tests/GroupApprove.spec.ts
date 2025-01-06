@@ -124,11 +124,11 @@ describe('GroupApprove', () => {
             to: bridge.address,
             success: true,
         }); 
-        // await bridge.sendTransferCrossOwner(deployer.getSender(),  {
-        //     value: toNano('1000'),
-        //     queryID: 1,
-        //     owner: groupApprove.address
-        // });
+        await bridge.sendTransferCrossOwner(deployer.getSender(),  {
+            value: toNano('1000'),
+            queryID: 1,
+            owner: groupApprove.address
+        });
     });
 
     it('group approve set halt', async () => {
@@ -738,6 +738,7 @@ describe('GroupApprove', () => {
         let toChainID = BIP44_CHAINID;
         let fromAccount = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
         let toAccount = "EQB6Ipa85lD-LVxypTA3xQs2dmdcM_VeUUQexul6_TDOPu_d";
+        let jettonAdminAddr = "EQB6Ipa85lD-LVxypTA3xQs2dmdcM_VeUUQexul6_TDOPu_d";
         let txRet = await groupApprove.sendAddTokenPair(user1.getSender(), {
             value: toNano('97'),
             queryID:1,
@@ -748,6 +749,7 @@ describe('GroupApprove', () => {
             fromAccount,
             toChainID,
             toAccount,
+            jettonAdminAddr
         })
         expect(txRet.transactions).toHaveTransaction({
             from: user1.address,
