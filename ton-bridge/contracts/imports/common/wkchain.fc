@@ -3,5 +3,5 @@
 const WORKING_CHAINID       = 0x00;
 
 ;; chainID, used to build uniqueue ID
-const BIP44_CHAINID         = 0x4567;
+const BIP44_CHAINID         = 0x8000025f;
 
