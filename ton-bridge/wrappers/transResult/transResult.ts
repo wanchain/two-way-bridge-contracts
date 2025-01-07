@@ -8,87 +8,6 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export interface TranStepInfo {
-    addr: Address;
-    txHash: string;
-    gasUsed: bigint;
-    status: boolean;
-    lt:string;
-}
-
-export interface TranResult {
-    addr: Address;
-    msgInHash: string;
-    path:TranPathInfo;
-    success: boolean;
-    originAddr: Address;
-    gasUsed:bigint;
-}
-
-export type TranPathInfo = TranStepInfo[]
-
-// example of result
-/*
-TranResult=> {
-        addr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
-        msgInHash: '8a2fdd9e5508f06c94ff55f0d367fdaaca82207c52ed03008680319b2424bfed',
-        path: [
-        {
-            addr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
-            txHash: '3bc0e57c110eab0a0ad1d282df89a99f3c2a3aa71fcd27d2ff897bc45febd3bb',
-            gasUsed: 2577471n,
-            status: true,
-            lt: '29498261000001'
-        },
-        {
-            addr: EQBsdoNazbwI9ybbsgufhRocWBPm7emo7cZQxojqzNuvNRcC,
-            txHash: '9e4f815609fa16591648b08d186cda0d81175e3a45ee17a91754f83fe013136d',
-            gasUsed: 4319392n,
-            status: true,
-            lt: '29498264000001'
-        },
-        {
-            addr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
-            txHash: '78b3031ffed07ec7b147f24db7a80e6fda5338d1d9fdbf5e9a845dbcf12de67f',
-            gasUsed: 396405n,
-            status: true,
-            lt: '29498268000001'
-        }
-    ],
-        success: true,
-        originAddr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
-        gasUsed: 7293268n
-}
-*/
-export async function getTranResultByMsgHash(client:TonClient,scAddr:Address,msgBodyCellHash:string,msgInHash:string):Promise<TranResult>{
-
-    let path = await getTranPathInfoByMsgHash(client,scAddr,msgBodyCellHash,msgInHash);
-    let success = await isTranPathSuccess(path);
-    return {
-        addr: scAddr,
-        msgInHash,
-        path,
-        success,
-        originAddr: path[0].addr,
-        gasUsed: await computePathGas(path)
-    };
-}
-
-export async function getTranResultByTxHash(client:TonClient,scAddr:Address,txHash:string, lt:string):Promise<TranResult>{
-    let tran = await client.getTransaction(scAddr,lt,txHash);
-    let path = await  getTranPathInfoByPivotTran(client,scAddr,tran);
-
-    let success = await isTranPathSuccess(path);
-    return {
-        addr: scAddr,
-        msgInHash:tran.inMessage.body.hash().toString('base64'),
-        path,
-        success,
-        originAddr: path[0].addr,
-        gasUsed: await computePathGas(path)
-    };
-}
-
 /*
 return
 [
@@ -254,6 +173,89 @@ async function getTranPathInfoByPivotTran(client:TonClient,scAddr:Address,pivotT
     return allTranPathInfo.concat(beforePivotTranPathInfo,[pivoltTranStepInfo],afterPivotTranPathInfo);
 }
 
+
+
+export interface TranStepInfo {
+    addr: Address;
+    txHash: string;
+    gasUsed: bigint;
+    status: boolean;
+    lt:string;
+}
+
+export interface TranResult {
+    addr: Address;
+    msgInHash: string;
+    path:TranPathInfo;
+    success: boolean;
+    originAddr: Address;
+    gasUsed:bigint;
+}
+
+export type TranPathInfo = TranStepInfo[]
+
+// example of result
+/*
+TranResult=> {
+        addr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
+        msgInHash: '8a2fdd9e5508f06c94ff55f0d367fdaaca82207c52ed03008680319b2424bfed',
+        path: [
+        {
+            addr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
+            txHash: '3bc0e57c110eab0a0ad1d282df89a99f3c2a3aa71fcd27d2ff897bc45febd3bb',
+            gasUsed: 2577471n,
+            status: true,
+            lt: '29498261000001'
+        },
+        {
+            addr: EQBsdoNazbwI9ybbsgufhRocWBPm7emo7cZQxojqzNuvNRcC,
+            txHash: '9e4f815609fa16591648b08d186cda0d81175e3a45ee17a91754f83fe013136d',
+            gasUsed: 4319392n,
+            status: true,
+            lt: '29498264000001'
+        },
+        {
+            addr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
+            txHash: '78b3031ffed07ec7b147f24db7a80e6fda5338d1d9fdbf5e9a845dbcf12de67f',
+            gasUsed: 396405n,
+            status: true,
+            lt: '29498268000001'
+        }
+    ],
+        success: true,
+        originAddr: EQCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUI30,
+        gasUsed: 7293268n
+}
+*/
+export async function getTranResultByMsgHash(client:TonClient,scAddr:Address,msgBodyCellHash:string,msgInHash:string):Promise<TranResult>{
+
+    let path = await getTranPathInfoByMsgHash(client,scAddr,msgBodyCellHash,msgInHash);
+    let success = await isTranPathSuccess(path);
+    return {
+        addr: scAddr,
+        msgInHash,
+        path,
+        success,
+        originAddr: path[0].addr,
+        gasUsed: await computePathGas(path)
+    };
+}
+
+export async function getTranResultByTxHash(client:TonClient,scAddr:Address,txHash:string, lt:string):Promise<TranResult>{
+    let tran = await client.getTransaction(scAddr,lt,txHash);
+    let path = await  getTranPathInfoByPivotTran(client,scAddr,tran);
+
+    let success = await isTranPathSuccess(path);
+    return {
+        addr: scAddr,
+        msgInHash:tran.inMessage.body.hash().toString('base64'),
+        path,
+        success,
+        originAddr: path[0].addr,
+        gasUsed: await computePathGas(path)
+    };
+}
+
 export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgBodyCellHash:string, msgHash:string=''):Promise<Transaction> {
     let maxRetry = 5;
 
@@ -314,7 +316,6 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgBody
         await sleep(3000);
     }
 }
-
 
 /*
 

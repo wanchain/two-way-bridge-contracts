@@ -18,8 +18,6 @@ export function openWallet(client:TonClient,wallet:WalletContractV4):OpenedContr
     return client.open(wallet);
 }
 
-
-
 export function getSender(provider: OpenedContract<WalletContractV4>,secretKey:Buffer):Sender{
     return provider.sender(secretKey);
 }

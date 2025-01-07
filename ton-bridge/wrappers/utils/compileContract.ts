@@ -10,6 +10,7 @@ export interface CR {
     hashHex:string,
     codeBase64:string,
 }
+
 export async function compileContract(conf: CompilerConfig) {
     // You can get compiler version
     let version = await compilerVersion();
