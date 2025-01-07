@@ -47,7 +47,7 @@ export async function run() {
         queryID: 1,
     });
     console.log("ret:", ret)
-    await sleep(12000);
+    await sleep(20000);
     ret = await bridge.sendSetStoremanGroupConfigCommit(walletSender,{
         id: BigInt(smgId),
         gpkX:BigInt(gpkX), gpkY:BigInt(gpkY),
@@ -56,7 +56,7 @@ export async function run() {
         value: toNano('0.061'),
         queryID: 1,
     });
-    await sleep(1000);
+    await sleep(21000);
     let smgInfo = await bridge.getStoremanGroupConfig(BigInt(smgId))
     console.log("smgInfo1", smgInfo)
     let get_first_smg_id_Commited = await bridge.getFirstStoremanGroupIDCommited();

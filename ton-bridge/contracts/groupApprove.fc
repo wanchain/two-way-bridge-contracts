@@ -26,6 +26,18 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
         .store_dict(taskDict)
         .end_cell());
 }
+() cb_executed(slice sender_address, int query_id) impure {
+    var msg = begin_cell()
+        .store_uint(0x18, 6)     ;;
+        .store_slice(sender_address)
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(OP_COMMON_Finished, 32)
+        .store_uint(query_id, 64)
+        .end_cell();
+    send_raw_message(msg,64);
+    return ();
+}
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     int current_balance  = get_balance().pair_first();
     int initial_balance = current_balance - msg_value;
@@ -76,7 +88,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
         
         taskCount += 1;
         save_data(taskCount, foundation, bridge, taskDict);
-       
+        cb_executed(sender_address, query_id);
         return ();
     }
  
@@ -159,7 +171,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
             var msg = begin_cell()
                 .store_uint(0x10, 6)     ;;
                 .store_slice(toAddr)
-                .store_coins(10000000)
+                .store_coins(0)
                 .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
                 .store_uint(op2, 32)
                 .store_uint(proposalId, 64) ;; used as query id
@@ -175,7 +187,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
                 msg = msg.store_ref(fromb).store_ref(tob);                
             }
 
-            send_raw_message(msg.end_cell(),0);
+            send_raw_message(msg.end_cell(),64);
             ~strdump("end OP_GROUPAPPROVE_Execute_WithGPK");
             return ();
         } else {
@@ -230,4 +242,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
 (slice, slice) get_config() method_id {
     (int taskCount, slice foundation, slice bridge, cell taskDict) = load_data();
     return (foundation, bridge);
+}
+(slice) version() method_id {
+    return "0.14";
 }
