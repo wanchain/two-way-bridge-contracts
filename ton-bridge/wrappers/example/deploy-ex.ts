@@ -21,10 +21,12 @@ let bridgeOpened = null;
 
 let deployerValue = toNano('0.05');
 
+import {conf } from "../testData/bridge.compile.func"
+let filePath = "../testData/bridge.compiled.json";
 
 async function buildCodeCell(){
-    await doCompile();
-    let filePath = "../testData/bridge.compiled.json";
+
+    await doCompile(conf,filePath);
 
     let cr:CR = JSON.parse(fs_1.readFileSync(filePath,'utf-8'));
     return Cell.fromBoc(Buffer.from(cr.codeBase64, "base64"))[0];

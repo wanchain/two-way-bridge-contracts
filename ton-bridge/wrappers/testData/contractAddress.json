@@ -1,6 +1,7 @@
 {
-  "bridgeAddress1": "EQAD0YoLS3fHb9n5u-F0Nd4ZyiEgpcWDM4tA_xZVNrDEUF2L",
+  "bridgeAddressV1": "EQAD0YoLS3fHb9n5u-F0Nd4ZyiEgpcWDM4tA_xZVNrDEUF2L",
   "approveAddress": "EQBEFtwQIPs1WdDJ1v-0c7F_JqHTWkGrgebql9o6KxO3Z7KJ",
-  "bridgeAddress2": "EQAC6xSpcsmnWfBT4Er-8m3DMmHEnKbIHJ1ycILYpFDNUoRU",
-  "bridgeAddress":"EQBsdoNazbwI9ybbsgufhRocWBPm7emo7cZQxojqzNuvNRcC"
+  "bridgeAddressV2": "EQAC6xSpcsmnWfBT4Er-8m3DMmHEnKbIHJ1ycILYpFDNUoRU",
+  "bridgeAddressV3":"EQBsdoNazbwI9ybbsgufhRocWBPm7emo7cZQxojqzNuvNRcC",
+  "bridgeAddress":"EQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE24h"
 }

@@ -12,7 +12,7 @@ import {
     buildInternalMessage
 } from "./rawTrans";
 import {OP_FEE_SetTokenPairFee, OP_TOKENPAIR_Upsert} from "../opcodes"
-import {BIP44_CHAINID, TON_COIN_ACCOUT} from "../const/const-value";
+import {BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR} from "../const/const-value";
 import {codeTable} from "../code/encode-decode";
 import {getClient, TonClientConfig} from "../client/client";
 import {getSenderByPrvKey, getWalletByPrvKey, openWalletByPrvKey} from "../wallet/walletContract";
@@ -20,6 +20,8 @@ import {sign} from "@ton/crypto";
 import {SendMode} from "@ton/core";
 import {getQueryID, sleep} from "../utils/utils";
 import {getTranResultByMsgHash} from "../transResult/transResult";
+
+let  jettonAdmin = TON_COIN_ACCOUNT_STR;
 
 let tokenInfo = {
     tokenOrg:{tokenPairId:0x01,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',},
@@ -42,7 +44,7 @@ let wallet = null;
 let walletOpenned = null;
 let privateKey = Buffer.from(prvList[0],'hex')
 
-describe('decode', () => {
+describe('sendRawTransaction', () => {
 
     beforeAll(async () => {
         client = await getClient(config);
@@ -61,13 +63,14 @@ describe('decode', () => {
             fromAccount: srcTokenAcc3,
             toChainID: dstChainId3,
             toAccount: dstTokenAcc3,
+            jettonAdminAddr:jettonAdmin,
         }
         let bodyCell = codeTable[OP_TOKENPAIR_Upsert]["enCode"](opt);
 
         // build message
         let message = await buildInternalMessage(wallet.address,{
             to:scAddresses.bridgeAddress,
-            value:toNano('0.005'),
+            value:toNano('0.007'),
             bounce:true,
             body:bodyCell,
         })
@@ -75,11 +78,13 @@ describe('decode', () => {
         // build data for sign
         let seqno = await walletOpenned.getSeqno();
         let walletId = 698983191; // provide by user
+        let timeoutTimeStamp = Math.floor(Date.now() / 1e3) + 60;  // experiment timestamp.
         let dataNeedSign = await buildSignData({
             seqno:seqno,
             sendMode:SendMode.PAY_GAS_SEPARATELY,
             walletId:walletId,
-            messages:[message]
+            messages:[message],
+            timeout:timeoutTimeStamp,
         });
 
         for(let msgHash of dataNeedSign.msgHashs){
@@ -96,7 +101,7 @@ describe('decode', () => {
 
         // send raw trans
         console.log("wallet.address=>",wallet.address);
-        let ret = await sendRawTransaction(wallet.address,rawTrans);
+        let ret = await sendRawTransaction(client,wallet.address,rawTrans);
         console.log("ret of sendRawTransaction ==>",ret);
 
         await sleep(10000);

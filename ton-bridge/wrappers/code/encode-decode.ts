@@ -440,7 +440,7 @@ export const codeTable = {
 
     [opcodes.OP_TOKENPAIR_Upsert]: {
         "enCode": function (opts: any): Cell {
-            let toBuffer, fromBuffer
+            let toBuffer, fromBuffer;
             if (opts.fromChainID == BIP44_CHAINID) {
                 if (opts.fromAccount == "") {
                     fromBuffer = Buffer.from(TON_COIN_ACCOUT.slice(2), 'hex')

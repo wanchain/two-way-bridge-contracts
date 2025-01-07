@@ -35,21 +35,13 @@ export function writeCR(filePath:string,cr:CR){
     return fs_1.writeFileSync(filePath,JSON.stringify(cr));
 }
 
-import {conf } from "../testData/bridge.compile.func"
-export async function doCompile(){
+export async function doCompile(conf:CompilerConfig,resultFilePath:string){
     let ret = await compileContract(conf);
     //logger.info(formatUtil.format(ret?.toBoc().toString('base64'));
-    let filePath = "../testData/bridge.compiled.json";
-    logger.info(formatUtil.format(filePath));
-    writeCR(filePath,ret);
 
-    let cr:CR = JSON.parse(fs_1.readFileSync(filePath,'utf-8'));
+    logger.info(formatUtil.format(resultFilePath));
+    writeCR(resultFilePath,ret);
+    let cr:CR = JSON.parse(fs_1.readFileSync(resultFilePath,'utf-8'));
     let codeCell = Cell.fromBoc(Buffer.from(cr.codeBase64, "base64"))[0];
     return codeCell.hash().toString('hex') == cr.hashHex && cr.hashHex == ret?.hashHex;
 }
-
-async function main(){
-    let ret = await doCompile();
-    logger.info(formatUtil.format("ret=>",ret));
-}
-main();

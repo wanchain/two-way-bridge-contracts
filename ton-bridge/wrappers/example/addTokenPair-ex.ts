@@ -6,7 +6,7 @@ const config:TonClientConfig =  {
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 
 import {Bridge} from '../Bridge';
-import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
+import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR} from '../const/const-value';
 
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
 import {getClient, TonClientConfig} from "../client/client";
@@ -51,13 +51,14 @@ async function addTokenPair(){
     let ba = BridgeAccess.create(client,scAddresses.bridgeAddress);
     // write contract
     let opt = {
-        value: toNano('0.005'),
+        value: toNano('0.05'),
         queryID,
         tokenPairId: tokenPairId3,
         fromChainID: srcChainId3,
         fromAccount: srcTokenAcc3,
         toChainID: dstChainId3,
         toAccount: dstTokenAcc3,
+        jettonAdminAddr:TON_COIN_ACCOUNT_STR,
     }
     console.log("opt=>",opt);
     let via = await getSenderByPrvKey(client,Buffer.from(prvList[0],'hex'));

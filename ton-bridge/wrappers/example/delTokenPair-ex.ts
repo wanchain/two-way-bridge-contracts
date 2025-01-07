@@ -45,7 +45,7 @@ async function removeTokenPair(){
     let ba = BridgeAccess.create(client,scAddresses.bridgeAddress);
     // write contract
     let opt = {
-        value: toNano('0.005'),
+        value: toNano('0.006'),
         queryID,
         tokenPairId: tokenPairId3,
     }

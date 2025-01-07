@@ -26,10 +26,10 @@ export async function getClient(config:TonClientConfig,url?:string):Promise<TonC
     }
     const indexUsed = await getSecureRandomNumber(0,total)
     logger.info(formatUtil.format("http endpoint is =>",endpoints[indexUsed]));
-    return  new TonClient({ endpoint:endpoints[indexUsed],timeout:config.tonClientTimeout });
+    // return  new TonClient({ endpoint:endpoints[indexUsed],timeout:config.tonClientTimeout });
 
-    // const TONCLINET_TIMEOUT = 60 * 1000 * 1000;
-    // const toncenter_testnet_apikey ="73ee18f6b52a360e9db390f146a8c6af161549495d6e9794ae3efd2e412fa7a2";
-    // const toncenter_mainnet_apikey ="16f38715eb1a0984abf42148d5ed042589f8bf11768141ecb944feae8102913a";
-    // return  new TonClient({ endpoint:"https://testnet.toncenter.com/api/v2/jsonRPC",timeout:TONCLINET_TIMEOUT,apiKey:toncenter_testnet_apikey});
+    const TONCLINET_TIMEOUT = 60 * 1000 * 1000;
+    const toncenter_testnet_apikey ="73ee18f6b52a360e9db390f146a8c6af161549495d6e9794ae3efd2e412fa7a2";
+    const toncenter_mainnet_apikey ="16f38715eb1a0984abf42148d5ed042589f8bf11768141ecb944feae8102913a";
+    return  new TonClient({ endpoint:"https://testnet.toncenter.com/api/v2/jsonRPC",timeout:TONCLINET_TIMEOUT,apiKey:toncenter_testnet_apikey});
 }
