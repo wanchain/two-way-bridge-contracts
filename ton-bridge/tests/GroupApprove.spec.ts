@@ -670,7 +670,7 @@ describe('GroupApprove', () => {
 
 
         let txRet = await groupApprove.sendUpgradeSC(user1.getSender(), {
-            value: toNano('97'),
+            value: toNano('0.1'),
             queryID:1,
             chainId: BIP44_CHAINID,
             toAddr: bridge.address,
