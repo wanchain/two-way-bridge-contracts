@@ -60,6 +60,11 @@ const config = {
     },
   },
   networks: {
+    lummioTestnet: {
+      url: "http://188.245.49.86:32795",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741854,
+    },
     fiveireMainnet: {
       url: "https://rpc.5ire.network",
       accounts: [process.env.PK],
