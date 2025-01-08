@@ -36,13 +36,25 @@ export function writeCR(filePath:string,cr:CR){
     return fs_1.writeFileSync(filePath,JSON.stringify(cr));
 }
 
-export async function doCompile(conf:CompilerConfig,resultFilePath:string){
+export async function doCompile(conf:CompilerConfig,resultFilePath?:string){
     let ret = await compileContract(conf);
     //logger.info(formatUtil.format(ret?.toBoc().toString('base64'));
 
-    logger.info(formatUtil.format(resultFilePath));
-    writeCR(resultFilePath,ret);
-    let cr:CR = JSON.parse(fs_1.readFileSync(resultFilePath,'utf-8'));
-    let codeCell = Cell.fromBoc(Buffer.from(cr.codeBase64, "base64"))[0];
-    return codeCell.hash().toString('hex') == cr.hashHex && cr.hashHex == ret?.hashHex;
+    logger.info(formatUtil.format("result file path: %s",resultFilePath));
+    if(resultFilePath){
+        writeCR(resultFilePath,ret);
+        let cr:CR = JSON.parse(fs_1.readFileSync(resultFilePath,'utf-8'));
+        let codeCell = Cell.fromBoc(Buffer.from(cr.codeBase64, "base64"))[0];
+        return {
+            status:codeCell.hash().toString('hex') == cr.hashHex && cr.hashHex == ret?.hashHex,
+            codeCell:codeCell
+        }
+    }else{
+        let codeCell = Cell.fromBoc(Buffer.from(ret?.codeBase64, "base64"))[0];
+        return {
+            status:true,
+            codeCell:codeCell
+        }
+    }
+
 }
