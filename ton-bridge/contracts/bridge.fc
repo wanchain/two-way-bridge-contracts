@@ -60,16 +60,13 @@
         return ();
     }
     if((op == OP_COMMON_TransferOwner) | (op == OP_COMMON_SetHalt)) {
-        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
-        return ();
+        throw_unless(error::unauthorized_set_common_config, equal_slices(sender_address, cross_owner));
     }
     if ((op == OP_FEE_SetSmgFeeProxy) | (op == OP_FEE_SetFeeOperator)) {
-        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
-        return ();
+        throw_unless(error::unauthorized_set_fee_config, equal_slices(sender_address, cross_owner));
     }
     if((op == OP_FEE_AddCrossAdmin) | (op == OP_FEE_DelCrossAdmin)) {
-        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
-        return ();
+        throw_unless(error::unauthorized_set_fee_admin, equal_slices(sender_address, cross_owner));
     }
 
     if ((op == OP_FEE_SetChainFee) | (op == OP_FEE_SetChainFees) | (op == OP_FEE_SetTokenPairFee) | (op == OP_FEE_SetTokenPairFees)) {
@@ -80,27 +77,24 @@
         if( 1 == fee_isCrodsAdmin(feeCell, sender_address)) {
             return ();
         }
-        throw(0xff);
+        throw(error::unauthorized_set_fee);
     }
 
     if(op == OP_ORACLE_TransferOracleAdmin) {
-        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
-        return ();        
+        throw_unless(error::unauthorized_transfer_oracle_admin, equal_slices(sender_address, cross_owner));
     }
 
     if((op == OP_ORACLE_SetSMG) | (op == OP_ORACLE_CommitSMG) |(op == OP_ORACLE_DeleteSMG)) {
         slice oracleAdmin = oracle_get_OracleAdmin(oracle);
-        throw_unless(0xffff, (equal_slices(sender_address, cross_owner) | equal_slices(sender_address, oracleAdmin)));
-        return ();        
+        throw_unless(error::unauthorized_set_oracle_smg, (equal_slices(sender_address, cross_owner) | equal_slices(sender_address, oracleAdmin)));
     }
     if (op & 0xFF000000 == OP_TOKENPAIR) {
-        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
-        return ();             
+        throw_unless(error::unauthorized_set_tokenpair, equal_slices(sender_address, cross_owner));
     }
     if (op == OP_UPGRADE_Code) {
-        throw_unless(0xffff, equal_slices(sender_address, cross_owner));
-        return ();                
+        throw_unless(error::unauthorized_upgrade, equal_slices(sender_address, cross_owner));
     }
+    throw(error::privilege_unknown_opcode);
 }
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -134,7 +128,7 @@
         ~strdump("OP_FETCH_GPK"); ~dump(smgID);
         (int gpkx, int gpky, int startTime, int endTime, int timestamp) = get_smgConfigCommited(smgID);
         ~strdump("OP_FETCH_GPK"); ~dump(gpkx);~dump(gpky);
-        throw_unless(0xffed, (now() > startTime) & (now() < endTime)); ;; TODO why eerrror?
+        throw_unless(error::gpk_invalid_timestamp, (now() > startTime) & (now() < endTime));
 
         var msg = begin_cell()
             .store_uint(0x18, 6)     ;;
@@ -215,7 +209,7 @@
         return cb_executed(sender_address, query_id);
     }
 
-    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+    throw(error::recv_unknown_opcode); ;; if the message contains an op that is not known to this contract, we throw
 }
 
 (slice, int, int) get_cross_config() method_id {
