@@ -502,10 +502,11 @@ export const codeTable = {
             let toBuffer = sliceTo.loadBits(8*toLength);
             sliceTo.endParse();
             logger.info(formatUtil.format("toBuffer=>",toBuffer));
+            let jettonAdmin = slice.loadBits(256)
             slice.endParse();
 
             return {
-                opCode,queryID,tokenPairID,fromChainID,toChainID,fromAccount:fromBuffer,toAccount:toBuffer
+                opCode,queryID,tokenPairID,fromChainID,toChainID,fromAccount:fromBuffer,toAccount:toBuffer,jettonAdmin:jettonAdmin
             }
         },
         "emitEvent": function(opts){

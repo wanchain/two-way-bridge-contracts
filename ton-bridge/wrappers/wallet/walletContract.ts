@@ -90,4 +90,9 @@ export async function isAddrDepolyed(client:TonClient,addrStr:string){
     return await client.isContractDeployed(addr);
 }
 
+export async function getWalletAddrByPublicKey(publicKey: Buffer){
+    let ret = WalletContractV4.create({publicKey: publicKey, workchain: 0});
+    return ret.address.toString();
+}
+
 

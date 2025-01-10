@@ -29,7 +29,7 @@ example of ret:
 //todo  gas used (accumuted, summary.)
 //todo  in send Message, message body-> txhash.
 
-export async function getEvents(client: TonClient,scAddress:string,limit:number,lt?:string,to_lt?:string):Promise<any> {
+export async function getEvents(client: TonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string):Promise<any> {
     if (!client){
         throw new Error("client does not exist");
     }
@@ -57,6 +57,9 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
         logger.info(formatUtil.format("tran=>",tran.hash().toString('base64')));
         let event = await getEventFromTran(tran);
         if(event != null){
+            if(eventName && event.eventName.toLowerCase() != eventName.toLowerCase()){
+                continue;
+            }
             events.push(event);
         }
     }
@@ -79,7 +82,7 @@ async function getTransactions(client:TonClient,scAddress:string,opts:{
         //ret = await client.getTransactions(scAddr,opts)
         ret = await client.getTransactions(scAddr,{limit:3})
     }catch(err){
-        logger.error(formatUtil.format("getTransactions error",err));
+        logger.error(formatUtil.format("getTransactions error",err.code));
     }
     return ret;
 }

@@ -13,7 +13,7 @@ import {
     openWallet,
     getWalletByPrvKey,
     getWalletByMnemonic,
-    getTonAddrBySecPrvKey, getSenderBySecPrvKey, getWalletBySecPrvKey
+    getTonAddrBySecPrvKey, getSenderBySecPrvKey, getWalletBySecPrvKey, getWalletAddrByPublicKey
 } from "./walletContract";
 
 import {KeyPair, mnemonicNew, mnemonicToWalletKey} from '@ton/crypto';
@@ -41,13 +41,16 @@ describe('walletContract', () => {
 
     });
 
-
     it('getWalletByMnemonic', async () => {
         for(let i = 0; i < 5;i++){
             let tempMnemonic = mnemonics[i].join(" ");
             accounts.push(await getWalletByMnemonic(tempMnemonic));
             console.log(`address[${i}]=>`,accounts[i].address);
         }
+    });
+
+    it('getWalletAddrByPk', async () => {
+        console.log(await getWalletAddrByPublicKey(Buffer.from('497c3bc8bc7712f179d791e26a18544259909b11460fbf74027faf1a68ad515c','hex')));
     });
 
     it('address should equal (from mnemonic and from private key) success', async () => {

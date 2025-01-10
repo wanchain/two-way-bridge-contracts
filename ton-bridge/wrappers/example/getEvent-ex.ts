@@ -1,3 +1,5 @@
+import {sleep} from "../utils/utils";
+
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
@@ -8,19 +10,42 @@ import { logger } from "../utils/logger";
 
 const scAddress = require('../testData/contractAddress.json');
 const LIMIT=100;
+let  MAX_TRY_TIMES = 5;
 async function main(){
     let client = await getClient(config);
     let scBridgeAddr = scAddress.bridgeAddress;
-    try{
-        let  events = await getEvents(client,scBridgeAddr,LIMIT);
+    while(MAX_TRY_TIMES--){
+        try{
+            console.log("===========================Events no fileter (eventName)===========================");
+            let  events = await getEvents(client,scBridgeAddr,LIMIT);
 
-        for(let event of events){
-            console.log(event);
-            logger.info(event);
+            for(let event of events){
+                console.log(event);
+                logger.info(event);
+            }
+            break;
+        }catch(e){
+            logger.error(e.message.code);
+            await sleep(5000)
         }
-    }catch(e){
-            logger.error(e.message);
     }
+
+    MAX_TRY_TIMES = 5;
+    while(MAX_TRY_TIMES--){
+        try{
+            console.log("===========================Events only AddTokenPair===========================");
+            let  events = await getEvents(client,scBridgeAddr,LIMIT,undefined,undefined,"AddTokenPair");
+            for(let event of events){
+                console.log(event);
+                logger.info(event);
+            }
+            break;
+        }catch(e){
+            logger.error(e.message.code);
+            await sleep(5000)
+        }
+    }
+
     client = null;
 }
 
