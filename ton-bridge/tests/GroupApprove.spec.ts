@@ -47,6 +47,9 @@ describe('GroupApprove', () => {
         oracleAdmin = await blockchain.treasury('oracleAdmin');
         operator = await blockchain.treasury('operator');
         owner2 = await blockchain.treasury('owner2');
+        console.log("oracleAdmin.address(bigInt)==>",BigInt("0x"+oracleAdmin.address.hash.toString('hex')));
+        console.log("deployer.address(bigInt)==>",BigInt("0x"+deployer.address.hash.toString('hex')));
+
 
         let c_bridge = Bridge.createFromConfig(
             {
@@ -68,8 +71,8 @@ describe('GroupApprove', () => {
             deploy: true,
             success: true,
         });
-        console.log("bridge.address==>",bridge.address);
-        console.log("bridge.address(bigInt)==>",BigInt("0x"+bridge.address.hash.toString('hex')));
+        // console.log("bridge.address==>",bridge.address);
+        // console.log("bridge.address==>","0x"+bridge.address.hash.toString('hex'));
 
         let c = GroupApprove.createFromConfig(
             {
@@ -83,8 +86,8 @@ describe('GroupApprove', () => {
         groupApprove = blockchain.openContract(c);
 
         const deployResult = await groupApprove.sendDeploy(deployer.getSender(), toNano('0.1'));
-        console.log("GroupApprove.address==>",groupApprove.address);
-        console.log("GroupApprove.address(bigInt)==>",BigInt("0x"+groupApprove.address.hash.toString('hex')));
+        // console.log("GroupApprove.address==>",groupApprove.address);
+        // console.log("GroupApprove.address==>","0x"+groupApprove.address.hash.toString('hex'));
         expect(deployResult.transactions).toHaveTransaction({
             from: deployer.address,
             to: groupApprove.address,
@@ -203,7 +206,7 @@ describe('GroupApprove', () => {
         let info = await bridge.getCrossConfig()
         console.log("getCrossConfig:", info)
         expect(info.halt).toEqual(0)
-        const balance = await user1.getBalance();
+        const balance = await deployer.getBalance();
         
         console.log("balance before tx:", fromNano(balance))
         // get task
@@ -211,7 +214,7 @@ describe('GroupApprove', () => {
         console.log("taskCount:", taskCount)
         expect(taskCount).toEqual(0)
 
-        let txRet = await groupApprove.sendTransferCrossOwner(user1.getSender(), {
+        let txRet = await groupApprove.sendTransferCrossOwner(deployer.getSender(), {
             value: toNano('97'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -219,12 +222,12 @@ describe('GroupApprove', () => {
             owner: owner2.address,
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });
 
-        const balance2 = await user1.getBalance();
+        const balance2 = await deployer.getBalance();
         console.log("balance after tx:", fromNano(balance2))
 
         // get task
@@ -270,7 +273,7 @@ describe('GroupApprove', () => {
         let info = await bridge.getCrossConfig()
         console.log("getCrossConfig:", info)
         expect(info.halt).toEqual(0)
-        const balance = await user1.getBalance();
+        const balance = await deployer.getBalance();
         
         console.log("balance before tx:", fromNano(balance))
         // get task
@@ -278,7 +281,8 @@ describe('GroupApprove', () => {
         console.log("taskCount:", taskCount)
         expect(taskCount).toEqual(0)    
 
-        let txRet = await groupApprove.sendTransferOracleAdmin(user1.getSender(), {
+        console.log("owner2.address:", owner2.address.toString())
+        let txRet = await groupApprove.sendTransferOracleAdmin(deployer.getSender(), {
             value: toNano('97'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -286,12 +290,12 @@ describe('GroupApprove', () => {
             oracleAdmin: owner2.address,
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });
 
-        const balance2 = await user1.getBalance();
+        const balance2 = await deployer.getBalance();
         console.log("balance after tx:", fromNano(balance2))
 
         // get task
@@ -322,6 +326,7 @@ describe('GroupApprove', () => {
             to: groupApprove.address,
             success: true,
         });
+        await sleep(1000)
         info = await bridge.getCrossConfig()
         console.log("getCrossConfig:", info)
         expect(info.oracleAdmin.toString()).toEqual(owner2.address.toString())
@@ -336,10 +341,10 @@ describe('GroupApprove', () => {
         let info = await bridge.getCrossConfig()
         console.log("getCrossConfig:", info)
         expect(info.halt).toEqual(0)
-        const balance = await user1.getBalance();
+        const balance = await deployer.getBalance();
         console.log("balance before tx:", fromNano(balance))
 
-        let txRet = await groupApprove.sendTransferRobotAdmin(user1.getSender(), {
+        let txRet = await groupApprove.sendTransferRobotAdmin(deployer.getSender(), {
             value: toNano('97'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -347,13 +352,13 @@ describe('GroupApprove', () => {
             operator: owner2.address,
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });
 
 
-        const balance2 = await user1.getBalance();
+        const balance2 = await deployer.getBalance();
         console.log("balance after tx:", fromNano(balance2))
 
         // get task
@@ -397,7 +402,7 @@ describe('GroupApprove', () => {
         let info = await bridge.getCrossConfig()
         console.log("getCrossConfig:", info)
         expect(info.halt).toEqual(0)
-        const balance = await user1.getBalance();
+        const balance = await deployer.getBalance();
         
         console.log("balance before tx:", fromNano(balance))
         // get task
@@ -406,7 +411,7 @@ describe('GroupApprove', () => {
         expect(taskCount).toEqual(0) 
 
 
-        let txRet = await groupApprove.sendSetFeeProxy(user1.getSender(), {
+        let txRet = await groupApprove.sendSetFeeProxy(deployer.getSender(), {
             value: toNano('97'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -414,12 +419,12 @@ describe('GroupApprove', () => {
             feeProxy: owner2.address,
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });
 
-        const balance2 = await user1.getBalance();
+        const balance2 = await deployer.getBalance();
         console.log("balance after tx:", fromNano(balance2))
 
         // get task
@@ -463,7 +468,7 @@ describe('GroupApprove', () => {
         let info = await bridge.getCrossConfig()
         console.log("getCrossConfig:", info)
         expect(info.halt).toEqual(0)
-        const balance = await user1.getBalance();
+        const balance = await deployer.getBalance();
         
         console.log("balance before tx:", fromNano(balance))
         // get task
@@ -475,7 +480,7 @@ describe('GroupApprove', () => {
 
         console.log("owner2.address(bigInt)==>", "0x" + bridge.address.hash.toString('hex'));
 
-        let txRet = await groupApprove.sendAddCrossAdmin(user1.getSender(), {
+        let txRet = await groupApprove.sendAddCrossAdmin(deployer.getSender(), {
             value: toNano('97'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -483,12 +488,12 @@ describe('GroupApprove', () => {
             admin: owner2.address,
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });
 
-        const balance2 = await user1.getBalance();
+        const balance2 = await deployer.getBalance();
         
         console.log("balance after tx:", fromNano(balance2))
 
@@ -534,7 +539,7 @@ describe('GroupApprove', () => {
 
         // remove
 
-        txRet = await groupApprove.sendRemoveCrossAdmin(user1.getSender(), {
+        txRet = await groupApprove.sendRemoveCrossAdmin(deployer.getSender(), {
             value: toNano('97'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -542,7 +547,7 @@ describe('GroupApprove', () => {
             admin: owner2.address,
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });
@@ -596,7 +601,7 @@ describe('GroupApprove', () => {
         let taskCount = await groupApprove.getProposolCount()
         expect(taskCount).toEqual(0)
 
-        let txRet = await groupApprove.sendTransferFoundation(user1.getSender(), {
+        let txRet = await groupApprove.sendTransferFoundation(deployer.getSender(), {
             value: toNano('0.1'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -604,12 +609,12 @@ describe('GroupApprove', () => {
             foundation: owner2.address,
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });
 
-        const balance2 = await user1.getBalance();
+        const balance2 = await deployer.getBalance();
         console.log("balance after tx:", fromNano(balance2))
 
         // get task
@@ -660,7 +665,7 @@ describe('GroupApprove', () => {
         let version = await bridge.getVersion()
         console.log("getVersion:", version)
         expect(version).toEqual("0.1")
-        const balance = await user1.getBalance();
+        const balance = await deployer.getBalance();
         
         console.log("balance before tx:", fromNano(balance))
         // get task
@@ -669,7 +674,7 @@ describe('GroupApprove', () => {
         expect(taskCount).toEqual(0) 
 
 
-        let txRet = await groupApprove.sendUpgradeSC(user1.getSender(), {
+        let txRet = await groupApprove.sendUpgradeSC(deployer.getSender(), {
             value: toNano('0.1'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -677,12 +682,12 @@ describe('GroupApprove', () => {
             code: fakeCode,
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });
 
-        const balance2 = await user1.getBalance();
+        const balance2 = await deployer.getBalance();
         console.log("balance after tx:", fromNano(balance2))
 
         // get task
@@ -726,7 +731,7 @@ describe('GroupApprove', () => {
         let info = await bridge.getCrossConfig()
         console.log("getCrossConfig:", info)
         expect(info.halt).toEqual(0)
-        const balance = await user1.getBalance();
+        const balance = await deployer.getBalance();
         
         console.log("balance before tx:", fromNano(balance))
         // get task
@@ -739,7 +744,7 @@ describe('GroupApprove', () => {
         let fromAccount = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
         let toAccount = "EQB6Ipa85lD-LVxypTA3xQs2dmdcM_VeUUQexul6_TDOPu_d";
         let jettonAdminAddr = "EQB6Ipa85lD-LVxypTA3xQs2dmdcM_VeUUQexul6_TDOPu_d";
-        let txRet = await groupApprove.sendAddTokenPair(user1.getSender(), {
+        let txRet = await groupApprove.sendAddTokenPair(deployer.getSender(), {
             value: toNano('97'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -752,7 +757,7 @@ describe('GroupApprove', () => {
             jettonAdminAddr
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });
@@ -760,7 +765,7 @@ describe('GroupApprove', () => {
         // console.log("txRet:", txRet.transactions[1].totalFees)
         // console.log("txRet:", txRet.transactions[2].totalFees)
 
-        const balance2 = await user1.getBalance();
+        const balance2 = await deployer.getBalance();
         
         console.log("balance after tx:", fromNano(balance2))
 
@@ -804,7 +809,7 @@ describe('GroupApprove', () => {
         expect(task.executed).toEqual(1)
 
         // remove
-        txRet = await groupApprove.sendRemoveTokenPair(user1.getSender(), {
+        txRet = await groupApprove.sendRemoveTokenPair(deployer.getSender(), {
             value: toNano('97'),
             queryID:1,
             chainId: BIP44_CHAINID,
@@ -812,7 +817,7 @@ describe('GroupApprove', () => {
             tokenPairId, 
         })
         expect(txRet.transactions).toHaveTransaction({
-            from: user1.address,
+            from: deployer.address,
             to: groupApprove.address,
             success: true,
         });   

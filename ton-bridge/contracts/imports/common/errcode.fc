@@ -1,30 +1,30 @@
-const ERROR::INVALID_WKID               = 0x01;
-const ERROR::INVALID_HASH               = 0x02;
+const int ERROR::INVALID_WKID               = 0x01;
+const int ERROR::INVALID_HASH               = 0x02;
 
 
-const error::unauthorized_set_common_config  = 0xEE000001;
-const error::unauthorized_set_fee_config     = 0xEE000002;
-const error::unauthorized_set_fee_admin      = 0xEE000003;
-const error::unauthorized_set_fee        = 0xEE000004;
-const error::unauthorized_transfer_oracle_admin        = 0xEE000005;
-const error::unauthorized_set_oracle_smg        = 0xEE000006;
-const error::unauthorized_set_tokenpair        = 0xEE000007;
-const error::unauthorized_upgrade        = 0xEE000008;
+const int error::unauthorized_set_common_config  = 0xEE01;
+const int error::unauthorized_set_fee_config     = 0xEE02;
+const int error::unauthorized_set_fee_admin      = 0xEE03;
+const int error::unauthorized_set_fee        = 0xEE04;
+const int error::unauthorized_transfer_oracle_admin        = 0xEE05;
+const int error::unauthorized_set_oracle_smg        = 0xEE06;
+const int error::unauthorized_set_tokenpair        = 0xEE07;
+const int error::unauthorized_upgrade        = 0xEE08;
 
-const error::privilege_unknown_opcode        = 0xEE000010;
-const error::recv_unknown_opcode        = 0xEE000011;
+const int error::privilege_unknown_opcode        = 0xEE10;
+const int error::recv_unknown_opcode        = 0xEE11;
 
-const error::gpk_invalid_timestamp        = 0xEE000020;
-const error::group_error_chainid        = 0xEE000021;
-const error::group_not_foundation        = 0xEE000022;
-const error::group_gpk_not_bridge        = 0xEE000023;
-const error::group_proposolid_not_found        = 0xEE000024;
-const error::group_finish_not_bridge        = 0xEE000025;
-const error::group_proposolid_not_found_inFinished        = 0xEE000026;
-const error::group_recv_unknown_opcode        = 0xEE000027;
+const int error::gpk_invalid_timestamp        = 0xEE20;
+const int error::group_error_chainid        = 0xEE21;
+const int error::group_not_foundation        = 0xEE22;
+const int error::group_gpk_not_bridge        = 0xEE23;
+const int error::group_proposolid_not_found        = 0xEE24;
+const int error::group_finish_not_bridge        = 0xEE25;
+const int error::group_proposolid_not_found_inFinished        = 0xEE26;
+const int error::group_recv_unknown_opcode        = 0xEE27;
 
-const error::oracle_invalid_timestamp        = 0xEE000030;
-const error::oracle_not_matched_gpk        = 0xEE000031;
-const error::oracle_not_found_smg        = 0xEE000032;
+const int error::oracle_invalid_timestamp        = 0xEE30;
+const int error::oracle_not_matched_gpk        = 0xEE31;
+const int error::oracle_not_found_smg        = 0xEE32;
 
-const error::signature_unknown_opcode        = 0xEE000040;
+const int error::signature_unknown_opcode        = 0xEE40;

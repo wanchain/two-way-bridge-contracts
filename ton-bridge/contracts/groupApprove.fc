@@ -3,6 +3,7 @@
 #include "imports/common/opcode.fc";
 #include "imports/signature/sig-header.fc";
 #include "imports/common/wkchain.fc";
+#include "imports/common/errcode.fc";
 
 #pragma version >=0.2.0;
 
@@ -35,7 +36,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
         .store_uint(OP_COMMON_Finished, 32)
         .store_uint(query_id, 64)
         .end_cell();
-    send_raw_message(msg,64);
+    send_raw_message(msg,80);
     return ();
 }
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -105,7 +106,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
             .store_uint(SmgID, 256)
             .store_ref(begin_cell().store_uint(taskID, 64).store_ref(proof).end_cell())
             .end_cell();
-        send_raw_message(msg,64);
+        send_raw_message(msg,80);
         return();
     }
     if (op == OP_GROUPAPPROVE_Execute_WithGPK) {
@@ -185,7 +186,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
                 msg = msg.store_ref(fromb).store_ref(tob);                
             }
 
-            send_raw_message(msg.end_cell(),64);
+            send_raw_message(msg.end_cell(),80);
             ~strdump("end OP_GROUPAPPROVE_Execute_WithGPK");
             return ();
         } else {

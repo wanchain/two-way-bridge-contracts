@@ -48,7 +48,7 @@
         .store_uint(OP_COMMON_Finished, 32)
         .store_uint(query_id, 64)
         .end_cell();
-    send_raw_message(msg,64);
+    send_raw_message(msg,80);
     return ();
 }
 (int, int, int, int, int) get_smgConfigCommited(int id) method_id {
@@ -61,12 +61,15 @@
     }
     if((op == OP_COMMON_TransferOwner) | (op == OP_COMMON_SetHalt)) {
         throw_unless(error::unauthorized_set_common_config, equal_slices(sender_address, cross_owner));
+        return ();
     }
     if ((op == OP_FEE_SetSmgFeeProxy) | (op == OP_FEE_SetFeeOperator)) {
         throw_unless(error::unauthorized_set_fee_config, equal_slices(sender_address, cross_owner));
+        return ();
     }
     if((op == OP_FEE_AddCrossAdmin) | (op == OP_FEE_DelCrossAdmin)) {
         throw_unless(error::unauthorized_set_fee_admin, equal_slices(sender_address, cross_owner));
+        return ();
     }
 
     if ((op == OP_FEE_SetChainFee) | (op == OP_FEE_SetChainFees) | (op == OP_FEE_SetTokenPairFee) | (op == OP_FEE_SetTokenPairFees)) {
@@ -82,17 +85,21 @@
 
     if(op == OP_ORACLE_TransferOracleAdmin) {
         throw_unless(error::unauthorized_transfer_oracle_admin, equal_slices(sender_address, cross_owner));
+        return ();
     }
 
     if((op == OP_ORACLE_SetSMG) | (op == OP_ORACLE_CommitSMG) |(op == OP_ORACLE_DeleteSMG)) {
         slice oracleAdmin = oracle_get_OracleAdmin(oracle);
         throw_unless(error::unauthorized_set_oracle_smg, (equal_slices(sender_address, cross_owner) | equal_slices(sender_address, oracleAdmin)));
+        return ();
     }
     if (op & 0xFF000000 == OP_TOKENPAIR) {
         throw_unless(error::unauthorized_set_tokenpair, equal_slices(sender_address, cross_owner));
+        return ();
     }
     if (op == OP_UPGRADE_Code) {
         throw_unless(error::unauthorized_upgrade, equal_slices(sender_address, cross_owner));
+        return ();
     }
     throw(error::privilege_unknown_opcode);
 }
@@ -141,7 +148,7 @@
             .store_uint(gpky, 256)
             .store_ref(in_msg_body~load_ref())
             .end_cell();
-        return send_raw_message(msg,64);
+        return send_raw_message(msg,80);
     }
     if(op & 0xFF000000 == OP_COMMON) {
         if(op == OP_COMMON_SetHalt) {
