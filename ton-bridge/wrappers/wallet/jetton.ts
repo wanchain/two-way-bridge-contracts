@@ -40,30 +40,50 @@ function leftpad(str, len, ch=' ') {
     return pad + str;
 }
 
+const SNAKE_PREFIX = 0x00;
+const ONCHAIN_CONTENT_PREFIX = 0x00;
+const KEYLEN = 256;
+const jettonOnChainMetadataSpec = {
+    name: "utf8",
+    description: "utf8",
+    image: "ascii",
+    symbol: "utf8",
+    decimals: 'utf8'
+};
+
 export async function buildWrappedJettonContent(opts:any):Promise<Cell>{
+    const dict = Dictionary.empty(Dictionary.Keys.BigUint(KEYLEN), Dictionary.Values.Cell());
 
+    Object.entries(opts).forEach(([k, v]: [string, string | undefined]) => {
+        if (!jettonOnChainMetadataSpec[k])
+            throw new Error(`Unsupported token key: ${k}`);
+        if (v === undefined || v === "") return;
 
-    const keys = Dictionary.Keys.BitString(256);
-    const values = Dictionary.Values.Buffer(16);
+        let bufferToStore = Buffer.from(v, jettonOnChainMetadataSpec[k]);
 
-    let dic = Dictionary.empty(keys, values);
+        const rootCell = beginCell();
+        rootCell.storeUint(SNAKE_PREFIX, 8);
+        let currentCell = rootCell;
 
-    const keyName = new BitString(sha256_sync("name"),0,256);
-    const valueName = Buffer.from(leftpad(opts.name,16),'utf-8');
-    dic.set(keyName, valueName);
+        const CELL_MAX_SIZE_BYTES = Math.floor((1023 - 8) / 8); 
+        while (bufferToStore.length > 0) {
+            currentCell.storeBuffer(bufferToStore.slice(0, CELL_MAX_SIZE_BYTES));
+            bufferToStore = bufferToStore.slice(CELL_MAX_SIZE_BYTES);
+            if (bufferToStore.length > 0) {
+                const newCell = beginCell();
+                currentCell.storeRef(newCell);
+                currentCell = newCell;
+            }
+        }
 
-    const keySymbol = new BitString(sha256_sync("symbol"),0,256);
-    const valueSymbol = Buffer.from(leftpad(opts.symbol,16),'utf-8');
-    dic.set(keySymbol, valueSymbol);
-
-    const keyDecimal = new BitString(sha256_sync("decimal"),0,256);
-    const valueDecimal = Buffer.from(leftpad(opts.decimal,16),'utf-8');
-    dic.set(keyDecimal, valueDecimal);
+        const keyHash = BigInt("0x" + sha256_sync(k).toString('hex'));
+        dict.set(keyHash, rootCell.endCell());
+    });
 
     return beginCell()
-        .storeUint(0,8)
-        .storeDictDirect(dic,keys,values)
-        .endCell()
+        .storeUint(ONCHAIN_CONTENT_PREFIX, 8)
+        .storeDict(dict)
+        .endCell();
 }
 
 export async function parseWrappedJettonContent(cell:Cell){
@@ -72,7 +92,7 @@ export async function parseWrappedJettonContent(cell:Cell){
 
     const keyName = new BitString(sha256_sync("name"),0,256);
     const keySymbol = new BitString(sha256_sync("symbol"),0,256);
-    const keyDecimal = new BitString(sha256_sync("decimal"),0,256);
+    const keyDecimals = new BitString(sha256_sync("decimals"),0,256);
 
     let cs = cell.beginParse();
     cs.skip(8);
@@ -81,6 +101,6 @@ export async function parseWrappedJettonContent(cell:Cell){
     return {
         name:dictDs.get(keyName).toString('utf-8').trim(),
         symbol:dictDs.get(keySymbol).toString('utf-8').trim(),
-        decimal:dictDs.get(keyDecimal).toString('utf-8').trim(),
+        decimals:dictDs.get(keyDecimals).toString('utf-8').trim(),
     }
 }
