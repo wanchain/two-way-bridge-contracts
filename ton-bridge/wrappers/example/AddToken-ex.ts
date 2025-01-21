@@ -77,8 +77,8 @@ async function main() {
         console.log(retDeploy);
     }
 
-    // EQCsALeDy_a3dzj21ZGMz-tuG9KIZVLmNUapfNtqGia8oqLk
-    await DisplayJettonInfo(client,jettonMinterOpened.address);
+    // await DisplayJettonInfo(client,jettonMinterOpened.address);
+    await DisplayJettonInfo(client, Address.parse('EQCsALeDy_a3dzj21ZGMz-tuG9KIZVLmNUapfNtqGia8oqLk'));
 }
 
 main();
