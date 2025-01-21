@@ -201,12 +201,12 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
         var (smg_slice, found?) = smgConfig.udict_get?(SMGID_DICTIONARY_KEY_LEN, id);
         if (found?) {
             var (gpkX1, gpkY1, startTime1, endTime1, timestamp1) = load_smg(smg_slice);
-            throw_unless(0xfff1, timestamp >= timestamp1 + TIMELOCK);
-            throw_unless(0xfff2, (gpkX1 == gpkX) & (gpkY1 == gpkY) & (startTime == startTime1) & (endTime == endTime1));
+            throw_unless(error::oracle_invalid_timestamp, timestamp >= timestamp1 + TIMELOCK);
+            throw_unless(error::oracle_not_matched_gpk, (gpkX1 == gpkX) & (gpkY1 == gpkY) & (startTime == startTime1) & (endTime == endTime1));
             smgConfigCommit~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime, timestamp));
             return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
         } else {
-            throw(0xfff3);
+            throw(error::oracle_not_found_smg);
         }
 
     }  ;; t

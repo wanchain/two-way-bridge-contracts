@@ -44,5 +44,5 @@
         return ();
     }
 
-    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+    throw(error::signature_unknown_opcode); ;; if the message contains an op that is not known to this contract, we throw
 }

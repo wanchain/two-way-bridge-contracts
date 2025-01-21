@@ -17,9 +17,9 @@ import {JettonMinter} from "../JettonMinter";
 import {JettonWallet} from "../JettonWallet";
 
 const JettonCofig = {
-    name:'WAN@wanchain',   // string
-    symbol:'WAN', // string
-    decimal:'18',  // string
+    name:'TEST2@wanchain',   // string
+    symbol:'TEST2', // string
+    decimals:'18',  // string
 }
 
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
@@ -119,6 +119,7 @@ async function main() {
 
     b = await getJettonBalance(client,jettonMinterOpened.address,nonDeployer.address);
     console.log("nonDeployer After mint balance = %s",b.toString(10));
+    // await DisplayJettonInfo(client, Address.parse('EQCsALeDy_a3dzj21ZGMz-tuG9KIZVLmNUapfNtqGia8oqLk'));
 }
 
 main();
