@@ -162,7 +162,8 @@ const int gas_consumption = 14000000;
             .store_coins(0)
             .store_msgbody_prefix_slice()
             .store_op(op::excesses)
-            .store_query_id(query_id);
+            .store_query_id(query_id)
+            .store_coins(jetton_amount);  ;; add by Jacob. inorder to check the jetton got consistent with the one of user lock
     send_raw_message(msg.end_cell(), CARRY_REMAINING_BALANCE | IGNORE_ERRORS);
   }
   save_data(balance, owner_address, jetton_master_address, jetton_wallet_code);

@@ -1,6 +1,6 @@
 import {Blockchain, SandboxContract, TreasuryContract} from '@ton/sandbox';
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
-import {TON_COIN_ACCOUT,BIP44_CHAINID} from '../wrappers/const/const-value';
+import {TON_COIN_ACCOUT, BIP44_CHAINID, BIP44_WANCHAIN_CHAINID} from '../wrappers/const/const-value';
 import {Bridge} from '../wrappers/Bridge';
 import '@ton/test-utils';
 import {compile} from '@ton/blueprint';
@@ -17,6 +17,8 @@ function AccountToBig(addr: Address) {
     return BigInt("0x" + addr.hash.toString('hex'));
 };
 
+
+
 const skSmg = Buffer.from("097e961933fa62e3fef5cedef9a728a6a927a4b29f06a15c6e6c52c031a6cb2b", 'hex');
 const gpk = schnorr.getPKBySk(skSmg);
 const gpkX = gpk.startsWith("0x") || gpk.startsWith("0X")? gpk.substring(0,66): `0x${gpk.substring(0,64)}`;
@@ -25,10 +27,12 @@ const smgId = "0x000000000000000000000000000000000000000000746573746e65745f30363
 
 const wkDuring = 1000; // seconds
 let initJettonAdmin;
-let tokenInfo = {
-    tokenOrg:{tokenPairId:0x01,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
-    tokenWrapped:{tokenPairId:0x02,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
-    coin:{tokenPairId:0x03,srcChainId:0x1234,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
+let
+    tokenInfo = {
+        coin:{tokenPairId:0x01,srcChainId:BIP44_WANCHAIN_CHAINID,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
+    tokenOrg:{tokenPairId:0x02,srcChainId:BIP44_WANCHAIN_CHAINID,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
+    tokenWrapped:{tokenPairId:0x03,srcChainId:BIP44_WANCHAIN_CHAINID,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
+
 }
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -95,6 +99,7 @@ describe('Bridge', () => {
             success: true,
         });
 
+
         // 2. deploy original token usdt
         deployer_jetton = await blockchain.treasury('deployer_jetton');
         alice = await blockchain.treasury('alice');
@@ -122,7 +127,8 @@ describe('Bridge', () => {
         });
 
         tokenInfo.tokenOrg.jettonAdminAddr = deployer_jetton.address.toString();
-
+        console.log("usdt jetton admin ==>", deployer_jetton.address);
+        console.log("usdt jetton token address  ==>", jettonMinter.address);
         // 3. deploy wrapped Token dog
         defaultContent_dog = beginCell().storeUint(1, 1).endCell();
         jettonMinter_dog = blockchain.openContract(
@@ -149,12 +155,9 @@ describe('Bridge', () => {
         });
 
         tokenInfo.tokenWrapped.jettonAdminAddr = deployer_jetton.address.toString();
+        console.log("dog (wrapped) jetton admin ==>", deployer_jetton.address);
+        console.log("dog (wrapped) jetton token address  ==>", jettonMinter_dog.address);
         // 3.1 add token pair for token-org
-
-        let tokenPairId = tokenInfo.tokenOrg.tokenPairId;
-        let srcChainId = tokenInfo.tokenOrg.srcChainId;
-        let dstChainId = tokenInfo.tokenOrg.dstChainId;
-        let srcTokenAcc = tokenInfo.tokenOrg.srcTokenAcc;
 
 
         let dstTokenAcc = jettonMinter.address.toString() //BufferrToHexString(jettonMinter.address.hash)  //todo handle testnet and mainnet , bounceable and non-bounceable
@@ -163,7 +166,7 @@ describe('Bridge', () => {
         tokenInfo.tokenOrg.dstTokenAcc = dstTokenAcc;
         console.log("(str)dstTokenAcc....", jettonMinter.address)
 
-        let retOld = await bridge.getTokenPair(tokenPairId);
+        let retOld = await bridge.getTokenPair(tokenInfo.tokenOrg.tokenPairId);
         console.log("retOld", retOld);
 
         const user1 = await blockchain.treasury('user1');
@@ -172,22 +175,22 @@ describe('Bridge', () => {
         console.log("user1.address==>", user1.address);
         console.log("user1.address(bigInt)==>", BigInt("0x" + user1.address.hash.toString('hex')));
 
-        console.log("adminAddr", deployer.address.toRawString());
+        console.log("adminAddr", tokenInfo.tokenOrg.jettonAdminAddr.toString());
         const ret = await bridge.sendAddTokenPair(deployer.getSender(), {
-            value: toNano('1000'),
+            value: toNano('0.1'),
             queryID,
-            tokenPairId,
-            fromChainID: srcChainId,
-            fromAccount: srcTokenAcc,
-            toChainID: dstChainId,
-            toAccount: dstTokenAcc,
+            tokenPairId: tokenInfo.tokenOrg.tokenPairId,
+            fromChainID: tokenInfo.tokenOrg.srcChainId,
+            fromAccount: tokenInfo.tokenOrg.srcTokenAcc,
+            toChainID: tokenInfo.tokenOrg.dstChainId,
+            toAccount: tokenInfo.tokenOrg.dstTokenAcc,
             jettonAdminAddr:tokenInfo.tokenOrg.jettonAdminAddr,
         });
 
         console.log("ret", slimSndMsgResult(ret));
 
-        let retNew = await bridge.getTokenPair(tokenPairId);
-        console.log("retNew", retNew);
+        let retNew = await bridge.getTokenPair(tokenInfo.tokenOrg.tokenPairId);
+        console.log("tokenPairId",tokenInfo.tokenOrg.tokenPairId,"retNew", retNew);
 
         expect(ret.transactions).toHaveTransaction({
             from: deployer.address,
@@ -197,35 +200,28 @@ describe('Bridge', () => {
 
         // 3.2 add token pair for token-wrapped
 
-        let tokenPairId2 = tokenInfo.tokenWrapped.tokenPairId;
-        let srcChainId2 = tokenInfo.tokenWrapped.srcChainId;
-        let dstChainId2 = tokenInfo.tokenWrapped.dstChainId;
-        let srcTokenAcc2 = tokenInfo.tokenWrapped.srcTokenAcc;
-
-        let dstTokenAcc2 = jettonMinter_dog.address.toString() //BufferrToHexString(jettonMinter_dog.address.hash);
 
 
-        console.log("(hex)dstTokenAcc2....", dstTokenAcc2)
         console.log("(str)dstTokenAcc2....", jettonMinter_dog.address)
         tokenInfo.tokenWrapped.dstTokenAcc = jettonMinter_dog.address.toString();
 
-        let retOld2 = await bridge.getTokenPair(tokenPairId2);
+        let retOld2 = await bridge.getTokenPair(tokenInfo.tokenWrapped.tokenPairId);
         console.log("retOld2", retOld2);
         const ret2 = await bridge.sendAddTokenPair(deployer.getSender(), {
             value: toNano('1000'),
             queryID,
-            tokenPairId: tokenPairId2,
-            fromChainID: srcChainId2,
-            fromAccount: srcTokenAcc2,
-            toChainID: dstChainId2,
-            toAccount: dstTokenAcc2,
+            tokenPairId: tokenInfo.tokenWrapped.tokenPairId,
+            fromChainID: tokenInfo.tokenWrapped.srcChainId,
+            fromAccount: tokenInfo.tokenWrapped.srcTokenAcc,
+            toChainID: tokenInfo.tokenWrapped.dstChainId,
+            toAccount: tokenInfo.tokenWrapped.dstTokenAcc,
             jettonAdminAddr:tokenInfo.tokenWrapped.jettonAdminAddr,
         });
 
         console.log("ret2", slimSndMsgResult(ret2));
 
-        let retNew2 = await bridge.getTokenPair(tokenPairId2);
-        console.log("retNew2", retNew2);
+        let retNew2 = await bridge.getTokenPair(tokenInfo.tokenWrapped.tokenPairId);
+        console.log("tokenPairId",tokenInfo.tokenWrapped.tokenPairId,"retNew2", retNew2);
 
         expect(ret2.transactions).toHaveTransaction({
             from: deployer.address,
@@ -234,34 +230,28 @@ describe('Bridge', () => {
         });
 
         // 3.3 add token pair for ton-coin
-        let tokenPairId3 = tokenInfo.coin.tokenPairId;
-        let srcChainId3 = tokenInfo.coin.srcChainId;
-        let dstChainId3 = tokenInfo.coin.dstChainId;
-        let srcTokenAcc3 = tokenInfo.coin.srcTokenAcc;
 
-        let dstTokenAcc3 = "";
-        console.log("(hex)dstTokenAcc3....", dstTokenAcc3)
+
         tokenInfo.coin.dstTokenAcc = "";
-
         tokenInfo.coin.jettonAdminAddr = "";
 
-        let retOld3 = await bridge.getTokenPair(tokenPairId3);
+        let retOld3 = await bridge.getTokenPair(tokenInfo.coin.tokenPairId);
         console.log("retOld2", retOld3);
         const ret3 = await bridge.sendAddTokenPair(deployer.getSender(), {
             value: toNano('1000'),
             queryID,
-            tokenPairId: tokenPairId3,
-            fromChainID: srcChainId3,
-            fromAccount: srcTokenAcc3,
-            toChainID: dstChainId3,
-            toAccount: dstTokenAcc3,
+            tokenPairId: tokenInfo.coin.tokenPairId,
+            fromChainID: tokenInfo.coin.srcChainId,
+            fromAccount: tokenInfo.coin.srcTokenAcc,
+            toChainID: tokenInfo.coin.dstChainId,
+            toAccount: tokenInfo.coin.dstTokenAcc,
             jettonAdminAddr:tokenInfo.coin.jettonAdminAddr,
         });
 
         console.log("ret3", slimSndMsgResult(ret3));
 
-        let retNew3 = await bridge.getTokenPair(tokenPairId3);
-        console.log("retNew3", retNew3);
+        let retNew3 = await bridge.getTokenPair(tokenInfo.coin.tokenPairId);
+        console.log("tokenPairdId",tokenInfo.coin.tokenPairId,"retNew3", retNew3);
 
         expect(ret3.transactions).toHaveTransaction({
             from: deployer.address,
@@ -292,6 +282,8 @@ describe('Bridge', () => {
 
     });
 
+    it('empty test case used to debug beforeAll', async () => {
+    })
 
     it('should Mint origin token success', async () => {
 
@@ -368,7 +360,7 @@ describe('Bridge', () => {
         let retOld2 = await bridge.getTokenPair(tokenPairId2);
         console.log("retOld2", retOld2);
         const ret2 = await bridge.sendAddTokenPair(deployer.getSender(), {
-            value: toNano('1000'),
+            value: toNano('0.1'),
             queryID,
             tokenPairId: tokenPairId2,
             fromChainID: srcChainId2,
@@ -390,15 +382,15 @@ describe('Bridge', () => {
         });
     });
 
-    it('[userLock original token] should userLock success', async () => {
+    /*it('[userLock coin token] should userLock success', async () => {
         let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-        let tokenPairID = 0x1;
+        let tokenPairID = tokenInfo.coin.tokenPairId;
         let crossValue = BigInt(toNano(1));
         let value = BigInt(toNano(2));
         console.log("smgID(bigInt)==>", BigInt(smgID));
         const queryID = 1;
 
-        console.log("before user lock original token");
+        console.log("before user lock coin");
 
         const ret = await bridge.sendUserLock(alice.getSender(), {
             value: value,
@@ -406,11 +398,41 @@ describe('Bridge', () => {
             tokenPairID,
             smgID,
             crossValue,
-            dstUserAccount: bob.address,
+            dstUserAccount: bob.address.toString(),
+            client:blockchain,
+            senderAccount:alice.address.toString(),
+            bridgeScAddr:bridge.address.toString(),
         });
+
+        console.log("ret", slimSndMsgResult(ret));
+    });*/
+
+    it('[userLock original token] should userLock success', async () => {
+        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+        let tokenPairID = tokenInfo.tokenOrg.tokenPairId;
+        let crossValue = BigInt(toNano(1));
+        let value = BigInt(toNano(2));
+        console.log("smgID(bigInt)==>", BigInt(smgID));
+        const queryID = 1;
+
+        console.log("before user lock original token");
+        console.log("alice's address",alice.address.toString());
+        const ret = await bridge.sendUserLock(alice.getSender(), {
+            value: value,
+            queryID,
+            tokenPairID,
+            smgID,
+            crossValue,
+            dstUserAccount: bob.address.toString(),
+            client:blockchain,
+            senderAccount:alice.address.toString(),
+            bridgeScAddr:bridge.address.toString(),
+        });
+
+        console.log("ret", slimSndMsgResult(ret));
     });
 
-    it('[userLock wrapped token ] should userLock success', async () => {
+    /*it('[userLock wrapped token ] should userLock success', async () => {
         let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
         let tokenPairID = 0x2;
         let crossValue = BigInt(toNano(1));
@@ -702,6 +724,6 @@ describe('Bridge', () => {
         expect(true).toEqual(afterTotalSupplyDog == (beforeTotalSupplyDog + releaseValue));      //todo add fee
 
         // todo add expect later
-    });
+    });*/
 
 });

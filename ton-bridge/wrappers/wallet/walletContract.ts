@@ -5,9 +5,11 @@ PayAttention:
 */
 
 import {mnemonicToWalletKey, keyPairFromSecretKey} from "ton-crypto";
-import {TonClient, WalletContractV4} from "@ton/ton";
+import {address, TonClient, WalletContractV4} from "@ton/ton";
 import {Address, ContractProvider, OpenedContract, Sender} from "@ton/core";
 import {keyPairFromSeed} from "ton-crypto/dist/primitives/nacl";
+import {Blockchain} from "@ton/sandbox";
+import {AccountStateActive} from "@ton/core/src/types/AccountState";
 
 export async function getWalletByMnemonic(mnemonic: String): Promise<WalletContractV4> {
     const key = await mnemonicToWalletKey(mnemonic.split(" "));
@@ -85,9 +87,14 @@ export async function getWalletAddrBySecPrvKey(privateKey: Buffer){
 }
 
 // others
-export async function isAddrDepolyed(client:TonClient,addrStr:string){
-    let addr = Address.parse(addrStr);
-    return await client.isContractDeployed(addr);
+export async function isAddrDepolyed(client:TonClient|Blockchain,addrStr:string){
+    if(client instanceof TonClient){
+        let addr = Address.parse(addrStr);
+        return await client.isContractDeployed(addr);
+    }else{
+        let addr = Address.parse(addrStr);
+        return (await client.getContract(addr)).accountState?.type === 'active'
+    }
 }
 
 export async function getWalletAddrByPublicKey(publicKey: Buffer){

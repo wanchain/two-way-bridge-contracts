@@ -170,12 +170,12 @@
         }
     }
 
-    if (op & 0xFF000000 == OP_CROSS) {
+    if ((op & 0xFF000000 == OP_CROSS) | (op == OP_TRANSFER_NOTIFICATION)) {
         ;; var _extend = cross_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
         ;; save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
         ~strdump("Entering op_cross...");
 
-        var _oracle = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle);
+        var _oracle = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle,ca_fee);
         save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
 
         return ();
@@ -240,26 +240,11 @@
 
 (int, int) get_chain_fee(int _src_chain_id, int _dst_chain_id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    ;;todo load smgFeeProxy first
-    slice ca_fee_slice = ca_fee.begin_parse();
-    (_,_,_, cell chainFee,_) = fee_load_data(ca_fee);
-    int key_int = (_src_chain_id << 32) + _dst_chain_id;
-    (slice cs, int find) = udict_get?(chainFee, 64, key_int);
-    if (find) {
-        return (cs~load_uint(32), cs~load_uint(32));
-    }
-    return (0, 0);
+    return fee_get_chain_fee(ca_fee,_src_chain_id,_dst_chain_id);
 }
 (int) get_tokenpair_fee(int tokenpairID) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    ;;todo load smgFeeProxy first
-    (_,_, cell tpFee, _,_) = fee_load_data(ca_fee);
-
-    (slice cs, int find) = udict_get?(tpFee, 32, tokenpairID);
-    if (find) {
-        return (cs~load_uint(32));
-    }
-    return (0);
+    return fee_get_tokenpair_fee(ca_fee,tokenpairID);
 }
 (int) get_first_smg_id() method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();

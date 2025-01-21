@@ -1,5 +1,6 @@
 import {logger} from './utils/logger'
 const formatUtil = require('util');
+import {buildUserLockMessages} from './code/userLock'
 
 import {
     Address,
@@ -20,6 +21,8 @@ import * as opcodes from "./opcodes"
 import {OP_CROSS_SmgRelease, OP_FEE_SetSmgFeeProxy} from "./opcodes";
 import {codeTable} from "./code/encode-decode";
 import {BIP44_CHAINID,TON_COIN_ACCOUT,TON_COIN_ACCOUNT_STR,WK_CHIANID} from "./const/const-value";
+import {TonClient} from "@ton/ton";
+import {Blockchain} from "@ton/sandbox";
 
 export type BridgeConfig = {
     owner:Address,
@@ -204,22 +207,21 @@ export class Bridge implements Contract {
         });
     }
 
+    async getJettonWalletAddr(provider: ContractProvider,jettonMaster:Address,owner:Address){
+        let c = JettonMinter.createFromAddress(jettonMaster);
+        let jettonMinterScOpened =  await provider.open(c);
+        return await jettonMinterScOpened.getWalletAddress(owner);
+    }
 
-    async sendUserLock(
-        provider: ContractProvider,
-        via: Sender,
-        opts: {
-            value: bigint,
-            queryID?: number,
-            smgID:string,
-            tokenPairID:number,
-            crossValue:bigint,
-            dstUserAccount:Address,
-        }
-    ) {
+    async getJettonAdminAddr(provider: ContractProvider,jettonMaster:Address){
+        let c = JettonMinter.createFromAddress(jettonMaster);
+        let jettonMinterScOpened =  await provider.open(c);
+        return await jettonMinterScOpened.getAdminAddress();
+    }
 
+    async getTokenAccount(provider: ContractProvider,tokenPairID:number){
         // 1. get tokenpair from bridge
-        let tokePairInfo = await this.getTokenPair(provider,opts.tokenPairID);
+        let tokePairInfo = await this.getTokenPair(provider,tokenPairID);
         logger.info(formatUtil.format("tokePairInfo",tokePairInfo));
 
         // 2. check src account and dst account
@@ -233,110 +235,48 @@ export class Bridge implements Contract {
                 throw "TokenPair not support"
             }
         }
+        return tokenAccount;
+    }
 
+    async sendUserLock(
+        provider: ContractProvider,
+        via: Sender,
+        opts: {
+            value: bigint,
+            queryID?: number,
+            smgID:string,
+            tokenPairID:number,
+            crossValue:bigint,
+            dstUserAccount:string, // hex string
+            client:TonClient|Blockchain,
+            senderAccount:string,
+            bridgeScAddr:string,
+        },
+    ) {
 
-        let sendUserLock = async ()=>{
-            let ret = await provider.internal(via, {
+        let ret = await buildUserLockMessages({
+            value: opts.value,
+            smgID: opts.smgID,
+            tokenPairID: opts.tokenPairID,
+            crossValue: opts.crossValue,
+            dstUserAccount: opts.dstUserAccount,
+            bridgeScAddr: opts.bridgeScAddr,
+            client: opts.client,
+            senderAccount: opts.senderAccount
+        })
+        console.log("ret==>",ret);
+        if(ret.to.toString() == this.address.toString()){
+            await provider.internal(via, {
                 value: opts.value,
                 sendMode: SendMode.PAY_GAS_SEPARATELY,
-                body: beginCell()
-                    .storeUint(opcodes.OP_CROSS_UserLock, 32)
-                    .storeUint(opts.queryID ?? 0, 64)
-                    .storeUint(BigInt(opts.smgID), 256)
-                    .storeUint(opts.tokenPairID, 32)
-                    .storeUint(opts.crossValue, 256)
-                    .storeAddress(opts.dstUserAccount)
-                    .endCell()
-            });
-            return ret;
-        }
-        logger.info(formatUtil.format("tokenAccount",tokenAccount,"TON_COIN_ACCOUT",TON_COIN_ACCOUT));
-        logger.info(formatUtil.format("(len)tokenAccount",tokenAccount.length,"(len)TON_COIN_ACCOUT",TON_COIN_ACCOUT.length));
-        // 3.1 ton
-        if(tokenAccount === TON_COIN_ACCOUNT_STR ){
-            logger.info(formatUtil.format("entering ton coin........"));
-            let ret = await sendUserLock();
-            return;
-        }
-
-        //let addrFriedly = Address.parseFriendly(HexStringToBuffer(tokenAccount));
-        let addRaw = Address.parse(tokenAccount);
-        let c = JettonMinter.createFromAddress(addRaw);
-        let jp =  await provider.open(c);
-        // 3.2 original Token
-        let admin = await jp.getAdminAddress();
-        logger.info(formatUtil.format("JettonMinter address , admin address, bridge address", jp.address,admin, this.address))
-        if (admin != this.address){
-            logger.info(formatUtil.format("entering original Token........"));
-            let JwBridgeAddr = await jp.getWalletAddress(this.address);
-            logger.info(formatUtil.format("JwBridge address, bridge address",JwBridgeAddr,this.address));
-
-            logger.info(formatUtil.format("via....",via));
-
-            if(!Address.isAddress(via.address)){
-                throw "invalid via.address"
-            }
-            let JwUserAddr = await jp.getWalletAddress(via.address);
-            logger.info(formatUtil.format("JwUserAddr address, via.address",JwUserAddr,via.address));
-
-            let JwUserSc = await JettonWallet.createFromAddress(JwUserAddr);
-            let JwBridgeSc = await JettonWallet.createFromAddress(JwBridgeAddr);
-
-            let jwu =  await provider.open(JwUserSc);
-            let jwb =  await provider.open(JwBridgeSc);
-
-            logger.info(formatUtil.format("before lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
-                await jwu.getJettonBalance(),
-                await jwb.getJettonBalance()))
-
-            let forwardAmount = toNano('0.05');
-            const sendResult = await jwu.sendTransfer(via,
-                toNano('0.1'), //tons
-                opts.crossValue, this.address,
-                this.address, beginCell().endCell(), forwardAmount, beginCell().endCell());
-
-            logger.info(formatUtil.format("After lock  user(usdt_balance) = %d, bridge(usdt_balance)  = %d",
-                await jwu.getJettonBalance(),
-                await jwb.getJettonBalance()));
-            let ret = await sendUserLock();
-            return;
-        }
-
-        // 3.3 wrapped Token
-        if (admin == this.address){
-            logger.info(formatUtil.format("entering wrapped Token........"));
-            let JwBridgeAddr = await jp.getWalletAddress(this.address);
-            logger.info(formatUtil.format("JwBridge address, bridge address",JwBridgeAddr,this.address));
-
-            logger.info(formatUtil.format("via....",via));
-
-            if(!Address.isAddress(via.address)){
-                throw "invalid via.address"
-            }
-            let JwUserAddr = await jp.getWalletAddress(via.address);
-            logger.info(formatUtil.format("JwUserAddr address, via.address",JwUserAddr,via.address));
-
-            let JwUserSc = await JettonWallet.createFromAddress(JwUserAddr);
-            let JwBridgeSc = await JettonWallet.createFromAddress(JwBridgeAddr);
-
-            let jwu =  await provider.open(JwUserSc);
-            let jwb =  await provider.open(JwBridgeSc);
-
-            logger.info(formatUtil.format("before lock  user(dog_balance) = %d, bridge(dog_balance)  = %d",
-                await jwu.getJettonBalance(),
-                await jwb.getJettonBalance()));
-
-            let forwardAmount = toNano('0.05');
-            const sendResult = await jwu.sendBurn(via,
-                toNano('0.1'), //tons
-                opts.crossValue, this.address,
-                beginCell().endCell());
-
-            logger.info(formatUtil.format("After lock  user(dog_balance) = %d, bridge(dog_balance)  = %d",
-                await jwu.getJettonBalance(),
-                await jwb.getJettonBalance()));
-            let ret = await sendUserLock();
-            return;
+                body: ret.body});
+        }else{
+             let provider = await opts.client.provider(ret.to);
+             await provider.internal(via, {
+                 value: opts.value,
+                 //sendMode: SendMode.PAY_GAS_SEPARATELY,
+                 sendMode: SendMode.NONE,
+                 body: ret.body})
         }
     }
 

@@ -17,9 +17,9 @@ import {JettonMinter} from "../JettonMinter";
 import {JettonWallet} from "../JettonWallet";
 
 const JettonCofig = {
-    name:'WAN@wanchain',   // string
-    symbol:'WAN', // string
-    decimal:'18',  // string
+    name:'USDT@ton',   // string
+    symbol:'USDT', // string
+    decimal:'6',  // string
 }
 
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";

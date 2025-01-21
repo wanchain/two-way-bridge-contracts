@@ -137,3 +137,24 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
     (slice smgFeeProxy, slice feeOperator, _, _, _) = fee_load_data(refcell);
     return (smgFeeProxy, feeOperator);
 }
+
+
+(int) fee_get_tokenpair_fee(cell refCell, int tokenpairID) method_id {
+    (_,_, cell tpFee, _,_) = fee_load_data(refCell);
+
+    (slice cs, int find) = udict_get?(tpFee, 32, tokenpairID);
+    if (find) {
+        return (cs~load_uint(32));
+    }
+    return (0);
+}
+
+(int, int) fee_get_chain_fee(cell refCell, int _src_chain_id, int _dst_chain_id) method_id {
+    (_,_,_, cell chainFee,_) = fee_load_data(refCell);
+    int key_int = (_src_chain_id << 32) + _dst_chain_id;
+    (slice cs, int find) = udict_get?(chainFee, 64, key_int);
+    if (find) {
+        return (cs~load_uint(32), cs~load_uint(32));
+    }
+    return (0, 0);
+}
