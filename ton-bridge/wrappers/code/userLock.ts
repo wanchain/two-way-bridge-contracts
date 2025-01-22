@@ -148,14 +148,19 @@ async function buildLockOriginalTokenMessages(opts: {
         .storeRef(extraCell)
         .endCell()
 
+    //todo should delete begin
+    lockFee = toNano('0.1');
+    //todo should delete end
+
     // sendToken payLoad
     let forwardAmount = lockFee;
+
     let sendTokenAmount = opts.crossValue;
     let sendJettonCel = beginCell()
-        .storeUint(0xf8a7ea5, 32) // op 0xf8a7ea5
+        .storeUint(0xf8a7ea5, 32) // const int op::transfer = 0xf8a7ea5;
         .storeUint(queryId, 64) // op, queryId
         .storeCoins(sendTokenAmount) //jetton_amount
-        .storeAddress(jwAddrBridgeSc)
+        .storeAddress(Address.parse(opts.bridgeScAddr))  // receive address (token)
         .storeAddress(Address.parse(opts.bridgeScAddr)) //response address
         .storeMaybeRef(null)
         .storeCoins(forwardAmount) // forward_ton_amount

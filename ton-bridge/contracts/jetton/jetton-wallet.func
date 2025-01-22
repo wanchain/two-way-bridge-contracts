@@ -134,6 +134,8 @@ const int gas_consumption = 14000000;
   int ton_balance_before_msg = my_ton_balance - msg_value;
   ;;int storage_fee = min_tons_for_storage - min(ton_balance_before_msg, min_tons_for_storage);
   ;;msg_value -= (storage_fee + gas_consumption);
+    ~strdump("receive_tokens");
+    ~dump(forward_ton_amount);
   if(forward_ton_amount) {
     msg_value -= (forward_ton_amount + fwd_fee);
     slice either_forward_payload = in_msg_body;

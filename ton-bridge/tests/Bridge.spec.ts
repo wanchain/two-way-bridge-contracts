@@ -129,6 +129,7 @@ describe('Bridge', () => {
         tokenInfo.tokenOrg.jettonAdminAddr = deployer_jetton.address.toString();
         console.log("usdt jetton admin ==>", deployer_jetton.address);
         console.log("usdt jetton token address  ==>", jettonMinter.address);
+        console.log("usdt jetton wallet address(bridge)  ==>", (await jettonMinter.getWalletAddress(bridge.address)));
         // 3. deploy wrapped Token dog
         defaultContent_dog = beginCell().storeUint(1, 1).endCell();
         jettonMinter_dog = blockchain.openContract(

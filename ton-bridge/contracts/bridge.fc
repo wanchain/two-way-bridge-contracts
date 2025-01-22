@@ -56,6 +56,12 @@
     return oracle_get_smg(oracle, id, 1);
 }
 () check_privilege(int op, slice sender_address, slice cross_owner, cell oracle, cell feeCell ) impure {
+    ~strdump("check_privilege");
+    ~dump(op);
+    if( op == OP_TRANSFER_NOTIFICATION ){
+        return ();
+    }
+
     if((op & 0xFF000000 == OP_CROSS) | (op == OP_FETCH_GPK)){
         return ();
     }
