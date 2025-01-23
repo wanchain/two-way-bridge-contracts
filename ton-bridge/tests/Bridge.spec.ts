@@ -12,6 +12,8 @@ import { common } from '../wrappers/common';
 const schnorr = require('./tools-secp256k1.js');
 import { slimSndMsgResult} from "./transaction";
 import {getQueryID} from "../wrappers/utils/utils";
+import {CoinBalance, TokenBalance} from "../wrappers/wallet/balance";
+import {getSenderByPrvKey} from "../wrappers";
 
 function AccountToBig(addr: Address) {
     return BigInt("0x" + addr.hash.toString('hex'));
@@ -27,9 +29,8 @@ const smgId = "0x000000000000000000000000000000000000000000746573746e65745f30363
 
 const wkDuring = 1000; // seconds
 let initJettonAdmin;
-let
-    tokenInfo = {
-        coin:{tokenPairId:0x01,srcChainId:BIP44_WANCHAIN_CHAINID,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
+let   tokenInfo = {
+    coin:{tokenPairId:0x01,srcChainId:BIP44_WANCHAIN_CHAINID,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
     tokenOrg:{tokenPairId:0x02,srcChainId:BIP44_WANCHAIN_CHAINID,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
     tokenWrapped:{tokenPairId:0x03,srcChainId:BIP44_WANCHAIN_CHAINID,dstChainId:BIP44_CHAINID,srcTokenAcc:"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",dstTokenAcc:'',jettonAdminAddr:''},
 
@@ -58,6 +59,7 @@ describe('Bridge', () => {
     let deployer: SandboxContract<TreasuryContract>;
     let smgFeeProxy: SandboxContract<TreasuryContract>;
     let oracleAdmin: SandboxContract<TreasuryContract>;
+    let operator: SandboxContract<TreasuryContract>;
     let bridge: SandboxContract<Bridge>;
 
     beforeAll(async () => {
@@ -71,6 +73,7 @@ describe('Bridge', () => {
         deployer = await blockchain.treasury('deployer');
         smgFeeProxy = await blockchain.treasury('smgFeeProxy');
         oracleAdmin = await blockchain.treasury('oracleAdmin');
+        operator = await blockchain.treasury('operator');
 
         let c = Bridge.createFromConfig(
             {
@@ -201,8 +204,6 @@ describe('Bridge', () => {
 
         // 3.2 add token pair for token-wrapped
 
-
-
         console.log("(str)dstTokenAcc2....", jettonMinter_dog.address)
         tokenInfo.tokenWrapped.dstTokenAcc = jettonMinter_dog.address.toString();
 
@@ -231,7 +232,6 @@ describe('Bridge', () => {
         });
 
         // 3.3 add token pair for ton-coin
-
 
         tokenInfo.coin.dstTokenAcc = "";
         tokenInfo.coin.jettonAdminAddr = "";
@@ -277,6 +277,8 @@ describe('Bridge', () => {
         let retGetSmg = await bridge.getStoremanGroupConfig(BigInt(smgId));
         console.log("retGetSmg",retGetSmg);
 
+        // 5. set contractFee and AgentFee
+        await setFee(bridge,oracleAdmin);
     });
 
     beforeEach(async () => {
@@ -285,6 +287,7 @@ describe('Bridge', () => {
 
     it('empty test case used to debug beforeAll', async () => {
     })
+
 
     it('should Mint origin token success', async () => {
 
@@ -307,6 +310,7 @@ describe('Bridge', () => {
         expect(await bobJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
         expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
 
+        printCaseSeperator()
     });
 
     it('should Mint wrapped token success', async () => {
@@ -335,7 +339,7 @@ describe('Bridge', () => {
 
         expect(await bobJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
         expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
-
+        printCaseSeperator()
     });
 
     it('should change admin of jetton_dog token to bridge address', async () => {
@@ -345,6 +349,7 @@ describe('Bridge', () => {
         let newAdmin = await jettonMinter_dog.getAdminAddress()
         expect(true).toEqual(Address.isAddress(newAdmin));
         expect(true).toEqual(bridge.address.equals(newAdmin));
+        printCaseSeperator()
     });
 
     it('should update tokenpair success', async () => {
@@ -381,9 +386,10 @@ describe('Bridge', () => {
             to: bridge.address,
             success: true,
         });
+        printCaseSeperator()
     });
 
-    /*it('[userLock coin token] should userLock success', async () => {
+    it('[userLock coin] should userLock success', async () => {
         let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
         let tokenPairID = tokenInfo.coin.tokenPairId;
         let crossValue = BigInt(toNano(1));
@@ -391,8 +397,13 @@ describe('Bridge', () => {
         console.log("smgID(bigInt)==>", BigInt(smgID));
         const queryID = 1;
 
-        console.log("before user lock coin");
-
+        console.log("before user lock original token");
+        console.log("alice's address",alice.address.toString());
+        console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
+        console.log("Before balance of coin",
+            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+        );
         const ret = await bridge.sendUserLock(alice.getSender(), {
             value: value,
             queryID,
@@ -406,7 +417,12 @@ describe('Bridge', () => {
         });
 
         console.log("ret", slimSndMsgResult(ret));
-    });*/
+        console.log("After balance of coin",
+            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+        );
+        printCaseSeperator()
+    });
 
     it('[userLock original token] should userLock success', async () => {
         let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
@@ -418,6 +434,15 @@ describe('Bridge', () => {
 
         console.log("before user lock original token");
         console.log("alice's address",alice.address.toString());
+        console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
+        console.log("Before balance of coin",
+            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+        );
+        console.log("Before balance of token",
+            "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
+            "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
+        );
         const ret = await bridge.sendUserLock(alice.getSender(), {
             value: value,
             queryID,
@@ -431,6 +456,15 @@ describe('Bridge', () => {
         });
 
         console.log("ret", slimSndMsgResult(ret));
+        console.log("After balance of coin",
+            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+            );
+        console.log("After balance of token",
+            "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
+            "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
+        );
+        printCaseSeperator()
     });
 
     /*it('[userLock wrapped token ] should userLock success', async () => {
@@ -728,3 +762,38 @@ describe('Bridge', () => {
     });*/
 
 });
+
+async function printCaseSeperator(){
+    console.log("\n================================\n");
+}
+async  function setFee(bridge:SandboxContract<Bridge>,operator:SandboxContract<TreasuryContract>){
+    let contractChainFee = toNano('0.01')
+    let contractTokenPairFee = toNano('0.02')
+    let agentFee = toNano('0.03')
+
+    // set chain fee
+    for(let key of Object.keys(tokenInfo)){
+        const queryID=await getQueryID();
+        let ret = await bridge.sendSetChainFee(operator.getSender(),{
+            srcChainId:tokenInfo[key].srcChainId,
+            dstChainId:tokenInfo[key].dstChainId,
+            contractFee:Number(contractChainFee),
+            agentFee:Number(agentFee),
+            value: toNano('0.01'),
+            queryID,
+        });
+
+        ret = await bridge.sendSetTokenPairFee(operator.getSender(),{
+            tokenPairID:tokenInfo[key].tokenPairId,
+            fee:Number(contractTokenPairFee),
+            value: toNano('0.01'),
+            queryID,
+        });
+
+        let tokenPairFee = await bridge.getTokenPairFee(tokenInfo[key].tokenPairId)
+        console.log("tokenpairIdFee",tokenInfo[key].tokenPairId, tokenPairFee);
+
+        let chainFee = await bridge.getChainFee(tokenInfo[key].srcChainId,tokenInfo[key].dstChainId);
+        console.log("chainFee","srcChainId", tokenInfo[key].srcChainId,"desChainId",tokenInfo[key].dstChainId,chainFee);
+    }
+}
