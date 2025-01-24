@@ -28,3 +28,10 @@ const int error::oracle_not_matched_gpk        = 0xEE31;
 const int error::oracle_not_found_smg        = 0xEE32;
 
 const int error::signature_unknown_opcode        = 0xEE40;
+
+const int error::cross_query_id_not_equal  = 0xEE50;
+const int error::cross_invalid_jetton_amount = 0xEE51;
+const int error::cross_invalid_chainid = 0xEE52;
+const int error::cross_invalid_jetton_admin = 0xEE53;
+const int error::cross_invalid_tokenpair_id = 0xEE54;
+

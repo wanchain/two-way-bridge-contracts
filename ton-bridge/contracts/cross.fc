@@ -13,29 +13,27 @@
 #include "imports/signature/sig-header.fc";
 #include "fee.fc";
 
-() smgRelease_ton(int queryId, int uniqId, int smgId, int tokenPairId, int releaseValue, int fee, slice tokenAccount, slice userAccount, int r, int p, int s, slice jwBridgeAddr) impure {
-    ~strdump("smgRelease_ton.....");
+() send_fee_to_proxy(slice proxyAddress,int fee){
+    ~strdump("send_fee_to_proxy....");
     var msg = begin_cell()
-        .store_msg_flag(msg_flag::bounceable)
-        .store_slice(userAccount)
-        .store_coins(releaseValue) ;;todo handle fee
-        .store_msgbody_prefix_slice();
-    send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS); ;; revert on errors
-    ;;todo delete begin
-    ;;throw(0x111);  ;; rollback ton to bridge if error occurs.
-    ;;todo delete end
-    return ();
+        .store_msg_flag(msg_flag::non_bounceable) ;; we should not bounce here cause receiver can have uninitialized contract
+        .store_slice(proxyAddress)
+        .store_coins(fee);
+    send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY);
 }
 
-() smgRelease_org_jetton(int queryId, int uniqId, int smgId, int tokenPairId, int releaseValue, int fee, slice tokenAccount, slice userAccount, int r, int p, int s, slice jwBridgeAddr) impure {
+
+() send_token(int queryId, int amount, slice toAddress , slice jwBridgeAddr) impure {
     {--
     1. bridge send inter_transfer to JW_bridge address
     -}
     int forward_ton_amount = 2;                         ;;todo get from input message
     int total_ton_amount = 200000000;                   ;;todo get from input message
-    cell mint_request = begin_cell()
-        .store_op(op::transfer).store_query_id(queryId)
-        .store_coins(releaseValue).store_slice(userAccount)
+    cell transfer_request = begin_cell()
+        .store_op(op::transfer)
+        .store_query_id(queryId)
+        .store_coins( amount)
+        .store_slice(toAddress)
         .store_slice(my_address())                  ;; todo check response address
         .store_maybe_ref(begin_cell().end_cell())   ;; customPayload
         .store_coins(forward_ton_amount)            ;; forward_amount, 4 bit if zero
@@ -46,56 +44,32 @@
         .store_msg_flag(msg_flag::bounceable)
         .store_slice(jwBridgeAddr)
         .store_coins(total_ton_amount)
-        .store_msgbody_prefix_ref(mint_request);
+        .store_msgbody_prefix_ref(transfer_request);
     send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY); ;; revert on errors
+
     return ();
 }
 
-() smgRelease_wrapped_jetton(int queryId, int uniqId, int smgId, int tokenPairId, int releaseValue, int fee, slice tokenAccount, slice userAccount, int r, int p, int s, slice jwBridgeAddr) impure {
-    {--
-    1. bridge send mint message to tokenAccount
-    -}
-    int forward_ton_amount = 4000000;                   ;;todo get from input message
-    int total_ton_amount = 5000000;
-    int totalTonFee = 100000000;
-    int fwdTonFee = 50000000;
-    cell mint_request = begin_cell()
-        .store_op(op::mint).store_query_id(queryId)
+() smgRelease_ton(int queryId, int releaseValue, int fee,slice userAccount, slice proxyAddress) impure {
+    ~strdump("smgRelease_ton.....");
+    var msg = begin_cell()
+        .store_msg_flag(msg_flag::bounceable)
         .store_slice(userAccount)
-        .store_coins(releaseValue)
-        .store_coins(forward_ton_amount)
-        .store_coins(total_ton_amount)
-        .end_cell();
-
-
-    var msg = begin_cell()
-        .store_uint(0, 1)
-        .store_uint(1, 1)
-        .store_uint(1, 1)
-        .store_uint(0, 1)
-        .store_slice(my_address())
-        .store_slice(tokenAccount)
-        .store_coins(totalTonFee)
-        .store_uint(0, 1)
-        .store_coins(0)
-        .store_coins(fwdTonFee)
-        .store_uint(cur_lt(), 64)
-        .store_uint(now(), 32)
-        .store_uint(0, 1)
-        .store_uint(1, 1)
-        .store_ref(mint_request);
-
-    send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY); ;; revert on errors
+        .store_coins(( releaseValue - fee ) )
+        .store_msgbody_prefix_slice();
+    send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS);
+    send_fee_to_proxy(proxyAddress,fee);
     return ();
 }
 
-() send_fee_to_proxy(slice proxyAddress,int fee){
-    ~strdump("send_fee_to_proxy....");
-    var msg = begin_cell()
-        .store_msg_flag(msg_flag::non_bounceable) ;; we should not bounce here cause receiver can have uninitialized contract
-        .store_slice(proxyAddress)
-        .store_coins(fee);
-    send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY);
+() smgRelease_org_jetton(int queryId, int releaseValue, int fee,slice userAccount, slice proxyAddress, slice jwBridgeAddr) impure {
+    send_token( queryId, ( releaseValue - fee ),  userAccount , jwBridgeAddr);
+    send_token( queryId, fee ,  proxyAddress , jwBridgeAddr);
+    return ();
+}
+
+() smgRelease_wrapped_jetton(int queryId, int releaseValue, int fee,slice userAccount, slice proxyAddress, slice jwBridgeAddr) impure {
+    smgRelease_org_jetton( queryId,  releaseValue,  fee, userAccount,  proxyAddress,  jwBridgeAddr);
 }
 
 () userLock_ton(int queryId, int smgId, int tokenPairId, int lockValue, int fee, slice tokenAccount, slice userAccount,slice smgFeeProxy) impure {
@@ -104,13 +78,13 @@
     return ();
 }
 
-() userLock_org_jetton(int queryId, int smgId, int tokenPairId, int lockValue, int fee, slice tokenAccount, slice userAccount, slice jwAddrSrc,slice jwAddrBridge,slice smgFeeProxy) impure {
+() userLock_org_jetton(int queryId, int smgId, int tokenPairId, int lockValue, int fee, slice tokenAccount, slice userAccount,slice smgFeeProxy) impure {
     ~strdump("userLock_org_jetton....");
     send_fee_to_proxy(smgFeeProxy,fee);
     return ();
 }
 
-() userLock_wrapped_jetton(int queryId, int smgId, int tokenPairId, int lockValue, int fee, slice tokenAccount, slice userAccount, slice jwAddrSrc,slice jwAddrBridge,slice smgFeeProxy) impure {
+() userLock_wrapped_jetton(int queryId, int smgId, int tokenPairId, int lockValue, int fee, slice tokenAccount, slice userAccount, slice smgFeeProxy) impure {
     ~strdump("userLock_wrapped_jetton....");
     send_fee_to_proxy(smgFeeProxy,fee);
     return ();
@@ -142,7 +116,7 @@
         (slice userAccount) = inMsgBody~load_bits(8 * userAccountLen);
 
         (slice extraSlice) = inMsgBody~load_ref().begin_parse();
-        (slice jettonAdminAddrFromMsg,slice jwAddressSrc, slice jwAddressBridge) = (extraSlice~load_msg_addr(),extraSlice~load_msg_addr(),extraSlice~load_msg_addr());
+        (slice tokenAcountFromMsg,slice jwAddressSrc, slice jwAddressBridge) = (extraSlice~load_msg_addr(),extraSlice~load_msg_addr(),extraSlice~load_msg_addr());
         (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr) = tm_get_token_pair(tokenManager, tokenPairId);
 
         int fee = 0;
@@ -169,22 +143,8 @@
                 tokenAccount = dstAccount;
             } else {
                 ~strdump("No chainID == BIP44_CHAINID....");
-                ;;todo throw error   error tokenpairId, no ton bip44 chainID
-                ;;todo send back jetton to srcUser
+                throw_arg("No chainID == BIP44_CHAINID",error::cross_invalid_chainid);
             }
-        }
-        ~strdump("jettonAdminAddr");
-        ~dump(jettonAdminAddr);
-
-        ~strdump("jettonAdminAddrFromMsg");
-        ~dump(jettonAdminAddrFromMsg);
-
-        (_, int hashJettonAdminAddrFromMsgHash) = parse_std_addr(jettonAdminAddrFromMsg);
-        slice jettonAdminAddrFromMsgSlice = int_to_slice(hashJettonAdminAddrFromMsgHash, 256);
-
-        if (equal_slices(jettonAdminAddr,jettonAdminAddrFromMsgSlice) != -1){
-            ;;todo send back jetton to srcUser
-            throw_arg("consistent with jettonAdminAddr",0xffff);
         }
 
         int hashProxyFeeAddr = smgFeeProxy~load_uint(256);
@@ -194,21 +154,13 @@
         if (equal_slices(tokenAccount, ZERO_ACCOUNT)) {
             userLock_ton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount,intProxyFeeAddr);
         } else {
-            int hash = tokenAccount~load_uint(256);
-            slice tokenAccountInt = get_serialized_address(WORKING_CHAINID, hash);
 
-            int hashJwSrc = jwAddressSrc~load_uint(256);
-            slice jwSrcAccountInt = get_serialized_address(WORKING_CHAINID, hashJwSrc);
-
-            int hashJwBridge = jwAddressBridge~load_uint(256);
-            slice jwBridgeAccountInt = get_serialized_address(WORKING_CHAINID, hashJwBridge);
-
-            (_, hash) = parse_std_addr(my_address());
+            (_, int hash) = parse_std_addr(my_address());
             slice myAddressHashSlice = int_to_slice(hash, 256);
             if (equal_slices(jettonAdminAddr, myAddressHashSlice)) {
-                userLock_org_jetton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccountInt, userAccount, jwSrcAccountInt,jwBridgeAccountInt,intProxyFeeAddr);
+                userLock_wrapped_jetton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount, intProxyFeeAddr);
             } else {
-                userLock_wrapped_jetton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccountInt, userAccount, jwSrcAccountInt,jwBridgeAccountInt,intProxyFeeAddr);
+                userLock_org_jetton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount, intProxyFeeAddr);
             }
         }
         return oracle;
@@ -222,10 +174,10 @@
         (_, int queryIdFromLockBody,_,_,int crossValue) =
         (lockBodySlice~load_uint(32),lockBodySlice~load_uint(64),lockBodySlice~load_uint(256),lockBodySlice~load_uint(32),lockBodySlice~load_uint(256));
         if ( queryIdFromLockBody != queryId){
-            throw_arg("query not equal",0xffff);
+            throw_arg("queryId not equal",error::cross_query_id_not_equal);
         }
         if ( jettonAmount != crossValue){
-            throw_arg("jettonAmount is not equal to crossValue",0xffff); ;;//
+            throw_arg("jettonAmount is not equal to crossValue",error::cross_invalid_jetton_amount); ;;//
         }
 
         ;; send message to itself and invoke userLock
@@ -234,13 +186,21 @@
             .store_slice(my_address())
             .store_coins(msgValue)
             .store_msgbody_prefix_ref(lockBody);
+        ~strdump("begin send userLock triggered by notification");
         send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS);
         return oracle;
+    }
+
+    if (op == OP_EXCESSES) {
+        return (oracle);
     }
 
     if (op == OP_CROSS_SmgRelease) {
         ;;(slice oracleAdmin, cell smgConfig, cell smgConfigCommit, cell smgTxUniqueId) = oracle_load_data(oracle);
         ~strdump("entering OP_CROSS_SmgRelease...");
+
+        (slice smgFeeProxy,_) = fee_get_config(caFee);
+        ~dump(smgFeeProxy);
 
         (int uniqId,int smgId,int tokenPairId,int releaseValue) =(inMsgBody~load_uint(256),inMsgBody~load_uint(256),inMsgBody~load_uint(32),inMsgBody~load_uint(256));
 
@@ -282,7 +242,7 @@
             if (dstChainId == BIP44_CHAINID) {
                 tokenAccountFromTp = dstAccount;
             } else {
-                ;;todo throw error
+                throw_arg("invalid tokenPairID",error::cross_invalid_tokenpair_id);
             }
         }
 
@@ -295,27 +255,26 @@
         throw_unless(0xffee, verify_sec(s, gpk_x, gpk_y, e, p, msg_hash));
         ~strdump("after verify_sec");
 
+        ;; int hashUserAccount = smgFeeProxy~load_uint(256);
+        ;; slice intUserAccount = get_serialized_address(WORKING_CHAINID, hashUserAccount);
+
         if (equal_slices(tokenAccountFromTp, ZERO_ACCOUNT)) {
             ~strdump("before entering smgRelease_ton...");
-            smgRelease_ton(queryId, uniqId, smgId, tokenPairId, releaseValue, fee, tokenAccountFromTp, userAccount, e, p, s, jwBridgeAddr);
+            smgRelease_ton(queryId,releaseValue, fee, userAccount, smgFeeProxy);
         } else {
-
-            int hash = tokenAccountFromTp~load_uint(256);
-            slice tokenAccountInt = get_serialized_address(WORKING_CHAINID, hash);
-
-            ;; todo get jetton_admin_addr from jetton_admin
-            (_, hash) = parse_std_addr(my_address());
+            (_, int hash) = parse_std_addr(my_address());
             slice myAddressHashSlice = int_to_slice(hash, 256);
             if (equal_slices(jettonAdminAddr, myAddressHashSlice)) {
                 ~strdump("before entering smgRelease_wrapped_jetton...");
-                smgRelease_wrapped_jetton(queryId, uniqId, smgId, tokenPairId, releaseValue, fee, tokenAccountInt, userAccount, e, p, s, jwBridgeAddr);
+                smgRelease_wrapped_jetton(queryId,releaseValue, fee, userAccount,smgFeeProxy,jwBridgeAddr);
             } else {
                 ~strdump("before entering smgRelease_org_jetton...");
-                smgRelease_org_jetton(queryId, uniqId, smgId, tokenPairId, releaseValue, fee, tokenAccountInt, userAccount, e, p, s, jwBridgeAddr);
+                smgRelease_org_jetton(queryId,releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr);
             }
         }
         return (new_oracle);
     }
+
     throw(0xffff);
     return (oracle);
 }

@@ -58,7 +58,7 @@
 () check_privilege(int op, slice sender_address, slice cross_owner, cell oracle, cell feeCell ) impure {
     ~strdump("check_privilege");
     ~dump(op);
-    if( op == OP_TRANSFER_NOTIFICATION ){
+    if(( op == OP_TRANSFER_NOTIFICATION ) | ( op == OP_EXCESSES )){
         return ();
     }
 
@@ -177,14 +177,14 @@
         }
     }
 
-    if ((op & 0xFF000000 == OP_CROSS) | (op == OP_TRANSFER_NOTIFICATION)) {
+    if ((op & 0xFF000000 == OP_CROSS) | (op == OP_TRANSFER_NOTIFICATION) | (op == OP_EXCESSES )) {
         ;; var _extend = cross_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
         ;; save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
         ~strdump("Entering op_cross...");
 
         var _oracle = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle,ca_fee);
+        ;;cb_executed(sender_address,query_id); ;;todo check it carefully.
         save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
-
         return ();
     }
 

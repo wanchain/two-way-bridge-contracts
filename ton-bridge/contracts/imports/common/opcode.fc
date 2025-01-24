@@ -70,3 +70,4 @@ const OP_GROUPAPPROVE_Proposol_UpgradeSc    = 0xa000001a;
 const OP_FETCH_GPK                         = 0xb0000001;
 const OP_TRANSFER_NOTIFICATION = 0x7362d09c; ;;op::transfer_notification = 0x7362d09c;
 const OP_TRANSFER = 0xf8a7ea5;  ;; transfer const int op::transfer = 0xf8a7ea5;
+const OP_EXCESSES = 0xd53276db; ;;const int op::excesses = 0xd53276db;

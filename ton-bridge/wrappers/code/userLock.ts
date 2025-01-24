@@ -178,11 +178,10 @@ async function buildLockOriginalTokenMessages(opts: {
 }
 
 async function buildLockWrappedTokenMessages(opts:any,jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
-    return {
-        internalMsg:null,
-        body:null,
-        to:null,
-    }
+    console.log("buildLockWrappedTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
+    let ret =  (await buildLockOriginalTokenMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee));
+    return ret;
+
 }
 
 async function getFee(client:TonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number,srcChainId,dstChainId){

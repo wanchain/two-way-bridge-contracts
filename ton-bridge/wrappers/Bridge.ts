@@ -265,13 +265,15 @@ export class Bridge implements Contract {
             senderAccount: opts.senderAccount
         })
         console.log("ret==>",ret);
+        console.log("ret.to==>",ret.to);
+
         if(ret.to.toString() == this.address.toString()){
             await provider.internal(via, {
                 value: opts.value,
                 sendMode: SendMode.PAY_GAS_SEPARATELY,
                 body: ret.body});
         }else{
-             let provider = await opts.client.provider(ret.to);
+             let provider = await opts.client.provider(ret.to as unknown as Address);
              await provider.internal(via, {
                  value: opts.value,
                  //sendMode: SendMode.PAY_GAS_SEPARATELY,
