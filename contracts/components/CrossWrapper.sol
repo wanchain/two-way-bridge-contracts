@@ -76,7 +76,7 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
         address tokenAddress = _getTokenAddressFromPairID(tokenPairID);
         if (tokenAddress != address(0)) {
             IERC20(tokenAddress).safeTransferFrom(msg.sender, address(this), value);
-            IERC20(tokenAddress).approve(address(cross), value);
+            IERC20(tokenAddress).forceApprove(address(cross), value);
         }
         cross.userLock{value: msg.value}(smgID, tokenPairID, value, userAccount);
         emit PartnerCross(partner, partner);
