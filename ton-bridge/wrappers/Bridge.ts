@@ -614,19 +614,19 @@ export class Bridge implements Contract {
         });
     }
 
-    async sendUpgradeSC(provider: ContractProvider, code: Cell,
+    async sendUpgradeSC(provider: ContractProvider,via:Sender,
         opts: {
-            sender: Sender,
             value: bigint,
             queryID?: number,
+            code:Cell,
         }
     ) {
-        await provider.internal(opts.sender, {
+        await provider.internal(via, {
             value: opts.value,
             body: beginCell()
             .storeUint(opcodes.OP_UPGRADE_Code, 32) // op (op #1 = increment)
             .storeUint(0, 64) // query id
-            .storeRef(code)
+            .storeRef(opts.code)
             .endCell()
         });
     }
