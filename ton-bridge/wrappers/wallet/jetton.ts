@@ -51,10 +51,22 @@ const jettonOnChainMetadataSpec = {
     decimals: 'utf8'
 };
 
+async function getRidofProp(originalObj:any,propertiesToRemove:string[]):Promise<any> {
+
+    const newObj = Object.keys(originalObj)
+        .filter(key => !propertiesToRemove.includes(key))
+        .reduce((acc, key) => {
+            acc[key] = originalObj[key];
+            return acc;
+        }, {});
+    return newObj;
+}
+
 export async function buildWrappedJettonContent(opts:any):Promise<Cell>{
     const dict = Dictionary.empty(Dictionary.Keys.BigUint(KEYLEN), Dictionary.Values.Cell());
 
-    Object.entries(opts).forEach(([k, v]: [string, string | undefined]) => {
+    let newOpts = await getRidofProp(opts,['tokenAddress']);
+    Object.entries(newOpts).forEach(([k, v]: [string, string | undefined]) => {
         if (!jettonOnChainMetadataSpec[k])
             throw new Error(`Unsupported token key: ${k}`);
         if (v === undefined || v === "") return;

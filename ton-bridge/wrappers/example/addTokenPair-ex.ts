@@ -15,7 +15,8 @@ const args = process.argv.slice(2);
 //let tokenType = "coin";
 let tokenType = args[0];
 
-const tokenInfo = require('../testData/tokenInfo.js')
+let jettonTokenInfo = require('../testData/jettonTokenInfo.json');
+let tokenInfo = require('../testData/tokenInfo.json')
 
 const prvList = require('../testData/prvlist')
 
@@ -36,6 +37,7 @@ async function init(){
     client = await getClient(config);
     console.log("client=>",client);
     queryID = await getQueryID();
+
 }
 
 async function addTokenPair(){

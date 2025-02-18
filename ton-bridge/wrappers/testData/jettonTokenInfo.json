@@ -1,0 +1,14 @@
+{
+  "tokenOrg": {
+    "name": "USDT@ton",
+    "symbol": "USDT",
+    "decimals": "6",
+    "tokenAddress": "EQDPFoyEUdur7g9c0nNn8rGX08TedRsvc_aik0nohFn8v1eF"
+  },
+  "tokenWrapped": {
+    "name": "TEST2@wanchain",
+    "symbol": "TEST2",
+    "decimals": "18",
+    "tokenAddress": "EQB7MS_HPERUy7btkQlbgn3L4GQN_eqoev_D3jv6DvH9OxqL"
+  }
+}

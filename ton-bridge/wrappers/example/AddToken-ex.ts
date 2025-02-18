@@ -1,24 +1,30 @@
 import {TonClient} from "@ton/ton";
+const fs = require("fs");
+
+let jettonTokenInfo = require('../testData/jettonTokenInfo.json')
+const jettonTokenInfoPath = "../testData/jettonTokenInfo.json";
+
+let tokenInfo = require('../testData/tokenInfo.json')
+const tokenInfoPath = "../testData/tokenInfo.json";
 
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
 }
 
-import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
+import {Address, toNano, Sender} from '@ton/core';
 import {
     getJettonDataContent,
     getJettonData,
     buildWrappedJettonContent,
     parseWrappedJettonContent, getJettonBalance, getJettonAddress
 } from "../wallet/jetton";
-import {compileContract,writeCR,doCompile} from "../utils/compileContract";
+import {doCompile} from "../utils/compileContract";
 import {JettonMinter} from "../JettonMinter";
-import {JettonWallet} from "../JettonWallet";
 
 let args = process.argv.slice(2);
 let jettonName = args[0];
-const jettonTokenInfo = require('../testData/jettonTokenInfo')
+
 const JettonCofig = jettonTokenInfo[jettonName]
 
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
@@ -32,6 +38,16 @@ let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let nonDeployer = null;
 let client = null;
 let via;
+
+async function writeJettonTokenInfo(path:string,jettonTokenInfo:any){
+    fs.writeFileSync(path,jettonTokenInfo);
+}
+
+async function writeTokenInfo(path:string,jettonTokenInfo:any,jettonName:string){
+    console.log("tokenInfo=>",tokenInfo);
+    tokenInfo[jettonName].dstTokenAcc = jettonTokenInfo[jettonName].tokenAddress;
+    fs.writeFileSync(path,JSON.stringify(tokenInfo,null,2));
+}
 
 async function init(){
     client = await getClient(config);
@@ -79,14 +95,19 @@ async function main() {
                 wallet_code: retWallet.codeCell,
             },
             retMinter.codeCell));
+
+    jettonTokenInfo[jettonName].tokenAddress =jettonMinterOpened.address.toString();
+    await writeJettonTokenInfo(jettonTokenInfoPath,JSON.stringify(jettonTokenInfo,null,2));
+    await writeTokenInfo(tokenInfoPath,jettonTokenInfo,jettonName);
+
     if(await isAddrDepolyed(client,jettonMinterOpened.address.toString())){
         console.log("jettonMinter address :",jettonMinterOpened.address.toString(),"has already deployed");
+        return;
     }else{
         let retDeploy = await jettonMinterOpened.sendDeploy(via, toNano('0.005'))
         console.log("jettonMinter address :",jettonMinterOpened.address.toString());
         console.log(retDeploy);
     }
-
 
     let jwAddrDeployer = await getJettonAddress(client,jettonMinterOpened.address,deployer.address);
     console.log("deployer.jettonAddress=>",jwAddrDeployer.toString());
@@ -122,5 +143,5 @@ async function main() {
 }
 
 main();
-// ts-node AddToken-ex.ts wrappedToken
-// ts-node AddToken-ex.ts originalToken
+// ts-node AddToken-ex.ts tokenWrapped
+// ts-node AddToken-ex.ts tokenOrg

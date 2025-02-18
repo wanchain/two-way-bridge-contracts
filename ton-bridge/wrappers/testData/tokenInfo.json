@@ -1,0 +1,23 @@
+{
+  "tokenOrg": {
+    "tokenPairId": 940,
+    "srcChainId": 2153201998,
+    "dstChainId": 2147484255,
+    "srcTokenAcc": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "dstTokenAcc": "EQDPFoyEUdur7g9c0nNn8rGX08TedRsvc_aik0nohFn8v1eF"
+  },
+  "tokenWrapped": {
+    "tokenPairId": 941,
+    "srcChainId": 2153201998,
+    "dstChainId": 2147484255,
+    "srcTokenAcc": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "dstTokenAcc": "EQB7MS_HPERUy7btkQlbgn3L4GQN_eqoev_D3jv6DvH9OxqL"
+  },
+  "coin": {
+    "tokenPairId": 939,
+    "srcChainId": 2153201998,
+    "dstChainId": 2147484255,
+    "srcTokenAcc": "0x1B047f66ddC11d6ae4Af9417b7534c7f51904f73",
+    "dstTokenAcc": "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c"
+  }
+}
