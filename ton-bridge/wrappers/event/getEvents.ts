@@ -5,7 +5,7 @@ import {codeTable} from "../code/encode-decode";
 
 import {logger} from '../utils/logger'
 import {getTranResultByTxHash, TranResult} from "../transResult/transResult";
-import {ZERO_ACCOUNT_STR} from "../../wan-ton-sdk/src/const/const-value";
+import {ZERO_ACCOUNT_STR} from "../const/const-value";
 const formatUtil = require('util');
 import * as opcodes from "../opcodes";
 import {OP_TRANSFER_NOTIFICATION} from "../opcodes";
