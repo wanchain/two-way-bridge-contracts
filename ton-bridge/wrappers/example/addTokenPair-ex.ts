@@ -11,7 +11,9 @@ import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR,BIP44_WANCHAIN_CHAIN
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
 import {getClient, TonClientConfig} from "../client/client";
 
-let tokenType = "coin";
+const args = process.argv.slice(2);
+//let tokenType = "coin";
+let tokenType = args[0];
 
 const tokenInfo = require('../testData/tokenInfo.js')
 
@@ -62,3 +64,7 @@ async function main(){
 };
 
 main();
+
+// ts-node addTokenPair-ex.ts coin
+// ts-node addTokenPair-ex.ts tokenWrapped
+// ts-node addTokenPair-ex.ts tokenOrg

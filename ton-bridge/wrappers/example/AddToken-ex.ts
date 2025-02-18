@@ -16,11 +16,10 @@ import {compileContract,writeCR,doCompile} from "../utils/compileContract";
 import {JettonMinter} from "../JettonMinter";
 import {JettonWallet} from "../JettonWallet";
 
-const JettonCofig = {
-    name:'TEST2@wanchain',   // string
-    symbol:'TEST2', // string
-    decimals:'18',  // string
-}
+let args = process.argv.slice(2);
+let jettonName = args[0];
+const jettonTokenInfo = require('../testData/jettonTokenInfo')
+const JettonCofig = jettonTokenInfo[jettonName]
 
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
 import {getClient, TonClientConfig} from "../client/client";
@@ -123,3 +122,5 @@ async function main() {
 }
 
 main();
+// ts-node AddToken-ex.ts wrappedToken
+// ts-node AddToken-ex.ts originalToken

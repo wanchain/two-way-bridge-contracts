@@ -8,7 +8,8 @@ import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
 import {getWalletByPrvKey} from "../wallet/walletContract";
 import {getClient, TonClientConfig} from "../client/client";
 
-const tokenPairId=941;
+let args = process.argv.slice(2);
+let tokenPairId=args[0];
 const prvList = require('../testData/prvlist')
 
 let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
@@ -42,3 +43,6 @@ async function main(){
 };
 
 main();
+// ts-node getTokenPair-ex.ts 941
+// ts-node getTokenPair-ex.ts 939
+// ts-node getTokenPair-ex.ts 940
