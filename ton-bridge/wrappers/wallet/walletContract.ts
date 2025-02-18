@@ -4,12 +4,12 @@ PayAttention:
     for interface support all version of wallet contract, you can refer tonWeb sdk.
 */
 
-import {mnemonicToWalletKey, keyPairFromSecretKey} from "ton-crypto";
+//import {mnemonicToWalletKey, keyPairFromSecretKey} from "ton-crypto";
+import {mnemonicToWalletKey, keyPairFromSecretKey} from "@ton/crypto";
 import {address, TonClient, WalletContractV4} from "@ton/ton";
 import {Address, ContractProvider, OpenedContract, Sender} from "@ton/core";
 import {keyPairFromSeed} from "ton-crypto/dist/primitives/nacl";
 import {Blockchain} from "@ton/sandbox";
-import {AccountStateActive} from "@ton/core/src/types/AccountState";
 
 export async function getWalletByMnemonic(mnemonic: String): Promise<WalletContractV4> {
     const key = await mnemonicToWalletKey(mnemonic.split(" "));

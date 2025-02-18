@@ -10,7 +10,7 @@ const formatUtil = require('util');
 import * as opcodes from "../opcodes";
 import {OP_TRANSFER_NOTIFICATION} from "../opcodes";
 import {getJettonAddress} from "../wallet/jetton";
-import {getTokenPairInfo} from "../../wan-ton-sdk/src/code/userLock";
+import {getTokenPairInfo} from "../code/userLock";
 import {isAddressEqual} from "../utils/utils";
 
 const MAX_LIMIT = 1000;
@@ -108,7 +108,7 @@ async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:str
         }
         let decoded = await codeTable[opCode]["deCode"](bodyCell);
         decoded.txHashBase64 = tran.hash().toString("base64");
-        decoded.txHash = tran.hash().toString("hex");97
+        decoded.txHash = tran.hash().toString("hex");
 
         decoded.lt = tran.lt;
         decoded.prevTransactionHash = tran.prevTransactionHash
@@ -228,19 +228,4 @@ async function decodeUserLock(bodyCell:Cell){
 
 async function getTransResult(client:TonClient, scAddr:Address,txHash:string, lt:string){
     return await getTranResultByTxHash(client,scAddr,txHash,lt);
-}
-
-async function checkUserLockTokenPairId(client:TonClient, scAddr:Address,txHash:string, lt:string){
-    let isValid = false
-    let transResult = await getTransResult(client,scAddr,txHash,lt);
-    if (!transResult.success){
-        logger.error("the trans tree is not success")
-        return false
-    }
-
-    for(let pathStep of transResult.path){
-
-    }
-
-    return isValid
 }
