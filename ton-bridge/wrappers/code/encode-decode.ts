@@ -13,6 +13,33 @@ const formatUtil = require('util');
 
 export const codeTable = {
 
+    [opcodes.OP_CROSS_UserLock]:{
+        "enCode": function (opts: any): Cell{
+            let retCell = Cell.EMPTY
+            return retCell;
+        },
+        "deCode": function (cell: Cell): any{
+            return
+        },
+        "emitEvent": function (opts){
+            return {
+                eventName:"UserLockLogger",
+                uniqueID:opts.uniqueID,
+                smgID:opts.smgID,
+                tokenPairID:opts.tokenPairID,
+                value:opts.releaseValue,
+                fee:opts.fee,
+                userAccount:opts.userAccount,
+                txHashBase64:opts.txHashBase64,
+                txHash:opts.txHash,
+                lt:opts?.lt,
+                from:opts?.origin,
+                prevTransactionHash:opts?.prevTransactionHash,
+                prevTransactionLt:opts?.prevTransactionLt,
+            }
+        }
+    },
+
     [opcodes.OP_CROSS_SmgRelease]: {
         "enCode": function (opts: any): Cell {
             logger.info(formatUtil.format("Entering enCode Function OP_CROSS_SmgRelease"));

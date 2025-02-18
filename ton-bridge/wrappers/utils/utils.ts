@@ -54,3 +54,21 @@ export function bigIntReplacer(key, value) {
     }
     return value;
 }
+
+export function isAddressEqual(src:Address|string,dst:Address|string){
+    let srcAddr :Address;
+    let dstAddr :Address;
+    if(!(src instanceof  Address)){
+        srcAddr = Address.parse(src)
+    }else{
+        srcAddr = src
+    }
+
+    if(!(dst instanceof  Address)){
+        dstAddr = Address.parse(dst)
+    }else{
+        dstAddr = dst
+    }
+
+    return srcAddr.equals(dstAddr);
+}

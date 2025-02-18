@@ -234,7 +234,7 @@ async function getJettonAdminAddr(client:TonClient|Blockchain,jettonMasterAddr:A
     }
 }
 
-async function getTokenPairInfo(client:TonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number){
+export async function getTokenPairInfo(client:TonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number){
     let tokePairInfo ;
     let tokenAccount = "";
 

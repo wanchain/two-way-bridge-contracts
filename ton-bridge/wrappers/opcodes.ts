@@ -50,3 +50,9 @@ export const OP_GROUPAPPROVE_Proposol_TransferOracleAdmin    = 0xa0000018;
 export const OP_GROUPAPPROVE_Proposol_TransferOperator    = 0xa000001;
 export const OP_GROUPAPPROVE_Proposol_UpgradeSc    = 0xa000001a;
 export const OP_FETCH_GPK                         = 0xb0000001;
+
+
+
+export const OP_TRANSFER_NOTIFICATION = 0x7362d09c;
+export const OP_TRANSFER = 0xf8a7ea5;
+export const OP_EXCESSES = 0xd53276db;

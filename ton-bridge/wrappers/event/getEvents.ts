@@ -4,7 +4,14 @@ import {codeTable} from "../code/encode-decode";
 
 
 import {logger} from '../utils/logger'
+import {getTranResultByTxHash, TranResult} from "../transResult/transResult";
+import {ZERO_ACCOUNT_STR} from "../../wan-ton-sdk/src/const/const-value";
 const formatUtil = require('util');
+import * as opcodes from "../opcodes";
+import {OP_TRANSFER_NOTIFICATION} from "../opcodes";
+import {getJettonAddress} from "../wallet/jetton";
+import {getTokenPairInfo} from "../../wan-ton-sdk/src/code/userLock";
+import {isAddressEqual} from "../utils/utils";
 
 const MAX_LIMIT = 1000;
 /*
@@ -55,7 +62,7 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
 
     for(let tran of trans){
         logger.info(formatUtil.format("tran=>",tran.hash().toString('base64')));
-        let event = await getEventFromTran(tran);
+        let event = await getEventFromTran(client,tran,scAddress);
         if(event != null){
             if(eventName && event.eventName.toLowerCase() != eventName.toLowerCase()){
                 continue;
@@ -87,7 +94,7 @@ async function getTransactions(client:TonClient,scAddress:string,opts:{
     return ret;
 }
 
-async function getEventFromTran(tran:Transaction){
+async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:string){
     let bodyCell = tran.inMessage?.body;
     if(!bodyCell){
         return null;
@@ -101,8 +108,26 @@ async function getEventFromTran(tran:Transaction){
         }
         let decoded = await codeTable[opCode]["deCode"](bodyCell);
         decoded.txHashBase64 = tran.hash().toString("base64");
-        decoded.txHash = tran.hash().toString("hex");
+        decoded.txHash = tran.hash().toString("hex");97
+
         decoded.lt = tran.lt;
+        decoded.prevTransactionHash = tran.prevTransactionHash
+        decoded.prevTransactionLt = tran.prevTransactionLt
+
+        // handle userLock
+        if(opCode == opcodes.OP_CROSS_UserLock){
+            logger.info(formatUtil.format("getEventFromTran OP_CROSS_UserLock"));
+
+            let handleResult = await handleUserLockEvent(client,Address.parse(scAddress),
+                tran.hash().toString(),tran.lt.toString(10),
+                tran.prevTransactionHash.toString(10),
+                tran.prevTransactionLt.toString(10),)
+            if (!handleResult.valid){
+                logger.error(formatUtil.format("handleResult OP_CROSS_UserLock is not valid"));
+                return null;
+            }
+            decoded.origin = handleResult.origin;
+        }
         return await codeTable[opCode]["emitEvent"](decoded);
     }catch(err){
         logger.error(formatUtil.format("getEventFromTran err",err.message));
@@ -121,4 +146,101 @@ async function getOpCodeFromCell(cell:Cell){
         logger.error(formatUtil.format("getOpCodeFromCell(err)=>",err));
         throw new Error("no opCode find");
     }
+}
+/*
+{
+    valid: true|false,  // used the trans tree is valid
+    origin: Address,    // from address, who trigger the lock event.
+}
+ */
+
+async function handleUserLockEvent(client:TonClient, scAddr:Address,txHash:string, lt:string,preHash:string, preLt:string){
+
+    logger.info(formatUtil.format("handleUserLockEvent"));
+
+    let transResult  = await getTransResult(client,scAddr,txHash,lt);
+    if (!transResult.success){
+        logger.error("the trans tree is not success")
+        return {
+            valid:false,
+            origin:transResult.originAddr.toString()
+        }
+    }
+
+    let tx = await client.getTransaction(scAddr,lt,txHash)
+    let bodyCellLock = tx.inMessage.body
+    let decodedResult = await decodeUserLock(bodyCellLock);
+
+    // get parent trans
+    let preTx = await client.getTransaction(scAddr,preLt,preHash)
+    let bodyCell = preTx.inMessage.body
+    let bodySlice = bodyCell.beginParse();
+    let op = bodySlice.loadUint(32);
+    if(op == opcodes.OP_TRANSFER_NOTIFICATION){
+        let fromAddrHead = preTx.inMessage.info.src
+        let ret = await getTokenPairInfo(client,scAddr,decodedResult.tokenPairID)
+        // 1. check tokenAccount content with the one get by tokenPairId
+        if(!isAddressEqual(decodedResult.addrTokenAccount,ret.tokenAccount)){
+            throw Error("invalid tokenpairid or tokenAccount");
+        }
+        // 2. check from address is content with the one computed by getJettonAddress
+        // build jettonAddress
+        let jwAddr = await getJettonAddress(client,Address.parse(ret.tokenAccount),scAddr)
+        if(isAddressEqual(jwAddr,(preTx.inMessage.info.src as unknown as Address ))){
+            throw Error("invalid from address of transfer notification");
+        }
+    }
+    return {
+        valid:true,
+        origin:transResult.originAddr.toString()
+    }
+}
+
+async function decodeUserLock(bodyCell:Cell){
+    let bodySlice = bodyCell.asSlice();
+    let queryId,dstUserAccount,addrTokenAccount,jwAddrSrc,jwAddrBridgeSc,opCode,smgID,tokenPairID,crossValue;
+    opCode = bodySlice.loadUint(32)
+    queryId = bodySlice.loadUint(64)
+    smgID = bodySlice.loadUint(256)
+    tokenPairID = bodySlice.loadUint(32)
+    crossValue = bodySlice.loadUint(256)
+    let dstUserAccountBufferLen = bodySlice.loadUint(8)
+    let dstUserAccountBuffer = bodySlice.loadBuffer(dstUserAccountBufferLen)
+
+    let extraSlice = bodySlice.loadRef().beginParse()
+    addrTokenAccount =   extraSlice.loadAddress()
+    jwAddrSrc = extraSlice.loadAddress()
+    jwAddrBridgeSc = extraSlice.loadAddress()
+    extraSlice.endParse()
+    dstUserAccount = "0x"+dstUserAccountBuffer.toString('hex')
+    return{
+        opCode,
+        queryId,
+        smgID,
+        tokenPairID,
+        crossValue,
+        dstUserAccount,
+        addrTokenAccount,
+        jwAddrSrc,
+        jwAddrBridgeSc
+    }
+}
+
+async function getTransResult(client:TonClient, scAddr:Address,txHash:string, lt:string){
+    return await getTranResultByTxHash(client,scAddr,txHash,lt);
+}
+
+async function checkUserLockTokenPairId(client:TonClient, scAddr:Address,txHash:string, lt:string){
+    let isValid = false
+    let transResult = await getTransResult(client,scAddr,txHash,lt);
+    if (!transResult.success){
+        logger.error("the trans tree is not success")
+        return false
+    }
+
+    for(let pathStep of transResult.path){
+
+    }
+
+    return isValid
 }

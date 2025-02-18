@@ -4,6 +4,7 @@ export {
 
 export {codeTable,} from "./code/encode-decode"
 export {buildUserLockMessages} from "./code/userLock"
+export {getTokenPairInfo} from "./code/userLock"
 
 export {
     BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR, WK_CHIANID,
