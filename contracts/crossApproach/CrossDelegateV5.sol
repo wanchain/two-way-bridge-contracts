@@ -46,9 +46,6 @@ contract CrossDelegateV5 is CrossDelegateV4 {
         public
         payable
         override
-        notHalted
-        nonReentrant
-        onlyReadySmg(smgID)
     {
         super.userLockNFT(smgID, tokenPairID, tokenIDs, tokenValues, userAccount);
 
