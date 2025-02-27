@@ -5,7 +5,8 @@ const Web3EthAbi = require('web3-eth-abi');
 const ecparams = ecurve.getCurveByName('secp256k1');
 const Web3Utils = require("web3-utils");
 
-import {logger} from '../utils/logger'
+//import {logger} from '../utils/logger'
+const logger = require('../utils/logger')
 const formatUtil = require('util');
 
 // buffer
