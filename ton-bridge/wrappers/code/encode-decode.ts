@@ -9,6 +9,7 @@ import * as opcodes from "../opcodes";
 import {BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR, WK_CHIANID} from "../const/const-value";
 
 import {logger} from '../utils/logger'
+import {BufferrToHexString, int64ToByte32} from "../utils/utils";
 const formatUtil = require('util');
 
 export const codeTable = {
@@ -19,7 +20,33 @@ export const codeTable = {
             return retCell;
         },
         "deCode": function (cell: Cell): any{
-            return
+            let slice = cell.beginParse();
+            let opCode = slice.loadUint(32);
+            let queryID = slice.loadUint(64);
+            let smgID = slice.loadUint(256);
+            let tokenPairID = slice.loadUint(32);
+            let crossValue = slice.loadUint(256);
+
+            let dstUserAccountLen = slice.loadUint(8);
+            let dstUserAccountBuff = slice.loadBuffer(dstUserAccountLen);
+
+            let extraCell = slice.loadRef().beginParse();
+            let addrTokenAccount = extraCell.loadAddress();
+            let jwAddrSrc = extraCell.loadAddress();
+            let jwAddrBridgeSc = extraCell.loadAddress();
+            extraCell.endParse();
+
+            slice.endParse();
+
+            return {
+                smgID:int64ToByte32(BigInt(smgID)),
+                tokenPairID,
+                crossValue,
+                dstUserAccount: dstUserAccountBuff.toString('hex'),
+                addrTokenAccount: addrTokenAccount.toString(),
+                jwAddrSrc,
+                jwAddrBridgeSc
+            }
         },
         "emitEvent": function (opts){
             return {

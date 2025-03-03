@@ -68,4 +68,13 @@ describe('decode', () => {
         let decode = codeTable[opCode]["deCode"](bodyCell);
         console.log(decode);
     })
+
+    it('decode userlock',async () =>{
+        let bodyCelStr = "b5ee9c720101020100bb0001a2400000010000000043c5bea9000000000000000000000000000000000000000000746573746e65745f303638000003ac0000000000000000000000000000000000000000000000000000000005f5e100000100c98019e2d1908a3b757dc1eb9a4e6cfe5632fa789bcea365ee7ed452693d108b3f97f000a21b8da3f35c1ac4d8745f5d43077e25b2b482a5dbba52b532dd52cad9dda5f600070829dbe0c1c08edaf5f5ba2689cb0a722561e17864183ddc4f8087692ee517c0";
+        let bodyCell = Cell.fromBoc(Buffer.from(bodyCelStr,'hex'))[0];
+        let opCode = 0x40000001;
+        let decode = codeTable[opCode]["deCode"](bodyCell);
+        console.log(decode);
+    })
+
 });

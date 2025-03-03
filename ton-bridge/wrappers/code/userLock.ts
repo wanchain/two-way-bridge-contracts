@@ -149,7 +149,7 @@ async function buildLockOriginalTokenMessages(opts: {
         .endCell()
 
     //todo should delete begin
-    lockFee = toNano('0.1');   // no lockFee, no forward payload.
+    lockFee = toNano('0.2');   // no lockFee, no forward payload.
     //todo should delete end
 
     // sendToken payLoad

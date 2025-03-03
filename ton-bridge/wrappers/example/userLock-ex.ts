@@ -3,52 +3,65 @@ import {getClient, TonClientConfig} from "../client/client";
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
 import {buildUserLockMessages} from "../code/userLock";
 import {toNano} from "@ton/core";
+import {BridgeAccess} from "../contractAccess/bridgeAccess";
+import {sleep} from "../utils/utils";
 
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
 }
 const prvList = require('../testData/prvlist')
+const prvAlice = Buffer.from(prvList[1],'hex');
+const prvBob = Buffer.from(prvList[2],'hex');
+
 const scAddresses = require('../testData/contractAddress.json');
 
 const smgCfg = require('../testData/smg.json');
-
+const tokenInfo = require('../testData/tokenInfo.json');
 let smgID = smgCfg.smgId
 let crossValue = toNano('0.1')
 let bridgeScAddr = scAddresses.bridgeAddress
-let transValue = toNano('0.05')
+let transValueUserLock = toNano('0.3')
 let dstUserAccount = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"
+let aliceSender;
 
 
 
-
-async function userLockCoin(){
-
+let client = null;
+let aliceWallet,aliceAddress;
+async function init(){
+    client = await getClient(config);
+     aliceWallet = await getWalletByPrvKey(prvAlice);
+     aliceAddress = aliceWallet.address.toString();
+     aliceSender = await getSenderByPrvKey(client,prvAlice);
 }
 
-async function userLockWrappedToken(){
+async function userLock(){
+    try{
+        let ba = BridgeAccess.create(client,bridgeScAddr);
+        for(let key of Object.keys(tokenInfo)) {
+            let ret = await ba.writeContract('sendUserLock', aliceSender, {
+                value: transValueUserLock,
+                smgID,
+                tokenPairID: tokenInfo[key].tokenPairId,
+                crossValue,
+                dstUserAccount,
+                bridgeScAddr,
+                client,
+                senderAccount: aliceAddress
+            })
+            await sleep(3000);
+            console.log("key = %s, ret of userLock is %s",key,ret);
+        }
 
+    }catch(e){
+        console.log("err  =%s",e.Error);
+    }
 }
-
-async function userLockOriginalToken(){
-
-}
-
 async function main() {
-    let client = await getClient(config);
-    let sender = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
-    let senderAccount = sender.address.toString();
 
-    let msgs = await buildUserLockMessages({
-        value:transValue,
-        smgID,
-        tokenPairID:940,
-        crossValue,
-        bridgeScAddr,
-        client,
-        senderAccount,
-        dstUserAccount,
-    })
-    console.log("msgs=>",msgs);
+    await init();
+    await userLock();
+
 }
 main();

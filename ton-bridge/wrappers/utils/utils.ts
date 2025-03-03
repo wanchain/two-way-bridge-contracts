@@ -18,7 +18,7 @@ export const getRandomTon = (min:number, max:number): bigint => {
     return toNano(getRandom(min, max).toFixed(9));
 }
 
-export const BufferrToHexString = (buff:Buffer): string =>{
+export const BufferrToHexString = (buff: Buffer): string =>{
     return "0x" + buff.toString('hex');
 }
 
@@ -71,4 +71,37 @@ export function isAddressEqual(src:Address|string,dst:Address|string){
     }
 
     return srcAddr.equals(dstAddr);
+}
+
+
+export function int64ToByte32(int64Value) {
+    // 确保输入是 BigInt
+    if (typeof int64Value !== 'bigint') {
+        throw new Error('Input must be a BigInt');
+    }
+
+    // 创建一个 8 字节的缓冲区（64 位）
+    const buffer = new ArrayBuffer(8);
+    const view = new DataView(buffer);
+
+    // 将 BigInt 写入缓冲区（小端序）
+    view.setBigUint64(0, int64Value, true);
+
+    // 将缓冲区转换为字节数组
+    const byteArray = new Uint8Array(buffer);
+
+    // 创建一个 32 字节的缓冲区
+    const byte32Buffer = new ArrayBuffer(32);
+    const byte32Array = new Uint8Array(byte32Buffer);
+
+    // 将 8 字节的 int64 复制到 32 字节缓冲区的末尾（右对齐）
+    byte32Array.set(byteArray, 24); // 24 = 32 - 8
+
+    // 将字节数组转换为十六进制字符串
+    let hexString = '0x';
+    byte32Array.forEach(byte => {
+        hexString += byte.toString(16).padStart(2, '0');
+    });
+
+    return hexString;
 }
