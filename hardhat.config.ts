@@ -94,6 +94,7 @@ const config = {
       url: 'https://testnet.edexa.network/rpc',
       accounts: [process.env.PK],
       bip44ChainId: 1073741850,
+      gasPrice: 30e9,
     },
     plyrMainnet: {
       url: 'https://subnets.avax.network/plyr/mainnet/rpc',
