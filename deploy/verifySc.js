@@ -15,7 +15,7 @@ const verify = async (hre, artifact, address, pathName, constructorArgs) => {
 }
 
 async function main() {
-    let deployer = (await hre.ethers.getSigner()).address;
+    let deployer = (await hre.ethers.getSigners())[0].address;
     const network = hre.network.name
     const scAddr = require('../deployed/'+network+'.json')
 
@@ -25,7 +25,7 @@ async function main() {
     let Bn128SchnorrVerifier = await hre.ethers.getContractFactory("Bn128SchnorrVerifier");
     
 
-    let CrossDelegateV4 = await hre.ethers.getContractFactory("CrossDelegateV4", {
+    let CrossDelegateV5 = await hre.ethers.getContractFactory("CrossDelegateV5", {
         libraries: {
           NFTLibV1: scAddr.NFTLibV1,
           RapidityLibV4: scAddr.RapidityLibV4,
@@ -48,7 +48,7 @@ async function main() {
         await verify(hre, Bn128SchnorrVerifier, scAddr.bn128SchnorrVerifier);
     }
     
-    await verify(hre, CrossDelegateV4, scAddr.crossDelegate);
+    await verify(hre, CrossDelegateV5, scAddr.crossDelegate);
     await verify(hre, OracleDelegate, scAddr.oracleDelegate);
     await verify(hre, Multicall2, scAddr.multicall2);
     await verify(hre, TokenManagerProxy, scAddr.tokenManagerProxy);

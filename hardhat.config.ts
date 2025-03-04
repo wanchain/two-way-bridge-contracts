@@ -1,9 +1,11 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomiclabs/hardhat-truffle5");
+
 require("@matterlabs/hardhat-zksync-deploy");
 require("@matterlabs/hardhat-zksync-solc");
-
 require("@matterlabs/hardhat-zksync-verify");
+
+require('@vechain/sdk-hardhat-plugin');
 
 require("solidity-coverage");
 
@@ -17,6 +19,19 @@ const config = {
         runs: 200,
       },
     },
+    compilers: [
+    {
+      version: '0.8.18', // Specify the first Solidity version
+      settings: {
+        // Additional compiler settings for this version
+        optimizer: {
+            enabled: true,
+            runs: 200
+        },
+        evmVersion: 'paris' // EVM version (e.g., "byzantium", "constantinople", "petersburg", "istanbul", "berlin", "london")
+      }
+    },
+    ]
   },
   mocha: {
     timeout: 600000,
@@ -267,6 +282,7 @@ const config = {
     sepolia: {
       url: "https://rpc.ankr.com/eth_sepolia",
       accounts: [process.env.PK],
+      bip44ChainId: 2147483708,
     },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
@@ -283,6 +299,7 @@ const config = {
     goerli: {
       url: "https://rpc.ankr.com/eth_goerli",
       accounts: [process.env.PK],
+      bip44ChainId: 2147483708,
     },
     wanchainTestnet: {
       url: "https://gwan-ssl.wandevs.org:46891",
@@ -301,9 +318,22 @@ const config = {
       url: "https://evm.astar.network",
       accounts: [process.env.PK],
     },
+    arbitrumSepolia: {
+      url: "https://sepolia-rollup.arbitrum.io/rpc",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741826,
+    },
     optimisticEthereum: {
       url: "https://optimism-rpc.publicnode.com",
       accounts: [process.env.PK],
+      bip44ChainId: 2147484262,
+      gasPrice: 2000,
+    },
+    optimisticSepolia: {
+      url: "https://sepolia.optimism.io",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147484262,
+      gasPrice: 2000,
     },
     telos_testnet: {
       url: "https://testnet.telos.net/evm",
@@ -360,15 +390,17 @@ const config = {
       // contract verification endpoint
       verifyURL:
         "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
+      bip44ChainId: 1073741837,
     },
     zkSyncSepolia: {
-      url: "https://sepolia.era.zksync.dev",
+      url: "https://sepolia.era.zksync.dev/",
       accounts: [process.env.PK],
       ethNetwork: "sepolia",
       zksync: true,
       // contract verification endpoint
       verifyURL:
-        "https://sepolia.explorer.zksync.io/contract_verification",
+        "https://explorer.sepolia.era.zksync.dev/contract_verification",
+      bip44ChainId: 1073741837,
     },
     zkSyncMainnet: {
       // url: 'https://mainnet.era.zksync.io',
@@ -432,9 +464,86 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 2154655314,
     },
+    hederaTestnet: {
+      url: "https://testnet.hashio.io/api",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147486678,
+      gasPrice: 2000e9,
+    },
+    celoTestnet: {
+      url: "https://alfajores-forno.celo-testnet.org",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147536400,
+    },
+    celoMainnet: {
+      url: "https://forno.celo.org/",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147536400,
+    },
+    opBnbTestnet: {
+      url: "https://opbnb-testnet-rpc.bnbchain.org",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741845,
+      timeout: 600000,
+    },
+    opBnbMainnet: {
+      url: "https://opbnb-mainnet-rpc.bnbchain.org",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741845,
+      timeout: 600000,
+      gasPrice: 2e4,
+    },
     arbTestnet: {
       url: 'https://arbitrum-goerli.publicnode.com',
       accounts: [process.env.PK],
+    },
+    sonicMainnet: {
+      url: 'https://rpc.soniclabs.com',
+      chainId: 146,
+      accounts: [process.env.PK],
+      bip44ChainId: 2147493655,
+    },
+    sonicTestnet: {
+      url: 'https://rpc.blaze.soniclabs.com',
+      chainId: 57054,
+      accounts: [process.env.PK],
+      bip44ChainId: 2147493655,
+    },
+    vechainTestnet: {
+      url: "https://testnet.vechain.org/",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147484466,
+
+      // // optionally use fee delegation to let someone else pay the gas fees
+      // // visit vechain.energy for a public fee delegation service
+      // delegator: {
+      //     delegatorUrl: "https://sponsor-testnet.vechain.energy/by/90"
+      // },
+      verbose: false,
+      debug: false,
+      enableDelegation: false,
+      gas: 'auto',
+      gasPrice: 'auto',
+      gasMultiplier: 1,
+      // timeout: 20000,
+    },
+    vechainMainnet: {
+      url: "https://mainnet.vechain.org/",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147484466,
+
+      // // optionally use fee delegation to let someone else pay the gas fees
+      // // visit vechain.energy for a public fee delegation service
+      // delegator: {
+      //     delegatorUrl: "https://sponsor-testnet.vechain.energy/by/90"
+      // },
+      verbose: false,
+      debug: false,
+      enableDelegation: false,
+      gas: 'auto',
+      gasPrice: 'auto',
+      gasMultiplier: 1,
+      timeout: 20000,
     },
     hardhat: {
       accounts: {
@@ -456,8 +565,46 @@ const config = {
     },  
   },
   etherscan: {
-    apiKey: '',
+    apiKey: {
+      sepolia: "PLACEHOLDER_STRING",
+      arbitrumSepolia: "PLACEHOLDER_STRING",
+      baseSepolia: "PLACEHOLDER_STRING",
+      optimisticSepolia: "PLACEHOLDER_STRING",
+      // baseMainnet: "PLACEHOLDER_STRING"
+      baseTestnet:'PLACEHOLDER_STRING',
+      lineaMainnet: 'PLACEHOLDER_STRING',
+      celoTestnet: "PLACEHOLDER_STRING",
+      celoMainnet: "PLACEHOLDER_STRING",
+      opBnbTestnet:'PLACEHOLDER_STRING',
+      opBnbMainnet:'PLACEHOLDER_STRING',
+      sonicMainnet: "PLACEHOLDER_STRING",
+      sonicTestnet: "PLACEHOLDER_STRING"
+    },
     customChains: [
+      {
+        network: "celoTestnet",
+        chainId: 44787,
+        urls: {
+          apiURL: "https://api-alfajores.celoscan.io/api",
+          browserURL: "https://alfajores.celoscan.io",
+        },
+      },
+      {
+        network: "celoMainnet",
+        chainId: 42220,
+        urls: {
+          apiURL: "https://api.celoscan.io/api",
+          browserURL: "https://celoscan.io",
+        },
+      },
+      {
+        network: "optimisticSepolia",
+        chainId: 11155420,
+        urls: {
+          apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
+          browserURL: "https://sepolia-optimistic.etherscan.io/",
+        },
+      },
       {
         network: "x1Mainnet",
         chainId: 196, //196 for mainnet
@@ -505,6 +652,22 @@ const config = {
           apiURL: "https://blockscout.com/astar/api",
           browserURL: "https://blockscout.com/astar",
         },
+      },
+      {
+        network: "arbitrumSepolia",
+        chainId: 421614,
+        urls: {
+         apiURL: "https://api-sepolia.arbiscan.io/api",
+         browserURL: "https://sepolia.arbiscan.io/"
+        }
+      },
+      {
+        network: "baseSepolia",
+        chainId: 84532,
+        urls: {
+         apiURL: "https://api-sepolia.basescan.org/api",
+         browserURL: "https://sepolia.basescan.org/"
+        }
       },
       {
         network: "baseTestnet",
@@ -571,11 +734,51 @@ const config = {
         }
       },
       {
+        network: "hederaTestnet",
+        chainId: 296,
+        urls: {
+         apiURL: "https://verify.hashscan.io",
+         browserURL: "https://hashscan.io/testnet"
+	      }
+      },
+      {
+        network: "opBnbTestnet",
+        chainId: 5611,
+        urls: {
+          apiURL: "https://open-platform.nodereal.io/82d7bfafd91b433c89670b523688e6ce/op-bnb-testnet/contract/",
+          browserURL: "https://testnet.opbnbscan.com"
+        }
+      },
+      {
+        network: "opBnbMainnet",
+        chainId: 204,
+        urls: {
+          apiURL: "https://open-platform.nodereal.io/db27845a41ec432a91eaa8917c4112a7/op-bnb-mainnet/contract/",
+          browserURL: "https://opbnb.bscscan.com"
+        }
+      },
+      {
         network: 'fantom',
         chainId: 250,
         urls: {
           apiURL: "https://api.ftmscan.com/api",
           browserURL: "https://ftmscan.com",
+        }
+      },
+      {
+        network: "sonicMainnet",
+        chainId: 146,
+        urls: {
+          apiURL: "https://api.sonicscan.org/api",
+          browserURL: "https://sonicscan.org"
+        }
+      },
+      {
+        network: "sonicTestnet",
+        chainId: 57054,
+        urls: {
+          apiURL: "https://api-testnet.sonicscan.org/api",
+          browserURL: "https://testnet.sonicscan.org"
         }
       }
     ],

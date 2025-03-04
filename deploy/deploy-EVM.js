@@ -60,87 +60,87 @@ if(!BIP44_CHAIN_ID) {
   process.exit()
 }
 async function main() {
-  let deployer = (await hre.ethers.getSigner()).address;
+  let deployer = (await hre.ethers.getSigners())[0].address;
 
   let Multicall2 = await hre.ethers.getContractFactory("Multicall2");
   let multicall2 = await Multicall2.deploy();
   if (waitForReceipt) {
-    await multicall2.deployed();
+    await (multicall2.deployed ?  multicall2.deployed() : multicall2.waitForDeployment());
   }
-  console.log("Multicall2 deployed to:", multicall2.address);
+  console.log("Multicall2 deployed to:", multicall2.target);
 
   let TokenManagerDelegateV2 = await hre.ethers.getContractFactory("TokenManagerDelegateV2");
   let tokenManagerDelegate = await TokenManagerDelegateV2.deploy();
   if (waitForReceipt) {
-    await tokenManagerDelegate.deployed();
+    await (tokenManagerDelegate.deployed ?  tokenManagerDelegate.deployed() : tokenManagerDelegate.waitForDeployment());
   }
-  console.log("TokenManagerDelegateV2 deployed to:", tokenManagerDelegate.address);
+  console.log("TokenManagerDelegateV2 deployed to:", tokenManagerDelegate.target);
 
   let TokenManagerProxy = await hre.ethers.getContractFactory("TokenManagerProxy");
   let tokenManagerProxy = await TokenManagerProxy.deploy();
   if (waitForReceipt) {
-    await tokenManagerProxy.deployed();
+    await (tokenManagerProxy.deployed ?  tokenManagerProxy.deployed() : tokenManagerProxy.waitForDeployment());
   }
-  console.log("TokenManagerProxy deployed to:", tokenManagerProxy.address);
+  console.log("TokenManagerProxy deployed to:", tokenManagerProxy.target);
 
   let NFTLibV1 = await hre.ethers.getContractFactory("NFTLibV1");
   let nftLib = await NFTLibV1.deploy();
   if (waitForReceipt) {
-    await nftLib.deployed();
+    await (nftLib.deployed ?  nftLib.deployed() : nftLib.waitForDeployment());
   }
-  console.log("NFTLibV1 deployed to:", nftLib.address);
+  console.log("NFTLibV1 deployed to:", nftLib.target);
 
   let RapidityLibV4 = await hre.ethers.getContractFactory("RapidityLibV4");
   let rapidityLib = await RapidityLibV4.deploy();
   if (waitForReceipt) {
-    await rapidityLib.deployed();
+    await (rapidityLib.deployed ?  rapidityLib.deployed() : rapidityLib.waitForDeployment());
   }
-  console.log("RapidityLibV4 deployed to:", rapidityLib.address);
+  console.log("RapidityLibV4 deployed to:", rapidityLib.target);
   
-  let CrossDelegateV4 = await hre.ethers.getContractFactory("CrossDelegateV4", {
+  let CrossDelegateV5 = await hre.ethers.getContractFactory("CrossDelegateV5", {
     libraries: {
-      NFTLibV1: nftLib.address,
-      RapidityLibV4: rapidityLib.address,
+      NFTLibV1: nftLib.target,
+      RapidityLibV4: rapidityLib.target,
     }
   });
 
-  let crossDelegate = await CrossDelegateV4.deploy();
+  let crossDelegate = await CrossDelegateV5.deploy();
   if (waitForReceipt) {
-    await crossDelegate.deployed();
+    await (crossDelegate.deployed ?  crossDelegate.deployed() : crossDelegate.waitForDeployment());
   }
 
-  console.log("CrossDelegateV4 deployed to:", crossDelegate.address);
+  console.log("CrossDelegateV5 deployed to:", crossDelegate.target);
 
   let CrossProxy = await hre.ethers.getContractFactory("CrossProxy");
   let crossProxy = await CrossProxy.deploy();
   if (waitForReceipt) {
-    await crossProxy.deployed();
+    await (crossProxy.deployed ?  crossProxy.deployed() : crossProxy.waitForDeployment());
   }
 
-  console.log("CrossProxy deployed to:", crossProxy.address);
+  console.log("CrossProxy deployed to:", crossProxy.target);
   let OracleDelegate = await hre.ethers.getContractFactory("OracleDelegate");
   let oracleDelegate = await OracleDelegate.deploy();
   if (waitForReceipt) {
-    await oracleDelegate.deployed();
+    await (oracleDelegate.deployed ?  oracleDelegate.deployed() : oracleDelegate.waitForDeployment());
   }
 
-  console.log("OracleDelegate deployed to:", oracleDelegate.address);
+  console.log("OracleDelegate deployed to:", oracleDelegate.target);
   let OracleProxy = await hre.ethers.getContractFactory("OracleProxy");
   let oracleProxy = await OracleProxy.deploy();
   if (waitForReceipt) {
-    await oracleProxy.deployed();
+    await (oracleProxy.deployed ?  oracleProxy.deployed() : oracleProxy.waitForDeployment());
   }
-  console.log("OracleProxy deployed to:", oracleProxy.address);
+  console.log("OracleProxy deployed to:", oracleProxy.target);
 
  
   let SignatureVerifier = await hre.ethers.getContractFactory("SignatureVerifier");
   let signatureVerifier = await SignatureVerifier.deploy();
   if (waitForReceipt) {
-    await signatureVerifier.deployed();
+    await (signatureVerifier.deployed ?  signatureVerifier.deployed() : signatureVerifier.waitForDeployment());
   }
   console.log('verifier register...')
   // 1: common EVM, bn128, 0: ZK, ECDSA
-  //tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
+  //tx = await signatureVerifier.register(1, bn128SchnorrVerifier.target);
   let signCurveId = 1
   let tx
   if(hre.network.config.signCurveId != undefined) {
@@ -152,45 +152,45 @@ async function main() {
     let Bn128SchnorrVerifier = await hre.ethers.getContractFactory("Bn128SchnorrVerifier");
     bn128SchnorrVerifier = await Bn128SchnorrVerifier.deploy();
     if (waitForReceipt) {
-      await bn128SchnorrVerifier.deployed();
+      await (bn128SchnorrVerifier.deployed ?  bn128SchnorrVerifier.deployed() : bn128SchnorrVerifier.waitForDeployment());
     }
-    console.log("bn128SchnorrVerifier deployed to:", bn128SchnorrVerifier.address);
-    tx = await signatureVerifier.register(1, bn128SchnorrVerifier.address);
+    console.log("bn128SchnorrVerifier deployed to:", bn128SchnorrVerifier.target);
+    tx = await signatureVerifier.register(1, bn128SchnorrVerifier.target);
   }else {
     let EcSchnorrVerifier = await hre.ethers.getContractFactory("EcSchnorrVerifier");
     ecSchnorrVerifier = await EcSchnorrVerifier.deploy();
     if (waitForReceipt) {
-      await ecSchnorrVerifier.deployed();
+      await (ecSchnorrVerifier.deployed ?  ecSchnorrVerifier.deployed() : ecSchnorrVerifier.waitForDeployment());
     }
-    console.log("EcSchnorrVerifier deployed to:", ecSchnorrVerifier.address);
-    tx = await signatureVerifier.register(0, ecSchnorrVerifier.address);
+    console.log("EcSchnorrVerifier deployed to:", ecSchnorrVerifier.target);
+    tx = await signatureVerifier.register(0, ecSchnorrVerifier.target);
   }
   await tx.wait();
   console.log('verifier register finished.')
-  console.log("SignatureVerifier deployed to:", signatureVerifier.address);
+  console.log("SignatureVerifier deployed to:", signatureVerifier.target);
   // config
 
   console.log('config...');
-  tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
+  tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.target);
   await tx.wait();
   console.log('tokenManagerProxy upgradeTo finished.');
-  tx = await crossProxy.upgradeTo(crossDelegate.address);
+  tx = await crossProxy.upgradeTo(crossDelegate.target);
   await tx.wait();
   console.log('crossProxy upgradeTo finished.');
-  tx = await oracleProxy.upgradeTo(oracleDelegate.address);
+  tx = await oracleProxy.upgradeTo(oracleDelegate.target);
   await tx.wait();
   console.log('oracleProxy upgradeTo finished.');
   console.log('deploy finished start to config...');
-  let tokenManager = await hre.ethers.getContractAt("TokenManagerDelegateV2", tokenManagerProxy.address);
-  let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
-  let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.address);
+  let tokenManager = await hre.ethers.getContractAt("TokenManagerDelegateV2", tokenManagerProxy.target);
+  let cross = await hre.ethers.getContractAt("CrossDelegateV5", crossProxy.target);
+  let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.target);
 
   // deploy time lock------------------------------
   console.log('deploy time lock...');
   let TimelockController = await hre.ethers.getContractFactory("TimelockController");
   let timelockController = await TimelockController.deploy(86400, proposers, executors, deployer);
-  await timelockController.deployed();
-  console.log("TimelockController deployed to:", timelockController.address);
+  await (timelockController.deployed ?  timelockController.deployed() : timelockController.waitForDeployment());
+  console.log("TimelockController deployed to:", timelockController.target);
   for (let i=0; i<cancellers.length; i++) {
     console.log('adding canceller', i, cancellers[i]);
     let tx = await timelockController.grantRole(timelockController.CANCELLER_ROLE(), cancellers[i]);
@@ -210,11 +210,11 @@ async function main() {
   //------------------------------------------------
 
   console.log('oracle set admin...')
-  tx = await oracle.setAdmin(timelockController.address);
+  tx = await oracle.setAdmin(timelockController.target);
   await tx.wait();
   console.log('oracle set admin finished.')
   console.log('tokenManager add admin...')
-  tx = await tokenManager.addAdmin(crossProxy.address);
+  tx = await tokenManager.addAdmin(crossProxy.target);
   await tx.wait();
   console.log('tokenManager add admin finished.')
 
@@ -224,7 +224,7 @@ async function main() {
   console.log('tokenManager set operator finished.')
 
   console.log('cross set partner...');
-  tx = await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
+  tx = await cross.setPartners(tokenManagerProxy.target, oracleProxy.target, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.target);
   await tx.wait();
   console.log('cross set partner finished.');
 
@@ -246,27 +246,27 @@ async function main() {
 
 
   let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
-  let groupApprove = await GroupApprove.deploy(deployer, signatureVerifier.address, oracleProxy.address, crossProxy.address);
+  let groupApprove = await GroupApprove.deploy(deployer, signatureVerifier.target, oracleProxy.target, crossProxy.target);
   if (waitForReceipt) {
-    await groupApprove.deployed();
+    await (groupApprove.deployed ?  groupApprove.deployed() : groupApprove.waitForDeployment());
   }
-  console.log("groupApprove deployed to:", groupApprove.address);
+  console.log("groupApprove deployed to:", groupApprove.target);
 
   const deployed = {
-    multicall2: multicall2.address,
-    signatureVerifier: signatureVerifier.address,
-    bn128SchnorrVerifier: bn128SchnorrVerifier.address,
-    EcSchnorrVerifier: ecSchnorrVerifier.address,
-    RapidityLibV4: rapidityLib.address,
-    NFTLibV1: nftLib.address,
-    crossDelegate: crossDelegate.address,
-    crossProxy: crossProxy.address,
-    tokenManagerDelegate: tokenManagerDelegate.address,
-    tokenManagerProxy: tokenManagerProxy.address,
-    oracleDelegate: oracleDelegate.address,
-    oracleProxy: oracleProxy.address,
-    groupApprove: groupApprove.address,
-    timelock: timelockController.address,
+    multicall2: multicall2.target,
+    signatureVerifier: signatureVerifier.target,
+    bn128SchnorrVerifier: bn128SchnorrVerifier.target,
+    EcSchnorrVerifier: ecSchnorrVerifier.target,
+    RapidityLibV4: rapidityLib.target,
+    NFTLibV1: nftLib.target,
+    crossDelegate: crossDelegate.target,
+    crossProxy: crossProxy.target,
+    tokenManagerDelegate: tokenManagerDelegate.target,
+    tokenManagerProxy: tokenManagerProxy.target,
+    oracleDelegate: oracleDelegate.target,
+    oracleProxy: oracleProxy.target,
+    groupApprove: groupApprove.target,
+    timelock: timelockController.target,
   };
 
   fs.writeFileSync(`deployed/${hre.network.name}.json`, JSON.stringify(deployed, null, 2));
