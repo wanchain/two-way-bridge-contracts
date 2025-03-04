@@ -46,6 +46,7 @@
     "greet": "yarn hardhat deploy-zksync --script use-greeter.ts"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.2"
+    "@openzeppelin/contracts": "^4.9.2",
+    "@vechain/sdk-rpc-proxy": "^1.0.0-rc.6"
   }
 }
