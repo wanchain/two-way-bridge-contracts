@@ -1,0 +1,15 @@
+{
+  "multicall2": "0x9bcef4d80cc3da5f9ffc3103a640e4a66c059a6d",
+  "signatureVerifier": "0x9811969ecee31cf4fbfbd215b46fe6e1152af166",
+  "bn128SchnorrVerifier": "0x789d18186d7ff46d0657f0f63a27dc8ab54674ec",
+  "RapidityLibV4": "0x84a6d39e5ac3e61dde002488d28215d5dd7ee081",
+  "NFTLibV1": "0xe8aa089a30964203bfc005e975b73915155943a4",
+  "crossDelegate": "0x6e7e4610c80546d1e9d15fb76062dd1fdaca3387",
+  "crossProxy": "0x8dc369fa992f2f3c38474e84b0a93cc9957b1b73",
+  "tokenManagerDelegate": "0xfd3b14eaafdbfd6f5bcedcea852a8bf824f1002f",
+  "tokenManagerProxy": "0xf0b1ac208b8217261a17ec4ce68403cc9dfd6d92",
+  "oracleDelegate": "0x44672471bd2924b791debd83068e4ddaac56cf37",
+  "oracleProxy": "0xeaeb47e53cc981a8d8c4ea73130bed7a32bc27f4",
+  "groupApprove": "0xcb4511531658feaf25e3b6388dbd2f2b7a2f5263",
+  "timelock": "0x2f76594dbf5cf68ad7814181cb920ae34b7c3555"
+}
