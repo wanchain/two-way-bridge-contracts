@@ -60,6 +60,12 @@ const config = {
     },
   },
   networks: {
+    edexaMainnet: {
+      url: 'https://rpc.edexa.com',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741850,
+      gasPrice: 30e9,
+    },
     immutableTestnet: {
       url: "https://rpc.testnet.immutable.com",
       accounts: [process.env.PK],
