@@ -60,6 +60,11 @@ const config = {
     },
   },
   networks: {
+    immutableTestnet: {
+      url: "https://rpc.testnet.immutable.com",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741855,
+    },
     lummioTestnet: {
       url: "http://188.245.49.86:32795",
       accounts: [process.env.PK],
