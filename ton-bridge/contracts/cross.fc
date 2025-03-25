@@ -13,13 +13,25 @@
 #include "imports/signature/sig-header.fc";
 #include "fee.fc";
 
-() send_fee_to_proxy(slice proxyAddress,int fee){
+() send_fee_to_proxy(slice proxyAddress,int fee) impure {
     ~strdump("send_fee_to_proxy....");
-    var msg = begin_cell()
+   {- var msg = begin_cell()
         .store_msg_flag(msg_flag::non_bounceable) ;; we should not bounce here cause receiver can have uninitialized contract
         .store_slice(proxyAddress)
         .store_coins(fee);
     send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY);
+    return ();-}
+
+
+    var msg = begin_cell()
+        .store_msg_flag(msg_flag::non_bounceable) ;; we should not bounce here cause receiver can have uninitialized contract
+        .store_slice(proxyAddress)
+        .store_coins(fee)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .end_cell();
+    send_raw_message(msg,PAY_FEES_SEPARATELY);
+    return ();
+
 }
 
 

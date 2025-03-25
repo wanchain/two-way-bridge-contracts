@@ -5,8 +5,7 @@ const Web3EthAbi = require('web3-eth-abi');
 const ecparams = ecurve.getCurveByName('secp256k1');
 const Web3Utils = require("web3-utils");
 
-//import {logger} from '../utils/logger'
-const logger = require('../utils/logger')
+const logger = require('../utils/logger').logger
 const formatUtil = require('util');
 
 // buffer
@@ -184,7 +183,7 @@ function getSecSchnorrS(sk, typesArray, parameters) {
 function getSecSchnorrSByMsgHash(sk, msgHash) {
     // let MBuff = computeM(typesArray, parameters);
     // let M1Buff = computeM1(MBuff);
-
+    console.log("getSecSchnorrSByMsgHash sk=>",sk);
     let pk = getPKBySk(sk);
     let pkBuf = Buffer.from(pk.substring(2), 'hex');
     let eBuffHexStr = computeE(R, getPararity(pkBuf), getXBytesFromPk(pkBuf), msgHash);

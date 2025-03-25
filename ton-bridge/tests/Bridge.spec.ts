@@ -251,390 +251,390 @@ describe('Bridge', () => {
         printCaseSeperator(it.name)
     });
 
-    it('should Mint wrapped token success', async () => {
+        it('should Mint wrapped token success', async () => {
 
-        // mint  100 dog to alice
-        let initialTotalSupply = await jettonMinter_dog.getTotalSupply();
-        const aliceJettonWallet = await userWallet_dog(alice.address);
-        const bobJettonWallet = await userWallet_dog(bob.address);
-        const bridgeJettonWallet = await userWallet_dog(bridge.address);
+            // mint  100 dog to alice
+            let initialTotalSupply = await jettonMinter_dog.getTotalSupply();
+            const aliceJettonWallet = await userWallet_dog(alice.address);
+            const bobJettonWallet = await userWallet_dog(bob.address);
+            const bridgeJettonWallet = await userWallet_dog(bridge.address);
 
-        let initialJettonBalance = toNano('100');
+            let initialJettonBalance = toNano('100');
 
-        const mintResult = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), alice.address, initialJettonBalance, toNano('0.05'), toNano('1'));
-        console.log("mintResultDog.....", slimSndMsgResult(mintResult));
+            const mintResult = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), alice.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+            console.log("mintResultDog.....", slimSndMsgResult(mintResult));
 
-        expect(await aliceJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
-        expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
-        initialTotalSupply += initialJettonBalance;
+            expect(await aliceJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+            expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+            initialTotalSupply += initialJettonBalance;
 
-        // mint  100 dog to bob
-        const mintResult2 = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), bob.address, initialJettonBalance, toNano('0.05'), toNano('1'));
-        console.log("mintResult2Dog.....", slimSndMsgResult(mintResult2));
-        expect(await bobJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
-        expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
-        initialTotalSupply += initialJettonBalance;
+            // mint  100 dog to bob
+            const mintResult2 = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), bob.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+            console.log("mintResult2Dog.....", slimSndMsgResult(mintResult2));
+            expect(await bobJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+            expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+            initialTotalSupply += initialJettonBalance;
 
 
-        const mintResult3 = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), bridge.address, initialJettonBalance, toNano('0.05'), toNano('1'));
-        console.log("mintResult3Dog.....", slimSndMsgResult(mintResult3));
-        expect(await bridgeJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
-        expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
-        initialTotalSupply += initialJettonBalance;
+            const mintResult3 = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), bridge.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+            console.log("mintResult3Dog.....", slimSndMsgResult(mintResult3));
+            expect(await bridgeJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+            expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+            initialTotalSupply += initialJettonBalance;
 
-        printCaseSeperator(it.name)
-    });
-
-    it('should change admin of jetton_dog token to bridge address', async () => {
-
-        const changeAdminResult = await jettonMinter_dog.sendChangeAdmin(deployer_jetton.getSender(), bridge.address);
-
-        let newAdmin = await jettonMinter_dog.getAdminAddress()
-        expect(true).toEqual(Address.isAddress(newAdmin));
-        expect(true).toEqual(bridge.address.equals(newAdmin));
-
-        await displayAllTokenPair(bridge);
-        printCaseSeperator(it.name)
-    });
-
-    it('[userLock coin] should userLock success', async () => {
-        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-        let tokenPairID = tokenInfo.coin.tokenPairId;
-        let crossValue = BigInt(toNano(1));
-        let value = BigInt(toNano(2));
-        console.log("smgID(bigInt)==>", BigInt(smgID));
-        const queryID = 1;
-
-        console.log("before user lock original token");
-        console.log("alice's address",alice.address.toString());
-        console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
-        console.log("Before balance of coin",
-            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
-            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
-        );
-        const ret = await bridge.sendUserLock(alice.getSender(), {
-            value: value,
-            queryID,
-            tokenPairID,
-            smgID,
-            crossValue,
-            dstUserAccount: bob.address.toString(),
-            client:blockchain,
-            senderAccount:alice.address.toString(),
-            bridgeScAddr:bridge.address.toString(),
+            printCaseSeperator(it.name)
         });
 
-        console.log("ret", slimSndMsgResult(ret));
-        console.log("After balance of coin",
-            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
-            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
-        );
-        printCaseSeperator(it.name)
-    });
+        it('should change admin of jetton_dog token to bridge address', async () => {
 
-    it('[userLock original token] should userLock success', async () => {
-        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-        let tokenPairID = tokenInfo.tokenOrg.tokenPairId;
-        let crossValue = BigInt(toNano(1));
-        let value = BigInt(toNano(2));
-        console.log("smgID(bigInt)==>", BigInt(smgID));
-        const queryID = 1;
+            const changeAdminResult = await jettonMinter_dog.sendChangeAdmin(deployer_jetton.getSender(), bridge.address);
 
-        console.log("before user lock original token");
-        console.log("alice's address",alice.address.toString());
-        console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
-        console.log("Before balance of coin",
-            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
-            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
-        );
-        console.log("Before balance of token",
-            "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
-            "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
-        );
-        const ret = await bridge.sendUserLock(alice.getSender(), {
-            value: value,
-            queryID,
-            tokenPairID,
-            smgID,
-            crossValue,
-            dstUserAccount: bob.address.toString(),
-            client:blockchain,
-            senderAccount:alice.address.toString(),
-            bridgeScAddr:bridge.address.toString(),
+            let newAdmin = await jettonMinter_dog.getAdminAddress()
+            expect(true).toEqual(Address.isAddress(newAdmin));
+            expect(true).toEqual(bridge.address.equals(newAdmin));
+
+            await displayAllTokenPair(bridge);
+            printCaseSeperator(it.name)
         });
 
-        console.log("ret", slimSndMsgResult(ret));
-        console.log("After balance of coin",
-            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
-            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+        it('[userLock coin] should userLock success', async () => {
+            let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+            let tokenPairID = tokenInfo.coin.tokenPairId;
+            let crossValue = BigInt(toNano(1));
+            let value = BigInt(toNano(2));
+            console.log("smgID(bigInt)==>", BigInt(smgID));
+            const queryID = 1;
+
+            console.log("before user lock original token");
+            console.log("alice's address",alice.address.toString());
+            console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
+            console.log("Before balance of coin",
+                "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+                "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
             );
-        console.log("After balance of token",
-            "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
-            "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
-        );
-        printCaseSeperator(it.name)
-    });
+            const ret = await bridge.sendUserLock(alice.getSender(), {
+                value: value,
+                queryID,
+                tokenPairID,
+                smgID,
+                crossValue,
+                dstUserAccount: bob.address.toString(),
+                client:blockchain,
+                senderAccount:alice.address.toString(),
+                bridgeScAddr:bridge.address.toString(),
+            });
 
-    it('[userLock wrapped token ] should userLock success', async () => {
-        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-        let tokenPairID = tokenInfo.tokenWrapped.tokenPairId;
-        let crossValue = BigInt(toNano(0.5));
-        let value = BigInt(toNano(2));
-        console.log("smgID(bigInt)==>", BigInt(smgID));
-        const queryID = 1;
-
-        console.log("before user lock original token");
-        console.log("alice's address",alice.address.toString());
-        console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
-        console.log("Before balance of coin",
-            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
-            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
-        );
-        console.log("Before balance of token",
-            "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenWrapped.dstTokenAcc),alice.address)),
-            "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenWrapped.dstTokenAcc),bridge.address)),
-        );
-        const ret = await bridge.sendUserLock(alice.getSender(), {
-            value: value,
-            queryID,
-            tokenPairID,
-            smgID,
-            crossValue,
-            dstUserAccount: bob.address.toString(),
-            client:blockchain,
-            senderAccount:alice.address.toString(),
-            bridgeScAddr:bridge.address.toString(),
+            console.log("ret", slimSndMsgResult(ret));
+            console.log("After balance of coin",
+                "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+                "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+            );
+            printCaseSeperator(it.name)
         });
 
-        console.log("ret", slimSndMsgResult(ret));
-        console.log("After balance of coin",
-            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
-            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
-        );
-        console.log("After balance of token",
-            "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenWrapped.dstTokenAcc),alice.address)),
-            "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenWrapped.dstTokenAcc),bridge.address)),
-        );
-        printCaseSeperator(it.name)
+        it('[userLock original token] should userLock success', async () => {
+            let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+            let tokenPairID = tokenInfo.tokenOrg.tokenPairId;
+            let crossValue = BigInt(toNano(1));
+            let value = BigInt(toNano(2));
+            console.log("smgID(bigInt)==>", BigInt(smgID));
+            const queryID = 1;
 
-    });
+            console.log("before user lock original token");
+            console.log("alice's address",alice.address.toString());
+            console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
+            console.log("Before balance of coin",
+                "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+                "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+            );
+            console.log("Before balance of token",
+                "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
+                "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
+            );
+            const ret = await bridge.sendUserLock(alice.getSender(), {
+                value: value,
+                queryID,
+                tokenPairID,
+                smgID,
+                crossValue,
+                dstUserAccount: bob.address.toString(),
+                client:blockchain,
+                senderAccount:alice.address.toString(),
+                bridgeScAddr:bridge.address.toString(),
+            });
 
-    it('[smgRelease ton] should msgRelease success', async () => {
-        let smgID = smgId;
-        let tokenPairID = tokenInfo.coin.tokenPairId;
-        let releaseValue = BigInt(toNano(1));
-        let value = BigInt(toNano(2));
-        console.log("smgID(bigInt)==>", BigInt(smgID));
-
-        const queryID = 1;
-        const uniqueID = BigInt(1);
-        const fee = BigInt(1000);
-
-        let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
-            BigInt(uniqueID),
-            BigInt(tokenPairID),
-            BigInt(releaseValue),
-            BigInt(fee),
-            TON_COIN_ACCOUT,
-            bob.address);
-
-        console.log("msgHashResult....",msgHashResult);
-        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,msgHashResult.hashBuf);
-        const e = BigInt(sig.e);
-
-        const p = BigInt(sig.p);
-        const s = BigInt(sig.s);
-
-        console.log("before smgRelease ton");
-
-        let beforeBridge = (await blockchain.getContract(bridge.address)).balance;
-        let beforeAlice = await alice.getBalance();
-        let beforeBob = await bob.getBalance();
-
-        const ret = await bridge.sendSmgRelease(alice.getSender(), {
-            value: value,
-            queryID,
-            uniqueID,
-            smgID,
-            tokenPairID,
-            releaseValue,
-            fee,
-            userAccount: bob.address,
-            bridgeJettonWalletAddr: alice.address, //todo ZERO_ACCOUNT
-            e,
-            p,
-            s
-        });
-        // console.log("sendSmgRelease ret:", ret)
-        await sleep(2000)
-        let afterBridge = (await blockchain.getContract(bridge.address)).balance;
-        let afterAlice = await alice.getBalance();
-        let afterBob = await bob.getBalance();
-
-
-        console.log("beforeAlice, afterAlice, delta", fromNano(beforeAlice), fromNano(afterAlice), afterAlice - beforeAlice);
-        console.log("beforeBob, afterBob, delta", fromNano(beforeBob), fromNano(afterBob), afterBob - beforeBob);
-        console.log("beforeBridge, afterBridge,delta", fromNano(beforeBridge), fromNano(afterBridge), afterBridge - beforeBridge);
-
-        console.log("ret.transaction=>", slimSndMsgResult(ret));
-        // console.log("ret=====>",ret);
-        // todo add expect later
-        expect(true).toEqual(afterBridge <= (beforeBridge)); //todo add fee
-        console.log("beforeBridge(wei), afterBridge(wei), releaseValue(wei)", beforeBridge, afterBridge, releaseValue);
-        console.log("debug: afterBob >= (beforeBob + releaseValue):", afterBob ,beforeBob , releaseValue)
-        expect(true).toEqual(afterBob >= (beforeBob + releaseValue));      //todo add fee should equal , not >=
-
-        printCaseSeperator(it.name);
-    });
-
-
-    it('[smgRelease original token] should msgRelease success', async () => {
-        let smgID = smgId;
-        let tokenPairID = tokenInfo.tokenOrg.tokenPairId;
-        let releaseValue = BigInt(toNano(1));
-        let value = BigInt(toNano(2));
-        console.log("smgID(bigInt)==>", BigInt(smgID));
-
-        const queryID = 1;
-        const uniqueID = BigInt(2);
-        const fee = BigInt(1000);
-
-        let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
-            BigInt(uniqueID),
-            BigInt(tokenPairID),
-            BigInt(releaseValue),
-            BigInt(fee),
-            Address.parseFriendly(tokenInfo.tokenOrg.dstTokenAcc).address,
-            bob.address);
-
-        console.log("msgHashResult....",msgHashResult);
-        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,msgHashResult.hashBuf);
-        const e = BigInt(sig.e);
-
-        const p = BigInt(sig.p);
-        const s = BigInt(sig.s);
-
-
-        console.log("before smgRelease original token");
-
-        let initialTotalSupply = await jettonMinter.getTotalSupply();
-        const bridgeJettonWallet = await userWallet(bridge.address);
-        const bobJettonWallet = await userWallet(bob.address);
-
-        let beforeBridgeUsdt = await bridgeJettonWallet.getJettonBalance();
-        let beforeBobUsdt = await bobJettonWallet.getJettonBalance();
-
-        const ret = await bridge.sendSmgRelease(alice.getSender(), {
-            value: value,
-            queryID,
-            uniqueID,
-            smgID,
-            tokenPairID,
-            releaseValue,
-            fee,
-            userAccount: bob.address,
-            bridgeJettonWalletAddr: bridgeJettonWallet.address,
-            e,
-            p,
-            s
+            console.log("ret", slimSndMsgResult(ret));
+            console.log("After balance of coin",
+                "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+                "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+                );
+            console.log("After balance of token",
+                "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
+                "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
+            );
+            printCaseSeperator(it.name)
         });
 
-        let afterBridgeUsdt = await bridgeJettonWallet.getJettonBalance();
-        let afterBobUsdt = await bobJettonWallet.getJettonBalance();
+        it('[userLock wrapped token ] should userLock success', async () => {
+            let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+            let tokenPairID = tokenInfo.tokenWrapped.tokenPairId;
+            let crossValue = BigInt(toNano(0.5));
+            let value = BigInt(toNano(2));
+            console.log("smgID(bigInt)==>", BigInt(smgID));
+            const queryID = 1;
 
-        console.log(
-            "tokenAccount",jettonMinter.address,
-            "userAccount",(bob.address),
-            "jettonAdminAddr",(deployer_jetton.address),
-            "bridgeJettonWalletAddr",(bridgeJettonWallet.address),
-            "alice",(alice.address),
-            "bob",(bob.address),
-            "bridge",(bridge.address));
+            console.log("before user lock original token");
+            console.log("alice's address",alice.address.toString());
+            console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
+            console.log("Before balance of coin",
+                "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+                "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+            );
+            console.log("Before balance of token",
+                "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenWrapped.dstTokenAcc),alice.address)),
+                "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenWrapped.dstTokenAcc),bridge.address)),
+            );
+            const ret = await bridge.sendUserLock(alice.getSender(), {
+                value: value,
+                queryID,
+                tokenPairID,
+                smgID,
+                crossValue,
+                dstUserAccount: bob.address.toString(),
+                client:blockchain,
+                senderAccount:alice.address.toString(),
+                bridgeScAddr:bridge.address.toString(),
+            });
 
-        console.log("beforeBob, afterBob, delta", fromNano(beforeBobUsdt), fromNano(afterBobUsdt), afterBobUsdt - beforeBobUsdt);
-        console.log("beforeBridge, afterBridge,delta", fromNano(beforeBridgeUsdt), fromNano(afterBridgeUsdt), afterBridgeUsdt - beforeBridgeUsdt);
+            console.log("ret", slimSndMsgResult(ret));
+            console.log("After balance of coin",
+                "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+                "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+            );
+            console.log("After balance of token",
+                "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenWrapped.dstTokenAcc),alice.address)),
+                "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenWrapped.dstTokenAcc),bridge.address)),
+            );
+            printCaseSeperator(it.name)
 
-        expect(true).toEqual(afterBobUsdt == (beforeBobUsdt + releaseValue - fee));
-        expect(true).toEqual(afterBridgeUsdt == (beforeBridgeUsdt - releaseValue));
-
-        console.log("ret.transaction=>", slimSndMsgResult(ret));
-
-        printCaseSeperator(it.name);
-    });
-
-    it('[smgRelease wrapped token] should msgRelease success', async () => {
-        let smgID = smgId;
-        let tokenPairID = tokenInfo.tokenWrapped.tokenPairId;
-        let releaseValue = BigInt(toNano(1));
-        let value = BigInt(toNano(2));
-        console.log("smgID(bigInt)==>", BigInt(smgID));
-
-        const queryID = 1;
-        const uniqueID = BigInt(3);
-        const fee = BigInt(1000);
-
-        let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
-            BigInt(uniqueID),
-            BigInt(tokenPairID),
-            BigInt(releaseValue),
-            BigInt(fee),
-            Address.parseFriendly(tokenInfo.tokenWrapped.dstTokenAcc).address,
-            bob.address);
-
-        console.log("msgHashResult....",msgHashResult);
-        let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,msgHashResult.hashBuf);
-        const e = BigInt(sig.e);
-
-        const p = BigInt(sig.p);
-        const s = BigInt(sig.s);
-
-
-        console.log("before smgRelease original token");
-
-        let initialTotalSupply = await jettonMinter_dog.getTotalSupply();
-        const bridgeJettonWallet = await userWallet_dog(bridge.address);
-        const bobJettonWallet = await userWallet_dog(bob.address);
-
-        let beforeBridgeDog = await bridgeJettonWallet.getJettonBalance();
-        let beforeBobDog = await bobJettonWallet.getJettonBalance();
-
-        const ret = await bridge.sendSmgRelease(alice.getSender(), {
-            value: value,
-            queryID,
-            uniqueID,
-            smgID,
-            tokenPairID,
-            releaseValue,
-            fee,
-            userAccount: bob.address,
-            bridgeJettonWalletAddr: bridgeJettonWallet.address,
-            e,
-            p,
-            s
         });
 
-        let afterBridgeDog = await bridgeJettonWallet.getJettonBalance();
-        let afterBobDog = await bobJettonWallet.getJettonBalance();
+        it('[smgRelease ton] should msgRelease success', async () => {
+            let smgID = smgId;
+            let tokenPairID = tokenInfo.coin.tokenPairId;
+            let releaseValue = BigInt(toNano(1));
+            let value = BigInt(toNano(2));
+            console.log("smgID(bigInt)==>", BigInt(smgID));
 
-        console.log(
-            "tokenAccount",jettonMinter.address,
-            "userAccount",(bob.address),
-            "jettonAdminAddr",(deployer_jetton.address),
-            "bridgeJettonWalletAddr",(bridgeJettonWallet.address),
-            "alice",(alice.address),
-            "bob",(bob.address),
-            "bridge",(bridge.address));
+            const queryID = 1;
+            const uniqueID = BigInt(1);
+            const fee = BigInt(1000);
 
-        console.log("beforeBob, afterBob, delta", fromNano(beforeBobDog), fromNano(afterBobDog), afterBobDog - beforeBobDog);
-        console.log("beforeBridge, afterBridge,delta", fromNano(beforeBridgeDog), fromNano(afterBridgeDog), afterBridgeDog - beforeBridgeDog);
+            let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
+                BigInt(uniqueID),
+                BigInt(tokenPairID),
+                BigInt(releaseValue),
+                BigInt(fee),
+                TON_COIN_ACCOUT,
+                bob.address);
 
-        expect(true).toEqual(afterBobDog == (beforeBobDog + releaseValue - fee));
-        expect(true).toEqual(afterBridgeDog == (beforeBridgeDog - releaseValue));
+            console.log("msgHashResult....",msgHashResult);
+            let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,msgHashResult.hashBuf);
+            const e = BigInt(sig.e);
 
-        console.log("ret.transaction=>", slimSndMsgResult(ret));
+            const p = BigInt(sig.p);
+            const s = BigInt(sig.s);
 
-        printCaseSeperator(it.name);
-    });
+            console.log("before smgRelease ton");
+
+            let beforeBridge = (await blockchain.getContract(bridge.address)).balance;
+            let beforeAlice = await alice.getBalance();
+            let beforeBob = await bob.getBalance();
+
+            const ret = await bridge.sendSmgRelease(alice.getSender(), {
+                value: value,
+                queryID,
+                uniqueID,
+                smgID,
+                tokenPairID,
+                releaseValue,
+                fee,
+                userAccount: bob.address,
+                bridgeJettonWalletAddr: alice.address, //todo ZERO_ACCOUNT
+                e,
+                p,
+                s
+            });
+            // console.log("sendSmgRelease ret:", ret)
+            await sleep(2000)
+            let afterBridge = (await blockchain.getContract(bridge.address)).balance;
+            let afterAlice = await alice.getBalance();
+            let afterBob = await bob.getBalance();
+
+
+            console.log("beforeAlice, afterAlice, delta", fromNano(beforeAlice), fromNano(afterAlice), afterAlice - beforeAlice);
+            console.log("beforeBob, afterBob, delta", fromNano(beforeBob), fromNano(afterBob), afterBob - beforeBob);
+            console.log("beforeBridge, afterBridge,delta", fromNano(beforeBridge), fromNano(afterBridge), afterBridge - beforeBridge);
+
+            console.log("ret.transaction=>", slimSndMsgResult(ret));
+            // console.log("ret=====>",ret);
+            // todo add expect later
+            expect(true).toEqual(afterBridge <= (beforeBridge)); //todo add fee
+            console.log("beforeBridge(wei), afterBridge(wei), releaseValue(wei)", beforeBridge, afterBridge, releaseValue);
+            console.log("debug: afterBob >= (beforeBob + releaseValue):", afterBob ,beforeBob , releaseValue)
+            expect(true).toEqual(afterBob >= (beforeBob + releaseValue));      //todo add fee should equal , not >=
+
+            printCaseSeperator(it.name);
+        });
+
+
+        it('[smgRelease original token] should msgRelease success', async () => {
+            let smgID = smgId;
+            let tokenPairID = tokenInfo.tokenOrg.tokenPairId;
+            let releaseValue = BigInt(toNano(1));
+            let value = BigInt(toNano(2));
+            console.log("smgID(bigInt)==>", BigInt(smgID));
+
+            const queryID = 1;
+            const uniqueID = BigInt(2);
+            const fee = BigInt(1000);
+
+            let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
+                BigInt(uniqueID),
+                BigInt(tokenPairID),
+                BigInt(releaseValue),
+                BigInt(fee),
+                Address.parseFriendly(tokenInfo.tokenOrg.dstTokenAcc).address,
+                bob.address);
+
+            console.log("msgHashResult....",msgHashResult);
+            let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,msgHashResult.hashBuf);
+            const e = BigInt(sig.e);
+
+            const p = BigInt(sig.p);
+            const s = BigInt(sig.s);
+
+
+            console.log("before smgRelease original token");
+
+            let initialTotalSupply = await jettonMinter.getTotalSupply();
+            const bridgeJettonWallet = await userWallet(bridge.address);
+            const bobJettonWallet = await userWallet(bob.address);
+
+            let beforeBridgeUsdt = await bridgeJettonWallet.getJettonBalance();
+            let beforeBobUsdt = await bobJettonWallet.getJettonBalance();
+
+            const ret = await bridge.sendSmgRelease(alice.getSender(), {
+                value: value,
+                queryID,
+                uniqueID,
+                smgID,
+                tokenPairID,
+                releaseValue,
+                fee,
+                userAccount: bob.address,
+                bridgeJettonWalletAddr: bridgeJettonWallet.address,
+                e,
+                p,
+                s
+            });
+
+            let afterBridgeUsdt = await bridgeJettonWallet.getJettonBalance();
+            let afterBobUsdt = await bobJettonWallet.getJettonBalance();
+
+            console.log(
+                "tokenAccount",jettonMinter.address,
+                "userAccount",(bob.address),
+                "jettonAdminAddr",(deployer_jetton.address),
+                "bridgeJettonWalletAddr",(bridgeJettonWallet.address),
+                "alice",(alice.address),
+                "bob",(bob.address),
+                "bridge",(bridge.address));
+
+            console.log("beforeBob, afterBob, delta", fromNano(beforeBobUsdt), fromNano(afterBobUsdt), afterBobUsdt - beforeBobUsdt);
+            console.log("beforeBridge, afterBridge,delta", fromNano(beforeBridgeUsdt), fromNano(afterBridgeUsdt), afterBridgeUsdt - beforeBridgeUsdt);
+
+            expect(true).toEqual(afterBobUsdt == (beforeBobUsdt + releaseValue - fee));
+            expect(true).toEqual(afterBridgeUsdt == (beforeBridgeUsdt - releaseValue));
+
+            console.log("ret.transaction=>", slimSndMsgResult(ret));
+
+            printCaseSeperator(it.name);
+        });
+
+        it('[smgRelease wrapped token] should msgRelease success', async () => {
+            let smgID = smgId;
+            let tokenPairID = tokenInfo.tokenWrapped.tokenPairId;
+            let releaseValue = BigInt(toNano(1));
+            let value = BigInt(toNano(2));
+            console.log("smgID(bigInt)==>", BigInt(smgID));
+
+            const queryID = 1;
+            const uniqueID = BigInt(3);
+            const fee = BigInt(1000);
+
+            let msgHashResult = common.computeHash(BigInt(BIP44_CHAINID),
+                BigInt(uniqueID),
+                BigInt(tokenPairID),
+                BigInt(releaseValue),
+                BigInt(fee),
+                Address.parseFriendly(tokenInfo.tokenWrapped.dstTokenAcc).address,
+                bob.address);
+
+            console.log("msgHashResult....",msgHashResult);
+            let sig = schnorr.getSecSchnorrSByMsgHash(skSmg,msgHashResult.hashBuf);
+            const e = BigInt(sig.e);
+
+            const p = BigInt(sig.p);
+            const s = BigInt(sig.s);
+
+
+            console.log("before smgRelease original token");
+
+            let initialTotalSupply = await jettonMinter_dog.getTotalSupply();
+            const bridgeJettonWallet = await userWallet_dog(bridge.address);
+            const bobJettonWallet = await userWallet_dog(bob.address);
+
+            let beforeBridgeDog = await bridgeJettonWallet.getJettonBalance();
+            let beforeBobDog = await bobJettonWallet.getJettonBalance();
+
+            const ret = await bridge.sendSmgRelease(alice.getSender(), {
+                value: value,
+                queryID,
+                uniqueID,
+                smgID,
+                tokenPairID,
+                releaseValue,
+                fee,
+                userAccount: bob.address,
+                bridgeJettonWalletAddr: bridgeJettonWallet.address,
+                e,
+                p,
+                s
+            });
+
+            let afterBridgeDog = await bridgeJettonWallet.getJettonBalance();
+            let afterBobDog = await bobJettonWallet.getJettonBalance();
+
+            console.log(
+                "tokenAccount",jettonMinter.address,
+                "userAccount",(bob.address),
+                "jettonAdminAddr",(deployer_jetton.address),
+                "bridgeJettonWalletAddr",(bridgeJettonWallet.address),
+                "alice",(alice.address),
+                "bob",(bob.address),
+                "bridge",(bridge.address));
+
+            console.log("beforeBob, afterBob, delta", fromNano(beforeBobDog), fromNano(afterBobDog), afterBobDog - beforeBobDog);
+            console.log("beforeBridge, afterBridge,delta", fromNano(beforeBridgeDog), fromNano(afterBridgeDog), afterBridgeDog - beforeBridgeDog);
+
+            expect(true).toEqual(afterBobDog == (beforeBobDog + releaseValue - fee));
+            expect(true).toEqual(afterBridgeDog == (beforeBridgeDog - releaseValue));
+
+            console.log("ret.transaction=>", slimSndMsgResult(ret));
+
+            printCaseSeperator(it.name);
+        });
 
 
 });

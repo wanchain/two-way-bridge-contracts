@@ -10,6 +10,7 @@ import {BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR, WK_CHIANID} from "
 
 import {logger} from '../utils/logger'
 import {BufferrToHexString, int64ToByte32} from "../utils/utils";
+import {bigIntReplacer} from "../utils/utils";
 const formatUtil = require('util');
 
 export const codeTable = {
@@ -70,6 +71,7 @@ export const codeTable = {
     [opcodes.OP_CROSS_SmgRelease]: {
         "enCode": function (opts: any): Cell {
             logger.info(formatUtil.format("Entering enCode Function OP_CROSS_SmgRelease"));
+            logger.info(formatUtil.format("op_cross_smgRelease opts %s",JSON.stringify(opts,bigIntReplacer)));
             let part2Cell = beginCell()
                 .storeUint(opts.fee, 256)
                 .storeAddress(opts.userAccount)

@@ -40,6 +40,11 @@ async function userLock(){
     try{
         let ba = BridgeAccess.create(client,bridgeScAddr);
         for(let key of Object.keys(tokenInfo)) {
+            console.log("key:",key);
+            if(key.toString().toLowerCase() !== "coin"){
+                continue;
+            }
+
             let ret = await ba.writeContract('sendUserLock', aliceSender, {
                 value: transValueUserLock,
                 smgID,

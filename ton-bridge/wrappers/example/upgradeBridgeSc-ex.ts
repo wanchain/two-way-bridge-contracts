@@ -38,7 +38,7 @@ const scAddresses = require('../testData/contractAddress.json');
     }
     console.log("opt=>",opt);
     ret = await ba.writeContract('sendUpgradeSC',via,opt);
-    console.log("sendAddTokenPair",ret);
+    console.log("sendUpgradeSC",ret);
 
 })()
 

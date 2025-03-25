@@ -38,11 +38,15 @@ async function addSmg(){
 
     let ba = BridgeAccess.create(client,scAddresses.bridgeAddress);
     const skSmg = Buffer.from(smgCfg.skSmg, 'hex');
+    console.log("skSmg=>",skSmg);
     const gpk = schnorr.getPKBySk(skSmg);
+
+    console.log("gpk=>",gpk);
     const gpkX = gpk.startsWith("0x") || gpk.startsWith("0X")? gpk.substring(0,66): `0x${gpk.substring(0,64)}`;
     const gpkY = gpk.startsWith("0x") || gpk.startsWith("0X")? `0x${gpk.substring(66)}`: `0x${gpk.substring(64)}`;
     const smgId = smgCfg.smgId;
-
+    console.log("gpkX=>",gpkX)
+    console.log("gpkY=>",gpkY)
     let startTime = Math.floor(Date.now() / 1000);
     let endTime = startTime + smgCfg.wkDuring;
 
