@@ -39,8 +39,15 @@
     {--
     1. bridge send inter_transfer to JW_bridge address
     -}
-    int forward_ton_amount = 2;                         ;;todo get from input message
+    ;; int forward_ton_amount = 2;                         ;;todo get from input message
+    ;; int total_ton_amount = 200000000;                   ;;todo get from input message
+
+    ;; int forward_ton_amount = 2000000;                         ;;todo get from input message
+    ;; int total_ton_amount = 200000000;                   ;;todo get from input message
+
+    int forward_ton_amount = 0;                         ;;todo get from input message
     int total_ton_amount = 200000000;                   ;;todo get from input message
+
     cell transfer_request = begin_cell()
         .store_op(op::transfer)
         .store_query_id(queryId)
@@ -203,9 +210,9 @@
         return oracle;
     }
 
-    if (op == OP_EXCESSES) {
-        return (oracle);
-    }
+    ;; if (op == OP_EXCESSES) {
+    ;;     return (oracle);
+    ;; }
 
     if (op == OP_CROSS_SmgRelease) {
         ;;(slice oracleAdmin, cell smgConfig, cell smgConfigCommit, cell smgTxUniqueId) = oracle_load_data(oracle);

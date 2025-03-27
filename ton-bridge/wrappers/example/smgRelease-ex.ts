@@ -126,7 +126,10 @@ async function smgRelease(){
             // if(key.toString().toLowerCase() !== "tokenwrapped"){
             //     continue;
             // }
-            if(key.toString().toLowerCase() !== "coin"){
+            // if(key.toString().toLowerCase() !== "coin"){
+            //     continue;
+            // }
+            if(key.toString().toLowerCase() !== "tokenorg"){
                 continue;
             }
             let smgReleasePara = await buildSmgReleaseParameters(client,{
