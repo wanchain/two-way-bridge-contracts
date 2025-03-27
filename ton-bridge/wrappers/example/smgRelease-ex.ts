@@ -123,7 +123,10 @@ async function smgRelease(){
         let ba = BridgeAccess.create(client,bridgeScAddr);
         for(let key of Object.keys(tokenInfo)) {
             console.log("key:",key);
-            if(key.toString().toLowerCase() !== "tokenwrapped"){
+            // if(key.toString().toLowerCase() !== "tokenwrapped"){
+            //     continue;
+            // }
+            if(key.toString().toLowerCase() !== "coin"){
                 continue;
             }
             let smgReleasePara = await buildSmgReleaseParameters(client,{

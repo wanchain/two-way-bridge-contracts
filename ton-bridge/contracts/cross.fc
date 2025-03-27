@@ -65,11 +65,11 @@
 () smgRelease_ton(int queryId, int releaseValue, int fee,slice userAccount, slice proxyAddress) impure {
     ~strdump("smgRelease_ton.....");
     var msg = begin_cell()
-        .store_msg_flag(msg_flag::bounceable)
+        .store_msg_flag(msg_flag::non_bounceable)
         .store_slice(userAccount)
         .store_coins(( releaseValue - fee ) )
         .store_msgbody_prefix_slice();
-    send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS);
+    send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY);
     send_fee_to_proxy(proxyAddress,fee);
     return ();
 }

@@ -183,7 +183,7 @@
         ~strdump("Entering op_cross...");
 
         var _oracle = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle,ca_fee);
-        ;;cb_executed(sender_address,query_id); ;;todo check it carefully.
+        cb_executed(sender_address,query_id);
         save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
         return ();
     }
