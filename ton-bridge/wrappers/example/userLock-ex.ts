@@ -19,9 +19,9 @@ const scAddresses = require('../testData/contractAddress.json');
 const smgCfg = require('../testData/smg.json');
 const tokenInfo = require('../testData/tokenInfo.json');
 let smgID = smgCfg.smgId
-let crossValue = toNano('1')
+let crossValue = toNano('0.1')
 let bridgeScAddr = scAddresses.bridgeAddress
-let transValueUserLock = toNano('0.3')
+let transValueUserLock = toNano('0.4')
 let dstUserAccount = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"
 let aliceSender;
 
@@ -41,9 +41,9 @@ async function userLock(){
         let ba = BridgeAccess.create(client,bridgeScAddr);
         for(let key of Object.keys(tokenInfo)) {
             console.log("key:",key);
-            // if(key.toString().toLowerCase() !== "coin"){
-            //     continue;
-            // }
+            if(key.toString().toLowerCase() !== ("tokenOrg").toLowerCase()){
+                continue;
+            }
 
             let ret = await ba.writeContract('sendUserLock', aliceSender, {
                 value: transValueUserLock,

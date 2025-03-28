@@ -125,7 +125,8 @@
     return msg.end_cell().cell_hash();
 }
 
-(cell) cross_recv_internal(int op, int queryId, cell tokenManager, int msgValue, cell inMsgFull, slice inMsgBody, cell oracle, cell caFee) impure {
+(int,cell) cross_recv_internal(int op, int queryId, cell tokenManager, int msgValue, cell inMsgFull, slice inMsgBody, cell oracle, cell caFee) impure {
+    int refundValue = 0;
     ~strdump("cross_recv_internal....");
     slice ZERO_ACCOUNT = begin_cell().store_int(0, 256).end_cell().begin_parse();
     ~dump(op);
@@ -171,6 +172,7 @@
 
         ~strdump("compare tokenAccount and ZERO_ACCOUNT....");
         if (equal_slices(tokenAccount, ZERO_ACCOUNT)) {
+            refundValue = msgValue - fee - crossValue ;
             userLock_ton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount,intProxyFeeAddr);
         } else {
 
@@ -182,7 +184,7 @@
                 userLock_org_jetton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount, intProxyFeeAddr);
             }
         }
-        return oracle;
+        return (refundValue,oracle);
     }
 
     if (op == OP_TRANSFER_NOTIFICATION) {
@@ -207,7 +209,7 @@
             .store_msgbody_prefix_ref(lockBody);
         ~strdump("begin send userLock triggered by notification");
         send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS);
-        return oracle;
+        return (refundValue,oracle);
     }
 
     ;; if (op == OP_EXCESSES) {
@@ -291,9 +293,9 @@
                 smgRelease_org_jetton(queryId,releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr);
             }
         }
-        return (new_oracle);
+        return (refundValue,new_oracle);
     }
 
     throw(0xffff);
-    return (oracle);
+    return (refundValue,oracle);
 }

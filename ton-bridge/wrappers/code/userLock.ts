@@ -12,6 +12,12 @@ import {Blockchain} from "@ton/sandbox";
 import {Bridge} from "../Bridge";
 const formatUtil = require('util');
 
+export const LOCK_TYPE={
+    coin:1,
+    tokenOrg:2,
+    tokenWrapped:3
+}
+
 export async function buildUserLockMessages(opts: {
     value: bigint,
     smgID:string,
@@ -89,6 +95,9 @@ async function buildLockCoinMessages(opts: {
     senderAccount:string,
 },jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
     console.log("buildLockCoinMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
+    let totalValue:bigint;
+    totalValue = opts.value + opts.crossValue;
+    console.log("totalValue=>",totalValue);
     let queryId = await getQueryID();
     let dstUserAccountBuffer = Buffer.from(opts.dstUserAccount,'hex');
     let dstUserAccountBufferLen = dstUserAccountBuffer.length
@@ -107,11 +116,14 @@ async function buildLockCoinMessages(opts: {
         .storeBuffer(dstUserAccountBuffer,dstUserAccountBufferLen)
         .storeRef(extraCell)
         .endCell()
-    let msg = await buildInternalMessage({to:opts.bridgeScAddr,value:opts.value,body:body,bounce:true});
+
+    let msg = await buildInternalMessage({to:opts.bridgeScAddr,value:totalValue,body:body,bounce:true});
     return {
         internalMsg:msg,
         body:body,
         to:opts.bridgeScAddr,
+        lockType:LOCK_TYPE.coin,
+        value:totalValue,
     }
 }
 
@@ -127,6 +139,9 @@ async function buildLockOriginalTokenMessages(opts: {
 },jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
     console.log("buildLockOriginalTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
 
+    if(opts.value < (lockFee + toNano('0.3'))){ //todo value > lockFee + transUserLockFee
+        throw new Error("insufficient ton balance");
+    }
     // forward payLoad
     let queryId = await getQueryID();
 
@@ -148,13 +163,9 @@ async function buildLockOriginalTokenMessages(opts: {
         .storeRef(extraCell)
         .endCell()
 
-    //todo should delete begin
-    lockFee = toNano('0.2');   // no lockFee, no forward payload.
-    //todo should delete end
-
     // sendToken payLoad
-    let forwardAmount = lockFee;
-
+    let forwardAmount = lockFee + toNano('0.3');
+    console.log("forwardAmount=>",forwardAmount);
     let sendTokenAmount = opts.crossValue;
     let sendJettonCel = beginCell()
         .storeUint(0xf8a7ea5, 32) // const int op::transfer = 0xf8a7ea5;
@@ -174,14 +185,16 @@ async function buildLockOriginalTokenMessages(opts: {
         internalMsg:msg,
         body:sendJettonCel,
         to:jwAddrSrc,
+        lockType:LOCK_TYPE.tokenOrg,
+        value:opts.value,
     }
 }
 
 async function buildLockWrappedTokenMessages(opts:any,jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
     console.log("buildLockWrappedTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
     let ret =  (await buildLockOriginalTokenMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee));
+    ret.lockType = LOCK_TYPE.tokenWrapped;
     return ret;
-
 }
 
 async function getFee(client:TonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number,srcChainId,dstChainId){

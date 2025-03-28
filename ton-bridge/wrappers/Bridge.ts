@@ -268,8 +268,10 @@ export class Bridge implements Contract {
         console.log("ret.to==>",ret.to);
 
         if(ret.to.toString() == this.address.toString()){
+            let totalValue:bigint;
+            totalValue = ret.value;
             await provider.internal(via, {
-                value: opts.value,
+                value: totalValue,
                 sendMode: SendMode.PAY_GAS_SEPARATELY,
                 body: ret.body});
         }else{

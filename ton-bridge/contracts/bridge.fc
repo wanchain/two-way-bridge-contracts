@@ -51,6 +51,21 @@
     send_raw_message(msg,80);
     return ();
 }
+
+
+() refund_executed(slice sender_address, int query_id, int refundAmout) impure {
+    var msg = begin_cell()
+        .store_uint(0x18, 6)     ;;
+        .store_slice(sender_address)
+        .store_coins(refundAmout)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(OP_COMMON_Finished, 32)
+        .store_uint(query_id, 64)
+        .end_cell();
+    send_raw_message(msg,1);
+    return ();
+}
+
 (int, int, int, int, int) get_smgConfigCommited(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_smg(oracle, id, 1);
@@ -185,8 +200,13 @@
         ;; save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
         ~strdump("Entering op_cross...");
 
-        var _oracle = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle,ca_fee);
-        cb_executed(sender_address,query_id);
+        (var refundValue,var _oracle) = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle,ca_fee);
+        if ( refundValue == 0){
+            cb_executed(sender_address,query_id);
+        } else {
+            refund_executed(sender_address,query_id,refundValue);
+        }
+
         save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
         return ();
     }
