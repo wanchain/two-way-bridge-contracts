@@ -97,7 +97,7 @@ const config = {
       bip44ChainId: 1073741851,
     },
     songbirdMainnet: {
-      url: 'https://01-gravelines-006-01.rpc.tatum.io/ext/bc/C/rpc',
+      url: 'https://rpc.au.cc/songbird',
       accounts: [process.env.PK],
       bip44ChainId: 1073741836,
     },
@@ -383,8 +383,7 @@ const config = {
         "https://sepolia.explorer.zksync.io/contract_verification",
     },
     zkSyncMainnet: {
-      // url: 'https://mainnet.era.zksync.io',
-      url: 'https://zksync-era.blockpi.network/v1/rpc/public',
+      url: 'https://mainnet.era.zksync.io',
       accounts: [process.env.PK],
       ethNetwork: "mainnet",
       zksync: true,
