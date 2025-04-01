@@ -237,7 +237,7 @@ echo '*********** use db config ***********:  '$dbip":"$dbport
 echo '*********** use mongocontainer name ***********:  '$mongocontainer
 # echo "Please ignore the error 'Error: No such container: $mongocontainer' if your first start the script"
 
-mongoimage=$(docker ps --filter "name=agentmongo_mainnet" --format "{{.Image}}"); mongoimage=${mongoimage%$'\n'}; mongoimage=${mongoimage:-"mongo:5.0"}
+mongoimage=$(docker ps -a --filter "name=agentmongo_mainnet" --format "{{.Image}}"); mongoimage=${mongoimage%$'\n'}; mongoimage=${mongoimage:-"mongo:5.0"}
 echo "use mongo image "$mongoimage
 
 `sudo docker rm -f $mongocontainer > /dev/null 2>&1`
