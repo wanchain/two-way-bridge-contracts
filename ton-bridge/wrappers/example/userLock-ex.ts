@@ -21,7 +21,8 @@ const tokenInfo = require('../testData/tokenInfo.json');
 let smgID = smgCfg.smgId
 let crossValue = toNano('0.1')
 let bridgeScAddr = scAddresses.bridgeAddress
-let transValueUserLock = toNano('0.4')
+//let transValueUserLock = toNano('0.4')
+let transValueUserLock = toNano('1')
 let dstUserAccount = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"
 let aliceSender;
 

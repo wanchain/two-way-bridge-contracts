@@ -105,7 +105,12 @@ async function buildLockCoinMessages(opts: {
         .storeAddress(addrTokenAccount)
         .storeAddress(jwAddrSrc)
         .storeAddress(jwAddrBridgeSc)
+        .storeAddress(Address.parse(opts.senderAccount))
         .endCell()
+    let extraCell2 = beginCell()
+        .storeAddress(Address.parse(opts.senderAccount))
+        .endCell()
+
     let body = beginCell()
         .storeUint(opcodes.OP_CROSS_UserLock, 32)
         .storeUint(queryId, 64)
@@ -115,6 +120,7 @@ async function buildLockCoinMessages(opts: {
         .storeUint(dstUserAccountBufferLen,8)
         .storeBuffer(dstUserAccountBuffer,dstUserAccountBufferLen)
         .storeRef(extraCell)
+        .storeRef(extraCell2)
         .endCell()
 
     let msg = await buildInternalMessage({to:opts.bridgeScAddr,value:totalValue,body:body,bounce:true});
@@ -152,6 +158,9 @@ async function buildLockOriginalTokenMessages(opts: {
         .storeAddress(jwAddrSrc)
         .storeAddress(jwAddrBridgeSc)
         .endCell()
+    let extraCell2 = beginCell()
+        .storeAddress(Address.parse(opts.senderAccount))
+        .endCell()
     let body = beginCell()
         .storeUint(opcodes.OP_CROSS_UserLock, 32)
         .storeUint(queryId, 64)
@@ -161,10 +170,12 @@ async function buildLockOriginalTokenMessages(opts: {
         .storeUint(dstUserAccountBufferLen,8)
         .storeBuffer(dstUserAccountBuffer,dstUserAccountBufferLen)
         .storeRef(extraCell)
+        .storeRef(extraCell2)
         .endCell()
 
     // sendToken payLoad
-    let forwardAmount = lockFee + toNano('0.3');
+    //let forwardAmount = lockFee + toNano('0.3');
+    let forwardAmount = lockFee + toNano('0.8');
     console.log("forwardAmount=>",forwardAmount);
     let sendTokenAmount = opts.crossValue;
     let sendJettonCel = beginCell()
@@ -172,7 +183,8 @@ async function buildLockOriginalTokenMessages(opts: {
         .storeUint(queryId, 64) // op, queryId
         .storeCoins(sendTokenAmount) //jetton_amount
         .storeAddress(Address.parse(opts.bridgeScAddr))  // receive address (token)
-        .storeAddress(Address.parse(opts.bridgeScAddr)) //response address
+        //.storeAddress(Address.parse(opts.bridgeScAddr)) //response address
+        .storeAddress(Address.parse(opts.senderAccount))
         .storeMaybeRef(null)
         .storeCoins(forwardAmount) // forward_ton_amount
         .storeMaybeRef(body)  //forwardPayload

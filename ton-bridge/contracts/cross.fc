@@ -125,8 +125,9 @@
     return msg.end_cell().cell_hash();
 }
 
-(int,cell) cross_recv_internal(int op, int queryId, cell tokenManager, int msgValue, cell inMsgFull, slice inMsgBody, cell oracle, cell caFee) impure {
+(slice, int,cell) cross_recv_internal(int op, int queryId, cell tokenManager, int msgValue, cell inMsgFull, slice inMsgBody, cell oracle, cell caFee) impure {
     int refundValue = 0;
+    slice originAddress = begin_cell().end_cell().begin_parse();
     ~strdump("cross_recv_internal....");
     slice ZERO_ACCOUNT = begin_cell().store_int(0, 256).end_cell().begin_parse();
     ~dump(op);
@@ -137,6 +138,10 @@
 
         (slice extraSlice) = inMsgBody~load_ref().begin_parse();
         (slice tokenAcountFromMsg,slice jwAddressSrc, slice jwAddressBridge) = (extraSlice~load_msg_addr(),extraSlice~load_msg_addr(),extraSlice~load_msg_addr());
+
+        (slice extraSlice2) = inMsgBody~load_ref().begin_parse();
+        originAddress = extraSlice2~load_msg_addr();
+
         (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr) = tm_get_token_pair(tokenManager, tokenPairId);
 
         int fee = 0;
@@ -175,7 +180,7 @@
             refundValue = msgValue - fee - crossValue ;
             userLock_ton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount,intProxyFeeAddr);
         } else {
-
+            refundValue = msgValue - fee ;
             (_, int hash) = parse_std_addr(my_address());
             slice myAddressHashSlice = int_to_slice(hash, 256);
             if (equal_slices(jettonAdminAddr, myAddressHashSlice)) {
@@ -184,7 +189,7 @@
                 userLock_org_jetton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount, intProxyFeeAddr);
             }
         }
-        return (refundValue,oracle);
+        return (originAddress,refundValue,oracle);
     }
 
     if (op == OP_TRANSFER_NOTIFICATION) {
@@ -205,11 +210,11 @@
         var msg = begin_cell()
             .store_msg_flag(msg_flag::bounceable) ;; we should not bounce here cause receiver can have uninitialized contract
             .store_slice(my_address())
-            .store_coins(msgValue)
+            .store_coins(0)
             .store_msgbody_prefix_ref(lockBody);
         ~strdump("begin send userLock triggered by notification");
         send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS);
-        return (refundValue,oracle);
+        return (originAddress,refundValue,oracle);
     }
 
     ;; if (op == OP_EXCESSES) {
@@ -293,9 +298,9 @@
                 smgRelease_org_jetton(queryId,releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr);
             }
         }
-        return (refundValue,new_oracle);
+        return (originAddress,refundValue,new_oracle);
     }
 
     throw(0xffff);
-    return (refundValue,oracle);
+    return (originAddress,refundValue,oracle);
 }

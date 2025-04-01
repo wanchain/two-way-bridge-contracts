@@ -268,6 +268,7 @@ export class Bridge implements Contract {
         console.log("ret.to==>",ret.to);
 
         if(ret.to.toString() == this.address.toString()){
+            console.log("entering lock coin");
             let totalValue:bigint;
             totalValue = ret.value;
             await provider.internal(via, {
@@ -275,6 +276,7 @@ export class Bridge implements Contract {
                 sendMode: SendMode.PAY_GAS_SEPARATELY,
                 body: ret.body});
         }else{
+             console.log("entering lock token");
              let provider = await opts.client.provider(ret.to as unknown as Address);
              await provider.internal(via, {
                  value: opts.value,
