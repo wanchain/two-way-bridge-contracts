@@ -236,9 +236,13 @@ echo '*********** use db config ***********:  '$dbip":"$dbport
 # mongocontainer=openstoremanmongo
 echo '*********** use mongocontainer name ***********:  '$mongocontainer
 # echo "Please ignore the error 'Error: No such container: $mongocontainer' if your first start the script"
+
+mongoimage=$(docker ps --filter "name=agentmongo_mainnet" --format "{{.Image}}"); mongoimage=${mongoimage%$'\n'}; mongoimage=${mongoimage:-"mongo:5.0"}
+echo "use mongo image "$mongoimage
+
 `sudo docker rm -f $mongocontainer > /dev/null 2>&1`
 
-sudo docker run -itd --name $mongocontainer --network $dockernet -v $dbdir:/data/db --restart=always --log-opt max-size=500m --log-opt max-file=3 mongo:5.0
+sudo docker run -itd --name $mongocontainer --network $dockernet -v $dbdir:/data/db --restart=always --log-opt max-size=500m --log-opt max-file=3 $mongoimage
 
 # ************************************************************************************************************ 
 # storeman agent start 
@@ -372,7 +376,8 @@ if [ "$savepasswd" == "N" ] || [ "$savepasswd" == "n" ]; then
 
 	sleep 36
 
-    sudo rm $password
+    # sudo rm $password
+    (sleep 10m && sudo echo '{}' > $password) &
 	
 	if [ $? -ne 0 ]; then
 		echo "rm $password failed"
