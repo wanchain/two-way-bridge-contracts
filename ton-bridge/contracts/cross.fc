@@ -35,34 +35,27 @@
 }
 
 
-() send_token(int queryId, int amount, slice toAddress , slice jwBridgeAddr) impure {
+() send_token(int queryId, int amount, slice toAddress , slice jwBridgeAddr, int fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
     {--
     1. bridge send inter_transfer to JW_bridge address
     -}
-    ;; int forward_ton_amount = 2;                         ;;todo get from input message
-    ;; int total_ton_amount = 200000000;                   ;;todo get from input message
-
-    ;; int forward_ton_amount = 2000000;                         ;;todo get from input message
-    ;; int total_ton_amount = 200000000;                   ;;todo get from input message
-
-    int forward_ton_amount = 0;                         ;;todo get from input message
-    int total_ton_amount = 200000000;                   ;;todo get from input message
 
     cell transfer_request = begin_cell()
         .store_op(op::transfer)
         .store_query_id(queryId)
         .store_coins( amount)
         .store_slice(toAddress)
-        .store_slice(my_address())                  ;; todo check response address
+        ;;.store_slice(my_address())
+        .store_slice(senderAddr)
         .store_maybe_ref(begin_cell().end_cell())   ;; customPayload
-        .store_coins(forward_ton_amount)            ;; forward_amount, 4 bit if zero
+        .store_coins(fwdTonAmount)            ;; forward_amount, 4 bit if zero
         .store_maybe_ref(begin_cell().end_cell())   ;; forwardPayload
         .end_cell();
 
     var msg = begin_cell()
         .store_msg_flag(msg_flag::bounceable)
         .store_slice(jwBridgeAddr)
-        .store_coins(total_ton_amount)
+        .store_coins(totalTonAmount)
         .store_msgbody_prefix_ref(transfer_request);
     send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY); ;; revert on errors
 
@@ -81,14 +74,14 @@
     return ();
 }
 
-() smgRelease_org_jetton(int queryId, int releaseValue, int fee,slice userAccount, slice proxyAddress, slice jwBridgeAddr) impure {
-    send_token( queryId, ( releaseValue - fee ),  userAccount , jwBridgeAddr);
-    send_token( queryId, fee ,  proxyAddress , jwBridgeAddr);
+() smgRelease_org_jetton(int queryId, int releaseValue, int fee,slice userAccount, slice proxyAddress, slice jwBridgeAddr,fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
+    send_token( queryId, ( releaseValue - fee ),  userAccount , jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
+    send_token( queryId, fee ,  proxyAddress , jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
     return ();
 }
 
-() smgRelease_wrapped_jetton(int queryId, int releaseValue, int fee,slice userAccount, slice proxyAddress, slice jwBridgeAddr) impure {
-    smgRelease_org_jetton( queryId,  releaseValue,  fee, userAccount,  proxyAddress,  jwBridgeAddr);
+() smgRelease_wrapped_jetton(int queryId, int releaseValue, int fee,slice userAccount, slice proxyAddress, slice jwBridgeAddr ,int fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
+    smgRelease_org_jetton( queryId,  releaseValue,  fee, userAccount,  proxyAddress,  jwBridgeAddr,fwdTonAmount,totalTonAmount, senderAddr);
 }
 
 () userLock_ton(int queryId, int smgId, int tokenPairId, int lockValue, int fee, slice tokenAccount, slice userAccount,slice smgFeeProxy) impure {
@@ -125,7 +118,7 @@
     return msg.end_cell().cell_hash();
 }
 
-(slice, int,cell) cross_recv_internal(int op, int queryId, cell tokenManager, int msgValue, cell inMsgFull, slice inMsgBody, cell oracle, cell caFee) impure {
+(slice, int,cell) cross_recv_internal(int op, int queryId, cell tokenManager, int msgValue, cell inMsgFull, slice inMsgBody, cell oracle, cell caFee, slice senderAddr) impure {
     int refundValue = 0;
     slice originAddress = begin_cell().end_cell().begin_parse();
     ~strdump("cross_recv_internal....");
@@ -240,6 +233,7 @@
 
         slice part3 = inMsgBody~load_ref().begin_parse();
         (slice jwBridgeAddr) =(part3~load_msg_addr());
+        (int fwTonAmount, int totalTonAmount) = (part3~load_uint(256),part3~load_uint(256));
         part3.end_parse();
 
         ~strdump("before oracle_get_smg");
@@ -281,21 +275,23 @@
         throw_unless(0xffee, verify_sec(s, gpk_x, gpk_y, e, p, msg_hash));
         ~strdump("after verify_sec");
 
-        ;; int hashUserAccount = smgFeeProxy~load_uint(256);
-        ;; slice intUserAccount = get_serialized_address(WORKING_CHAINID, hashUserAccount);
-
         if (equal_slices(tokenAccountFromTp, ZERO_ACCOUNT)) {
             ~strdump("before entering smgRelease_ton...");
             smgRelease_ton(queryId,releaseValue, fee, userAccount, smgFeeProxy);
         } else {
+            if ( fee == 0 ){
+                refundValue = msgValue - totalTonAmount;
+            } else {
+                refundValue = msgValue - 2 * totalTonAmount;
+            }
             (_, int hash) = parse_std_addr(my_address());
             slice myAddressHashSlice = int_to_slice(hash, 256);
             if (equal_slices(jettonAdminAddr, myAddressHashSlice)) {
                 ~strdump("before entering smgRelease_wrapped_jetton...");
-                smgRelease_wrapped_jetton(queryId,releaseValue, fee, userAccount,smgFeeProxy,jwBridgeAddr);
+                smgRelease_wrapped_jetton(queryId,releaseValue, fee, userAccount,smgFeeProxy,jwBridgeAddr, fwTonAmount,totalTonAmount,senderAddr);
             } else {
                 ~strdump("before entering smgRelease_org_jetton...");
-                smgRelease_org_jetton(queryId,releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr);
+                smgRelease_org_jetton(queryId,releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr, fwTonAmount, totalTonAmount, senderAddr);
             }
         }
         return (originAddress,refundValue,new_oracle);

@@ -84,6 +84,8 @@ async function buildSmgReleaseParameters(client:TonClient,input:{
     uniqueID:bigint,
     tokenCoinAccount:Address,
     destAccount:Address,
+    fwTonAmount:bigint,
+    totalTonAmount:bigint,
 },srcChainId:number,dstChainId:number,bridgeScAddr:Address){
     let bridgeJwAddress = await getJettonWalletAddr(client,input.tokenCoinAccount, bridgeScAddr);
     let agentFee = await getAgentFee(input.tokenPairID,srcChainId,dstChainId);
@@ -115,12 +117,15 @@ async function buildSmgReleaseParameters(client:TonClient,input:{
         bridgeJettonWalletAddr:bridgeJwAddress,
         e,
         p,
-        s
+        s,
+        fwTonAmount:input.fwTonAmount,
+        totalTonAmount:input.totalTonAmount,
     }
 }
 
 async function smgRelease(){
     try{
+        let transValueSmg : bigint = transValueSmgRelease;
         let ba = BridgeAccess.create(client,bridgeScAddr);
         for(let key of Object.keys(tokenInfo)) {
             console.log("key:",key);
@@ -130,19 +135,26 @@ async function smgRelease(){
             // if(key.toString().toLowerCase() !== "coin"){
             //     continue;
             // }
-            if(key.toString().toLowerCase() !== "tokenorg"){
+            if(key.toString().toLowerCase() !== "tokenOrg".toLowerCase()){
                 continue;
             }
+
+            if(key.toString().toLowerCase() !== "coin".toLowerCase()){
+                transValueSmg = TON_FEE.TRANS_FEE_USER_LOCK_TOKEN;
+            }
+
             let smgReleasePara = await buildSmgReleaseParameters(client,{
                 smgID:smgConfig.smgId,
                 tokenPairID:tokenInfo[key].tokenPairId,
                 releaseValue:smgReleaseValue,
-                value:transValueSmgRelease,
+                value:transValueSmg,
                 queryID:BigInt(await getQueryID()),
                 uniqueID:BigInt(await getQueryID()),  // should be txHas->bigInt, here is the example.
                 tokenCoinAccount:Address.parse(tokenInfo[key].dstTokenAcc),
                 //tokenCoinAccount:Address.parseFriendly(tokenInfo.tokenOrg.dstTokenAcc).address,
-                destAccount:bobAddress
+                destAccount:bobAddress,
+                fwTonAmount:TON_FEE.FWD_TON_AMOUNT_TRANSFER_JETTON,
+                totalTonAmount:TON_FEE.TOTAL_TON_AMOUNT_TRANSFER_JETTON
             },tokenInfo[key].srcChainId,tokenInfo[key].dstChainId,Address.parse(bridgeScAddr))
             let ret = await ba.writeContract('sendSmgRelease', aliceSender, smgReleasePara)
             await sleep(3000);

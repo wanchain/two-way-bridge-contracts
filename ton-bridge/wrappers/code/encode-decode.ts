@@ -14,7 +14,6 @@ import {bigIntReplacer} from "../utils/utils";
 const formatUtil = require('util');
 
 export const codeTable = {
-
     [opcodes.OP_CROSS_UserLock]:{
         "enCode": function (opts: any): Cell{
             let retCell = Cell.EMPTY
@@ -67,7 +66,6 @@ export const codeTable = {
             }
         }
     },
-
     [opcodes.OP_CROSS_SmgRelease]: {
         "enCode": function (opts: any): Cell {
             logger.info(formatUtil.format("Entering enCode Function OP_CROSS_SmgRelease"));
@@ -85,6 +83,8 @@ export const codeTable = {
 
             let part4Cell = beginCell()
                 .storeAddress(opts.bridgeJettonWalletAddr)
+                .storeUint(opts.fwTonAmount,256)
+                .storeUint(opts.totalTonAmount,256)
                 .endCell();
 
             return beginCell()
@@ -154,7 +154,6 @@ export const codeTable = {
             }
         }
     },
-
     [opcodes.OP_FEE_SetTokenPairFee]: {
         "enCode": function (opts: any): Cell {
             logger.info(formatUtil.format("Entering enCode Function OP_CROSS_SmgRelease"));
@@ -453,7 +452,6 @@ export const codeTable = {
             return 0;
         }
     },
-
     [opcodes.OP_FEE_SetChainFee]: {
         "enCode": function (opts: any): Cell {
             console.log("Entering enCode Function OP_FEE_SetChainFees");
@@ -470,7 +468,6 @@ export const codeTable = {
             return 0;
         }
     },
-
     [opcodes.OP_FEE_SetChainFees]: {
         "enCode": function (opts: any): Cell {
             console.log("Entering enCode Function OP_FEE_SetChainFee");
@@ -493,7 +490,6 @@ export const codeTable = {
             return 0;
         }
     },
-
     [opcodes.OP_TOKENPAIR_Upsert]: {
         "enCode": function (opts: any): Cell {
             let toBuffer, fromBuffer;
@@ -579,7 +575,6 @@ export const codeTable = {
             }
         }
     },
-
     [opcodes.OP_TOKENPAIR_Remove]: {
         "enCode": function (opts: any): Cell {
             return beginCell()

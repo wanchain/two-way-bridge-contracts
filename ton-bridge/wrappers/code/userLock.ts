@@ -106,7 +106,6 @@ async function buildLockCoinMessages(opts: {
         .storeAddress(addrTokenAccount)
         .storeAddress(jwAddrSrc)
         .storeAddress(jwAddrBridgeSc)
-        .storeAddress(Address.parse(opts.senderAccount))
         .endCell()
     let extraCell2 = beginCell()
         .storeAddress(Address.parse(opts.senderAccount))
