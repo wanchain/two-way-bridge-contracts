@@ -1,3 +1,5 @@
+import {TON_FEE} from "../fee/fee";
+
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
@@ -98,7 +100,7 @@ describe('walletContract', () => {
 
         let contractProvide = client.provider(Address.parse(addr));
         let ret = await contractProvide.internal(via,{
-            value:toNano('0.0001'),
+            value:TON_FEE.TRANS_FEE_NORMAL,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().endCell(),
         })

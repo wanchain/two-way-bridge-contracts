@@ -10,6 +10,7 @@ import {StateInit} from "@ton/core";
 import {Cell} from "@ton/core";
 import {Blockchain} from "@ton/sandbox";
 import {Bridge} from "../Bridge";
+import {TON_FEE} from "../fee/fee";
 const formatUtil = require('util');
 
 export const LOCK_TYPE={
@@ -145,7 +146,7 @@ async function buildLockOriginalTokenMessages(opts: {
 },jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
     console.log("buildLockOriginalTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
 
-    if(opts.value < (lockFee + toNano('0.3'))){ //todo value > lockFee + transUserLockFee
+    if(opts.value < (lockFee + TON_FEE.NOTIFY_FEE_USER_LOCK)){ //todo value > lockFee + transUserLockFee
         throw new Error("insufficient ton balance");
     }
     // forward payLoad
@@ -175,7 +176,7 @@ async function buildLockOriginalTokenMessages(opts: {
 
     // sendToken payLoad
     //let forwardAmount = lockFee + toNano('0.3');
-    let forwardAmount = lockFee + toNano('0.8');
+    let forwardAmount = lockFee + TON_FEE.NOTIFY_FEE_USER_LOCK;
     console.log("forwardAmount=>",forwardAmount);
     let sendTokenAmount = opts.crossValue;
     let sendJettonCel = beginCell()

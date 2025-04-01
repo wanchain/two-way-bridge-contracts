@@ -1,3 +1,5 @@
+import {TON_FEE} from "../fee/fee";
+
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
@@ -56,7 +58,7 @@ describe('sendRawTransaction', () => {
     it('build rawTrans, sign, and send rawTrans', async () => {
         // build body
         let opt = {
-            value: toNano('0.005'),
+            value: TON_FEE.TRANS_FEE_NORMAL,
             queryID,
             tokenPairId: tokenPairId3,
             fromChainID: srcChainId3,
@@ -70,7 +72,7 @@ describe('sendRawTransaction', () => {
         // build message
         let message = await buildInternalMessage(wallet.address,{
             to:scAddresses.bridgeAddress,
-            value:toNano('0.007'),
+            value:TON_FEE.TRANS_FEE_NORMAL,
             bounce:true,
             body:bodyCell,
         })

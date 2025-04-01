@@ -3,6 +3,7 @@ import {codeTable} from "./encode-decode";
 import {OP_FEE_SetTokenPairFee, OP_TOKENPAIR_Upsert} from "../opcodes"
 import {BIP44_CHAINID, TON_COIN_ACCOUT} from "../const/const-value";
 import {getQueryID} from "../utils/utils";
+import {TON_FEE} from "../fee/fee";
 
 let rawCellStr = "b5ee9c7201010101005000009c50000003000000000000000100000003000012340000456714833589fcd6edb6e08f4c7c32d4f71b54bda02913200000000000000000000000000000000000000000000000000000000000000000"
 let rawCellStr1 = 'b5ee9c7241010301006c0002345000000300000000000000010000000300001234000045672a200102005430783833333538396663643665646236653038663463376333326434663731623534626461303239313300400000000000000000000000000000000000000000000000000000000000000000e249552b'
@@ -35,7 +36,7 @@ describe('decode', () => {
 
     it('decode should be equal code', async () => {
         let opt = {
-            value: toNano('0.005'),
+            value: TON_FEE.TRANS_FEE_NORMAL,
             queryID,
             tokenPairId: tokenPairId3,
             fromChainID: srcChainId3,
