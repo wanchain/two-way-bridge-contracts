@@ -1,3 +1,5 @@
+import {Address} from "@ton/core";
+
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
@@ -5,25 +7,13 @@ const config:TonClientConfig =  {
 
 import {getClient} from "../client/client";
 import {TonClientConfig} from "../client/client";
-const scAddress = require('../testData/contractAddress.json');
 async function main(){
     let client = await getClient(config,"https://ton.access.orbs.network/55033c0ff5Bd3F8B62C092Ab4D238bEE463E5503/1/testnet/toncenter-api-v2/jsonRPC\n");
-    let ret = await client.getContractState(scAddress.bridgeAddress);
+    let ret = await client.getContractState(Address.parse(process.argv[2]));
     console.log("ret1=>",ret);
-    client = null;
-
-    client = await getClient(config);
-    ret = await client.getContractState(scAddress.bridgeAddress);
-    console.log("ret2=>",ret);
-    client = null;
-
-    const config1:TonClientConfig =  {
-        network:"testnet", // testnet|mainnet
-    }
-    client = await getClient(config1);
-    ret = await client.getContractState(scAddress.bridgeAddress);
-    console.log("ret3=>",ret);
     client = null;
 }
 
 main();
+
+// ts-node getContractState-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr
