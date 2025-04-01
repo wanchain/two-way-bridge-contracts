@@ -29,7 +29,7 @@ const tokenInfo = require('../testData/tokenInfo.json');
 let smgID = smgCfg.smgId
 let smgReleaseValue = toNano('0.1')
 let bridgeScAddr = scAddresses.bridgeAddress
-let transValueSmgRelease = TON_FEE.TRANS_FEE_SMG_RLEASE
+let transValueSmgRelease = TON_FEE.TRANS_FEE_SMG_RELEASE
 let smgAgentFee = BigInt(1000); // should get from contract.
 let dstUserAccount = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"
 let aliceSender;
