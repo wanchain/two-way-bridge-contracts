@@ -7,6 +7,7 @@ import {getQueryID} from "../utils/utils";
 import {BridgeAccess} from "../contractAccess/bridgeAccess";
 import {toNano} from "@ton/core";
 import {TON_COIN_ACCOUNT_STR} from "../const/const-value";
+import {TON_FEE} from "../fee/fee";
 
 const prvList = require('../testData/prvlist')
 
@@ -32,7 +33,7 @@ const scAddresses = require('../testData/contractAddress.json');
     let via = await getSenderByPrvKey(client,Buffer.from(prvList[0],'hex'));
     let opt = {
         sender:via,
-        value: toNano('0.05'),
+        value: TON_FEE.TRANS_FEE_NORMAL,
         queryID,
         code:newCode,
     }

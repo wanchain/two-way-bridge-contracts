@@ -1,3 +1,5 @@
+import {TON_FEE} from "../fee/fee";
+
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
@@ -45,7 +47,7 @@ async function addTokenPair(){
     let ba = BridgeAccess.create(client,scAddresses.bridgeAddress);
     // write contract
     let opt = {
-        value: toNano('0.05'),
+        value: TON_FEE.TRANS_FEE_NORMAL,
         queryID,
         tokenPairId: tokenInfo[tokenType].tokenPairId,
         fromChainID: tokenInfo[tokenType].srcChainId,

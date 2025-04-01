@@ -62,6 +62,7 @@ async function init(){
 
 import {isAddrDepolyed} from "../wallet/walletContract";
 import {sleep} from "../utils/utils";
+import {TON_FEE} from "../fee/fee";
 
 async function DisplayJettonInfo(client:TonClient,addr:Address){
     let ret = await getJettonData(client,addr);
@@ -71,8 +72,9 @@ async function DisplayJettonInfo(client:TonClient,addr:Address){
     console.log("getJettonDataContent=>",await parseWrappedJettonContent(retJettonContent));
 }
 
-const fwdAmount = toNano('0.005');
-const totalAmount = toNano('0.2');
+const fwdAmount = TON_FEE.FWD_FEE_MINT_JETTON;
+const totalAmount = TON_FEE.TOTAL_FEE_MINT_JETTON;
+
 async function Mint(client:TonClient,via:Sender,jettonMasterAddr:Address,addr:Address, amount:bigint){
     let jettMasterSc = await JettonMinter.createFromAddress(jettonMasterAddr);
     let jettMasterScOpened = await client.open(jettMasterSc)
@@ -104,7 +106,7 @@ async function main() {
         console.log("jettonMinter address :",jettonMinterOpened.address.toString(),"has already deployed");
         return;
     }else{
-        let retDeploy = await jettonMinterOpened.sendDeploy(via, toNano('0.005'))
+        let retDeploy = await jettonMinterOpened.sendDeploy(via, TON_FEE.TRANS_FEE_NORMAL)
         console.log("jettonMinter address :",jettonMinterOpened.address.toString());
         console.log(retDeploy);
     }

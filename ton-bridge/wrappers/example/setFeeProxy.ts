@@ -25,6 +25,7 @@ const scAddresses = require('../testData/contractAddress.json');
 import { BridgeAccess } from "../contractAccess/bridgeAccess";
 import {getQueryID, sleep} from "../utils/utils";
 import {SandboxContract, TreasuryContract} from "@ton/sandbox";
+import {TON_FEE} from "../fee/fee";
 
 
 async function init(){
@@ -39,7 +40,7 @@ const schnorr = require("../sign/tools-secp256k1.js");
 
 let tokenInfo = require('../testData/tokenInfo.json')
 
-const setFeeGasValue =  toNano('0.01')
+const setFeeGasValue =  TON_FEE.TRANS_FEE_NORMAL
 
 async  function setFeeProxy(){
 

@@ -24,6 +24,7 @@ let client = null;
 const scAddresses = require('../testData/contractAddress.json');
 import { BridgeAccess } from "../contractAccess/bridgeAccess";
 import {getQueryID} from "../utils/utils";
+import { TON_FEE } from "../fee/fee";
 
 
 async function init(){
@@ -52,7 +53,7 @@ async function addSmg(){
 
     // write contract
     let opt = {
-        value: toNano('0.05'),
+        value: TON_FEE.TRANS_FEE_NORMAL,
         id: BigInt(smgId),
         gpkX:BigInt(gpkX), gpkY:BigInt(gpkY),
         startTime,

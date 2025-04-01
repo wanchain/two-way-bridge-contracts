@@ -12,6 +12,7 @@ import {getJettonAddress } from "../wallet/jetton";
 
 const schnorr = require("../sign/tools-secp256k1.js");
 import * as util from "node:util";
+import {TON_FEE} from "../fee/fee";
 
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
@@ -28,7 +29,7 @@ const tokenInfo = require('../testData/tokenInfo.json');
 let smgID = smgCfg.smgId
 let smgReleaseValue = toNano('0.1')
 let bridgeScAddr = scAddresses.bridgeAddress
-let transValueSmgRelease = toNano('0.3')
+let transValueSmgRelease = TON_FEE.TRANS_FEE_SMG_RLEASE
 let smgAgentFee = BigInt(1000); // should get from contract.
 let dstUserAccount = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"
 let aliceSender;

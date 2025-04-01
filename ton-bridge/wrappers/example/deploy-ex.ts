@@ -1,3 +1,5 @@
+import {TON_FEE} from "../fee/fee";
+
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
@@ -19,7 +21,7 @@ let bridge = null;
 let deployerOpened = null;
 let bridgeOpened = null;
 
-let deployerValue = toNano('0.05');
+let deployerValue = TON_FEE.TRANS_FEE_DEPLOY;
 
 import {conf } from "../testData/bridge.compile.func"
 let filePath = "../testData/bridge.compiled.json";

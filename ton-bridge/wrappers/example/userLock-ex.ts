@@ -5,6 +5,7 @@ import {buildUserLockMessages} from "../code/userLock";
 import {toNano} from "@ton/core";
 import {BridgeAccess} from "../contractAccess/bridgeAccess";
 import {sleep} from "../utils/utils";
+import {TON_FEE} from "../fee/fee";
 
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
@@ -39,6 +40,7 @@ async function init(){
 
 async function userLock(){
     try{
+        let transValue:bigint = transValueUserLock;
         let ba = BridgeAccess.create(client,bridgeScAddr);
         for(let key of Object.keys(tokenInfo)) {
             console.log("key:",key);
@@ -46,8 +48,12 @@ async function userLock(){
                 continue;
             }
 
+            if(key.toString().toLowerCase() !== ("coin").toLowerCase()){
+                transValue = TON_FEE.TRANS_FEE_USER_LOCK_TOKEN;
+            }
+
             let ret = await ba.writeContract('sendUserLock', aliceSender, {
-                value: transValueUserLock,
+                value: transValue,
                 smgID,
                 tokenPairID: tokenInfo[key].tokenPairId,
                 crossValue,

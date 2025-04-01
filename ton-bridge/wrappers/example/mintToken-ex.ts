@@ -53,6 +53,7 @@ import{JettonMinter} from "../JettonMinter";
 import{JettonWallet} from "../JettonWallet";
 import {CoinBalance,TokenBalance} from "../wallet/balance";
 import {TonClient} from "@ton/ton";
+import {TON_FEE} from "../fee/fee";
 
 
 async function mintToken(client:TonClient,tokenType: string, to: Address, amount: bigint) {
@@ -65,7 +66,7 @@ async function mintToken(client:TonClient,tokenType: string, to: Address, amount
     let jettonMinter = JettonMinter.createFromAddress(jettonTokenAddr);
     let contractProvider = client.provider(jettonTokenAddr);
 
-    let mintResult = await jettonMinter.sendMint(contractProvider, via, to, amount, toNano('0.005'), toNano('0.05'))
+    let mintResult = await jettonMinter.sendMint(contractProvider, via, to, amount, TON_FEE.FWD_FEE_MINT_JETTON, TON_FEE.TOTAL_FEE_MINT_JETTON)
     console.log("mintResult",mintResult);
     console.log("after mintToken to:%s, coin:%d,token:%d", to.toString(), await CoinBalance(client, to), await TokenBalance(client, Address.parse(jettonTokenAddr), to));
 

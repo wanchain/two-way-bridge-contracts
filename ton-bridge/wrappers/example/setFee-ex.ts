@@ -25,6 +25,7 @@ const scAddresses = require('../testData/contractAddress.json');
 import { BridgeAccess } from "../contractAccess/bridgeAccess";
 import {getQueryID} from "../utils/utils";
 import {SandboxContract, TreasuryContract} from "@ton/sandbox";
+import {TON_FEE} from "../fee/fee";
 
 
 async function init(){
@@ -54,14 +55,14 @@ async  function setFee(){
             dstChainId:tokenInfo[key].dstChainId,
             contractFee:Number(contractChainFee),
             agentFee:Number(agentFee),
-            value: toNano('0.001'),
+            value: TON_FEE.TRANS_FEE_NORMAL,
             queryID,
         });
 
         ret = await ba.writeContract('sendSetTokenPairFee',via,{
             tokenPairID:tokenInfo[key].tokenPairId,
             fee:Number(contractTokenPairFee),
-            value: toNano('0.001'),
+            value: TON_FEE.TRANS_FEE_NORMAL,
             queryID,
         });
 
