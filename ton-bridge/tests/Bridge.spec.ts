@@ -18,8 +18,7 @@ import {getSenderByPrvKey} from "../wrappers";
 function AccountToBig(addr: Address) {
     return BigInt("0x" + addr.hash.toString('hex'));
 };
-
-
+import {TON_FEE} from '../wrappers/fee/fee';
 
 const skSmg = Buffer.from("097e961933fa62e3fef5cedef9a728a6a927a4b29f06a15c6e6c52c031a6cb2b", 'hex');
 const gpk = schnorr.getPKBySk(skSmg);
@@ -463,7 +462,9 @@ describe('Bridge', () => {
                 bridgeJettonWalletAddr: alice.address, //todo ZERO_ACCOUNT
                 e,
                 p,
-                s
+                s,
+                fwTonAmount:TON_FEE.FWD_TON_AMOUNT_TRANSFER_JETTON,
+                totalTonAmount:TON_FEE.TOTAL_TON_AMOUNT_TRANSFER_JETTON,
             });
             // console.log("sendSmgRelease ret:", ret)
             await sleep(2000)
@@ -482,7 +483,9 @@ describe('Bridge', () => {
             expect(true).toEqual(afterBridge <= (beforeBridge)); //todo add fee
             console.log("beforeBridge(wei), afterBridge(wei), releaseValue(wei)", beforeBridge, afterBridge, releaseValue);
             console.log("debug: afterBob >= (beforeBob + releaseValue):", afterBob ,beforeBob , releaseValue)
-            expect(true).toEqual(afterBob >= (beforeBob + releaseValue));      //todo add fee should equal , not >=
+            let delta = releaseValue*BigInt(1)/BigInt(100);
+            const absBigInt = (n) => (n < 0n ? -n : n);
+            expect(true).toEqual(absBigInt(afterBob -beforeBob -releaseValue) < delta );
 
             printCaseSeperator(it.name);
         });
@@ -536,7 +539,9 @@ describe('Bridge', () => {
                 bridgeJettonWalletAddr: bridgeJettonWallet.address,
                 e,
                 p,
-                s
+                s,
+                fwTonAmount:TON_FEE.FWD_TON_AMOUNT_TRANSFER_JETTON,
+                totalTonAmount:TON_FEE.TOTAL_TON_AMOUNT_TRANSFER_JETTON,
             });
 
             let afterBridgeUsdt = await bridgeJettonWallet.getJettonBalance();
@@ -610,7 +615,9 @@ describe('Bridge', () => {
                 bridgeJettonWalletAddr: bridgeJettonWallet.address,
                 e,
                 p,
-                s
+                s,
+                fwTonAmount:TON_FEE.FWD_TON_AMOUNT_TRANSFER_JETTON,
+                totalTonAmount:TON_FEE.TOTAL_TON_AMOUNT_TRANSFER_JETTON,
             });
 
             let afterBridgeDog = await bridgeJettonWallet.getJettonBalance();

@@ -302,8 +302,11 @@ export class Bridge implements Contract {
             e:bigint,
             p:bigint,
             s:bigint,
+            fwTonAmount:bigint,
+            totalTonAmount:bigint,
         }
     ) {
+        console.log("opts1",opts);
         let body = codeTable[opcodes.OP_CROSS_SmgRelease].enCode(opts);
         await provider.internal(via, {
             value: opts.value,
