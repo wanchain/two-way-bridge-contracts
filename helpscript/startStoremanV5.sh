@@ -377,7 +377,7 @@ if [ "$savepasswd" == "N" ] || [ "$savepasswd" == "n" ]; then
 	sleep 36
 
     # sudo rm $password
-    (sleep 10m && sudo echo '{}' > $password) &
+    (sleep 50m && sudo echo '{}' > $password) &
 	
 	if [ $? -ne 0 ]; then
 		echo "rm $password failed"
