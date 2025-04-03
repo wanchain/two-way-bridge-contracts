@@ -4,7 +4,7 @@ import {codeTable} from "../code/encode-decode";
 
 
 import {logger} from '../utils/logger'
-import {getTranResultByTxHash, TranResult} from "../transResult/transResult";
+import {getTranResultByTran, getTranResultByTxHash, TranResult} from "../transResult/transResult";
 import {ZERO_ACCOUNT_STR} from "../const/const-value";
 const formatUtil = require('util');
 import * as opcodes from "../opcodes";
@@ -178,9 +178,7 @@ async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:str
             logger.info(formatUtil.format("getEventFromTran OP_CROSS_UserLock"));
 
             let handleResult = await handleUserLockEvent(client,Address.parse(scAddress),
-                tran.hash().toString(),tran.lt.toString(10),
-                tran.prevTransactionHash.toString(10),
-                tran.prevTransactionLt.toString(10),)
+                tran)
             if (!handleResult.valid){
                 logger.error(formatUtil.format("handleResult OP_CROSS_UserLock is not valid"));
                 return null;
@@ -189,9 +187,14 @@ async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:str
         }
         return await codeTable[opCode]["emitEvent"](decoded);
     }catch(err){
-        logger.error(formatUtil.format("getEventFromTran err",err.message));
+        logger.error(formatUtil.format("getEventFromTran err",err.message,err.response?.data?.error));
         return null;
     }
+}
+
+export async function getEventByTranHash(client:TonClient, scAddress:string, lt:string, tranHash:string){
+    let tran = await client.getTransaction(Address.parse(scAddress),lt,tranHash);
+    return await getEventFromTran(client,tran,scAddress);
 }
 
 async function getOpCodeFromCell(cell:Cell){
@@ -213,11 +216,11 @@ async function getOpCodeFromCell(cell:Cell){
 }
  */
 
-async function handleUserLockEvent(client:TonClient, scAddr:Address,txHash:string, lt:string,preHash:string, preLt:string){
+async function handleUserLockEvent(client:TonClient, scAddr:Address,tran:Transaction){
 
-    logger.info(formatUtil.format("handleUserLockEvent"));
+    logger.info(formatUtil.format("Entering handleUserLockEvent"));
 
-    let transResult  = await getTransResult(client,scAddr,txHash,lt);
+    let transResult  = await getTransResult(client,scAddr,tran);
     if (!transResult.success){
         logger.error("the trans tree is not success")
         return {
@@ -226,12 +229,11 @@ async function handleUserLockEvent(client:TonClient, scAddr:Address,txHash:strin
         }
     }
 
-    let tx = await client.getTransaction(scAddr,lt,txHash)
-    let bodyCellLock = tx.inMessage.body
+    let bodyCellLock = tran.inMessage.body
     let decodedResult = await decodeUserLock(bodyCellLock);
 
     // get parent trans
-    let preTx = await client.getTransaction(scAddr,preLt,preHash)
+    let preTx = await client.getTransaction(scAddr,tran.prevTransactionLt.toString(10),tran.prevTransactionHash.toString(16));
     let bodyCell = preTx.inMessage.body
     let bodySlice = bodyCell.beginParse();
     let op = bodySlice.loadUint(32);
@@ -285,6 +287,6 @@ async function decodeUserLock(bodyCell:Cell){
     }
 }
 
-async function getTransResult(client:TonClient, scAddr:Address,txHash:string, lt:string){
-    return await getTranResultByTxHash(client,scAddr,txHash,lt);
+async function getTransResult(client:TonClient, scAddr:Address,tran:Transaction){
+    return await getTranResultByTran(client,scAddr,tran);
 }

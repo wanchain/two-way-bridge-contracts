@@ -3,6 +3,7 @@ import {TonClient} from "@ton/ton";
 import {TransactionDescriptionGeneric} from "@ton/core/src/types/TransactionDescription";
 import {TransactionComputeVm} from "@ton/core/src/types/TransactionComputePhase";
 import {bigIntReplacer} from "../utils/utils";
+const formatUtil = require('util');
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -76,20 +77,47 @@ async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, p
     let tranInMsgBodyCellHash = tran.inMessage.body.hash().toString('hex');
 
     let upperAddress = tran.inMessage.info.src as Address;
-    let to_lt:string = "0";
     let maxTrans = 1000;
     let transChecked = 0;
-    while(transChecked<maxTrans){
-        const transactions = await client.getTransactions(upperAddress, {
-            to_lt ,
-            limit: 10,
-        });
+    let opts:{
+        limit: number;
+        lt?: string;
+        hash?: string;
+        to_lt?: string;
+        inclusive?: boolean;
+        archival?: boolean;
+    } = {
+        limit: 10,
+        archival:true,
+    }
+    let foundUpper = false
+    let transCount = 0;
+
+    while(transChecked<maxTrans && !foundUpper && !transCount){
+        let retry = 5;
+        let status = false;
+        let transactions:Transaction[] = [];
+        while(--retry > 0  && !status){
+            try{
+                console.log("getUpperSteps getTransactions ","scAddress",upperAddress,"opts",opts);
+                transactions = await client.getTransactions(upperAddress, opts);
+                transCount = transactions.length;
+                status = true;
+            }catch(e){
+                await sleep(1000);
+            }
+        }
+        if(retry == 0){
+            throw(new Error(formatUtil.format("error getUpperSteps getTransactions ","scAddress",upperAddress,"opts",opts)))
+        }
+
         for (let i=0; i<transactions.length; i++) {
             let tx = transactions[i]
             if(i == transactions.length-1) {
-                to_lt = tx.lt.toString()
+                opts.lt = tx.lt.toString(10);
+                opts.hash = tx.hash().toString('base64');
             }
-            const transactionHash = tx.hash().toString('hex');
+            const transactionHash = tx.hash().toString('base64');
             console.log("tx hash is:",i, tx.lt, transactionHash)
             const outMessages = tx.outMessages;
             let foundInOutMsgs = false;
@@ -114,7 +142,8 @@ async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, p
             if (foundInOutMsgs){
                 console.log("found upper tx",tx.hash().toString('base64'));
                 await getUpperSteps(client,upperAddress,tx,path);
-                break; // find the upper tx
+                foundUpper = true;
+                break; // found the upper tx
             }
         }
 
@@ -124,6 +153,43 @@ async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, p
     if(transChecked>=maxTrans){
         throw new Error("can not found the upper tx!")
     }
+}
+
+async function getUpperSteps_Old(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
+    console.log(".........Entering getUpperSteps","scAddress",scAddr,"tranHash",tran.hash().toString('base64'),"path",path);
+    if(tran.inMessage.info.type == 'external-in'){
+        return
+    }
+
+    let upperAddress = tran.inMessage.info.src as Address;
+    let preLt = tran.prevTransactionLt.toString(10);
+    let preHash = Buffer.from(tran.prevTransactionHash.toString(16),'hex').toString('base64');
+    console.log("getTransaction","scAddress",upperAddress,"preLt",preLt,"preHash",preHash);
+    let preTran:Transaction;
+    let retry=5;
+    let status = false;
+    while(--retry>0 && !status){
+        try{
+            preTran = await client.getTransaction(upperAddress,preLt,preHash);
+            status = true;
+        }catch(e){
+            console.log("e",e);
+        }
+    }
+    if(retry == 0){
+        throw(new Error(formatUtil.format("getTransaction","scAddress",upperAddress,"preLt",preLt,"preHash","retry",retry)));
+    }
+
+
+    let stepInfoTemp :TranStepInfo = {
+        addr:upperAddress as Address,
+        txHash:preTran.hash().toString('hex'),
+        gasUsed:preTran.totalFees.coins,
+        status:await isTranSuccess(preTran),
+        lt:preTran.lt.toString(),
+    }
+    path.unshift(stepInfoTemp);
+    await getUpperSteps(client,upperAddress,preTran, path);
 }
 
 async function getLowerSteps(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
@@ -152,6 +218,7 @@ async function getLowerSteps(client:TonClient,scAddr:Address,tran:Transaction, p
 }
 
 async function getTranPathInfoByPivotTran(client:TonClient,scAddr:Address,pivotTran:Transaction):Promise<TranPathInfo>{
+    console.log("Entering getTranPathInfoByPivotTran");
     let allTranPathInfo: TranPathInfo = [];
     let beforePivotTranPathInfo: TranPathInfo = [];
     let afterPivotTranPathInfo: TranPathInfo = [];
@@ -164,8 +231,13 @@ async function getTranPathInfoByPivotTran(client:TonClient,scAddr:Address,pivotT
         lt:pivotTran.lt.toString(),
     }
 
-    await getLowerSteps(client,scAddr,pivotTran,afterPivotTranPathInfo);   // find children tx
+    // console.log("Entering get children tx");
+    // await getLowerSteps(client,scAddr,pivotTran,afterPivotTranPathInfo);   // find children tx //todo check it carefully.
+    // console.log("End get children tx");
+
+    console.log("Entering get parent tx");
     await getUpperSteps(client,scAddr,pivotTran,beforePivotTranPathInfo);  // find parent tx
+    console.log("End get parent tx");
 
     console.log("[pivoltTranStepInfo]====>",[pivoltTranStepInfo]);
     console.log("[beforePivotTranPathInfo]====>",beforePivotTranPathInfo);
@@ -255,6 +327,21 @@ export async function getTranResultByTxHash(client:TonClient,scAddr:Address,txHa
         gasUsed: await computePathGas(path)
     };
 }
+
+export async function getTranResultByTran(client:TonClient,scAddr:Address,tran:Transaction):Promise<TranResult>{
+    console.log("Entering getTranResultByTran");
+    let path = await  getTranPathInfoByPivotTran(client,scAddr,tran);
+    let success = await isTranPathSuccess(path);
+    return {
+        addr: scAddr,
+        msgInHash:tran.inMessage.body.hash().toString('base64'),
+        path,
+        success,
+        originAddr: path[0].addr,
+        gasUsed: await computePathGas(path)
+    };
+}
+
 
 export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgBodyCellHash:string, msgHash:string=''):Promise<Transaction> {
     let maxRetry = 5;
