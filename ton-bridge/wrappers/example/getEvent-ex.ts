@@ -9,7 +9,7 @@ import {getEvents} from "../event/getEvents";
 import { logger } from "../utils/logger";
 
 const scAddress = require('../testData/contractAddress.json');
-const LIMIT=10;
+const LIMIT=20;
 let  MAX_TRY_TIMES = 5;
 async function main(){
     let client = await getClient(config);
@@ -30,20 +30,20 @@ async function main(){
         }
     }
 
-    while(MAX_TRY_TIMES--){
-        try{
-            console.log("===========================Events only AddTokenPair===========================");
-            let  events = await getEvents(client,scBridgeAddr,LIMIT,undefined,undefined,"AddTokenPair");
-            for(let event of events){
-                console.log(event);
-                logger.info(event);
-            }
-            break;
-        }catch(e){
-            logger.error(e.message.code);
-            await sleep(5000)
-        }
-    }
+    // while(MAX_TRY_TIMES--){
+    //     try{
+    //         console.log("===========================Events only AddTokenPair===========================");
+    //         let  events = await getEvents(client,scBridgeAddr,LIMIT,undefined,undefined,"AddTokenPair");
+    //         for(let event of events){
+    //             console.log(event);
+    //             logger.info(event);
+    //         }
+    //         break;
+    //     }catch(e){
+    //         logger.error(e.message.code);
+    //         await sleep(5000)
+    //     }
+    // }
 
     client = null;
 }

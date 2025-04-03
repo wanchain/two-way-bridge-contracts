@@ -14,6 +14,7 @@ import {getTokenPairInfo} from "../code/userLock";
 import {isAddressEqual, sleep} from "../utils/utils";
 
 const MAX_LIMIT = 1000;
+const MAX_RETRY = 10;
 /*
 example of ret:
 
@@ -37,6 +38,7 @@ example of ret:
 //todo  in send Message, message body-> txhash.
 
 export async function getEvents(client: TonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string):Promise<any> {
+
     console.log("scAddress:%s,limit:%s,lt:%s,to_lt:%s,eventName:%s",scAddress,limit,lt,to_lt,eventName);
     if (!client){
         throw new Error("client does not exist");
@@ -47,23 +49,22 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
     if(limit>MAX_LIMIT){
         throw new Error("limit is more than MAX_LIMIT(1000)");
     }
-    if(to_lt?.length && lt?.length){
-        if (BigInt(lt)<=BigInt(to_lt)){
-            throw new Error("lt must be more than to_lt");
+
+    let events = [];
+    let trans = [];
+
+    while(true){
+        try {
+            trans = await getAllTransactions(client, scAddress, limit, MAX_RETRY);
+            break;
+        }catch(e){
+            console.log(e);
+            await sleep(5000);
         }
     }
 
-    let events = [];
-    let trans = await getTransactions(client,scAddress,{limit,lt,to_lt});
-    if(trans?.length>limit){
-        throw new Error("transaction length is more than limit, decrease the during [lt_start,lt_end]");
-    }
-
-    logger.info(formatUtil.format("trans.length=>",trans?.length));
-
     for(let tran of trans){
         logger.info(formatUtil.format("tran=>",tran.hash().toString('base64')));
-        /*
         let event = await getEventFromTran(client,tran,scAddress);
         if(event != null){
             if(eventName && event.eventName.toLowerCase() != eventName.toLowerCase()){
@@ -71,7 +72,6 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
             }
             events.push(event);
         }
-         */
     }
     return events;
 }
@@ -100,8 +100,7 @@ export async function getTransactions(client:TonClient,scAddress:string,opts:{
 }
 
 export async function getAllTransactions(client:TonClient,scAddress:string,limit:number, retry:number){
-    let lt = "";
-    let to_lt = "";
+    let trans = [];
     let transCount = limit;
     let opts: {
         limit: number;
@@ -122,8 +121,10 @@ export async function getAllTransactions(client:TonClient,scAddress:string,limit
                console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,opts);
                let ret = await client.getTransactions(Address.parse(scAddress),opts)
                transCount = ret.length;
+               console.log("getTransactions success","opts",opts,"len of getTransactions",transCount);
                for(let tran of ret){
                    console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
+                   trans.push(tran);
                }
                if(ret.length){
                    opts.lt = ret[ret.length-1].lt.toString(10);
@@ -131,26 +132,37 @@ export async function getAllTransactions(client:TonClient,scAddress:string,limit
                }
                getSuccess = true;
                maxRetry = retry;
+
+               // todo should delete begin
+               transCount = 0; //only for test, only get the first limit trans, and decode the event.
+               // todo should delete end.
            }catch(e){
                console.log("err ",e);
                await sleep(2000);
            }
         }
+        if(maxRetry == 0){
+            throw(new Error(formatUtil("getTransactions failed after %d retry. opts is %s",retry,JSON.stringify(opts))));
+        }
 
         await sleep(2000);
     }
+    console.log("getAllTransactions success");
+    return trans;
 }
 
 async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:string){
     let bodyCell = tran.inMessage?.body;
     if(!bodyCell){
+        console.error("body is empty","tran",tran.hash().toString("base64"));
         return null;
     }
     try{
         let opCode = await getOpCodeFromCell(bodyCell);
-        logger.info(formatUtil.format("opCode=>",opCode));
+        logger.info(formatUtil.format("opCode=>",opCode.toString(16)));
         logger.info(formatUtil.format("codeTable[opCode]=>",codeTable[opCode]));
         if(!codeTable[opCode]){
+            console.error("opCode is empty","tran","opCode",opCode.toString(16));
             return null;
         }
         let decoded = await codeTable[opCode]["deCode"](bodyCell);

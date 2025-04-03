@@ -13,9 +13,10 @@ const LIMIT=10;
 let  MAX_TRY_TIMES = 5;
 async function main(){
     let client = null;
+    client = await getClient(config);
     let scBridgeAddr = scAddress.bridgeAddress;
     while(true){
-        client = await getClient(config);
+        //client = await getClient(config);
         try {
             await getAllTransactions(client, scBridgeAddr, LIMIT, MAX_TRY_TIMES);
             break;

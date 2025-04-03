@@ -36,6 +36,10 @@ export const codeTable = {
             let jwAddrBridgeSc = extraCell.loadAddress();
             extraCell.endParse();
 
+            let extraCell2 = slice.loadRef().beginParse();
+            let senderAccount = extraCell2.loadAddress();
+            extraCell2.endParse();
+
             slice.endParse();
 
             return {
@@ -45,7 +49,8 @@ export const codeTable = {
                 dstUserAccount: dstUserAccountBuff.toString('hex'),
                 addrTokenAccount: addrTokenAccount.toString(),
                 jwAddrSrc,
-                jwAddrBridgeSc
+                jwAddrBridgeSc,
+                senderAccount,
             }
         },
         "emitEvent": function (opts){
@@ -130,7 +135,7 @@ export const codeTable = {
                 opCode,
                 queryID,
                 uniqueID,
-                smgID,
+                smgID:int64ToByte32(BigInt(smgID)),
                 tokenPairID,
                 releaseValue,
                 fee,
@@ -147,7 +152,7 @@ export const codeTable = {
             return {
                 eventName:"SmgReleaseLogger",
                 uniqueID:opts.uniqueID,
-                smgID:opts.smgID,
+                smgID:opts.smgID.toString(16),
                 tokenPairID:opts.tokenPairID,
                 value:opts.releaseValue,
                 fee:opts.fee,
