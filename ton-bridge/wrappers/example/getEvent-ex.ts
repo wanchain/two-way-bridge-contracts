@@ -9,7 +9,7 @@ import {getEvents} from "../event/getEvents";
 import { logger } from "../utils/logger";
 
 const scAddress = require('../testData/contractAddress.json');
-const LIMIT=100;
+const LIMIT=10;
 let  MAX_TRY_TIMES = 5;
 async function main(){
     let client = await getClient(config);
@@ -30,7 +30,6 @@ async function main(){
         }
     }
 
-    MAX_TRY_TIMES = 5;
     while(MAX_TRY_TIMES--){
         try{
             console.log("===========================Events only AddTokenPair===========================");

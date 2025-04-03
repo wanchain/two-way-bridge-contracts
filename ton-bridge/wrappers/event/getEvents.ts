@@ -11,7 +11,7 @@ import * as opcodes from "../opcodes";
 import {OP_TRANSFER_NOTIFICATION} from "../opcodes";
 import {getJettonAddress} from "../wallet/jetton";
 import {getTokenPairInfo} from "../code/userLock";
-import {isAddressEqual} from "../utils/utils";
+import {isAddressEqual, sleep} from "../utils/utils";
 
 const MAX_LIMIT = 1000;
 /*
@@ -37,6 +37,7 @@ example of ret:
 //todo  in send Message, message body-> txhash.
 
 export async function getEvents(client: TonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string):Promise<any> {
+    console.log("scAddress:%s,limit:%s,lt:%s,to_lt:%s,eventName:%s",scAddress,limit,lt,to_lt,eventName);
     if (!client){
         throw new Error("client does not exist");
     }
@@ -62,6 +63,7 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
 
     for(let tran of trans){
         logger.info(formatUtil.format("tran=>",tran.hash().toString('base64')));
+        /*
         let event = await getEventFromTran(client,tran,scAddress);
         if(event != null){
             if(eventName && event.eventName.toLowerCase() != eventName.toLowerCase()){
@@ -69,11 +71,12 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
             }
             events.push(event);
         }
+         */
     }
     return events;
 }
 
-async function getTransactions(client:TonClient,scAddress:string,opts:{
+export async function getTransactions(client:TonClient,scAddress:string,opts:{
     limit: number;
     lt?: string;
     hash?: string;
@@ -81,17 +84,61 @@ async function getTransactions(client:TonClient,scAddress:string,opts:{
     inclusive?: boolean;
     archival?: boolean;
 }):Promise<any> {
+    console.log("getTransactions opts = %s",opts);
     let scAddr = Address.parse(scAddress);
     logger.info(formatUtil.format("contractAddr=>",scAddress));
     let ret;
     try{
         //todo check change back
-        //ret = await client.getTransactions(scAddr,opts)
-        ret = await client.getTransactions(scAddr,{limit:3})
+        ret = await client.getTransactions(scAddr,opts)
+        //ret = await client.getTransactions(scAddr,{limit:3})
     }catch(err){
+        console.log("err",err);
         logger.error(formatUtil.format("getTransactions error",err.code));
     }
     return ret;
+}
+
+export async function getAllTransactions(client:TonClient,scAddress:string,limit:number, retry:number){
+    let lt = "";
+    let to_lt = "";
+    let transCount = limit;
+    let opts: {
+        limit: number;
+        lt?: string;
+        hash?: string;
+        to_lt?: string;
+        inclusive?: boolean;
+        archival?: boolean;
+    } = {
+        limit,
+        archival:true,
+    }
+    let maxRetry = retry;
+    while(transCount){
+        let getSuccess = false
+        while(maxRetry-- >0 && (!getSuccess)){
+           try{
+               console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,opts);
+               let ret = await client.getTransactions(Address.parse(scAddress),opts)
+               transCount = ret.length;
+               for(let tran of ret){
+                   console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
+               }
+               if(ret.length){
+                   opts.lt = ret[ret.length-1].lt.toString(10);
+                   opts.hash = ret[ret.length-1].hash().toString('base64');
+               }
+               getSuccess = true;
+               maxRetry = retry;
+           }catch(e){
+               console.log("err ",e);
+               await sleep(2000);
+           }
+        }
+
+        await sleep(2000);
+    }
 }
 
 async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:string){

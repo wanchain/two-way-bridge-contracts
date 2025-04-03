@@ -121,6 +121,8 @@ export const codeTable = {
 
             let part4Slice = slice.loadRef().beginParse();
             let bridgeJettonWalletAddr = part4Slice.loadAddress();
+            let fwTonAmount = part4Slice.loadUint(256);
+            let totalTonAmount = part4Slice.loadUint(256);
             part4Slice.endParse();
 
             slice.endParse();
@@ -137,6 +139,8 @@ export const codeTable = {
                 p,
                 s,
                 bridgeJettonWalletAddr,
+                fwTonAmount,
+                totalTonAmount,
             };
         },
         "emitEvent": function (opts){
