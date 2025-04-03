@@ -4,12 +4,33 @@ pragma solidity ^0.8.18;
 
 import "./Bn128.sol";
 
+/**
+ * @title Bn128SchnorrVerifier
+ * @dev Implementation of Schnorr signature verification for the Bn128 curve
+ * This contract provides functionality to verify Schnorr signatures using the Bn128 elliptic curve
+ */
 contract Bn128SchnorrVerifier is Bn128 {
     using SafeMath for uint256;
+
+    /**
+     * @dev Structure representing a point on the elliptic curve
+     * @param x X-coordinate of the point
+     * @param y Y-coordinate of the point
+     */
     struct Point {
         uint256 x; uint256 y;
     }
 
+    /**
+     * @dev Structure containing all the data needed for signature verification
+     * @param groupKey The public key point
+     * @param randomPoint The random point used in signature generation
+     * @param signature The signature value
+     * @param message The message that was signed
+     * @param _hash The hash value computed during verification
+     * @param _left The left side of the verification equation
+     * @param _right The right side of the verification equation
+     */
     struct Verification {
         Point groupKey;
         Point randomPoint;
@@ -21,24 +42,71 @@ contract Bn128SchnorrVerifier is Bn128 {
         Point _right;
     }
 
+    /**
+     * @notice Computes the hash value used in Schnorr signature verification
+     * @dev Implements the hash function h(m, R) where m is the message and R is the random point
+     * @param m The message to be hashed
+     * @param a X-coordinate of the random point
+     * @param b Y-coordinate of the random point
+     * @return The computed hash value
+     */
     function h(bytes32 m, uint256 a, uint256 b) public pure returns (uint256) {
         return uint256(sha256(abi.encodePacked(m, a, b)));
     }
 
-    // function cmul(Point p, uint256 scalar) public pure returns (uint256, uint256) {
+    /**
+     * @notice Performs scalar multiplication on a point
+     * @dev Wrapper for the ecmul function from Bn128
+     * @param x X-coordinate of the input point
+     * @param y Y-coordinate of the input point
+     * @param scalar The scalar value to multiply by
+     * @return The resulting point coordinates
+     */
     function cmul(uint256 x, uint256 y, uint256 scalar) public view returns (uint256, uint256) {
         return ecmul(x, y, scalar);
     }
 
+    /**
+     * @notice Computes the signature point sG
+     * @dev Multiplies the base point G by the signature value
+     * @param sig_s The signature value
+     * @return The resulting point coordinates
+     */
     function sg(uint256 sig_s) public view returns (uint256, uint256) {
         return ecmul(getGx(), getGy(), sig_s);
     }
 
-    // function cadd(Point a, Point b) public pure returns (uint256, uint256) {
+    /**
+     * @notice Performs point addition
+     * @dev Wrapper for the ecadd function from Bn128
+     * @param ax X-coordinate of the first point
+     * @param ay Y-coordinate of the first point
+     * @param bx X-coordinate of the second point
+     * @param by Y-coordinate of the second point
+     * @return The resulting point coordinates
+     */
     function cadd(uint256 ax, uint256 ay, uint256 bx, uint256 by) public view returns (uint256, uint256) {
         return ecadd(ax, ay, bx, by);
     }
 
+    /**
+     * @notice Verifies a Schnorr signature
+     * @dev Implements the Schnorr signature verification algorithm for Bn128 curve
+     * The verification checks if sG = R + h(m,R)Y where:
+     * - s is the signature
+     * - G is the base point
+     * - R is the random point
+     * - h(m,R) is the hash of the message and random point
+     * - Y is the public key
+     * The hash value is reduced modulo the curve order to ensure it's in the correct range
+     * @param signature The signature to verify
+     * @param groupKeyX X-coordinate of the public key
+     * @param groupKeyY Y-coordinate of the public key
+     * @param randomPointX X-coordinate of the random point
+     * @param randomPointY Y-coordinate of the random point
+     * @param message The message that was signed
+     * @return bool indicating whether the signature is valid
+     */
     function verify(bytes32 signature, bytes32 groupKeyX, bytes32 groupKeyY, bytes32 randomPointX, bytes32 randomPointY, bytes32 message)
         public
         view
@@ -56,7 +124,7 @@ contract Bn128SchnorrVerifier is Bn128 {
 
         state._hash = h(state.message, state.randomPoint.x, state.randomPoint.y);
 
-        /// change to bn256 range.
+        /// @dev Reduce hash value to bn256 range
         state._hash = (state._hash).mod(getOrder());
 
         (state._left.x, state._left.y) = sg(state.signature);

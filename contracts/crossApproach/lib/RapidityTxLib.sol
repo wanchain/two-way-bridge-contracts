@@ -28,37 +28,40 @@
 
 pragma solidity ^0.8.18;
 
+/**
+ * @title RapidityTxLib
+ * @dev Library for managing rapid cross-chain transaction status
+ * This library provides functionality for:
+ * - Tracking transaction status
+ * - Managing rapid cross-chain transactions
+ */
 library RapidityTxLib {
 
     /**
-     *
-     * ENUMS
-     *
+     * @notice Enumeration of possible transaction statuses
+     * @dev Defines the states a rapidity transaction can be in
+     * - None: Initial state, transaction not yet processed
+     * - Redeemed: Transaction has been completed
      */
-
-    /// @notice tx info status
-    /// @notice uninitialized,Redeemed
     enum TxStatus {None, Redeemed}
 
     /**
-     *
-     * STRUCTURES
-     *
+     * @notice Main data structure for rapidity transactions
+     * @dev Contains mappings for tracking transaction statuses
+     * @param mapTxStatus Mapping of transaction unique IDs to their status
      */
     struct Data {
-        /// @notice mapping of uniqueID to TxStatus -- uniqueID->TxStatus
         mapping(bytes32 => TxStatus) mapTxStatus;
-
     }
 
     /**
-     *
-     * MANIPULATIONS
-     *
+     * @notice Adds a new rapidity transaction
+     * @dev Marks a transaction as redeemed when it is added
+     * @param self The storage data structure
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * Requirements:
+     * - Transaction must not already exist
      */
-
-    /// @notice                     add user transaction info
-    /// @param  uniqueID            Rapidity random number
     function addRapidityTx(Data storage self, bytes32 uniqueID)
         internal
     {

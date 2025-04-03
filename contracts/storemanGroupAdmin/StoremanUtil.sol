@@ -7,21 +7,54 @@ import "./StoremanType.sol";
 import "../interfaces/IPosLib.sol";
 import "../lib/CommonTool.sol";
 
+/**
+ * @title StoremanUtil
+ * @dev Utility library for Storeman Group operations
+ */
 library StoremanUtil {
   using SafeMath for uint;
 
+  /**
+   * @notice Calculates the weight of a Storeman node
+   * @dev Computes the weight based on standalone weight and deposit amount
+   * @param standaloneWeight Base weight of the node
+   * @param deposit Deposit amount
+   * @return Calculated weight value
+   */
   function calSkWeight(uint standaloneWeight,uint deposit) public pure returns(uint) {
     return deposit*standaloneWeight/10000;
   }
 
+  /**
+   * @notice Gets the epoch ID for a given timestamp
+   * @dev Converts timestamp to epoch ID using POS library
+   * @param posLib Address of the POS library contract
+   * @param time Timestamp to convert
+   * @return ID number
+   */
   function getDaybyTime(address posLib, uint time)  public view returns(uint) {
     return IPosLib(posLib).getEpochId(time);
   }
 
+  /**
+   * @notice Gets the number of selected Storeman nodes in a group
+   * @dev Returns the count of selected nodes for a given group
+   * @param data Storeman data storage
+   * @param groupId ID of the group
+   * @return Number of selected nodes
+   */
   function getSelectedSmNumber(StoremanType.StoremanData storage data, bytes32 groupId) public view returns(uint) {
     StoremanType.StoremanGroup storage group = data.groups[groupId];
     return group.selectedCount;
   }
+
+  /**
+   * @notice Gets the list of selected Storeman nodes in a group
+   * @dev Returns an array of selected node addresses for a given group
+   * @param data Storeman data storage
+   * @param groupId ID of the group
+   * @return Array of selected node addresses
+   */
   function getSelectedStoreman(StoremanType.StoremanData storage data, bytes32 groupId) public view returns(address[] memory) {
     StoremanType.StoremanGroup storage group = data.groups[groupId];
     address[] memory storemans = new address[](group.selectedCount);
@@ -30,6 +63,13 @@ library StoremanUtil {
     }
     return storemans;
   }
+
+  /**
+   * @notice Checks if a public key is valid on the curve
+   * @dev Validates if the given public key coordinates lie on the secp256k1 curve
+   * @param pubkey Public key bytes to validate
+   * @return bool indicating if the key is valid
+   */
   function onCurve(bytes calldata pubkey) public pure returns (bool) {
     if(pubkey.length != 64) return false;
     uint[2] memory P;

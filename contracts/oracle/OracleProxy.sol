@@ -31,15 +31,25 @@ import "../components/Owned.sol";
 import "./OracleStorage.sol";
 import "../components/Proxy.sol";
 
+/**
+ * @title OracleProxy
+ * @dev Proxy contract for Oracle functionality
+ * This contract provides:
+ * - Upgradeable implementation
+ * - Storage management
+ * - Ownership control
+ */
 contract OracleProxy is OracleStorage, Owned, Proxy {
     /**
-    *
-    * MANIPULATIONS
-    *
-    */
-
-    /// @notice                           function for setting or upgrading OracleDelegate address by owner
-    /// @param impl                       OracleDelegate contract address
+     * @notice Upgrades the OracleDelegate implementation
+     * @dev Can only be called by the contract owner
+     * @param impl Address of the new OracleDelegate contract
+     * Requirements:
+     * - New implementation address cannot be zero
+     * - New implementation address must be different from current
+     * Emits:
+     * - Upgraded event with the new implementation address
+     */
     function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");

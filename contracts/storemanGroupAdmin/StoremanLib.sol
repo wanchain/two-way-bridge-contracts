@@ -1,5 +1,29 @@
 // SPDX-License-Identifier: MIT
 
+/*
+  Copyright 2023 Wanchain Foundation.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+//                            _           _           _
+//  __      ____ _ _ __   ___| |__   __ _(_)_ __   __| | _____   __
+//  \ \ /\ / / _` | '_ \ / __| '_ \ / _` | | '_ \@/ _` |/ _ \ \ / /
+//   \ V  V / (_| | | | | (__| | | | (_| | | | | | (_| |  __/\ V /
+//    \_/\_/ \__,_|_| |_|\___|_| |_|\__,_|_|_| |_|\__,_|\___| \_/
+//
+//
+
 pragma solidity ^0.8.18;
 
 import "./StoremanType.sol";
@@ -7,28 +31,161 @@ import "./StoremanUtil.sol";
 import "../interfaces/IListGroup.sol";
 
 
+/**
+ * @title StoremanLib
+ * @dev Library for storeman management
+ * This library provides utility functions for managing individual storemen,
+ * including creation, updates, and information retrieval
+ * 
+ * Key features:
+ * - Storeman creation and validation
+ * - Information updates
+ * - Status management
+ * - Information retrieval
+ * 
+ * @custom:usage
+ * - Used by StoremanGroupLib contract
+ * - Provides reusable storeman management functions
+ * - Ensures consistent storeman operations
+ * 
+ * @custom:security
+ * - Input validation
+ * - State consistency checks
+ * - Safe data operations
+ */
 library StoremanLib {
     using Deposit for Deposit.Records;
     using SafeMath for uint;
 
     uint constant MaxPartnerCount = 5;
+
+    /**
+     * @notice Event emitted when a node stakes into a group
+     * @dev Indicates successful staking operation
+     * @param groupId ID of the group
+     * @param wkAddr Work address of the node
+     * @param from Address of the sender
+     * @param value Amount staked
+     */
     event stakeInEvent(bytes32 indexed groupId,address indexed wkAddr, address indexed from, uint  value);
     event stakeAppendEvent(address indexed wkAddr, address indexed from, uint indexed value);
+    /**
+     * @notice Event emitted when a node stakes out of a group
+     * @dev Indicates successful stake withdrawal
+     * @param groupId ID of the group
+     * @param wkAddr Work address of the node
+     * @param from Address of the sender
+     */
     event stakeOutEvent(address indexed wkAddr, address indexed from);
+
+    /**
+     * @notice Event emitted when a node claims their stake
+     * @dev Indicates successful stake claim
+     * @param groupId ID of the group
+     * @param wkAddr Work address of the node
+     * @param from Address of the sender
+     * @param value Amount claimed
+     */
     event stakeClaimEvent(address indexed wkAddr, address indexed from,bytes32 indexed groupId, uint value);
     event stakeIncentiveClaimEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
+
+    /**
+     * @notice Event emitted when a node claims their incentive
+     * @dev Indicates successful incentive claim
+     * @param wkAddr Work address of the node
+     * @param from Address of the sender
+     * @param amount Amount claimed
+     */
     event stakeIncentiveCrossFeeEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
 
+    /**
+     * @notice Event emitted when a node transfers between groups
+     * @dev Indicates successful group transfer
+     * @param groupId ID of the group
+     * @param preGroupId ID of the previous group
+     * @param wkAddrs Addresses of the nodes
+     */
     event storemanTransferEvent(bytes32 indexed groupId, bytes32 indexed preGroupId, address[] wkAddrs);
+
+    /**
+     * @notice Event emitted when a group is unregistered
+     * @dev Indicates successful group unregistration
+     * @param groupId ID of the group
+     */
     event StoremanGroupUnregisterEvent(bytes32 indexed groupId);
+
+    /**
+     * @notice Event emitted when a node delegates to another node
+     * @dev Indicates successful delegation
+     * @param groupId ID of the group
+     * @param wkAddr Work address of the delegator
+     * @param from Address of the sender
+     * @param value Amount delegated
+     */
     event delegateInEvent(address indexed wkAddr, address indexed from, uint indexed value);
+
+    /**
+     * @notice Event emitted when a node quits a group
+     * @dev Indicates successful group exit
+     * @param groupId ID of the group
+     * @param wkAddr Work address of the node
+     * @param from Address of the sender
+     */
     event delegateOutEvent(address indexed wkAddr, address indexed from);
+
+    /**
+     * @notice Event emitted when a node claims their incentive
+     * @dev Indicates successful incentive claim
+     * @param groupId ID of the group
+     * @param wkAddr Work address of the node
+     * @param from Address of the sender
+     * @param amount Amount claimed
+     */
     event delegateClaimEvent(address indexed wkAddr, address indexed from, uint256 indexed amount);
+
+    /**
+     * @notice Event emitted when a node claims their incentive
+     * @dev Indicates successful incentive claim
+     * @param wkAddr Work address of the node
+     * @param from Address of the sender
+     * @param amount Amount claimed
+     */
     event delegateIncentiveClaimEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
+
+    /**
+     * @notice Event emitted when a node claims their incentive
+     * @dev Indicates successful incentive claim
+     * @param wkAddr Work address of the node
+     * @param from Address of the sender
+     * @param amount Amount claimed
+     */
     event partInEvent(address indexed wkAddr, address indexed from, uint indexed value);
+
+    /**
+     * @notice Event emitted when a node quits a group
+     * @dev Indicates successful group exit
+     * @param groupId ID of the group
+     * @param wkAddr Work address of the node
+     * @param from Address of the sender
+     */
     event partOutEvent(address indexed wkAddr, address indexed from);
+
+    /**
+     * @notice Event emitted when a node claims their incentive
+     * @dev Indicates successful incentive claim
+     * @param groupId ID of the group
+     * @param wkAddr Work address of the node
+     * @param from Address of the sender
+     * @param amount Amount claimed
+     */
     event partClaimEvent(address indexed wkAddr, address indexed from, uint256 indexed amount);
 
+    /**
+     * @notice Unregisters a Storeman group
+     * @dev Marks a group as unregistered after its work period has expired
+     * @param data Storage data for Storeman operations
+     * @param groupId Identifier of the group to unregister
+     */
     function storemanGroupUnregister(StoremanType.StoremanData storage data,bytes32 groupId)
         external
     {
@@ -39,6 +196,12 @@ library StoremanLib {
         emit StoremanGroupUnregisterEvent(groupId);
     }
 
+    /**
+     * @notice Deletes a Storeman node if it has no deposits or delegations
+     * @dev Removes a node from storage when it has no active participation
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the node to delete
+     */
     function deleteStoremanNode(StoremanType.StoremanData storage data, address wkAddr) private {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         if(sk.deposit.getLastValue() == 0  && sk.delegatorCount == 0 && sk.partnerCount == 0) {
@@ -46,6 +209,14 @@ library StoremanLib {
         }
     }
 
+    /**
+     * @notice Processes a new stake in a Storeman group
+     * @dev Handles the initial staking process for a new node
+     * @param data Storage data for Storeman operations
+     * @param groupId Identifier of the target group
+     * @param PK Public key of the staker
+     * @param enodeID Enode ID for P2P network
+     */
     function stakeIn(StoremanType.StoremanData storage data, bytes32 groupId, bytes memory PK, bytes memory enodeID) external
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
@@ -96,6 +267,12 @@ library StoremanLib {
         emit stakeInEvent(groupId, wkAddr, msg.sender, msg.value);
     }
 
+    /**
+     * @notice Appends additional stake to an existing position
+     * @dev Handles additional staking for an existing node
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the staker
+     */
     function stakeAppend(StoremanType.StoremanData storage data,  address wkAddr) external  {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
@@ -114,6 +291,13 @@ library StoremanLib {
         emit stakeAppendEvent(wkAddr, msg.sender,msg.value);
     }
 
+    /**
+     * @notice Checks if a stake can be withdrawn
+     * @dev Validates conditions for stake withdrawal
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address to check
+     * @return bool Whether the stake can be withdrawn
+     */
     function checkCanStakeOut(StoremanType.StoremanData storage data,  address wkAddr) public view returns(bool){
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
@@ -132,6 +316,12 @@ library StoremanLib {
         }
         return true;
     }
+    /**
+     * @notice Processes stake withdrawal request
+     * @dev Handles the stake withdrawal process
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the staker
+     */
     function stakeOut(StoremanType.StoremanData storage data,  address wkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.sender == msg.sender, "Only the sender can stakeOut");
@@ -140,6 +330,13 @@ library StoremanLib {
         emit stakeOutEvent(wkAddr, msg.sender);
     }
 
+    /**
+     * @notice Checks if a node is a working node in a group
+     * @dev Verifies if a node is actively participating in a group
+     * @param group Group data to check against
+     * @param wkAddr Work address to check
+     * @return bool Whether the node is a working node
+     */
     function isWorkingNodeInGroup(StoremanType.StoremanGroup storage group, address wkAddr) public  view returns (bool) {
         uint count = group.selectedCount;
         for(uint8 i = 0; i < count; i++) {
@@ -150,6 +347,14 @@ library StoremanLib {
         return false;
     }
 
+    /**
+     * @notice Checks if a stake can be claimed from a specific group
+     * @dev Validates conditions for claiming stake from a group
+     * @param posLib Address of the POS library
+     * @param sk Candidate data
+     * @param group Group data
+     * @return bool Whether the stake can be claimed
+     */
     function checkCanStakeClaimFromGroup(address posLib, StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage group) private view returns (bool) {
         // if group haven't selected, can't claim 
         // if group failed, can claim. 
@@ -174,6 +379,13 @@ library StoremanLib {
         }
         return false;
     }
+    /**
+     * @notice Checks if a stake can be claimed
+     * @dev Validates overall conditions for stake claiming
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address to check
+     * @return bool Whether the stake can be claimed
+     */
     function checkCanStakeClaim(StoremanType.StoremanData storage data, address wkAddr) public view returns(bool) {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         if(sk.wkAddr != wkAddr){ // sk doesn't exist.
@@ -188,6 +400,12 @@ library StoremanLib {
         }
     }
 
+    /**
+     * @notice Processes stake claim
+     * @dev Handles the stake claiming process including slashing and incentives
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the claimant
+     */
     function stakeClaim(StoremanType.StoremanData storage data, address wkAddr) external {
         require(checkCanStakeClaim(data,wkAddr),"Cannot claim");
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
@@ -219,6 +437,12 @@ library StoremanLib {
         }
     }
 
+    /**
+     * @notice Processes incentive claim for staking
+     * @dev Handles the claiming of staking incentives
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the claimant
+     */
     function stakeIncentiveClaim(StoremanType.StoremanData storage data, address wkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
@@ -232,6 +456,14 @@ library StoremanLib {
         emit stakeIncentiveClaimEvent(wkAddr,sk.sender,amount);
     }
 
+    /**
+     * @notice Inserts a node into the group based on weight
+     * @dev Handles the insertion of a node into the group's sorted structure
+     * @param data Storage data for Storeman operations
+     * @param group Group data
+     * @param skAddr Address of the node to insert
+     * @param weight Weight value for sorting
+     */
     function realInsert(StoremanType.StoremanData storage data, StoremanType.StoremanGroup storage  group, address skAddr, uint weight) internal{
         uint i = group.whiteCount;
         for (; i < group.selectedCount; i++) {
@@ -266,6 +498,15 @@ library StoremanLib {
         }
     }
 
+    /**
+     * @notice Updates group information based on new deposits
+     * @dev Handles group updates when new deposits are made
+     * @param data Storage data for Storeman operations
+     * @param sk Candidate data
+     * @param group Group data
+     * @param r Deposit record
+     * @param rw Weighted deposit record
+     */
     function updateGroup(StoremanType.StoremanData storage data,StoremanType.Candidate storage sk, StoremanType.StoremanGroup storage  group, Deposit.Record memory r, Deposit.Record memory rw) internal {
         //if haven't selected, need not update group. 
         // if selected, need to update group. 
@@ -284,6 +525,13 @@ library StoremanLib {
             }
         }
     }
+
+    /**
+     * @notice Processes a new delegation
+     * @dev Handles the delegation process for a storeman node
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the node
+     */
     function delegateIn(StoremanType.StoremanData storage data, address wkAddr)
         external
     {
@@ -311,7 +559,15 @@ library StoremanLib {
         emit delegateInEvent(wkAddr, msg.sender,msg.value);
     }
 
-    // must specify all the whitelist.
+    /**
+     * @notice Inherits nodes from a previous group
+     * @dev Handles the inheritance of nodes from a previous group to a new group
+     * @param data Storage data for Storeman operations
+     * @param groupId New group identifier
+     * @param preGroupId Previous group identifier
+     * @param wkAddrs Array of work addresses
+     * @param senders Array of sender addresses
+     */
     function inheritNode(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] memory wkAddrs, address[] memory senders) public
     {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
@@ -362,6 +618,16 @@ library StoremanLib {
         emit storemanTransferEvent(groupId, preGroupId, oldArray);
     }
 
+    /**
+     * @notice Inherits stakers from a previous group
+     * @dev Handles the inheritance of stakers from a previous group
+     * @param data Storage data for Storeman operations
+     * @param groupId New group identifier
+     * @param preGroupId Previous group identifier
+     * @param oldAddr Array of old addresses
+     * @param oldCount Count of old addresses
+     * @return uint Updated count of old addresses
+     */
     function inheritStaker(StoremanType.StoremanData storage data, bytes32 groupId, bytes32 preGroupId, address[] memory oldAddr, uint oldCount) public returns(uint) {
         StoremanType.StoremanGroup storage group = data.groups[groupId];
         StoremanType.StoremanGroup storage oldGroup = data.groups[preGroupId];
@@ -387,6 +653,15 @@ library StoremanLib {
         return oldCount;
     }
 
+    /**
+     * @notice Inherits sorted stakers into a group
+     * @dev Handles the inheritance of stakers in sorted order
+     * @param group Group data
+     * @param addresses Array of addresses
+     * @param stakes Array of stake amounts
+     * @param start Starting index
+     * @param end Ending index
+     */
     function inheritSortedStaker(StoremanType.StoremanGroup storage group, address[] memory addresses, uint[] memory stakes, uint start, uint end) public {
       while ((group.selectedCount < group.memberCount) && (group.selectedCount < group.memberCountDesign)) {
         uint maxIndex = start;
@@ -405,6 +680,13 @@ library StoremanLib {
       }
     }
 
+    /**
+     * @notice Processes delegation withdrawal
+     * @dev Handles the withdrawal of a delegation
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the node
+     * @param listGroupAddr Address of the list group contract
+     */
     function delegateOut(StoremanType.StoremanData storage data, address wkAddr, address listGroupAddr) external {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
@@ -421,6 +703,13 @@ library StoremanLib {
         emit delegateOutEvent(wkAddr, msg.sender);
     }
 
+    /**
+     * @notice Processes delegation claim
+     * @dev Handles the claiming of delegated funds
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the node
+     * @param listGroupAddr Address of the list group contract
+     */
     function delegateClaim(StoremanType.StoremanData storage data, address wkAddr, address listGroupAddr) external {
         require(checkCanDelegatorClaim(data, wkAddr, msg.sender, listGroupAddr),"Cannot claim");
 
@@ -450,6 +739,12 @@ library StoremanLib {
     }
     
 
+    /**
+     * @notice Processes delegation incentive claim
+     * @dev Handles the claiming of delegation incentives
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the node
+     */
     function delegateIncentiveClaim(StoremanType.StoremanData storage data, address wkAddr) external {
         StoremanType.Candidate storage sk = data.candidates[0][wkAddr];
         require(sk.wkAddr == wkAddr, "Candidate doesn't exist");
@@ -465,6 +760,12 @@ library StoremanLib {
     }
 
 
+    /**
+     * @notice Processes partnership stake
+     * @dev Handles the staking process for partners
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the node
+     */
     function partIn(StoremanType.StoremanData storage data, address wkAddr)
         external
     {
@@ -496,6 +797,13 @@ library StoremanLib {
         emit partInEvent(wkAddr, msg.sender, msg.value);
     }
 
+    /**
+     * @notice Processes partnership withdrawal
+     * @dev Handles the withdrawal of partnership stake
+     * @param data Storage data for Storeman operations
+     * @param wkAddr Work address of the node
+     * @param listGroupAddr Address of the list group contract
+     */
     function partOut(StoremanType.StoremanData storage data, address wkAddr, address listGroupAddr) external {
         require(checkCanStakeOut(data, wkAddr),"selecting");
 
@@ -509,6 +817,13 @@ library StoremanLib {
         IListGroup(listGroupAddr).setPartQuitGroupId(wkAddr, msg.sender, sk.groupId, sk.nextGroupId);
         emit partOutEvent(wkAddr, msg.sender);
     }
+    /**
+     * @notice Checks if a group is terminated
+     * @dev Verifies if a group has reached a terminated state
+     * @param data Storage data for Storeman operations
+     * @param groupId Group identifier
+     * @return bool Whether the group is terminated
+     */
     function checkGroupTerminated(StoremanType.StoremanData storage data, bytes32 groupId) public view returns(bool){
         if(groupId == bytes32(0x00)) {
             return true;

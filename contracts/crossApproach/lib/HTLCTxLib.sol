@@ -30,84 +30,127 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+/**
+ * @title HTLCTxLib
+ * @dev Library for managing Hash Time-Locked Contract (HTLC) transactions
+ * This library provides functionality for:
+ * - User and storeman transaction management
+ * - Debt management between storeman groups
+ * - Transaction status tracking and verification
+ */
 library HTLCTxLib {
     using SafeMath for uint;
 
     /**
-     *
-     * ENUMS
-     *
+     * @notice Enumeration of possible transaction statuses
+     * @dev Status flow:
+     * - None: Initial state
+     * - Locked: Transaction is locked and pending
+     * - Redeemed: Transaction has been completed
+     * - Revoked: Transaction has been cancelled
+     * - AssetLocked: Asset is locked in debt management
+     * - DebtLocked: Debt is locked in debt management
      */
-
-    /// @notice tx info status
-    /// @notice uninitialized,locked,redeemed,revoked
     enum TxStatus {None, Locked, Redeemed, Revoked, AssetLocked, DebtLocked}
 
     /**
-     *
-     * STRUCTURES
-     *
+     * @notice Parameters for user-initiated HTLC transactions
+     * @dev Used when creating new user transactions
+     * @param xHash Hash of the HTLC random number
+     * @param smgID ID of the selected storeman group
+     * @param tokenPairID ID of the token pair for cross-chain transfer
+     * @param value Amount of tokens to transfer
+     * @param lockFee Fee for the lock operation
+     * @param lockedTime Duration for which the transaction is locked
      */
-
-    /// @notice struct of HTLC user mint lock parameters
     struct HTLCUserParams {
-        bytes32 xHash;                  /// hash of HTLC random number
-        bytes32 smgID;                  /// ID of storeman group which user has selected
-        uint tokenPairID;               /// token pair id on cross chain
-        uint value;                     /// exchange token value
-        uint lockFee;                   /// exchange token value
-        uint lockedTime;                /// HTLC lock time
+        bytes32 xHash;
+        bytes32 smgID;
+        uint tokenPairID;
+        uint value;
+        uint lockFee;
+        uint lockedTime;
     }
 
-    /// @notice HTLC(Hashed TimeLock Contract) tx info
+    /**
+     * @notice Base structure for all HTLC transactions
+     * @dev Contains common fields for all transaction types
+     * @param smgID ID of the storeman group
+     * @param lockedTime Duration for which the transaction is locked
+     * @param beginLockedTime Timestamp when the transaction was locked
+     * @param status Current status of the transaction
+     */
     struct BaseTx {
-        bytes32 smgID;                  /// HTLC transaction storeman ID
-        uint lockedTime;                /// HTLC transaction locked time
-        uint beginLockedTime;           /// HTLC transaction begin locked time
-        TxStatus status;                /// HTLC transaction status
+        bytes32 smgID;
+        uint lockedTime;
+        uint beginLockedTime;
+        TxStatus status;
     }
 
-    /// @notice user  tx info
+    /**
+     * @notice Structure for user-initiated transactions
+     * @dev Extends BaseTx with user-specific information
+     * @param baseTx Base transaction information
+     * @param tokenPairID ID of the token pair
+     * @param value Amount of tokens
+     * @param fee Transaction fee
+     * @param userAccount Address of the user initiating the transaction
+     */
     struct UserTx {
         BaseTx baseTx;
         uint tokenPairID;
         uint value;
         uint fee;
-        address userAccount;            /// HTLC transaction sender address for the security check while user's revoke
+        address userAccount;
     }
-    /// @notice storeman  tx info
+
+    /**
+     * @notice Structure for storeman-initiated transactions
+     * @dev Extends BaseTx with storeman-specific information
+     * @param baseTx Base transaction information
+     * @param tokenPairID ID of the token pair
+     * @param value Amount of tokens
+     * @param userAccount Address of the user to receive tokens
+     */
     struct SmgTx {
         BaseTx baseTx;
         uint tokenPairID;
         uint value;
-        address  userAccount;          /// HTLC transaction user address for the security check while user's redeem
-    }
-    /// @notice storeman  debt tx info
-    struct DebtTx {
-        BaseTx baseTx;
-        bytes32 srcSmgID;              /// HTLC transaction sender(source storeman) ID
-    }
-
-    struct Data {
-        /// @notice mapping of hash(x) to UserTx -- xHash->htlcUserTxData
-        mapping(bytes32 => UserTx) mapHashXUserTxs;
-
-        /// @notice mapping of hash(x) to SmgTx -- xHash->htlcSmgTxData
-        mapping(bytes32 => SmgTx) mapHashXSmgTxs;
-
-        /// @notice mapping of hash(x) to DebtTx -- xHash->htlcDebtTxData
-        mapping(bytes32 => DebtTx) mapHashXDebtTxs;
-
+        address userAccount;
     }
 
     /**
-     *
-     * MANIPULATIONS
-     *
+     * @notice Structure for storeman debt transactions
+     * @dev Extends BaseTx with debt-specific information
+     * @param baseTx Base transaction information
+     * @param srcSmgID ID of the source storeman group
      */
+    struct DebtTx {
+        BaseTx baseTx;
+        bytes32 srcSmgID;
+    }
 
-    /// @notice                     add user transaction info
-    /// @param params               parameters for user tx
+    /**
+     * @notice Main data structure for HTLC transactions
+     * @dev Contains mappings for all transaction types
+     * @param mapHashXUserTxs Mapping of transaction hashes to user transactions
+     * @param mapHashXSmgTxs Mapping of transaction hashes to storeman transactions
+     * @param mapHashXDebtTxs Mapping of transaction hashes to debt transactions
+     */
+    struct Data {
+        mapping(bytes32 => UserTx) mapHashXUserTxs;
+        mapping(bytes32 => SmgTx) mapHashXSmgTxs;
+        mapping(bytes32 => DebtTx) mapHashXDebtTxs;
+    }
+
+    /**
+     * @notice Adds a new user transaction
+     * @dev Creates a new user transaction with the provided parameters
+     * @param self The storage data structure
+     * @param params Parameters for the new transaction
+     * Requirements:
+     * - Transaction must not already exist
+     */
     function addUserTx(Data storage self, HTLCUserParams memory params)
         public
     {
@@ -128,8 +171,16 @@ library HTLCTxLib {
         self.mapHashXUserTxs[params.xHash] = userTx;
     }
 
-    /// @notice                     refund coins from HTLC transaction, which is used for storeman redeem(outbound)
-    /// @param x                    HTLC random number
+    /**
+     * @notice Redeems a user transaction
+     * @dev Used for storeman redeem (outbound) operations
+     * @param self The storage data structure
+     * @param x The HTLC random number
+     * @return xHash The hash of the random number
+     * Requirements:
+     * - Transaction must be in Locked status
+     * - Transaction must not be expired
+     */
     function redeemUserTx(Data storage self, bytes32 x)
         external
         returns(bytes32 xHash)
@@ -145,8 +196,15 @@ library HTLCTxLib {
         return xHash;
     }
 
-    /// @notice                     revoke user transaction
-    /// @param  xHash               hash of HTLC random number
+    /**
+     * @notice Revokes a user transaction
+     * @dev Allows cancellation of expired transactions
+     * @param self The storage data structure
+     * @param xHash Hash of the HTLC random number
+     * Requirements:
+     * - Transaction must be in Locked status
+     * - Transaction must be expired
+     */
     function revokeUserTx(Data storage self, bytes32 xHash)
         external
     {
@@ -157,13 +215,17 @@ library HTLCTxLib {
         userTx.baseTx.status = TxStatus.Revoked;
     }
 
-    /// @notice                    function for get user info
-    /// @param xHash               hash of HTLC random number
-    /// @return smgID              ID of storeman which user has selected
-    /// @return tokenPairID        token pair ID of cross chain
-    /// @return value              exchange value
-    /// @return fee                exchange fee
-    /// @return userAccount        HTLC transaction sender address for the security check while user's revoke
+    /**
+     * @notice Retrieves user transaction information
+     * @dev Returns all relevant information about a user transaction
+     * @param self The storage data structure
+     * @param xHash Hash of the HTLC random number
+     * @return smgID ID of the storeman group
+     * @return tokenPairID ID of the token pair
+     * @return value Amount of tokens
+     * @return fee Transaction fee
+     * @return userAccount Address of the user
+     */
     function getUserTx(Data storage self, bytes32 xHash)
         external
         view
@@ -173,12 +235,20 @@ library HTLCTxLib {
         return (userTx.baseTx.smgID, userTx.tokenPairID, userTx.value, userTx.fee, userTx.userAccount);
     }
 
-    /// @notice                     add storeman transaction info
-    /// @param  xHash               hash of HTLC random number
-    /// @param  smgID               ID of the storeman which user has selected
-    /// @param  tokenPairID         token pair ID of cross chain
-    /// @param  value               HTLC transfer value of token
-    /// @param  userAccount            user account address on the destination chain, which is used to redeem token
+    /**
+     * @notice Adds a new storeman transaction
+     * @dev Creates a new storeman transaction with the provided parameters
+     * @param self The storage data structure
+     * @param xHash Hash of the HTLC random number
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param value Amount of tokens
+     * @param userAccount Address of the user to receive tokens
+     * @param lockedTime Duration for which the transaction is locked
+     * Requirements:
+     * - Value must be non-zero
+     * - Transaction must not already exist
+     */
     function addSmgTx(Data storage self, bytes32 xHash, bytes32 smgID, uint tokenPairID, uint value, address userAccount, uint lockedTime)
         external
     {
@@ -198,8 +268,16 @@ library HTLCTxLib {
         self.mapHashXSmgTxs[xHash] = smgTx;
     }
 
-    /// @notice                     refund coins from HTLC transaction, which is used for users redeem(inbound)
-    /// @param x                    HTLC random number
+    /**
+     * @notice Redeems a storeman transaction
+     * @dev Used for user redeem (inbound) operations
+     * @param self The storage data structure
+     * @param x The HTLC random number
+     * @return xHash The hash of the random number
+     * Requirements:
+     * - Transaction must be in Locked status
+     * - Transaction must not be expired
+     */
     function redeemSmgTx(Data storage self, bytes32 x)
         external
         returns(bytes32 xHash)
@@ -215,8 +293,15 @@ library HTLCTxLib {
         return xHash;
     }
 
-    /// @notice                     revoke storeman transaction
-    /// @param  xHash               hash of HTLC random number
+    /**
+     * @notice Revokes a storeman transaction
+     * @dev Allows cancellation of expired transactions
+     * @param self The storage data structure
+     * @param xHash Hash of the HTLC random number
+     * Requirements:
+     * - Transaction must be in Locked status
+     * - Transaction must be expired
+     */
     function revokeSmgTx(Data storage self, bytes32 xHash)
         external
     {
@@ -227,12 +312,16 @@ library HTLCTxLib {
         smgTx.baseTx.status = TxStatus.Revoked;
     }
 
-    /// @notice                     function for get smg info
-    /// @param xHash                hash of HTLC random number
-    /// @return smgID               ID of storeman which user has selected
-    /// @return tokenPairID         token pair ID of cross chain
-    /// @return value               exchange value
-    /// @return userAccount            user account address for redeem
+    /**
+     * @notice Retrieves storeman transaction information
+     * @dev Returns all relevant information about a storeman transaction
+     * @param self The storage data structure
+     * @param xHash Hash of the HTLC random number
+     * @return smgID ID of the storeman group
+     * @return tokenPairID ID of the token pair
+     * @return value Amount of tokens
+     * @return userAccount Address of the user to receive tokens
+     */
     function getSmgTx(Data storage self, bytes32 xHash)
         external
         view
@@ -242,12 +331,19 @@ library HTLCTxLib {
         return (smgTx.baseTx.smgID, smgTx.tokenPairID, smgTx.value, smgTx.userAccount);
     }
 
-    /// @notice                     add storeman transaction info
-    /// @param  xHash               hash of HTLC random number
-    /// @param  srcSmgID            ID of source storeman group
-    /// @param  destSmgID           ID of the storeman which will take over of the debt of source storeman group
-    /// @param  lockedTime          HTLC lock time
-    /// @param  status              Status, should be 'Locked' for asset or 'DebtLocked' for debt
+    /**
+     * @notice Adds a new debt transaction
+     * @dev Creates a new debt transaction between storeman groups
+     * @param self The storage data structure
+     * @param xHash Hash of the HTLC random number
+     * @param srcSmgID ID of the source storeman group
+     * @param destSmgID ID of the destination storeman group
+     * @param lockedTime Duration for which the transaction is locked
+     * @param status Initial status of the transaction
+     * Requirements:
+     * - Transaction must not already exist
+     * - Status must be either Locked or DebtLocked
+     */
     function addDebtTx(Data storage self, bytes32 xHash, bytes32 srcSmgID, bytes32 destSmgID, uint lockedTime, TxStatus status)
         external
     {
@@ -264,9 +360,16 @@ library HTLCTxLib {
         self.mapHashXDebtTxs[xHash] = debtTx;
     }
 
-    /// @notice                     refund coins from HTLC transaction
-    /// @param x                    HTLC random number
-    /// @param status               Status, should be 'Locked' for asset or 'DebtLocked' for debt
+    /**
+     * @notice Redeems a debt transaction
+     * @dev Used to complete debt transfer between storeman groups
+     * @param self The storage data structure
+     * @param x The HTLC random number
+     * @return xHash The hash of the random number
+     * Requirements:
+     * - Transaction must be in Locked or DebtLocked status
+     * - Transaction must not be expired
+     */
     function redeemDebtTx(Data storage self, bytes32 x, TxStatus status)
         external
         returns(bytes32 xHash)
@@ -283,9 +386,15 @@ library HTLCTxLib {
         return xHash;
     }
 
-    /// @notice                     revoke debt transaction, which is used for source storeman group
-    /// @param  xHash               hash of HTLC random number
-    /// @param  status              Status, should be 'Locked' for asset or 'DebtLocked' for debt
+    /**
+     * @notice Revokes a debt transaction
+     * @dev Allows cancellation of expired debt transactions
+     * @param self The storage data structure
+     * @param xHash Hash of the HTLC random number
+     * Requirements:
+     * - Transaction must be in Locked or DebtLocked status
+     * - Transaction must be expired
+     */
     function revokeDebtTx(Data storage self, bytes32 xHash, TxStatus status)
         external
     {
@@ -297,10 +406,14 @@ library HTLCTxLib {
         debtTx.baseTx.status = TxStatus.Revoked;
     }
 
-    /// @notice                     function for get debt info
-    /// @param xHash                hash of HTLC random number
-    /// @return srcSmgID            ID of source storeman
-    /// @return destSmgID           ID of destination storeman
+    /**
+     * @notice Retrieves debt transaction information
+     * @dev Returns all relevant information about a debt transaction
+     * @param self The storage data structure
+     * @param xHash Hash of the HTLC random number
+     * @return smgID ID of the storeman group
+     * @return srcSmgID ID of the source storeman group
+     */
     function getDebtTx(Data storage self, bytes32 xHash)
         external
         view

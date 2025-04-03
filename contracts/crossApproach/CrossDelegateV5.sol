@@ -30,18 +30,56 @@ pragma solidity 0.8.18;
 
 import "./CrossDelegateV4.sol";
 
+/**
+ * @title CrossDelegateV5
+ * @dev Enhanced version of CrossDelegateV4 that adds NFT cross-chain ID management functionality
+ * This contract extends CrossDelegateV4 to provide:
+ * - NFT collection registration tracking
+ * - Cross-chain ID mapping for NFTs
+ * - Batch registration capabilities
+ */
 contract CrossDelegateV5 is CrossDelegateV4 {
-    // NFT collection addresss => register count
+    /**
+     * @notice Mapping from NFT collection address to registration count
+     * @dev Tracks the number of NFTs registered for cross-chain operations from each collection
+     */
     mapping(address => uint256) public nftRegisterCount;
 
-    // NFT collection address => NFT id => cross chain id
+    /**
+     * @notice Mapping from NFT collection and token ID to cross-chain ID
+     * @dev Stores the cross-chain ID assigned to each NFT
+     * @param collection The address of the NFT collection
+     * @param tokenId The ID of the NFT within the collection
+     * @return The assigned cross-chain ID
+     */
     mapping(address => mapping(uint256 => uint256)) public crossId;
 
-    // NFT collection address => cross chain id => NFT id
+    /**
+     * @notice Mapping from NFT collection and cross-chain ID to NFT token ID
+     * @dev Stores the original NFT token ID for each cross-chain ID
+     * @param collection The address of the NFT collection
+     * @param crossId The cross-chain ID
+     * @return The original NFT token ID
+     */
     mapping(address => mapping(uint256 => uint256)) public crossIdToNftBaseInfo;
 
+    /**
+     * @notice Emitted when a new NFT is registered for cross-chain operations
+     * @param collection The address of the NFT collection
+     * @param tokenId The ID of the NFT within the collection
+     * @param crossId The assigned cross-chain ID
+     */
     event RegisterNftCrossId(address indexed collection, uint256 indexed tokenId, uint256 indexed crossId);
 
+    /**
+     * @notice Initiates a cross-chain NFT transfer by locking original NFTs
+     * @dev Overrides the parent function to add cross-chain ID registration
+     * @param smgID ID of the storeman group handling the transfer
+     * @param tokenPairID ID of the token pair for cross-chain transfer
+     * @param tokenIDs Array of NFT token IDs to transfer
+     * @param tokenValues Array of token values (amounts) for each NFT
+     * @param userAccount Account information for receiving NFTs on the destination chain
+     */
     function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, bytes memory userAccount)
         public
         payable
@@ -56,6 +94,13 @@ contract CrossDelegateV5 is CrossDelegateV4 {
         }
     }
 
+    /**
+     * @notice Registers a new NFT for cross-chain operations
+     * @dev Assigns a unique cross-chain ID to an NFT if not already registered
+     * @param collection The address of the NFT collection
+     * @param tokenId The ID of the NFT within the collection
+     * @return The assigned cross-chain ID
+     */
     function registerNftCrossId(address collection, uint tokenId) internal returns (uint256) {
         if (crossId[collection][tokenId] > 0) {
             return crossId[collection][tokenId];
@@ -68,6 +113,15 @@ contract CrossDelegateV5 is CrossDelegateV4 {
         }
     }
 
+    /**
+     * @notice Registers multiple NFTs for cross-chain operations in a single transaction
+     * @dev Allows admin to register multiple NFTs from different collections at once
+     * @param collection Array of NFT collection addresses
+     * @param tokenIds Array of NFT token IDs
+     * Requirements:
+     * - Caller must be admin
+     * - Length of collection array must match length of tokenIds array
+     */
     function batchRegisterNftCrossId(address[] memory collection, uint256[] memory tokenIds) external onlyAdmin {
         require(collection.length == tokenIds.length, "CrossDelegateV5: collection length not equal to tokenIds length");
         for (uint256 i = 0; i < tokenIds.length; i++) {
@@ -75,6 +129,15 @@ contract CrossDelegateV5 is CrossDelegateV4 {
         }
     }
 
+    /**
+     * @notice Retrieves the local token address for a given token pair
+     * @dev Determines the correct token address based on the current chain ID
+     * @param tokenPairID ID of the token pair
+     * @return The address of the token contract on the current chain
+     * Requirements:
+     * - Token pair must exist
+     * - Current chain must be either source or destination chain
+     */
     function localTokenAddress(uint tokenPairID)
         public
         view

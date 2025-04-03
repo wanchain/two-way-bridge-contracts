@@ -37,8 +37,21 @@ import "../components/Admin.sol";
 import "./ConfigStorage.sol";
 import "../components/Proxy.sol";
 
+/**
+ * @title ConfigProxy
+ * @dev Proxy contract for configuration management
+ * This contract implements the upgradeable pattern for the configuration system
+ * and provides administrative controls for contract upgrades
+ */
 contract ConfigProxy is ConfigStorage, Halt, Admin, Proxy {
 
+    /**
+     * @notice Updates the implementation address of the ConfigDelegate contract
+     * @dev Only callable by the contract owner
+     * @param impl The address of the new ConfigDelegate contract
+     * @dev Throws if the new implementation address is invalid or the same as current
+     * @dev Emits Upgraded event on successful upgrade
+     */
     ///@dev                   update the address of ConfigDelegate contract
     ///@param impl            the address of the new ConfigDelegate contract
     function upgradeTo(address impl) public onlyOwner {

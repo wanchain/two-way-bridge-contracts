@@ -34,60 +34,88 @@ import "./GpkStorageV2.sol";
 import "../interfaces/IStoremanGroup.sol";
 import "./lib/GpkLib.sol" ;
 
+/**
+ * @title GpkDelegate
+ * @dev Implementation contract for Group Public Key (GPK) functionality
+ * This contract handles the core logic for GPK operations including:
+ * - Group initialization and management
+ * - Polynomial commitment submission and verification
+ * - Encrypted share distribution and verification
+ * - Timeout handling and slashing
+ */
 contract GpkDelegate is GpkStorageV2 {
     using SafeMath for uint;
 
     /**
-     *
-     * EVENTS
-     *
+     * @dev Events for tracking GPK operations
      */
 
-    /// @notice                           event for storeman submit poly commit
-    /// @param groupId                    storeman group id
-    /// @param round                      group negotiate round
-    /// @param curveIndex                 signature curve index
-    /// @param storeman                   storeman address
+    /**
+     * @notice Emitted when a storeman submits their polynomial commitment
+     * @param groupId The ID of the storeman group
+     * @param round The current negotiation round
+     * @param curveIndex The index of the signature curve
+     * @param storeman The address of the storeman
+     */
     event SetPolyCommitLogger(bytes32 indexed groupId, uint16 indexed round, uint8 indexed curveIndex, address storeman);
 
-    /// @notice                           event for storeman submit encoded sij
-    /// @param groupId                    storeman group id
-    /// @param round                      group negotiate round
-    /// @param curveIndex                 signature curve index
-    /// @param src                        src storeman address
-    /// @param dest                       dest storeman address
+    /**
+     * @notice Emitted when a storeman submits an encrypted share
+     * @param groupId The ID of the storeman group
+     * @param round The current negotiation round
+     * @param curveIndex The index of the signature curve
+     * @param src The source storeman address
+     * @param dest The destination storeman address
+     */
     event SetEncSijLogger(bytes32 indexed groupId, uint16 indexed round, uint8 indexed curveIndex, address src, address dest);
 
-    /// @notice                           event for storeman submit result of checking encSij
-    /// @param groupId                    storeman group id
-    /// @param round                      group negotiate round
-    /// @param curveIndex                 signature curve index
-    /// @param src                        src storeman address
-    /// @param dest                       dest storeman address
-    /// @param isValid                    whether encSij is valid
+    /**
+     * @notice Emitted when a storeman verifies an encrypted share
+     * @param groupId The ID of the storeman group
+     * @param round The current negotiation round
+     * @param curveIndex The index of the signature curve
+     * @param src The source storeman address
+     * @param dest The destination storeman address
+     * @param isValid Whether the encrypted share is valid
+     */
     event SetCheckStatusLogger(bytes32 indexed groupId, uint16 indexed round, uint8 indexed curveIndex, address src, address dest, bool isValid);
 
-    /// @notice                           event for storeman reveal sij
-    /// @param groupId                    storeman group id
-    /// @param round                      group negotiate round
-    /// @param curveIndex                 signature curve index
-    /// @param src                        src storeman address
-    /// @param dest                       dest storeman address
+    /**
+     * @notice Emitted when a storeman reveals their share
+     * @param groupId The ID of the storeman group
+     * @param round The current negotiation round
+     * @param curveIndex The index of the signature curve
+     * @param src The source storeman address
+     * @param dest The destination storeman address
+     */
     event RevealSijLogger(bytes32 indexed groupId, uint16 indexed round, uint8 indexed curveIndex, address src, address dest);
 
-
+    /**
+     * @notice Emitted when a new GPK is created
+     * @param groupId The ID of the storeman group
+     * @param round The current negotiation round
+     * @param gpk The array of GPK values
+     */
     event GpkCreatedLogger(bytes32 indexed groupId, uint16 indexed round, bytes[] gpk);
+
+    /**
+     * @notice Emitted when GPK configuration is set
+     * @param groupId The ID of the storeman group
+     * @param count The number of GPK configurations
+     */
     event setGpkCfgEvent(bytes32 indexed groupId, uint indexed count);
 
     /**
-    *
-    * MANIPULATIONS
-    *
+     * @dev Contract manipulation functions
     */
 
-    /// @notice                           function for set smg contract address
-    /// @param cfgAddr                    cfg contract address
-    /// @param smgAddr                    smg contract address
+    /**
+     * @notice Sets the dependencies for the contract
+     * @dev Only callable by the contract owner
+     * @param cfgAddr The address of the configuration contract
+     * @param smgAddr The address of the storeman group contract
+     * @dev Throws if either address is invalid
+     */
     function setDependence(address cfgAddr, address smgAddr)
         external
         onlyOwner
@@ -99,11 +127,14 @@ contract GpkDelegate is GpkStorageV2 {
         smg = smgAddr;
     }
 
-    /// @notice                           function for set period
-    /// @param groupId                    group id
-    /// @param ployCommitPeriod           ployCommit period
-    /// @param defaultPeriod              default period
-    /// @param negotiatePeriod            negotiate period
+    /**
+     * @notice Sets the time periods for different phases of GPK generation
+     * @dev Only callable by admin
+     * @param groupId The ID of the storeman group
+     * @param ployCommitPeriod The period for polynomial commitment submission
+     * @param defaultPeriod The default timeout period
+     * @param negotiatePeriod The period for negotiation phase
+     */
     function setPeriod(bytes32 groupId, uint32 ployCommitPeriod, uint32 defaultPeriod, uint32 negotiatePeriod)
         external
         onlyAdmin
@@ -114,12 +145,16 @@ contract GpkDelegate is GpkStorageV2 {
         group.negotiatePeriod = negotiatePeriod;
     }
 
-
-    /// @notice                           function for storeman submit poly commit
-    /// @param groupId                    storeman group id
-    /// @param roundIndex                 group negotiate round
-    /// @param curveIndex                 singnature curve index
-    /// @param polyCommit                 poly commit list (17 order in x0,y0,x1,y1... format)
+    /**
+     * @notice Allows a storeman to submit their polynomial commitment
+     * @dev Handles the polynomial commitment phase of GPK generation
+     * @param groupId The ID of the storeman group
+     * @param roundIndex The current negotiation round
+     * @param curveIndex The index of the signature curve
+     * @param polyCommit The polynomial commitment data
+     * @dev Throws if the commitment is invalid or duplicate
+     * @dev Emits SetPolyCommitLogger event on success
+     */
     function setPolyCommit(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, bytes memory polyCommit)
         external
     {
@@ -154,9 +189,13 @@ contract GpkDelegate is GpkStorageV2 {
         emit SetPolyCommitLogger(groupId, roundIndex, curveIndex, msg.sender);
     }
 
-    /// @notice                           function for report storeman submit poly commit timeout
-    /// @param groupId                    storeman group id
-    /// @param curveIndex                 singnature curve index
+    /**
+     * @notice Reports timeout for polynomial commitment submission
+     * @dev Handles slashing for storemen who failed to submit commitments
+     * @param groupId The ID of the storeman group
+     * @param curveIndex The index of the signature curve
+     * @dev Throws if the timeout period has not elapsed
+     */
     function polyCommitTimeout(bytes32 groupId, uint8 curveIndex)
         external
     {
@@ -176,12 +215,17 @@ contract GpkDelegate is GpkStorageV2 {
         GpkLib.slashMulti(group, curveIndex, smg);
     }
 
-    /// @notice                           function for src storeman submit encSij
-    /// @param groupId                    storeman group id
-    /// @param roundIndex                 group negotiate round
-    /// @param curveIndex                 singnature curve index
-    /// @param dest                       dest storeman address
-    /// @param encSij                     encSij
+    /**
+     * @notice Allows a storeman to submit an encrypted share
+     * @dev Handles the encrypted share distribution phase
+     * @param groupId The ID of the storeman group
+     * @param roundIndex The current negotiation round
+     * @param curveIndex The index of the signature curve
+     * @param dest The destination storeman address
+     * @param encSij The encrypted share data
+     * @dev Throws if the encrypted share is invalid or duplicate
+     * @dev Emits SetEncSijLogger event on success
+     */
     function setEncSij(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address dest, bytes memory encSij)
         external
     {
@@ -196,12 +240,17 @@ contract GpkDelegate is GpkStorageV2 {
         emit SetEncSijLogger(groupId, roundIndex, curveIndex, msg.sender, dest);
     }
 
-    /// @notice                           function for dest storeman set check status for encSij
-    /// @param groupId                    storeman group id
-    /// @param roundIndex                 group negotiate round
-    /// @param curveIndex                 singnature curve index
-    /// @param src                        src storeman address
-    /// @param isValid                    whether encSij is valid
+    /**
+     * @notice Allows a storeman to verify an encrypted share
+     * @dev Handles the verification phase of encrypted shares
+     * @param groupId The ID of the storeman group
+     * @param roundIndex The current negotiation round
+     * @param curveIndex The index of the signature curve
+     * @param src The source storeman address
+     * @param isValid Whether the encrypted share is valid
+     * @dev Throws if the share is not ready or already verified
+     * @dev Emits SetCheckStatusLogger event on success
+     */
     function setCheckStatus(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src, bool isValid)
         external
     {
@@ -230,10 +279,14 @@ contract GpkDelegate is GpkStorageV2 {
         }
     }
 
-    /// @notice                           function for report src storeman submit encSij timeout
-    /// @param groupId                    storeman group id
-    /// @param curveIndex                 singnature curve index
-    /// @param src                        src storeman address
+    /**
+     * @notice Reports timeout for encrypted share submission
+     * @dev Handles slashing for storemen who failed to submit encrypted shares
+     * @param groupId The ID of the storeman group
+     * @param curveIndex The index of the signature curve
+     * @param src The source storeman address
+     * @dev Throws if the share is already submitted or timeout period has not elapsed
+     */
     function encSijTimeout(bytes32 groupId, uint8 curveIndex, address src)
         external
     {
@@ -246,13 +299,18 @@ contract GpkDelegate is GpkStorageV2 {
         GpkLib.slash(group, curveIndex, GpkTypes.SlashType.EncSijTimout, src, msg.sender, true, smg);
     }
 
-    /// @notice                           function for src storeman reveal sij
-    /// @param groupId                    storeman group id
-    /// @param roundIndex                 group negotiate round
-    /// @param curveIndex                 singnature curve index
-    /// @param dest                       dest storeman address
-    /// @param sij                        sij
-    /// @param ephemPrivateKey            ecies ephemPrivateKey
+    /**
+     * @notice Allows a storeman to reveal their share
+     * @dev Handles the share revelation phase
+     * @param groupId The ID of the storeman group
+     * @param roundIndex The current negotiation round
+     * @param curveIndex The index of the signature curve
+     * @param dest The destination storeman address
+     * @param sij The share value
+     * @param ephemPrivateKey The ephemeral private key
+     * @dev Throws if the share is not needed or invalid
+     * @dev Emits RevealSijLogger event on success
+     */
     function revealSij(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address dest, uint sij, uint ephemPrivateKey)
         external
     {
@@ -272,10 +330,14 @@ contract GpkDelegate is GpkStorageV2 {
         }
     }
 
-    /// @notice                           function for report dest storeman check Sij timeout
-    /// @param groupId                    storeman group id
-    /// @param curveIndex                 singnature curve index
-    /// @param dest                       dest storeman address
+    /**
+     * @notice Reports timeout for share verification
+     * @dev Handles slashing for storemen who failed to verify shares
+     * @param groupId The ID of the storeman group
+     * @param curveIndex The index of the signature curve
+     * @param dest The destination storeman address
+     * @dev Throws if the share is already verified or timeout period has not elapsed
+     */
     function checkSijTimeout(bytes32 groupId, uint8 curveIndex, address dest)
         external
     {
@@ -289,10 +351,14 @@ contract GpkDelegate is GpkStorageV2 {
         GpkLib.slash(group, curveIndex, GpkTypes.SlashType.CheckTimeout, dest, msg.sender, true, smg);
     }
 
-    /// @notice                           function for report srcPk submit sij timeout
-    /// @param groupId                    storeman group id
-    /// @param curveIndex                 singnature curve index
-    /// @param src                        src storeman address
+    /**
+     * @notice Reports timeout for share submission
+     * @dev Handles slashing for storemen who failed to submit shares
+     * @param groupId The ID of the storeman group
+     * @param curveIndex The index of the signature curve
+     * @param src The source storeman address
+     * @dev Throws if the share is not needed or timeout period has not elapsed
+     */
     function SijTimeout(bytes32 groupId, uint8 curveIndex, address src)
         external
     {
@@ -305,9 +371,13 @@ contract GpkDelegate is GpkStorageV2 {
         GpkLib.slash(group, curveIndex, GpkTypes.SlashType.SijTimeout, src, msg.sender, true, smg);
     }
 
-    /// @notice                           function for terminate protocol
-    /// @param groupId                    storeman group id
-    /// @param curveIndex                 singnature curve index
+    /**
+     * @notice Terminates the protocol for a group
+     * @dev Handles the termination of the GPK generation protocol
+     * @param groupId The ID of the storeman group
+     * @param curveIndex The index of the signature curve
+     * @dev Throws if the negotiation period has not elapsed
+     */
     function terminate(bytes32 groupId, uint8 curveIndex)
         external
     {
@@ -339,14 +409,18 @@ contract GpkDelegate is GpkStorageV2 {
         GpkLib.slashMulti(group, curveIndex, smg);
     }
 
-    /// @notice                           function for check paras
-    /// @param group                      group
-    /// @param roundIndex                 group negotiate round
-    /// @param curveIndex                 singnature curve index
-    /// @param status                     check group status
-    /// @param checkSender                whether check msg.sender
-    /// @param checkStoreman              whether check storeman
-    /// @param storeman                   storeman address
+    /**
+     * @notice Validates parameters for group operations
+     * @dev Internal function to check validity of group parameters
+     * @param group The group structure
+     * @param roundIndex The current negotiation round
+     * @param curveIndex The index of the signature curve
+     * @param status The expected group status
+     * @param checkSender Whether to check the sender
+     * @param checkStoreman Whether to check the storeman
+     * @param storeman The storeman address
+     * @dev Throws if any parameter is invalid
+     */
     function checkValid(GpkTypes.Group storage group, uint16 roundIndex, uint8 curveIndex, GpkTypes.GpkStatus status, bool checkSender, bool checkStoreman, address storeman)
         private
         view
@@ -363,6 +437,18 @@ contract GpkDelegate is GpkStorageV2 {
         }
     }
 
+    /**
+     * @notice Gets information about a group
+     * @param groupId The ID of the storeman group
+     * @param roundIndex The round index to query (-1 for current round)
+     * @return queriedRound The queried round number
+     * @return curve1 The address of curve 1
+     * @return curve1Status The status of curve 1
+     * @return curve1StatusTime The status time of curve 1
+     * @return curve2 The address of curve 2
+     * @return curve2Status The status of curve 2
+     * @return curve2StatusTime The status time of curve 2
+     */
     function getGroupInfo(bytes32 groupId, int32 roundIndex)
         external
         view
@@ -375,6 +461,14 @@ contract GpkDelegate is GpkStorageV2 {
         return (queriedRound, round1.curve, uint8(round1.status), round1.statusTime, round2.curve, uint8(round2.status), round2.statusTime);
     }
 
+    /**
+     * @notice Gets the polynomial commitment for a storeman
+     * @param groupId The ID of the storeman group
+     * @param roundIndex The round index
+     * @param curveIndex The index of the signature curve
+     * @param src The source storeman address
+     * @return polyCommit The polynomial commitment data
+     */
     function getPolyCommit(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src)
         external
         view
@@ -385,6 +479,20 @@ contract GpkDelegate is GpkStorageV2 {
         return round.srcMap[src].polyCommit;
     }
 
+    /**
+     * @notice Gets information about a share
+     * @param groupId The ID of the storeman group
+     * @param roundIndex The round index
+     * @param curveIndex The index of the signature curve
+     * @param src The source storeman address
+     * @param dest The destination storeman address
+     * @return encSij The encrypted share data
+     * @return checkStatus The verification status
+     * @return setTime The time when the share was set
+     * @return checkTime The time when the share was verified
+     * @return sij The share value
+     * @return ephemPrivateKey The ephemeral private key
+     */
     function getSijInfo(bytes32 groupId, uint16 roundIndex, uint8 curveIndex, address src, address dest)
         external
         view
@@ -396,6 +504,13 @@ contract GpkDelegate is GpkStorageV2 {
         return (d.encSij, uint8(d.checkStatus), d.setTime, d.checkTime, d.sij, d.ephemPrivateKey);
     }
 
+    /**
+     * @notice Gets the GPK share for a storeman
+     * @param groupId The ID of the storeman group
+     * @param index The index of the storeman
+     * @return gpkShare1 The GPK share for curve 1
+     * @return gpkShare2 The GPK share for curve 2
+     */
     function getGpkShare(bytes32 groupId, uint16 index)
         external
         view
@@ -407,6 +522,12 @@ contract GpkDelegate is GpkStorageV2 {
         return (roundMap[0].srcMap[src].gpkShare, roundMap[1].srcMap[src].gpkShare);
     }
 
+    /**
+     * @notice Gets the GPK for a group
+     * @param groupId The ID of the storeman group
+     * @return gpk1 The GPK for curve 1
+     * @return gpk2 The GPK for curve 2
+     */
     function getGpk(bytes32 groupId)
         external
         view
@@ -417,7 +538,12 @@ contract GpkDelegate is GpkStorageV2 {
         return (roundMap[0].gpk, roundMap[1].gpk);
     }
 
-    // new functions for many gpks.
+    /**
+     * @notice Gets the GPK for a specific index
+     * @param groupId The ID of the storeman group
+     * @param gpkIndex The index of the GPK
+     * @return gpk The GPK data
+     */
     function getGpkbyIndex(bytes32 groupId, uint8 gpkIndex)
         external
         view
@@ -428,6 +554,13 @@ contract GpkDelegate is GpkStorageV2 {
         return roundMap[gpkIndex].gpk;
     }
 
+    /**
+     * @notice Gets the GPK share for a specific storeman and index
+     * @param groupId The ID of the storeman group
+     * @param smIndex The index of the storeman
+     * @param gpkIndex The index of the GPK
+     * @return gpkShare The GPK share data
+     */
     function getGpkSharebyIndex(bytes32 groupId, uint16 smIndex, uint8 gpkIndex)
         external
         view
@@ -439,13 +572,35 @@ contract GpkDelegate is GpkStorageV2 {
         return roundMap[gpkIndex].srcMap[src].gpkShare;
     }
 
+    /**
+     * @notice Gets the number of GPKs for a group
+     * @param groupId The ID of the storeman group
+     * @return count The number of GPKs
+     */
     function getGpkCount(bytes32 groupId) public view returns(uint count) {
         return gpkCount[groupId];
     }
+
+    /**
+     * @notice Gets the GPK configuration for a group
+     * @param groupId The ID of the storeman group
+     * @param index The index of the configuration
+     * @return curveIndex The index of the curve
+     * @return algoIndex The index of the algorithm
+     */
     function getGpkCfgbyGroup(bytes32 groupId, uint index) external view  returns(uint curveIndex, uint algoIndex) {
         return (curve[groupId][index], algo[groupId][index]);
     }
 
+    /**
+     * @notice Sets the GPK configuration for a group
+     * @dev Only callable by admin
+     * @param groupId The ID of the storeman group
+     * @param curIndex The array of curve indices
+     * @param algoIndex The array of algorithm indices
+     * @dev Throws if the arrays are empty or have different lengths
+     * @dev Emits setGpkCfgEvent on success
+     */
     function setGpkCfg(bytes32 groupId, uint[] memory curIndex, uint[] memory algoIndex) external onlyAdmin {
         require(curIndex.length != 0, "empty curve");
         require(curIndex.length == algoIndex.length, "invalid length");
@@ -457,6 +612,12 @@ contract GpkDelegate is GpkStorageV2 {
         emit setGpkCfgEvent(groupId, gpkCount[groupId]);
     }
 
+    /**
+     * @notice Attempts to complete the GPK generation process
+     * @dev Internal function to handle GPK completion
+     * @param groupId The ID of the storeman group
+     * @param smg The address of the storeman group contract
+     */
     function tryComplete(bytes32 groupId, address smg)
         internal
     {
@@ -479,6 +640,16 @@ contract GpkDelegate is GpkStorageV2 {
         IStoremanGroup(smg).setGpk(groupId, round1.gpk, round2.gpk); // only set 2 gpk for compatible 
     }
     
+    /**
+     * @notice Gets group information for a specific GPK index
+     * @param groupId The ID of the storeman group
+     * @param roundIndex The round index to query (-1 for current round)
+     * @param gpkIndex The index of the GPK
+     * @return queriedRound The queried round number
+     * @return curve The address of the curve
+     * @return curveStatus The status of the curve
+     * @return curveStatusTime The status time of the curve
+     */
     function getGroupInfobyIndex(bytes32 groupId, int32 roundIndex, uint8 gpkIndex)
         external
         view

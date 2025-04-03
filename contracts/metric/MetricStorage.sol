@@ -33,13 +33,24 @@ import "./lib/MetricTypes.sol";
 import "../interfaces/IConfig.sol";
 import "../interfaces/IStoremanGroup.sol";
 
+/**
+ * @title MetricStorage
+ * @dev Storage contract for metric system
+ * This contract stores metrics and slashing data for the storeman group system
+ */
 contract MetricStorage is BasicStorage {
 
     /**
-     *
-     * EVENTS
-     *
-     **/
+     * @dev Events for tracking metric operations
+     */
+
+    /**
+     * @notice Emitted when a storeman is slashed
+     * @param groupId The ID of the storeman group
+     * @param hashX The hash of the transaction
+     * @param smIndex The index of the slashed storeman
+     * @param slshReason The reason for slashing
+     */
     event SMSlshLogger(bytes32 indexed groupId, bytes32 indexed hashX, uint8 indexed smIndex, MetricTypes.SlshReason slshReason);
 
     /************************************************************
@@ -48,6 +59,10 @@ contract MetricStorage is BasicStorage {
      **
      ************************************************************/
 
+    /**
+     * @dev Public storage for metric data
+     * @notice Contains all metric-related data structures and mappings
+     */
     MetricTypes.MetricStorageData public metricData;
 
 }

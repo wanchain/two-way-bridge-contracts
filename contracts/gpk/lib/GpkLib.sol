@@ -35,58 +35,72 @@ import "../../interfaces/IConfig.sol";
 import "./GpkTypes.sol";
 import "../../storemanGroupAdmin/StoremanType.sol";
 
-
+/**
+ * @title GpkLib
+ * @dev Library containing core functionality for Group Public Key (GPK) operations
+ * This library implements the cryptographic operations and protocol logic for GPK generation
+ */
 library GpkLib {
 
-    /// submit period
+    /// @dev Default timeout period (2 hours)
     uint32 constant DEFAULT_PERIOD = 2 * 60 * 60;     // 2 hours
+    /// @dev Period for polynomial commitment submission (48 hours)
     uint32 constant PLOYCOMMIT_PERIOD = 48 * 60 * 60; // 48 hours
+    /// @dev Period for negotiation phase (6 hours)
     uint32 constant NEGOTIATE_PERIOD = 6 * 60 * 60;   // 6 hours
 
     /**
-     *
-     * EVENTS
-     *
+     * @dev Events for tracking GPK operations
      */
 
-    /// @notice                           event for gpk created
-    /// @param groupId                    storeman group id
-    /// @param round                      group negotiate round
-    /// @param gpk1                       group public key for chain1
-    /// @param gpk2                       group public key for chain2
+    /**
+     * @notice Emitted when a new GPK is created
+     * @param groupId The ID of the storeman group
+     * @param round The current negotiation round
+     * @param gpk1 The group public key for chain1
+     * @param gpk2 The group public key for chain2
+     */
     event GpkCreatedLogger(bytes32 indexed groupId, uint16 indexed round, bytes gpk1, bytes gpk2);
 
-    /// @notice                           event for contract slash storeman
-    /// @param groupId                    storeman group id
-    /// @param slashType                  the reason to slash
-    /// @param slashed                    slashed storeman
-    /// @param partner                     negotiate parter
-    /// @param round                      group negotiate round
-    /// @param curveIndex                 signature curve index
+    /**
+     * @notice Emitted when a storeman is slashed
+     * @param groupId The ID of the storeman group
+     * @param slashType The reason for slashing
+     * @param slashed The address of the slashed storeman
+     * @param partner The negotiation partner
+     * @param round The current negotiation round
+     * @param curveIndex The index of the signature curve
+     */
     event SlashLogger(bytes32 indexed groupId, uint8 indexed slashType, address indexed slashed, address partner, uint16 round, uint8 curveIndex);
 
-    /// @notice                           event for group reset protocol
-    /// @param groupId                    storeman group id
-    /// @param round                      group negotiate round
+    /**
+     * @notice Emitted when the group protocol is reset
+     * @param groupId The ID of the storeman group
+     * @param round The current negotiation round
+     */
     event ResetLogger(bytes32 indexed groupId, uint16 indexed round);
 
-    /// @notice                           event for group close protocol
-    /// @param groupId                    storeman group id
-    /// @param round                      group negotiate max round
+    /**
+     * @notice Emitted when the group protocol is closed
+     * @param groupId The ID of the storeman group
+     * @param round The maximum negotiation round
+     */
     event CloseLogger(bytes32 indexed groupId, uint16 indexed round);
 
     /**
-    *
-    * MANIPULATIONS
-    *
+     * @dev Core GPK operations
     */
 
-    /// @notice                           function for init period
-    /// @param groupId                    storeman group id
-    /// @param group                      storeman group
-    /// @param cfg                        group config
-    /// @param smg                        storeman group contract address
-    /// @param curves                     storeman group curves, sec256:0, bn256:1
+    /**
+     * @notice Initializes a storeman group with its configuration
+     * @dev Sets up periods, curves, and retrieves storeman information
+     * @param groupId The ID of the storeman group
+     * @param group The group structure to initialize
+     * @param cfg The configuration contract address
+     * @param smg The storeman group contract address
+     * @param curves Array of curve identifiers (sec256:0, bn256:1)
+     * @dev Throws if the group status is invalid
+     */
     function initGroup(bytes32 groupId, GpkTypes.Group storage group, address cfg, address smg, uint[] memory curves)
         public
     {
@@ -121,10 +135,13 @@ library GpkLib {
         }
     }
 
-
-    /// @notice                           function for update gpk
-    /// @param round                      round
-    /// @param polyCommit                 poly commit
+    /**
+     * @notice Updates the group public key with a new polynomial commitment
+     * @dev Performs elliptic curve addition to combine commitments
+     * @param round The current round structure
+     * @param polyCommit The polynomial commitment to add
+     * @dev Throws if the curve addition fails
+     */
     function updateGpk(GpkTypes.Round storage round, bytes memory polyCommit)
         public
     {
@@ -145,10 +162,14 @@ library GpkLib {
         round.gpk = gpk;
     }
 
-    /// @notice                           function for update gpkShare
-    /// @param group                      storeman group
-    /// @param round                      round
-    /// @param polyCommit                 poly commit
+    /**
+     * @notice Updates the GPK shares for all storemen
+     * @dev Calculates and stores individual shares of the group public key
+     * @param group The storeman group structure
+     * @param round The current round structure
+     * @param polyCommit The polynomial commitment to process
+     * @dev Throws if polynomial commitment calculation or curve addition fails
+     */
     function updateGpkShare(GpkTypes.Group storage group, GpkTypes.Round storage round, bytes memory polyCommit)
         public
     {
@@ -176,11 +197,15 @@ library GpkLib {
         }
     }
 
-    /// @notice                           function for verify sij to judge challenge
-    /// @param d                          Dest
-    /// @param destPk                     dest storeman pk
-    /// @param polyCommit                 polyCommit of pki
-    /// @param curve                      curve contract address
+    /**
+     * @notice Verifies a secret share against a challenge
+     * @dev Checks both the share value and its encryption
+     * @param d The destination structure containing the share
+     * @param destPk The public key of the destination storeman
+     * @param polyCommit The polynomial commitment of the source storeman
+     * @param curve The curve contract address
+     * @return bool Whether the verification was successful
+     */
     function verifySij(GpkTypes.Dest storage d, bytes memory destPk, bytes memory polyCommit, address curve)
         public
         view
@@ -208,14 +233,17 @@ library GpkLib {
         return false;
     }
 
-    /// @notice                           function for slash
-    /// @param group                      storeman group
-    /// @param curveIndex                 signature curve index
-    /// @param slashType                  slash reason
-    /// @param slashed                    slashed storeman
-    /// @param parter                     negotiate parter
-    /// @param toReset                    is reset immediately
-    /// @param smg                        the storeman group admin contract
+    /**
+     * @notice Handles slashing of a storeman
+     * @dev Updates slash status and emits events
+     * @param group The storeman group structure
+     * @param curveIndex The index of the signature curve
+     * @param slashType The reason for slashing
+     * @param slashed The address of the slashed storeman
+     * @param parter The negotiation partner
+     * @param toReset Whether to reset the protocol immediately
+     * @param smg The storeman group contract address
+     */
     function slash(GpkTypes.Group storage group, uint8 curveIndex, GpkTypes.SlashType slashType,
         address slashed, address parter, bool toReset, address smg)
         public
@@ -241,10 +269,13 @@ library GpkLib {
         }
     }
 
-    /// @notice                           function for slash
-    /// @param group                      storeman group
-    /// @param curveIndex                 singnature curve index
-    /// @param smg                        smg contract address
+    /**
+     * @notice Handles slashing of multiple storemen
+     * @dev Processes slashing for all invalid storemen in a round
+     * @param group The storeman group structure
+     * @param curveIndex The index of the signature curve
+     * @param smg The storeman group contract address
+     */
     function slashMulti(GpkTypes.Group storage group, uint8 curveIndex, address smg)
         public
     {
@@ -264,9 +295,12 @@ library GpkLib {
         reset(group, isContinue);
     }
 
-    /// @notice                           function for reset protocol
-    /// @param group                      storeman group
-    /// @param isContinue                 is continue to next round
+    /**
+     * @notice Resets the GPK protocol for a group
+     * @dev Handles protocol reset and group closure
+     * @param group The storeman group structure
+     * @param isContinue Whether to continue with the protocol
+     */
     function reset(GpkTypes.Group storage group, bool isContinue)
         public
     {

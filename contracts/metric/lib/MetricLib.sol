@@ -35,15 +35,27 @@ import "../../interfaces/IPosLib.sol";
 import "../../interfaces/IStoremanGroup.sol";
 import "../../interfaces/ICurve.sol";
 
+/**
+ * @title MetricLib
+ * @dev Library for handling metric-related operations in the Storeman system
+ * This library provides functionality for managing and validating slash operations
+ * in both R and S stages of the Storeman protocol
+ */
+
 library MetricLib {
     using SafeMath for uint;
 
-    /// @notice                         function for write slash of R stage
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param rslshData                slash data of R stage
-    /// @param smCount                  total number of store man
+    /**
+     * @notice Writes and validates a slash operation for the R stage
+     * @dev Processes R stage slash data and updates the metric storage
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param hashX Hash of the signed data
+     * @param rslshData Slash data for R stage
+     * @param smCount Total number of storeman nodes
+     * @return bool Success status of the operation
+     * @return uint8 Index of the storeman node
+     */
     function writeRSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.RSlshData memory rslshData, uint8 smCount)
     internal
     returns (bool, uint8)
@@ -65,7 +77,6 @@ library MetricLib {
 
         metricData.mapRSlsh[grpId][hashX][smIndex] = rslshData;
 
-
         if (checkRProof(metricData, grpId, hashX, smIndex)) {
             metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex] = metricData.mapSlshCount[grpId][getEpochId(metricData)][smIndex].add(uint(1));
             return (true, smIndex);
@@ -73,15 +84,17 @@ library MetricLib {
             delete metricData.mapRSlsh[grpId][hashX][smIndex];
             return (false, smIndex);
         }
-
     }
 
-
-    /// @notice                         check proof of R stage
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param smIndex                  index of store man
+    /**
+     * @notice Validates the proof for R stage slash operation
+     * @dev Checks both signature and content of the R stage proof
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param hashX Hash of the signed data
+     * @param smIndex Index of the storeman node
+     * @return bool Validation result
+     */
     function checkRProof(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -90,11 +103,16 @@ library MetricLib {
         bool bContent = checkRContent(metricData, grpId, hashX, smIndex);
         return getChkResult(bSig, bContent);
     }
-    /// @notice                         check signature of proof in R stage
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param smIndex                  index of store man
+
+    /**
+     * @notice Validates the signature of R stage proof
+     * @dev Verifies the cryptographic signature of the R stage proof
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param hashX Hash of the signed data
+     * @param smIndex Index of the storeman node
+     * @return bool Signature validation result
+     */
     function checkRSig(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -109,18 +127,22 @@ library MetricLib {
         senderPk = getPkBytesByInx(metricData, grpId, rslshData.sndrIndex);
         return ckSig(metricData,h, rslshData.polyDataPln.polyDataR, rslshData.polyDataPln.polyDataS, senderPk);
     }
-    /// @notice                         check content of proof in R stage
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param smIndex                  index of store man
+
+    /**
+     * @notice Validates the content of R stage proof
+     * @dev Verifies the mathematical correctness of the R stage proof content
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param hashX Hash of the signed data
+     * @param smIndex Index of the storeman node
+     * @return bool Content validation result
+     */
     function checkRContent(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
     {
         uint256 xLeft;
         uint256 yLeft;
-
         uint256 xRight;
         uint256 yRight;
         bool success;
@@ -145,6 +167,13 @@ library MetricLib {
         return ICurve(curveAddr).equalPt(xLeft,yLeft,xRight,yRight);
     }
 
+    /**
+     * @notice Determines the final check result based on signature and content validation
+     * @dev Combines signature and content validation results
+     * @param bSig Signature validation result
+     * @param bContent Content validation result
+     * @return bool Final validation result
+     */
     function getChkResult(bool bSig, bool bContent)
     internal
     pure
@@ -152,12 +181,18 @@ library MetricLib {
     {
         return !bSig || !bContent;
     }
-    /// @notice                         function for write slash of S stage
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param sslshData                slash data of S stage
-    /// @param smCount                  total number of store man
+
+    /**
+     * @notice Writes and validates a slash operation for the S stage
+     * @dev Processes S stage slash data and updates the metric storage
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param hashX Hash of the signed data
+     * @param sslshData Slash data for S stage
+     * @param smCount Total number of storeman nodes
+     * @return bool Success status of the operation
+     * @return uint8 Index of the storeman node
+     */
     function writeSSlsh(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData memory sslshData, uint8 smCount)
     public
     returns (bool, uint8)
@@ -189,11 +224,15 @@ library MetricLib {
         }
     }
 
-    /// @notice                         check proof of S stage
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param smIndex                  index of store man
+    /**
+     * @notice Validates the proof for S stage slash operation
+     * @dev Checks both signature and content of the S stage proof
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param hashX Hash of the signed data
+     * @param smIndex Index of the storeman node
+     * @return bool Validation result
+     */
     function checkSProof(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -202,11 +241,15 @@ library MetricLib {
         bool bContent = checkSContent(metricData, grpId, hashX, smIndex);
         return getChkResult(bSig, bContent);
     }
-    /// @notice                         check signature of proof in S stage
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param smIndex                  index of store man
+    /**
+     * @notice Validates the signature of S stage proof
+     * @dev Verifies the cryptographic signature of the S stage proof
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param hashX Hash of the signed data
+     * @param smIndex Index of the storeman node
+     * @return bool Signature validation result
+     */
     function checkSSig(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -223,6 +266,16 @@ library MetricLib {
         return ckSig(metricData, h, sslshData.polyDataPln.polyDataR, sslshData.polyDataPln.polyDataS, senderPk);
     }
 
+    /**
+     * @notice Validates a cryptographic signature
+     * @dev Checks if a signature is valid using the specified curve
+     * @param metricData Storage data for metrics
+     * @param hash Hash of the signed data
+     * @param r First part of the signature
+     * @param s Second part of the signature
+     * @param pk Public key of the signer
+     * @return bool Signature validation result
+     */
     function ckSig(MetricTypes.MetricStorageData storage metricData, bytes32 hash, bytes32 r, bytes32 s, bytes memory pk)
     internal
     returns (bool){
@@ -231,11 +284,15 @@ library MetricLib {
         return ICurve(curveAddr).checkSig(hash, r, s, pk);
     }
 
-    /// @notice                         check content of proof in S stage
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param smIndex                  index of store man
+    /**
+     * @notice Validates the content of S stage proof
+     * @dev Verifies the mathematical correctness of the S stage proof content
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param hashX Hash of the signed data
+     * @param smIndex Index of the storeman node
+     * @return bool Content validation result
+     */
     function checkSContent(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, bytes32 hashX, uint8 smIndex)
     internal
     returns (bool)
@@ -272,10 +329,14 @@ library MetricLib {
         require(success, 'add fail');
         return ICurve(curveAddr).equalPt(xLeft,yLeft,yLeft,yRight);
     }
-    /// @notice                         get public key bytes by stor eman index
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param smIndex                  index of store man
+    /**
+     * @notice Retrieves public key bytes by storeman index
+     * @dev Gets the public key of a storeman node by its index
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param smIndex Index of the storeman node
+     * @return bytes Public key bytes
+     */
     function getPkBytesByInx(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint8 smIndex)
     internal
     view
@@ -285,8 +346,12 @@ library MetricLib {
         (, smPk,) = (IStoremanGroup)(metricData.smg).getSelectedSmInfo(grpId, uint(smIndex));
         return smPk;
     }
-    /// @notice                         get epoch id by now time stamp
-    /// @param metricData               self parameter for lib function
+    /**
+     * @notice Gets the current epoch ID based on timestamp
+     * @dev Retrieves the epoch ID for the current block timestamp
+     * @param metricData Storage data for metrics
+     * @return uint Current epoch ID
+     */
     function getEpochId(MetricTypes.MetricStorageData storage metricData)
     internal
     view
@@ -294,9 +359,13 @@ library MetricLib {
     {
         return IPosLib(metricData.posLib).getEpochId(block.timestamp);
     }
-    /// @notice                         get total number of store man in special group
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
+    /**
+     * @notice Gets the total number of storeman nodes in a specific group
+     * @dev Retrieves the count of selected storeman nodes in a group
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @return uint8 Number of storeman nodes
+     */
     function getSMCount(MetricTypes.MetricStorageData storage metricData, bytes32 grpId)
     public
     view
@@ -305,9 +374,13 @@ library MetricLib {
         IStoremanGroup smgTemp = IStoremanGroup(metricData.smg);
         return uint8(smgTemp.getSelectedSmNumber(grpId));
     }
-    /// @notice                         get leader address of the group
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
+    /**
+     * @notice Gets the leader address of a group
+     * @dev Retrieves the address of the leader node in a group
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @return address Leader node address
+     */
     function getLeader(MetricTypes.MetricStorageData storage metricData, bytes32 grpId)
     public
     view
@@ -319,10 +392,14 @@ library MetricLib {
         return leader;
     }
 
-    /// @notice                         get work address of the group
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param smIndex                  sm index
+    /**
+     * @notice Gets the work address of a storeman node
+     * @dev Retrieves the work address of a storeman node by its index
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param smIndex Index of the storeman node
+     * @return address Work address of the node
+     */
     function getWkAddr(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint smIndex)
     public
     view
@@ -334,10 +411,13 @@ library MetricLib {
         return wkAddr;
     }
 
-    /// @notice                         record sm slash
-    /// @param metricData               self parameter for lib function
-    /// @param grpId                    group id
-    /// @param smIndex                  sm index
+    /**
+     * @notice Records a storeman slash event
+     * @dev Records a slash event for a specific storeman node
+     * @param metricData Storage data for metrics
+     * @param grpId Group identifier
+     * @param smIndex Index of the storeman node
+     */
     function recordSmSlash(MetricTypes.MetricStorageData storage metricData, bytes32 grpId, uint smIndex)
     public
     {

@@ -30,6 +30,14 @@ pragma solidity ^0.8.18;
 
 import "../components/BasicStorage.sol";
 
+/**
+ * @title TokenManagerStorage
+ * @dev Storage contract for token management functionality
+ * This contract provides:
+ * - Token pair information storage
+ * - Ancestor token information storage
+ * - Token pair mapping and indexing
+ */
 contract TokenManagerStorage is BasicStorage {
     /************************************************************
      **
@@ -37,6 +45,15 @@ contract TokenManagerStorage is BasicStorage {
      **
      ************************************************************/
 
+    /**
+     * @notice Structure for storing ancestor token information
+     * @dev Contains basic information about the original token
+     * @param account Address of the token contract
+     * @param name Name of the token
+     * @param symbol Symbol of the token
+     * @param decimals Number of decimal places
+     * @param chainID ID of the blockchain where the token originates
+     */
     struct AncestorInfo {
       bytes   account;
       string  name;
@@ -45,14 +62,33 @@ contract TokenManagerStorage is BasicStorage {
       uint    chainID;
     }
 
+    /**
+     * @notice Structure for storing token pair information
+     * @dev Contains information about token pairs for cross-chain operations
+     * @param aInfo Information about the ancestor token
+     * @param fromChainID ID of the source blockchain (e.g., eth=60, etc=61, wan=5718350)
+     * @param fromAccount Address of the token on the source chain
+     * @param toChainID ID of the destination blockchain
+     * @param toAccount Address of the token on the destination chain
+     */
     struct TokenPairInfo {
-      AncestorInfo aInfo;               /// TODO:
-      uint      fromChainID;            /// index in coinType.txt; e.g. eth=60, etc=61, wan=5718350
-      bytes     fromAccount;            /// from address
-      uint      toChainID;              ///
-      bytes     toAccount;              /// to token address
+      AncestorInfo aInfo;
+      uint      fromChainID;
+      bytes     fromAccount;
+      uint      toChainID;
+      bytes     toAccount;
     }
     
+    /**
+     * @notice Structure for storing complete token pair information
+     * @dev Extends TokenPairInfo with a unique identifier
+     * @param id Unique identifier for the token pair
+     * @param aInfo Information about the ancestor token
+     * @param fromChainID ID of the source blockchain
+     * @param fromAccount Address of the token on the source chain
+     * @param toChainID ID of the destination blockchain
+     * @param toAccount Address of the token on the destination chain
+     */
     struct TokenPairInfoFull {
       uint      id;
       AncestorInfo aInfo;
@@ -69,11 +105,12 @@ contract TokenManagerStorage is BasicStorage {
      **
      ************************************************************/
 
-    /// total amount of TokenPair instance
+    /// @notice Total number of token pairs registered in the system
     uint public totalTokenPairs = 0;
 
-    /// a map from a sequence ID to token pair
+    /// @notice Mapping from token pair ID to token pair information
     mapping(uint => TokenPairInfo) public mapTokenPairInfo;
-    // index -> tokenPairId
+    
+    /// @notice Mapping from index to token pair ID for enumeration
     mapping(uint => uint) public mapTokenPairIndex;
 }

@@ -30,6 +30,11 @@ pragma solidity ^0.8.18;
 
 import "../components/BasicStorage.sol";
 
+/**
+ * @title ConfigStorage
+ * @dev Storage contract for configuration management
+ * This contract stores the mapping between curve types and their corresponding contract addresses
+ */
 contract ConfigStorage is BasicStorage {
 
 
@@ -39,6 +44,12 @@ contract ConfigStorage is BasicStorage {
      **
      ************************************************************/
 
+    /**
+     * @dev Mapping from curve type to its contract address
+     * @notice Stores the addresses of different curve implementations
+     * @param uint8 The curve type identifier
+     * @return address The contract address implementing the curve
+     */
     /// curve -> contract address
     mapping(uint8 => address) curves;
 }

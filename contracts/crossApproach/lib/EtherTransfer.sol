@@ -2,6 +2,12 @@
 
 pragma solidity ^0.8.1;
 
+/**
+ * @title EtherTransfer
+ * @dev Library for safe ether transfer operations
+ * This library provides a safer alternative to Solidity's native transfer function
+ * by allowing custom gas limits and better error handling
+ */
 library EtherTransfer {
     /**
      * @dev Replacement for Solidity's `transfer`: sends `amount` wei to

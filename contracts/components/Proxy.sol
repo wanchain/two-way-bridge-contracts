@@ -29,20 +29,65 @@
 pragma solidity ^0.8.18;
 
 /**
- * Math operations with safety checks
+ * @title Proxy
+ * @dev Base contract for proxy pattern implementation
+ * This contract provides functionality for delegating calls to implementation contracts
+ * and supports contract upgradeability
+ * 
+ * Key features:
+ * - Implementation contract delegation
+ * - Contract upgrade support
+ * - Fallback handling
+ * - Receive function support
+ * 
+ * @custom:security
+ * - Implementation address validation
+ * - Safe delegatecall execution
+ * - Proper return data handling
  */
-
-
 contract Proxy {
 
+    /**
+     * @dev Emitted when the implementation contract is upgraded
+     * 
+     * @param implementation Address of the new implementation contract
+     */
     event Upgraded(address indexed implementation);
 
+    /**
+     * @dev Internal storage for implementation contract address
+     * 
+     * @custom:usage
+     * - Stores current implementation address
+     * - Used for delegatecall operations
+     * - Modified through upgrade operations
+     */
     address internal _implementation;
 
+    /**
+     * @dev Returns the current implementation contract address
+     * 
+     * @return Address of the current implementation contract
+     */
     function implementation() public view returns (address) {
         return _implementation;
     }
 
+    /**
+     * @dev Internal function to handle fallback calls
+     * Delegates all calls to the implementation contract
+     * 
+     * @custom:requirements
+     * - Implementation contract must be set
+     * 
+     * @custom:effects
+     * - Executes delegatecall to implementation
+     * - Handles return data
+     * 
+     * @custom:reverts
+     * - If implementation contract is not set
+     * - If delegatecall fails
+     */
     function _fallback() internal {
         address _impl = _implementation;
         require(_impl != address(0), "implementation contract not set");
@@ -59,9 +104,25 @@ contract Proxy {
             default { return(ptr, size) }
         }
     }
+
+    /**
+     * @dev Fallback function to handle unknown function calls
+     * Delegates all calls to the implementation contract
+     * 
+     * @custom:effects
+     * - Forwards call to _fallback
+     */
     fallback() external payable {
         return _fallback();
     }
+
+    /**
+     * @dev Receive function to handle incoming ETH
+     * Delegates all calls to the implementation contract
+     * 
+     * @custom:effects
+     * - Forwards call to _fallback
+     */
     receive() external payable {
         return _fallback();
     }

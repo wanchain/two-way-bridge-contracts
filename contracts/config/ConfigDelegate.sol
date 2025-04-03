@@ -32,9 +32,21 @@ import "../components/Halt.sol";
 import "../components/Admin.sol";
 import "./ConfigStorage.sol";
 
-
+/**
+ * @title ConfigDelegate
+ * @dev Implementation contract for configuration management
+ * This contract provides functionality for managing curve implementations
+ * and their corresponding contract addresses
+ */
 contract ConfigDelegate is ConfigStorage, Halt , Admin{
 
+    /**
+     * @notice Sets the contract addresses for different curve implementations
+     * @dev Only callable by admin
+     * @param curveId Array of curve type identifiers
+     * @param curveAddress Array of corresponding curve contract addresses
+     * @dev Throws if arrays are empty or have mismatched lengths
+     */
     /// @notice                           function for set smg contract address
     /// @param curveId                    curve id array
     /// @param curveAddress               curve contract address array
@@ -49,6 +61,12 @@ contract ConfigDelegate is ConfigStorage, Halt , Admin{
         }
     }
 
+    /**
+     * @notice Retrieves the contract address for a specific curve type
+     * @param curveId The identifier of the curve type
+     * @return address The contract address implementing the curve
+     * @dev Throws if no curve implementation exists for the given ID
+     */
     function getCurve(uint8 curveId)
     external
     view
@@ -57,6 +75,10 @@ contract ConfigDelegate is ConfigStorage, Halt , Admin{
         return curves[curveId];
     }
 
+    /**
+     * @dev Prevents the contract from receiving ETH
+     * @notice This contract does not support receiving ETH
+     */
     receive() external payable {
         revert("Not support");
     }

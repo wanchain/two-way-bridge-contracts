@@ -34,126 +34,197 @@ import "../../interfaces/ITokenManager.sol";
 import "../../interfaces/IRC20Protocol.sol";
 import "./EtherTransfer.sol";
 
+/**
+ * @title RapidityLibV4
+ * @dev Library for managing rapid cross-chain token transfers
+ * This library provides functionality for:
+ * - Token locking and unlocking
+ * - Token minting and burning
+ * - Cross-chain token transfer management
+ */
 library RapidityLibV4 {
     using SafeMath for uint;
     using RapidityTxLib for RapidityTxLib.Data;
 
+    /**
+     * @notice Enumeration of supported token types for cross-chain operations
+     * @dev Defines the types of tokens that can be transferred across chains
+     */
     enum TokenCrossType {ERC20, ERC721, ERC1155}
 
     /**
-    *
-    * STRUCTURES
-    *
-    */
-
-    /// @notice struct of Rapidity storeman mint lock parameters
+     * @notice Parameters for user-initiated token locking operations
+     * @dev Used when users want to lock their tokens for cross-chain transfer
+     * @param smgID ID of the selected storeman group
+     * @param tokenPairID ID of the token pair for cross-chain transfer
+     * @param value Amount of tokens to transfer
+     * @param currentChainID ID of the current blockchain
+     * @param tokenPairContractFee Fee for the token pair contract
+     * @param etherTransferGasLimit Gas limit for ether transfers
+     * @param destUserAccount Destination user account address
+     * @param smgFeeProxy Address of the proxy for storing storeman group fees
+     */
     struct RapidityUserLockParams {
-        bytes32 smgID;                    /// ID of storeman group which user has selected
-        uint tokenPairID;                 /// token pair id on cross chain
-        uint value;                       /// exchange token value
-        uint currentChainID;              /// current chain ID
-        uint tokenPairContractFee;        /// fee of token pair
-        uint etherTransferGasLimit;     /// exchange token fee
-        bytes destUserAccount;            /// account of shadow chain, used to receive token
-        address smgFeeProxy;              /// address of the proxy to store fee for storeman group
-    }
-
-    /// @notice struct of Rapidity storeman mint lock parameters
-    struct RapiditySmgMintParams {
-        bytes32 uniqueID;                 /// Rapidity random number
-        bytes32 smgID;                    /// ID of storeman group which user has selected
-        uint tokenPairID;                 /// token pair id on cross chain
-        uint value;                       /// exchange token value
-        uint fee;                         /// exchange token fee
-        address destTokenAccount;         /// shadow token account
-        address destUserAccount;          /// account of shadow chain, used to receive token
-        address smgFeeProxy;              /// address of the proxy to store fee for storeman group
-    }
-
-    /// @notice struct of Rapidity user burn lock parameters
-    struct RapidityUserBurnParams {
-        bytes32 smgID;                  /// ID of storeman group which user has selected
-        uint tokenPairID;               /// token pair id on cross chain
-        uint value;                     /// exchange token value
-        uint currentChainID;            /// current chain ID
-        uint fee;                       /// exchange token fee
-        uint tokenPairContractFee;      /// fee of token pair
-        uint etherTransferGasLimit;     /// exchange token fee
-        address srcTokenAccount;        /// shadow token account
-        bytes destUserAccount;          /// account of token destination chain, used to receive token
-        address smgFeeProxy;            /// address of the proxy to store fee for storeman group
-    }
-
-    /// @notice struct of Rapidity user burn lock parameters
-    struct RapiditySmgReleaseParams {
-        bytes32 uniqueID;               /// Rapidity random number
-        bytes32 smgID;                  /// ID of storeman group which user has selected
-        uint tokenPairID;               /// token pair id on cross chain
-        uint value;                     /// exchange token value
-        uint fee;                       /// exchange token fee
-        uint etherTransferGasLimit;     /// exchange token fee
-        address destTokenAccount;       /// original token/coin account
-        address destUserAccount;        /// account of token original chain, used to receive token
-        address smgFeeProxy;            /// address of the proxy to store fee for storeman group
+        bytes32 smgID;
+        uint tokenPairID;
+        uint value;
+        uint currentChainID;
+        uint tokenPairContractFee;
+        uint etherTransferGasLimit;
+        bytes destUserAccount;
+        address smgFeeProxy;
     }
 
     /**
-     *
-     * EVENTS
-     *
-     **/
+     * @notice Parameters for storeman-initiated token minting operations
+     * @dev Used when storeman group mints tokens on the destination chain
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param value Amount of tokens to mint
+     * @param fee Transaction fee
+     * @param destTokenAccount Destination token contract address
+     * @param destUserAccount Destination user account address
+     * @param smgFeeProxy Address of the proxy for storing storeman group fees
+     */
+    struct RapiditySmgMintParams {
+        bytes32 uniqueID;
+        bytes32 smgID;
+        uint tokenPairID;
+        uint value;
+        uint fee;
+        address destTokenAccount;
+        address destUserAccount;
+        address smgFeeProxy;
+    }
 
+    /**
+     * @notice Parameters for user-initiated token burning operations
+     * @dev Used when users want to burn their tokens for cross-chain transfer
+     * @param smgID ID of the selected storeman group
+     * @param tokenPairID ID of the token pair
+     * @param value Amount of tokens to burn
+     * @param currentChainID ID of the current blockchain
+     * @param fee Transaction fee
+     * @param tokenPairContractFee Fee for the token pair contract
+     * @param etherTransferGasLimit Gas limit for ether transfers
+     * @param srcTokenAccount Source token contract address
+     * @param destUserAccount Destination user account address
+     * @param smgFeeProxy Address of the proxy for storing storeman group fees
+     */
+    struct RapidityUserBurnParams {
+        bytes32 smgID;
+        uint tokenPairID;
+        uint value;
+        uint currentChainID;
+        uint fee;
+        uint tokenPairContractFee;
+        uint etherTransferGasLimit;
+        address srcTokenAccount;
+        bytes destUserAccount;
+        address smgFeeProxy;
+    }
 
-    /// @notice                         event of exchange WRC-20 token with original chain token request
-    /// @notice                         event invoked by storeman group
-    /// @param smgID                    ID of storemanGroup
-    /// @param tokenPairID              token pair ID of cross chain token
-    /// @param tokenAccount             Rapidity original token account
-    /// @param value                    Rapidity value
-    /// @param userAccount              account of shadow chain, used to receive token
+    /**
+     * @notice Parameters for storeman-initiated token release operations
+     * @dev Used when storeman group releases tokens on the original chain
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param value Amount of tokens to release
+     * @param fee Transaction fee
+     * @param etherTransferGasLimit Gas limit for ether transfers
+     * @param destTokenAccount Destination token contract address
+     * @param destUserAccount Destination user account address
+     * @param smgFeeProxy Address of the proxy for storing storeman group fees
+     */
+    struct RapiditySmgReleaseParams {
+        bytes32 uniqueID;
+        bytes32 smgID;
+        uint tokenPairID;
+        uint value;
+        uint fee;
+        uint etherTransferGasLimit;
+        address destTokenAccount;
+        address destUserAccount;
+        address smgFeeProxy;
+    }
+
+    /**
+     * @notice Event emitted when tokens are locked by a user
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param tokenAccount Address of the token contract
+     * @param value Amount of tokens locked
+     * @param contractFee Contract fee charged
+     * @param userAccount Destination user account address
+     */
     event UserLockLogger(bytes32 indexed smgID, uint indexed tokenPairID, address indexed tokenAccount, uint value, uint contractFee, bytes userAccount);
 
-    /// @notice                         event of exchange WRC-20 token with original chain token request
-    /// @notice                         event invoked by storeman group
-    /// @param smgID                    ID of storemanGroup
-    /// @param tokenPairID              token pair ID of cross chain token
-    /// @param tokenAccount             Rapidity shadow token account
-    /// @param value                    Rapidity value
-    /// @param userAccount              account of shadow chain, used to receive token
+    /**
+     * @notice Event emitted when tokens are burned by a user
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param tokenAccount Address of the token contract
+     * @param value Amount of tokens burned
+     * @param contractFee Contract fee charged
+     * @param fee Transaction fee charged
+     * @param userAccount Destination user account address
+     */
     event UserBurnLogger(bytes32 indexed smgID, uint indexed tokenPairID, address indexed tokenAccount, uint value, uint contractFee, uint fee, bytes userAccount);
 
-    /// @notice                         event of exchange WRC-20 token with original chain token request
-    /// @notice                         event invoked by storeman group
-    /// @param uniqueID                 unique random number
-    /// @param smgID                    ID of storemanGroup
-    /// @param tokenPairID              token pair ID of cross chain token
-    /// @param value                    Rapidity value
-    /// @param tokenAccount             Rapidity shadow token account
-    /// @param userAccount              account of original chain, used to receive token
+    /**
+     * @notice Event emitted when tokens are minted by storeman group
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param value Amount of tokens minted
+     * @param tokenAccount Address of the token contract
+     * @param userAccount Destination user account address
+     */
     event SmgMintLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
+
+    /**
+     * @notice Event emitted when tokens are minted by storeman group (with additional data)
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param keys Array of event keys
+     * @param values Array of event values
+     */
     event SmgMint(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
 
-    /// @notice                         event of exchange WRC-20 token with original chain token request
-    /// @notice                         event invoked by storeman group
-    /// @param uniqueID                 unique random number
-    /// @param smgID                    ID of storemanGroup
-    /// @param tokenPairID              token pair ID of cross chain token
-    /// @param value                    Rapidity value
-    /// @param tokenAccount             Rapidity original token account
-    /// @param userAccount              account of original chain, used to receive token
+    /**
+     * @notice Event emitted when tokens are released by storeman group
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param value Amount of tokens released
+     * @param tokenAccount Address of the token contract
+     * @param userAccount Destination user account address
+     */
     event SmgReleaseLogger(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, uint value, address tokenAccount, address userAccount);
+
+    /**
+     * @notice Event emitted when tokens are released by storeman group (with additional data)
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param keys Array of event keys
+     * @param values Array of event values
+     */
     event SmgRelease(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
 
     /**
-    *
-    * MANIPULATIONS
-    *
-    */
-
-    /// @notice                         mintBridge, user lock token on token original chain
-    /// @notice                         event invoked by user mint lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for user mint lock token on token original chain
+     * @notice Locks tokens for cross-chain transfer
+     * @dev Handles the locking of ERC20 tokens
+     * @param storageData Cross storage data
+     * @param params Parameters for the token locking operation
+     * Requirements:
+     * - Token type must be ERC20
+     * - User must have sufficient balance
+     * - Contract must have approval to transfer tokens
+     */
     function userLock(CrossTypes.Data storage storageData, RapidityUserLockParams memory params)
     public
     {
@@ -206,10 +277,16 @@ library RapidityLibV4 {
         emit UserLockLogger(params.smgID, params.tokenPairID, tokenScAddr, params.value, contractFee, params.destUserAccount);
     }
 
-    /// @notice                         burnBridge, user lock token on token original chain
-    /// @notice                         event invoked by user burn lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for user burn lock token on token original chain
+    /**
+     * @notice Burns tokens for cross-chain transfer
+     * @dev Handles the burning of ERC20 tokens
+     * @param storageData Cross storage data
+     * @param params Parameters for the token burning operation
+     * Requirements:
+     * - Token type must be ERC20
+     * - User must have sufficient balance
+     * - Contract must have approval to burn tokens
+     */
     function userBurn(CrossTypes.Data storage storageData, RapidityUserBurnParams memory params)
     public
     {
@@ -261,10 +338,15 @@ library RapidityLibV4 {
         emit UserBurnLogger(params.smgID, params.tokenPairID, tokenScAddr, params.value, contractFee, params.fee, params.destUserAccount);
     }
 
-    /// @notice                         mintBridge, storeman mint lock token on token shadow chain
-    /// @notice                         event invoked by user mint lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman mint lock token on token shadow chain
+    /**
+     * @notice Mints tokens on the destination chain
+     * @dev Handles the minting of ERC20 tokens
+     * @param storageData Cross storage data
+     * @param params Parameters for the token minting operation
+     * Requirements:
+     * - Token type must be valid (ERC20)
+     * - Storeman group must have permission to mint
+     */
     function smgMint(CrossTypes.Data storage storageData, RapiditySmgMintParams memory params)
     public
     {
@@ -292,10 +374,15 @@ library RapidityLibV4 {
         emit SmgMintLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
 
-    /// @notice                         burnBridge, storeman burn lock token on token shadow chain
-    /// @notice                         event invoked by user burn lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman burn lock token on token shadow chain
+    /**
+     * @notice Releases tokens on the original chain
+     * @dev Handles the release of ERC20 tokens
+     * @param storageData Cross storage data
+     * @param params Parameters for the token release operation
+     * Requirements:
+     * - Token type must be ERC20
+     * - Storeman group must have permission to release
+     */
     function smgRelease(CrossTypes.Data storage storageData, RapiditySmgReleaseParams memory params)
     public
     {
@@ -329,6 +416,15 @@ library RapidityLibV4 {
         emit SmgReleaseLogger(params.uniqueID, params.smgID, params.tokenPairID, params.value, params.destTokenAccount, params.destUserAccount);
     }
 
+    /**
+     * @notice Burns shadow tokens
+     * @dev Handles the burning of ERC20 tokens
+     * @param tokenManager Token manager contract
+     * @param tokenAddress Address of the token contract
+     * @param userAccount Address of the user account
+     * @param value Amount of tokens to burn
+     * @return bool indicating whether the burn was successful
+     */
     function burnShadowToken(ITokenManager tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
         uint beforeBalance;
         uint afterBalance;
@@ -340,6 +436,15 @@ library RapidityLibV4 {
         return afterBalance == beforeBalance.sub(value);
     }
 
+    /**
+     * @notice Mints shadow tokens
+     * @dev Handles the minting of ERC20 tokens
+     * @param tokenManager Token manager contract
+     * @param tokenAddress Address of the token contract
+     * @param userAccount Address of the user account
+     * @param value Amount of tokens to mint
+     * @return bool indicating whether the mint was successful
+     */
     function mintShadowToken(ITokenManager tokenManager, address tokenAddress, address userAccount, uint value) private returns (bool) {
         uint beforeBalance;
         uint afterBalance;

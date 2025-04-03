@@ -38,14 +38,24 @@ import "../lib/CommonTool.sol";
 import "./lib/MetricLib.sol";
 import "../interfaces/IPosLib.sol";
 
+/**
+ * @title MetricDelegate
+ * @dev Implementation contract for metric system
+ * This contract handles the recording and retrieval of metrics, incentives, and slashing data
+ * for the storeman group system
+ */
 contract MetricDelegate is MetricStorage, Halt{
     using SafeMath for uint;
     using MetricLib for MetricTypes.MetricStorageData;
 
     /**
-     *
-     * MODIFIERS
-     *
+     * @dev Modifiers for access control
+     */
+
+    /**
+     * @dev Ensures that only the group leader can call the function
+     * @param grpId The ID of the storeman group
+     * @dev Throws if the caller is not the group leader
      */
     modifier onlyLeader(bytes32 grpId) {
         address leader;
@@ -55,9 +65,14 @@ contract MetricDelegate is MetricStorage, Halt{
     }
 
     /**
-     *
-     * MANIPULATIONS
-     *
+     * @dev Core metric operations
+     */
+
+    /**
+     * @notice Retrieves the addresses of dependent contracts
+     * @return address The configuration contract address
+     * @return address The storeman group contract address
+     * @return address The position library contract address
      */
     function getDependence()
     external
@@ -67,12 +82,18 @@ contract MetricDelegate is MetricStorage, Halt{
         return (metricData.config, metricData.smg, metricData.posLib);
     }
 
-    ///=======================================statistic=============================================
+    /**
+     * @dev Statistics functions
+     */
 
-    /// @notice                         function for get incentive count of all store man during special epochs
-    /// @param grpId                    group id
-    /// @param startEpId                start epoch id
-    /// @param endEpId                  end epoch id
+    /**
+     * @notice Retrieves incentive counts for all storemen during specified epochs
+     * @param grpId The ID of the storeman group
+     * @param startEpId The starting epoch ID
+     * @param endEpId The ending epoch ID
+     * @return uint[] Array of incentive counts for each storeman
+     * @dev Throws if endEpId is less than startEpId
+     */
     function getPrdInctMetric(bytes32 grpId, uint startEpId, uint endEpId)
     external
     view
@@ -88,10 +109,15 @@ contract MetricDelegate is MetricStorage, Halt{
         }
         return ret;
     }
-    /// @notice                         function for get slash count of all store man during special epochs
-    /// @param grpId                    group id
-    /// @param startEpId                start epoch id
-    /// @param endEpId                  end epoch id
+
+    /**
+     * @notice Retrieves slash counts for all storemen during specified epochs
+     * @param grpId The ID of the storeman group
+     * @param startEpId The starting epoch ID
+     * @param endEpId The ending epoch ID
+     * @return uint[] Array of slash counts for each storeman
+     * @dev Throws if endEpId is less than startEpId
+     */
     function getPrdSlshMetric(bytes32 grpId, uint startEpId, uint endEpId)
     external
     view
@@ -108,10 +134,14 @@ contract MetricDelegate is MetricStorage, Halt{
         }
         return ret;
     }
-    /// @notice                         function for get success count of sign data
-    /// @param grpId                    group id
-    /// @param epId                     epoch id
-    /// @param smIndex                  index of store man
+
+    /**
+     * @notice Retrieves the success count for a specific storeman in an epoch
+     * @param grpId The ID of the storeman group
+     * @param epId The epoch ID
+     * @param smIndex The index of the storeman
+     * @return uint The success count
+     */
     function getSmSuccCntByEpId(bytes32 grpId, uint epId, uint8 smIndex)
     external
     view
@@ -119,10 +149,14 @@ contract MetricDelegate is MetricStorage, Halt{
     {
         return metricData.mapInctCount[grpId][epId][smIndex];
     }
-    /// @notice                         function for get slash count of one store man
-    /// @param grpId                    group id
-    /// @param epId                     epoch id
-    /// @param smIndex                  index of store man
+
+    /**
+     * @notice Retrieves the slash count for a specific storeman in an epoch
+     * @param grpId The ID of the storeman group
+     * @param epId The epoch ID
+     * @param smIndex The index of the storeman
+     * @return uint The slash count
+     */
     function getSlshCntByEpId(bytes32 grpId, uint epId, uint8 smIndex)
     external
     view
@@ -131,22 +165,28 @@ contract MetricDelegate is MetricStorage, Halt{
         return metricData.mapSlshCount[grpId][epId][smIndex];
     }
 
-    /// @notice                         function for get R stage slash proof of one store man
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param smIndex                  index of store man
+    /**
+     * @notice Retrieves the R stage slash proof for a specific storeman
+     * @param grpId The ID of the storeman group
+     * @param hashX The hash of the signed data
+     * @param smIndex The index of the storeman
+     * @return MetricTypes.RSlshData The R stage slash proof data
+     */
     function getRSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     external
     view
     returns (MetricTypes.RSlshData memory)
     {
         return metricData.mapRSlsh[grpId][hashX][smIndex];
-
     }
-    /// @notice                         function for get S stage slash proof of one store man
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param smIndex                  index of store man
+
+    /**
+     * @notice Retrieves the S stage slash proof for a specific storeman
+     * @param grpId The ID of the storeman group
+     * @param hashX The hash of the signed data
+     * @param smIndex The index of the storeman
+     * @return MetricTypes.SSlshData The S stage slash proof data
+     */
     function getSSlshProof(bytes32 grpId, bytes32 hashX, uint8 smIndex)
     external
     view
@@ -155,12 +195,18 @@ contract MetricDelegate is MetricStorage, Halt{
         return metricData.mapSSlsh[grpId][hashX][smIndex];
     }
 
-    ///=======================================write incentive and slash=============================================
+    /**
+     * @dev Write operations for incentives and slashing
+     */
 
-    /// @notice                         function for write incentive data
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param inctData                 incentive store man's bitmap
+    /**
+     * @notice Records incentive data for storemen
+     * @param grpId The ID of the storeman group
+     * @param hashX The hash of the signed data
+     * @param inctData The bitmap of incentivized storemen
+     * @dev Only callable by the group leader when not halted
+     * @dev Throws if incentive data already exists
+     */
     function wrInct(bytes32 grpId, bytes32 hashX, uint inctData)
     external
     notHalted
@@ -179,10 +225,16 @@ contract MetricDelegate is MetricStorage, Halt{
             }
         }
     }
-    /// @notice                         function for write R stage slash
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param rslshData                data of slash
+
+    /**
+     * @notice Records R stage slash data
+     * @param grpId The ID of the storeman group
+     * @param hashX The hash of the signed data
+     * @param rslshData The R stage slash data
+     * @dev Only callable by the group leader when not halted
+     * @dev Throws if slash data writing fails
+     * @dev Emits SMSlshLogger event on success
+     */
     function wrRSlsh(bytes32 grpId, bytes32 hashX, MetricTypes.RSlshData memory rslshData)
     public
     notHalted
@@ -197,10 +249,16 @@ contract MetricDelegate is MetricStorage, Halt{
 
         emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.R);
     }
-    /// @notice                         function for write S stage slash
-    /// @param grpId                    group id
-    /// @param hashX                    hash of the signed data
-    /// @param sslshData                data of slash
+
+    /**
+     * @notice Records S stage slash data
+     * @param grpId The ID of the storeman group
+     * @param hashX The hash of the signed data
+     * @param sslshData The S stage slash data
+     * @dev Only callable by the group leader when not halted
+     * @dev Throws if slash data writing fails
+     * @dev Emits SMSlshLogger event on success
+     */
     function wrSSlsh(bytes32 grpId, bytes32 hashX, MetricTypes.SSlshData memory sslshData)
     public
     notHalted
@@ -216,9 +274,14 @@ contract MetricDelegate is MetricStorage, Halt{
         emit SMSlshLogger(grpId, hashX, smIndex, MetricTypes.SlshReason.S);
     }
 
-    /// @notice                         function for set config and smg contract address
-    /// @param configAddr               config contract address
-    /// @param smgAddr                  smg contract address
+    /**
+     * @notice Sets the addresses of dependent contracts
+     * @param configAddr The configuration contract address
+     * @param smgAddr The storeman group contract address
+     * @param posAddr The position library contract address
+     * @dev Only callable by the contract owner
+     * @dev Throws if any address is invalid
+     */
     function setDependence(address configAddr, address smgAddr, address posAddr)
     external
     onlyOwner
@@ -232,7 +295,15 @@ contract MetricDelegate is MetricStorage, Halt{
         metricData.posLib = posAddr;
     }
 
+    /**
+     * @dev Internal helper functions
+     */
 
+    /**
+     * @notice Gets the number of storemen in a group
+     * @param grpId The ID of the storeman group
+     * @return uint8 The number of storemen
+     */
     function getSMCount(bytes32 grpId)
     private
     view
@@ -241,6 +312,10 @@ contract MetricDelegate is MetricStorage, Halt{
         return uint8(metricData.getSMCount(grpId));
     }
 
+    /**
+     * @notice Gets the current epoch ID based on block timestamp
+     * @return uint The current epoch ID
+     */
     function getEpochId()
     private
     view

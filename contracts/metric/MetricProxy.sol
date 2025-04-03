@@ -38,8 +38,21 @@ import "../components/Admin.sol";
 import "./MetricStorage.sol";
 import "../components/Proxy.sol";
 
+/**
+ * @title MetricProxy
+ * @dev Proxy contract for metric system
+ * This contract implements the upgradeable pattern for the metric system
+ * and provides administrative controls for contract upgrades
+ */
 contract MetricProxy is MetricStorage, Halt, Proxy {
 
+    /**
+     * @notice Updates the implementation address of the MetricDelegate contract
+     * @dev Only callable by the contract owner
+     * @param impl The address of the new MetricDelegate contract
+     * @dev Throws if the new implementation address is invalid or the same as current
+     * @dev Emits Upgraded event on successful upgrade
+     */
     ///@dev                   update the address of MetricDelegate contract
     ///@param impl            the address of the new MetricDelegate contract
     function upgradeTo(address impl) public onlyOwner {

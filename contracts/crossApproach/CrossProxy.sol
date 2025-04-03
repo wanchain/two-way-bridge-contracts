@@ -37,11 +37,27 @@ import "../components/Halt.sol";
 import "../components/ReentrancyGuard.sol";
 import "./CrossStorage.sol";
 
-
+/**
+ * @title CrossProxy
+ * @dev Proxy contract for cross-chain functionality that allows for implementation upgrades
+ * This contract inherits from:
+ * - CrossStorage: For storing cross-chain related data
+ * - ReentrancyGuard: To prevent reentrancy attacks
+ * - Halt: To provide emergency stop functionality
+ * - Proxy: To enable implementation upgrades
+ */
 contract CrossProxy is CrossStorage, ReentrancyGuard, Halt, Proxy {
 
-    ///@dev                   update the address of CrossDelegate contract
-    ///@param impl            the address of the new CrossDelegate contract
+    /**
+     * @dev Updates the implementation address of the CrossDelegate contract
+     * @param impl The address of the new CrossDelegate contract implementation
+     * Requirements:
+     * - Caller must be the owner
+     * - New implementation address cannot be zero
+     * - New implementation address must be different from current implementation
+     * Emits:
+     * - Upgraded event with the new implementation address
+     */
     function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");
