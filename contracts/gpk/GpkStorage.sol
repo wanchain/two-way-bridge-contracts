@@ -31,13 +31,20 @@ pragma solidity ^0.8.18;
 import "../components/BasicStorage.sol";
 import "./lib/GpkTypes.sol";
 
+/**
+ * @title GpkStorage
+ * @dev Storage contract for Group Public Key (GPK) functionality
+ * This contract serves as the storage layer for the GPK system, inheriting from BasicStorage
+ * and providing storage for group-related data and configuration
+ */
 contract GpkStorage is BasicStorage {
-    /// smg instance address
+    /// @notice Address of the Storeman Group (SMG) instance
     address public smg;
 
-    /// gpk config
+    /// @notice Address of the GPK configuration contract
     address public cfg;
 
-    /// groupId -> Group
+    /// @notice Mapping from group ID to Group structure
+    /// @dev Stores all group-related information indexed by their unique identifiers
     mapping(bytes32 => GpkTypes.Group) public groupMap;
 }

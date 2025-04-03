@@ -30,6 +30,15 @@ pragma solidity ^0.8.18;
 
 import "./CrossStorageV3.sol";
 
+/**
+ * @title CrossStorageV4
+ * @dev Enhanced version of CrossStorageV3 that adds batch processing, gas limits, and role-based access control
+ * This contract inherits from CrossStorageV3 and provides:
+ * - Maximum batch size configuration
+ * - Gas limit settings for ether transfers
+ * - Hash function type selection
+ * - Role-based access control for admin and operator roles
+ */
 contract CrossStorageV4 is CrossStorageV3 {
 
     /************************************************************
@@ -37,9 +46,34 @@ contract CrossStorageV4 is CrossStorageV3 {
      ** VARIABLES
      **
      ************************************************************/
+    /**
+     * @notice Maximum number of transactions that can be processed in a single batch
+     * @dev Used to limit the size of batch operations for gas optimization
+     */
     uint internal maxBatchSize;
+
+    /**
+     * @notice Gas limit for ether transfer operations
+     * @dev Used to estimate gas costs for cross-chain ether transfers
+     */
     uint internal etherTransferGasLimit;
+
+    /**
+     * @notice Type of hash function to be used
+     * @dev 0: sha256, 1: keccak256
+     * Used for generating transaction hashes in cross-chain operations
+     */
     uint public hashType; // 0: sha256, 1: keccak256
+
+    /**
+     * @notice Mapping of addresses to admin role status
+     * @dev Used for role-based access control of administrative functions
+     */
     mapping(address => bool) public isAdmin;
+
+    /**
+     * @notice Mapping of addresses to operator role status
+     * @dev Used for role-based access control of operational functions
+     */
     mapping(address => bool) public isOperator;
 }

@@ -30,6 +30,13 @@ pragma solidity ^0.8.18;
 
 import "./CrossStorageV2.sol";
 
+/**
+ * @title CrossStorageV3
+ * @dev Enhanced version of CrossStorageV2 that adds token pair fee management functionality
+ * This contract inherits from CrossStorageV2 and provides:
+ * - Mapping for token pair contract fees
+ * - Structure for setting token pair fees
+ */
 contract CrossStorageV3 is CrossStorageV2 {
 
     /************************************************************
@@ -39,9 +46,20 @@ contract CrossStorageV3 is CrossStorageV2 {
      ************************************************************/
 
     /** STATE VARIABLES **/
-    // tokenPairID => fee
+    /**
+     * @notice Mapping from token pair ID to contract fee
+     * @dev Used to store and retrieve fees for specific token pairs
+     * @param tokenPairID Unique identifier for a token pair
+     * @return contractFee The fee charged by the contract for this token pair
+     */
     mapping(uint256 => uint256) mapTokenPairContractFee;
 
+    /**
+     * @notice Parameters for setting token pair fees
+     * @dev Used when configuring fees for specific token pairs
+     * @param tokenPairID Unique identifier for a token pair
+     * @param contractFee The fee to be charged by the contract for this token pair
+     */
     struct SetTokenPairFeesParam {
         uint256 tokenPairID;
         uint256 contractFee;

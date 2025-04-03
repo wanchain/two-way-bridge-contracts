@@ -33,6 +33,15 @@ import "../interfaces/IWrappedNFT1155.sol";
 import "./TokenManagerDelegate.sol";
 import "../components/Proxy.sol";
 
+/**
+ * @title TokenManagerDelegateV2
+ * @dev Enhanced version of TokenManagerDelegate with NFT support
+ * This contract provides:
+ * - NFT token pair type management
+ * - NFT minting and burning functionality
+ * - Operator role management
+ * - Support for ERC721 and ERC1155 tokens
+ */
 contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
 
     /************************************************************
@@ -40,10 +49,17 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
      ** STATE VARIABLES
      **
      ************************************************************/
+    /// @notice Address of the operator who can set token pair types
     address public operator;
 
-    /// tokenPairID => type; type: 0 is ERC20, 1 is ERC721, ...
+    /// @notice Enumeration of supported token types for cross-chain operations
+    /// @dev Defines the types of tokens that can be transferred across chains
+    /// - ERC20: Standard fungible tokens
+    /// - ERC721: Non-fungible tokens
+    /// - ERC1155: Multi-token standard
     enum TokenCrossType {ERC20, ERC721, ERC1155}
+    
+    /// @notice Mapping from token pair ID to token type
     mapping(uint => uint8) public mapTokenPairType;
 
 
@@ -52,15 +68,20 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
      ** EVENTS
      **
      ************************************************************/
+     /// @notice Emitted when the operator address is changed
+     /// @param oldOperator Previous operator address
+     /// @param newOperator New operator address
      event SetOperator(address indexed oldOperator, address indexed newOperator);
+     
+     /// @notice Emitted when a token pair type is set
+     /// @param tokenPairId ID of the token pair
+     /// @param tokenPairType Type of the token pair
      event SetTokenPairType(uint indexed tokenPairId, uint indexed tokenPairType);
 
     /**
-     *
-     * MODIFIERS
-     *
+     * @notice Modifier to restrict function access to operator only
+     * @dev Throws if called by any account other than the operator
      */
-
     modifier onlyOperator() {
         require(msg.sender == operator, "not operator");
         _;
@@ -71,6 +92,17 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
      ** MANIPULATIONS
      **
      ************************************************************/
+    /**
+     * @notice Sets token pair types for multiple token pairs
+     * @dev Can only be called by the operator
+     * @param tokenPairIds Array of token pair IDs
+     * @param tokenPairTypes Array of token pair types
+     * Requirements:
+     * - Arrays must have the same length
+     * - Caller must be the operator
+     * Emits:
+     * - SetTokenPairType event for each token pair
+     */
     function setTokenPairTypes(uint[] calldata tokenPairIds, uint8[] calldata tokenPairTypes)
         external
         onlyOperator
@@ -82,6 +114,13 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
        }
     }
 
+    /**
+     * @notice Sets the operator address
+     * @dev Can only be called by the contract owner
+     * @param account New operator address
+     * Emits:
+     * - SetOperator event with old and new operator addresses
+     */
     function setOperator(address account)
         external
         onlyOwner
@@ -95,6 +134,19 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
     // ERC1155
     //*****************************************************************************
     //*****************************************************************************
+    /**
+     * @notice Mints NFTs of specified type
+     * @dev Can only be called by admin
+     * @param tokenCrossType Type of NFT (ERC721 or ERC1155)
+     * @param tokenAddress Address of the NFT contract
+     * @param to Address to receive the NFTs
+     * @param tokenId ID of the NFT to mint
+     * @param amount Amount of NFTs to mint (for ERC1155)
+     * @param data Additional data for the NFT
+     * Requirements:
+     * - Caller must be admin
+     * - Token type must be valid
+     */
     function mintNFT(
         uint    tokenCrossType,
         address tokenAddress,
@@ -117,6 +169,18 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
         }
     }
 
+    /**
+     * @notice Burns NFTs of specified type
+     * @dev Can only be called by admin
+     * @param tokenCrossType Type of NFT (ERC721 or ERC1155)
+     * @param tokenAddress Address of the NFT contract
+     * @param from Address to burn NFTs from
+     * @param tokenId ID of the NFT to burn
+     * @param amount Amount of NFTs to burn (for ERC1155)
+     * Requirements:
+     * - Caller must be admin
+     * - Token type must be valid
+     */
     function burnNFT(
         uint    tokenCrossType,
         address tokenAddress,

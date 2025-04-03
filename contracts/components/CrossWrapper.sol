@@ -35,6 +35,14 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
+/**
+ * @dev Interface for cross-chain operations
+ * 
+ * @custom:usage
+ * - Defines core cross-chain functionality
+ * - Handles token transfers and burns
+ * - Manages NFT operations
+ */
 interface ICross {
     function currentChainID() external view returns (uint);
     function getPartners() external view returns(address tokenManager, address smgAdminProxy, address smgFeeProxy, address quota, address sigVerifier);
@@ -44,34 +52,108 @@ interface ICross {
     function userBurnNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, address tokenAccount, bytes memory userAccount) external payable;
 }
 
+/**
+ * @dev Interface for token pair management
+ * 
+ * @custom:usage
+ * - Manages token pair information
+ * - Handles token pair type mapping
+ */
 interface ITokenManager {
     function getTokenPairInfo(uint id) external view returns (uint fromChainID, bytes memory fromAccount, uint toChainID, bytes memory toAccount);
     function mapTokenPairType(uint id) external view returns (uint8);
 }
 
+/**
+ * @dev Interface for XDC token receiver operations
+ * 
+ * @custom:usage
+ * - Handles XDC token reception
+ * - Supports ERC721 and ERC1155 tokens
+ */
 interface IXDCReceiver {
     function onXRC721Received(address, address, uint256, bytes calldata) external returns (bytes4);
     function onXRC1155Received(address, address, uint256, uint256, bytes calldata) external returns (bytes4);
     function onXRC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) external returns (bytes4);
 }
 
+/**
+ * @title CrossWrapper
+ * @dev Contract for wrapping cross-chain operations with token support
+ * This contract provides functionality for handling cross-chain token transfers
+ * and NFT operations with proper token approvals and safety checks
+ * 
+ * Key features:
+ * - Cross-chain token transfers
+ * - NFT cross-chain operations
+ * - Token approval management
+ * - Safe token transfers
+ * 
+ * @custom:security
+ * - SafeERC20 for token transfers
+ * - ERC721Holder for NFT support
+ * - ERC1155Holder for batch NFT support
+ */
 contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
     using SafeERC20 for IERC20;
 
+    // Cross-chain contract instance
     ICross public cross;
+    
+    // Token manager contract address
     address public tokenManager;
+    
+    // Current chain identifier
     uint public currentChainID;
 
+    /**
+     * @dev Enum for different token types supported in cross-chain operations
+     * 
+     * @custom:usage
+     * - ERC20: Standard token type
+     * - ERC721: Non-fungible token type
+     * - ERC1155: Multi-token type
+     */
     enum TokenCrossType {ERC20, ERC721, ERC1155}
 
+    /**
+     * @dev Event emitted when partner cross-chain operation is performed
+     * 
+     * @param partner Partner identifier
+     * @param _partner Partner identifier (duplicate for compatibility)
+     */
     event PartnerCross(string indexed partner, string _partner);
 
+    /**
+     * @dev Constructor initializes the contract with cross-chain address
+     * 
+     * @param _cross Address of the cross-chain contract
+     * 
+     * @custom:effects
+     * - Sets up cross-chain contract
+     * - Initializes token manager
+     * - Sets current chain ID
+     */
     constructor(address _cross) {
         cross = ICross(_cross);
         (tokenManager, , , , ) = cross.getPartners();
         currentChainID = cross.currentChainID();
     }
 
+    /**
+     * @dev Locks tokens for cross-chain transfer
+     * 
+     * @param smgID Storeman group identifier
+     * @param tokenPairID Token pair identifier
+     * @param value Amount of tokens to lock
+     * @param userAccount User account information
+     * @param partner Partner identifier
+     * 
+     * @custom:effects
+     * - Transfers tokens from user
+     * - Approves cross-chain contract
+     * - Initiates cross-chain lock
+     */
     function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount, string memory partner) external payable {
         address tokenAddress = _getTokenAddressFromPairID(tokenPairID);
         if (tokenAddress != address(0)) {
@@ -82,6 +164,21 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
         emit PartnerCross(partner, partner);
     }
 
+    /**
+     * @dev Burns tokens for cross-chain transfer
+     * 
+     * @param smgID Storeman group identifier
+     * @param tokenPairID Token pair identifier
+     * @param value Amount of tokens to burn
+     * @param fee Cross-chain fee
+     * @param tokenAccount Token account address
+     * @param userAccount User account information
+     * @param partner Partner identifier
+     * 
+     * @custom:effects
+     * - Transfers tokens from user
+     * - Initiates cross-chain burn
+     */
     function userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes calldata userAccount, string memory partner) external payable {
         address tokenAddress = _getTokenAddressFromPairID(tokenPairID);
         IERC20(tokenAddress).safeTransferFrom(msg.sender, address(this), value);
@@ -89,6 +186,21 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
         emit PartnerCross(partner, partner);
     }
 
+    /**
+     * @dev Locks NFTs for cross-chain transfer
+     * 
+     * @param smgID Storeman group identifier
+     * @param tokenPairID Token pair identifier
+     * @param tokenIDs Array of NFT token IDs
+     * @param tokenValues Array of NFT token values
+     * @param userAccount User account information
+     * @param partner Partner identifier
+     * 
+     * @custom:effects
+     * - Transfers NFTs from user
+     * - Approves cross-chain contract
+     * - Initiates cross-chain NFT lock
+     */
     function userLockNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, bytes memory userAccount, string memory partner) external payable {
         uint8 tokenCrossType = ITokenManager(tokenManager).mapTokenPairType(tokenPairID);
         address tokenScAddr = _getTokenAddressFromPairID(tokenPairID);
@@ -107,6 +219,21 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
         emit PartnerCross(partner, partner);
     }
 
+    /**
+     * @dev Burns NFTs for cross-chain transfer
+     * 
+     * @param smgID Storeman group identifier
+     * @param tokenPairID Token pair identifier
+     * @param tokenIDs Array of NFT token IDs
+     * @param tokenValues Array of NFT token values
+     * @param tokenAccount Token account address
+     * @param userAccount User account information
+     * @param partner Partner identifier
+     * 
+     * @custom:effects
+     * - Transfers NFTs from user
+     * - Initiates cross-chain NFT burn
+     */
     function userBurnNFT(bytes32 smgID, uint tokenPairID, uint[] memory tokenIDs, uint[] memory tokenValues, address tokenAccount, bytes memory userAccount, string memory partner) external payable {
         uint8 tokenCrossType = ITokenManager(tokenManager).mapTokenPairType(tokenPairID);
         address tokenScAddr = _getTokenAddressFromPairID(tokenPairID);
@@ -123,6 +250,12 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
         emit PartnerCross(partner, partner);
     }
 
+    /**
+     * @dev Checks if contract supports specific interface
+     * 
+     * @param interfaceId Interface identifier to check
+     * @return True if interface is supported
+     */
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Receiver) returns (bool) {
         return
             interfaceId == type(IERC721Receiver).interfaceId || 
@@ -132,6 +265,11 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
             super.supportsInterface(interfaceId);
     }
 
+    /**
+     * @dev Handles ERC721 token reception
+     * 
+     * @return Function selector
+     */
     function onXRC721Received(address, address, uint256, bytes calldata)
         external
         pure
@@ -140,6 +278,11 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
         return this.onXRC721Received.selector;
     }
 
+    /**
+     * @dev Handles ERC1155 token reception
+     * 
+     * @return Function selector
+     */
     function onXRC1155Received(address, address, uint256, uint256, bytes calldata)
         external
         pure
@@ -148,6 +291,11 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
         return this.onXRC1155Received.selector;
     }
 
+    /**
+     * @dev Handles batch ERC1155 token reception
+     * 
+     * @return Function selector
+     */
     function onXRC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
         external
         pure
@@ -156,6 +304,15 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
         return this.onXRC1155BatchReceived.selector;
     }
 
+    /**
+     * @dev Gets token address from token pair ID
+     * 
+     * @param tokenPairID Token pair identifier
+     * @return Token contract address
+     * 
+     * @custom:reverts
+     * - If token pair ID is invalid
+     */
     function _getTokenAddressFromPairID(uint tokenPairID) internal view returns (address) {
         (uint fromChainID, bytes memory fromAccount, uint toChainID, bytes memory toAccount) = ITokenManager(tokenManager).getTokenPairInfo(tokenPairID);
         if (currentChainID == fromChainID) {
@@ -167,6 +324,12 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
         }
     }
 
+    /**
+     * @dev Converts bytes to address
+     * 
+     * @param b Bytes to convert
+     * @return Converted address
+     */
     function _bytesToAddress(bytes memory b) internal pure returns (address addr) {
         assembly {
             addr := mload(add(b,20))

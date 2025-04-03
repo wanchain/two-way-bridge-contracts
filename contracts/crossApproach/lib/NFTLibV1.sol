@@ -36,13 +36,38 @@ import "../../interfaces/ITokenManager.sol";
 import "./EtherTransfer.sol";
 
 
+/**
+ * @title NFTLibV1
+ * @dev Library for managing NFT cross-chain operations
+ * This library provides functionality for:
+ * - NFT locking and unlocking
+ * - NFT minting and burning
+ * - Cross-chain NFT transfer management
+ */
 library NFTLibV1 {
     using SafeMath for uint;
     using RapidityTxLib for RapidityTxLib.Data;
 
+    /**
+     * @notice Enumeration of supported token types for cross-chain operations
+     * @dev Defines the types of tokens that can be transferred across chains
+     */
     enum TokenCrossType {ERC20, ERC721, ERC1155}
 
-    /// @notice struct of Rapidity storeman mint lock parameters
+
+    /**
+     * @notice Parameters for user-initiated NFT locking operations
+     * @dev Used when users want to lock their NFTs for cross-chain transfer
+     * @param smgID ID of the selected storeman group
+     * @param tokenPairID ID of the token pair for cross-chain transfer
+     * @param tokenIDs Array of NFT token IDs to be locked
+     * @param tokenValues Array of NFT token values (for ERC1155)
+     * @param currentChainID ID of the current blockchain
+     * @param tokenPairContractFee Fee for the token pair contract
+     * @param etherTransferGasLimit Gas limit for ether transfers
+     * @param destUserAccount Destination user account address
+     * @param smgFeeProxy Address of the proxy for storing storeman group fees
+     */
     struct RapidityUserLockNFTParams {
         bytes32                 smgID;                  /// ID of storeman group which user has selected
         uint                    tokenPairID;            /// token pair id on cross chain
@@ -55,7 +80,18 @@ library NFTLibV1 {
         address                 smgFeeProxy;            /// address of the proxy to store fee for storeman group
     }
 
-    /// @notice struct of Rapidity storeman mint lock parameters
+    /**
+     * @notice Parameters for storeman-initiated NFT minting operations
+     * @dev Used when storeman group mints NFTs on the destination chain
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param tokenIDs Array of NFT token IDs to be minted
+     * @param tokenValues Array of NFT token values (for ERC1155)
+     * @param extData Additional data for storeman operations
+     * @param destTokenAccount Destination token contract address
+     * @param destUserAccount Destination user account address
+     */
     struct RapiditySmgMintNFTParams {
         bytes32                 uniqueID;               /// Rapidity random number
         bytes32                 smgID;                  /// ID of storeman group which user has selected
@@ -67,7 +103,20 @@ library NFTLibV1 {
         address                 destUserAccount;        /// account of shadow chain, used to receive token
     }
 
-    /// @notice struct of Rapidity user burn lock parameters
+    /**
+     * @notice Parameters for user-initiated NFT burning operations
+     * @dev Used when users want to burn their NFTs for cross-chain transfer
+     * @param smgID ID of the selected storeman group
+     * @param tokenPairID ID of the token pair
+     * @param tokenIDs Array of NFT token IDs to be burned
+     * @param tokenValues Array of NFT token values (for ERC1155)
+     * @param currentChainID ID of the current blockchain
+     * @param tokenPairContractFee Fee for the token pair contract
+     * @param etherTransferGasLimit Gas limit for ether transfers
+     * @param srcTokenAccount Source token contract address
+     * @param destUserAccount Destination user account address
+     * @param smgFeeProxy Address of the proxy for storing storeman group fees
+     */
     struct RapidityUserBurnNFTParams {
         bytes32                 smgID;                  /// ID of storeman group which user has selected
         uint                    tokenPairID;            /// token pair id on cross chain
@@ -81,7 +130,17 @@ library NFTLibV1 {
         address                 smgFeeProxy;            /// address of the proxy to store fee for storeman group
     }
 
-    /// @notice struct of Rapidity user burn lock parameters
+    /**
+     * @notice Parameters for storeman-initiated NFT release operations
+     * @dev Used when storeman group releases NFTs on the original chain
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param tokenIDs Array of NFT token IDs to be released
+     * @param tokenValues Array of NFT token values (for ERC1155)
+     * @param destTokenAccount Destination token contract address
+     * @param destUserAccount Destination user account address
+     */
     struct RapiditySmgReleaseNFTParams {
         bytes32                 uniqueID;               /// Rapidity random number
         bytes32                 smgID;                  /// ID of storeman group which user has selected
@@ -92,14 +151,60 @@ library NFTLibV1 {
         address                 destUserAccount;        /// account of token original chain, used to receive token
     }
 
+    /**
+     * @notice Event emitted when NFTs are locked by a user
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param tokenAccount Address of the token contract
+     * @param keys Array of event keys
+     * @param values Array of event values
+     */
     event UserLockNFT(bytes32 indexed smgID, uint indexed tokenPairID, address indexed tokenAccount, string[] keys, bytes[] values);
 
+    /**
+     * @notice Event emitted when NFTs are burned by a user
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param tokenAccount Address of the token contract
+     * @param keys Array of event keys
+     * @param values Array of event values
+     */
     event UserBurnNFT(bytes32 indexed smgID, uint indexed tokenPairID, address indexed tokenAccount, string[] keys, bytes[] values);
 
+    /**
+     * @notice Event emitted when NFTs are minted by storeman group
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param keys Array of event keys
+     * @param values Array of event values
+     */
     event SmgMintNFT(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
 
+    /**
+     * @notice Event emitted when NFTs are released by storeman group
+     * @param uniqueID Unique identifier for the rapidity transaction
+     * @param smgID ID of the storeman group
+     * @param tokenPairID ID of the token pair
+     * @param keys Array of event keys
+     * @param values Array of event values
+     */
     event SmgReleaseNFT(bytes32 indexed uniqueID, bytes32 indexed smgID, uint indexed tokenPairID, string[] keys, bytes[] values);
 
+    /**
+     * @notice Gets the token contract address and contract fee for a token pair
+     * @dev Calculates the appropriate contract fee based on chain IDs and batch size
+     * @param storageData Cross storage data
+     * @param tokenPairID ID of the token pair
+     * @param tokenPairContractFee Fee for the token pair contract
+     * @param currentChainID ID of the current blockchain
+     * @param batchLength Length of the batch operation
+     * @return tokenScAddr Address of the token contract
+     * @return contractFee Calculated contract fee
+     * Requirements:
+     * - Token pair must exist
+     * - Current chain ID must be valid
+     */
     function getTokenScAddrAndContractFee(CrossTypes.Data storage storageData, uint tokenPairID, uint tokenPairContractFee, uint currentChainID, uint batchLength)
         public
         view
@@ -140,10 +245,16 @@ library NFTLibV1 {
         return (tokenScAddr, contractFee);
     }
 
-    /// @notice                         mintBridge, user lock token on token original chain
-    /// @notice                         event invoked by user mint lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for user mint lock token on token original chain
+    /**
+     * @notice Locks NFTs for cross-chain transfer
+     * @dev Handles the locking of ERC721 and ERC1155 tokens
+     * @param storageData Cross storage data
+     * @param params Parameters for the NFT locking operation
+     * Requirements:
+     * - NFT type must be valid (ERC721 or ERC1155)
+     * - User must have sufficient balance
+     * - Contract must have approval to transfer tokens
+     */
     function userLockNFT(CrossTypes.Data storage storageData, RapidityUserLockNFTParams memory params)
         public
     {
@@ -191,10 +302,16 @@ library NFTLibV1 {
         emit UserLockNFT(params.smgID, params.tokenPairID, tokenScAddr, keys, values);
     }
 
-    /// @notice                         burnBridge, user lock token on token original chain
-    /// @notice                         event invoked by user burn lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for user burn lock token on token original chain
+    /**
+     * @notice Burns NFTs for cross-chain transfer
+     * @dev Handles the burning of ERC721 and ERC1155 tokens
+     * @param storageData Cross storage data
+     * @param params Parameters for the NFT burning operation
+     * Requirements:
+     * - NFT type must be valid (ERC721 or ERC1155)
+     * - User must have sufficient balance
+     * - Contract must have approval to burn tokens
+     */
     function userBurnNFT(CrossTypes.Data storage storageData, RapidityUserBurnNFTParams memory params)
         public
     {
@@ -233,10 +350,15 @@ library NFTLibV1 {
         emit UserBurnNFT(params.smgID, params.tokenPairID, tokenScAddr, keys, values);
     }
 
-    /// @notice                         mintBridge, storeman mint lock token on token shadow chain
-    /// @notice                         event invoked by user mint lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman mint lock token on token shadow chain
+    /**
+     * @notice Mints NFTs on the destination chain
+     * @dev Handles the minting of ERC721 and ERC1155 tokens
+     * @param storageData Cross storage data
+     * @param params Parameters for the NFT minting operation
+     * Requirements:
+     * - NFT type must be valid (ERC721 or ERC1155)
+     * - Storeman group must have permission to mint
+     */
     function smgMintNFT(CrossTypes.Data storage storageData, RapiditySmgMintNFTParams memory params)
         public
     {
@@ -268,10 +390,15 @@ library NFTLibV1 {
         emit SmgMintNFT(params.uniqueID, params.smgID, params.tokenPairID, keys, values);
     }
 
-    /// @notice                         burnBridge, storeman burn lock token on token shadow chain
-    /// @notice                         event invoked by user burn lock
-    /// @param storageData              Cross storage data
-    /// @param params                   parameters for storeman burn lock token on token shadow chain
+    /**
+     * @notice Releases NFTs on the original chain
+     * @dev Handles the release of ERC721 and ERC1155 tokens
+     * @param storageData Cross storage data
+     * @param params Parameters for the NFT release operation
+     * Requirements:
+     * - NFT type must be valid (ERC721 or ERC1155)
+     * - Storeman group must have permission to release
+     */
     function smgReleaseNFT(CrossTypes.Data storage storageData, RapiditySmgReleaseNFTParams memory params)
         public
     {

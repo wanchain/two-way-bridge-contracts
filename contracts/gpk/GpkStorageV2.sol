@@ -34,11 +34,22 @@ import "./GpkStorage.sol";
 import "../components/Admin.sol";
 import "../components/Proxy.sol";
 
-
+/**
+ * @title GpkStorageV2
+ * @dev Extended storage contract for Group Public Key (GPK) functionality
+ * This contract extends GpkStorage with additional storage for multiple GPK configurations
+ * per group, including curve and algorithm information
+ */
 contract GpkStorageV2 is GpkStorage, Admin, Proxy {
-    //groupId=>gpkCount
+    /// @notice Mapping from group ID to the number of GPK configurations
+    /// @dev Tracks how many different GPK configurations exist for each group
     mapping(bytes32=>uint) public gpkCount;
-    // groupId=>gpkIndex=>curves
+
+    /// @notice Mapping from group ID and GPK index to curve identifier
+    /// @dev Stores the curve type for each GPK configuration
     mapping(bytes32=>mapping(uint=>uint)) public curve;
+
+    /// @notice Mapping from group ID and GPK index to algorithm identifier
+    /// @dev Stores the algorithm type for each GPK configuration
     mapping(bytes32=>mapping(uint=>uint)) public algo;
 }

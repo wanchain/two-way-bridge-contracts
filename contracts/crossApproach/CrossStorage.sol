@@ -33,6 +33,14 @@ import "./lib/CrossTypes.sol";
 import "./lib/HTLCTxLib.sol";
 import "./lib/RapidityTxLib.sol";
 
+/**
+ * @title CrossStorage
+ * @dev Storage contract for cross-chain functionality that manages cross-chain related data
+ * This contract inherits from BasicStorage and provides storage for:
+ * - HTLC (Hash Time-Locked Contract) transactions
+ * - Rapidity transactions
+ * - Cross-chain types and data
+ */
 contract CrossStorage is BasicStorage {
     using HTLCTxLib for HTLCTxLib.Data;
     using RapidityTxLib for RapidityTxLib.Data;
@@ -43,16 +51,38 @@ contract CrossStorage is BasicStorage {
      **
      ************************************************************/
 
+    /**
+     * @dev Internal storage for cross-chain related data
+     */
     CrossTypes.Data internal storageData;
 
-    /// @notice locked time(in seconds)
+    /**
+     * @notice Time period for which assets are locked in HTLC transactions
+     * @dev Default value is 36 hours (3600*36 seconds)
+     */
     uint public lockedTime = uint(3600*36);
 
-    /// @notice Since storeman group admin receiver address may be changed, system should make sure the new address
-    /// @notice can be used, and the old address can not be used. The solution is add timestamp.
-    /// @notice unit: second
+    /**
+     * @notice Timeout period for storeman group fee receiver address changes
+     * @dev Since storeman group admin receiver address may be changed, system ensures:
+     * - New address becomes valid after this timeout
+     * - Old address becomes invalid after this timeout
+     * Default value is 10 minutes (10*60 seconds)
+     */
     uint public smgFeeReceiverTimeout = uint(10*60);
 
+    /**
+     * @notice Enumeration of possible states for a storeman group
+     * @dev States:
+     * - none: Initial state
+     * - initial: Group has been initialized
+     * - curveSeted: Curve parameters have been set
+     * - failed: Group setup has failed
+     * - selected: Group has been selected
+     * - ready: Group is ready for operations
+     * - unregistered: Group has been unregistered
+     * - dismissed: Group has been dismissed
+     */
     enum GroupStatus { none, initial, curveSeted, failed, selected, ready, unregistered, dismissed }
 
 }

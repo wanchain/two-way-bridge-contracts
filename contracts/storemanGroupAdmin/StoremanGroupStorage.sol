@@ -34,22 +34,56 @@ import "./Deposit.sol";
 import "./StoremanType.sol";
 import "../interfaces/IQuota.sol";
 
-
+/**
+ * @title StoremanGroupStorage
+ * @dev Contract for managing storage of storeman group data and configurations
+ * This contract inherits from BasicStorage and provides storage functionality
+ * for storeman group management
+ * 
+ * Key features:
+ * - Storeman data storage
+ * - Configuration management
+ * - Metric and quota integration
+ * - Default parameter initialization
+ * 
+ * @custom:security
+ * - Inherits BasicStorage security features
+ * - Access control through BasicStorage
+ * - Safe storage operations
+ */
 contract StoremanGroupStorage is BasicStorage {
+  // Address of the metric contract for performance tracking
   address public metric;
-  IQuota public quotaInst;
-  address  public  createGpkAddr;
 
+  // Instance of the quota contract for managing quotas
+  IQuota public quotaInst;
+
+  // Address for creating group public key
+  address public createGpkAddr;
+
+  // Main storage structure for storeman data
   StoremanType.StoremanData data;
 
+  /**
+   * @dev Constructor initializes default configuration values
+   * 
+   * @custom:effects
+   * - Sets default backup count to 3
+   * - Sets default max slashed count to 2
+   * - Sets default standalone weight to 15000
+   * - Sets default chain type coefficient to 10000
+   * - Sets default delegation multiplier to 5
+   * 
+   * @custom:initialization
+   * - Initializes all configuration parameters
+   * - Sets up default values for storeman group management
+   */
   constructor() {
-
     uint backupCountDefault = 3;
     uint maxSlashedCount = 2;
     uint standaloneWeightDefault = 15000;
     uint chainTypeCoDefault = 10000;
     uint DelegationMultiDefault = 5;
-
 
     data.conf.standaloneWeight = standaloneWeightDefault;
     data.conf.backupCount = backupCountDefault;

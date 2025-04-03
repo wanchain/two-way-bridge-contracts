@@ -3,24 +3,49 @@
 pragma solidity ^0.8.18;
 
 /**
- * @dev Contract module that helps prevent reentrant calls to a function.
+ * @title ReentrancyGuard
+ * @dev Abstract contract module that helps prevent reentrant calls to a function
  *
- * Inheriting from `ReentrancyGuard` will make the {nonReentrant} modifier
- * available, which can be applied to functions to make sure there are no nested
- * (reentrant) calls to them.
+ * Key features:
+ * - Prevents reentrant function calls
+ * - Gas optimization for refunds
+ * - Support for nested function protection
  *
- * Note that because there is a single `nonReentrant` guard, functions marked as
- * `nonReentrant` may not call one another. This can be worked around by making
- * those functions `private`, and then adding `external` `nonReentrant` entry
- * points to them.
- *
- * TIP: If you would like to learn more about reentrancy and alternative ways
- * to protect against it, check out our blog post
- * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].
+ * @custom:security
+ * - Prevents reentrancy attacks
+ * - Optimizes gas refunds
+ * - Supports private function calls
+ * 
+ * @custom:usage
+ * - Inherit this contract to use nonReentrant modifier
+ * - Apply nonReentrant modifier to functions that need protection
+ * - Use private functions for nested calls
  */
 abstract contract ReentrancyGuard {
+    /**
+     * @dev Private state variable to track reentrancy status
+     * 
+     * @custom:usage
+     * - true: Function can be entered
+     * - false: Function is currently executing
+     * 
+     * @custom:security
+     * - Prevents reentrant calls
+     * - Optimizes gas refunds
+     */
     bool private _notEntered;
 
+    /**
+     * @dev Constructor initializes the reentrancy guard
+     * 
+     * @custom:effects
+     * - Sets initial state to true
+     * - Optimizes gas refunds
+     * 
+     * @custom:security
+     * - Ensures proper initialization
+     * - Prevents initial reentrancy
+     */
     constructor () {
         // Storing an initial non-zero value makes deployment a bit more
         // expensive, but in exchange the refund on every call to nonReentrant
@@ -32,11 +57,21 @@ abstract contract ReentrancyGuard {
     }
 
     /**
-     * @dev Prevents a contract from calling itself, directly or indirectly.
-     * Calling a `nonReentrant` function from another `nonReentrant`
-     * function is not supported. It is possible to prevent this from happening
-     * by making the `nonReentrant` function external, and make it call a
-     * `private` function that does the actual work.
+     * @dev Modifier to prevent reentrant calls to a function
+     * 
+     * @custom:requirements
+     * - Function must not be currently executing
+     * 
+     * @custom:effects
+     * - Sets _notEntered to false during execution
+     * - Restores _notEntered to true after execution
+     * 
+     * @custom:reverts
+     * - If function is already executing
+     * 
+     * @custom:usage
+     * - Apply to functions that need reentrancy protection
+     * - Use with private functions for nested calls
      */
     modifier nonReentrant() {
         // On the first call to nonReentrant, _notEntered will be true

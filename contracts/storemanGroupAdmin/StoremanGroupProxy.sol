@@ -34,6 +34,35 @@ import "./StoremanGroupStorage.sol";
 import "../components/Proxy.sol";
 import "../components/ReentrancyGuard.sol";
 
+/**
+ * @title StoremanGroupProxy
+ * @dev Proxy contract for storeman group administration
+ * This contract implements the proxy pattern for the storeman group administration system,
+ * allowing for upgradeable functionality while maintaining storage and address
+ * 
+ * Key features:
+ * - Upgradeable implementation through proxy pattern
+ * - Storage layout preservation
+ * - Access control through Admin contract
+ * - Emergency stop capability through Halt contract
+ * 
+ * @custom:inheritance
+ * - StoremanGroupAdminStorage: Provides storage layout
+ * - Halt: Provides emergency stop functionality
+ * - Admin: Provides administrative access control
+ * - Proxy: Implements upgradeable proxy pattern
+ * 
+ * @custom:security
+ * - Access control through Admin contract
+ * - Emergency stop capability through Halt contract
+ * - Upgradeable through Proxy pattern
+ * - Storage layout preservation
+ * 
+ * @custom:upgradeability
+ * - Implementation can be upgraded without changing storage
+ * - Storage layout is preserved across upgrades
+ * - Upgrade process is controlled by admin
+ */
 contract StoremanGroupProxy is StoremanGroupStorage, Halt, Admin, ReentrancyGuard,Proxy {
     /**
     *
@@ -41,8 +70,35 @@ contract StoremanGroupProxy is StoremanGroupStorage, Halt, Admin, ReentrancyGuar
     *
     */
 
-    /// @notice                           function for setting or upgrading StoremanGroupDelegate address by owner
-    /// @param impl                       StoremanGroupDelegate contract address
+    /**
+     * @dev Updates the implementation address of the StoremanGroupAdminDelegate contract
+     * This function allows the admin to upgrade the implementation contract while
+     * preserving the storage layout and contract address
+     * 
+     * @param implementation The new implementation address
+     * 
+     * @custom:requirements
+     * - Caller must be the contract owner
+     * - Implementation address must not be zero
+     * - Implementation address must not be the current implementation
+     * 
+     * @custom:effects
+     * - Updates the implementation address
+     * - Emits Upgraded event
+     * 
+     * @custom:modifiers
+     * - onlyOwner: Only contract owner can upgrade
+     * 
+     * @custom:reverts
+     * - If implementation address is zero
+     * - If implementation address is already set
+     * 
+     * @custom:examples
+     * ```solidity
+     * // Upgrade to new implementation
+     * upgradeTo(newImplementation);
+     * ```
+     */
     function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");

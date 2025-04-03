@@ -4,11 +4,31 @@ pragma solidity ^0.8.18;
 
 import "./Deposit.sol";
 
+/**
+ * @title StoremanType
+ * @dev Library containing type definitions and data structures for Storeman Group management
+ */
 library StoremanType {
     using Deposit for Deposit.Records;
-    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}  //ready: gpk finished.
 
+    /**
+     * @notice Enumeration of possible group statuses
+     * @dev Defines the various states a Storeman group can be in
+     * - none: Initial state
+     * - initial: Group initialization
+     * - curveSeted: Curve parameters set
+     * - failed: Group operation failed
+     * - selected: Members selected
+     * - ready: Group ready for operation (GPK finished)
+     * - unregistered: Group unregistered
+     * - dismissed: Group dismissed
+     */
+    enum GroupStatus {none, initial,curveSeted, failed,selected,ready,unregistered, dismissed}
 
+    /**
+     * @notice Structure representing a delegator in the system
+     * @dev Contains information about a delegator's status and deposits
+     */
     struct Delegator {
         bool  quited;
         uint index; // for delete from candidate;
@@ -16,6 +36,10 @@ library StoremanType {
         mapping(uint=>uint) incentive;
     }
 
+    /**
+     * @notice Structure representing a candidate node in the system
+     * @dev Contains comprehensive information about a Storeman node
+     */
     struct Candidate {
         address sender;
         bytes enodeID;
@@ -48,6 +72,11 @@ library StoremanType {
         
     }
 
+
+    /**
+     * @notice Structure representing a Storeman group
+     * @dev Contains all information about a group's configuration and state
+     */
     struct StoremanGroup {
         GroupStatus    status;
         Deposit.Records    deposit;                  //group's deposit, used for calculate group incentive
@@ -82,6 +111,11 @@ library StoremanType {
         mapping(address=>address) whiteWk;   // the white list specified when start group. the from sender of whitelist.
         mapping(uint=>uint) groupIncentive; // by day.
     }
+
+    /**
+     * @notice Structure for global Storeman configuration
+     * @dev Contains system-wide configuration parameters
+     */
     struct StoremanGlobalConf {
         uint standaloneWeight; // defult 15000; need mul 10000
         uint DelegationMulti;  // 10
@@ -89,6 +123,10 @@ library StoremanType {
         uint chainTypeCoDefault; //10000
         uint maxSlashedCount;
     }
+    /**
+     * @notice Structure for global Storeman data
+     * @dev Contains system-wide data and mappings
+     */
     struct StoremanData {
         uint contribution;
         uint totalReward;
@@ -100,6 +138,11 @@ library StoremanType {
         mapping(uint=>mapping(address=>StoremanType.Candidate)) candidates;
         mapping(uint=> mapping(uint => uint)) chainTypeCo;
     }
+
+    /**
+     * @notice Structure for Storeman node information
+     * @dev Contains public information about a Storeman node
+     */
     struct StoremanInfo {
         address sender;
         bytes enodeID;
@@ -121,6 +164,11 @@ library StoremanType {
         uint  deposit;
         uint incentive;
     }
+
+    /**
+     * @notice Structure for Storeman group information
+     * @dev Contains public information about a Storeman group
+     */
     struct StoremanGroupInfo {
         bytes32    groupId;
         GroupStatus    status;
@@ -149,6 +197,11 @@ library StoremanType {
         bytes gpk2;
         uint delegateFee;
     }
+
+    /**
+     * @notice Structure for Storeman group input parameters
+     * @dev Contains parameters required for group creation
+     */
     struct StoremanGroupInput {
         bytes32    groupId;
         bytes32    preGroupId;

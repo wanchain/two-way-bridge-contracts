@@ -1,6 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
+/**
+ * @title IMPC
+ * @dev Interface for Multi-Party Computation (MPC) operations related to storeman groups
+ * 
+ * @custom:key-features
+ * - Storeman group configuration retrieval
+ * - Threshold signature verification
+ * - Cross-chain security validation
+ * 
+ * @custom:security
+ * - Cryptographic signature verification
+ * - Elliptic curve operations
+ * - Group public key management
+ */
 interface IMPC {
     /**
      * @dev Retrieves the configuration of a Storeman Group by ID
@@ -16,6 +30,11 @@ interface IMPC {
      * @return gpk2 The Group Public Key for the second elliptic curve
      * @return startTime The start time of the Storeman Group
      * @return endTime The end time of the Storeman Group
+     * 
+     * @custom:usage
+     * - Used to validate storeman group status
+     * - Provides cryptographic parameters for signature verification
+     * - Ensures group is active within its time window
      */
     function getStoremanGroupConfig(
         bytes32 id
@@ -43,6 +62,12 @@ interface IMPC {
      * @param randomPointY The Y component of the random point
      * @param message The message that was signed
      * @return true if the signature is valid, false otherwise
+     * 
+     * @custom:security
+     * - Performs threshold signature verification
+     * - Uses secure elliptic curve cryptography
+     * - Critical for cross-chain message authentication
+     * - Protects against signature forgery attacks
      */
     function verify(
         uint curveId,

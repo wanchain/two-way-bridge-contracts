@@ -36,6 +36,14 @@ import "../components/Admin.sol";
 import "./TokenManagerStorage.sol";
 import "../components/Proxy.sol";
 
+/**
+ * @title TokenManagerProxy
+ * @dev Proxy contract for token management functionality
+ * This contract provides:
+ * - Upgradeable implementation for token management
+ * - Storage and admin functionality inheritance
+ * - Implementation upgrade mechanism
+ */
 contract TokenManagerProxy is TokenManagerStorage, Admin, Proxy {
     /**
     *
@@ -43,8 +51,16 @@ contract TokenManagerProxy is TokenManagerStorage, Admin, Proxy {
     *
     */
 
-    /// @notice                           function for setting or upgrading TokenManagerDelegate address by owner
-    /// @param impl                       TokenManagerDelegate contract address
+    /**
+     * @notice Upgrades the implementation address of the TokenManagerDelegate contract
+     * @dev Can only be called by the contract owner
+     * @param impl Address of the new TokenManagerDelegate implementation
+     * Requirements:
+     * - Implementation address cannot be zero
+     * - Implementation address cannot be the same as current
+     * Emits:
+     * - Upgraded event with the new implementation address
+     */
     function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");

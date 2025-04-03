@@ -33,6 +33,15 @@ import "../components/Halt.sol";
 import "../components/ReentrancyGuard.sol";
 import "./CrossStorage.sol";
 
+/**
+ * @title CrossStorageV2
+ * @dev Enhanced version of CrossStorage that adds chain ID and fee management functionality
+ * This contract inherits from:
+ * - CrossStorage: Base storage functionality
+ * - ReentrancyGuard: To prevent reentrancy attacks
+ * - Halt: To provide emergency stop functionality
+ * - Proxy: To enable implementation upgrades
+ */
 contract CrossStorageV2 is CrossStorage, ReentrancyGuard, Halt, Proxy {
 
     /************************************************************
@@ -42,10 +51,27 @@ contract CrossStorageV2 is CrossStorage, ReentrancyGuard, Halt, Proxy {
      ************************************************************/
 
     /** STATE VARIABLES **/
+    /**
+     * @notice The chain ID of the current network
+     * @dev Used to identify the source chain in cross-chain operations
+     */
     uint256 public currentChainID;
+
+    /**
+     * @notice The address of the contract administrator
+     * @dev Has special privileges for managing the contract
+     */
     address public admin;
 
     /** STRUCTURES **/
+    /**
+     * @notice Parameters for setting cross-chain fees
+     * @dev Used when configuring fees for specific chain pairs
+     * @param srcChainID Source chain identifier
+     * @param destChainID Destination chain identifier
+     * @param contractFee Fee charged by the contract
+     * @param agentFee Fee charged by the agent
+     */
     struct SetFeesParam {
         uint256 srcChainID;
         uint256 destChainID;
@@ -53,11 +79,23 @@ contract CrossStorageV2 is CrossStorage, ReentrancyGuard, Halt, Proxy {
         uint256 agentFee;
     }
 
+    /**
+     * @notice Parameters for retrieving cross-chain fees
+     * @dev Used when querying fees for specific chain pairs
+     * @param srcChainID Source chain identifier
+     * @param destChainID Destination chain identifier
+     */
     struct GetFeesParam {
         uint256 srcChainID;
         uint256 destChainID;
     }
 
+    /**
+     * @notice Return structure for fee queries
+     * @dev Contains the fee information for a specific chain pair
+     * @param contractFee Fee charged by the contract
+     * @param agentFee Fee charged by the agent
+     */
     struct GetFeesReturn {
         uint256 contractFee;
         uint256 agentFee;

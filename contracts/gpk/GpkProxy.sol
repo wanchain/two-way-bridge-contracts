@@ -32,15 +32,24 @@ import "../components/Admin.sol";
 import "./GpkStorage.sol";
 import "../components/Proxy.sol";
 
+/**
+ * @title GpkProxy
+ * @dev Proxy contract for Group Public Key (GPK) functionality
+ * This contract implements the proxy pattern for upgradeable GPK contracts,
+ * allowing the implementation to be upgraded while maintaining the same storage
+ */
 contract GpkProxy is GpkStorage, Admin, Proxy {
     /**
-    *
-    * MANIPULATIONS
-    *
+     * @dev Contract upgrade functionality
     */
 
-    /// @notice                           function for setting or upgrading GpkDelegate address by owner
-    /// @param impl                       GpkDelegate contract address
+    /**
+     * @notice Upgrades the GPK implementation to a new version
+     * @dev Only callable by the contract owner
+     * @param impl The address of the new GpkDelegate contract implementation
+     * @dev Throws if the new implementation address is invalid or the same as current
+     * @dev Emits an Upgraded event on successful upgrade
+     */
     function upgradeTo(address impl) external onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");

@@ -28,47 +28,135 @@
 
 pragma solidity ^0.8.18;
 
-/// @dev `Owned` is a base level contract that assigns an `owner` that can be
-///  later changed
+/**
+ * @title Owned
+ * @dev Base contract for ownership management
+ * This contract provides functionality for managing contract ownership
+ * with support for ownership transfer and renunciation
+ * 
+ * Key features:
+ * - Ownership assignment
+ * - Ownership transfer
+ * - Ownership renunciation
+ * - Two-step ownership transfer
+ * 
+ * @custom:security
+ * - Owner-only access control
+ * - Safe ownership transfer
+ * - Ownership renunciation capability
+ */
 contract Owned {
 
+    /**
+     * @dev Emitted when ownership is transferred
+     * 
+     * @param previousOwner Address of the previous owner
+     * @param newOwner Address of the new owner
+     */
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-    /// @dev `owner` is the only address that can call a function with this
-    /// modifier
+    /**
+     * @dev Modifier to restrict function access to owner only
+     * 
+     * @custom:requirements
+     * - Caller must be the contract owner
+     * 
+     * @custom:reverts
+     * - If caller is not the owner
+     */
     modifier onlyOwner() {
         require(msg.sender == owner, "Not owner");
         _;
     }
 
+    /**
+     * @dev Public state variable for contract owner
+     * 
+     * @custom:usage
+     * - Stores current owner address
+     * - Accessible for external queries
+     * - Modified through ownership functions
+     */
     address public owner;
 
-    /// @notice The Constructor assigns the message sender to be `owner`
+    /**
+     * @dev Constructor assigns initial owner
+     * 
+     * @custom:effects
+     * - Sets initial owner to contract deployer
+     */
     constructor() {
         owner = msg.sender;
     }
 
+    /**
+     * @dev Public state variable for pending owner
+     * 
+     * @custom:usage
+     * - Stores address of pending owner
+     * - Used in two-step ownership transfer
+     */
     address public newOwner;
 
+    /**
+     * @dev Transfers ownership to a new address
+     * 
+     * @param _newOwner Address of the new owner
+     * 
+     * @custom:requirements
+     * - Caller must be the current owner
+     * - New owner address must not be zero
+     * 
+     * @custom:effects
+     * - Updates owner address
+     * - Emits OwnershipTransferred event
+     */
     function transferOwner(address _newOwner) public onlyOwner {
         require(_newOwner != address(0), "New owner is the zero address");
         emit OwnershipTransferred(owner, _newOwner);
         owner = _newOwner;
     }
 
-    /// @notice `owner` can step down and assign some other address to this role
-    /// @param _newOwner The address of the new owner. 0x0 can be used to create
-    ///  an unowned neutral vault, however that cannot be undone
+    /**
+     * @dev Initiates two-step ownership transfer
+     * 
+     * @param _newOwner Address of the new owner
+     * 
+     * @custom:requirements
+     * - Caller must be the current owner
+     * 
+     * @custom:effects
+     * - Sets pending owner address
+     */
     function changeOwner(address _newOwner) public onlyOwner {
         newOwner = _newOwner;
     }
 
+    /**
+     * @dev Accepts pending ownership transfer
+     * 
+     * @custom:requirements
+     * - Caller must be the pending owner
+     * 
+     * @custom:effects
+     * - Updates owner address to pending owner
+     */
     function acceptOwnership() public {
         if (msg.sender == newOwner) {
             owner = newOwner;
         }
     }
 
+    /**
+     * @dev Renounces ownership of the contract
+     * 
+     * @custom:requirements
+     * - Caller must be the current owner
+     * 
+     * @custom:effects
+     * - Sets owner to zero address
+     * - Makes contract unowned
+     */
     function renounceOwnership() public onlyOwner {
         owner = address(0);
     }
