@@ -93,7 +93,8 @@ async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, p
     let foundUpper = false
     let transCount = 0;
 
-    while(transChecked<maxTrans && !foundUpper && !transCount){
+    //while(transChecked<maxTrans && !foundUpper && !transCount){
+    while(transChecked<maxTrans && !foundUpper){
         let retry = 5;
         let status = false;
         let transactions:Transaction[] = [];
@@ -125,6 +126,8 @@ async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, p
                 let outMsg = outMessages.get(outMsgKey);
                 let outMsgHash = beginCell().store(storeMessage(outMsg)).endCell().hash().toString('hex');
                 let outMsgBodyHash = outMsg.body.hash().toString('hex');
+                console.log("=============outMsg=======",outMsg);
+                console.log("=============inMsg========",tran.inMessage);
                 if (outMsg.info.dest == scAddr && (outMsgHash == tranInMsgHash || outMsgBodyHash == tranInMsgBodyCellHash)){
                     let stepInfoTemp :TranStepInfo = {
                         addr:upperAddress as Address,
@@ -146,7 +149,7 @@ async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, p
                 break; // found the upper tx
             }
         }
-
+        await sleep(2000);
         transChecked += transactions.length;
     }
 
