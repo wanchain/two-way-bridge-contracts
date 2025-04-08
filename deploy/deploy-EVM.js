@@ -13,31 +13,13 @@ const waitForReceipt = true;
 if (!process.env.PK)
   throw "⛔️ Private key not detected! Add it to the .env file!";
 // mainnet
-// const ORACLE_ADMIN = '0x390CC3173EE7F425Fe7659df215B13959FD468E1';
-// const CROSS_ADMIN = '0xa35B3C55626188015aC79F396D0B593947231976';
-// const TOKEN_MANAGER_OPERATOR = '0xa35B3C55626188015aC79F396D0B593947231976';
-// const SMG_FEE_PROXY = "0x82bf94d159b15a587c45c9d70e0fab7fd87889eb";
-// const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
-
-// const proposers = ["0x390CC3173EE7F425Fe7659df215B13959FD468E1"];
-// const executors = ["0x0000000000000000000000000000000000000000"];
-// const admin = CROSS_ADMIN;
-// const cancellers = [
-//   "0x7521eda00e2ce05ac4a9d8353d096ccb970d5188",
-//   "0xae693fb903559f8856a3c21d6c0aa4a4e9682ae9",
-//   CROSS_ADMIN
-// ];
-
-
-
-// testnet
-const ORACLE_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const CROSS_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const TOKEN_MANAGER_OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
-const SMG_FEE_PROXY = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9";
+const ORACLE_ADMIN = '0x390CC3173EE7F425Fe7659df215B13959FD468E1';
+const CROSS_ADMIN = '0xa35B3C55626188015aC79F396D0B593947231976';
+const TOKEN_MANAGER_OPERATOR = '0xa35B3C55626188015aC79F396D0B593947231976';
+const SMG_FEE_PROXY = "0x82bf94d159b15a587c45c9d70e0fab7fd87889eb";
 const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 
-const proposers = ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"];
+const proposers = ["0x390CC3173EE7F425Fe7659df215B13959FD468E1"];
 const executors = ["0x0000000000000000000000000000000000000000"];
 const admin = CROSS_ADMIN;
 const cancellers = [
@@ -45,6 +27,24 @@ const cancellers = [
   "0xae693fb903559f8856a3c21d6c0aa4a4e9682ae9",
   CROSS_ADMIN
 ];
+
+
+
+// // testnet
+// const ORACLE_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
+// const CROSS_ADMIN = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
+// const TOKEN_MANAGER_OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
+// const SMG_FEE_PROXY = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9";
+// const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
+
+// const proposers = ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"];
+// const executors = ["0x0000000000000000000000000000000000000000"];
+// const admin = CROSS_ADMIN;
+// const cancellers = [
+//   "0x7521eda00e2ce05ac4a9d8353d096ccb970d5188",
+//   "0xae693fb903559f8856a3c21d6c0aa4a4e9682ae9",
+//   CROSS_ADMIN
+// ];
 
 
 
@@ -97,19 +97,19 @@ async function main() {
   }
   console.log("RapidityLibV4 deployed to:", rapidityLib.target);
   
-  let CrossDelegateV5 = await hre.ethers.getContractFactory("CrossDelegateV5", {
+  let CrossDelegateV4 = await hre.ethers.getContractFactory("CrossDelegateV4", {
     libraries: {
       NFTLibV1: nftLib.target,
       RapidityLibV4: rapidityLib.target,
     }
   });
 
-  let crossDelegate = await CrossDelegateV5.deploy();
+  let crossDelegate = await CrossDelegateV4.deploy();
   if (waitForReceipt) {
     await (crossDelegate.deployed ?  crossDelegate.deployed() : crossDelegate.waitForDeployment());
   }
 
-  console.log("CrossDelegateV5 deployed to:", crossDelegate.target);
+  console.log("CrossDelegateV4 deployed to:", crossDelegate.target);
 
   let CrossProxy = await hre.ethers.getContractFactory("CrossProxy");
   let crossProxy = await CrossProxy.deploy();
@@ -182,7 +182,7 @@ async function main() {
   console.log('oracleProxy upgradeTo finished.');
   console.log('deploy finished start to config...');
   let tokenManager = await hre.ethers.getContractAt("TokenManagerDelegateV2", tokenManagerProxy.target);
-  let cross = await hre.ethers.getContractAt("CrossDelegateV5", crossProxy.target);
+  let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.target);
   let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.target);
 
   // deploy time lock------------------------------
