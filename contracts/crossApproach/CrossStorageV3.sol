@@ -49,8 +49,8 @@ contract CrossStorageV3 is CrossStorageV2 {
     /**
      * @notice Mapping from token pair ID to contract fee
      * @dev Used to store and retrieve fees for specific token pairs
-     * @param tokenPairID Unique identifier for a token pair
-     * @return contractFee The fee charged by the contract for this token pair
+     * uint256 - tokenPairID Unique identifier for a token pair
+     * uint256 - contractFee The fee charged by the contract for this token pair
      */
     mapping(uint256 => uint256) mapTokenPairContractFee;
 

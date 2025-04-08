@@ -72,7 +72,6 @@ library StoremanLib {
     /**
      * @notice Event emitted when a node stakes out of a group
      * @dev Indicates successful stake withdrawal
-     * @param groupId ID of the group
      * @param wkAddr Work address of the node
      * @param from Address of the sender
      */
@@ -93,7 +92,7 @@ library StoremanLib {
      * @notice Event emitted when a node claims their incentive
      * @dev Indicates successful incentive claim
      * @param wkAddr Work address of the node
-     * @param from Address of the sender
+     * @param sender Address of the sender
      * @param amount Amount claimed
      */
     event stakeIncentiveCrossFeeEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
@@ -117,7 +116,6 @@ library StoremanLib {
     /**
      * @notice Event emitted when a node delegates to another node
      * @dev Indicates successful delegation
-     * @param groupId ID of the group
      * @param wkAddr Work address of the delegator
      * @param from Address of the sender
      * @param value Amount delegated
@@ -127,7 +125,6 @@ library StoremanLib {
     /**
      * @notice Event emitted when a node quits a group
      * @dev Indicates successful group exit
-     * @param groupId ID of the group
      * @param wkAddr Work address of the node
      * @param from Address of the sender
      */
@@ -136,7 +133,6 @@ library StoremanLib {
     /**
      * @notice Event emitted when a node claims their incentive
      * @dev Indicates successful incentive claim
-     * @param groupId ID of the group
      * @param wkAddr Work address of the node
      * @param from Address of the sender
      * @param amount Amount claimed
@@ -147,7 +143,7 @@ library StoremanLib {
      * @notice Event emitted when a node claims their incentive
      * @dev Indicates successful incentive claim
      * @param wkAddr Work address of the node
-     * @param from Address of the sender
+     * @param sender Address of the sender
      * @param amount Amount claimed
      */
     event delegateIncentiveClaimEvent(address indexed wkAddr,address indexed sender,uint indexed amount);
@@ -157,14 +153,13 @@ library StoremanLib {
      * @dev Indicates successful incentive claim
      * @param wkAddr Work address of the node
      * @param from Address of the sender
-     * @param amount Amount claimed
+     * @param value Amount claimed
      */
     event partInEvent(address indexed wkAddr, address indexed from, uint indexed value);
 
     /**
      * @notice Event emitted when a node quits a group
      * @dev Indicates successful group exit
-     * @param groupId ID of the group
      * @param wkAddr Work address of the node
      * @param from Address of the sender
      */
@@ -173,7 +168,6 @@ library StoremanLib {
     /**
      * @notice Event emitted when a node claims their incentive
      * @dev Indicates successful incentive claim
-     * @param groupId ID of the group
      * @param wkAddr Work address of the node
      * @param from Address of the sender
      * @param amount Amount claimed

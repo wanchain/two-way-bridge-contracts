@@ -25,7 +25,7 @@ interface ISmg {
      * @dev Get storeman group information by ID
      * 
      * @param id The group ID to query
-     * @return StoremanGroupInfo struct containing group details
+     * @return info StoremanGroupInfo struct containing group details
      */
     function getStoremanGroupInfo(bytes32 id) external view returns(StoremanType.StoremanGroupInfo memory info);
 }

@@ -39,10 +39,10 @@ import "./CrossDelegateV4.sol";
 contract CrossDelegateXinFin is CrossDelegateV4 {
     /**
      * @dev Implementation of the XRC721 token receiver interface
-     * @param operator The address which called `safeTransferFrom` function
-     * @param from The address which previously owned the token
-     * @param tokenId The identifier of the token being transferred
-     * @param data Additional data with no specified format
+     * address - operator The address which called `safeTransferFrom` function
+     * address - from The address which previously owned the token
+     * uint256 - tokenId The identifier of the token being transferred
+     * bytes - data Additional data with no specified format
      * @return bytes4 The function selector of this function
      */
     function onXRC721Received(address, address, uint256, bytes calldata)
@@ -55,11 +55,11 @@ contract CrossDelegateXinFin is CrossDelegateV4 {
 
     /**
      * @dev Implementation of the XRC1155 token receiver interface for single token transfers
-     * @param operator The address which initiated the transfer
-     * @param from The address which previously owned the token
-     * @param id The identifier of the token being transferred
-     * @param value The amount of tokens being transferred
-     * @param data Additional data with no specified format
+     * address - operator The address which initiated the transfer
+     * address - from The address which previously owned the token
+     * uint256 - id The identifier of the token being transferred
+     * uint256 - value The amount of tokens being transferred
+     * bytes - data Additional data with no specified format
      * @return bytes4 The function selector of this function
      */
     function onXRC1155Received(address, address, uint256, uint256, bytes calldata)
@@ -72,11 +72,11 @@ contract CrossDelegateXinFin is CrossDelegateV4 {
 
     /**
      * @dev Implementation of the XRC1155 token receiver interface for batch token transfers
-     * @param operator The address which initiated the transfer
-     * @param from The address which previously owned the tokens
-     * @param ids Array of token identifiers being transferred
-     * @param values Array of amounts of tokens being transferred
-     * @param data Additional data with no specified format
+     * address - operator The address which initiated the transfer
+     * address - from The address which previously owned the tokens
+     * uint256[] - ids Array of token identifiers being transferred
+     * uint256[] - values Array of amounts of tokens being transferred
+     * bytes - data Additional data with no specified format
      * @return bytes4 The function selector of this function
      */
     function onXRC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)

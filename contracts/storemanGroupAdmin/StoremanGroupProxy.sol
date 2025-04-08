@@ -75,7 +75,7 @@ contract StoremanGroupProxy is StoremanGroupStorage, Halt, Admin, ReentrancyGuar
      * This function allows the admin to upgrade the implementation contract while
      * preserving the storage layout and contract address
      * 
-     * @param implementation The new implementation address
+     * @param impl The new implementation address
      * 
      * @custom:requirements
      * - Caller must be the contract owner

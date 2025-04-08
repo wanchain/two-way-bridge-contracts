@@ -102,7 +102,7 @@ library CommonTool {
      * 
      * @param source Source bytes array
      * 
-     * @return bytes32 The converted bytes32 value
+     * @return result The converted bytes32 value
      * 
      * @custom:effects
      * - Directly loads first 32 bytes into a bytes32 value
