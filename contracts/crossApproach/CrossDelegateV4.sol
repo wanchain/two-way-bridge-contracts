@@ -667,10 +667,10 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /**
      * @notice Implements the ERC721 token receiver interface
      * @dev This function allows the contract to receive ERC721 tokens
-     * @param operator The address which called safeTransferFrom function
-     * @param from The address which previously owned the token
-     * @param tokenId The token identifier
-     * @param data Additional data with no specified format
+     * address - operator The address which called safeTransferFrom function
+     * address - from The address which previously owned the token
+     * uint256 - tokenId The token identifier
+     * bytes - data Additional data with no specified format
      * @return The function selector of onERC721Received
      */
     function onERC721Received(address, address, uint256, bytes memory)
@@ -684,11 +684,11 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /**
      * @notice Implements the ERC1155 token receiver interface for single token transfers
      * @dev This function allows the contract to receive ERC1155 tokens
-     * @param operator The address which called safeTransferFrom function
-     * @param from The address which previously owned the token
-     * @param id The token identifier
-     * @param value The amount of tokens being transferred
-     * @param data Additional data with no specified format
+     * address - operator The address which called safeTransferFrom function
+     * address - from The address which previously owned the token
+     * uint256 - id The token identifier
+     * uint256 - value The amount of tokens being transferred
+     * bytes - data Additional data with no specified format
      * @return The function selector of onERC1155Received
      */
     function onERC1155Received(address, address, uint256, uint256, bytes memory) 
@@ -702,11 +702,11 @@ contract CrossDelegateV4 is CrossStorageV4 {
     /**
      * @notice Implements the ERC1155 token receiver interface for batch token transfers
      * @dev This function allows the contract to receive multiple ERC1155 tokens in a single transaction
-     * @param operator The address which called safeBatchTransferFrom function
-     * @param from The address which previously owned the tokens
-     * @param ids Array of token identifiers
-     * @param values Array of token amounts
-     * @param data Additional data with no specified format
+     * address - operator The address which called safeBatchTransferFrom function
+     * address - from The address which previously owned the tokens
+     * uint256[] - ids Array of token identifiers
+     * uint256[] - values Array of token amounts
+     * bytes - data Additional data with no specified format
      * @return The function selector of onERC1155BatchReceived
      */
     function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata) 

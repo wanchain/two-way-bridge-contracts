@@ -47,8 +47,8 @@ contract ConfigStorage is BasicStorage {
     /**
      * @dev Mapping from curve type to its contract address
      * @notice Stores the addresses of different curve implementations
-     * @param uint8 The curve type identifier
-     * @return address The contract address implementing the curve
+     * uint8 The curve type identifier
+     * address The contract address implementing the curve
      */
     mapping(uint8 => address) curves;
 }

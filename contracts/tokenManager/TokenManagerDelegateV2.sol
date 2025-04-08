@@ -140,8 +140,8 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
      * @param tokenCrossType Type of NFT (ERC721 or ERC1155)
      * @param tokenAddress Address of the NFT contract
      * @param to Address to receive the NFTs
-     * @param tokenId ID of the NFT to mint
-     * @param amount Amount of NFTs to mint (for ERC1155)
+     * @param tokenIDs ID of the NFT to mint
+     * @param values Amount of NFTs to mint (for ERC1155)
      * @param data Additional data for the NFT
      * Requirements:
      * - Caller must be admin
@@ -175,8 +175,8 @@ contract TokenManagerDelegateV2 is TokenManagerDelegate, Proxy {
      * @param tokenCrossType Type of NFT (ERC721 or ERC1155)
      * @param tokenAddress Address of the NFT contract
      * @param from Address to burn NFTs from
-     * @param tokenId ID of the NFT to burn
-     * @param amount Amount of NFTs to burn (for ERC1155)
+     * @param tokenIDs ID of the NFT to burn
+     * @param values Amount of NFTs to burn (for ERC1155)
      * Requirements:
      * - Caller must be admin
      * - Token type must be valid

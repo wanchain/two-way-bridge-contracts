@@ -59,7 +59,6 @@ contract EcSchnorrVerifier {
      * @dev Wrapper for the internal _verify function
      * @param signature The signature to verify
      * @param px The x-coordinate of the public key
-     * @param groupKeyY The y-coordinate of the public key (unused in this implementation)
      * @param e The Schnorr signature challenge
      * @param parity The parity of the public key y-coordinate
      * @param message The message that was signed

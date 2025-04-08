@@ -48,8 +48,8 @@ contract CrossDelegateV5 is CrossDelegateV4 {
     /**
      * @notice Mapping from NFT collection and token ID to cross-chain ID
      * @dev Stores the cross-chain ID assigned to each NFT
-     * @param collection The address of the NFT collection
-     * @param tokenId The ID of the NFT within the collection
+     * uint256 - collection The address of the NFT collection
+     * uint256 - tokenId The ID of the NFT within the collection
      * @return The assigned cross-chain ID
      */
     mapping(address => mapping(uint256 => uint256)) public crossId;
@@ -57,8 +57,8 @@ contract CrossDelegateV5 is CrossDelegateV4 {
     /**
      * @notice Mapping from NFT collection and cross-chain ID to NFT token ID
      * @dev Stores the original NFT token ID for each cross-chain ID
-     * @param collection The address of the NFT collection
-     * @param crossId The cross-chain ID
+     * uint256 - collection The address of the NFT collection
+     * uint256 - crossId The cross-chain ID
      * @return The original NFT token ID
      */
     mapping(address => mapping(uint256 => uint256)) public crossIdToNftBaseInfo;

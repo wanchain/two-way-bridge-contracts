@@ -328,7 +328,7 @@ contract CrossWrapper is IXDCReceiver, ERC721Holder, ERC1155Holder {
      * @dev Converts bytes to address
      * 
      * @param b Bytes to convert
-     * @return Converted address
+     * @return addr Converted address
      */
     function _bytesToAddress(bytes memory b) internal pure returns (address addr) {
         assembly {

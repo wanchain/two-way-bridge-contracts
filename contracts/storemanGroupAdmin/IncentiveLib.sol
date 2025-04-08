@@ -83,7 +83,7 @@ library IncentiveLib {
      * @param data Storeman data storage
      * @param chain1 First chain ID
      * @param chain2 Second chain ID
-     * @return Coefficient value
+     * @return co Coefficient value
      */
     function getChainTypeCo(StoremanType.StoremanData storage data, uint chain1, uint chain2) public view returns(uint co){
         if(chain1 < chain2) {
