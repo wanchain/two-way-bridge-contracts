@@ -50,6 +50,5 @@ contract ConfigStorage is BasicStorage {
      * @param uint8 The curve type identifier
      * @return address The contract address implementing the curve
      */
-    /// curve -> contract address
     mapping(uint8 => address) curves;
 }
