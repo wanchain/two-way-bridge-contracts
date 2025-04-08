@@ -132,10 +132,6 @@ export async function getAllTransactions(client:TonClient,scAddress:string,limit
                }
                getSuccess = true;
                maxRetry = retry;
-
-               // todo should delete begin
-               transCount = 0; //only for test, only get the first limit trans, and decode the event.
-               // todo should delete end.
            }catch(e){
                console.log("err ",e);
                await sleep(2000);
@@ -192,8 +188,93 @@ async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:str
     }
 }
 
+export async function getTransaction(client:TonClient,scAddress:string,lt:string,tranHash:string){
+    console.log("Entering getTransaction","scAddress",scAddress,"lt",lt,"tranHash",tranHash);
+    let tran:Transaction;
+    let trans:Transaction[] = [];
+    let retry = 2
+    let status = false;
+    let foundTran = false;
+
+    let maxTrans = 1000;
+    let transChecked = 0;
+
+    while(retry-- > 0){
+        try{
+            tran = await client.getTransaction(Address.parse(scAddress),lt,tranHash); //  cannot compute block with specified transaction: cannot find block (0,e56031f43e6493da) lt=33028010000003: lt not in db'
+            //tran = await client.getTransaction(Address.parse(scAddress),lt,'');
+            //tran = await client.getTransaction(Address.parse(scAddress),'',tranHash);
+            console.log("tran = >",tran);
+            return tran;
+        }catch(err){
+            console.log("err",err.message);
+            console.error(err.response?.data?.error);
+            await sleep(2000);
+        }
+    }
+
+    retry = MAX_RETRY;
+    let opts:{
+        limit: number;
+        lt?: string;
+        hash?: string;
+        to_lt?: string;
+        inclusive?: boolean;
+        archival?: boolean;
+    } = {
+        limit: 10,
+        archival:true,
+    }
+
+
+    while(transChecked<maxTrans && !foundTran){
+        status = false;
+        while(--retry > 0 && !status){
+            try{
+                //tran = await client.getTransaction(Address.parse(scAddress),lt,tranHash); //  cannot compute block with specified transaction: cannot find block (0,e56031f43e6493da) lt=33028010000003: lt not in db'
+                //console.log("tran = >",tran);
+
+                console.log("getTransactions","scAddress",scAddress,"opts",opts);
+                trans = await client.getTransactions(Address.parse(scAddress),opts);
+                status = true;
+                retry = MAX_RETRY;
+            }catch(err){
+                console.error(err.message,err.response?.data?.error,err);
+                await sleep(2000);
+            }
+        }
+        if(retry == 0){
+            throw(new Error(formatUtil.format("getTransactions ","scAddress",scAddress,"opts",opts)))
+        }
+        if(trans.length == 0){
+            break;
+        }
+        for (let i=0; i<trans.length; i++) {
+            let tx = trans[i]
+            if(i == trans.length-1) {
+                opts.lt = tx.lt.toString(10);
+                opts.hash = tx.hash().toString('base64');
+            }
+            console.log("i",i,"txHash",tx.hash().toString("base64"));
+            if(tx.hash().toString('base64') == tranHash){
+                tran = tx;
+                foundTran = true;
+                break;
+            }
+        }
+
+        await sleep(2000);
+        transChecked += trans.length;
+    }
+    if(foundTran){
+        return tran;
+    }
+    throw(new Error(formatUtil.format("can not getTransactions ","scAddress",scAddress,"opts",opts)));
+}
+
 export async function getEventByTranHash(client:TonClient, scAddress:string, lt:string, tranHash:string){
-    let tran = await client.getTransaction(Address.parse(scAddress),lt,tranHash);
+    let tran = await getTransaction(client,scAddress,lt,tranHash);
+    console.log("tran=>",tran, "tranHash=>",tran.hash().toString('hex'));
     return await getEventFromTran(client,tran,scAddress);
 }
 
@@ -231,9 +312,11 @@ async function handleUserLockEvent(client:TonClient, scAddr:Address,tran:Transac
 
     let bodyCellLock = tran.inMessage.body
     let decodedResult = await decodeUserLock(bodyCellLock);
+    console.log("decodeResult of decodeUserLock", decodedResult);
 
+    //handle bridge->bridge(userLock)
     // get parent trans
-    let preTx = await client.getTransaction(scAddr,tran.prevTransactionLt.toString(10),tran.prevTransactionHash.toString(16));
+    let preTx = await getTransaction(client,scAddr.toString(),tran.prevTransactionLt.toString(10),Buffer.from(tran.prevTransactionHash.toString(16),'hex').toString('base64'));
     let bodyCell = preTx.inMessage.body
     let bodySlice = bodyCell.beginParse();
     let op = bodySlice.loadUint(32);
@@ -247,7 +330,8 @@ async function handleUserLockEvent(client:TonClient, scAddr:Address,tran:Transac
         // 2. check from address is content with the one computed by getJettonAddress
         // build jettonAddress
         let jwAddr = await getJettonAddress(client,Address.parse(ret.tokenAccount),scAddr)
-        if(isAddressEqual(jwAddr,(preTx.inMessage.info.src as unknown as Address ))){
+        console.log("======jwAddr",jwAddr.toString(),"preTx.inMessage.info.src",(preTx.inMessage.info.src as unknown as Address ).toString());
+        if(!isAddressEqual(jwAddr,(preTx.inMessage.info.src as unknown as Address ))){
             throw Error("invalid from address of transfer notification");
         }
     }
