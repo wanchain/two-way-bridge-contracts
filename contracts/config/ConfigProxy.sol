@@ -52,8 +52,6 @@ contract ConfigProxy is ConfigStorage, Halt, Admin, Proxy {
      * @dev Throws if the new implementation address is invalid or the same as current
      * @dev Emits Upgraded event on successful upgrade
      */
-    ///@dev                   update the address of ConfigDelegate contract
-    ///@param impl            the address of the new ConfigDelegate contract
     function upgradeTo(address impl) public onlyOwner {
         require(impl != address(0), "Cannot upgrade to invalid address");
         require(impl != _implementation, "Cannot upgrade to the same implementation");

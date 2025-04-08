@@ -47,9 +47,6 @@ contract ConfigDelegate is ConfigStorage, Halt , Admin{
      * @param curveAddress Array of corresponding curve contract addresses
      * @dev Throws if arrays are empty or have mismatched lengths
      */
-    /// @notice                           function for set smg contract address
-    /// @param curveId                    curve id array
-    /// @param curveAddress               curve contract address array
     function setCurve(uint8[] calldata curveId, address[] calldata curveAddress)
     external
     onlyAdmin
