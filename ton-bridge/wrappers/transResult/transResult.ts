@@ -192,10 +192,7 @@ export async function getLowerSteps(client:TonClient,scAddr:Address,tran:Transac
             lt:lowerTx.lt.toString(),
         }
         path.push(stepInfoTemp);
-
         await getLowerSteps(client,lowerAddr,lowerTx,path);
-
-        //break; //todo should delete break;
     }
 }
 

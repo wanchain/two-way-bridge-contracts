@@ -67,6 +67,7 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
         logger.info(formatUtil.format("tran=>",tran.hash().toString('base64')));
         let event = await getEventFromTran(client,tran,scAddress);
         if(event != null){
+            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!==found event==!!!!!!!!!!!!!!!!!!!!!!!!!!!",event);
             if(eventName && event.eventName.toLowerCase() != eventName.toLowerCase()){
                 continue;
             }
@@ -180,7 +181,16 @@ async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:str
                 return null;
             }
             decoded.origin = handleResult.origin;
+        }else{
+            let handleResult = await handleCommonEvent(client,Address.parse(scAddress),
+                tran)
+            if (!handleResult.valid){
+                logger.error(formatUtil.format("handleResult handleCommonEvent is not valid"));
+                return null;
+            }
+            decoded.origin = handleResult.origin;
         }
+
         return await codeTable[opCode]["emitEvent"](decoded);
     }catch(err){
         logger.error(formatUtil.format("getEventFromTran err",err.message,err.response?.data?.error));
@@ -333,6 +343,24 @@ async function handleUserLockEvent(client:TonClient, scAddr:Address,tran:Transac
         console.log("======jwAddr",jwAddr.toString(),"preTx.inMessage.info.src",(preTx.inMessage.info.src as unknown as Address ).toString());
         if(!isAddressEqual(jwAddr,(preTx.inMessage.info.src as unknown as Address ))){
             throw Error("invalid from address of transfer notification");
+        }
+    }
+    return {
+        valid:true,
+        origin:transResult.originAddr.toString()
+    }
+}
+
+async function handleCommonEvent(client:TonClient, scAddr:Address,tran:Transaction){
+
+    logger.info(formatUtil.format("Entering handleCommonEvent"));
+
+    let transResult  = await getTransResult(client,scAddr,tran);
+    if (!transResult.success){
+        logger.error("the trans tree is not success")
+        return {
+            valid:false,
+            origin:transResult.originAddr.toString()
         }
     }
     return {
