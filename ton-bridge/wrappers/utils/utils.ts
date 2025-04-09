@@ -73,6 +73,14 @@ export function isAddressEqual(src:Address|string,dst:Address|string){
     return srcAddr.equals(dstAddr);
 }
 
+export  function bigIntToBytes32(value:bigint) {
+
+    if (value < 0n || value >= 2n ** 256n) {
+        throw new Error("Value must be a 256-bit unsigned integer");
+    }
+    const hex = value.toString(16).padStart(64, '0');
+    return Buffer.from(hex, 'hex');
+}
 
 export function int64ToByte32(int64Value) {
     // 确保输入是 BigInt
@@ -104,4 +112,12 @@ export function int64ToByte32(int64Value) {
     });
 
     return hexString;
+}
+
+export function remove0x(str:string){
+    return (str.slice(0,2).toLowerCase() == '0x') ? str.slice(2):str;
+}
+
+export function add0x(str:string){
+    return (str.slice(0,2).toLowerCase() == '0x') ? str:'0x' + str;
 }

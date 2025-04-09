@@ -34,4 +34,5 @@ const int error::cross_invalid_jetton_amount = 0xEE51;
 const int error::cross_invalid_chainid = 0xEE52;
 const int error::cross_invalid_jetton_admin = 0xEE53;
 const int error::cross_invalid_tokenpair_id = 0xEE54;
+const int error::cross_invalid_lock_fee = 0xEE55;
 

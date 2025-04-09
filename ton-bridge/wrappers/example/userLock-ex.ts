@@ -44,9 +44,9 @@ async function userLock(){
         let ba = BridgeAccess.create(client,bridgeScAddr);
         for(let key of Object.keys(tokenInfo)) {
             console.log("key:",key);
-            if(key.toString().toLowerCase() !== ("coin").toLowerCase()){
-                continue;
-            }
+            // if(key.toString().toLowerCase() !== ("coin").toLowerCase()){
+            //     continue;
+            // }
 
             if(key.toString().toLowerCase() !== ("coin").toLowerCase()){
                 transValue = TON_FEE.TRANS_FEE_USER_LOCK_TOKEN;

@@ -1,4 +1,4 @@
-import {getQueryID} from "../utils/utils";
+import {getQueryID, remove0x} from "../utils/utils";
 import {isAddrDepolyed} from "../wallet/walletContract";
 import {JettonMaster, TonClient} from "@ton/ton";
 import {BridgeAccess} from "../contractAccess/bridgeAccess";
@@ -109,6 +109,7 @@ async function buildLockCoinMessages(opts: {
         .endCell()
     let extraCell2 = beginCell()
         .storeAddress(Address.parse(opts.senderAccount))
+        .storeUint(lockFee, 256)
         .endCell()
 
     let body = beginCell()
@@ -151,7 +152,7 @@ async function buildLockOriginalTokenMessages(opts: {
     // forward payLoad
     let queryId = await getQueryID();
 
-    let dstUserAccountBuffer = Buffer.from(opts.dstUserAccount,'hex');
+    let dstUserAccountBuffer = Buffer.from(remove0x(opts.dstUserAccount),'hex');
     let dstUserAccountBufferLen = dstUserAccountBuffer.length
     let extraCell = beginCell()
         .storeAddress(addrTokenAccount)
@@ -160,6 +161,7 @@ async function buildLockOriginalTokenMessages(opts: {
         .endCell()
     let extraCell2 = beginCell()
         .storeAddress(Address.parse(opts.senderAccount))
+        .storeUint(lockFee, 256)
         .endCell()
     let body = beginCell()
         .storeUint(opcodes.OP_CROSS_UserLock, 32)

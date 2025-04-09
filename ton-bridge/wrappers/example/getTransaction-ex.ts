@@ -1,4 +1,4 @@
-import {sleep} from "../utils/utils";
+import {bigIntToBytes32, sleep} from "../utils/utils";
 
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
@@ -23,6 +23,17 @@ async function main(){
 
         console.log(ret.prevTransactionLt.toString(10),ret.prevTransactionHash.toString(16))
 
+        let base64Str = Buffer.from(ret.prevTransactionHash.toString(16),'hex').toString('base64');
+        console.log(base64Str);
+
+        console.log(Buffer.from(base64Str,'base64').toString('hex'));
+
+        console.log(Buffer.from(ret.prevTransactionHash.toString(16),'hex').toString('hex'));
+
+        console.log("hex",bigIntToBytes32(ret.prevTransactionHash).toString('hex'));
+        console.log("base64",bigIntToBytes32(ret.prevTransactionHash).toString('base64'));
+
+
         client = null;
     }catch(err){
         console.error(err.code,err.response?.data?.error)
@@ -34,3 +45,5 @@ main();
 
 // ts-node getTransaction-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr 33028010000001 61ec9d0be00c8f65a8e84b1a13121d8fbd826cf7777f856bc5f72381bf6b2257
 // ts-node getTransaction-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr 33028010000003 07e8eb174f5298fe02a7c8a68e3bb3197d2232c287fccbc0deebc44b1334a723
+// ts-node getTransaction-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr 33313091000003 095015c23c8323af4b7c20b9bd35b2864aa2a4fbaa85335828fa63bccbfdaeff
+

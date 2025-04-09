@@ -11,7 +11,7 @@ import * as opcodes from "../opcodes";
 import {OP_TRANSFER_NOTIFICATION} from "../opcodes";
 import {getJettonAddress} from "../wallet/jetton";
 import {getTokenPairInfo} from "../code/userLock";
-import {isAddressEqual, sleep} from "../utils/utils";
+import {bigIntToBytes32, isAddressEqual, sleep} from "../utils/utils";
 
 const MAX_LIMIT = 1000;
 const MAX_RETRY = 10;
@@ -189,7 +189,7 @@ async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:str
 }
 
 export async function getTransaction(client:TonClient,scAddress:string,lt:string,tranHash:string){
-    console.log("Entering getTransaction","scAddress",scAddress,"lt",lt,"tranHash",tranHash);
+    console.log("Entering getTransaction","scAddress",scAddress,"lt",lt,"tranHash",tranHash,"tranHash(hex)",Buffer.from(tranHash,'base64').toString('hex'));
     let tran:Transaction;
     let trans:Transaction[] = [];
     let retry = 2
@@ -316,7 +316,7 @@ async function handleUserLockEvent(client:TonClient, scAddr:Address,tran:Transac
 
     //handle bridge->bridge(userLock)
     // get parent trans
-    let preTx = await getTransaction(client,scAddr.toString(),tran.prevTransactionLt.toString(10),Buffer.from(tran.prevTransactionHash.toString(16),'hex').toString('base64'));
+    let preTx = await getTransaction(client,scAddr.toString(),tran.prevTransactionLt.toString(10),bigIntToBytes32(tran.prevTransactionHash).toString('base64'));
     let bodyCell = preTx.inMessage.body
     let bodySlice = bodyCell.beginParse();
     let op = bodySlice.loadUint(32);

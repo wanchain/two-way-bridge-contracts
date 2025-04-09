@@ -134,6 +134,7 @@
 
         (slice extraSlice2) = inMsgBody~load_ref().begin_parse();
         originAddress = extraSlice2~load_msg_addr();
+        int lockFee = extraSlice2~load_uint(256);
 
         (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr) = tm_get_token_pair(tokenManager, tokenPairId);
 
@@ -148,6 +149,8 @@
         } else {
             fee = tpFee;
         }
+
+        throw_unless(error::cross_invalid_lock_fee,lockFee == fee );
         ~strdump("fee_get_config....");
         (slice smgFeeProxy,_) = fee_get_config(caFee);
         ~dump(smgFeeProxy);

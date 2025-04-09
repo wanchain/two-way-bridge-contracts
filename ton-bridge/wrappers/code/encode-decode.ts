@@ -9,7 +9,7 @@ import * as opcodes from "../opcodes";
 import {BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR, WK_CHIANID} from "../const/const-value";
 
 import {logger} from '../utils/logger'
-import {BufferrToHexString, int64ToByte32} from "../utils/utils";
+import {add0x, BufferrToHexString, int64ToByte32} from "../utils/utils";
 import {bigIntReplacer} from "../utils/utils";
 const formatUtil = require('util');
 
@@ -38,19 +38,22 @@ export const codeTable = {
 
             let extraCell2 = slice.loadRef().beginParse();
             let senderAccount = extraCell2.loadAddress();
+            let fee = extraCell2.loadUint(256);
             extraCell2.endParse();
 
             slice.endParse();
 
             return {
+                uniqueID:queryID,
                 smgID:int64ToByte32(BigInt(smgID)),
                 tokenPairID,
                 crossValue,
-                dstUserAccount: dstUserAccountBuff.toString('hex'),
+                dstUserAccount: add0x(dstUserAccountBuff.toString('hex')),
                 addrTokenAccount: addrTokenAccount.toString(),
                 jwAddrSrc,
                 jwAddrBridgeSc,
                 senderAccount,
+                fee,
             }
         },
         "emitEvent": function (opts){
@@ -59,9 +62,9 @@ export const codeTable = {
                 uniqueID:opts.uniqueID,
                 smgID:opts.smgID,
                 tokenPairID:opts.tokenPairID,
-                value:opts.releaseValue,
+                value:opts.crossValue,
                 fee:opts.fee,
-                userAccount:opts.userAccount,
+                userAccount:opts.dstUserAccount,
                 txHashBase64:opts.txHashBase64,
                 txHash:opts.txHash,
                 lt:opts?.lt,
