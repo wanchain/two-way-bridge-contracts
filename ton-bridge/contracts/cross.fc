@@ -242,7 +242,7 @@
         ~strdump("before oracle_get_smg");
         (int gpk_x, int gpk_y, int start_time, int endTime, int timestamp) = oracle_get_smg(oracle, smgId, 0); ;; TODO, use commited.
         ~strdump("ssssssss oracle_get_smg"); ~dump(now()); ~dump(start_time); ~dump(endTime);
-        throw_unless(0xffed, (now() >= start_time) & (now() <= endTime));
+        throw_unless(error::oracle_out_time_range, (now() >= start_time) & (now() <= endTime));
 
         ~strdump("end oracle_get_smg");
 

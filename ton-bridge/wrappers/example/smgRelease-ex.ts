@@ -135,9 +135,9 @@ async function smgRelease(){
             // if(key.toString().toLowerCase() !== "coin"){
             //     continue;
             // }
-            if(key.toString().toLowerCase() !== "tokenOrg".toLowerCase()){
-                continue;
-            }
+            // if(key.toString().toLowerCase() !== "tokenOrg".toLowerCase()){
+            //     continue;
+            // }
 
             if(key.toString().toLowerCase() !== "coin".toLowerCase()){
                 transValueSmg = TON_FEE.TRANS_FEE_USER_LOCK_TOKEN;
