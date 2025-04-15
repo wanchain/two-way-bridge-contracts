@@ -16,14 +16,15 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "bigi": "^1.4.2",
-    "json-bigint": "^1.0.0",
-    "moment": "^2.30.1",
-    "winston": "^3.17.0",
-    "winston-daily-rotate-file": "^5.0.0",
+    "@orbs-network/ton-access": "^2.3.3",
     "@ton/core": "^0.60.0",
     "@ton/crypto": "^3.2.0",
     "@ton/ton": "^13.11.2",
-    "@orbs-network/ton-access": "^2.3.3"
+    "bigi": "^1.4.2",
+    "json-bigint": "^1.0.0",
+    "lowdb": "^7.0.0",
+    "moment": "^2.30.1",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
   }
 }

@@ -4,7 +4,8 @@
   "scripts": {
     "start": "blueprint run",
     "build": "blueprint build",
-    "test": "jest --verbose --testTimeout=10000"
+    "test": "jest --verbose --testTimeout=10000",
+    "type": "module"
   },
   "devDependencies": {
     "@ton/blueprint": "^0.22.0",
@@ -24,6 +25,7 @@
   "dependencies": {
     "bigi": "^1.4.2",
     "json-bigint": "^1.0.0",
+    "lowdb": "^7.0.0",
     "winston-daily-rotate-file": "^5.0.0"
   }
 }
