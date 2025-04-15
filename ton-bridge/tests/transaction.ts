@@ -11,7 +11,7 @@ import {TransactionDescription} from "@ton/core/src/types/TransactionDescription
 import {Cell} from "@ton/core/src/boc/Cell";
 import {EventAccountCreated, EventAccountDestroyed, EventMessageSent} from "@ton/sandbox/dist/event/Event";
 import {ExternalOutInfo} from "@ton/sandbox/dist/blockchain/Blockchain";
-import {CommonMessageInfo} from "@ton/core/src/types/CommonMessageInfo";
+import {CommonMessageInfo} from "@ton/core";
 
 const JSONbig = require('json-bigint');
 

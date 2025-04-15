@@ -1,5 +1,3 @@
-import {slimSndMsgResult} from "../../tests/transaction";
-
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
