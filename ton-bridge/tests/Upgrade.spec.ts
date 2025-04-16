@@ -63,8 +63,8 @@ describe('Bridge', () => {
         let v1 = await bridge.getVersion()
         expect(v1).toBe('0.1')
         const queryID=1;
-        const ret = await bridge.sendUpgradeSC(fakeCode ,{
-            sender: deployer.getSender(),
+        const ret = await bridge.sendUpgradeSC(deployer.getSender(),{
+            code:fakeCode,
             value: toNano('1'),
             queryID,
         });
