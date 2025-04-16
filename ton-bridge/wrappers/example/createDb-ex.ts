@@ -1,4 +1,4 @@
-import {DB} from '../db/Db'
+import { DB } from '../db/Db';
 
 async function main(){
     console.log("Entering main function");

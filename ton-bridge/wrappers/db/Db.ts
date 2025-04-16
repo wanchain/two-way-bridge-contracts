@@ -1,5 +1,5 @@
 // import { Low } from 'lowdb';
-export const TEST_FLAG = "TEST_FLAG";
+
 import _ from 'lodash';
 import {DBDataDir} from './common'
 import path from 'path';
@@ -59,7 +59,7 @@ const defaultData:Data = {
     }],
 }
 
-import { Low } from 'lowdb';
+import low, { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 
 export class DB {
@@ -75,11 +75,32 @@ export class DB {
     }
 
     async init(dbName:string) {
-        const adapter = new JSONFile(path.join(...[DBDataDir,dbName,'.json']));
-        this.db = new Low(adapter,defaultData)
+
+        const low = require('lowdb')
+        const FileSync = require('lowdb/adapters/FileSync')
+
+        const adapter = new FileSync(path.join(...[DBDataDir,dbName+'.json']))
+        this.db = low(adapter)
     }
 }
 
+
+/*
+const low = require('lowdb')
+const FileSync = require('lowdb/adapters/FileSync')
+
+const adapter = new FileSync('db.json')
+const db = low(adapter)
+
+db.defaults({ posts: [] })
+  .write()
+
+const result = db.get('posts')
+  .push({ name: process.argv[2] })
+  .write()
+
+console.log(result)
+ */
 
 
 /*export class DB {

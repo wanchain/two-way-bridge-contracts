@@ -1,4 +1,4 @@
-export const DBDataDir = "../../data";
+export const DBDataDir = "../../data/";
 
 
 import * as fs from 'fs';

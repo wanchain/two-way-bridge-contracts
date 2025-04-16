@@ -1,7 +1,5 @@
 import {DB} from "./Db";
-let testDB :DB = null;
-
-import { TEST_FLAG} from "./Db"
+let testDB :DB ;
 
 describe('DB', () => {
 
