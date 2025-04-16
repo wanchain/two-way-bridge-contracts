@@ -2,6 +2,7 @@
 #include "../common/opcode.fc";
 #include "../util/slice.fc";
 #include "../crypto/secp256k1.fc";
+#include "../common/errcode.fc";
 
 (int, int, int, int) ecrecover(int hash, int v, int r, int s) asm "ECRECOVER";
 

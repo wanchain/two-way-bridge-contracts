@@ -8,7 +8,7 @@ PayAttention:
 import {mnemonicToWalletKey, keyPairFromSecretKey} from "@ton/crypto";
 import {address, TonClient, WalletContractV4} from "@ton/ton";
 import {Address, ContractProvider, OpenedContract, Sender} from "@ton/core";
-import {keyPairFromSeed} from "ton-crypto/dist/primitives/nacl";
+import {keyPairFromSeed} from "@ton/crypto";
 import {Blockchain} from "@ton/sandbox";
 
 export async function getWalletByMnemonic(mnemonic: String): Promise<WalletContractV4> {
