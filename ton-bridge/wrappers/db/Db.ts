@@ -1,6 +1,6 @@
 import {DBDataDir} from './common'
 import path from 'path';
-import {bigIntReplacer, ensureFileAndPath, ensurePath} from "../utils/utils";
+import {bigIntReplacer, ensureFileAndPath, ensurePath, removeFile} from "../utils/utils";
 
 var _ = require('lodash');
 
@@ -23,19 +23,17 @@ export type TonTransaction = {
     in:{
         src: string,
         inMsgHash:string,
-        inMsgBodyHash:string,
+        inBodyHash:string,
         createdLt:bigint,
         createAt:bigint,
     },
     out:{
-        outMsgs:{
-            dst:string,
-            outMsgHash:string,
-            outBodyHash:string,
-            createdLt:bigint,
-            createAt:bigint,
-        }[],
-    },
+        dst:string,
+        outMsgHash:string,
+        outBodyHash:string,
+        createdLt:bigint,
+        createAt:bigint,
+    }[],
     emitEventOrNot:boolean,
 }
 
@@ -71,6 +69,7 @@ var deserializeWithBig = function(str:string){
 
 exports.DB = class DB {
     private readonly dbName: string;
+    private  fullFileName: string;
     private db = null;
     private mutex: any;
     constructor(dbName:string) {
@@ -89,7 +88,7 @@ exports.DB = class DB {
         const FileSync = require('lowdb/adapters/FileSync')
         const fullName = path.join(...[DBDataDir,dbName+'.json'])
         console.log("fullName",fullName);
-
+        this.fullFileName = fullName;
         if(!(await ensurePath(fullName))){
             throw new Error(`init db error ${fullName}`);
         }
@@ -168,20 +167,18 @@ exports.DB = class DB {
     }
 
     async setTranHandleFlags(trans:TonTransaction[],finishOrNots:boolean[]){
+        console.log("Entering setTranHandleFlag");
+        if(trans.length != finishOrNots.length || trans.length == 0 ){
+            throw(new Error("setTranHandleFlag fail"))
+        }
         try {
-            console.log("Entering setTranHandleFlag");
-            if(trans.length != finishOrNots.length || trans.length == 0 ){
-                throw(new Error("setTranHandleFlag fail"))
-            }
             for(let i = 0;i < trans.length; i++){
                 await this.setTranHandleFlag(trans[i],finishOrNots[i]);
             }
         }catch(err){
             console.log("setTranHandleFlag","err",err);
         }
-
     }
-
     // isInitial (true->false)
     async setScanStarted(){
         let copy = {};
@@ -213,6 +210,10 @@ exports.DB = class DB {
 
     }
 
+    async clearDb(){
+        this.db.setState({}).write();
+        await removeFile(this.fullFileName);
+    }
 
     /////////////////////////////////////
     // read db
@@ -231,27 +232,120 @@ exports.DB = class DB {
         }
     }
 
-    async getParenTx(){
+    async getParenTx(tran:TonTransaction){
+        let copy = {};
         const release = await this.mutex.acquire();
         try {
             console.log("getParenTx");
+            copy = _.cloneDeep(this.db.get('trans').value());
         }catch(err){
             console.log("getParenTx","err",err);
         }
         finally {
             release();
         }
+
+        let result :TonTransaction[] = [];
+        try{
+            result = _.filter(copy, (tonTran) =>{
+                return _.some(tonTran.out, (item) => {
+                    return (
+                        (item.dst === tran.in.src && item.createdLt === tran.in.createdLt) &&
+                        ((item.outMsgHash === tran.in.inMsgHash) || (item.outBodyHash == tran.in.inBodyHash))
+                    );
+                });
+            });
+
+        }catch(err){
+            console.log("getParenTx","map err",err);
+        }finally {
+            copy = null;
+        }
+        return result.length? result[0]:null;
     }
 
-    async getChildTxs(msgHash:string,msgBodyHash:string,lt:string){
+    async getChildTxs(tran:TonTransaction){
+        let copy = {};
         const release = await this.mutex.acquire();
         try {
             console.log("getChildTxs");
+            copy = _.cloneDeep(this.db.get('trans').value());
         }catch(err){
             console.log("getChildTxs","err",err);
         }
         finally {
             release();
         }
+
+        let result:TonTransaction[] = [];
+       try{
+            for(let i =0; i<tran.out.length;i++){
+                let oneTran = _.filter(copy,(item)=>{
+                    return (item.in.src ==  tran.out[i].dst  &&
+                        (item.in.inMsgHash == tran.out[i].outMsgHash || item.in.inBodyHash == tran.out[i].outBodyHash) &&
+                    item.in.createdLt == tran.out[i].createdLt);
+                })
+
+                result.push(...oneTran);
+            }
+       }catch(err){
+
+       }finally {
+           copy = null;
+       }
+       return result;
+    }
+
+    async getTxByTxHash(txHash: string) {
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            console.log("getChildTxs");
+            copy = _.cloneDeep(this.db.get('trans').value());
+        } catch (err) {
+            console.log("getChildTxs", "err", err);
+        } finally {
+            release();
+        }
+
+        let result: TonTransaction = null;
+        try {
+
+            result = _.filter(copy, (item) => {
+                return (item.hash == txHash);
+            })
+        } catch (err) {
+
+        } finally {
+            copy = null;
+        }
+        return result;
+    }
+
+    async getTxByMsg(msgHash:string,bodyHash:string,lt:bigint){
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            console.log("getChildTxs");
+            copy = _.cloneDeep(this.db.get('trans').value());
+        } catch (err) {
+            console.log("getChildTxs", "err", err);
+        } finally {
+            release();
+        }
+
+        let result: TonTransaction = null;
+        try {
+            result = _.filter(copy, (item) => {
+                return (
+                    (item.in.inMsgHash == msgHash || item.in.inBodyHash == bodyHash) &&
+                    item.in.createdLt == lt);
+            })
+        } catch (err) {
+            console.log("getTxByMsg","err",err);
+        } finally {
+            copy = null;
+        }
+        return result;
     }
 }

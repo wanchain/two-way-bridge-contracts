@@ -187,3 +187,18 @@ export async function ensurePath(fullFilePath:string):Promise<boolean>{
     }
     return true;
 }
+
+export async function removeFile(fullFilePath:string):Promise<boolean>{
+    try {
+        await fs.access(fullFilePath);
+        console.log(`file exist: ${fullFilePath}`);
+        await fs.unlink(fullFilePath);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return true
+        } else {
+            console.error(`access file fail (${fullFilePath}):`, error);
+            return false
+        }
+    }
+}
