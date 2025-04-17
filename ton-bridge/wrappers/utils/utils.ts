@@ -121,3 +121,69 @@ export function remove0x(str:string){
 export function add0x(str:string){
     return (str.slice(0,2).toLowerCase() == '0x') ? str:'0x' + str;
 }
+
+
+const fs = require('node:fs/promises');
+const path = require('node:path');
+
+export async function ensureFileAndPath(fullFilePath:string):Promise<boolean>{
+    try {
+        await fs.access(fullFilePath);
+        console.log(`file exist: ${fullFilePath}`);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            const directoryPath = path.dirname(fullFilePath);
+
+            try {
+                await fs.access(directoryPath);
+            } catch (dirError) {
+                if (dirError.code === 'ENOENT') {
+                    console.log(`mkdir: ${directoryPath}`);
+                    await fs.mkdir(directoryPath, { recursive: true });
+                } else {
+                    console.error(`mkdir (${directoryPath}):`, dirError);
+                    return false;
+                }
+            }
+
+            try {
+                await fs.writeFile(fullFilePath, '');
+                console.log(`file created: ${fullFilePath}`);
+            } catch (fileError) {
+                console.error(`create file faile (${fullFilePath}):`, fileError);
+                return false;
+            }
+        } else {
+            console.error(`access file fail (${fullFilePath}):`, error);
+            return false
+        }
+    }
+    return true;
+}
+
+export async function ensurePath(fullFilePath:string):Promise<boolean>{
+    try {
+        await fs.access(fullFilePath);
+        console.log(`file exist: ${fullFilePath}`);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            const directoryPath = path.dirname(fullFilePath);
+
+            try {
+                await fs.access(directoryPath);
+            } catch (dirError) {
+                if (dirError.code === 'ENOENT') {
+                    console.log(`mkdir: ${directoryPath}`);
+                    await fs.mkdir(directoryPath, { recursive: true });
+                } else {
+                    console.error(`mkdir (${directoryPath}):`, dirError);
+                    return false;
+                }
+            }
+        } else {
+            console.error(`access file fail (${fullFilePath}):`, error);
+            return false
+        }
+    }
+    return true;
+}

@@ -1,8 +1,9 @@
-export const DBDataDir = "../../data/";
-
-
 import * as fs from 'fs';
 import * as path from 'path';
+
+export const DBDataDir = path.join(...[__dirname,"/../data/"]);
+console.log("__dirname",__dirname);
+console.log("DBDataDir",DBDataDir);
 
 export  function listJsonFiles(dir: string, fileList: string[] = []): string[] {
     const files = fs.readdirSync(dir);
@@ -10,9 +11,9 @@ export  function listJsonFiles(dir: string, fileList: string[] = []): string[] {
         const filePath = path.join(dir, file);
         const stat = fs.statSync(filePath);
         if (stat.isDirectory()) {
-            listJsonFiles(filePath, fileList); // 递归处理子目录
+            listJsonFiles(filePath, fileList);
         } else if (path.extname(filePath) === '.json') {
-            fileList.push(filePath); // 添加.json文件路径
+            fileList.push(filePath);
         }
     }
     return fileList;

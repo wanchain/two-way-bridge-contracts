@@ -1,13 +1,15 @@
-// import { Low } from 'lowdb';
-
-import _ from 'lodash';
 import {DBDataDir} from './common'
 import path from 'path';
+import {bigIntReplacer, ensureFileAndPath, ensurePath} from "../utils/utils";
+
+var _ = require('lodash');
+
+const { Mutex } = require('async-mutex');
 
 const minLt = BigInt(0)
-const maxLt = BigInt(2^256-1)
+const maxLt = 1n << 256n - 1n;
 
-enum RangeOpen {
+export enum RangeOpen {
     CloseRange,    // 0
     RightOpenRange,  // 1
     //LeftOpenRange,  // 2
@@ -24,7 +26,7 @@ export type TonTransaction = {
         inMsgBodyHash:string,
         createdLt:bigint,
         createAt:bigint,
-    }
+    },
     out:{
         outMsgs:{
             dst:string,
@@ -59,15 +61,22 @@ const defaultData:Data = {
     }],
 }
 
-import low, { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
+var serializeWithBig = function(obj:any){
+    return JSON.stringify(obj,bigIntReplacer,2)
+}
 
-export class DB {
+var deserializeWithBig = function(str:string){
+    return JSON.parse(str,bigIntReplacer);
+}
+
+exports.DB = class DB {
     private readonly dbName: string;
     private db = null;
+    private mutex: any;
     constructor(dbName:string) {
         this.dbName = dbName;
         this.db = null;
+        this.mutex = new Mutex();
     }
 
     getDbName() {
@@ -78,120 +87,171 @@ export class DB {
 
         const low = require('lowdb')
         const FileSync = require('lowdb/adapters/FileSync')
+        const fullName = path.join(...[DBDataDir,dbName+'.json'])
+        console.log("fullName",fullName);
 
-        const adapter = new FileSync(path.join(...[DBDataDir,dbName+'.json']))
+        if(!(await ensurePath(fullName))){
+            throw new Error(`init db error ${fullName}`);
+        }
+
+        const adapter = new FileSync(fullName,{
+            defaultValue:defaultData,
+            serialize:serializeWithBig,
+            deserialize:deserializeWithBig,
+        });
         this.db = low(adapter)
-    }
-}
-
-
-/*
-const low = require('lowdb')
-const FileSync = require('lowdb/adapters/FileSync')
-
-const adapter = new FileSync('db.json')
-const db = low(adapter)
-
-db.defaults({ posts: [] })
-  .write()
-
-const result = db.get('posts')
-  .push({ name: process.argv[2] })
-  .write()
-
-console.log(result)
- */
-
-
-/*export class DB {
-    private dbName: string;
-    private db: Low<Data>;
-    constructor(dbName:string) {
-        this.dbName = dbName;
-        this.db = null;
-    }
-
-    getDbName() {
-        return this.dbName;
-    }
-
-    async init(dbName:string) {
-        const adapter = new JSONFile<Data>(path.join(...[DBDataDir,dbName,'.json']));
-        this.db = new Low(adapter,defaultData)
     }
 
     async stopFeedTrans(){
-        console.log("Entering stopFeedTrans");
+        const release = await this.mutex.acquire();
+        try {
+            console.log("Entering stopFeedTrans");
+        } finally {
+            release();
+        }
+    }
+
+    async insertTrans(trans:TonTransaction){
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            console.log("Entering insertTrans");
+            copy = _.cloneDeep(this.db.getState())
+            _.forEach(trans, tran => {
+                this.db.get('trans').value().push(tran);
+            });
+            this.db.write();
+        }catch(err){
+            this.db.setState(copy);
+            console.log("insertTrans","err",err);
+        }finally {
+            release();
+        }
     }
 
     /////////////////////////////////////
     // write db
     /////////////////////////////////////
     async updateTask(tasks:Task[]){
-        console.log("Entering updateTask");
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            console.log("Entering updateTask");
+            copy = _.cloneDeep(this.db.getState())
+            this.db.set("scanTasks",tasks).write();
+        }catch(err){
+            this.db.setState(copy)
+            console.log("updateTask","err",err);
+        }
+        finally {
+            release();
+        }
     }
 
     async setTranHandleFlag(tran:TonTransaction,finishOrNot:boolean){
-        console.log("Entering setTranHandleFlag");
-        try{
-            await this.db.read()
-            let copy = _.cloneDeep(this.db.data)
-            await this.db.update(copy=>{
-                const index  = _.findIndex(copy.trans,{hash:tran.hash,lt:tran.lt})
-                if (index !== -1) {
-                    _.set(copy.trans[index], 'emitEventOrNot', finishOrNot);
-                }
-            });
-        }catch(err){
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            console.log("Entering setTranHandleFlag");
+            copy = _.cloneDeep(this.db.getState())
+
+            this.db.get('trans').find({hash: tran.hash,lt:tran.lt})
+                .assign({emitEventOrNot: finishOrNot})
+                .write()
+        } catch (err) {
+            this.db.setState(copy)
             console.log("setTranHandleFlag","err",err);
+        }
+        finally {
+            release();
         }
     }
 
     async setTranHandleFlags(trans:TonTransaction[],finishOrNots:boolean[]){
-        console.log("Entering setTranHandleFlags");
-        if(trans.length != finishOrNots.length || trans.length == 0 ){
-            throw(new Error("setTranHandleFlags fail"))
+        try {
+            console.log("Entering setTranHandleFlag");
+            if(trans.length != finishOrNots.length || trans.length == 0 ){
+                throw(new Error("setTranHandleFlag fail"))
+            }
+            for(let i = 0;i < trans.length; i++){
+                await this.setTranHandleFlag(trans[i],finishOrNots[i]);
+            }
+        }catch(err){
+            console.log("setTranHandleFlag","err",err);
         }
-        for(let i = 0;i < trans.length; i++){
-            await this.setTranHandleFlag(trans[i],finishOrNots[i]);
-        }
+
     }
 
     // isInitial (true->false)
     async setScanStarted(){
-        console.log("Entering setScanStarted");
-        try{
-            await this.db.read()
-            let copy = _.cloneDeep(this.db.data)
-            copy.isInitial = false;
-            await this.db.update(copy=>{
-                copy.isInitial = true;
-            });
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            console.log("Entering setScanStarted");
+            copy = _.cloneDeep(this.db.getState())
+            this.db.set('isInitial', false).write();
         }catch(err){
+            this.db.setState(copy);
             console.log("setScanStarted","err",err);
         }
-
+        finally {
+            release();
+        }
     }
 
     // scan history and increased new trans into db.
     async feedTrans(){
-        console.log("Entering feedTrans");
+        const release = await this.mutex.acquire();
+        try {
+            console.log("Entering feedTrans");
+        }catch(err){
+            console.log("setScanStarted","err",err);
+        }
+        finally {
+            release();
+        }
+
     }
 
 
     /////////////////////////////////////
     // read db
     /////////////////////////////////////
+
+    async getTasks(){
+        const release = await this.mutex.acquire();
+        try {
+            console.log("getTasks");
+            return _.cloneDeep(this.db.get("scanTasks").value());
+        }catch(err){
+            console.log("getTasks","err",err);
+        }
+        finally {
+            release();
+        }
+    }
+
     async getParenTx(){
-        console.log("Entering getParenTx");
-        let ret:TonTransaction = null;
-        return ret;
+        const release = await this.mutex.acquire();
+        try {
+            console.log("getParenTx");
+        }catch(err){
+            console.log("getParenTx","err",err);
+        }
+        finally {
+            release();
+        }
     }
 
     async getChildTxs(msgHash:string,msgBodyHash:string,lt:string){
-        console.log("Entering getChildTxs");
-        let ret:TonTransaction[];
-        await this.db.read();
-        return ret
+        const release = await this.mutex.acquire();
+        try {
+            console.log("getChildTxs");
+        }catch(err){
+            console.log("getChildTxs","err",err);
+        }
+        finally {
+            release();
+        }
     }
-}*/
+}
