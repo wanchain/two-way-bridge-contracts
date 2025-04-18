@@ -13,8 +13,7 @@ import {getJettonAddress} from "../wallet/jetton";
 import {getTokenPairInfo} from "../code/userLock";
 import {bigIntToBytes32, isAddressEqual, sleep} from "../utils/utils";
 
-const MAX_LIMIT = 1000;
-const MAX_RETRY = 10;
+import {MAX_LIMIT,MAX_RETRY} from "../const/const-value";
 /*
 example of ret:
 

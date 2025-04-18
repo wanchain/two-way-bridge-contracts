@@ -1,11 +1,25 @@
-import {DB} from './Db';
+const DB = require("../db/Db").DB;
+const RangeOpen = require("../db/Db").RangeOpen;
 
 import {DBDataDir} from './common'
 import {listJsonFiles} from './common'
 
 let dbAccess:DBAccess = null;
+
+async function runAsyncTask(db:typeof DB) {
+    // return new Promise(async(resolve,reject) => {
+    //     try{
+    //         await db.feedTrans();
+    //         resolve(db.getName());
+    //     }catch(err){
+    //         reject(err)
+    //     }
+    // });
+    db.feedTrans();
+}
+
 export class DBAccess {
-    private dbs: Map<string, DB>;
+    private dbs: Map<string, typeof DB>;
     constructor() {
         this.dbs = new Map();
     }
@@ -17,6 +31,7 @@ export class DBAccess {
             let db = new DB(dbName);
             await db.init(dbName);
             this.dbs[dbName] = db;
+            await runAsyncTask(db);
         }
     }
 
@@ -24,26 +39,31 @@ export class DBAccess {
         for(let key of this.dbs.keys()){
             let db = this.dbs[key];
             await db.stopFeedTrans()
+            await db.clearDb();
             db = null;
         }
         this.dbs.clear();
     }
+
     static getDBAccess() {
         if(dbAccess == null){
             dbAccess = new DBAccess();
+            return dbAccess;
         }else {
             return dbAccess;
         }
     }
 
-    addDb(db:DB){
+    async addDbByName(dbName:string){
+        let db = new DB(dbName);
+        await db.init(dbName);
         this.dbs.set(db.getDbName(),db);
-        (this.dbs[db.getDbName()]).feedTrans();
+        runAsyncTask(db);
     }
 
-    removeDb(db:DB){
-        this.dbs.delete(db.getDbName());
-        (this.dbs[db.getDbName()]).stopFeedTrans();
+    async removeDbByName(dbName:string){
+        this.dbs.delete(dbName);
+        await (this.dbs[dbName]).stopFeedTrans();
     }
 
 }

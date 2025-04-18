@@ -1,6 +1,18 @@
 import {DBDataDir} from './common'
 import path from 'path';
-import {bigIntReplacer, ensureFileAndPath, ensurePath, removeFile} from "../utils/utils";
+import {bigIntReplacer, ensureFileAndPath, ensurePath, removeFile, sleep} from "../utils/utils";
+import {getClient, TonClientConfig} from "../client/client";
+import {TonClient} from "@ton/ton";
+import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
+import formatUtil from "util";
+import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
+import {MAX_LIMIT,MAX_RETRY} from "../const/const-value";
+
+//todo how to provide testnet | mainnet information.
+const config:TonClientConfig =  {
+    network:"testnet", // testnet|mainnet
+    tonClientTimeout: 60 * 1000 * 1000,
+}
 
 var _ = require('lodash');
 
@@ -110,7 +122,7 @@ exports.DB = class DB {
         }
     }
 
-    async insertTrans(trans:TonTransaction){
+    async insertTrans(trans:TonTransaction[]){
         let copy = {};
         const release = await this.mutex.acquire();
         try {
@@ -196,18 +208,213 @@ exports.DB = class DB {
         }
     }
 
-    // scan history and increased new trans into db.
-    async feedTrans(){
+    async getScanStatus(){
+        let copy = {};
         const release = await this.mutex.acquire();
         try {
-            console.log("Entering feedTrans");
+            console.log("Entering getScanStatus");
+            copy = _.cloneDeep(this.db.getState())
+            return this.db.get('isInitial').value();
         }catch(err){
+            this.db.setState(copy);
             console.log("setScanStarted","err",err);
         }
         finally {
             release();
         }
+    }
 
+    // scan history and increased new trans into db.
+    async feedTrans(){
+        let scanInit = await this.getScanStatus();
+        if(scanInit){
+            await this.setScanStarted();
+        }
+        while(true){
+            try{
+                let tasks = await this.getTasks();
+                let retTasks = await this.scanTonTxByTasks(tasks);
+                await this.updateTask(retTasks);
+            }catch(err){
+
+            }
+            console.log(`***************************feedTrans is working ${this.dbName}**************************************`);
+            await sleep(1000);
+        }
+    }
+
+    async scanTonTxByTasks(tasks:Task[]){
+        let retTask:Task[] = [];
+        for(let i = tasks.length-1 ; i>= 0; i--){
+            try{
+                retTask.push(...(await this.scanTonTxByTask(tasks[i])));
+            }catch(err){
+                console.log("scanTonTxByTasks err",err);
+                retTask.push(tasks[i]);
+            }
+        }
+        return retTask;
+    }
+    async scanTonTxByTask(task:Task){
+        let rangeStartLt = task.rangeStart;
+        let rangeEndLt = task.rangeEnd;
+        let rangeOpen = task.rangeOpen;
+        let retTask:Task[] = [];
+        let client:TonClient = await getClient(config);   //todo check how to provide config.
+        let maxScanedLt = BigInt(rangeStartLt);
+        let minScanedLt = BigInt(rangeEndLt);
+
+        let trans = [];
+        let transCount = MAX_LIMIT;
+        let limit = MAX_LIMIT;
+        let maxRetry = MAX_RETRY;
+        let retry = MAX_RETRY;
+        let needSlitRange = false;
+        let opts: {
+            limit: number;
+            lt?: string;
+            hash?: string;
+            to_lt?: string;
+            inclusive?: boolean;
+            archival?: boolean;
+        } = {
+            limit,
+            archival:true,
+            to_lt:rangeStartLt.toString(10),
+            lt:rangeEndLt.toString(10),
+        }
+        let scAddress = Address.parse(this.dbName)
+
+        try{
+            while(transCount){
+                let getSuccess = false
+                while(maxRetry-- >0 && (!getSuccess)){
+                    try{
+                        console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,opts);
+                        let ret = await client.getTransactions(scAddress,opts)
+                        transCount = ret.length;
+                        console.log("getTransactions success","opts",opts,"len of getTransactions",transCount);
+                        for(let tran of ret){
+                            console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
+                            trans.push(tran);
+                        }
+                        if(ret.length){
+                            opts.lt = ret[ret.length-1].lt.toString(10);
+                            opts.hash = ret[ret.length-1].hash().toString('base64');
+                            maxScanedLt = ret[0].lt > maxScanedLt ? ret[0].lt : maxScanedLt
+                            minScanedLt = ret[ret.length-1].lt < minScanedLt ? ret[ret.length-1].lt : minScanedLt;
+                        }
+                        console.log("maxScanedLt",maxScanedLt,"minScanedLt",minScanedLt,"scAddress or dbName",this.dbName);
+
+                        let tonTrans:TonTransaction[] = [];
+                        tonTrans = this.convertTranToTonTrans(trans);
+                        await this.insertTrans(tonTrans);
+                        trans = [];
+
+                        getSuccess = true;
+                        maxRetry = retry;
+                    }catch(e){
+                        console.log("err ",e);
+                        await sleep(2000);
+                    }
+                }
+                if(maxRetry == 0){
+                    let err = new Error(formatUtil.format("getTransactions failed after %d retry. opts is %s",retry,JSON.stringify(opts)))
+                    throw("fail by max_retry"+err.message);
+                }
+
+                await sleep(2000);
+            }
+        }catch(err){
+            console.log("err",err.message);
+            if(err.message.toString().includes("fail by max_retry")){
+                //todo need handle sepcial?
+            }
+            needSlitRange = true;
+        }
+        if(transCount ==0){
+            console.log("scan success","startLt",rangeStartLt.toString(10),"endLt",rangeEndLt.toString(10),"rangeOpen",rangeOpen);
+
+        }
+        if(maxScanedLt < rangeEndLt){
+            retTask.push({
+                rangeStart:maxScanedLt,
+                rangeEnd:rangeEndLt,
+                rangeOpen:RangeOpen.RightOpenRange,
+            });
+        }
+        if(needSlitRange){
+            if(rangeStartLt < minScanedLt){
+                retTask.push({
+                    rangeStart:rangeStartLt,
+                    rangeEnd:minScanedLt,
+                    rangeOpen:RangeOpen.CloseRange,
+                });
+            }
+        }
+        return retTask;
+    }
+
+    convertTranToTonTrans(trans:Transaction[]){
+        let tonTrans:TonTransaction[] = [];
+        for(let tran of trans){
+            const inMessageCell = beginCell().store(storeMessage(tran.inMessage)).endCell();
+            let inMessageHash = inMessageCell.hash().toString('hex');
+            let inMessageBodyCellHash = tran.inMessage.body.hash().toString('hex');
+
+            let cii = tran.inMessage.info as unknown as CommonMessageInfoInternal
+
+            let outMsgs:{
+                dst:string,
+                outMsgHash:string,
+                outBodyHash:string,
+                createdLt:bigint,
+                createAt:bigint,
+            }[] = [];
+            for(let key of tran.outMessages.keys()){
+                let om = tran.outMessages.get(key);
+                let ciiOut = om.info as unknown as CommonMessageInfoInternal;
+
+                const outMessageCell = beginCell().store(storeMessage(om)).endCell();
+                let outMessageHash = outMessageCell.hash().toString('hex');
+                let outMessageBodyCellHash = om.body.hash().toString('hex');
+
+                let outMsg = {
+                    dst:ciiOut.dest.toString(),
+                    outMsgHash:outMessageHash,
+                    outBodyHash:outMessageBodyCellHash,
+                    createdLt:ciiOut.createdLt,
+                    createAt:BigInt(ciiOut.createdAt),
+                }
+                outMsgs.push(outMsg);
+            }
+
+            let tonTranTemp:TonTransaction = {
+                hash: tran.hash().toString('hex'),// hexString
+                lt:tran.lt,
+                raw:tran.raw.toBoc().toString('base64'),
+                in:{
+                    src: cii.src.toString(),
+                    inMsgHash:inMessageHash,
+                    inBodyHash:inMessageBodyCellHash,
+                    createdLt:cii.createdLt,
+                    createAt:BigInt(cii.createdAt),
+                },
+                out:outMsgs,
+                emitEventOrNot:false,
+            }
+            tonTrans.push(tonTranTemp);
+        }
+        return tonTrans;
+    }
+
+    convertTonTransToTran(tonTrans:TonTransaction[]){
+        let trans:Transaction[] = [];
+        for(let tonTran of tonTrans){
+            let tranTemp:Transaction; //todo should check core/transaction.
+            trans.push(tranTemp);
+        }
+        return trans;
     }
 
     async clearDb(){
