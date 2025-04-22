@@ -7,15 +7,7 @@ import {listJsonFiles} from './common'
 let dbAccess:DBAccess = null;
 
 async function runAsyncTask(db:typeof DB) {
-    // return new Promise(async(resolve,reject) => {
-    //     try{
-    //         await db.feedTrans();
-    //         resolve(db.getName());
-    //     }catch(err){
-    //         reject(err)
-    //     }
-    // });
-    db.feedTrans();
+    await db.feedTrans();
 }
 
 export class DBAccess {
@@ -58,7 +50,7 @@ export class DBAccess {
         let db = new DB(dbName);
         await db.init(dbName);
         this.dbs.set(db.getDbName(),db);
-        runAsyncTask(db);
+        await runAsyncTask(db);
     }
 
     async removeDbByName(dbName:string){

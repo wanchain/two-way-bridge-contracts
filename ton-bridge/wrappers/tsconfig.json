@@ -10,7 +10,7 @@
     "forceConsistentCasingInFileNames": true,
     "strict": false,
     "skipLibCheck": true,
-    "types": ["jest"]
+    "types": ["jest","node"]
   },
   "include": ["./**/*"],
   "exclude": [

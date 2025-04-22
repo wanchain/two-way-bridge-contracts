@@ -226,24 +226,43 @@ exports.DB = class DB {
 
     // scan history and increased new trans into db.
     async feedTrans(){
+        console.log("Entering feedTrans..............",this.dbName);
         let scanInit = await this.getScanStatus();
         if(scanInit){
             await this.setScanStarted();
         }
-        while(true){
-            try{
-                let tasks = await this.getTasks();
-                let retTasks = await this.scanTonTxByTasks(tasks);
-                await this.updateTask(retTasks);
-            }catch(err){
 
-            }
-            console.log(`***************************feedTrans is working ${this.dbName}**************************************`);
-            await sleep(1000);
+        let scanFun = async ()=>{
+            let tasks = await this.getTasks();
+            let retTasks = await this.scanTonTxByTasks(tasks);
+            await this.updateTask(retTasks);
         }
+
+        try{
+            console.log(`***************************first time feedTrans is working**************************************`,this.dbName);
+            await scanFun();
+        }catch(e){
+            console.error(e);
+        }
+
+        let isRunning = false;
+        setInterval(async () => {
+            if (isRunning) return;
+            isRunning = true;
+
+            try {
+                console.log(`***************************feedTrans is working**************************************`,this.dbName);
+                await scanFun();
+            } catch (e) {
+                console.log("feedTrans error",e);
+            }finally {
+                isRunning = false;
+            }
+        }, 10000);
     }
 
     async scanTonTxByTasks(tasks:Task[]){
+        console.log("entering scanTonTxByTasks:",this.dbName,"tasks",tasks);
         let retTask:Task[] = [];
         for(let i = tasks.length-1 ; i>= 0; i--){
             try{
@@ -256,13 +275,14 @@ exports.DB = class DB {
         return retTask;
     }
     async scanTonTxByTask(task:Task){
+        console.log("entering scanTonTxByTask:",this.dbName,"task",task);
         let rangeStartLt = task.rangeStart;
         let rangeEndLt = task.rangeEnd;
         let rangeOpen = task.rangeOpen;
         let retTask:Task[] = [];
         let client:TonClient = await getClient(config);   //todo check how to provide config.
-        let maxScanedLt = BigInt(rangeStartLt);
-        let minScanedLt = BigInt(rangeEndLt);
+        let maxScanedLt = rangeStartLt;
+        let minScanedLt = rangeEndLt;
 
         let trans = [];
         let transCount = MAX_LIMIT;
@@ -283,7 +303,7 @@ exports.DB = class DB {
             to_lt:rangeStartLt.toString(10),
             lt:rangeEndLt.toString(10),
         }
-        let scAddress = Address.parse(this.dbName)
+        let scAddress = Address.parse(this.dbName);
 
         try{
             while(transCount){
