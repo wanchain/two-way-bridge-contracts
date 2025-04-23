@@ -325,9 +325,11 @@ class DB {
         try{
             while(transCount){
                 let getSuccess = false
-                while(maxRetry-- >0 && (!getSuccess)){
+                while((maxRetry-- >0) && (!getSuccess)){
                     try{
+
                         console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,opts);
+
                         let ret = await client.getTransactions(scAddress,opts)
                         transCount = ret.length;
                         console.log("getTransactions success","opts",opts,"len of getTransactions",transCount);
@@ -355,12 +357,13 @@ class DB {
                         await sleep(2000);
                     }
                 }
-                if(maxRetry == 0){
-                    let err = new Error(formatUtil.format("getTransactions failed after %d retry. opts is %s",retry,JSON.stringify(opts)))
-                    throw new Error("fail by max_retry"+err.message);
+                if(maxRetry <= 0){
+                    console.log("maxRetry == 0, before throw err.XXXXXXXXXXXXXXX");
+                    throw new Error(formatUtil.format("fail by max_retry getTransactions failed after %d retry. opts is %s",retry,JSON.stringify(opts)))
                 }
 
                 await sleep(2000);
+                console.log("last loop transCount",transCount,"retry",maxRetry);
             }
         }catch(err){
             console.log("err",err.message);
