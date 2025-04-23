@@ -26,7 +26,7 @@ export async function getClient(config:TonClientConfig,url?:string):Promise<TonC
     }
     const indexUsed = await getSecureRandomNumber(0,total)
     logger.info(formatUtil.format("http endpoint is =>",endpoints[indexUsed]));
-    // return  new TonClient({ endpoint:endpoints[indexUsed],timeout:config.tonClientTimeout });
+    //return  new TonClient({ endpoint:endpoints[indexUsed],timeout:config.tonClientTimeout });
 
     const TONCLINET_TIMEOUT = 60 * 1000 * 1000;
     const toncenter_testnet_apikey ="73ee18f6b52a360e9db390f146a8c6af161549495d6e9794ae3efd2e412fa7a2";

@@ -36,6 +36,7 @@ example of ret:
 //todo  gas used (accumuted, summary.)
 //todo  in send Message, message body-> txhash.
 
+
 export async function getEvents(client: TonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string):Promise<any> {
 
     console.log("scAddress:%s,limit:%s,lt:%s,to_lt:%s,eventName:%s",scAddress,limit,lt,to_lt,eventName);
@@ -161,7 +162,9 @@ async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:str
             console.error("opCode is empty","tran","opCode",opCode.toString(16));
             return null;
         }
+        console.log("before decode bodyCell");
         let decoded = await codeTable[opCode]["deCode"](bodyCell);
+        console.log("after decode bodyCell");
         decoded.txHashBase64 = tran.hash().toString("base64");
         decoded.txHash = tran.hash().toString("hex");
 

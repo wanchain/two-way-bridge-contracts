@@ -23,13 +23,15 @@ export const codeTable = {
             let slice = cell.beginParse();
             let opCode = slice.loadUint(32);
             let queryID = slice.loadUint(64);
-            let smgID = slice.loadUint(256);
+            console.log("33333");
+            let smgID = slice.loadUintBig(256); // why not use .loadUintBig(256)? should change all loadUint(256) to loadUintBig(256)?
+            console.log("4444");
             let tokenPairID = slice.loadUint(32);
-            let crossValue = slice.loadUint(256);
+            let crossValue = slice.loadUintBig(256);
 
             let dstUserAccountLen = slice.loadUint(8);
             let dstUserAccountBuff = slice.loadBuffer(dstUserAccountLen);
-
+            console.log("22222");
             let extraCell = slice.loadRef().beginParse();
             let addrTokenAccount = extraCell.loadAddress();
             let jwAddrSrc = extraCell.loadAddress();
@@ -38,14 +40,15 @@ export const codeTable = {
 
             let extraCell2 = slice.loadRef().beginParse();
             let senderAccount = extraCell2.loadAddress();
-            let fee = extraCell2.loadUint(256);
+            console.log("1111111");
+            let fee = extraCell2.loadUintBig(256);
             extraCell2.endParse();
 
             slice.endParse();
 
             return {
                 uniqueID:queryID,
-                smgID:int64ToByte32(BigInt(smgID)),
+                smgID:int64ToByte32(smgID),
                 tokenPairID,
                 crossValue,
                 dstUserAccount: add0x(dstUserAccountBuff.toString('hex')),
@@ -111,26 +114,26 @@ export const codeTable = {
             let slice = cell.beginParse();
             let opCode = slice.loadUint(32);
             let queryID = slice.loadUint(64);
-            let uniqueID = slice.loadUint(256);
-            let smgID = slice.loadUint(256);
+            let uniqueID = slice.loadUintBig(256);
+            let smgID = slice.loadUintBig(256);
             let tokenPairID = slice.loadUint(32);
-            let releaseValue = slice.loadUint(256);
+            let releaseValue = slice.loadUintBig(256);
 
             let part2Slice = slice.loadRef().beginParse();
-            let fee = part2Slice.loadUint(256);
+            let fee = part2Slice.loadUintBig(256);
             let userAccount = part2Slice.loadAddress();
             part2Slice.endParse();
 
             let part3Slice = slice.loadRef().beginParse();
-            let e = part3Slice.loadUint(256);
-            let p = part3Slice.loadUint(256);
-            let s = part3Slice.loadUint(256);
+            let e = part3Slice.loadUintBig(256);
+            let p = part3Slice.loadUintBig(256);
+            let s = part3Slice.loadUintBig(256);
             part3Slice.endParse();
 
             let part4Slice = slice.loadRef().beginParse();
             let bridgeJettonWalletAddr = part4Slice.loadAddress();
-            let fwTonAmount = part4Slice.loadUint(256);
-            let totalTonAmount = part4Slice.loadUint(256);
+            let fwTonAmount = part4Slice.loadUintBig(256);
+            let totalTonAmount = part4Slice.loadUintBig(256);
             part4Slice.endParse();
 
             slice.endParse();

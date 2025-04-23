@@ -1,0 +1,16 @@
+import {getClient} from "../client/client";
+
+const DBAccess = require("../db/DbAccess").DBAccess;
+const scAddress = require('../testData/contractAddress.json');
+let scBridgeAddr = scAddress.bridgeAddress;
+
+async function main(){
+    console.log("Entering main function");
+    let dbAccess = await DBAccess.getDBAccess();
+    await dbAccess.init();
+    await dbAccess.addDbByName(scBridgeAddr);
+};
+
+main();
+
+// ts-node dbFeedTrans-ex.ts

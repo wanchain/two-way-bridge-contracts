@@ -1,5 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import {beginCell, Cell, storeMessage, Transaction} from "@ton/core";
+import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
+import {TonTransaction} from "./Db";
+import {loadTransaction} from "@ton/core";
 
 export const DBDataDir = path.join(...[__dirname,"/../data/"]);
 console.log("__dirname",__dirname);
@@ -18,4 +22,67 @@ export  function listJsonFiles(dir: string, fileList: string[] = []): string[] {
         }
     }
     return fileList;
+}
+
+export function convertTranToTonTrans(trans:Transaction[]){
+    let tonTrans:TonTransaction[] = [];
+    for(let tran of trans){
+        const inMessageCell = beginCell().store(storeMessage(tran.inMessage)).endCell();
+        let inMessageHash = inMessageCell.hash().toString('hex');
+        let inMessageBodyCellHash = tran.inMessage.body.hash().toString('hex');
+
+        let cii = tran.inMessage.info as unknown as CommonMessageInfoInternal
+
+        let outMsgs:{
+            dst:string,
+            outMsgHash:string,
+            outBodyHash:string,
+            createdLt:bigint,
+            createAt:bigint,
+        }[] = [];
+        for(let key of tran.outMessages.keys()){
+            let om = tran.outMessages.get(key);
+            let ciiOut = om.info as unknown as CommonMessageInfoInternal;
+
+            const outMessageCell = beginCell().store(storeMessage(om)).endCell();
+            let outMessageHash = outMessageCell.hash().toString('hex');
+            let outMessageBodyCellHash = om.body.hash().toString('hex');
+
+            let outMsg = {
+                dst:ciiOut.dest.toString(),
+                outMsgHash:outMessageHash,
+                outBodyHash:outMessageBodyCellHash,
+                createdLt:ciiOut.createdLt,
+                createAt:BigInt(ciiOut.createdAt),
+            }
+            outMsgs.push(outMsg);
+        }
+
+        let tonTranTemp:TonTransaction = {
+            hash: tran.hash().toString('hex'),// hexString
+            lt:tran.lt,
+            raw:tran.raw.toBoc().toString('base64'),
+            in:{
+                src: cii.src.toString(),
+                inMsgHash:inMessageHash,
+                inBodyHash:inMessageBodyCellHash,
+                createdLt:cii.createdLt,
+                createAt:BigInt(cii.createdAt),
+            },
+            out:outMsgs,
+            emitEventOrNot:false,
+        }
+        tonTrans.push(tonTranTemp);
+    }
+    return tonTrans;
+}
+
+export function convertTonTransToTrans(tonTrans:TonTransaction[]){
+    console.log("convertTonTransToTrans","tonTrans",tonTrans);
+    let trans:Transaction[] = [];
+    for(let tonTran of tonTrans){
+        let tranTemp:Transaction = loadTransaction(Cell.fromBase64(tonTran.raw).asSlice());
+        trans.push(tranTemp);
+    }
+    return trans;
 }

@@ -1,7 +1,9 @@
+import {TonTransaction} from "./Db";
+
 const DB = require("../db/Db").DB;
 const RangeOpen = require("../db/Db").RangeOpen;
 
-import {DBDataDir} from './common'
+import {convertTonTransToTrans, DBDataDir} from './common'
 import {listJsonFiles} from './common'
 
 let dbAccess:DBAccess = null;
@@ -47,6 +49,9 @@ export class DBAccess {
     }
 
     async addDbByName(dbName:string){
+        if(this.has(dbName)){
+            throw new Error(`db ${dbName} already exists`);
+        }
         let db = new DB(dbName);
         await db.init(dbName);
         this.dbs.set(db.getDbName(),db);
@@ -54,8 +59,59 @@ export class DBAccess {
     }
 
     async removeDbByName(dbName:string){
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
         this.dbs.delete(dbName);
         await (this.dbs[dbName]).stopFeedTrans();
     }
 
+    async setTranHandleFlag(dbName:string,tran:TonTransaction,finishOrNot:boolean){
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        await this.dbs.get(dbName).setTranHandleFlag(tran,finishOrNot);
+    }
+
+    async getTxByTxHash(dbName:string,txHash: string) {
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        await this.dbs.get(dbName).getTxByTxHash(txHash);
+    }
+
+    async getTxByMsg(dbName:string,msgHash:string,bodyHash:string,lt:bigint){
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        let tonTran = await this.dbs.get(dbName).getTxByMsg(msgHash,bodyHash,lt);
+        if(!tonTran){
+            return null;
+        }
+        return (convertTonTransToTrans([tonTran]))[0];
+    }
+
+    async getParentTx(dbName:string,tran:TonTransaction){
+
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        let ret = await this.dbs.get(dbName).getParentTx(tran);
+        if(!ret) {
+            return ret;
+        }else{
+            return convertTonTransToTrans([ret])[0];
+        }
+    }
+
+    async getChildTxs(dbName:string,tran:TonTransaction){
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        await this.dbs.get(dbName).getChildTxs(tran);
+    }
+
+    has(dbName:string){
+        return this.dbs.has(dbName);
+    }
 }

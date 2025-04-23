@@ -4,6 +4,8 @@ import {TransactionDescriptionGeneric} from "@ton/core/src/types/TransactionDesc
 import {TransactionComputeVm} from "@ton/core/src/types/TransactionComputePhase";
 import {bigIntReplacer} from "../utils/utils";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
+import {DBAccess} from "../db/DbAccess";
+import {convertTranToTonTrans} from "../db/common";
 const formatUtil = require('util');
 
 function sleep(ms) {
@@ -71,11 +73,66 @@ async function isTranPathSuccess(allTranPathInfo:TranPathInfo):Promise<boolean>{
     return true;
 }
 
-export async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
+
+export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
     if(tran.inMessage.info.type == 'external-in'){
         return
     }
 
+    const inMessageCell = beginCell().store(storeMessage( tran.inMessage)).endCell();
+    console.log("getUpperStepsFromDb inMessageCell==>",inMessageCell.toBoc().toString('hex'));
+
+    let upperAddress = tran.inMessage.info.src as Address;
+
+    let maxRetry = 5;
+    //get from scanned db
+    let dbAccess = await DBAccess.getDBAccess();
+    let transFromDb = null;
+    let foundInDb = false;
+    while(maxRetry-- >0 && !transFromDb){
+        try{
+            let inDb = await dbAccess.has(upperAddress.toString());
+            if(!inDb){
+                await dbAccess.addDbByName(upperAddress.toString());
+                await sleep(2000);
+            }
+            transFromDb = await dbAccess.getParentTx(upperAddress.toString(),convertTranToTonTrans([tran])[0]);
+            if(!transFromDb){  // found from db
+                foundInDb = true;
+            }
+        }catch(err){
+            console.log("getTranByMsgHash from db err",err,"retry ",maxRetry);
+        }
+        await sleep(2000);
+    }
+    if(maxRetry == 0 && !foundInDb){
+        throw new Error(`Fail to look for parent. upDb: ${upperAddress.toString()}`)
+    }
+    if(foundInDb && transFromDb){
+        let stepInfoTemp :TranStepInfo = {
+            addr:upperAddress as Address,
+            txHash:transFromDb.hash().toString('hex'),
+            gasUsed:transFromDb.totalFees.coins,
+            status:await isTranSuccess(transFromDb),
+            lt:transFromDb.lt.toString(),
+        }
+        path.unshift(stepInfoTemp);
+
+        await getUpperStepsFromDb(client,upperAddress,transFromDb,path);
+    }
+}
+
+export async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
+    try{
+        await getUpperStepsFromDb(client,scAddr,tran,path);
+        return;
+    }catch(err){
+        console.log("getUpperStepsFromDb error",err);
+    }
+
+    if(tran.inMessage.info.type == 'external-in'){
+        return
+    }
 
     const inMessageCell = beginCell().store(storeMessage( tran.inMessage)).endCell();
     console.log("inMessageCell==>",inMessageCell.toBoc().toString('hex'));
@@ -84,6 +141,8 @@ export async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transac
     let tranInMsgBodyCellHash = tran.inMessage.body.hash().toString('hex');
 
     let upperAddress = tran.inMessage.info.src as Address;
+
+
     let maxTrans = 1000;
     let transChecked = 0;
     let opts:{
@@ -324,87 +383,6 @@ export async function getTranResultByTran(client:TonClient,scAddr:Address,tran:T
 }
 
 
-export async function getTranByMsgHash_old(client:TonClient, scAddr:Address, msgCellHash:string,msgBodyHash:string,lt:string=''):Promise<Transaction> {
-    let maxRetry = 5;
-    let retTran:Transaction;
-
-    let txOpts: {
-        limit: number;
-        lt?: string;
-        hash?: string;
-        to_lt?: string;
-        inclusive?: boolean;
-        archival?: boolean;
-    }={
-        limit: 10,
-        archival:true,
-    }
-
-    while(maxRetry-- > 0){
-        console.log("call getTranByMsgHash, para:", scAddr, txOpts);
-        let transactions:Transaction[] = [];
-        try{
-            transactions = await client.getTransactions(scAddr, txOpts);
-        }catch (e) {
-            console.log(e);
-            await sleep(3000);
-            continue;
-        }
-        console.log("transactions length:", transactions.length)
-        for (let i=0; i<transactions.length; i++) {
-            let tx = transactions[i]
-            // console.log("tx:", tx)
-            const transactionHash = tx.hash().toString('hex');
-            console.log("tx hash is:",i, tx.lt, transactionHash)
-
-            const inMessage = tx.inMessage;
-            //console.log("---------------tx.inMessage==>",JSON.stringify(tx.inMessage,bigIntReplacer));
-
-            //console.log("---------------tx.inMessage==>",tx.inMessage);
-            let inMessageHash:string = "";
-            let inMessageBodyCellHash:string = "";
-
-            const inMessageCell = beginCell().store(storeMessage(inMessage)).endCell();
-            inMessageHash = inMessageCell.hash().toString('hex');
-            inMessageBodyCellHash = inMessage.body.hash().toString('hex');
-            console.log("messageHash","inMessageHash",inMessageHash,"msgCellHash",msgCellHash);
-            console.log("messageBodyHash","inMessageBodyCellHash",inMessageBodyCellHash,"msgBodyHash",msgBodyHash);
-
-            if(tx.hash().toString('hex') == "f0f311fecb1775047c741a25b6b714026cd4336d987a956fa7363ad7bec7cab4" ||
-            tx.hash().toString('hex') == "3a80c94fa62a855ebb47c634f1b42ebd0fdc9ea35ab3f6389bf2c086aac887ef"){
-                console.log("---------------tx.inMessage==>",tx.inMessage);
-            }
-
-            if ((inMessageHash == msgCellHash || inMessageBodyCellHash == msgBodyHash)) {
-                if (lt.length != 0 && (inMessage.info as unknown as CommonMessageInfoInternal).createdLt.toString(10) == lt) {
-                    console.log("********************************** child message found:", tx.lt, tx.hash().toString('hex'))
-                    return transactions[i];
-                } else {
-                    return transactions[i];
-                }
-            }
-
-            // if(inMessageHash == msgCellHash) {
-            //     console.log("********************************** external-in message found:", tx.lt, tx.hash().toString('hex'))
-            //     return transactions[i];
-            // }else{
-            //     if(inMessageBodyCellHash == msgBodyHash) {
-            //         console.log("********************************** internal-in message found:", tx.lt, tx.hash().toString('hex'))
-            //         return transactions[i];
-            //     }
-            // }
-        }
-
-        if(transactions.length > 0){
-            txOpts.hash = transactions[transactions.length - 1].hash().toString('base64')
-            txOpts.lt =  transactions[transactions.length - 1].lt.toString()
-        }
-        await sleep(3000);
-    }
-
-    return retTran;
-}
-
 export async function findMsgCellHashInTran(tran:Transaction,msgCellHash:string,msgBodyHash:string,lt:string=''):Promise<Boolean> {
     let found = false;
     const inMessageCell = beginCell().store(storeMessage(tran.inMessage)).endCell();
@@ -441,6 +419,30 @@ export async function findMsgCellHashInTran(tran:Transaction,msgCellHash:string,
 export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCellHash:string,msgBodyHash:string,lt:string=''):Promise<Transaction> {
     let limit = 10;
     let retry = 5
+    let maxRetry = retry;
+    //get from scanned db
+    let dbAccess = await DBAccess.getDBAccess();
+    let transFromDb = null;
+    while(maxRetry-- >0 && !transFromDb){
+        try{
+            let inDb = await dbAccess.has(scAddr.toString());
+            if(!inDb){
+                await dbAccess.addDbByName(scAddr.toString());
+                await sleep(2000);
+            }
+            transFromDb = await dbAccess.getTxByMsg(scAddr.toString(),msgCellHash,msgBodyHash,BigInt(lt));
+            if(!transFromDb){  // found from db
+                return transFromDb;
+            }
+        }catch(err){
+            console.log("getTranByMsgHash from db err",err,"retry ",maxRetry);
+        }
+        await sleep(2000);
+    }
+
+    //get from rpc
+    maxRetry = retry;
+
     let trans = [];
     let transCount = limit;
     let opts: {
@@ -454,7 +456,7 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCell
         limit,
         archival:true,
     }
-    let maxRetry = retry;
+
     while(transCount){
         let getSuccess = false
         while(maxRetry-- >0 && (!getSuccess)){

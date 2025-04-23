@@ -8,10 +8,17 @@ import {getClient, TonClientConfig} from "../client/client";
 import {getEvents} from "../event/getEvents";
 import { logger } from "../utils/logger";
 
+async function init(){
+    const DBAccess = require('../db/DbAccess').DBAccess;
+    await DBAccess.getDBAccess().init();
+}
+
 const scAddress = require('../testData/contractAddress.json');
 const LIMIT=20;
 let  MAX_TRY_TIMES = 5;
 async function main(){
+
+    await init();
     let client = await getClient(config);
     let scBridgeAddr = scAddress.bridgeAddress;
     while(MAX_TRY_TIMES--){

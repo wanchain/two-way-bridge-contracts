@@ -1,4 +1,4 @@
-import {DBDataDir} from './common'
+import {convertTranToTonTrans, DBDataDir} from './common'
 import path from 'path';
 import {bigIntReplacer, ensureFileAndPath, ensurePath, removeFile, sleep} from "../utils/utils";
 import {getClient, TonClientConfig} from "../client/client";
@@ -19,7 +19,8 @@ var _ = require('lodash');
 const { Mutex } = require('async-mutex');
 
 const minLt = BigInt(0)
-const maxLt = 1n << 256n - 1n;
+//const maxLt = 1n << 256n - 1n;  //error: "TypeError: Can't parse integer in parameter lt"
+const maxLt = 1n << 255n - 1n;
 
 export enum RangeOpen {
     CloseRange,    // 0
@@ -79,7 +80,7 @@ var deserializeWithBig = function(str:string){
     return JSON.parse(str,bigIntReplacer);
 }
 
-exports.DB = class DB {
+class DB {
     private readonly dbName: string;
     private  fullFileName: string;
     private db = null;
@@ -242,7 +243,7 @@ exports.DB = class DB {
             console.log(`***************************first time feedTrans is working**************************************`,this.dbName);
             await scanFun();
         }catch(e){
-            console.error(e);
+            console.error(`first time feedTrans error. db:${this.dbName}, err:${e}`);
         }
 
         let isRunning = false;
@@ -275,9 +276,25 @@ exports.DB = class DB {
         return retTask;
     }
     async scanTonTxByTask(task:Task){
-        console.log("entering scanTonTxByTask:",this.dbName,"task",task);
-        let rangeStartLt = task.rangeStart;
-        let rangeEndLt = task.rangeEnd;
+        console.log("entering scanTonTxByTask:",this.dbName,"task",task,"typeof task.rangeStart",typeof task.rangeStart);
+        let rangeStartLt = BigInt(0);
+        let rangeEndLt = BigInt(0);
+        if(typeof task.rangeStart === "string"){
+            let strTemp = String(task.rangeStart)
+            rangeStartLt = strTemp[strTemp.length-1] == 'n' ? BigInt(strTemp.slice(0,strTemp.length-1)):BigInt(strTemp);
+        }
+        if(typeof task.rangeStart === "bigint"){
+            rangeStartLt = task.rangeStart;
+        }
+
+        if(typeof task.rangeEnd === "string"){
+            let strTemp = String(task.rangeEnd)
+            rangeEndLt = strTemp[strTemp.length-1] == 'n' ? BigInt(strTemp.slice(0,strTemp.length-1)):BigInt(strTemp);
+        }
+        if(typeof task.rangeEnd === "bigint"){
+            rangeEndLt = task.rangeEnd;
+        }
+
         let rangeOpen = task.rangeOpen;
         let retTask:Task[] = [];
         let client:TonClient = await getClient(config);   //todo check how to provide config.
@@ -327,7 +344,7 @@ exports.DB = class DB {
                         console.log("maxScanedLt",maxScanedLt,"minScanedLt",minScanedLt,"scAddress or dbName",this.dbName);
 
                         let tonTrans:TonTransaction[] = [];
-                        tonTrans = this.convertTranToTonTrans(trans);
+                        tonTrans = convertTranToTonTrans(trans);
                         await this.insertTrans(tonTrans);
                         trans = [];
 
@@ -340,7 +357,7 @@ exports.DB = class DB {
                 }
                 if(maxRetry == 0){
                     let err = new Error(formatUtil.format("getTransactions failed after %d retry. opts is %s",retry,JSON.stringify(opts)))
-                    throw("fail by max_retry"+err.message);
+                    throw new Error("fail by max_retry"+err.message);
                 }
 
                 await sleep(2000);
@@ -349,12 +366,12 @@ exports.DB = class DB {
             console.log("err",err.message);
             if(err.message.toString().includes("fail by max_retry")){
                 //todo need handle sepcial?
+                console.log(`scanTonTxByTask eror:${err.message}`);
             }
             needSlitRange = true;
         }
         if(transCount ==0){
             console.log("scan success","startLt",rangeStartLt.toString(10),"endLt",rangeEndLt.toString(10),"rangeOpen",rangeOpen);
-
         }
         if(maxScanedLt < rangeEndLt){
             retTask.push({
@@ -372,70 +389,11 @@ exports.DB = class DB {
                 });
             }
         }
+        console.log(`after scanTonTxByTask, task= ${retTask}`,retTask);
         return retTask;
     }
 
-    convertTranToTonTrans(trans:Transaction[]){
-        let tonTrans:TonTransaction[] = [];
-        for(let tran of trans){
-            const inMessageCell = beginCell().store(storeMessage(tran.inMessage)).endCell();
-            let inMessageHash = inMessageCell.hash().toString('hex');
-            let inMessageBodyCellHash = tran.inMessage.body.hash().toString('hex');
 
-            let cii = tran.inMessage.info as unknown as CommonMessageInfoInternal
-
-            let outMsgs:{
-                dst:string,
-                outMsgHash:string,
-                outBodyHash:string,
-                createdLt:bigint,
-                createAt:bigint,
-            }[] = [];
-            for(let key of tran.outMessages.keys()){
-                let om = tran.outMessages.get(key);
-                let ciiOut = om.info as unknown as CommonMessageInfoInternal;
-
-                const outMessageCell = beginCell().store(storeMessage(om)).endCell();
-                let outMessageHash = outMessageCell.hash().toString('hex');
-                let outMessageBodyCellHash = om.body.hash().toString('hex');
-
-                let outMsg = {
-                    dst:ciiOut.dest.toString(),
-                    outMsgHash:outMessageHash,
-                    outBodyHash:outMessageBodyCellHash,
-                    createdLt:ciiOut.createdLt,
-                    createAt:BigInt(ciiOut.createdAt),
-                }
-                outMsgs.push(outMsg);
-            }
-
-            let tonTranTemp:TonTransaction = {
-                hash: tran.hash().toString('hex'),// hexString
-                lt:tran.lt,
-                raw:tran.raw.toBoc().toString('base64'),
-                in:{
-                    src: cii.src.toString(),
-                    inMsgHash:inMessageHash,
-                    inBodyHash:inMessageBodyCellHash,
-                    createdLt:cii.createdLt,
-                    createAt:BigInt(cii.createdAt),
-                },
-                out:outMsgs,
-                emitEventOrNot:false,
-            }
-            tonTrans.push(tonTranTemp);
-        }
-        return tonTrans;
-    }
-
-    convertTonTransToTran(tonTrans:TonTransaction[]){
-        let trans:Transaction[] = [];
-        for(let tonTran of tonTrans){
-            let tranTemp:Transaction; //todo should check core/transaction.
-            trans.push(tranTemp);
-        }
-        return trans;
-    }
 
     async clearDb(){
         this.db.setState({}).write();
@@ -459,7 +417,7 @@ exports.DB = class DB {
         }
     }
 
-    async getParenTx(tran:TonTransaction){
+    async getParentTx(tran:TonTransaction){
         let copy = {};
         const release = await this.mutex.acquire();
         try {
@@ -576,3 +534,5 @@ exports.DB = class DB {
         return result;
     }
 }
+
+exports.DB = DB;
