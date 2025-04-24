@@ -49,12 +49,14 @@ export class DBAccess {
     }
 
     async addDbByName(dbName:string){
+        console.log("before addDbByName","dbName",dbName,"dbs",this.dbs);
         if(this.has(dbName)){
             throw new Error(`db ${dbName} already exists`);
         }
         let db = new DB(dbName);
         await db.init(dbName);
         this.dbs.set(db.getDbName(),db);
+        console.log("after addDbByName","dbName",dbName,"dbs",this.dbs);
         await runAsyncTask(db);
     }
 
@@ -81,14 +83,15 @@ export class DBAccess {
     }
 
     async getTxByMsg(dbName:string,msgHash:string,bodyHash:string,lt:bigint){
+        console.log("Entering getTxByMsg........","dbName",dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
         let tonTran = await this.dbs.get(dbName).getTxByMsg(msgHash,bodyHash,lt);
-        if(!tonTran){
+        if(!tonTran || (tonTran.length  == 0) ){
             return null;
         }
-        return (convertTonTransToTrans([tonTran]))[0];
+        return (convertTonTransToTrans(tonTran))[0];
     }
 
     async getParentTx(dbName:string,tran:TonTransaction){
@@ -97,10 +100,10 @@ export class DBAccess {
             throw new Error(`db ${dbName} not exists`);
         }
         let ret = await this.dbs.get(dbName).getParentTx(tran);
-        if(!ret) {
-            return ret;
+        if(!ret || ret.length == 0) {
+            return null;
         }else{
-            return convertTonTransToTrans([ret])[0];
+            return convertTonTransToTrans(ret)[0];
         }
     }
 
@@ -108,7 +111,12 @@ export class DBAccess {
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
-        await this.dbs.get(dbName).getChildTxs(tran);
+        let ret = await this.dbs.get(dbName).getChildTxs(tran);
+        if(!ret || ret.length == 0) {
+            return null;
+        }else{
+            return convertTonTransToTrans(ret);
+        }
     }
 
     has(dbName:string){

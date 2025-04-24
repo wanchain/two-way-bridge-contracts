@@ -9,6 +9,7 @@ async function main(){
     let dbAccess = await DBAccess.getDBAccess();
     await dbAccess.init();
     await dbAccess.addDbByName(scBridgeAddr);
+    await dbAccess.addDbByName("EQCABVjsQnmRELMK6vjwGbYNRzHXoTd2hvSX6v_VmVrrJNjW");
 };
 
 main();

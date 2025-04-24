@@ -6,6 +6,7 @@ import {bigIntReplacer} from "../utils/utils";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
 import {DBAccess} from "../db/DbAccess";
 import {convertTranToTonTrans} from "../db/common";
+import { MAX_LIMIT } from "../const/const-value";
 const formatUtil = require('util');
 
 function sleep(ms) {
@@ -75,12 +76,12 @@ async function isTranPathSuccess(allTranPathInfo:TranPathInfo):Promise<boolean>{
 
 
 export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
+    console.log("getUpperStepsFromDb","tran hash",tran.hash().toString('hex'),"path",JSON.stringify(path,bigIntReplacer));
     if(tran.inMessage.info.type == 'external-in'){
         return
     }
-
     const inMessageCell = beginCell().store(storeMessage( tran.inMessage)).endCell();
-    console.log("getUpperStepsFromDb inMessageCell==>",inMessageCell.toBoc().toString('hex'));
+    console.log("getUpperStepsFromDb inMessageCell==>",inMessageCell.toBoc().toString('hex'),"hash",tran.hash().toString('hex'));
 
     let upperAddress = tran.inMessage.info.src as Address;
 
@@ -96,8 +97,9 @@ export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:T
                 await dbAccess.addDbByName(upperAddress.toString());
                 await sleep(2000);
             }
+            console.log("getUpperStepsFromDb before dbAccess.getParentTx","tran hash",tran.hash().toString('hex'),"upperAddress",upperAddress.toString());
             transFromDb = await dbAccess.getParentTx(upperAddress.toString(),convertTranToTonTrans([tran])[0]);
-            if(!transFromDb){  // found from db
+            if(transFromDb){  // found from db
                 foundInDb = true;
             }
         }catch(err){
@@ -109,6 +111,7 @@ export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:T
         throw new Error(`Fail to look for parent. upDb: ${upperAddress.toString()}`)
     }
     if(foundInDb && transFromDb){
+        console.log("getUpperStepsFromDB success","hash",tran.hash().toString('hex'),"parent hash",transFromDb.hash().toString('hex'));
         let stepInfoTemp :TranStepInfo = {
             addr:upperAddress as Address,
             txHash:transFromDb.hash().toString('hex'),
@@ -123,15 +126,15 @@ export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:T
 }
 
 export async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
+    if(tran.inMessage.info.type == 'external-in'){
+        return
+    }
+
     try{
         await getUpperStepsFromDb(client,scAddr,tran,path);
         return;
     }catch(err){
         console.log("getUpperStepsFromDb error",err);
-    }
-
-    if(tran.inMessage.info.type == 'external-in'){
-        return
     }
 
     const inMessageCell = beginCell().store(storeMessage( tran.inMessage)).endCell();
@@ -230,6 +233,7 @@ export async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transac
 }
 
 export async function getLowerSteps(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
+    console.log("Entering getLowerSteps","scAddr",scAddr);
     if(tran.outMessages.keys().length == 0){
         return
     }
@@ -417,7 +421,7 @@ export async function findMsgCellHashInTran(tran:Transaction,msgCellHash:string,
 }
 
 export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCellHash:string,msgBodyHash:string,lt:string=''):Promise<Transaction> {
-    let limit = 10;
+    let limit = MAX_LIMIT;
     let retry = 5
     let maxRetry = retry;
     //get from scanned db
@@ -431,7 +435,7 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCell
                 await sleep(2000);
             }
             transFromDb = await dbAccess.getTxByMsg(scAddr.toString(),msgCellHash,msgBodyHash,BigInt(lt));
-            if(!transFromDb){  // found from db
+            if(transFromDb){  // found from db
                 return transFromDb;
             }
         }catch(err){

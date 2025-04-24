@@ -41,7 +41,7 @@ export async function getQueryID(){
 }
 
 
-export function bigIntReviver(key, value) {
+/*export function bigIntReviver(key, value) {
     if (typeof value === "string" && value.endsWith("n")) {
         return BigInt(value.slice(0, -1));
     }
@@ -51,6 +51,23 @@ export function bigIntReviver(key, value) {
 export function bigIntReplacer(key, value) {
     if (typeof value === "bigint") {
         return value.toString() + "n";
+    }
+    return value;
+}*/
+
+export function bigIntReviver(key, value) {
+    if (typeof value === "string" && value.endsWith("n")) {
+        return BigInt(value.slice(0, -1));
+    }
+    if(typeof value === "string"){
+        return BigInt(value);
+    }
+    return value;
+}
+
+export function bigIntReplacer(key, value) {
+    if (typeof value === "bigint") {
+        return value.toString(10);
     }
     return value;
 }

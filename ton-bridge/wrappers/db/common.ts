@@ -63,11 +63,11 @@ export function convertTranToTonTrans(trans:Transaction[]){
             lt:tran.lt,
             raw:tran.raw.toBoc().toString('base64'),
             in:{
-                src: cii.src.toString(),
+                src: cii?.src?.toString(),
                 inMsgHash:inMessageHash,
                 inBodyHash:inMessageBodyCellHash,
                 createdLt:cii.createdLt,
-                createAt:BigInt(cii.createdAt),
+                createAt:cii?.createdAt ? BigInt(cii.createdAt):BigInt(0),
             },
             out:outMsgs,
             emitEventOrNot:false,
@@ -81,7 +81,9 @@ export function convertTonTransToTrans(tonTrans:TonTransaction[]){
     console.log("convertTonTransToTrans","tonTrans",tonTrans);
     let trans:Transaction[] = [];
     for(let tonTran of tonTrans){
-        let tranTemp:Transaction = loadTransaction(Cell.fromBase64(tonTran.raw).asSlice());
+        let tranCell = Cell.fromBase64(tonTran.raw);
+        console.log("tranCell",tranCell);
+        let tranTemp:Transaction = loadTransaction(tranCell.asSlice());
         trans.push(tranTemp);
     }
     return trans;

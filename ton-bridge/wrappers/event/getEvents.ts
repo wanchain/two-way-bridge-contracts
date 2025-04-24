@@ -234,7 +234,7 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
         inclusive?: boolean;
         archival?: boolean;
     } = {
-        limit: 10,
+        limit: MAX_LIMIT,
         archival:true,
     }
 
@@ -376,9 +376,9 @@ async function decodeUserLock(bodyCell:Cell){
     let queryId,dstUserAccount,addrTokenAccount,jwAddrSrc,jwAddrBridgeSc,opCode,smgID,tokenPairID,crossValue;
     opCode = bodySlice.loadUint(32)
     queryId = bodySlice.loadUint(64)
-    smgID = bodySlice.loadUint(256)
+    smgID = bodySlice.loadUintBig(256)
     tokenPairID = bodySlice.loadUint(32)
-    crossValue = bodySlice.loadUint(256)
+    crossValue = bodySlice.loadUintBig(256)
     let dstUserAccountBufferLen = bodySlice.loadUint(8)
     let dstUserAccountBuffer = bodySlice.loadBuffer(dstUserAccountBufferLen)
 

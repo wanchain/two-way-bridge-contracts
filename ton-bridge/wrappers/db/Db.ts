@@ -1,6 +1,6 @@
 import {convertTranToTonTrans, DBDataDir} from './common'
 import path from 'path';
-import {bigIntReplacer, ensureFileAndPath, ensurePath, removeFile, sleep} from "../utils/utils";
+import {bigIntReplacer, ensureFileAndPath, ensurePath, isAddressEqual, removeFile, sleep} from "../utils/utils";
 import {getClient, TonClientConfig} from "../client/client";
 import {TonClient} from "@ton/ton";
 import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
@@ -106,8 +106,9 @@ class DB {
             throw new Error(`init db error ${fullName}`);
         }
 
+        let myDefaultData = _.cloneDeep(defaultData);
         const adapter = new FileSync(fullName,{
-            defaultValue:defaultData,
+            defaultValue:myDefaultData,
             serialize:serializeWithBig,
             deserialize:deserializeWithBig,
         });
@@ -124,10 +125,13 @@ class DB {
     }
 
     async insertTrans(trans:TonTransaction[]){
+        console.log("Entering insertTrans","dbName",this.dbName,"tonTrans.length",trans?.length);
+        if(trans?.length == 0){
+            return;
+        }
         let copy = {};
         const release = await this.mutex.acquire();
         try {
-            console.log("Entering insertTrans");
             copy = _.cloneDeep(this.db.getState())
             _.forEach(trans, tran => {
                 this.db.get('trans').value().push(tran);
@@ -145,10 +149,10 @@ class DB {
     // write db
     /////////////////////////////////////
     async updateTask(tasks:Task[]){
+        console.log("Entering updateTask","tasks",JSON.stringify(tasks,bigIntReplacer));
         let copy = {};
         const release = await this.mutex.acquire();
         try {
-            console.log("Entering updateTask");
             copy = _.cloneDeep(this.db.getState())
             this.db.set("scanTasks",tasks).write();
         }catch(err){
@@ -225,6 +229,13 @@ class DB {
         }
     }
 
+    async scanFun(){
+        let tasks = await this.getTasks();
+        console.log("scanFun","dbName",this.dbName,"tasks",JSON.stringify(tasks,bigIntReplacer));
+        let retTasks = await this.scanTonTxByTasks(tasks);
+        await this.updateTask(retTasks);
+    }
+
     // scan history and increased new trans into db.
     async feedTrans(){
         console.log("Entering feedTrans..............",this.dbName);
@@ -233,37 +244,34 @@ class DB {
             await this.setScanStarted();
         }
 
-        let scanFun = async ()=>{
-            let tasks = await this.getTasks();
-            let retTasks = await this.scanTonTxByTasks(tasks);
-            await this.updateTask(retTasks);
-        }
 
         try{
             console.log(`***************************first time feedTrans is working**************************************`,this.dbName);
-            await scanFun();
+            await this.scanFun();
         }catch(e){
             console.error(`first time feedTrans error. db:${this.dbName}, err:${e}`);
         }
 
-        let isRunning = false;
-        setInterval(async () => {
-            if (isRunning) return;
-            isRunning = true;
-
-            try {
-                console.log(`***************************feedTrans is working**************************************`,this.dbName);
-                await scanFun();
-            } catch (e) {
-                console.log("feedTrans error",e);
-            }finally {
-                isRunning = false;
-            }
-        }, 10000);
+        // todo should open below code.
+        // let isRunning = false;
+        // setInterval(async () => {
+        //     let self = this;
+        //     if (isRunning) return;
+        //     isRunning = true;
+        //
+        //     try {
+        //         console.log(`***************************feedTrans is working**************************************`,this.dbName);
+        //         await self.scanFun();
+        //     } catch (e) {
+        //         console.log("feedTrans error",e);
+        //     }finally {
+        //         isRunning = false;
+        //     }
+        // }, 20000);
     }
 
     async scanTonTxByTasks(tasks:Task[]){
-        console.log("entering scanTonTxByTasks:",this.dbName,"tasks",tasks);
+        console.log("entering scanTonTxByTasks:",this.dbName,"tasks",JSON.stringify(tasks,bigIntReplacer));
         let retTask:Task[] = [];
         for(let i = tasks.length-1 ; i>= 0; i--){
             try{
@@ -276,7 +284,7 @@ class DB {
         return retTask;
     }
     async scanTonTxByTask(task:Task){
-        console.log("entering scanTonTxByTask:",this.dbName,"task",task,"typeof task.rangeStart",typeof task.rangeStart);
+        console.log("entering scanTonTxByTask:",this.dbName,"task",JSON.stringify(task,bigIntReplacer),"typeof task.rangeStart",typeof task.rangeStart);
         let rangeStartLt = BigInt(0);
         let rangeEndLt = BigInt(0);
         if(typeof task.rangeStart === "string"){
@@ -328,13 +336,13 @@ class DB {
                 while((maxRetry-- >0) && (!getSuccess)){
                     try{
 
-                        console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,opts);
+                        console.log("maxRetry = %s, getSuccess = %s, transCount = %s, dbName = %s opts = %s",maxRetry,getSuccess,transCount,scAddress.toString(),opts);
 
                         let ret = await client.getTransactions(scAddress,opts)
                         transCount = ret.length;
-                        console.log("getTransactions success","opts",opts,"len of getTransactions",transCount);
+                        console.log("getTransactions success","opts",opts,"len of getTransactions",transCount,"dbName",this.dbName);
                         for(let tran of ret){
-                            console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
+                            console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10),"dbName",this.dbName);
                             trans.push(tran);
                         }
                         if(ret.length){
@@ -346,7 +354,9 @@ class DB {
                         console.log("maxScanedLt",maxScanedLt,"minScanedLt",minScanedLt,"scAddress or dbName",this.dbName);
 
                         let tonTrans:TonTransaction[] = [];
+                        console.log("before convertTranToTonTrans","db",this.dbName,"trans.length",trans?.length);
                         tonTrans = convertTranToTonTrans(trans);
+                        console.log("before insertTrans","db",this.dbName,"tonTrans.length",tonTrans?.length);
                         await this.insertTrans(tonTrans);
                         trans = [];
 
@@ -392,7 +402,7 @@ class DB {
                 });
             }
         }
-        console.log(`after scanTonTxByTask, task= ${retTask}`,retTask);
+        console.log(`after scanTonTxByTask, task`,JSON.stringify(retTask,bigIntReplacer),"dbName",this.dbName);
         return retTask;
     }
 
@@ -421,13 +431,16 @@ class DB {
     }
 
     async getParentTx(tran:TonTransaction){
+        console.log("before getParentTx","dbName",this.dbName,"hash",tran.hash,"lt",tran.lt,"tonTran",JSON.stringify(tran,bigIntReplacer));
+        if(!tran){
+            return null;
+        }
         let copy = {};
         const release = await this.mutex.acquire();
         try {
-            console.log("getParenTx");
             copy = _.cloneDeep(this.db.get('trans').value());
         }catch(err){
-            console.log("getParenTx","err",err);
+            console.log("getParentTx","err",err);
         }
         finally {
             release();
@@ -438,18 +451,20 @@ class DB {
             result = _.filter(copy, (tonTran) =>{
                 return _.some(tonTran.out, (item) => {
                     return (
-                        (item.dst === tran.in.src && item.createdLt === tran.in.createdLt) &&
+                        (isAddressEqual(this.dbName,tran.in.src) && BigInt(item.createdLt) === tran.in.createdLt) &&
                         ((item.outMsgHash === tran.in.inMsgHash) || (item.outBodyHash == tran.in.inBodyHash))
                     );
                 });
             });
 
         }catch(err){
-            console.log("getParenTx","map err",err);
+            console.log("error getParentTx","err",err);
         }finally {
             copy = null;
         }
-        return result.length? result[0]:null;
+        console.log("after getParentTx","tran",JSON.stringify(tran,bigIntReplacer),"parent",JSON.stringify(result,bigIntReplacer));
+        //return result.length? result[0]:null;
+        return result;
     }
 
     async getChildTxs(tran:TonTransaction){
@@ -466,12 +481,14 @@ class DB {
         }
 
         let result:TonTransaction[] = [];
+        console.log("getChildTxs","db",this.dbName,"tran",tran);
        try{
             for(let i =0; i<tran.out.length;i++){
+                console.log("getChildTxs","db",this.dbName,`tran${i}.out`,tran[i].out);
                 let oneTran = _.filter(copy,(item)=>{
                     return (item.in.src ==  tran.out[i].dst  &&
                         (item.in.inMsgHash == tran.out[i].outMsgHash || item.in.inBodyHash == tran.out[i].outBodyHash) &&
-                    item.in.createdLt == tran.out[i].createdLt);
+                    BigInt(item.in.createdLt) == tran.out[i].createdLt);
                 })
 
                 result.push(...oneTran);
@@ -522,12 +539,12 @@ class DB {
             release();
         }
 
-        let result: TonTransaction = null;
+        let result: TonTransaction[] = [];
         try {
             result = _.filter(copy, (item) => {
                 return (
                     (item.in.inMsgHash == msgHash || item.in.inBodyHash == bodyHash) &&
-                    item.in.createdLt == lt);
+                    BigInt(item.in.createdLt) == lt);
             })
         } catch (err) {
             console.log("getTxByMsg","err",err);
