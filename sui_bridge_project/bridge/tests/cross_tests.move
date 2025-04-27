@@ -4,30 +4,30 @@ module sui_bridge_contracts::cross_tests {
     use sui_bridge_contracts::cross::{Self, TokenPairRegistry};
     use sui_bridge_contracts::admin::{Self, Admin};
     
-    // 测试账户地址
+    // Test account address
     const ADMIN: address = @0xA;
     
-    // 测试 token pair 参数
+    // Test token pair parameters
     const TOKEN_PAIR_ID: u64 = 1;
     const EXTERNAL_CHAIN_ID: u64 = 101;
     
-    // 错误码
+    // Error codes
     const EAssertionFailed: u64 = 1;
     
     #[test]
     fun test_token_pair_registry() {
         let mut scenario = test_scenario::begin(ADMIN);
         
-        // 初始化模块
+        // Initialize modules
         {
-            // 初始化 admin 模块
+            // Initialize admin module
             admin::test_init(test_scenario::ctx(&mut scenario));
             
-            // 初始化 cross 模块
+            // Initialize cross module
             cross::test_init(test_scenario::ctx(&mut scenario));
         };
         
-        // 添加 token pair
+        // Add token pair
         test_scenario::next_tx(&mut scenario, ADMIN);
         {
             let mut registry = test_scenario::take_shared<TokenPairRegistry>(&scenario);
@@ -44,7 +44,7 @@ module sui_bridge_contracts::cross_tests {
                 test_scenario::ctx(&mut scenario)
             );
             
-            // 验证 token pair 是否已添加
+            // Verify if token pair has been added
             assert!(cross::token_pair_exists(&registry, TOKEN_PAIR_ID), EAssertionFailed);
             
             test_scenario::return_shared(registry);
