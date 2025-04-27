@@ -11,7 +11,7 @@ artifacts
 
 .DS_Store
 aptos-bridge
-build/
+build
 node_modules/
 .cxt
 #keystore

@@ -1,0 +1,19 @@
+{
+  "name": "sui_cctp_contracts",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "sui move build",
+    "test": "sui move test",
+    "deploy": "sui client publish --gas-budget 1000000000",
+    "monitor": "node scripts/poll_fee_events.js",
+    "read-write": "node scripts/contract_interaction.js"
+  },
+  "dependencies": {
+    "@mysten/bcs": "^1.1.0",
+    "@mysten/sui": "^1.12.0",
+    "@mysten/sui.js": "^0.54.1",
+    "dotenv": "^16.4.5",
+    "viem": "^2.21.23"
+  }
+}
