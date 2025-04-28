@@ -396,7 +396,8 @@ module sui_bridge_contracts::cross {
         });
     }
     
-    /// Mint tokens using stored treasury cap (admin only)
+    /// Mint tokens using stored treasury cap (admin only, test only)
+    #[test_only]
     public entry fun admin_mint<CoinType>(
         treasury_caps_registry: &mut TreasuryCapsRegistry,
         admin_cap: &admin::Admin,
@@ -426,7 +427,8 @@ module sui_bridge_contracts::cross {
         transfer::public_transfer(minted_coin, recipient);
     }
     
-    /// Burn tokens using stored treasury cap
+    /// Burn tokens using stored treasury cap (admin only, test only)
+    #[test_only]
     public entry fun admin_burn<CoinType>(
         treasury_caps_registry: &mut TreasuryCapsRegistry,
         admin_cap: &admin::Admin,
