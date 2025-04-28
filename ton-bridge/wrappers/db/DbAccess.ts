@@ -5,6 +5,7 @@ const RangeOpen = require("../db/Db").RangeOpen;
 
 import {convertTonTransToTrans, DBDataDir} from './common'
 import {listJsonFiles} from './common'
+import {Address} from "@ton/core";
 
 let dbAccess:DBAccess = null;
 
@@ -14,24 +15,30 @@ async function runAsyncTask(db:typeof DB) {
 
 export class DBAccess {
     private dbs: Map<string, typeof DB>;
+    private inited: boolean;
     constructor() {
         this.dbs = new Map();
+        this.inited = false;
     }
 
     async init(){
+        if(this.inited){
+            return;
+        }
         let dbNames:string[] = [];
         listJsonFiles(DBDataDir,dbNames);
         for(let dbName of dbNames){
             let db = new DB(dbName);
             await db.init(dbName);
-            this.dbs[dbName] = db;
+            this.dbs.set(dbName,db);
             await runAsyncTask(db);
         }
+        this.inited = true;
     }
 
     async clear(){
         for(let key of this.dbs.keys()){
-            let db = this.dbs[key];
+            let db = this.dbs.get(key);
             await db.stopFeedTrans()
             await db.clearDb();
             db = null;
@@ -39,9 +46,10 @@ export class DBAccess {
         this.dbs.clear();
     }
 
-    static getDBAccess() {
+    static async getDBAccess() {
         if(dbAccess == null){
             dbAccess = new DBAccess();
+            await dbAccess.init();
             return dbAccess;
         }else {
             return dbAccess;
@@ -49,14 +57,15 @@ export class DBAccess {
     }
 
     async addDbByName(dbName:string){
-        console.log("before addDbByName","dbName",dbName,"dbs",this.dbs);
+        console.log("before addDbByName","dbName",dbName,"dbs.length",this.dbs.size);
         if(this.has(dbName)){
             throw new Error(`db ${dbName} already exists`);
         }
-        let db = new DB(dbName);
-        await db.init(dbName);
+        let dbNameFinal = this.getDbNameFinal(dbName);
+        let db = new DB(dbNameFinal);
+        await db.init(dbNameFinal);
         this.dbs.set(db.getDbName(),db);
-        console.log("after addDbByName","dbName",dbName,"dbs",this.dbs);
+        console.log("after addDbByName","dbName",dbName,"dbNameFinal",dbNameFinal,"dbs.length",this.dbs.size);
         await runAsyncTask(db);
     }
 
@@ -64,22 +73,38 @@ export class DBAccess {
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
-        this.dbs.delete(dbName);
-        await (this.dbs[dbName]).stopFeedTrans();
+
+        await (this.dbs.get(this.getDbNameFinal(dbName))).stopFeedTrans();
+        this.dbs.delete(this.getDbNameFinal(dbName));
     }
 
     async setTranHandleFlag(dbName:string,tran:TonTransaction,finishOrNot:boolean){
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
-        await this.dbs.get(dbName).setTranHandleFlag(tran,finishOrNot);
+        await this.dbs.get(this.getDbNameFinal(dbName)).setTranHandleFlag(tran,finishOrNot);
     }
 
     async getTxByTxHash(dbName:string,txHash: string) {
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
-        await this.dbs.get(dbName).getTxByTxHash(txHash);
+        let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxByTxHash(txHash);
+        if(!tonTran || (tonTran.length  == 0) ){
+            return null;
+        }
+        return (convertTonTransToTrans(tonTran))[0];
+    }
+
+    async getTxByHashLt(dbName:string,txHash: string,lt:string) {
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxByHashLt(txHash,lt);
+        if(!tonTran || (tonTran.length  == 0) ){
+            return null;
+        }
+        return (convertTonTransToTrans(tonTran))[0];
     }
 
     async getTxByMsg(dbName:string,msgHash:string,bodyHash:string,lt:bigint){
@@ -87,7 +112,7 @@ export class DBAccess {
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
-        let tonTran = await this.dbs.get(dbName).getTxByMsg(msgHash,bodyHash,lt);
+        let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxByMsg(msgHash,bodyHash,lt);
         if(!tonTran || (tonTran.length  == 0) ){
             return null;
         }
@@ -99,7 +124,7 @@ export class DBAccess {
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
-        let ret = await this.dbs.get(dbName).getParentTx(tran);
+        let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getParentTx(tran);
         if(!ret || ret.length == 0) {
             return null;
         }else{
@@ -111,7 +136,7 @@ export class DBAccess {
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
-        let ret = await this.dbs.get(dbName).getChildTxs(tran);
+        let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getChildTxs(tran);
         if(!ret || ret.length == 0) {
             return null;
         }else{
@@ -119,7 +144,27 @@ export class DBAccess {
         }
     }
 
+    async getAllTransNotHandled(dbName:string){
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getAllTransNotHandled();
+        if(!ret || ret.length == 0) {
+            return null;
+        }else{
+            return convertTonTransToTrans(ret);
+        }
+    }
+
+    getDbNameFinal(dbName:string){
+        let dbNameFinal = dbName;
+        if(Address.parse(dbName).toString()  != dbName){
+            dbNameFinal = Address.parse(dbName).toString()
+        }
+        return dbNameFinal;
+    }
     has(dbName:string){
-        return this.dbs.has(dbName);
+        let dbAliasName = Address.parse(dbName).toString();
+        return this.dbs.has(dbName) || this.dbs.has(dbAliasName);
     }
 }

@@ -4,6 +4,7 @@ import {beginCell, Cell, storeMessage, Transaction} from "@ton/core";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
 import {TonTransaction} from "./Db";
 import {loadTransaction} from "@ton/core";
+import {formatError} from "../utils/utils";
 
 export const DBDataDir = path.join(...[__dirname,"/../data/"]);
 console.log("__dirname",__dirname);
@@ -78,13 +79,16 @@ export function convertTranToTonTrans(trans:Transaction[]){
 }
 
 export function convertTonTransToTrans(tonTrans:TonTransaction[]){
-    console.log("convertTonTransToTrans","tonTrans",tonTrans);
+
     let trans:Transaction[] = [];
     for(let tonTran of tonTrans){
-        let tranCell = Cell.fromBase64(tonTran.raw);
-        console.log("tranCell",tranCell);
-        let tranTemp:Transaction = loadTransaction(tranCell.asSlice());
-        trans.push(tranTemp);
+        try{
+            let tranCell = Cell.fromBase64(tonTran.raw);
+            let tranTemp:Transaction = loadTransaction(tranCell.asSlice());
+            trans.push(tranTemp);
+        }catch(err){
+            console.error("convertTonTransToTrans","tonTran",tonTran,"err",formatError(err));
+        }
     }
     return trans;
 }

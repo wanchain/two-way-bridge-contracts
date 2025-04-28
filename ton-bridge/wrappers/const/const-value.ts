@@ -24,5 +24,5 @@ export const LOCK_ORIGINAL_TOKEN = 1;
 export const LOCK_WRAPPED_TOKEN = 2;
 
 
-export const MAX_LIMIT = 1000;
-export const MAX_RETRY = 10;
+export const MAX_LIMIT = 90;
+export const MAX_RETRY = 3;

@@ -1,4 +1,4 @@
-import {sleep} from "../utils/utils";
+import {formatError, sleep} from "../utils/utils";
 
 const config:TonClientConfig =  {
     network:"testnet", // testnet|mainnet
@@ -18,9 +18,15 @@ async function main(){
         let scBridgeAddr = args[0];
         let lt = args[1];
         let to_lt:string = args[2];
+        let hash:string = '';
+        if(args[3] && args[3].length != 0){
+            hash = Buffer.from(args[3],'hex').toString('base64');
+        }
 
-        let trans = await client.getTransactions(Address.parse(scBridgeAddr),{limit:10,lt,to_lt,archival:true
-        })
+        let opts = {
+            limit:10,lt,to_lt,hash,archival:true
+        }
+        let trans = await client.getTransactions(Address.parse(scBridgeAddr),opts)
 
         for(let tran of trans){
             console.log("txHash",tran.hash().toString('hex'),"lt",tran.lt.toString(10));
@@ -28,7 +34,7 @@ async function main(){
 
         client = null;
     }catch(err){
-        console.error(err.code,err.response?.data?.error)
+        console.error(formatError(err))
     }
 
 }

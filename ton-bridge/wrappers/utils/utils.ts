@@ -167,7 +167,7 @@ export async function ensureFileAndPath(fullFilePath:string):Promise<boolean>{
                 await fs.writeFile(fullFilePath, '');
                 console.log(`file created: ${fullFilePath}`);
             } catch (fileError) {
-                console.error(`create file faile (${fullFilePath}):`, fileError);
+                console.error(`create file fail (${fullFilePath}):`, fileError);
                 return false;
             }
         } else {
@@ -214,8 +214,53 @@ export async function removeFile(fullFilePath:string):Promise<boolean>{
         if (error.code === 'ENOENT') {
             return true
         } else {
-            console.error(`access file fail (${fullFilePath}):`, error);
+            console.error(`access file fail (${fullFilePath}):`, formatError(error));
             return false
         }
     }
+}
+
+
+const util = require('util');
+
+const ERROR_WHITELIST = new Set(['message', 'code', 'cause', 'name', 'status']);
+
+function extractErrorDetails(err, depth = 0, maxDepth = 3) {
+    if (depth > maxDepth) return '[Max Depth Exceeded]';
+    if (!err || typeof err !== 'object') return err;
+
+    const details = {};
+    ERROR_WHITELIST.forEach((key) => {
+
+        const value = err[key];
+        if (value !== undefined) {
+            details[key] = key === 'cause'
+                ? extractErrorDetails(value, depth + 1, maxDepth)
+                : value;
+        }
+    });
+
+    if(err.response?.config?.data){
+        details['response.config.data'] = err.response?.config?.data;
+    }
+    if(err.response?.data){
+        details['response.data.error'] = err.response?.data;
+    }
+    return details;
+}
+
+export function formatError(err:any):string{
+    return JSON.stringify(extractErrorDetails(err))
+}
+
+function isHexStringWithPrefix(str) {
+    return /^(0x)?[0-9a-fA-F]+$/.test(str);
+}
+
+function isEvenLengthHex(str) {
+    return /^[0-9a-fA-F]+$/.test(str) && str.length % 2 === 0;
+}
+
+export function isValidHexString(str:string){
+    return isHexStringWithPrefix && isValidHexString;
 }

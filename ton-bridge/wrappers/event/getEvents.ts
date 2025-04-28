@@ -11,9 +11,10 @@ import * as opcodes from "../opcodes";
 import {OP_TRANSFER_NOTIFICATION} from "../opcodes";
 import {getJettonAddress} from "../wallet/jetton";
 import {getTokenPairInfo} from "../code/userLock";
-import {bigIntToBytes32, isAddressEqual, sleep} from "../utils/utils";
+import {bigIntReplacer, bigIntToBytes32, formatError, isAddressEqual, isValidHexString, sleep} from "../utils/utils";
 
 import {MAX_LIMIT,MAX_RETRY} from "../const/const-value";
+import {DBAccess} from "../db/DbAccess";
 /*
 example of ret:
 
@@ -58,7 +59,7 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
             trans = await getAllTransactions(client, scAddress, limit, MAX_RETRY);
             break;
         }catch(e){
-            console.log(e);
+            console.error(formatError(e));
             await sleep(5000);
         }
     }
@@ -94,8 +95,7 @@ export async function getTransactions(client:TonClient,scAddress:string,opts:{
         ret = await client.getTransactions(scAddr,opts)
         //ret = await client.getTransactions(scAddr,{limit:3})
     }catch(err){
-        console.log("err",err);
-        logger.error(formatUtil.format("getTransactions error",err.code));
+        logger.error(formatError(err));
     }
     return ret;
 }
@@ -119,10 +119,10 @@ export async function getAllTransactions(client:TonClient,scAddress:string,limit
         let getSuccess = false
         while(maxRetry-- >0 && (!getSuccess)){
            try{
-               console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,opts);
+               console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,JSON.stringify(opts,bigIntReplacer));
                let ret = await client.getTransactions(Address.parse(scAddress),opts)
                transCount = ret.length;
-               console.log("getTransactions success","opts",opts,"len of getTransactions",transCount);
+               console.log("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount);
                for(let tran of ret){
                    console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                    trans.push(tran);
@@ -134,7 +134,7 @@ export async function getAllTransactions(client:TonClient,scAddress:string,limit
                getSuccess = true;
                maxRetry = retry;
            }catch(e){
-               console.log("err ",e);
+               console.error("err ",formatError(e));
                await sleep(2000);
            }
         }
@@ -195,13 +195,19 @@ async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:str
 
         return await codeTable[opCode]["emitEvent"](decoded);
     }catch(err){
-        logger.error(formatUtil.format("getEventFromTran err",err.message,err.response?.data?.error));
+        logger.error(formatUtil.format("getEventFromTran err",formatError(err)));
         return null;
     }
 }
 
+
 export async function getTransaction(client:TonClient,scAddress:string,lt:string,tranHash:string){
     console.log("Entering getTransaction","scAddress",scAddress,"lt",lt,"tranHash",tranHash,"tranHash(hex)",Buffer.from(tranHash,'base64').toString('hex'));
+    let retTranFromDb = await getTransactionFromDb(client,scAddress,lt,tranHash);
+    console.log("getTransaction","getTransactionFromDb","retTranFromDb",retTranFromDb);
+    if(retTranFromDb){
+        return retTranFromDb;
+    }
     let tran:Transaction;
     let trans:Transaction[] = [];
     let retry = 2
@@ -219,8 +225,8 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
             console.log("tran = >",tran);
             return tran;
         }catch(err){
-            console.log("err",err.message);
-            console.error(err.response?.data?.error);
+            //console.error(err.response?.data?.error);
+            console.error("getTransaction","client.getTransaction error",formatError(err));
             await sleep(2000);
         }
     }
@@ -243,15 +249,14 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
         status = false;
         while(--retry > 0 && !status){
             try{
-                //tran = await client.getTransaction(Address.parse(scAddress),lt,tranHash); //  cannot compute block with specified transaction: cannot find block (0,e56031f43e6493da) lt=33028010000003: lt not in db'
-                //console.log("tran = >",tran);
 
                 console.log("getTransactions","scAddress",scAddress,"opts",opts);
                 trans = await client.getTransactions(Address.parse(scAddress),opts);
                 status = true;
                 retry = MAX_RETRY;
             }catch(err){
-                console.error(err.message,err.response?.data?.error,err);
+                //console.error(err.message,err.response?.data?.error,err);
+                console.error(formatError(err))
                 await sleep(2000);
             }
         }
@@ -267,7 +272,7 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
                 opts.lt = tx.lt.toString(10);
                 opts.hash = tx.hash().toString('base64');
             }
-            console.log("i",i,"txHash",tx.hash().toString("base64"));
+            console.log("getTransactions from rpc","i",i,"txHash",tx.hash().toString("base64"));
             if(tx.hash().toString('base64') == tranHash){
                 tran = tx;
                 foundTran = true;
@@ -284,9 +289,33 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
     throw(new Error(formatUtil.format("can not getTransactions ","scAddress",scAddress,"opts",opts)));
 }
 
+export async function getTransactionFromDb(client:TonClient,scAddress:string,lt:string,tranHash:string){
+    console.log("Entering getTransactionFromDb","scAddress",scAddress,"lt",lt,"tranHash",tranHash);
+    let dbAccess = await DBAccess.getDBAccess();
+    if(!isValidHexString(tranHash)){
+        throw new Error(`invalid ${tranHash}`);
+    }
+
+    let retTx = null;
+    let retry = MAX_RETRY;
+    while(retry-- > 0 && !retTx){
+        try{
+            if(!dbAccess.has(scAddress)){
+                await dbAccess.addDbByName(scAddress);
+            }
+            retTx = await dbAccess.getTxByHashLt(scAddress,tranHash,lt)
+        }catch(err){
+            console.error("getTxByHashLt err",formatError(err),"retry",retry,"dbName","scAddress",scAddress,"hash",tranHash)
+        }
+        await sleep(10000);
+    }
+    console.log("getTransactionFromDb success","scAddress",scAddress,"lt",lt,"tranHash",tranHash,"retTx",retTx);
+    return retTx
+}
+
 export async function getEventByTranHash(client:TonClient, scAddress:string, lt:string, tranHash:string){
     let tran = await getTransaction(client,scAddress,lt,tranHash);
-    console.log("tran=>",tran, "tranHash=>",tran.hash().toString('hex'));
+    console.log("getEventByTranHash getTransaction success",tran, "tranHash ",tran.hash().toString('hex'));
     return await getEventFromTran(client,tran,scAddress);
 }
 
@@ -298,7 +327,7 @@ async function getOpCodeFromCell(cell:Cell){
     try{
         return slice.preloadUint(32);
     }catch(err){
-        logger.error(formatUtil.format("getOpCodeFromCell(err)=>",err));
+        logger.error(formatUtil.format("getOpCodeFromCell(err)=>",formatError(err)));
         throw new Error("no opCode find");
     }
 }

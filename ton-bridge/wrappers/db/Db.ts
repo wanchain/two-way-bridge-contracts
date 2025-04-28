@@ -1,6 +1,14 @@
 import {convertTranToTonTrans, DBDataDir} from './common'
 import path from 'path';
-import {bigIntReplacer, ensureFileAndPath, ensurePath, isAddressEqual, removeFile, sleep} from "../utils/utils";
+import {
+    bigIntReplacer,
+    ensureFileAndPath,
+    ensurePath,
+    formatError,
+    isAddressEqual,
+    removeFile,
+    sleep
+} from "../utils/utils";
 import {getClient, TonClientConfig} from "../client/client";
 import {TonClient} from "@ton/ton";
 import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
@@ -59,6 +67,7 @@ type Data = {
 type Task = {
     rangeStart:bigint,
     rangeEnd:bigint,
+    rangeEndHash?:string,
     rangeOpen:RangeOpen,
 }
 
@@ -139,7 +148,8 @@ class DB {
             this.db.write();
         }catch(err){
             this.db.setState(copy);
-            console.log("insertTrans","err",err);
+            console.error("insertTrans","err",formatError(err));
+            throw err;
         }finally {
             release();
         }
@@ -149,7 +159,7 @@ class DB {
     // write db
     /////////////////////////////////////
     async updateTask(tasks:Task[]){
-        console.log("Entering updateTask","tasks",JSON.stringify(tasks,bigIntReplacer));
+        console.log("=======================================Entering updateTask=========================","tasks",JSON.stringify(tasks,bigIntReplacer));
         let copy = {};
         const release = await this.mutex.acquire();
         try {
@@ -157,7 +167,7 @@ class DB {
             this.db.set("scanTasks",tasks).write();
         }catch(err){
             this.db.setState(copy)
-            console.log("updateTask","err",err);
+            console.error("updateTask","err",formatError(err));
         }
         finally {
             release();
@@ -176,7 +186,7 @@ class DB {
                 .write()
         } catch (err) {
             this.db.setState(copy)
-            console.log("setTranHandleFlag","err",err);
+            console.log("setTranHandleFlag","err",formatError(err));
         }
         finally {
             release();
@@ -193,7 +203,7 @@ class DB {
                 await this.setTranHandleFlag(trans[i],finishOrNots[i]);
             }
         }catch(err){
-            console.log("setTranHandleFlag","err",err);
+            console.log("setTranHandleFlag","err",formatError(err));
         }
     }
     // isInitial (true->false)
@@ -206,7 +216,7 @@ class DB {
             this.db.set('isInitial', false).write();
         }catch(err){
             this.db.setState(copy);
-            console.log("setScanStarted","err",err);
+            console.log("setScanStarted","err",formatError(err));
         }
         finally {
             release();
@@ -222,7 +232,7 @@ class DB {
             return this.db.get('isInitial').value();
         }catch(err){
             this.db.setState(copy);
-            console.log("setScanStarted","err",err);
+            console.log("setScanStarted","err",formatError(err));
         }
         finally {
             release();
@@ -249,25 +259,25 @@ class DB {
             console.log(`***************************first time feedTrans is working**************************************`,this.dbName);
             await this.scanFun();
         }catch(e){
-            console.error(`first time feedTrans error. db:${this.dbName}, err:${e}`);
+            console.error(`first time feedTrans error. db:${this.dbName}, err:`,formatError(e));
         }
 
         // todo should open below code.
-        // let isRunning = false;
-        // setInterval(async () => {
-        //     let self = this;
-        //     if (isRunning) return;
-        //     isRunning = true;
-        //
-        //     try {
-        //         console.log(`***************************feedTrans is working**************************************`,this.dbName);
-        //         await self.scanFun();
-        //     } catch (e) {
-        //         console.log("feedTrans error",e);
-        //     }finally {
-        //         isRunning = false;
-        //     }
-        // }, 20000);
+        let isRunning = false;
+        setInterval(async () => {
+            let self = this;
+            if (isRunning) return;
+            isRunning = true;
+
+            try {
+                console.log(`***************************feedTrans is working**************************************`,this.dbName);
+                await self.scanFun();
+            } catch (e) {
+                console.error("feedTrans error",formatError(e));
+            }finally {
+                isRunning = false;
+            }
+        }, 20000);
     }
 
     async scanTonTxByTasks(tasks:Task[]){
@@ -275,39 +285,101 @@ class DB {
         let retTask:Task[] = [];
         for(let i = tasks.length-1 ; i>= 0; i--){
             try{
-                retTask.push(...(await this.scanTonTxByTask(tasks[i])));
+                console.log("----------------------before scanTonTxByTask--------------","input task",tasks[i]);
+                let retOneTask = await this.scanTonTxByTask(tasks[i])
+                console.log("----------------------after scanTonTxByTask--------------","output tasks",retOneTask);
+                retTask.push(...retOneTask);
             }catch(err){
-                console.log("scanTonTxByTasks err",err);
+                console.log("scanTonTxByTasks err",formatError(err));
                 retTask.push(tasks[i]);
             }
         }
         return retTask;
     }
-    async scanTonTxByTask(task:Task){
-        console.log("entering scanTonTxByTask:",this.dbName,"task",JSON.stringify(task,bigIntReplacer),"typeof task.rangeStart",typeof task.rangeStart);
+
+    async scanTonTxByTask(task:Task) {
+        let client:TonClient = await getClient(config);   //todo check how to provide config.
+        console.log("entering scanTonTxByTask:", this.dbName, "task", JSON.stringify(task, bigIntReplacer), "typeof task.rangeStart", typeof task.rangeStart);
         let rangeStartLt = BigInt(0);
         let rangeEndLt = BigInt(0);
-        if(typeof task.rangeStart === "string"){
+        if (typeof task.rangeStart === "string") {
             let strTemp = String(task.rangeStart)
-            rangeStartLt = strTemp[strTemp.length-1] == 'n' ? BigInt(strTemp.slice(0,strTemp.length-1)):BigInt(strTemp);
+            rangeStartLt = strTemp[strTemp.length - 1] == 'n' ? BigInt(strTemp.slice(0, strTemp.length - 1)) : BigInt(strTemp);
         }
-        if(typeof task.rangeStart === "bigint"){
+        if (typeof task.rangeStart === "bigint") {
             rangeStartLt = task.rangeStart;
         }
 
-        if(typeof task.rangeEnd === "string"){
+        if (typeof task.rangeEnd === "string") {
             let strTemp = String(task.rangeEnd)
-            rangeEndLt = strTemp[strTemp.length-1] == 'n' ? BigInt(strTemp.slice(0,strTemp.length-1)):BigInt(strTemp);
+            rangeEndLt = strTemp[strTemp.length - 1] == 'n' ? BigInt(strTemp.slice(0, strTemp.length - 1)) : BigInt(strTemp);
         }
-        if(typeof task.rangeEnd === "bigint"){
+        if (typeof task.rangeEnd === "bigint") {
             rangeEndLt = task.rangeEnd;
+        }
+
+        if (rangeEndLt >= maxLt) {
+            let tranPovit :Transaction = null;
+            //need split one task to two task by povilt trans.
+            let optsOne: {
+                limit: number;
+                lt?: string;
+                hash?: string;
+                to_lt?: string;
+                inclusive?: boolean;
+                archival?: boolean;
+            } = {
+                limit: 1,
+                archival: true,
+            }
+            let scAddress = Address.parse(this.dbName);
+            try {
+                let getSuccess = false
+                let maxRetry = MAX_RETRY;
+                while ((maxRetry-- > 0) && (!getSuccess)) {
+                    try {
+
+                        let trans = await client.getTransactions(scAddress, optsOne)
+                        getSuccess = true;
+                        console.log("get transcations one","optsOne",optsOne,"pivolt tran hash",trans[0].hash().toString('hex'));
+                        tranPovit = trans[0];
+                    } catch (e) {
+
+                        console.error("err ", formatError(e));
+                        await sleep(2000);
+                    }
+                }
+                if (maxRetry < 0) {
+                    console.log("maxRetry == 0, before throw err.XXXXXXXXXXXXXXX");
+                    throw new Error(formatUtil.format("fail by max_retry getTransactions one failed after %d retry. opts is %s", MAX_RETRY, JSON.stringify(optsOne)))
+                }
+                await sleep(2000);
+            }catch(err){
+                console.error("err", formatError(err));
+                throw err;
+            }
+            let retTask = [];
+            if(tranPovit?.lt > rangeStartLt){
+                retTask.push({
+                    rangeStart:rangeStartLt,
+                    rangeEnd:tranPovit?.lt,
+                    rangeEndHash:tranPovit?.hash().toString('base64'),
+                    rangeOpen:RangeOpen.CloseRange,
+                });
+            }
+            retTask.push({
+                rangeStart:tranPovit?.lt.toString(10),
+                rangeEnd:rangeEndLt,
+                rangeOpen:RangeOpen.CloseRange,
+            });
+            return retTask;
         }
 
         let rangeOpen = task.rangeOpen;
         let retTask:Task[] = [];
-        let client:TonClient = await getClient(config);   //todo check how to provide config.
         let maxScanedLt = rangeStartLt;
         let minScanedLt = rangeEndLt;
+        let minScannedHash = '';
 
         let trans = [];
         let transCount = MAX_LIMIT;
@@ -327,20 +399,28 @@ class DB {
             archival:true,
             to_lt:rangeStartLt.toString(10),
             lt:rangeEndLt.toString(10),
+            hash:task.rangeEndHash,
         }
         let scAddress = Address.parse(this.dbName);
 
         try{
             while(transCount){
                 let getSuccess = false
-                while((maxRetry-- >0) && (!getSuccess)){
+                let insertSuccess = false
+                let oldMaxScaanedLt = maxScanedLt;
+                let oldMinScanedLt = minScanedLt;
+
+                while((maxRetry-- >0) && (!getSuccess || !insertSuccess) ){
                     try{
 
-                        console.log("maxRetry = %s, getSuccess = %s, transCount = %s, dbName = %s opts = %s",maxRetry,getSuccess,transCount,scAddress.toString(),opts);
+                        console.log("maxRetry = %s, getSuccess = %s, insertSuccess=%s,transCount = %s, dbName = %s opts = %s",
+                            maxRetry,getSuccess,insertSuccess,transCount,scAddress.toString(),JSON.stringify(opts,bigIntReplacer));
 
                         let ret = await client.getTransactions(scAddress,opts)
+                        getSuccess = true;
+
                         transCount = ret.length;
-                        console.log("getTransactions success","opts",opts,"len of getTransactions",transCount,"dbName",this.dbName);
+                        console.log("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"dbName",this.dbName);
                         for(let tran of ret){
                             console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10),"dbName",this.dbName);
                             trans.push(tran);
@@ -350,6 +430,7 @@ class DB {
                             opts.hash = ret[ret.length-1].hash().toString('base64');
                             maxScanedLt = ret[0].lt > maxScanedLt ? ret[0].lt : maxScanedLt
                             minScanedLt = ret[ret.length-1].lt < minScanedLt ? ret[ret.length-1].lt : minScanedLt;
+                            minScannedHash = ret[ret.length-1].hash().toString('base64');
                         }
                         console.log("maxScanedLt",maxScanedLt,"minScanedLt",minScanedLt,"scAddress or dbName",this.dbName);
 
@@ -360,14 +441,17 @@ class DB {
                         await this.insertTrans(tonTrans);
                         trans = [];
 
-                        getSuccess = true;
+                        insertSuccess = true;
                         maxRetry = retry;
                     }catch(e){
-                        console.log("err ",e);
+                        maxScanedLt = oldMaxScaanedLt;
+                        minScanedLt = oldMinScanedLt;
+
+                        console.error("err ",formatError(e));
                         await sleep(2000);
                     }
                 }
-                if(maxRetry <= 0){
+                if(maxRetry < 0){
                     console.log("maxRetry == 0, before throw err.XXXXXXXXXXXXXXX");
                     throw new Error(formatUtil.format("fail by max_retry getTransactions failed after %d retry. opts is %s",retry,JSON.stringify(opts)))
                 }
@@ -376,28 +460,24 @@ class DB {
                 console.log("last loop transCount",transCount,"retry",maxRetry);
             }
         }catch(err){
-            console.log("err",err.message);
-            if(err.message.toString().includes("fail by max_retry")){
-                //todo need handle sepcial?
-                console.log(`scanTonTxByTask eror:${err.message}`);
-            }
+            console.error("err",formatError(err));
             needSlitRange = true;
         }
         if(transCount ==0){
             console.log("scan success","startLt",rangeStartLt.toString(10),"endLt",rangeEndLt.toString(10),"rangeOpen",rangeOpen);
+            return retTask;
         }
-        if(maxScanedLt < rangeEndLt){
-            retTask.push({
-                rangeStart:maxScanedLt,
-                rangeEnd:rangeEndLt,
-                rangeOpen:RangeOpen.RightOpenRange,
-            });
+        console.log("minScanedLt",minScanedLt,"maxScanedLt",maxScanedLt,"rangeStartLt",rangeStartLt,"rangeEndLt",rangeEndLt);
+        if(maxScanedLt == rangeStartLt){ // no one tran scanned.
+            retTask.push(task);
+            return retTask;
         }
         if(needSlitRange){
             if(rangeStartLt < minScanedLt){
                 retTask.push({
                     rangeStart:rangeStartLt,
                     rangeEnd:minScanedLt,
+                    rangeEndHash:minScannedHash,
                     rangeOpen:RangeOpen.CloseRange,
                 });
             }
@@ -417,13 +497,39 @@ class DB {
     // read db
     /////////////////////////////////////
 
+    async getAllTransNotHandled() {
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            console.log("getAllTransNotHandled");
+            copy = _.cloneDeep(this.db.get('trans').value());
+        } catch (err) {
+            console.error("getAllTransNotHandled", "err", formatError(err));
+        } finally {
+            release();
+        }
+
+        let result: TonTransaction[] = [];
+        try {
+
+            result = _.filter(copy, (item) => {
+                return (item.emitEventOrNot == false);
+            })
+        } catch (err) {
+            console.error("getAllTransNotHandled error","dbName",this.dbName,"err",formatError(err))
+        } finally {
+            copy = null;
+        }
+        return result;
+    }
+
     async getTasks(){
         const release = await this.mutex.acquire();
         try {
             console.log("getTasks");
             return _.cloneDeep(this.db.get("scanTasks").value());
         }catch(err){
-            console.log("getTasks","err",err);
+            console.log("getTasks","err",formatError(err));
         }
         finally {
             release();
@@ -431,7 +537,9 @@ class DB {
     }
 
     async getParentTx(tran:TonTransaction){
-        console.log("before getParentTx","dbName",this.dbName,"hash",tran.hash,"lt",tran.lt,"tonTran",JSON.stringify(tran,bigIntReplacer));
+        //console.log("before getParentTx","dbName",this.dbName,"hash",tran.hash,"lt",tran.lt,"tonTran",JSON.stringify(tran,bigIntReplacer));
+        console.log("before getParentTx","dbName",this.dbName,"hash",tran.hash,"lt",tran.lt,"tran.in",
+            JSON.stringify(tran.in,bigIntReplacer),"tran.out",JSON.stringify(tran.out,bigIntReplacer));
         if(!tran){
             return null;
         }
@@ -440,7 +548,7 @@ class DB {
         try {
             copy = _.cloneDeep(this.db.get('trans').value());
         }catch(err){
-            console.log("getParentTx","err",err);
+            console.error("getParentTx","err",formatError(err));
         }
         finally {
             release();
@@ -458,12 +566,11 @@ class DB {
             });
 
         }catch(err){
-            console.log("error getParentTx","err",err);
+            console.error("error getParentTx","err",formatError(err));
         }finally {
             copy = null;
         }
-        console.log("after getParentTx","tran",JSON.stringify(tran,bigIntReplacer),"parent",JSON.stringify(result,bigIntReplacer));
-        //return result.length? result[0]:null;
+        console.log("after getParentTx","tran hash",tran.hash,"parent hash",result[0].hash,"dbName",this.dbName);
         return result;
     }
 
@@ -474,7 +581,7 @@ class DB {
             console.log("getChildTxs");
             copy = _.cloneDeep(this.db.get('trans').value());
         }catch(err){
-            console.log("getChildTxs","err",err);
+            console.error("getChildTxs","err",formatError(err));
         }
         finally {
             release();
@@ -486,7 +593,7 @@ class DB {
             for(let i =0; i<tran.out.length;i++){
                 console.log("getChildTxs","db",this.dbName,`tran${i}.out`,tran[i].out);
                 let oneTran = _.filter(copy,(item)=>{
-                    return (item.in.src ==  tran.out[i].dst  &&
+                    return (isAddressEqual(item.in.src,tran.out[i].dst)  &&
                         (item.in.inMsgHash == tran.out[i].outMsgHash || item.in.inBodyHash == tran.out[i].outBodyHash) &&
                     BigInt(item.in.createdLt) == tran.out[i].createdLt);
                 })
@@ -494,7 +601,7 @@ class DB {
                 result.push(...oneTran);
             }
        }catch(err){
-
+            console.error("getChildTxs err",formatError(err))
        }finally {
            copy = null;
        }
@@ -508,7 +615,7 @@ class DB {
             console.log("getChildTxs");
             copy = _.cloneDeep(this.db.get('trans').value());
         } catch (err) {
-            console.log("getChildTxs", "err", err);
+            console.error("getChildTxs", "err", formatError(err));
         } finally {
             release();
         }
@@ -520,7 +627,33 @@ class DB {
                 return (item.hash == txHash);
             })
         } catch (err) {
+            console.error("getTxByTxHash error","txHash",txHash,"dbName",this.dbName,"err",formatError(err))
+        } finally {
+            copy = null;
+        }
+        return result;
+    }
 
+    async getTxByHashLt(txHash: string,lt:string){
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            console.log("getTxByHashLt");
+            copy = _.cloneDeep(this.db.get('trans').value());
+        } catch (err) {
+            console.error("getTxByHashLt", "err", formatError(err),"txHash",txHash,"lt",lt);
+        } finally {
+            release();
+        }
+
+        let result: TonTransaction = null;
+        try {
+            console.error("getTxByHashLt","txHash",txHash,"lt",lt,"dbName",this.dbName);
+            result = _.filter(copy, (item) => {
+                return ((item.hash == txHash) && item.lt == lt);
+            })
+        } catch (err) {
+            console.error("getTxByHashLt", "err", formatError(err),"txHash",txHash,"lt",lt,"dbName",this.dbName);
         } finally {
             copy = null;
         }
@@ -531,10 +664,10 @@ class DB {
         let copy = {};
         const release = await this.mutex.acquire();
         try {
-            console.log("getChildTxs");
+            console.log("getTxByMsg");
             copy = _.cloneDeep(this.db.get('trans').value());
         } catch (err) {
-            console.log("getChildTxs", "err", err);
+            console.log("getTxByMsg", "err", formatError(err),"dbName",this.dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
         } finally {
             release();
         }
@@ -547,7 +680,7 @@ class DB {
                     BigInt(item.in.createdLt) == lt);
             })
         } catch (err) {
-            console.log("getTxByMsg","err",err);
+            console.log("getTxByMsg", "err", formatError(err),"dbName",this.dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
         } finally {
             copy = null;
         }

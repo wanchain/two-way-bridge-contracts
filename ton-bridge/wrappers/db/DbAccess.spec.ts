@@ -1,10 +1,10 @@
 import {DBAccess} from "./DbAccess";
+let dbAccess = null;
 
-const dbAccess:DBAccess = DBAccess.getDBAccess();
 describe('DbAccess', () => {
-
     beforeAll(async () => {
         console.log("DbAccess beforeAll");
+        dbAccess = await DBAccess.getDBAccess();
     },50000);
 
     it('DbAccess init', async () => {

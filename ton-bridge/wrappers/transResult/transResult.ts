@@ -2,7 +2,7 @@ import {Address, beginCell, storeMessage, storeMessageRelaxed, Transaction} from
 import {TonClient} from "@ton/ton";
 import {TransactionDescriptionGeneric} from "@ton/core/src/types/TransactionDescription";
 import {TransactionComputeVm} from "@ton/core/src/types/TransactionComputePhase";
-import {bigIntReplacer} from "../utils/utils";
+import {bigIntReplacer, formatError} from "../utils/utils";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
 import {DBAccess} from "../db/DbAccess";
 import {convertTranToTonTrans} from "../db/common";
@@ -76,12 +76,12 @@ async function isTranPathSuccess(allTranPathInfo:TranPathInfo):Promise<boolean>{
 
 
 export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
-    console.log("getUpperStepsFromDb","tran hash",tran.hash().toString('hex'),"path",JSON.stringify(path,bigIntReplacer));
+    console.log("getUpperStepsFromDb","tran hash",tran.hash().toString('hex'));
     if(tran.inMessage.info.type == 'external-in'){
         return
     }
     const inMessageCell = beginCell().store(storeMessage( tran.inMessage)).endCell();
-    console.log("getUpperStepsFromDb inMessageCell==>",inMessageCell.toBoc().toString('hex'),"hash",tran.hash().toString('hex'));
+    console.log("getUpperStepsFromDb inMessageCell==>","hash",tran.hash().toString('hex'));
 
     let upperAddress = tran.inMessage.info.src as Address;
 
@@ -103,7 +103,7 @@ export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:T
                 foundInDb = true;
             }
         }catch(err){
-            console.log("getTranByMsgHash from db err",err,"retry ",maxRetry);
+            console.log("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry);
         }
         await sleep(2000);
     }
@@ -134,7 +134,7 @@ export async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transac
         await getUpperStepsFromDb(client,scAddr,tran,path);
         return;
     }catch(err){
-        console.log("getUpperStepsFromDb error",err);
+        console.log("getUpperStepsFromDb error",formatError(err));
     }
 
     const inMessageCell = beginCell().store(storeMessage( tran.inMessage)).endCell();
@@ -175,6 +175,7 @@ export async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transac
                 retry = 5;
             }catch(e){
                 await sleep(1000);
+                console.error(formatError(e))
             }
         }
         if(retry == 0){
@@ -439,7 +440,7 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCell
                 return transFromDb;
             }
         }catch(err){
-            console.log("getTranByMsgHash from db err",err,"retry ",maxRetry);
+            console.error("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry);
         }
         await sleep(2000);
     }
@@ -465,10 +466,10 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCell
         let getSuccess = false
         while(maxRetry-- >0 && (!getSuccess)){
             try{
-                console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,opts);
+                console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,JSON.stringify(opts,bigIntReplacer));
                 let ret = await client.getTransactions(scAddr,opts)
                 transCount = ret.length;
-                console.log("getTransactions success","opts",opts,"len of getTransactions",transCount);
+                console.log("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount);
                 for(let tran of ret){
                     console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                     let found = await findMsgCellHashInTran(tran,msgCellHash,msgBodyHash,lt);
@@ -484,7 +485,7 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCell
                 maxRetry = retry;
 
             }catch(e){
-                console.log("err ",e);
+                console.error("err ",formatError(e));
                 await sleep(2000);
             }
         }

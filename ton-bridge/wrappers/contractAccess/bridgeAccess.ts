@@ -3,6 +3,7 @@ import {TonClient} from "@ton/ton";
 import {Bridge} from '../Bridge';
 
 import {logger} from '../utils/logger'
+import {bigIntReplacer, formatError} from "../utils/utils";
 const formatUtil = require('util');
 
 export class BridgeAccess {
@@ -29,7 +30,7 @@ export class BridgeAccess {
                 let  cOpened =  this.client.open(c);
                 return await cOpened[methodName](via,opts);
             }catch(err){
-                logger.info(formatUtil.format("err=>",err));
+                logger.info(formatUtil.format("writeContract err=>","methodName",methodName,"opts",JSON.stringify(opts,bigIntReplacer),"err",formatError(err)));
                 throw new Error(`${methodName} is not supported Non send method`);
             }
     }
@@ -44,7 +45,7 @@ export class BridgeAccess {
             logger.info(formatUtil.format("methodName=>",methodName));
             return await cOpened[methodName](...parameters);
         }catch(err){
-            logger.info(formatUtil.format(err));
+            logger.error(formatUtil.format(formatError(err)));
             throw new Error(`${methodName} is not supported Non send method`);
         }
     }
