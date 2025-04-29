@@ -29,6 +29,7 @@ module sui_bridge_contracts::cross {
     const ETreasuryCapsAlreadyExists: u64 = 11;
     const ETransactionAlreadyProcessed: u64 = 12;
     const EInsufficientFee: u64 = 13;
+    const EBridgePaused: u64 = 14;
 
     /// Token source type
     const TOKEN_TYPE_NATIVE: u8 = 1; // Native token on the chain
@@ -62,6 +63,12 @@ module sui_bridge_contracts::cross {
     public struct FoundationConfig has key {
         id: object::UID,
         fee_recipient: address
+    }
+
+    /// Pause configuration to control bridge operations
+    public struct PauseConfig has key {
+        id: object::UID,
+        is_paused: bool
     }
 
     /// Events
@@ -150,6 +157,11 @@ module sui_bridge_contracts::cross {
         new_recipient: address
     }
 
+    /// Pause status changed event
+    public struct PauseStatusChangedEvent has copy, drop {
+        is_paused: bool
+    }
+
     /// Vault to store locked tokens
     public struct TokenVault has key {
         id: object::UID
@@ -188,7 +200,7 @@ module sui_bridge_contracts::cross {
         };
     }
 
-    /// Initialization function
+    /// Initialize the cross-chain bridge
     fun init(ctx: &mut TxContext) {
         let registry = TokenPairRegistry {
             id: object::new(ctx),
@@ -207,10 +219,15 @@ module sui_bridge_contracts::cross {
             id: object::new(ctx),
             processed: table::new(ctx)
         };
-
+        
         let foundation_config = FoundationConfig {
             id: object::new(ctx),
             fee_recipient: tx_context::sender(ctx)
+        };
+        
+        let pause_config = PauseConfig {
+            id: object::new(ctx),
+            is_paused: false
         };
         
         transfer::share_object(registry);
@@ -218,6 +235,7 @@ module sui_bridge_contracts::cross {
         transfer::share_object(treasury_caps_registry);
         transfer::share_object(processed_tx);
         transfer::share_object(foundation_config);
+        transfer::share_object(pause_config);
     }
 
     /// Test initialization function
@@ -474,16 +492,41 @@ module sui_bridge_contracts::cross {
         });
     }
 
+    /// Set pause status for bridge operations
+    public entry fun set_pause_status(
+        pause_config: &mut PauseConfig,
+        admin_cap: &admin::Admin,
+        is_paused: bool,
+        ctx: &mut tx_context::TxContext
+    ) {
+        // Verify caller has admin permission
+        admin::assert_admin(admin_cap, ctx);
+        
+        // Only update if the status is changing
+        if (pause_config.is_paused != is_paused) {
+            pause_config.is_paused = is_paused;
+            
+            // Emit event
+            event::emit(PauseStatusChangedEvent {
+                is_paused
+            });
+        }
+    }
+
     public entry fun user_lock<T>(
         registry: &TokenPairRegistry,
         vault: &mut TokenVault,
         foundation_config: &FoundationConfig,
+        pause_config: &PauseConfig,
         fee_config: &FeeConfig,
         token_pair_id: u64,
         coin_in: coin::Coin<T>,
         fee_coin: &mut Coin<SUI>,
         ctx: &mut tx_context::TxContext
     ) {
+        // Check if bridge is paused
+        assert!(!pause_config.is_paused, EBridgePaused);
+        
         // Ensure the token pair exists
         assert!(table::contains(&registry.pairs_by_id, token_pair_id), ETokenPairNotFound);
         
@@ -573,12 +616,16 @@ module sui_bridge_contracts::cross {
         registry: &TokenPairRegistry,
         treasury_caps_registry: &mut TreasuryCapsRegistry,
         foundation_config: &FoundationConfig,
+        pause_config: &PauseConfig,
         fee_config: &FeeConfig,
         token_pair_id: u64,
         coin_in: coin::Coin<CoinType>,
         fee_coin: &mut Coin<SUI>,
         ctx: &mut tx_context::TxContext
     ) {
+        // Check if bridge is paused
+        assert!(!pause_config.is_paused, EBridgePaused);
+        
         // Ensure the token pair exists
         assert!(table::contains(&registry.pairs_by_id, token_pair_id), ETokenPairNotFound);
         
@@ -657,6 +704,7 @@ module sui_bridge_contracts::cross {
         treasury_caps_registry: &mut TreasuryCapsRegistry,
         processed_tx: &mut ProcessedTransactions,
         oracle_storage: &oracle::OracleStorage,
+        pause_config: &PauseConfig,
         clock: &Clock,
         unique_id: vector<u8>,
         smg_id: vector<u8>,
@@ -666,6 +714,9 @@ module sui_bridge_contracts::cross {
         signature: vector<u8>,
         ctx: &mut TxContext
     ) {
+        // Check if bridge is paused
+        assert!(!pause_config.is_paused, EBridgePaused);
+        
         // Check if transaction has already been processed
         assert!(!table::contains(&processed_tx.processed, unique_id), ETransactionAlreadyProcessed);
         
@@ -742,6 +793,7 @@ module sui_bridge_contracts::cross {
         vault: &mut TokenVault,
         processed_tx: &mut ProcessedTransactions,
         oracle_storage: &oracle::OracleStorage,
+        pause_config: &PauseConfig,
         clock: &Clock,
         unique_id: vector<u8>,
         smg_id: vector<u8>,
@@ -751,6 +803,9 @@ module sui_bridge_contracts::cross {
         signature: vector<u8>,
         ctx: &mut TxContext
     ) {
+        // Check if bridge is paused
+        assert!(!pause_config.is_paused, EBridgePaused);
+        
         // Check if transaction has already been processed
         assert!(!table::contains(&processed_tx.processed, unique_id), ETransactionAlreadyProcessed);
         

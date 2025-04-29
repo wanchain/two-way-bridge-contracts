@@ -149,17 +149,6 @@ The Cross module implements the core cross-chain token bridge functionality.
 
 ## Bridge 
 ```
-sui client publish
-[warning] Client/Server api version mismatch, client api version : 1.47.1, server api version : 1.47.0
-[Note]: Dependency sources are no longer verified automatically during publication and upgrade. You can pass the `--verify-deps` option if you would like to verify them as part of publication or upgrade.
-UPDATING GIT DEPENDENCY https://github.com/MystenLabs/sui.git
-INCLUDING DEPENDENCY Bridge
-INCLUDING DEPENDENCY SuiSystem
-INCLUDING DEPENDENCY cctp_helper
-INCLUDING DEPENDENCY Sui
-INCLUDING DEPENDENCY MoveStdlib
-BUILDING sui_bridge_contracts
-Skipping dependency verification
 Transaction Digest: 4JU3e72F14CPdwUvJSdWMntFGnKWSfK1UdfCygggnmFy
 ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Transaction Data                                                                                             │
