@@ -543,7 +543,7 @@ module sui_bridge_contracts::cross {
         let required_fee = fee_manager::get_fee(fee_config, token_pair.external_chain_id);
         
         // Check if user has provided enough fee
-        assert!(coin::value(fee_coin) == required_fee, EInsufficientFee);
+        assert!(coin::value(fee_coin) >= required_fee, EInsufficientFee);
         
         // Collect fee if required
         if (required_fee > 0) {
