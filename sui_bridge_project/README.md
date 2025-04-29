@@ -377,7 +377,7 @@ Transaction Digest: EtLn2f2yu261HSUqnA6j7ash6BmsRjPxopD7Vmpyna42
 │  └──                                                                                                             │
 │ Published Objects:                                                                                               │
 │  ┌──                                                                                                             │
-│  │ PackageID: 0xbbeb5c24bb2f36682a75fcc6f031aff1df27dc2a874be8363330170f9dad86de                                 │
+│  │ PackageID: 0x010f2a3728fbdaa6d72dcef01c50dc1736c9366b308889a4baade34c3f9cf77d                                 │
 │  │ Version: 1                                                                                                    │
 │  │ Digest: GKfWmk9uYp5icrRKWwzgv5PNg169xzknWtEG8wWJXxAd                                                          │
 │  │ Modules: admin, cross, oracle                                                                                 │
