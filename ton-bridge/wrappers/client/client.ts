@@ -31,5 +31,8 @@ export async function getClient(config:TonClientConfig,url?:string):Promise<TonC
     const TONCLINET_TIMEOUT = 60 * 1000 * 1000;
     const toncenter_testnet_apikey ="73ee18f6b52a360e9db390f146a8c6af161549495d6e9794ae3efd2e412fa7a2";
     const toncenter_mainnet_apikey ="16f38715eb1a0984abf42148d5ed042589f8bf11768141ecb944feae8102913a";
-    return  new TonClient({ endpoint:"https://testnet.toncenter.com/api/v2/jsonRPC",timeout:TONCLINET_TIMEOUT,apiKey:toncenter_testnet_apikey});
+    logger.info(formatUtil.format("http endpoint is =>","https://testnet.toncenter.com/api/v2/jsonRPC"));
+    //return  new TonClient({ endpoint:"https://testnet.toncenter.com/api/v2/jsonRPC",timeout:TONCLINET_TIMEOUT,apiKey:toncenter_testnet_apikey});
+
+    return  new TonClient({ endpoint:"https://toncenter.com/api/v2/jsonRPC",timeout:TONCLINET_TIMEOUT,apiKey:toncenter_mainnet_apikey});
 }

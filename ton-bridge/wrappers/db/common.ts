@@ -60,7 +60,7 @@ export function convertTranToTonTrans(trans:Transaction[]){
         }
 
         let tonTranTemp:TonTransaction = {
-            hash: tran.hash().toString('hex'),// hexString
+            hash: tran.hash().toString('base64'),
             lt:tran.lt,
             raw:tran.raw.toBoc().toString('base64'),
             in:{

@@ -264,3 +264,32 @@ function isEvenLengthHex(str) {
 export function isValidHexString(str:string){
     return isHexStringWithPrefix && isValidHexString;
 }
+
+
+export function isNotBase64(str) {
+    // 同时匹配标准Base64和URL安全Base64的正则表达式
+    const BASE64_REGEX = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^(?:[A-Za-z0-9\-_]{4})*(?:[A-Za-z0-9\-_]{2}==|[A-Za-z0-9\-_]{3}=)?$/;
+
+    // 类型检查
+    if (typeof str !== 'string') return true;
+
+    // 基础校验
+    const len = str.length;
+    if (len === 0) return false;        // 空字符串视为有效
+    if (len % 4 !== 0) return true;     // 长度必须是4的倍数
+
+    // 检查编码格式
+    return !BASE64_REGEX.test(str);
+}
+
+export function toBase64(str){
+    if(isNotBase64(str) && isValidHexString(str)){
+        return Buffer.from(str,'hex').toString('base64');
+    }else{
+        if(!isNotBase64(str)){
+            return str;
+        }else{
+            throw new Error(`invalid string ${str}`)
+        }
+    }
+}

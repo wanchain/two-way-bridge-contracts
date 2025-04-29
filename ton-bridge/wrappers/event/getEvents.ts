@@ -11,7 +11,15 @@ import * as opcodes from "../opcodes";
 import {OP_TRANSFER_NOTIFICATION} from "../opcodes";
 import {getJettonAddress} from "../wallet/jetton";
 import {getTokenPairInfo} from "../code/userLock";
-import {bigIntReplacer, bigIntToBytes32, formatError, isAddressEqual, isValidHexString, sleep} from "../utils/utils";
+import {
+    bigIntReplacer,
+    bigIntToBytes32,
+    formatError,
+    isAddressEqual,
+    isValidHexString,
+    sleep,
+    toBase64
+} from "../utils/utils";
 
 import {MAX_LIMIT,MAX_RETRY} from "../const/const-value";
 import {DBAccess} from "../db/DbAccess";
@@ -176,8 +184,7 @@ async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:str
         if(opCode == opcodes.OP_CROSS_UserLock){
             logger.info(formatUtil.format("getEventFromTran OP_CROSS_UserLock"));
 
-            let handleResult = await handleUserLockEvent(client,Address.parse(scAddress),
-                tran)
+            let handleResult = await handleUserLockEvent(client,Address.parse(scAddress),tran)
             if (!handleResult.valid){
                 logger.error(formatUtil.format("handleResult OP_CROSS_UserLock is not valid"));
                 return null;
@@ -200,14 +207,15 @@ async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:str
     }
 }
 
-
 export async function getTransaction(client:TonClient,scAddress:string,lt:string,tranHash:string){
-    console.log("Entering getTransaction","scAddress",scAddress,"lt",lt,"tranHash",tranHash,"tranHash(hex)",Buffer.from(tranHash,'base64').toString('hex'));
-    let retTranFromDb = await getTransactionFromDb(client,scAddress,lt,tranHash);
+    // todo should add below code
+    console.log("Entering getTransaction","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
+    let retTranFromDb = await getTransactionFromDb(client,scAddress,lt,toBase64(tranHash));
     console.log("getTransaction","getTransactionFromDb","retTranFromDb",retTranFromDb);
     if(retTranFromDb){
         return retTranFromDb;
     }
+
     let tran:Transaction;
     let trans:Transaction[] = [];
     let retry = 2
@@ -219,14 +227,12 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
 
     while(retry-- > 0){
         try{
-            tran = await client.getTransaction(Address.parse(scAddress),lt,tranHash); //  cannot compute block with specified transaction: cannot find block (0,e56031f43e6493da) lt=33028010000003: lt not in db'
-            //tran = await client.getTransaction(Address.parse(scAddress),lt,'');
-            //tran = await client.getTransaction(Address.parse(scAddress),'',tranHash);
+            console.log("before client.getTransaction","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
+            tran = await client.getTransaction(Address.parse(scAddress),lt,toBase64(tranHash)); //  cannot compute block with specified transaction: cannot find block (0,e56031f43e6493da) lt=33028010000003: lt not in db'
             console.log("tran = >",tran);
             return tran;
         }catch(err){
-            //console.error(err.response?.data?.error);
-            console.error("getTransaction","client.getTransaction error",formatError(err));
+            console.error("getTransaction","client.getTransaction error",formatError(err),"scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
             await sleep(2000);
         }
     }
@@ -273,7 +279,7 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
                 opts.hash = tx.hash().toString('base64');
             }
             console.log("getTransactions from rpc","i",i,"txHash",tx.hash().toString("base64"));
-            if(tx.hash().toString('base64') == tranHash){
+            if(tx.hash().toString('base64') == toBase64(tranHash)){
                 tran = tx;
                 foundTran = true;
                 break;
@@ -286,15 +292,12 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
     if(foundTran){
         return tran;
     }
-    throw(new Error(formatUtil.format("can not getTransactions ","scAddress",scAddress,"opts",opts)));
+    throw(new Error(formatUtil.format("can not getTransactions ","scAddress",scAddress,"opts",opts)),"hash",tranHash,"hash(bse64)",toBase64(tranHash));
 }
-
+// tranHash: base64
 export async function getTransactionFromDb(client:TonClient,scAddress:string,lt:string,tranHash:string){
     console.log("Entering getTransactionFromDb","scAddress",scAddress,"lt",lt,"tranHash",tranHash);
     let dbAccess = await DBAccess.getDBAccess();
-    if(!isValidHexString(tranHash)){
-        throw new Error(`invalid ${tranHash}`);
-    }
 
     let retTx = null;
     let retry = MAX_RETRY;

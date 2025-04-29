@@ -14,11 +14,16 @@ import {TonClient} from "@ton/ton";
 import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
 import formatUtil from "util";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
-import {MAX_LIMIT,MAX_RETRY} from "../const/const-value";
+import {MAX_BACKTRACE_SECONDS, MAX_LIMIT, MAX_RETRY} from "../const/const-value";
 
 //todo how to provide testnet | mainnet information.
+// const config:TonClientConfig =  {
+//     network:"testnet", // testnet|mainnet
+//     tonClientTimeout: 60 * 1000 * 1000,
+// }
+
 const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
+    network:"mainnet", // testnet|mainnet
     tonClientTimeout: 60 * 1000 * 1000,
 }
 
@@ -287,7 +292,7 @@ class DB {
             try{
                 console.log("----------------------before scanTonTxByTask--------------","input task",tasks[i]);
                 let retOneTask = await this.scanTonTxByTask(tasks[i])
-                console.log("----------------------after scanTonTxByTask--------------","output tasks",retOneTask);
+                console.log("----------------------after scanTonTxByTask--------------","output tasks",retOneTask,"input task",tasks[i]);
                 retTask.push(...retOneTask);
             }catch(err){
                 console.log("scanTonTxByTasks err",formatError(err));
@@ -361,6 +366,7 @@ class DB {
             let retTask = [];
             if(tranPovit?.lt > rangeStartLt){
                 retTask.push({
+                    //rangeStart:tranPovit?.lt - BigInt(MAX_BACKTRACE_SECONDS) > rangeStartLt ? tranPovit?.lt-BigInt(MAX_BACKTRACE_SECONDS) : rangeStartLt,
                     rangeStart:rangeStartLt,
                     rangeEnd:tranPovit?.lt,
                     rangeEndHash:tranPovit?.hash().toString('base64'),
@@ -400,11 +406,15 @@ class DB {
             to_lt:rangeStartLt.toString(10),
             lt:rangeEndLt.toString(10),
             hash:task.rangeEndHash,
+            inclusive:true,
         }
         let scAddress = Address.parse(this.dbName);
 
+        let retraced = false;
+        let nowTimeStamp = Math.floor((new Date()).getTime()/1000);
+        let oldestTimeStamp = nowTimeStamp;
         try{
-            while(transCount){
+            while(transCount && !retraced){
                 let getSuccess = false
                 let insertSuccess = false
                 let oldMaxScaanedLt = maxScanedLt;
@@ -422,7 +432,7 @@ class DB {
                         transCount = ret.length;
                         console.log("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"dbName",this.dbName);
                         for(let tran of ret){
-                            console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10),"dbName",this.dbName);
+                            console.log("(scanTonTxByTask) =====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10),"dbName",this.dbName);
                             trans.push(tran);
                         }
                         if(ret.length){
@@ -431,6 +441,9 @@ class DB {
                             maxScanedLt = ret[0].lt > maxScanedLt ? ret[0].lt : maxScanedLt
                             minScanedLt = ret[ret.length-1].lt < minScanedLt ? ret[ret.length-1].lt : minScanedLt;
                             minScannedHash = ret[ret.length-1].hash().toString('base64');
+                            let cci = (ret[ret.length-1].inMessage.info as unknown as CommonMessageInfoInternal);
+                            //console.log("cci=>",cci);
+                            oldestTimeStamp = cci.createdAt;
                         }
                         console.log("maxScanedLt",maxScanedLt,"minScanedLt",minScanedLt,"scAddress or dbName",this.dbName);
 
@@ -443,6 +456,12 @@ class DB {
 
                         insertSuccess = true;
                         maxRetry = retry;
+                        console.log("scanTonTxByTask","oldestTimeStamp",oldestTimeStamp,"MAX_BACKTRACE_SECONDS",MAX_BACKTRACE_SECONDS,"nowTimeStamp",nowTimeStamp);
+                        if(BigInt(oldestTimeStamp)+BigInt(MAX_BACKTRACE_SECONDS) < BigInt(nowTimeStamp)){
+                            retraced = true;
+                            console.log("scan finish because other are too older.");
+                            break;
+                        }
                     }catch(e){
                         maxScanedLt = oldMaxScaanedLt;
                         minScanedLt = oldMinScanedLt;
@@ -463,7 +482,7 @@ class DB {
             console.error("err",formatError(err));
             needSlitRange = true;
         }
-        if(transCount ==0){
+        if(transCount ==0 || retraced){
             console.log("scan success","startLt",rangeStartLt.toString(10),"endLt",rangeEndLt.toString(10),"rangeOpen",rangeOpen);
             return retTask;
         }
@@ -472,7 +491,7 @@ class DB {
             retTask.push(task);
             return retTask;
         }
-        if(needSlitRange){
+        if(needSlitRange){   // shrink the range
             if(rangeStartLt < minScanedLt){
                 retTask.push({
                     rangeStart:rangeStartLt,
@@ -681,6 +700,32 @@ class DB {
             })
         } catch (err) {
             console.log("getTxByMsg", "err", formatError(err),"dbName",this.dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
+        } finally {
+            copy = null;
+        }
+        return result;
+    }
+
+    async getTxByOnlyMsgHash(msgHash:string){
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            console.log("getTxByMsg");
+            copy = _.cloneDeep(this.db.get('trans').value());
+        } catch (err) {
+            console.log("getTxByOnlyMsgHash", "err", formatError(err),"dbName",this.dbName,"msgHash",msgHash);
+        } finally {
+            release();
+        }
+
+        let result: TonTransaction[] = [];
+        try {
+            result = _.filter(copy, (item) => {
+                return (
+                    (item.in.inMsgHash == msgHash));
+            })
+        } catch (err) {
+            console.log("getTxByOnlyMsgHash", "err", formatError(err),"dbName",this.dbName,"msgHash");
         } finally {
             copy = null;
         }

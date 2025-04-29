@@ -5,7 +5,7 @@ const config:TonClientConfig =  {
     tonClientTimeout: 60 * 1000 * 1000,
 }
 import {getClient, TonClientConfig} from "../client/client";
-import {getEventByTranHash, getEvents, getTransaction} from "../event/getEvents";
+import {getEventByTranHash, getEvents, getTransaction, getTransactionFromDb} from "../event/getEvents";
 import { logger } from "../utils/logger";
 
 const args = process.argv.slice(2);
@@ -18,7 +18,11 @@ async function main(){
         let tranHash = Buffer.from(args[2],'hex').toString('base64');
 
         console.log("scBridgeAddr",scBridgeAddr,"lt",lt,"tranHash",tranHash);
-        let ret = await getTransaction(client,scBridgeAddr,lt,tranHash);
+        //let ret = await getTransaction(client,scBridgeAddr,lt,tranHash);
+        //let ret = await getTransaction(client,scBridgeAddr,lt,args[2]);
+        console.log(".......args=",args);
+
+        let ret = await getTransactionFromDb(client,scBridgeAddr,lt,args[2]);
         console.log("ret = ",ret);
 
         console.log(ret.prevTransactionLt.toString(10),ret.prevTransactionHash.toString(16))
@@ -43,7 +47,10 @@ async function main(){
 
 main();
 
+// ts-node getTransaction-ex.ts EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs 56510003000001 fEULm54qtjiWNCWgqPuik7rnVg8TxFjgrEwkaGIeqAw=            //mainnet
+
 // ts-node getTransaction-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr 33028010000001 61ec9d0be00c8f65a8e84b1a13121d8fbd826cf7777f856bc5f72381bf6b2257
 // ts-node getTransaction-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr 33028010000003 07e8eb174f5298fe02a7c8a68e3bb3197d2232c287fccbc0deebc44b1334a723
 // ts-node getTransaction-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr 33313091000003 095015c23c8323af4b7c20b9bd35b2864aa2a4fbaa85335828fa63bccbfdaeff
 
+// ts-node getTransaction-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr 33891688000001 0759391fa78661e683e21db834a71588b9020f0ad04a490c53544e6349ef4d09
