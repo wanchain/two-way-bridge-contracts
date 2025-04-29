@@ -303,7 +303,7 @@ class DB {
     }
 
     async scanTonTxByTask(task:Task) {
-        let client:TonClient = await getClient(config);   //todo check how to provide config.
+        let client:TonClient = await getClient();   //todo check how to provide config.
         console.log("entering scanTonTxByTask:", this.dbName, "task", JSON.stringify(task, bigIntReplacer), "typeof task.rangeStart", typeof task.rangeStart);
         let rangeStartLt = BigInt(0);
         let rangeEndLt = BigInt(0);

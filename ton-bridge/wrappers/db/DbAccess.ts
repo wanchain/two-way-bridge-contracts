@@ -46,10 +46,9 @@ export class DBAccess {
         this.dbs.clear();
     }
 
-    static async getDBAccess() {
+    static getDBAccess() {
         if(dbAccess == null){
             dbAccess = new DBAccess();
-            await dbAccess.init();
             return dbAccess;
         }else {
             return dbAccess;
