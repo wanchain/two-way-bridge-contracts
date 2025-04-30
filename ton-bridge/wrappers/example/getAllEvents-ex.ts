@@ -1,10 +1,7 @@
 import {bigIntReplacer, sleep} from "../utils/utils";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
-import {getClient, TonClientConfig} from "../client/client";
+import {configTestnet,configMainnet} from "../config/config-ex";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 import {getEventByTranHash, getEvents} from "../event/getEvents";
 import { logger } from "../utils/logger";
 import {DBAccess} from "../db/DbAccess";
@@ -13,6 +10,7 @@ import {Address} from "@ton/core";
 const args = process.argv.slice(2);
 
 async function main(){
+    await wanTonSdkInit(configMainnet);
     let scBridgeAddr = args[0];
     let dbAcces = await DBAccess.getDBAccess();
 
@@ -20,7 +18,7 @@ async function main(){
     console.log("scBridgeAddr final address",Address.parse(scBridgeAddr).toString());
 
 
-    let client = await getClient(config);
+    let client = await getClient();
 
     setInterval(async () => {
         let tonTrans = [];

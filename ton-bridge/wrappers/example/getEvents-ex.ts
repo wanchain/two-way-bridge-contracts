@@ -1,14 +1,12 @@
 import {sleep} from "../utils/utils";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
-import {getClient, TonClientConfig} from "../client/client";
+import {configTestnet,configMainnet} from "../config/config-ex";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 import {getEvents} from "../event/getEvents";
 import { logger } from "../utils/logger";
 
 async function init(){
+    await wanTonSdkInit(configMainnet);
     const DBAccess = require('../db/DbAccess').DBAccess;
     await DBAccess.getDBAccess().init();
 }
@@ -19,7 +17,7 @@ let  MAX_TRY_TIMES = 5;
 async function main(){
 
     await init();
-    let client = await getClient(config);
+    let client = await getClient();
     let scBridgeAddr = scAddress.bridgeAddress;
     while(MAX_TRY_TIMES--){
         try{

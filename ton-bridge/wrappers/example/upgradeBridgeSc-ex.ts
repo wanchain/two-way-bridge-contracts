@@ -2,7 +2,7 @@ import {conf } from "../testData/bridge.compile.func"
 let filePath = "../testData/bridge.compiled.json";
 import {doCompile} from "../utils/compileContract";
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig} from "../client/client";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 import {getQueryID} from "../utils/utils";
 import {BridgeAccess} from "../contractAccess/bridgeAccess";
 import {toNano} from "@ton/core";
@@ -14,10 +14,7 @@ const prvList = require('../testData/prvlist')
 let client = null;
 let queryID;
 let deployer;
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 
 const scAddresses = require('../testData/contractAddress.json');
 (async function main() {
@@ -44,7 +41,8 @@ const scAddresses = require('../testData/contractAddress.json');
 })()
 
 async function init(){
+    await wanTonSdkInit(configMainnet);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     queryID = await getQueryID();
-    client = await getClient(config);
+    client = await getClient();
 }

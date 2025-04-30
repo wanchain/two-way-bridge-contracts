@@ -1,9 +1,6 @@
 import {TON_FEE} from "../fee/fee";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 
@@ -11,7 +8,7 @@ import {Bridge} from '../Bridge';
 import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR,BIP44_WANCHAIN_CHAINID} from '../const/const-value';
 
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig} from "../client/client";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 
 const args = process.argv.slice(2);
 //let tokenType = "coin";
@@ -32,11 +29,12 @@ import {getQueryID} from "../utils/utils";
 let queryID;
 
 async function init(){
+    await wanTonSdkInit(configMainnet);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     smgFeeProxy = deployer;
     oracleAdmin = deployer;
     robotAdmin = deployer;
-    client = await getClient(config);
+    client = await getClient();
     console.log("client=>",client);
     queryID = await getQueryID();
 

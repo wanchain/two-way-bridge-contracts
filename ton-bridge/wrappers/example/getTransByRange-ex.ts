@@ -1,10 +1,7 @@
 import {formatError, sleep} from "../utils/utils";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
-import {getClient, TonClientConfig} from "../client/client";
+import {configTestnet,configMainnet} from "../config/config-ex";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 import {getEventByTranHash, getEvents, getTransaction} from "../event/getEvents";
 import { logger } from "../utils/logger";
 import {Address} from "@ton/core";
@@ -14,7 +11,8 @@ const args = process.argv.slice(2);
 
 async function main(){
     try{
-        let client = await getClient(config);
+        await wanTonSdkInit(configMainnet);
+        let client = await getClient();
         let scBridgeAddr = args[0];
         let lt = args[1];
         let to_lt:string = args[2];

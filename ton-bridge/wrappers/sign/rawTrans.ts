@@ -1,9 +1,6 @@
 import {bigIntReplacer} from "../utils/utils";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 import {
     Address,
     beginCell,
@@ -96,7 +93,7 @@ external_message = {
 }
  */
 export async function sendRawTransaction(client:TonClient, senderAddress:Address,rawTrans:Cell){
-    // let client = await getClient(config);
+    // let client = await getClient();
     let provider =  client.provider(senderAddress)
     await provider.external(rawTrans)
 

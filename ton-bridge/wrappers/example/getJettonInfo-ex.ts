@@ -1,9 +1,6 @@
 import {TonClient} from "@ton/ton";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 import {
@@ -15,14 +12,15 @@ import {
 let args = process.argv.slice(2)
 let jettonTokenAddress = args[0]
 
-import {getClient, TonClientConfig} from "../client/client";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 
 const prvList = require('../testData/prvlist')
 
 let client = null;
 
 async function init(){
-    client = await getClient(config);
+    await wanTonSdkInit(configMainnet);
+    client = await getClient();
 }
 async function DisplayJettonInfo(client:TonClient,addr:Address){
     let ret = await getJettonData(client,addr);

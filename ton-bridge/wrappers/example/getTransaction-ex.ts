@@ -49,8 +49,10 @@ async function main(){
 
 main();
 
+// mainnet
 // ts-node getTransaction-ex.ts EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs 56510003000001 fEULm54qtjiWNCWgqPuik7rnVg8TxFjgrEwkaGIeqAw=            //mainnet
 
+// testnet
 // ts-node getTransaction-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr 33028010000001 61ec9d0be00c8f65a8e84b1a13121d8fbd826cf7777f856bc5f72381bf6b2257
 // ts-node getTransaction-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr 33028010000003 07e8eb174f5298fe02a7c8a68e3bb3197d2232c287fccbc0deebc44b1334a723
 // ts-node getTransaction-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr 33313091000003 095015c23c8323af4b7c20b9bd35b2864aa2a4fbaa85335828fa63bccbfdaeff

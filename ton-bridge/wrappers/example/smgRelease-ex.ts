@@ -1,5 +1,5 @@
 import {TonClient} from "@ton/ton";
-import {getClient, TonClientConfig} from "../client/client";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
 import {buildUserLockMessages} from "../code/userLock";
 import {Address, toNano} from "@ton/core";
@@ -14,10 +14,7 @@ const schnorr = require("../sign/tools-secp256k1.js");
 import * as util from "node:util";
 import {TON_FEE} from "../fee/fee";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 const prvList = require('../testData/prvlist')
 const prvAlice = Buffer.from(prvList[1],'hex');
 const prvBob = Buffer.from(prvList[2],'hex');
@@ -42,7 +39,8 @@ let aliceWallet,aliceAddressStr,aliceAddress;
 let bobWallet,bobAddress,bobAddressStr;
 
 async function init() {
-    client = await getClient(config);
+    await wanTonSdkInit(configMainnet);
+    client = await getClient();
     aliceWallet = await getWalletByPrvKey(prvAlice);
     bobWallet = await getWalletByPrvKey(prvBob);
 

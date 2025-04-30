@@ -1,9 +1,6 @@
 import {TON_FEE} from "../fee/fee";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 import '@ton/test-utils';
 import {sleep} from "../utils/utils";
 
@@ -92,7 +89,7 @@ describe('walletContract', () => {
         let rawAddr = "0:19dc7b6d850bd27b74b46017b8a23b014acd02f1fc324ad6f4a46159f024a8d1";
         let addr = "EQAZ3HtthQvSe3S0YBe4ojsBSs0C8fwyStb0pGFZ8CSo0QSE";
 
-        let client = await getClient(config);
+        let client = await getClient();
         let wallet = await getWalletBySecPrvKey(skSmg)
         let walletOpened = await client.open(wallet);
         let seq = await walletOpened.getSeqno();

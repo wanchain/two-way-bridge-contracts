@@ -1,12 +1,9 @@
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 
 import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
 
 import {getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig} from "../client/client";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 
 let args = process.argv.slice(2);
 let tokenPairId=args[0];
@@ -19,11 +16,12 @@ const scAddresses = require('../testData/contractAddress.json');
 import { BridgeAccess } from "../contractAccess/bridgeAccess";
 
 async function init(){
+    await wanTonSdkInit(configMainnet);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     smgFeeProxy = deployer;
     oracleAdmin = deployer;
     robotAdmin = deployer;
-    client = await getClient(config);
+    client = await getClient();
     console.log("client=>",client);
 }
 

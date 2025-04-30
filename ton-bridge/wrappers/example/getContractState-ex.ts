@@ -1,14 +1,12 @@
 import {Address} from "@ton/core";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 
-import {getClient} from "../client/client";
+import {getClient, wanTonSdkInit} from "../client/client";
 import {TonClientConfig} from "../client/client";
 async function main(){
-    let client = await getClient(config,"https://ton.access.orbs.network/55033c0ff5Bd3F8B62C092Ab4D238bEE463E5503/1/testnet/toncenter-api-v2/jsonRPC\n");
+    await wanTonSdkInit(configMainnet);
+    let client = await getClient();
     let ret = await client.getContractState(Address.parse(process.argv[2]));
     console.log("ret1=>",ret);
     client = null;

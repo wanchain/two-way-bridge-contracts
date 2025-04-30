@@ -1,9 +1,6 @@
 import {TON_FEE} from "../fee/fee";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 
 import {Cell, toNano} from "@ton/core";
 import {
@@ -49,7 +46,7 @@ let privateKey = Buffer.from(prvList[0],'hex')
 describe('sendRawTransaction', () => {
 
     beforeAll(async () => {
-        client = await getClient(config);
+        client = await getClient();
         wallet = await getWalletByPrvKey(privateKey);
         walletOpenned = await openWalletByPrvKey(client , privateKey);
         queryID = await getQueryID();

@@ -1,7 +1,4 @@
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 
@@ -9,7 +6,7 @@ import {Bridge} from '../Bridge';
 import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR,BIP44_WANCHAIN_CHAINID} from '../const/const-value';
 
 import {getSenderByPrvKey, getTonAddrByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig} from "../client/client";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 
 const smgCfg = require('../testData/smg.json');
 
@@ -32,6 +29,7 @@ import {getQueryID} from "../utils/utils";
 
 let contractProvider =null;
 async function init(){
+    await wanTonSdkInit(configMainnet);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     aliceWallet = await getWalletByPrvKey(Buffer.from(prvList[1],'hex'));
     bobWallet = await getWalletByPrvKey(Buffer.from(prvList[2],'hex'));
@@ -39,7 +37,7 @@ async function init(){
     aliceAddr = aliceWallet.address;
     bobAddr = bobWallet.address;
 
-    client = await getClient(config);
+    client = await getClient();
     console.log("client=>",client);
 }
 

@@ -7,10 +7,7 @@ const jettonTokenInfoPath = "../testData/jettonTokenInfo.json";
 let tokenInfo = require('../testData/tokenInfo.json')
 const tokenInfoPath = "../testData/tokenInfo.json";
 
-const config:TonClientConfig =  {
-    network:"testnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
+import {configTestnet,configMainnet} from "../config/config-ex";
 
 import {Address, toNano, Sender} from '@ton/core';
 import {
@@ -28,7 +25,7 @@ let jettonName = args[0];
 const JettonCofig = jettonTokenInfo[jettonName]
 
 import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig} from "../client/client";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 import {conf as JettonMinterCompilerConfig} from "../testData/JettonMinter.compile.func"
 import {conf as JettonWalletCompilerConfig} from "../testData/JettonWallet.compile.func"
 
@@ -50,7 +47,8 @@ async function writeTokenInfo(path:string,jettonTokenInfo:any,jettonName:string)
 }
 
 async function init(){
-    client = await getClient(config);
+    await wanTonSdkInit(configMainnet);
+    client = await getClient();
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     nonDeployer = await getWalletByPrvKey(Buffer.from(prvList[1],'hex'));
     via = await getSenderByPrvKey(client,Buffer.from(prvList[0],'hex'));
