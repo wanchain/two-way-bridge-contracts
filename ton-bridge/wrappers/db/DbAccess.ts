@@ -160,6 +160,18 @@ export class DBAccess {
         }
     }
 
+    async getTxByOnlyMsgHash(dbName:string,msgCellHash:string){
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getTxByOnlyMsgHash(msgCellHash);
+        if(!ret || ret.length == 0) {
+            return null;
+        }else{
+            return convertTonTransToTrans(ret);
+        }
+    }
+
     getDbNameFinal(dbName:string){
         let dbNameFinal = dbName;
         if(Address.parse(dbName).toString()  != dbName){

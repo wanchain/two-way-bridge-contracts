@@ -211,7 +211,7 @@ async function buildLockWrappedTokenMessages(opts:any,jwAddrBridgeSc:Address,jwA
     return ret;
 }
 
-async function getFee(client:TonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number,srcChainId,dstChainId){
+export async function getFee(client:TonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number,srcChainId,dstChainId){
     let fee = 0;
     if(client instanceof TonClient){
         let ba = BridgeAccess.create(client,bridgeScAddr.toString())
@@ -234,7 +234,7 @@ async function getFee(client:TonClient|Blockchain,bridgeScAddr:Address,tokenPair
     return fee;
 }
 
-async function getJettonWalletAddr(client:TonClient|Blockchain,jettonMasterAddr:Address,ownerAddr:Address){
+export async function getJettonWalletAddr(client:TonClient|Blockchain,jettonMasterAddr:Address,ownerAddr:Address){
     console.log("in getJettonWalletAddr", "jettonMasterAddr", jettonMasterAddr.toString(),"ownerAddr",ownerAddr.toString());
     if(client instanceof TonClient){
         let jettonMasterSc = JettonMaster.create(jettonMasterAddr)
@@ -248,7 +248,7 @@ async function getJettonWalletAddr(client:TonClient|Blockchain,jettonMasterAddr:
 
 }
 
-async function getJettonAdminAddr(client:TonClient|Blockchain,jettonMasterAddr:Address){
+export async function getJettonAdminAddr(client:TonClient|Blockchain,jettonMasterAddr:Address){
     console.log("in getJettonAdminAddr", "jettonMasterAddr", jettonMasterAddr.toString());
     if(client instanceof TonClient){
         let jettonMasterSc = JettonMaster.create(jettonMasterAddr)

@@ -1,18 +1,21 @@
 export {
-    TonClientConfig, getClient,
+    TonClientConfig, TonUrlConfig,TonConfig,getGlobalTonConfig,getClient,wanTonSdkInit
 } from "./client/client";
 
 export {codeTable,} from "./code/encode-decode"
-export {buildUserLockMessages} from "./code/userLock"
-export {getTokenPairInfo} from "./code/userLock"
+export {LOCK_TYPE,buildUserLockMessages,getFee,getJettonWalletAddr,getJettonAdminAddr,getTokenPairInfo,} from "./code/userLock"
+
+export {configTestnet,configMainnet} from "./config/config-ex"
 
 export {
     BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR, WK_CHIANID,
 } from "./const/const-value"
 
 export {
-    getEvents,
+    getEvents,getTransactions,getAllTransactions,getEventFromTran,getTransaction,getTransactionFromDb,getEventByTranHash,getOpCodeFromCell
 } from "./event/getEvents"
+
+export {TON_FEE} from "./fee/fee"
 
 export {
     computeHash,
@@ -30,6 +33,7 @@ export {
 
 export {
     TranStepInfo, TranResult, TranPathInfo, getTranResultByMsgHash, getTranResultByTxHash, getTranByMsgHash,
+    getTranResultByTran,getTranByOnlyMsgHash
 } from "./transResult/transResult"
 
 export {
@@ -37,8 +41,12 @@ export {
 } from "./utils/compileContract"
 
 export {
-    getRandomTon, BufferrToHexString, HexStringToBuffer, getQueryID, bigIntReviver, bigIntReplacer
+    getRandomTon, BufferrToHexString, HexStringToBuffer, getQueryID, bigIntReviver,
+    bigIntReplacer,isAddressEqual,bigIntToBytes32,int64ToByte32,remove0x,add0x,
+    formatError,isValidHexString,isNotBase64,toBase64
 } from "./utils/utils"
+
+export {CoinBalance,TokenBalance} from "./wallet/balance"
 
 export {
     getJettonBalance,
@@ -65,3 +73,4 @@ export {
     getWalletAddrBySecPrvKey,
     isAddrDepolyed
 } from "./wallet/walletContract"
+

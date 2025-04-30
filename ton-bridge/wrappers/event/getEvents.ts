@@ -156,7 +156,7 @@ export async function getAllTransactions(client:TonClient,scAddress:string,limit
     return trans;
 }
 
-async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:string){
+export async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:string){
     let bodyCell = tran.inMessage?.body;
     if(!bodyCell){
         console.error("body is empty","tran",tran.hash().toString("base64"));
@@ -325,7 +325,7 @@ export async function getEventByTranHash(client:TonClient, scAddress:string, lt:
     return await getEventFromTran(client,tran,scAddress);
 }
 
-async function getOpCodeFromCell(cell:Cell){
+export async function getOpCodeFromCell(cell:Cell){
     if(cell.equals(Cell.EMPTY)){
         throw new Error("empty cell");
     }

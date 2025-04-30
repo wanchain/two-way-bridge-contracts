@@ -426,6 +426,33 @@ export async function findMsgCellHashInTran(tran:Transaction,msgCellHash:string,
     return found;
 }
 
+export async function findOnlyMsgCellHashInTran(tran:Transaction,msgCellHash:string):Promise<Boolean> {
+    let found = false;
+    const inMessageCell = beginCell().store(storeMessage(tran.inMessage)).endCell();
+    let inMessageHash = inMessageCell.hash().toString('hex');
+    let inMessageBodyCellHash = tran.inMessage.body.hash().toString('hex');
+    let internalMsg = true;
+    if(tran.inMessage.info.type == 'external-in'){
+        internalMsg = false;
+    }
+    let inMessageLt = "";
+    if(internalMsg){
+        inMessageLt = (tran.inMessage.info as unknown as CommonMessageInfoInternal).createdLt.toString(10);
+    }
+
+    if(!internalMsg){
+        if ((inMessageHash == msgCellHash)) {
+            found = true;
+        }
+    }else{
+        if ((inMessageHash == msgCellHash)) {
+            found = true;
+        }
+    }
+
+    return found;
+}
+
 export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCellHash:string,msgBodyHash:string,lt:string=''):Promise<Transaction> {
     let limit = MAX_LIMIT;
     let retry = 5
@@ -503,121 +530,79 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCell
 
 }
 
-/*
-
-async function monitorTransactionbyHash(client, addr, txhash, txlt) {
-    let allTransactions = []
-    const myAddress = Address.parse(addr);
-    let tx = await client.getTransaction(myAddress,txlt, txhash)
-    for (const outMessage of tx.outMessages.values()) {
-        const outMessageCell = beginCell().store(storeMessage(outMessage)).endCell();
-        const outMessageHash = outMessageCell.hash().toString('hex');
-        await findTransactionbyMsgHash(client,  outMessage.info.dest.toString({testOnly:true}), outMessageHash, allTransactions)
-    }
-    let success = true
-    for(let i=0; i<allTransactions.length; i++) {
-        success = success && allTransactions[i].description.aborted==false && allTransactions[i].description.computePhase.exitCode==0
-            && allTransactions[i].description.computePhase.seccess && allTransactions[i].description.actionPhase.seccess
-    }
-    return {success,allTransactions}
-}
-
-async function monitorTransactionbyExternalIn(client, from,  msgHash){
-    let allTransactions = []
-    await waitTransactionbyExternalIn(client, from, msgHash, allTransactions);
-    let success = true
-    for(let i=0; i<allTransactions.length; i++) {
-        success = success && allTransactions[i].description.aborted==false && allTransactions[i].description.computePhase.exitCode==0
-            && allTransactions[i].description.computePhase.seccess && allTransactions[i].description.actionPhase.seccess
-    }
-    return {success,allTransactions}
-}
-
-// wait the new sub transactions to be confirmed
-async function waitTransactionbyExternalIn(client, from,  msgHash, allTransactions) {
-    const myAddress = Address.parse(from); // address that you want to fetch transactions from
-    const maxRetry = 30;
-    let retry=0;
-    let to_lt = "0"
-    while(retry++ < maxRetry) {
-        console.log("call getTransactions, para:", myAddress.toString({testOnly:true}), to_lt);
-        const transactions = await client.getTransactions(myAddress, {
-            to_lt ,
-            limit: 10,
-        });
-        console.log("transactions length:", transactions.length)
-        for (let i=0; i<transactions.length; i++) {
-            let tx = transactions[i]
-            if(i == 0) {
-                to_lt = tx.lt.toString()
+export async function getTranByOnlyMsgHash(client:TonClient, scAddr:Address, msgCellHash:string):Promise<Transaction> {
+    let limit = MAX_LIMIT;
+    let retry = 5
+    let maxRetry = retry;
+    //get from scanned db
+    let dbAccess = await DBAccess.getDBAccess();
+    let transFromDb = null;
+    while(maxRetry-- >0 && !transFromDb){
+        try{
+            let inDb = await dbAccess?.has(scAddr.toString());
+            if(!inDb){
+                await dbAccess.addDbByName(scAddr.toString());
+                await sleep(2000);
             }
-            const transactionHash = tx.hash().toString('hex');
-            console.log("tx hash is:",i, tx.lt, transactionHash)
-            const inMessage = tx.inMessage;
-            let inMessageHash
-            // if (inMessage?.info.type === 'external-in') {
-            const inMessageCell = beginCell().store(storeMessage(inMessage)).endCell();
-            inMessageHash = inMessageCell.hash().toString('hex');
-            //   console.log("inMessageHash", inMessageHash, msgHash);
-            if(inMessageHash == msgHash) {
-                console.log("found:", tx.lt, tx.hash().toString('hex'))
-                allTransactions.push(tx)
-                if(tx.outMessagesCount!=0){
-                    for (const outMessage of tx.outMessages.values()) {
-                        console.log("outMessage:", outMessage)
-                        const outMessageCell = beginCell().store(storeMessage(outMessage)).endCell();
-                        const outMessageHash = outMessageCell.hash().toString('hex');
-                        console.log("outMessageHash:", outMessageHash)
-                        await waitTransactionbyExternalIn(client, outMessage.info.dest.toString(), outMessageHash, allTransactions)
+            transFromDb = await dbAccess?.getTxByOnlyMsgHash(scAddr.toString(),msgCellHash);
+            if(transFromDb){  // found from db
+                return transFromDb;
+            }
+        }catch(err){
+            console.error("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry);
+        }
+        await sleep(2000);
+    }
+
+    //get from rpc
+    maxRetry = retry;
+
+    let trans = [];
+    let transCount = limit;
+    let opts: {
+        limit: number;
+        lt?: string;
+        hash?: string;
+        to_lt?: string;
+        inclusive?: boolean;
+        archival?: boolean;
+    } = {
+        limit,
+        archival:true,
+    }
+
+    while(transCount){
+        let getSuccess = false
+        while(maxRetry-- >0 && (!getSuccess)){
+            try{
+                console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,JSON.stringify(opts,bigIntReplacer));
+                let ret = await client.getTransactions(scAddr,opts)
+                transCount = ret.length;
+                console.log("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount);
+                for(let tran of ret){
+                    console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
+                    let found = await findOnlyMsgCellHashInTran(tran,msgCellHash);
+                    if(found){
+                        return tran;
                     }
                 }
-                return
-            }
-        }
-        await sleep(1000)
-    }
-}
-
-// find old transactions.
-async function findTransactionbyMsgHash(client:TonClient, from:Address,  msgHash:string, allTransactions) {
-    const myAddress = from;
-    let maxRetry = 30;
-    let txOpts = {
-        limit: 10
-    }
-    while(maxRetry-- > 0){
-        console.log("call findTransactionbyMsgHash, para:", from, txOpts);
-        const transactions = await client.getTransactions(from, txOpts);
-        console.log("transactions length:", transactions.length)
-        for (let i=0; i<transactions.length; i++) {
-            let tx = transactions[i]
-            // console.log("tx:", tx)
-            const transactionHash = tx.hash().toString('hex');
-            console.log("tx hash is:",i, tx.lt, transactionHash)
-            const inMessage = tx.inMessage;
-            let inMessageHash
-            // if (inMessage?.info.type === 'external-in') {
-            const inMessageCell = beginCell().store(storeMessage(inMessage)).endCell();
-            inMessageHash = inMessageCell.hash().toString('hex');
-            //   console.log("inMessageHash", inMessageHash, msgHash);
-            if(inMessageHash == msgHash) {
-                console.log("found:", tx.lt, tx.hash().toString('hex'))
-                allTransactions.push(tx)
-                if(tx.outMessagesCount!=0){
-                    for (const outMessage of tx.outMessages.values()) {
-                        console.log("outMessage:", outMessage)
-                        const outMessageCell = beginCell().store(storeMessage(outMessage)).endCell();
-                        const outMessageHash = outMessageCell.hash().toString('hex');
-                        console.log("outMessageHash:", outMessageHash)
-                        await findTransactionbyMsgHash(client, outMessage.info.dest.toString(), outMessageHash, allTransactions)
-                    }
+                if(ret.length){
+                    opts.lt = ret[ret.length-1].lt.toString(10);
+                    opts.hash = ret[ret.length-1].hash().toString('base64');
                 }
-                return
+                getSuccess = true;
+                maxRetry = retry;
+
+            }catch(e){
+                console.error("err ",formatError(e));
+                await sleep(2000);
             }
         }
-        txOpts.hash = transactions[transactions.length - 1].hash().toString('base64')
-        txOpts.lt =  transactions[transactions.length - 1].lt.toString()
-    }
-}
+        if(maxRetry == 0){
+            throw(new Error(formatUtil("getTransactions failed after %d retry. opts is %s",retry,JSON.stringify(opts))));
+        }
 
-*/
+        await sleep(2000);
+    }
+
+}
