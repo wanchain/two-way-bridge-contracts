@@ -174,7 +174,6 @@ module sui_bridge_contracts::cross {
 
     /// Key for token balance dynamic field
     public struct TokenBalanceKey has store, copy, drop {
-        token_pair_id: u64,
         type_name: type_name::TypeName
     }
 
@@ -572,7 +571,6 @@ module sui_bridge_contracts::cross {
         
         // Create balance key
         let balance_key = TokenBalanceKey { 
-            token_pair_id, 
             type_name: type_name_val
         };
         
@@ -848,7 +846,6 @@ module sui_bridge_contracts::cross {
         
         // Create balance key
         let balance_key = TokenBalanceKey { 
-            token_pair_id, 
             type_name: type_name_val
         };
         
