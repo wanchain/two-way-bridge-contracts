@@ -90,6 +90,7 @@ export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:T
     let dbAccess = await DBAccess.getDBAccess();
     if(!dbAccess){
         console.error("not using db cache");
+        throw new Error("not using db cache");
     }
     let transFromDb = null;
     let foundInDb = false;
@@ -140,6 +141,7 @@ export async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transac
         console.log("getUpperStepsFromDb error",formatError(err));
     }
 
+    console.log("getUpperSteps from rpc","scAddr",scAddr,"tran hash",tran.hash().toString('hex'));
     const inMessageCell = beginCell().store(storeMessage( tran.inMessage)).endCell();
     console.log("inMessageCell==>",inMessageCell.toBoc().toString('hex'));
     let tranInMsgHash = inMessageCell.hash().toString('hex');
