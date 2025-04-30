@@ -298,15 +298,18 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
 export async function getTransactionFromDb(client:TonClient,scAddress:string,lt:string,tranHash:string){
     console.log("Entering getTransactionFromDb","scAddress",scAddress,"lt",lt,"tranHash",tranHash);
     let dbAccess = await DBAccess.getDBAccess();
-
+    if(!dbAccess){
+        console.error("not using db cache");
+        return null;
+    }
     let retTx = null;
     let retry = MAX_RETRY;
     while(retry-- > 0 && !retTx){
         try{
-            if(!dbAccess.has(scAddress)){
+            if(!dbAccess?.has(scAddress)){
                 await dbAccess.addDbByName(scAddress);
             }
-            retTx = await dbAccess.getTxByHashLt(scAddress,tranHash,lt)
+            retTx = await dbAccess?.getTxByHashLt(scAddress,tranHash,lt)
         }catch(err){
             console.error("getTxByHashLt err",formatError(err),"retry",retry,"dbName","scAddress",scAddress,"hash",tranHash)
         }

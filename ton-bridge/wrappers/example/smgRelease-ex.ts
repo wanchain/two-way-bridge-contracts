@@ -40,6 +40,7 @@ let bobWallet,bobAddress,bobAddressStr;
 
 async function init() {
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     client = await getClient();
     aliceWallet = await getWalletByPrvKey(prvAlice);
     bobWallet = await getWalletByPrvKey(prvBob);

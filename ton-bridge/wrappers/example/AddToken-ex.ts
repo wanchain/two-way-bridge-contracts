@@ -48,6 +48,7 @@ async function writeTokenInfo(path:string,jettonTokenInfo:any,jettonName:string)
 
 async function init(){
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     client = await getClient();
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     nonDeployer = await getWalletByPrvKey(Buffer.from(prvList[1],'hex'));

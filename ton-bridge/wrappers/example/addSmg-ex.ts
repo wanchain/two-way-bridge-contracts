@@ -25,6 +25,7 @@ import { TON_FEE } from "../fee/fee";
 
 async function init(){
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     client = await getClient();
     console.log("client=>",client);

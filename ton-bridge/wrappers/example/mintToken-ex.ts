@@ -30,6 +30,7 @@ import {getQueryID} from "../utils/utils";
 let contractProvider =null;
 async function init(){
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     aliceWallet = await getWalletByPrvKey(Buffer.from(prvList[1],'hex'));
     bobWallet = await getWalletByPrvKey(Buffer.from(prvList[2],'hex'));

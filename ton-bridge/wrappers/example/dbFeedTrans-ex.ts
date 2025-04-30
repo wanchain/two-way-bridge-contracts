@@ -7,7 +7,10 @@ let scBridgeAddr = scAddress.bridgeAddress;
 async function main(){
     console.log("Entering main function");
     let dbAccess = await DBAccess.getDBAccess();
-    await dbAccess.init();
+    if(!dbAccess){
+        console.error("not using db cache.")
+        return;
+    }
     await dbAccess.addDbByName(scBridgeAddr);
     await dbAccess.addDbByName("EQCABVjsQnmRELMK6vjwGbYNRzHXoTd2hvSX6v_VmVrrJNjW");
 };

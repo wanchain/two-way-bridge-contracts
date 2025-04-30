@@ -7,8 +7,7 @@ import { logger } from "../utils/logger";
 
 async function init(){
     await wanTonSdkInit(configMainnet);
-    const DBAccess = require('../db/DbAccess').DBAccess;
-    await DBAccess.getDBAccess().init();
+    await wanTonSdkInit(configTestnet);
 }
 
 const scAddress = require('../testData/contractAddress.json');

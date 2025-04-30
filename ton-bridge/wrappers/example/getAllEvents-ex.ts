@@ -11,8 +11,13 @@ const args = process.argv.slice(2);
 
 async function main(){
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     let scBridgeAddr = args[0];
     let dbAcces = await DBAccess.getDBAccess();
+    if(!dbAcces){
+        console.error("not using db cache");
+        return;
+    }
 
     console.log("scBridgeAddr",scBridgeAddr);
     console.log("scBridgeAddr final address",Address.parse(scBridgeAddr).toString());
@@ -22,7 +27,7 @@ async function main(){
 
     setInterval(async () => {
         let tonTrans = [];
-        if (!dbAcces.has(scBridgeAddr)) {
+        if (!dbAcces?.has(scBridgeAddr)) {
             await dbAcces.addDbByName(scBridgeAddr);
             await sleep(2000);
         }

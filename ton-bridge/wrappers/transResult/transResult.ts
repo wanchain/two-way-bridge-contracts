@@ -88,17 +88,20 @@ export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:T
     let maxRetry = 5;
     //get from scanned db
     let dbAccess = await DBAccess.getDBAccess();
+    if(!dbAccess){
+        console.error("not using db cache");
+    }
     let transFromDb = null;
     let foundInDb = false;
     while(maxRetry-- >0 && !transFromDb){
         try{
-            let inDb = await dbAccess.has(upperAddress.toString());
+            let inDb = await dbAccess?.has(upperAddress.toString());
             if(!inDb){
-                await dbAccess.addDbByName(upperAddress.toString());
+                await dbAccess?.addDbByName(upperAddress.toString());
                 await sleep(2000);
             }
             console.log("getUpperStepsFromDb before dbAccess.getParentTx","tran hash",tran.hash().toString('hex'),"upperAddress",upperAddress.toString());
-            transFromDb = await dbAccess.getParentTx(upperAddress.toString(),convertTranToTonTrans([tran])[0]);
+            transFromDb = await dbAccess?.getParentTx(upperAddress.toString(),convertTranToTonTrans([tran])[0]);
             if(transFromDb){  // found from db
                 foundInDb = true;
             }
@@ -430,12 +433,12 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCell
     let transFromDb = null;
     while(maxRetry-- >0 && !transFromDb){
         try{
-            let inDb = await dbAccess.has(scAddr.toString());
+            let inDb = await dbAccess?.has(scAddr.toString());
             if(!inDb){
                 await dbAccess.addDbByName(scAddr.toString());
                 await sleep(2000);
             }
-            transFromDb = await dbAccess.getTxByMsg(scAddr.toString(),msgCellHash,msgBodyHash,BigInt(lt));
+            transFromDb = await dbAccess?.getTxByMsg(scAddr.toString(),msgCellHash,msgBodyHash,BigInt(lt));
             if(transFromDb){  // found from db
                 return transFromDb;
             }

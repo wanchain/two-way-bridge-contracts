@@ -30,6 +30,7 @@ let client = null;
 let aliceWallet,aliceAddress;
 async function init(){
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     client = await getClient();
      aliceWallet = await getWalletByPrvKey(prvAlice);
      aliceAddress = aliceWallet.address.toString();

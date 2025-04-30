@@ -13,6 +13,7 @@ async function main(){
 
         //await wanTonSdkInit(configTestnet);
         await wanTonSdkInit(configMainnet);
+        //await wanTonSdkInit(configTestnet);
 
         let client = await getClient();
         let scBridgeAddr = args[0];
@@ -24,7 +25,8 @@ async function main(){
         //let ret = await getTransaction(client,scBridgeAddr,lt,args[2]);
         console.log(".......args=",args);
 
-        let ret = await getTransactionFromDb(client,scBridgeAddr,lt,args[2]);
+        //let ret = await getTransactionFromDb(client,scBridgeAddr,lt,args[2]);
+        let ret = await getTransaction(client,scBridgeAddr,lt,args[2]);
         console.log("ret = ",ret);
 
         console.log(ret.prevTransactionLt.toString(10),ret.prevTransactionHash.toString(16))

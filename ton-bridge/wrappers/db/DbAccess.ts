@@ -6,6 +6,7 @@ const RangeOpen = require("../db/Db").RangeOpen;
 import {convertTonTransToTrans, DBDataDir} from './common'
 import {listJsonFiles} from './common'
 import {Address} from "@ton/core";
+import {getGlobalTonConfig} from "../client/client";
 
 let dbAccess:DBAccess = null;
 
@@ -47,10 +48,14 @@ export class DBAccess {
     }
 
     static getDBAccess() {
-        if(dbAccess == null){
+        if (!getGlobalTonConfig().usingDbCache) {
+            return null
+        }
+
+        if (dbAccess == null) {
             dbAccess = new DBAccess();
             return dbAccess;
-        }else {
+        } else {
             return dbAccess;
         }
     }

@@ -9,6 +9,7 @@ const args = process.argv.slice(2);
 
 async function main(){
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     try{
         let client = await getClient();
         let scBridgeAddr = args[0];

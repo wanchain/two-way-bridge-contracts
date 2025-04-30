@@ -20,18 +20,26 @@ export interface TonUrlConfig{
 export interface TonConfig {
     network:TonClientConfig;
     urls?:TonUrlConfig[];
+    usingDbCache?: boolean;
 }
 
 
-let tonConfig:TonConfig = null;
+let  g_tonConfig:TonConfig;
+
+export function getGlobalTonConfig(){
+    return g_tonConfig;
+}
+
 export async function wanTonSdkInit(tcf:TonConfig){
     if(tcf == null){
         throw new Error(`invalid ton config ${tcf}`);
     }
-    tonConfig = tcf;
+    g_tonConfig = tcf;
 
     let dbAccess = await DBAccess.getDBAccess();
-    await dbAccess.init();
+    if(dbAccess){
+        await dbAccess.init();
+    }
 }
 
 const toncenter_testnet_apikey ="73ee18f6b52a360e9db390f146a8c6af161549495d6e9794ae3efd2e412fa7a2";
@@ -41,25 +49,25 @@ const default_test_url= "https://testnet.toncenter.com/api/v2/jsonRPC"
 const default_url= "https://toncenter.com/api/v2/jsonRPC"
 
 export async function getClient():Promise<TonClient> {
-    logger.info(formatUtil.format("getClient config %s",JSON.stringify(tonConfig)));
+    logger.info(formatUtil.format("getClient config %s",JSON.stringify(g_tonConfig)));
 
     // get client by url
-    if(tonConfig.urls?.length){
-        let urls = tonConfig.urls;
+    if(g_tonConfig.urls?.length){
+        let urls = g_tonConfig.urls;
         const totalUrls = urls.length;
         const indexUsed = await getSecureRandomNumber(0,totalUrls)
-        return  new TonClient({ endpoint:urls[indexUsed].url ?? (tonConfig.network.network === 'mainnet' ? default_url:default_test_url),
-            timeout:tonConfig.network.tonClientTimeout ?? TONCLINET_TIMEOUT,
-            apiKey: urls[indexUsed].apiKey ?? (tonConfig.network.network === 'mainnet' ? toncenter_apikey : toncenter_testnet_apikey) });
+        return  new TonClient({ endpoint:urls[indexUsed].url ?? (g_tonConfig.network.network === 'mainnet' ? default_url:default_test_url),
+            timeout:g_tonConfig.network.tonClientTimeout ?? TONCLINET_TIMEOUT,
+            apiKey: urls[indexUsed].apiKey ?? (g_tonConfig.network.network === 'mainnet' ? toncenter_apikey : toncenter_testnet_apikey) });
     }
 
     // get client by orbs access
-    const endpoints = await getHttpEndpoints({ network:tonConfig.network.network});
+    const endpoints = await getHttpEndpoints({ network:g_tonConfig.network.network});
     const total = endpoints.length;
     if(!total){
         throw new Error("no http endpoint found!");
     }
     const indexUsed = await getSecureRandomNumber(0,total)
     logger.info(formatUtil.format("(orbos)http endpoint is =>",endpoints[indexUsed]));
-    return  new TonClient({ endpoint:endpoints[indexUsed],timeout:tonConfig.network.tonClientTimeout ?? TONCLINET_TIMEOUT});
+    return  new TonClient({ endpoint:endpoints[indexUsed],timeout:g_tonConfig.network.tonClientTimeout ?? TONCLINET_TIMEOUT});
 }

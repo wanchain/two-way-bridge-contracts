@@ -25,6 +25,7 @@ import {getQueryID} from "../utils/utils";
 let queryID;
 async function init(){
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     smgFeeProxy = deployer;
     oracleAdmin = deployer;

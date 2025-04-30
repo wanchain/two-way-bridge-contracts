@@ -6,6 +6,7 @@ import {getClient, wanTonSdkInit} from "../client/client";
 import {TonClientConfig} from "../client/client";
 async function main(){
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     let client = await getClient();
     let ret = await client.getContractState(Address.parse(process.argv[2]));
     console.log("ret1=>",ret);

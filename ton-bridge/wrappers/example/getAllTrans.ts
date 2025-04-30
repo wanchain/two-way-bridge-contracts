@@ -10,6 +10,7 @@ const LIMIT=10;
 let  MAX_TRY_TIMES = 5;
 async function main(){
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     let client = null;
     client = await getClient();
     let scBridgeAddr = scAddress.bridgeAddress;

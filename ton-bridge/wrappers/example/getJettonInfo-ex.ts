@@ -20,6 +20,7 @@ let client = null;
 
 async function init(){
     await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestnet);
     client = await getClient();
 }
 async function DisplayJettonInfo(client:TonClient,addr:Address){
