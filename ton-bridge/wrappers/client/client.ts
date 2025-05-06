@@ -4,6 +4,7 @@ import {getSecureRandomNumber} from "@ton/crypto";
 import {logger} from '../utils/logger'
 import {TONCLINET_TIMEOUT} from "../const/const-value";
 import {DBAccess} from "../db/DbAccess";
+import path from "path";
 
 const formatUtil = require('util');
 
@@ -30,11 +31,36 @@ export function getGlobalTonConfig(){
     return g_tonConfig;
 }
 
+export function isTestnet(){
+    if(!g_tonConfig){
+        return false; // default mainnet
+    }
+    return g_tonConfig.network?.network == 'testnet';
+}
+
+let DBDataDir: string;
+let buildDBdataDir = ()=>{
+    if(isTestnet()){
+        DBDataDir = path.join(...[__dirname,"/../data/testnet/"]);
+    }else{
+        DBDataDir = path.join(...[__dirname,"/../data/mainnet/"]);
+    }
+
+    console.log("__dirname",__dirname);
+    console.log("DBDataDir",DBDataDir);
+
+};
+
+export function getDBDataDir(){
+    return DBDataDir
+}
 export async function wanTonSdkInit(tcf:TonConfig){
     if(tcf == null){
         throw new Error(`invalid ton config ${tcf}`);
     }
     g_tonConfig = tcf;
+
+    buildDBdataDir();
 
     let dbAccess = await DBAccess.getDBAccess();
     if(dbAccess){

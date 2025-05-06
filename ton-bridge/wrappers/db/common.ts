@@ -6,10 +6,6 @@ import {TonTransaction} from "./Db";
 import {loadTransaction} from "@ton/core";
 import {formatError} from "../utils/utils";
 
-export const DBDataDir = path.join(...[__dirname,"/../data/"]);
-console.log("__dirname",__dirname);
-console.log("DBDataDir",DBDataDir);
-
 export  function listJsonFiles(dir: string, fileList: string[] = []): string[] {
     const files = fs.readdirSync(dir);
     console.log("files",files);

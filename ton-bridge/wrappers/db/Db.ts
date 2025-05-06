@@ -1,4 +1,4 @@
-import {convertTranToTonTrans, DBDataDir} from './common'
+import {convertTranToTonTrans} from './common'
 import path from 'path';
 import {
     bigIntReplacer,
@@ -9,7 +9,7 @@ import {
     removeFile,
     sleep
 } from "../utils/utils";
-import {getClient, TonClientConfig} from "../client/client";
+import {getClient, TonClientConfig,getDBDataDir} from "../client/client";
 import {TonClient} from "@ton/ton";
 import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
 import formatUtil from "util";
@@ -113,7 +113,7 @@ class DB {
 
         const low = require('lowdb')
         const FileSync = require('lowdb/adapters/FileSync')
-        const fullName = path.join(...[DBDataDir,dbName+'.json'])
+        const fullName = path.join(...[getDBDataDir(),dbName+'.json'])
         console.log("fullName",fullName);
         this.fullFileName = fullName;
         if(!(await ensurePath(fullName))){

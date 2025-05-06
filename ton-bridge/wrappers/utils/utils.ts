@@ -205,6 +205,27 @@ export async function ensurePath(fullFilePath:string):Promise<boolean>{
     return true;
 }
 
+export async function ensureDirectoryExists(directoryPath) {
+    try {
+        await fs.access(directoryPath);
+        console.log(`目录 "${directoryPath}" 已存在。`);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            try {
+                await fs.mkdir(directoryPath, { recursive: true });
+                console.log(`目录 "${directoryPath}" 创建成功。`);
+            } catch (mkdirError) {
+                console.error(`创建目录 "${directoryPath}" 失败:`, mkdirError);
+                throw mkdirError; // Re-throw the error if directory creation fails
+            }
+        } else {
+            console.error(`检查目录 "${directoryPath}" 失败:`, error);
+            throw error; // Re-throw other errors during access check
+        }
+    }
+}
+
+
 export async function removeFile(fullFilePath:string):Promise<boolean>{
     try {
         await fs.access(fullFilePath);
@@ -283,7 +304,7 @@ export function isNotBase64(str) {
 }
 
 export function toBase64(str){
-    if(isNotBase64(str) && isValidHexString(str)){
+    if(isValidHexString(str)){
         return Buffer.from(str,'hex').toString('base64');
     }else{
         if(!isNotBase64(str)){

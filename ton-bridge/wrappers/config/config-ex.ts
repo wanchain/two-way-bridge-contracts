@@ -16,7 +16,7 @@ export const configMainnet:TonConfig =  {
     network:{
         network:"mainnet", // testnet|mainnet
     },
-    //usingDbCache:true,
+    usingDbCache:true,
     urls:[
         {
             //url:'',

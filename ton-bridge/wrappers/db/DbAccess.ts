@@ -3,10 +3,11 @@ import {TonTransaction} from "./Db";
 const DB = require("../db/Db").DB;
 const RangeOpen = require("../db/Db").RangeOpen;
 
-import {convertTonTransToTrans, DBDataDir} from './common'
+import {convertTonTransToTrans} from './common'
 import {listJsonFiles} from './common'
 import {Address} from "@ton/core";
-import {getGlobalTonConfig} from "../client/client";
+import {getGlobalTonConfig,getDBDataDir} from "../client/client";
+import {ensureDirectoryExists, ensurePath} from "../utils/utils";
 
 let dbAccess:DBAccess = null;
 
@@ -27,7 +28,8 @@ export class DBAccess {
             return;
         }
         let dbNames:string[] = [];
-        listJsonFiles(DBDataDir,dbNames);
+        await ensureDirectoryExists(getDBDataDir());
+        listJsonFiles(getDBDataDir(),dbNames);
         for(let dbName of dbNames){
             let db = new DB(dbName);
             await db.init(dbName);
