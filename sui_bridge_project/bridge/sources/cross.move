@@ -131,6 +131,8 @@ module sui_bridge_contracts::cross {
         token_pair_id: u64,
         recipient: address,
         amount: u64,
+        serviceFee: u64,
+        fee_recipient: address,
         token_type: string::String
     }
 
@@ -141,6 +143,8 @@ module sui_bridge_contracts::cross {
         token_pair_id: u64,
         recipient: address,
         amount: u64,
+        serviceFee: u64,
+        fee_recipient: address,
         token_type: string::String
     }
 
@@ -703,12 +707,14 @@ module sui_bridge_contracts::cross {
         processed_tx: &mut ProcessedTransactions,
         oracle_storage: &oracle::OracleStorage,
         pause_config: &PauseConfig,
+        foundation_config: &FoundationConfig,
         clock: &Clock,
         unique_id: vector<u8>,
         smg_id: vector<u8>,
         token_pair_id: u64,
         to_account: address,
         amount: u64,
+        serviceFee: u64,
         signature: vector<u8>,
         ctx: &mut TxContext
     ) {
@@ -743,13 +749,17 @@ module sui_bridge_contracts::cross {
         // Check if treasury cap exists
         assert!(df::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
         
+        // Get fee recipient from foundation config
+        let fee_recipient = foundation_config.fee_recipient;
+        
         // Create message hash for signature verification
-        // Format: unique_id + token_pair_id + to_account + amount
+        // Format: unique_id + token_pair_id + to_account + amount + serviceFee
         let mut message = vector::empty<u8>();
         vector::append(&mut message, unique_id);
         vector::append(&mut message, bcs::to_bytes(&token_pair_id));
         vector::append(&mut message, bcs::to_bytes(&to_account));
         vector::append(&mut message, bcs::to_bytes(&amount));
+        vector::append(&mut message, bcs::to_bytes(&serviceFee));
         
         // Verify signature using oracle module
         oracle::verify_signature(
@@ -766,11 +776,17 @@ module sui_bridge_contracts::cross {
             type_name_val
         );
         
-        // Mint new coins
+        // Mint new coins for the user
         let minted_coins = coin::mint(treasury_cap, amount, ctx);
         
         // Transfer minted coins to recipient
         transfer::public_transfer(minted_coins, to_account);
+        
+        // Mint service fee coins if fee is greater than zero
+        if (serviceFee > 0) {
+            let fee_coins = coin::mint(treasury_cap, serviceFee, ctx);
+            transfer::public_transfer(fee_coins, fee_recipient);
+        };
         
         // Mark transaction as processed
         table::add(&mut processed_tx.processed, unique_id, true);
@@ -782,6 +798,8 @@ module sui_bridge_contracts::cross {
             token_pair_id,
             recipient: to_account,
             amount,
+            serviceFee,
+            fee_recipient,
             token_type: string::utf8(type_bytes)
         });
     }
@@ -792,12 +810,14 @@ module sui_bridge_contracts::cross {
         processed_tx: &mut ProcessedTransactions,
         oracle_storage: &oracle::OracleStorage,
         pause_config: &PauseConfig,
+        foundation_config: &FoundationConfig,
         clock: &Clock,
         unique_id: vector<u8>,
         smg_id: vector<u8>,
         token_pair_id: u64,
         to_account: address,
         amount: u64,
+        serviceFee: u64,
         signature: vector<u8>,
         ctx: &mut TxContext
     ) {
@@ -827,13 +847,17 @@ module sui_bridge_contracts::cross {
         // Compare type bytes with token pair's sui_token_address
         assert_bytes_equal(&type_bytes, &token_pair.sui_token_address, ETokenAddressMismatch);
         
+        // Get fee recipient from foundation config
+        let fee_recipient = foundation_config.fee_recipient;
+        
         // Create message for signature verification
-        // Format: unique_id + token_pair_id + to_account + amount
+        // Format: unique_id + token_pair_id + to_account + amount + serviceFee
         let mut message = vector::empty<u8>();
         vector::append(&mut message, unique_id);
         vector::append(&mut message, bcs::to_bytes(&token_pair_id));
         vector::append(&mut message, bcs::to_bytes(&to_account));
         vector::append(&mut message, bcs::to_bytes(&amount));
+        vector::append(&mut message, bcs::to_bytes(&serviceFee));
         
         // Verify signature using oracle module
         oracle::verify_signature(
@@ -858,10 +882,10 @@ module sui_bridge_contracts::cross {
             balance_key
         );
         
-        // Check if vault has enough balance
-        assert!(balance::value(&token_balance.balance) >= amount, EInsufficientBalance);
+        // Check if vault has enough balance for both amount and service fee
+        assert!(balance::value(&token_balance.balance) >= (amount + serviceFee), EInsufficientBalance);
         
-        // Take tokens from vault balance
+        // Take tokens from vault balance for the user
         let withdrawn_balance = balance::split(&mut token_balance.balance, amount);
         
         // Create coin from balance
@@ -869,6 +893,13 @@ module sui_bridge_contracts::cross {
         
         // Transfer coins to recipient
         transfer::public_transfer(coin_out, to_account);
+        
+        // Process service fee if greater than zero
+        if (serviceFee > 0) {
+            let fee_balance = balance::split(&mut token_balance.balance, serviceFee);
+            let fee_coin = coin::from_balance(fee_balance, ctx);
+            transfer::public_transfer(fee_coin, fee_recipient);
+        };
         
         // Mark transaction as processed
         table::add(&mut processed_tx.processed, unique_id, true);
@@ -880,6 +911,8 @@ module sui_bridge_contracts::cross {
             token_pair_id,
             recipient: to_account,
             amount,
+            serviceFee,
+            fee_recipient,
             token_type: string::utf8(type_bytes)
         });
     }
