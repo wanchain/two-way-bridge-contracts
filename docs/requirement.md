@@ -77,13 +77,18 @@ storemanGroup组织好以后, Leader发起产生公共私钥的过程,生成共�
 function contribute()
 ```
 
-### 设置delegation资金与stake资金的比例. 
-接口名: setDelegationRate  
-作用:   修改最大delegation资金与stake自有资金的比值. 默认为10:1  
-需要制定如下参数:  
-    -rate:    修改最大delegation资金与stake自有资金的比值
+### 更新storeman基础配置
+接口名: updateStoremanConf  
+作用:   
+1. 配置备份节点的个数
+2. 配置自有资金的权重
+3. 修改最大delegation资金与stake自有资金的比值.
+需要指定如下参数:  
+    -backupCount:       配置备份节点的个数
+    -standaloneWeight:  配置自有资金的权重 
+    -DelegationMulti:   修改最大delegation资金与stake自有资金的比值
 ```
-function setDelegationRate(uint rate)
+function updateStoremanConf(uint backupCount, uint standaloneWeight, uint DelegationMulti)
 ```    
 
 ### 注资参与独立节点竞选  
