@@ -49,14 +49,14 @@ storemanGroup组织好以后, Leader发起产生公共私钥的过程,生成共�
 ###  基金会发起资金募集,开始组建storemanGroup  
  接口名: registerStart:  
  作用  : 开放一个storemanGroup的注册窗口, 允许注册(stakeIn,  delegateIn)  
- 需要指定如下参数:
+ 需要指定如下参数:  
     - groupId: group的编号.   
     - wkAddrs:   白名单定节点的enodeId数组,白名单包含内定和备选两类  
-    - senders:   白名单对应的钱包地址, 只有从这个地址注册才能认领白订单的enodeID.
-    - workStart: 起始工作时间. 从1970年开始的秒数.
+    - senders:   白名单对应的钱包地址, 只有从这个地址注册才能认领白订单的enodeID.  
+    - workStart: 起始工作时间. 从1970年开始的秒数.  
     - workDuration: storeman工作时长(天)  
-    - registerDuration: 开放注册窗口的时间长度. (天)
-    - chain: 工作的chain的名字.
+    - registerDuration: 开放注册窗口的时间长度. (天)  
+    - chain: 工作的chain的名字.  
     - minStake: 该group允许的最小投资额度.  
     - crossFee: 该group收取的跨链手续费.  
     - preGroupId: 上一个group编号. 如果指定了这个参数, 上一个group如果有人退出, 则没有退出的人, 自动进入当前group参与竞选.     
@@ -141,7 +141,6 @@ function registerStop(uint groupIndex)
 委托资金:自有资金为10:1  
 需要指定如下参数:  
     - groupIndex: 指定要参与的group index  
-    //- enodeID:    指定要参与的group中的节点的标志
     - staker:     指定投给哪个staker的地址.  
 ```
 function delegateIn(uint groupIndex, bytes enodeID)
@@ -263,16 +262,16 @@ Leader发送每一次联合签名的记录, 由合约计算奖励明细.
 未确定问题.
 
 
-1. 平账流程(资产和债务，怎么决定平账给谁的问题)
+1. 平账流程(资产和债务，怎么决定平账给谁的问题)  
 方案1:  
 不做平账.   
-转入的token是所有storeman共享的. 只要不超出自己的额度即可.
+转入的token是所有storeman共享的. 只要不超出自己的额度即可.  
 方案2:   
-假定新的group肯定能接受上一个group的债务和资金, 需要人工保证.
+假定新的group肯定能接受上一个group的债务和资金, 需要人工保证.  
 
 
 
-1. 当跨链资产过大或者WAN币价下跌的时候，怎么调整收益系数让更多人抵押更多的WAN呢？可以计算出预期收益率吗？ 抵押率是预先设定的还是动态调整？
+1. 当跨链资产过大或者WAN币价下跌的时候，怎么调整收益系数让更多人抵押更多的WAN呢？可以计算出预期收益率吗？ 抵押率是预先设定的还是动态调整？  
 
-1. 目前计划基金会控制多少比例的节点？怎么评估locked account里的资产安全? 怎么告知跨链用户？
+1. 目前计划基金会控制多少比例的节点？怎么评估locked account里的资产安全? 怎么告知跨链用户？  
 
