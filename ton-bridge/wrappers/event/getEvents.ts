@@ -229,7 +229,7 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
         try{
             console.log("before client.getTransaction","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
             tran = await client.getTransaction(Address.parse(scAddress),lt,toBase64(tranHash)); //  cannot compute block with specified transaction: cannot find block (0,e56031f43e6493da) lt=33028010000003: lt not in db'
-            console.log("tran = >",tran);
+            console.log("client.getTransaction success", "scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash),"tran = > ",tran);
             return tran;
         }catch(err){
             console.error("getTransaction","client.getTransaction error",formatError(err),"scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));

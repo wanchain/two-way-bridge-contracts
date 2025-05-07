@@ -304,7 +304,8 @@ class DB {
 
     async scanTonTxByTask(task:Task) {
         let client:TonClient = await getClient();   //todo check how to provide config.
-        console.log("entering scanTonTxByTask:", this.dbName, "task", JSON.stringify(task, bigIntReplacer), "typeof task.rangeStart", typeof task.rangeStart);
+        let rawAddr = Address.parseFriendly(this.dbName).address
+        console.log("entering scanTonTxByTask:", this.dbName,"rawAddr",rawAddr,"task", JSON.stringify(task, bigIntReplacer), "typeof task.rangeStart", typeof task.rangeStart);
         let rangeStartLt = BigInt(0);
         let rangeEndLt = BigInt(0);
         if (typeof task.rangeStart === "string") {
@@ -344,18 +345,19 @@ class DB {
                 while ((maxRetry-- > 0) && (!getSuccess)) {
                     try {
 
-                        let trans = await client.getTransactions(scAddress, optsOne)
+                        //let trans = await client.getTransactions(scAddress, optsOne)
+                        let trans = await client.getTransactions(rawAddr, optsOne)
                         getSuccess = true;
                         console.log("get transcations one","optsOne",optsOne,"pivolt tran hash",trans[0].hash().toString('hex'));
                         tranPovit = trans[0];
                     } catch (e) {
 
-                        console.error("err ", formatError(e));
+                        console.error("get transcations one err ", formatError(e));
                         await sleep(2000);
                     }
                 }
                 if (maxRetry < 0) {
-                    console.log("maxRetry == 0, before throw err.XXXXXXXXXXXXXXX");
+                    console.log(" get transcations one maxRetry == 0, before throw err");
                     throw new Error(formatUtil.format("fail by max_retry getTransactions one failed after %d retry. opts is %s", MAX_RETRY, JSON.stringify(optsOne)))
                 }
                 await sleep(2000);
@@ -426,7 +428,7 @@ class DB {
                         console.log("maxRetry = %s, getSuccess = %s, insertSuccess=%s,transCount = %s, dbName = %s opts = %s",
                             maxRetry,getSuccess,insertSuccess,transCount,scAddress.toString(),JSON.stringify(opts,bigIntReplacer));
 
-                        let ret = await client.getTransactions(scAddress,opts)
+                        let ret = await client.getTransactions(rawAddr,opts)
                         getSuccess = true;
 
                         transCount = ret.length;

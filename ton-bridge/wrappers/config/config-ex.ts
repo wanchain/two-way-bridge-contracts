@@ -12,6 +12,13 @@ export const configTestnet:TonConfig =  {
         }]
 }
 
+export const configTestnetObs:TonConfig =  {
+    network:{
+        network:"testnet", // testnet|mainnet
+    },
+    usingDbCache:true,
+}
+
 export const configMainnet:TonConfig =  {
     network:{
         network:"mainnet", // testnet|mainnet

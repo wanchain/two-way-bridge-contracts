@@ -1,6 +1,6 @@
 import {bigIntToBytes32, sleep} from "../utils/utils";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet, configMainnet, configTestnetObs} from "../config/config-ex";
 
 import {getClient, TonClientConfig, TonConfig, TonUrlConfig, wanTonSdkInit} from "../client/client";
 import {getEventByTranHash, getEvents, getTransaction, getTransactionFromDb} from "../event/getEvents";
@@ -11,7 +11,8 @@ const args = process.argv.slice(2);
 async function main(){
     try{
         //await wanTonSdkInit(configMainnet);
-        await wanTonSdkInit(configTestnet);
+        //await wanTonSdkInit(configTestnet);
+        await wanTonSdkInit(configTestnetObs);
 
         let client = await getClient();
         let scBridgeAddr = args[0];
