@@ -80,22 +80,23 @@ function contribute()
 ### 更新storeman基础配置
 接口名: updateStoremanConf  
 作用:   
-1. 配置备份节点的个数
-2. 配置自有资金的权重
-3. 修改最大delegation资金与stake自有资金的比值.
+1. 配置备份节点的个数  
+2. 配置自有资金的权重  
+3. 修改最大delegation资金与stake自有资金的比值.  
+
 需要指定如下参数:  
-    -backupCount:       配置备份节点的个数
-    -standaloneWeight:  配置自有资金的权重 
-    -DelegationMulti:   修改最大delegation资金与stake自有资金的比值
+    -backupCount:       配置备份节点的个数  
+    -standaloneWeight:  配置自有资金的权重   
+    -DelegationMulti:   修改最大delegation资金与stake自有资金的比值  
 ```
 function updateStoremanConf(uint backupCount, uint standaloneWeight, uint DelegationMulti)
 ```    
 
 ### 注资参与独立节点竞选  
 接口名:  stakeIn  
-作用  :  参与者通过这个接口加入openstoreman计划.同时打钱.
-需要指定如下参数:
-    - groupIndex: 要参加的group的index.
+作用  :  参与者通过这个接口加入openstoreman计划.同时打钱.  
+需要指定如下参数:  
+    - groupIndex: 要参加的group的index.  
     - enodeID: 注册自己的enodeID.  
     - PK:      节点对应的mpc身份标志公钥, 不复用p2p层的标志.  
     - fee:     打算收取的delegateIn的手续费. 单位是万分之. 范围是 0 ~ 10000  
@@ -128,7 +129,7 @@ function settleUp(uint groupIndex)
 ### 结束注册窗口
 接口名: registerStop  
 作用:   结束注册窗口,生成被选中的注册者列表, 未选中的生成退款清单不退款,等待用户claim退款;  
-需要指定如下参数:
+需要指定如下参数:  
     - groupIndex: 指定要结束的group index  
 ```
 function registerStop(uint groupIndex)
@@ -186,7 +187,7 @@ function claim(uint groupIndex, bytes enodeID)
 ### 提取收益或退款
 接口名: delegateClaim  
 作用:   group工作周期结束后提取收益或本金.  
-需要指定如下参数:
+需要指定如下参数:  
     - groupIndex: 指定要提取的group index  
     - enodeID:    指定要提取的group中的节点的标志  
 
