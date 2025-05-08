@@ -103,7 +103,8 @@ module sui_bridge_contracts::cross {
     }
 
     /// User lock event
-    public struct UserLockEvent has copy, drop {
+    public struct UserLockLogger has copy, drop {
+        smg_id: vector<u8>,
         token_pair_id: u64,
         user: address,
         amount: u64,
@@ -114,7 +115,8 @@ module sui_bridge_contracts::cross {
     }
 
     /// User burn event
-    public struct UserBurnEvent has copy, drop {
+    public struct UserBurnLogger has copy, drop {
+        smg_id: vector<u8>,
         token_pair_id: u64,
         user: address,
         amount: u64,
@@ -125,7 +127,7 @@ module sui_bridge_contracts::cross {
     }
 
     /// Mint event for cross-chain transfer
-    public struct SmgMintEvent has copy, drop {
+    public struct SmgMintLogger has copy, drop {
         unique_id: vector<u8>,
         smg_id: vector<u8>,
         token_pair_id: u64,
@@ -137,7 +139,7 @@ module sui_bridge_contracts::cross {
     }
 
     /// Release event for cross-chain transfer
-    public struct SmgReleaseEvent has copy, drop {
+    public struct SmgReleaseLogger has copy, drop {
         unique_id: vector<u8>,
         smg_id: vector<u8>,
         token_pair_id: u64,
@@ -522,6 +524,7 @@ module sui_bridge_contracts::cross {
         foundation_config: &FoundationConfig,
         pause_config: &PauseConfig,
         fee_config: &FeeConfig,
+        smg_id: vector<u8>,
         token_pair_id: u64,
         coin_in: coin::Coin<T>,
         fee_coin: &mut Coin<SUI>,
@@ -603,7 +606,8 @@ module sui_bridge_contracts::cross {
         let address_bytes = bcs::to_bytes(&type_name::get_address(&type_name_val));
         
         // Emit event
-        event::emit(UserLockEvent {
+        event::emit(UserLockLogger {
+            smg_id,
             token_pair_id,
             user,
             amount,
@@ -620,6 +624,7 @@ module sui_bridge_contracts::cross {
         foundation_config: &FoundationConfig,
         pause_config: &PauseConfig,
         fee_config: &FeeConfig,
+        smg_id: vector<u8>,
         token_pair_id: u64,
         coin_in: coin::Coin<CoinType>,
         fee_coin: &mut Coin<SUI>,
@@ -690,7 +695,8 @@ module sui_bridge_contracts::cross {
         let type_bytes = bcs::to_bytes(&type_str);
         
         // Emit event
-        event::emit(UserBurnEvent {
+        event::emit(UserBurnLogger {
+            smg_id,
             token_pair_id,
             user,
             amount,
@@ -792,7 +798,7 @@ module sui_bridge_contracts::cross {
         table::add(&mut processed_tx.processed, unique_id, true);
         
         // Emit event
-        event::emit(SmgMintEvent {
+        event::emit(SmgMintLogger {
             unique_id,
             smg_id,
             token_pair_id,
@@ -905,7 +911,7 @@ module sui_bridge_contracts::cross {
         table::add(&mut processed_tx.processed, unique_id, true);
         
         // Emit event
-        event::emit(SmgReleaseEvent {
+        event::emit(SmgReleaseLogger {
             unique_id,
             smg_id,
             token_pair_id,
