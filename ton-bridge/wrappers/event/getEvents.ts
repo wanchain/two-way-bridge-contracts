@@ -23,6 +23,7 @@ import {
 
 import {MAX_LIMIT,MAX_RETRY} from "../const/const-value";
 import {DBAccess} from "../db/DbAccess";
+import {WanTonClient} from "../client/client-interface";
 /*
 example of ret:
 
@@ -46,7 +47,7 @@ example of ret:
 //todo  in send Message, message body-> txhash.
 
 
-export async function getEvents(client: TonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string):Promise<any> {
+export async function getEvents(client: WanTonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string):Promise<any> {
 
     console.log("scAddress:%s,limit:%s,lt:%s,to_lt:%s,eventName:%s",scAddress,limit,lt,to_lt,eventName);
     if (!client){
@@ -86,7 +87,7 @@ export async function getEvents(client: TonClient,scAddress:string,limit:number,
     return events;
 }
 
-export async function getTransactions(client:TonClient,scAddress:string,opts:{
+export async function getTransactions(client:WanTonClient,scAddress:string,opts:{
     limit: number;
     lt?: string;
     hash?: string;
@@ -108,7 +109,7 @@ export async function getTransactions(client:TonClient,scAddress:string,opts:{
     return ret;
 }
 
-export async function getAllTransactions(client:TonClient,scAddress:string,limit:number, retry:number){
+export async function getAllTransactions(client:WanTonClient,scAddress:string,limit:number, retry:number){
     let trans = [];
     let transCount = limit;
     let opts: {
@@ -156,7 +157,7 @@ export async function getAllTransactions(client:TonClient,scAddress:string,limit
     return trans;
 }
 
-export async function getEventFromTran(client:TonClient,tran:Transaction, scAddress:string){
+export async function getEventFromTran(client:WanTonClient,tran:Transaction, scAddress:string){
     let bodyCell = tran.inMessage?.body;
     if(!bodyCell){
         console.error("body is empty","tran",tran.hash().toString("base64"));
@@ -207,7 +208,7 @@ export async function getEventFromTran(client:TonClient,tran:Transaction, scAddr
     }
 }
 
-export async function getTransaction(client:TonClient,scAddress:string,lt:string,tranHash:string){
+export async function getTransaction(client:WanTonClient,scAddress:string,lt:string,tranHash:string){
     // todo should add below code
     console.log("Entering getTransaction","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
     let retTranFromDb = await getTransactionFromDb(client,scAddress,lt,toBase64(tranHash));
@@ -295,7 +296,7 @@ export async function getTransaction(client:TonClient,scAddress:string,lt:string
     throw(new Error(formatUtil.format("can not getTransactions ","scAddress",scAddress,"opts",opts)),"hash",tranHash,"hash(bse64)",toBase64(tranHash));
 }
 // tranHash: base64
-export async function getTransactionFromDb(client:TonClient,scAddress:string,lt:string,tranHash:string){
+export async function getTransactionFromDb(client:WanTonClient,scAddress:string,lt:string,tranHash:string){
     console.log("Entering getTransactionFromDb","scAddress",scAddress,"lt",lt,"tranHash",tranHash);
     let dbAccess = await DBAccess.getDBAccess();
     if(!dbAccess){
@@ -319,7 +320,7 @@ export async function getTransactionFromDb(client:TonClient,scAddress:string,lt:
     return retTx
 }
 
-export async function getEventByTranHash(client:TonClient, scAddress:string, lt:string, tranHash:string){
+export async function getEventByTranHash(client:WanTonClient, scAddress:string, lt:string, tranHash:string){
     let tran = await getTransaction(client,scAddress,lt,tranHash);
     console.log("getEventByTranHash getTransaction success",tran, "tranHash ",tran.hash().toString('hex'));
     return await getEventFromTran(client,tran,scAddress);
@@ -344,7 +345,7 @@ export async function getOpCodeFromCell(cell:Cell){
 }
  */
 
-async function handleUserLockEvent(client:TonClient, scAddr:Address,tran:Transaction){
+async function handleUserLockEvent(client:WanTonClient, scAddr:Address,tran:Transaction){
 
     logger.info(formatUtil.format("Entering handleUserLockEvent"));
 
@@ -388,7 +389,7 @@ async function handleUserLockEvent(client:TonClient, scAddr:Address,tran:Transac
     }
 }
 
-async function handleCommonEvent(client:TonClient, scAddr:Address,tran:Transaction){
+async function handleCommonEvent(client:WanTonClient, scAddr:Address,tran:Transaction){
 
     logger.info(formatUtil.format("Entering handleCommonEvent"));
 
@@ -436,6 +437,6 @@ async function decodeUserLock(bodyCell:Cell){
     }
 }
 
-async function getTransResult(client:TonClient, scAddr:Address,tran:Transaction){
+async function getTransResult(client:WanTonClient, scAddr:Address,tran:Transaction){
     return await getTranResultByTran(client,scAddr,tran);
 }

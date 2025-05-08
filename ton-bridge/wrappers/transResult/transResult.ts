@@ -1,5 +1,4 @@
 import {Address, beginCell, storeMessage, storeMessageRelaxed, Transaction} from "@ton/core";
-import {TonClient} from "@ton/ton";
 import {TransactionDescriptionGeneric} from "@ton/core/src/types/TransactionDescription";
 import {TransactionComputeVm} from "@ton/core/src/types/TransactionComputePhase";
 import {bigIntReplacer, formatError} from "../utils/utils";
@@ -7,6 +6,7 @@ import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
 import {DBAccess} from "../db/DbAccess";
 import {convertTranToTonTrans} from "../db/common";
 import { MAX_LIMIT } from "../const/const-value";
+import {WanTonClient} from "../client/client-interface";
 const formatUtil = require('util');
 
 function sleep(ms) {
@@ -26,7 +26,7 @@ return
 ]
  */
 
-async function getTranPathInfoByMsgHash(client: TonClient, scAddr: Address, msgBodyCellHash:string, msgInHash: string): Promise<TranPathInfo> {
+async function getTranPathInfoByMsgHash(client: WanTonClient, scAddr: Address, msgBodyCellHash:string, msgInHash: string): Promise<TranPathInfo> {
     let pivotTran = await getTranByMsgHash(client, scAddr, msgBodyCellHash,msgInHash);
     let path = await getTranPathInfoByPivotTran(client, scAddr, pivotTran);
     return path;
@@ -75,7 +75,7 @@ async function isTranPathSuccess(allTranPathInfo:TranPathInfo):Promise<boolean>{
 }
 
 
-export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
+export async function getUpperStepsFromDb(client:WanTonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
     console.log("getUpperStepsFromDb","tran hash",tran.hash().toString('hex'));
     if(tran.inMessage.info.type == 'external-in'){
         return
@@ -129,7 +129,7 @@ export async function getUpperStepsFromDb(client:TonClient,scAddr:Address,tran:T
     }
 }
 
-export async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
+export async function getUpperSteps(client:WanTonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
     if(tran.inMessage.info.type == 'external-in'){
         return
     }
@@ -238,7 +238,7 @@ export async function getUpperSteps(client:TonClient,scAddr:Address,tran:Transac
     }
 }
 
-export async function getLowerSteps(client:TonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
+export async function getLowerSteps(client:WanTonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
     console.log("Entering getLowerSteps","scAddr",scAddr);
     if(tran.outMessages.keys().length == 0){
         return
@@ -265,7 +265,7 @@ export async function getLowerSteps(client:TonClient,scAddr:Address,tran:Transac
     }
 }
 
-async function getTranPathInfoByPivotTran(client:TonClient,scAddr:Address,pivotTran:Transaction):Promise<TranPathInfo>{
+async function getTranPathInfoByPivotTran(client:WanTonClient,scAddr:Address,pivotTran:Transaction):Promise<TranPathInfo>{
     console.log("Entering getTranPathInfoByPivotTran");
     let allTranPathInfo: TranPathInfo = [];
     let beforePivotTranPathInfo: TranPathInfo = [];
@@ -294,8 +294,6 @@ async function getTranPathInfoByPivotTran(client:TonClient,scAddr:Address,pivotT
     console.log("========================ret = >", ret);
     return ret;
 }
-
-
 
 export interface TranStepInfo {
     addr: Address;
@@ -349,7 +347,7 @@ TranResult=> {
         gasUsed: 7293268n
 }
 */
-export async function getTranResultByMsgHash(client:TonClient,scAddr:Address,msgBodyCellHash:string,msgInHash:string):Promise<TranResult>{
+export async function getTranResultByMsgHash(client:WanTonClient,scAddr:Address,msgBodyCellHash:string,msgInHash:string):Promise<TranResult>{
 
     let path = await getTranPathInfoByMsgHash(client,scAddr,msgBodyCellHash,msgInHash);
     let success = await isTranPathSuccess(path);
@@ -363,7 +361,7 @@ export async function getTranResultByMsgHash(client:TonClient,scAddr:Address,msg
     };
 }
 
-export async function getTranResultByTxHash(client:TonClient,scAddr:Address,txHash:string, lt:string):Promise<TranResult>{
+export async function getTranResultByTxHash(client:WanTonClient,scAddr:Address,txHash:string, lt:string):Promise<TranResult>{
     let tran = await client.getTransaction(scAddr,lt,txHash);
     let path = await  getTranPathInfoByPivotTran(client,scAddr,tran);
 
@@ -378,7 +376,7 @@ export async function getTranResultByTxHash(client:TonClient,scAddr:Address,txHa
     };
 }
 
-export async function getTranResultByTran(client:TonClient,scAddr:Address,tran:Transaction):Promise<TranResult>{
+export async function getTranResultByTran(client:WanTonClient,scAddr:Address,tran:Transaction):Promise<TranResult>{
     console.log("Entering getTranResultByTran");
     let path = await  getTranPathInfoByPivotTran(client,scAddr,tran);
     let success = await isTranPathSuccess(path);
@@ -453,7 +451,7 @@ export async function findOnlyMsgCellHashInTran(tran:Transaction,msgCellHash:str
     return found;
 }
 
-export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCellHash:string,msgBodyHash:string,lt:string=''):Promise<Transaction> {
+export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgCellHash:string,msgBodyHash:string,lt:string=''):Promise<Transaction> {
     let limit = MAX_LIMIT;
     let retry = 5
     let maxRetry = retry;
@@ -530,7 +528,7 @@ export async function getTranByMsgHash(client:TonClient, scAddr:Address, msgCell
 
 }
 
-export async function getTranByOnlyMsgHash(client:TonClient, scAddr:Address, msgCellHash:string):Promise<Transaction> {
+export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, msgCellHash:string):Promise<Transaction> {
     let limit = MAX_LIMIT;
     let retry = 5
     let maxRetry = retry;

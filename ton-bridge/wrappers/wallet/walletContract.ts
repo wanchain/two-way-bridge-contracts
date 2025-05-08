@@ -10,13 +10,14 @@ import {address, TonClient, WalletContractV4} from "@ton/ton";
 import {Address, ContractProvider, OpenedContract, Sender} from "@ton/core";
 import {keyPairFromSeed} from "@ton/crypto";
 import {Blockchain} from "@ton/sandbox";
+import {IsWanTonClient, WanTonClient} from "../client/client-interface";
 
 export async function getWalletByMnemonic(mnemonic: String): Promise<WalletContractV4> {
     const key = await mnemonicToWalletKey(mnemonic.split(" "));
     return WalletContractV4.create({publicKey: key.publicKey, workchain: 0});
 }
 
-export function openWallet(client:TonClient,wallet:WalletContractV4):OpenedContract<WalletContractV4>{
+export function openWallet(client:WanTonClient,wallet:WalletContractV4):OpenedContract<WalletContractV4>{
     return client.open(wallet);
 }
 
@@ -38,7 +39,7 @@ export async function getTonAddrByPrvKey(privateKey: Buffer){
     }
 }
 
-export async function getSenderByPrvKey(client:TonClient,privateKey: Buffer):Promise<Sender>{
+export async function getSenderByPrvKey(client:WanTonClient,privateKey: Buffer):Promise<Sender>{
     let wallet = await getWalletByPrvKey(privateKey);
     return getSender(openWallet(client,wallet),privateKey);
 }
@@ -52,7 +53,7 @@ export async function getWalletAddrByPrvKey(privateKey: Buffer){
     }
 }
 
-export async function openWalletByPrvKey(client:TonClient,privateKey: Buffer){
+export async function openWalletByPrvKey(client:WanTonClient,privateKey: Buffer){
     return await openWallet(client,await getWalletByPrvKey(privateKey));
 }
 
@@ -69,13 +70,13 @@ export async function getTonAddrBySecPrvKey(privateKey: Buffer){
     }
 }
 
-export async function getSenderBySecPrvKey(client:TonClient,privateKey: Buffer):Promise<Sender>{
+export async function getSenderBySecPrvKey(client:WanTonClient,privateKey: Buffer):Promise<Sender>{
     let wallet = await getWalletBySecPrvKey(privateKey);
     const key =  keyPairFromSeed(privateKey);
     return getSender(openWallet(client,wallet),key.secretKey);
 }
 
-export async function openWalletBySecPrvKey(client:TonClient,privateKey: Buffer){
+export async function openWalletBySecPrvKey(client:WanTonClient,privateKey: Buffer){
     return await openWallet(client,await getWalletBySecPrvKey(privateKey));
 }
 
@@ -87,8 +88,8 @@ export async function getWalletAddrBySecPrvKey(privateKey: Buffer){
 }
 
 // others
-export async function isAddrDepolyed(client:TonClient|Blockchain,addrStr:string){
-    if(client instanceof TonClient){
+export async function isAddrDepolyed(client:WanTonClient|Blockchain,addrStr:string){
+    if(IsWanTonClient(client)){
         let addr = Address.parse(addrStr);
         return await client.isContractDeployed(addr);
     }else{

@@ -51,9 +51,10 @@ import{JettonWallet} from "../JettonWallet";
 import {CoinBalance,TokenBalance} from "../wallet/balance";
 import {TonClient} from "@ton/ton";
 import {TON_FEE} from "../fee/fee";
+import {WanTonClient} from "../client/client-interface";
 
 
-async function mintToken(client:TonClient,tokenType: string, to: Address, amount: bigint) {
+async function mintToken(client:WanTonClient,tokenType: string, to: Address, amount: bigint) {
     let jettonTokenAddr = tokenInfo[tokenType].dstTokenAcc
     console.log("tokenAddress = %s, tokenType = %s,to= %s,amount=%d",jettonTokenAddr,tokenType,to.toString(),amount)
     console.log("before mintToken to:%s, coin:%d,token:%d", to.toString(), await CoinBalance(client, to), await TokenBalance(client, Address.parse(jettonTokenAddr), to));

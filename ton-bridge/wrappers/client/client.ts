@@ -5,6 +5,8 @@ import {logger} from '../utils/logger'
 import {TONCLINET_TIMEOUT} from "../const/const-value";
 import {DBAccess} from "../db/DbAccess";
 import path from "path";
+import {WanTonClient} from "./client-interface";
+import {TonApiClient} from "./tonapi-client";
 
 const formatUtil = require('util');
 
@@ -16,6 +18,7 @@ export interface TonClientConfig {
 export interface TonUrlConfig{
     url?:string;
     apiKey?:string;
+    vendor?:string; //tonApi
 }
 
 export interface TonConfig {
@@ -74,7 +77,7 @@ const toncenter_apikey ="16f38715eb1a0984abf42148d5ed042589f8bf11768141ecb944fea
 const default_test_url= "https://testnet.toncenter.com/api/v2/jsonRPC"
 const default_url= "https://toncenter.com/api/v2/jsonRPC"
 
-export async function getClient():Promise<TonClient> {
+export async function getClient():Promise<WanTonClient> {
     logger.info(formatUtil.format("getClient config %s",JSON.stringify(g_tonConfig)));
 
     // get client by url
@@ -82,9 +85,15 @@ export async function getClient():Promise<TonClient> {
         let urls = g_tonConfig.urls;
         const totalUrls = urls.length;
         const indexUsed = await getSecureRandomNumber(0,totalUrls)
-        return  new TonClient({ endpoint:urls[indexUsed].url ?? (g_tonConfig.network.network === 'mainnet' ? default_url:default_test_url),
-            timeout:g_tonConfig.network.tonClientTimeout ?? TONCLINET_TIMEOUT,
-            apiKey: urls[indexUsed].apiKey ?? (g_tonConfig.network.network === 'mainnet' ? toncenter_apikey : toncenter_testnet_apikey) });
+        if(urls[indexUsed].vendor.toLowerCase() == 'tonapi'){
+            return new TonApiClient({
+                baseUrl:urls[indexUsed].url
+            });
+        }else{
+            return  new TonClient({ endpoint:urls[indexUsed].url ?? (g_tonConfig.network.network === 'mainnet' ? default_url:default_test_url),
+                timeout:g_tonConfig.network.tonClientTimeout ?? TONCLINET_TIMEOUT,
+                apiKey: urls[indexUsed].apiKey ?? (g_tonConfig.network.network === 'mainnet' ? toncenter_apikey : toncenter_testnet_apikey) });
+        }
     }
 
     // get client by orbs access
@@ -97,3 +106,26 @@ export async function getClient():Promise<TonClient> {
     logger.info(formatUtil.format("(orbos)http endpoint is =>",endpoints[indexUsed]));
     return  new TonClient({ endpoint:endpoints[indexUsed],timeout:g_tonConfig.network.tonClientTimeout ?? TONCLINET_TIMEOUT});
 }
+
+/*
+const ta = new TonApiClient({
+    baseUrl: 'https://tonapi.io',
+    apiKey: process.env.TONAPI_API_KEY
+});
+
+export const clientTonApi = new ContractAdapter(ta); // Create an adapter
+
+export const getTonCenterClient = () => {
+    if (!process.env.TONCENTER_API_KEY) {
+        throw new Error('TONCENTER_API_KEY is not set');
+    }
+
+    return new TonClient({
+        endpoint: 'https://toncenter.com/api/v2/jsonRPC',
+        apiKey: process.env.TONCENTER_API_KEY
+    });
+};
+
+export const client = process.env.CLIENT === 'toncenter' ? getTonCenterClient() : clientTonApi;
+
+ */

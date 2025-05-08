@@ -30,3 +30,30 @@ export const configMainnet:TonConfig =  {
             //apiKey:''
         }]
 }
+
+
+export const configTestTonApi:TonConfig =  {
+    network:{
+        network:"testnet", // testnet|mainnet
+    },
+    usingDbCache:true,
+    urls:[
+        {
+            url:'https://testnet.tonapi.io',
+            //apiKey:'',
+            vendor:'tonapi',
+        }]
+}
+
+export const configMainTonApi:TonConfig =  {
+    network:{
+        network:"mainnet", // testnet|mainnet
+    },
+    usingDbCache:true,
+    urls:[
+        {
+            url:'https://tonapi.io',
+            //apiKey:'',
+            vendor:'tonapi',
+        }]
+}

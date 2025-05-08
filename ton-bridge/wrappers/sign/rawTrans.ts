@@ -18,6 +18,7 @@ import {getClient, TonClientConfig} from "../client/client";
 import {internal} from "@ton/core";
 import {StateInit} from "@ton/core";
 import {TonClient} from "@ton/ton";
+import {WanTonClient} from "../client/client-interface";
 
 export async function buildInternalMessage(from:Address,src: {
     to: Address | string,
@@ -92,7 +93,7 @@ external_message = {
                 body: rawTransactionCell
 }
  */
-export async function sendRawTransaction(client:TonClient, senderAddress:Address,rawTrans:Cell){
+export async function sendRawTransaction(client:WanTonClient, senderAddress:Address,rawTrans:Cell){
     // let client = await getClient();
     let provider =  client.provider(senderAddress)
     await provider.external(rawTrans)

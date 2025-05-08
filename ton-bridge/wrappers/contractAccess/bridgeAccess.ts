@@ -4,18 +4,19 @@ import {Bridge} from '../Bridge';
 
 import {logger} from '../utils/logger'
 import {bigIntReplacer, formatError} from "../utils/utils";
+import {WanTonClient} from "../client/client-interface";
 const formatUtil = require('util');
 
 export class BridgeAccess {
-    private client: TonClient;
+    private client: WanTonClient;
     private readonly contractAddr: Address;
 
-    static create(client:TonClient,contractAddr:string):BridgeAccess {
+    static create(client:WanTonClient,contractAddr:string):BridgeAccess {
         let addr = Address.parse(contractAddr);
         return new BridgeAccess(client, addr);
     }
 
-    constructor(client:TonClient,contractAddr:Address){
+    constructor(client:WanTonClient,contractAddr:Address){
         this.client = client;
         this.contractAddr = contractAddr;
     }

@@ -24,6 +24,8 @@ import {BIP44_CHAINID,TON_COIN_ACCOUT,TON_COIN_ACCOUNT_STR,WK_CHIANID} from "./c
 import {TonClient} from "@ton/ton";
 import {Blockchain} from "@ton/sandbox";
 
+import {WanTonClient} from "./client/client-interface";
+
 export type BridgeConfig = {
     owner:Address,
     halt: number,
@@ -248,7 +250,7 @@ export class Bridge implements Contract {
             tokenPairID:number,
             crossValue:bigint,
             dstUserAccount:string, // hex string
-            client:TonClient|Blockchain,
+            client:WanTonClient|Blockchain,
             senderAccount:string,
             bridgeScAddr:string,
         },

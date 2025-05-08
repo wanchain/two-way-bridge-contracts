@@ -3,18 +3,19 @@ import {TonClient} from "@ton/ton";
 import {GroupApprove} from '../GroupApprove';
 
 import {logger} from '../utils/logger'
+import {WanTonClient} from "../client/client-interface";
 const formatUtil = require('util');
 
 export class GroupApproveAccess {
-    private client: TonClient;
+    private client: WanTonClient;
     private readonly contractAddr: Address;
 
-    static create(client:TonClient,contractAddr:string):GroupApproveAccess {
+    static create(client:WanTonClient,contractAddr:string):GroupApproveAccess {
         let addr = Address.parse(contractAddr);
         return new GroupApproveAccess(client, addr);
     }
 
-    constructor(client:TonClient,contractAddr:Address){
+    constructor(client:WanTonClient,contractAddr:Address){
         this.client = client;
         this.contractAddr = contractAddr;
     }

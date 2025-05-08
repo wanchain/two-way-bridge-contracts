@@ -11,6 +11,7 @@ import {Cell} from "@ton/core";
 import {Blockchain} from "@ton/sandbox";
 import {Bridge} from "../Bridge";
 import {TON_FEE} from "../fee/fee";
+import {IsWanTonClient, WanTonClient} from "../client/client-interface";
 const formatUtil = require('util');
 
 export const LOCK_TYPE={
@@ -26,7 +27,7 @@ export async function buildUserLockMessages(opts: {
     crossValue:bigint,
     dstUserAccount:string, // hex string
     bridgeScAddr:string,
-    client:TonClient|Blockchain,
+    client:WanTonClient|Blockchain,
     senderAccount:string,
 }){
 
@@ -92,7 +93,7 @@ async function buildLockCoinMessages(opts: {
     crossValue:bigint,
     dstUserAccount:string, // hex string
     bridgeScAddr:string,
-    client:TonClient|Blockchain,
+    client:WanTonClient|Blockchain,
     senderAccount:string,
 },jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
     console.log("buildLockCoinMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
@@ -141,7 +142,7 @@ async function buildLockOriginalTokenMessages(opts: {
     crossValue:bigint,
     dstUserAccount:string, // hex string
     bridgeScAddr:string,
-    client:TonClient|Blockchain,
+    client:WanTonClient|Blockchain,
     senderAccount:string,
 },jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
     console.log("buildLockOriginalTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
@@ -211,9 +212,9 @@ async function buildLockWrappedTokenMessages(opts:any,jwAddrBridgeSc:Address,jwA
     return ret;
 }
 
-export async function getFee(client:TonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number,srcChainId,dstChainId){
+export async function getFee(client:WanTonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number,srcChainId,dstChainId){
     let fee = 0;
-    if(client instanceof TonClient){
+    if(IsWanTonClient(client)){
         let ba = BridgeAccess.create(client,bridgeScAddr.toString())
         let feeTp = await ba.readContract("getChainFee",[srcChainId,dstChainId])
         if(feeTp.contractFee != 0){
@@ -234,9 +235,9 @@ export async function getFee(client:TonClient|Blockchain,bridgeScAddr:Address,to
     return fee;
 }
 
-export async function getJettonWalletAddr(client:TonClient|Blockchain,jettonMasterAddr:Address,ownerAddr:Address){
+export async function getJettonWalletAddr(client:WanTonClient|Blockchain,jettonMasterAddr:Address,ownerAddr:Address){
     console.log("in getJettonWalletAddr", "jettonMasterAddr", jettonMasterAddr.toString(),"ownerAddr",ownerAddr.toString());
-    if(client instanceof TonClient){
+    if(IsWanTonClient(client)){
         let jettonMasterSc = JettonMaster.create(jettonMasterAddr)
         let jettonMasterScOpened = await client.open(jettonMasterSc)
         return await jettonMasterScOpened.getWalletAddress(ownerAddr)
@@ -248,9 +249,9 @@ export async function getJettonWalletAddr(client:TonClient|Blockchain,jettonMast
 
 }
 
-export async function getJettonAdminAddr(client:TonClient|Blockchain,jettonMasterAddr:Address){
+export async function getJettonAdminAddr(client:WanTonClient|Blockchain,jettonMasterAddr:Address){
     console.log("in getJettonAdminAddr", "jettonMasterAddr", jettonMasterAddr.toString());
-    if(client instanceof TonClient){
+    if(IsWanTonClient(client)){
         let jettonMasterSc = JettonMaster.create(jettonMasterAddr)
         let jettonMasterScOpened = await client.open(jettonMasterSc)
         return (await jettonMasterScOpened.getJettonData()).adminAddress
@@ -261,11 +262,11 @@ export async function getJettonAdminAddr(client:TonClient|Blockchain,jettonMaste
     }
 }
 
-export async function getTokenPairInfo(client:TonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number){
+export async function getTokenPairInfo(client:WanTonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number){
     let tokePairInfo ;
     let tokenAccount = "";
 
-    if(client instanceof TonClient){
+    if(IsWanTonClient(client)){
         let ba = new BridgeAccess(client,bridgeScAddr)
         tokePairInfo = await ba.readContract("getTokenPair",[tokenPairID])
     }else{

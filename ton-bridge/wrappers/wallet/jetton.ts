@@ -3,25 +3,26 @@ import {TonClient} from "@ton/ton";
 import {JettonMaster,JettonWallet} from "@ton/ton";
 import {DictionaryKey, DictionaryKeyTypes, DictionaryValue} from "@ton/core"
 import {sha256_sync} from "@ton/crypto";
+import {WanTonClient} from "../client/client-interface";
 
-export async function getJettonBalance(client:TonClient,jettonMasterAddr:Address, userAddress:Address): Promise<bigint> {
+export async function getJettonBalance(client:WanTonClient,jettonMasterAddr:Address, userAddress:Address): Promise<bigint> {
     let jettonWalletAddress = await getJettonAddress(client,jettonMasterAddr,userAddress);
     let jettonWalletContract = JettonWallet.create(jettonWalletAddress);
     return  await (client.open(jettonWalletContract)).getBalance();
 }
 
-export async function getJettonAddress(client:TonClient,jettonMasterAddr:Address,userAddress:Address){
+export async function getJettonAddress(client:WanTonClient,jettonMasterAddr:Address,userAddress:Address){
     let jettonMasterContract = JettonMaster.create(jettonMasterAddr);
     return await (client.open(jettonMasterContract).getWalletAddress(userAddress));
 }
 
-export async function getJettonData(client:TonClient,jettonMasterAddr:Address){
+export async function getJettonData(client:WanTonClient,jettonMasterAddr:Address){
     let jettonMasterContract = JettonMaster.create(jettonMasterAddr);
     return await (client.open(jettonMasterContract).getJettonData());
 }
 
 
-export async function getJettonDataContent(client:TonClient,jettonMasterAddr:Address){
+export async function getJettonDataContent(client:WanTonClient,jettonMasterAddr:Address){
     let jettonMasterContract = JettonMaster.create(jettonMasterAddr);
     return (await (client.open(jettonMasterContract).getJettonData())).content;
 }

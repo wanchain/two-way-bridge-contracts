@@ -62,8 +62,9 @@ async function init(){
 import {isAddrDepolyed} from "../wallet/walletContract";
 import {sleep} from "../utils/utils";
 import {TON_FEE} from "../fee/fee";
+import {WanTonClient} from "../client/client-interface";
 
-async function DisplayJettonInfo(client:TonClient,addr:Address){
+async function DisplayJettonInfo(client:WanTonClient,addr:Address){
     let ret = await getJettonData(client,addr);
     console.log("getJettonData=>",ret)
 
@@ -74,7 +75,7 @@ async function DisplayJettonInfo(client:TonClient,addr:Address){
 const fwdAmount = TON_FEE.FWD_FEE_MINT_JETTON;
 const totalAmount = TON_FEE.TOTAL_FEE_MINT_JETTON;
 
-async function Mint(client:TonClient,via:Sender,jettonMasterAddr:Address,addr:Address, amount:bigint){
+async function Mint(client:WanTonClient,via:Sender,jettonMasterAddr:Address,addr:Address, amount:bigint){
     let jettMasterSc = await JettonMinter.createFromAddress(jettonMasterAddr);
     let jettMasterScOpened = await client.open(jettMasterSc)
     let ret = await jettMasterScOpened.sendMint(via,addr,amount,fwdAmount,totalAmount);

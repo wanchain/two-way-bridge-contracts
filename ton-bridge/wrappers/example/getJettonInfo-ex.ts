@@ -13,6 +13,7 @@ let args = process.argv.slice(2)
 let jettonTokenAddress = args[0]
 
 import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
+import {WanTonClient} from "../client/client-interface";
 
 const prvList = require('../testData/prvlist')
 
@@ -23,7 +24,7 @@ async function init(){
     await wanTonSdkInit(configTestnet);
     client = await getClient();
 }
-async function DisplayJettonInfo(client:TonClient,addr:Address){
+async function DisplayJettonInfo(client:WanTonClient,addr:Address){
     let ret = await getJettonData(client,addr);
     console.log("getJettonData=>",ret)
 

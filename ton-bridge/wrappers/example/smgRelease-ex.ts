@@ -15,6 +15,7 @@ import * as util from "node:util";
 import {TON_FEE} from "../fee/fee";
 
 import {configTestnet,configMainnet} from "../config/config-ex";
+import {WanTonClient} from "../client/client-interface";
 const prvList = require('../testData/prvlist')
 const prvAlice = Buffer.from(prvList[1],'hex');
 const prvBob = Buffer.from(prvList[2],'hex');
@@ -66,7 +67,7 @@ async function getAgentFee(tokenPairID:number,srcChainId:number,dstChainId:numbe
 }
 const jetton = require('../wallet/jetton');
 
-async function getJettonWalletAddr(client:TonClient,tokenAccountAddr:Address,ownerAddress:Address){
+async function getJettonWalletAddr(client:WanTonClient,tokenAccountAddr:Address,ownerAddress:Address){
     if(tokenAccountAddr.equals(Address.parse(TON_COIN_ACCOUNT_STR))){
         return Address.parse(TON_COIN_ACCOUNT_STR);
     }else{
@@ -74,7 +75,7 @@ async function getJettonWalletAddr(client:TonClient,tokenAccountAddr:Address,own
     }
 }
 
-async function buildSmgReleaseParameters(client:TonClient,input:{
+async function buildSmgReleaseParameters(client:WanTonClient,input:{
     smgID:string,
     tokenPairID:number,
     releaseValue:bigint,

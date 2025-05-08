@@ -15,6 +15,7 @@ import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
 import formatUtil from "util";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
 import {MAX_BACKTRACE_SECONDS, MAX_LIMIT, MAX_RETRY} from "../const/const-value";
+import {WanTonClient} from "../client/client-interface";
 
 //todo how to provide testnet | mainnet information.
 // const config:TonClientConfig =  {
@@ -303,7 +304,7 @@ class DB {
     }
 
     async scanTonTxByTask(task:Task) {
-        let client:TonClient = await getClient();   //todo check how to provide config.
+        let client:WanTonClient = await getClient();   //todo check how to provide config.
         let rawAddr = Address.parseFriendly(this.dbName).address
         console.log("entering scanTonTxByTask:", this.dbName,"rawAddr",rawAddr,"task", JSON.stringify(task, bigIntReplacer), "typeof task.rangeStart", typeof task.rangeStart);
         let rangeStartLt = BigInt(0);
