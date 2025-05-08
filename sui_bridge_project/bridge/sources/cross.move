@@ -106,7 +106,8 @@ module sui_bridge_contracts::cross {
     public struct UserLockLogger has copy, drop {
         smg_id: vector<u8>,
         token_pair_id: u64,
-        user: address,
+        sender: address,
+        recipient: vector<u8>,
         amount: u64,
         sui_token_address: string::String,
         external_chain_id: u64,
@@ -118,7 +119,8 @@ module sui_bridge_contracts::cross {
     public struct UserBurnLogger has copy, drop {
         smg_id: vector<u8>,
         token_pair_id: u64,
-        user: address,
+        sender: address,
+        recipient: vector<u8>,
         amount: u64,
         sui_token_address: string::String,
         external_chain_id: u64,
@@ -524,8 +526,11 @@ module sui_bridge_contracts::cross {
         foundation_config: &FoundationConfig,
         pause_config: &PauseConfig,
         fee_config: &FeeConfig,
+        oracle_storage: &oracle::OracleStorage,
+        clock: &Clock,
         smg_id: vector<u8>,
         token_pair_id: u64,
+        recipient: vector<u8>,
         coin_in: coin::Coin<T>,
         fee_coin: &mut Coin<SUI>,
         ctx: &mut tx_context::TxContext
@@ -575,6 +580,12 @@ module sui_bridge_contracts::cross {
         // Get coin amount
         let amount = coin::value(&coin_in);
         assert!(amount > 0, EInsufficientBalance);
+
+        oracle::verify_smg_id(
+            oracle_storage,
+            clock,
+            smg_id
+        );
         
         // Create balance key
         let balance_key = TokenBalanceKey { 
@@ -600,7 +611,7 @@ module sui_bridge_contracts::cross {
         balance::join(&mut token_balance.balance, coin::into_balance(coin_in));
         
         // Get user address
-        let user = tx_context::sender(ctx);
+        let sender = tx_context::sender(ctx);
         
         // Get address bytes for the event
         let address_bytes = bcs::to_bytes(&type_name::get_address(&type_name_val));
@@ -609,7 +620,8 @@ module sui_bridge_contracts::cross {
         event::emit(UserLockLogger {
             smg_id,
             token_pair_id,
-            user,
+            sender,
+            recipient,
             amount,
             sui_token_address: string::utf8(token_pair.sui_token_address),
             external_chain_id: token_pair.external_chain_id,
@@ -624,8 +636,11 @@ module sui_bridge_contracts::cross {
         foundation_config: &FoundationConfig,
         pause_config: &PauseConfig,
         fee_config: &FeeConfig,
+        oracle_storage: &oracle::OracleStorage,
+        clock: &Clock,
         smg_id: vector<u8>,
         token_pair_id: u64,
+        recipient: vector<u8>,
         coin_in: coin::Coin<CoinType>,
         fee_coin: &mut Coin<SUI>,
         ctx: &mut tx_context::TxContext
@@ -678,6 +693,12 @@ module sui_bridge_contracts::cross {
         
         // Check if treasury cap exists
         assert!(df::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
+
+        oracle::verify_smg_id(
+            oracle_storage,
+            clock,
+            smg_id
+        );
         
         // Borrow treasury cap
         let treasury_cap = df::borrow_mut<type_name::TypeName, TreasuryCap<CoinType>>(
@@ -689,7 +710,7 @@ module sui_bridge_contracts::cross {
         coin::burn(treasury_cap, coin_in);
         
         // Get user address
-        let user = tx_context::sender(ctx);
+        let sender = tx_context::sender(ctx);
         
         // Get type bytes for the event
         let type_bytes = bcs::to_bytes(&type_str);
@@ -698,7 +719,8 @@ module sui_bridge_contracts::cross {
         event::emit(UserBurnLogger {
             smg_id,
             token_pair_id,
-            user,
+            sender,
+            recipient,
             amount,
             sui_token_address: string::utf8(token_pair.sui_token_address),
             external_chain_id: token_pair.external_chain_id,

@@ -170,6 +170,25 @@ module sui_bridge_contracts::oracle {
         table::contains(&oracle_storage.smgs, smg_id)
     }
 
+    public fun verify_smg_id(
+        oracle_storage: &OracleStorage,
+        clock: &Clock,
+        smg_id: vector<u8>
+    ) {
+        // Verify SMG exists
+        assert!(table::contains(&oracle_storage.smgs, smg_id), ESmgIdNotFound);
+        
+        // Get SMG info
+        let smg_info = table::borrow(&oracle_storage.smgs, smg_id);
+        
+        // Check if SMG is active
+        assert!(smg_info.status == SMG_STATUS_ACTIVE, ESmgNotActive);
+        
+        // Check if current time is within valid range
+        let current_time = clock::timestamp_ms(clock) / 1000; // Convert to seconds
+        assert!(current_time >= smg_info.start_time && current_time <= smg_info.end_time, ESmgExpired);
+    }
+
     /// Verify signature against SMG's GPK
     public fun verify_signature(
         oracle_storage: &OracleStorage,
