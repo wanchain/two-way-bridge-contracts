@@ -149,18 +149,30 @@ The Cross module implements the core cross-chain token bridge functionality.
 
 ## Bridge 
 ```
+sui client publish
+[warning] Client/Server api version mismatch, client api version : 1.47.1, server api version : 1.48.1
+[Note]: Dependency sources are no longer verified automatically during publication and upgrade. You can pass the `--verify-deps` option if you would like to verify them as part of publication or upgrade.
+UPDATING GIT DEPENDENCY https://github.com/MystenLabs/sui.git
+INCLUDING DEPENDENCY Bridge
+INCLUDING DEPENDENCY SuiSystem
+INCLUDING DEPENDENCY cctp_helper
+INCLUDING DEPENDENCY Sui
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING sui_bridge_contracts
+Skipping dependency verification
+Transaction Digest: DbKTC5VHcsMk1fKzknro1yVxegnHeqPv9NpNSLVeoxkX
 ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Transaction Data                                                                                             │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                   │
 │ Gas Owner: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                │
-│ Gas Budget: 96118400 MIST                                                                                    │
+│ Gas Budget: 96285600 MIST                                                                                    │
 │ Gas Price: 1000 MIST                                                                                         │
 │ Gas Payment:                                                                                                 │
 │  ┌──                                                                                                         │
 │  │ ID: 0xc2eb13432bf1f88615a279a8304ba079eb8ddb8a3de14af26b439129cdcabaa6                                    │
-│  │ Version: 92611847                                                                                         │
-│  │ Digest: EZKuM19KwV2nsAAdrQ9ghZTb1AuSjtzoieMFpefZwL5d                                                      │
+│  │ Version: 206482966                                                                                        │
+│  │ Digest: ABqRC2wSSBw6KDBrzpHagKJ2pDBQXhprGFWVYVwzQmE9                                                      │
 │  └──                                                                                                         │
 │                                                                                                              │
 │ Transaction Kind: Programmable                                                                               │
@@ -189,101 +201,101 @@ The Cross module implements the core cross-chain token bridge functionality.
 │ ╰─────────────────────────────────────────────────────────────────────────╯                                  │
 │                                                                                                              │
 │ Signatures:                                                                                                  │
-│    Xo1W//u5AtOTi5Q4FurbGmJWeyZ17Ia9niuigExbiDAv/qeTYub2U7Du6IJqDyrNkgzaFw17laWnfggWZYSwDA==                  │
+│    kSEZ6Oae89DPzEFzDQ8TsJq43Y/i+8fa5/DhrcrrGaTGc/lJeJ6sACpvPaJcACtLcIevrL0+1nSiITfTdTNiAw==                  │
 │                                                                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭───────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Transaction Effects                                                                               │
 ├───────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Digest: C5kkY9xVdCVkmxHmytTkm4jBynvtooLouddhnKCTw6at                                              │
+│ Digest: DbKTC5VHcsMk1fKzknro1yVxegnHeqPv9NpNSLVeoxkX                                              │
 │ Status: Success                                                                                   │
-│ Executed Epoch: 726                                                                               │
+│ Executed Epoch: 728                                                                               │
 │                                                                                                   │
 │ Created Objects:                                                                                  │
 │  ┌──                                                                                              │
-│  │ ID: 0x055ef17bbc5ae1f50c0b16d6166f09b09393085080309df237376c6444da793f                         │
-│  │ Owner: Shared( 92611848 )                                                                      │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: DkjuZgJj5TA9Qv8JDePZFZd9Stxmm8ykGszM5hYbMdfy                                           │
+│  │ ID: 0x1ea85a71fc4ee11cbe8b1ae57bb3b06fc024336fef680493978b8d88da91c1c6                         │
+│  │ Owner: Shared( 206482967 )                                                                     │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: 7FJmNJ6gNptu75jxLvRhw6kR979hcjpQnUJgcvHqvxoU                                           │
 │  └──                                                                                              │
 │  ┌──                                                                                              │
-│  │ ID: 0x171786b5ed62cbaafb2d04771e6c8f32a9abd94f1c9515c38aa0da74a53fe916                         │
-│  │ Owner: Shared( 92611848 )                                                                      │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: 21XZXJhcmymXBK9QAyE558TMiVqaaJgFY7cYv6vxGyLn                                           │
-│  └──                                                                                              │
-│  ┌──                                                                                              │
-│  │ ID: 0x51ec3523cc19f1ea4bc7c28b706e34a4cc7caae16c7f815e136d98985c03dd5c                         │
-│  │ Owner: Account Address ( 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc )  │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: VnEDdAoqDXhDeLfwQno5wVKkabD3CKd4pncanR75i7h                                            │
-│  └──                                                                                              │
-│  ┌──                                                                                              │
-│  │ ID: 0x5df67891a012983c27b5d8190a90badb1043d1c7ad5d3974e5ecea265ce4dfb6                         │
+│  │ ID: 0x2562e8676228628f4349754865f6f2d457e885997cba71fb7d764b8c53783a6a                         │
 │  │ Owner: Immutable                                                                               │
 │  │ Version: 1                                                                                     │
-│  │ Digest: 5ipLFg91nstVLFHVuVC7MZBJDcZZH1YZhvC93cqcM94x                                           │
+│  │ Digest: RZa3BWpWn4z6eFDcQkRhkKMCAeWM2KBhy642ot6V3jz                                            │
 │  └──                                                                                              │
 │  ┌──                                                                                              │
-│  │ ID: 0x8f3c6444769e44ade3acc3e5b7f212415415ee5c2da7d69042deb241a4e9b058                         │
-│  │ Owner: Shared( 92611848 )                                                                      │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: AZhEPT2AHDFgdB5WHxxqa5D5kipNBtYMBsCAE5T5GwSk                                           │
+│  │ ID: 0x2858c2e257f8df2551656fd0e5a53b131527329a1eee1d97959296ef7424b26e                         │
+│  │ Owner: Shared( 206482967 )                                                                     │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: EF77kvrcGvmVXLPVWg7gr6NmHXFGHDaLPteEEnvaXZJF                                           │
 │  └──                                                                                              │
 │  ┌──                                                                                              │
-│  │ ID: 0xb1c62a6fb9f6d5ea707dec03d1bc7107888aaa2816f73d614c61d90dc8192b1f                         │
-│  │ Owner: Shared( 92611848 )                                                                      │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: 2Da2sjdUXxsE4hchEptYmwaepa6oCXeNYiWGWz9F3Rvr                                           │
+│  │ ID: 0x49df5a1155a5283d449f5e2a515480f0814df898068efe41bbafe4891a39fde7                         │
+│  │ Owner: Shared( 206482967 )                                                                     │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: 7XJVE6t2MeYjUhZE7ioMYzEtXDno3VR4CQTjGVYsfLuz                                           │
 │  └──                                                                                              │
 │  ┌──                                                                                              │
-│  │ ID: 0xbfe4dd5c4589c92df855f2d124c2e3b508bd2d67d5ec67107514eeafe7f05a06                         │
-│  │ Owner: Shared( 92611848 )                                                                      │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: DMevnrkjivB1QNDZFZNtQEbPADTtf3FPD4WLb2h1pKs7                                           │
+│  │ ID: 0x6a5353a9d918f3796c1bc5b3b772146b68aaac2c2d18b5de96a616934d5244b1                         │
+│  │ Owner: Shared( 206482967 )                                                                     │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: AREaxAKiDerbi5XxcoUcpg4PwQG5DRjPeHrtNSZdoMmG                                           │
 │  └──                                                                                              │
 │  ┌──                                                                                              │
-│  │ ID: 0xc21ecacd7614303927540366becbef43f9a4f9349cf75c8a0b784289b698653a                         │
-│  │ Owner: Shared( 92611848 )                                                                      │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: 2oENy2g5kwaqzsHSehAFHVgDptRNHP9HNHvXgUJZheAo                                           │
+│  │ ID: 0x6c05f707c086c0616579ff1270c560a930ed6206047c807d8e6cf94976f35db2                         │
+│  │ Owner: Account Address ( 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc )  │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: 3q4wt92TKM6jxe46g4At2a9XHDVefLDkteDEfVM4pwFT                                           │
 │  └──                                                                                              │
 │  ┌──                                                                                              │
-│  │ ID: 0xd7f3e5e559da6d20e6613ed5f4b301eb32e1db227ebf62bee68d6796e40dcfad                         │
-│  │ Owner: Shared( 92611848 )                                                                      │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: 36TWhFY66uGn5bEG7wnm6wBywy2mnLuCThzW9PfhMXt3                                           │
+│  │ ID: 0xb2d2a1ca56d5cdbedbaadf7583d6403f96c09b25a1b43d79c8acb93c41db4e6d                         │
+│  │ Owner: Shared( 206482967 )                                                                     │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: 9MjMsG789HdqW2VsiN7ouCTh5Cn6LM9fUFmY2zmHAEZL                                           │
 │  └──                                                                                              │
 │  ┌──                                                                                              │
-│  │ ID: 0xdd6e0a43febb004d1dc09dcba0448050f06e5c3ea9e22513cc44edc7df33e683                         │
-│  │ Owner: Shared( 92611848 )                                                                      │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: 7jdne5GH1B24pCv5FYgvrY1vE8zwZfJoJiUV8yQqxWzW                                           │
+│  │ ID: 0xb484a99730935d8e8eeeb843538c36e81bdeb98cf1cad0be562fa85e83457989                         │
+│  │ Owner: Shared( 206482967 )                                                                     │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: Fn8oezhrUUxsjZox2kziTjB2fPuwbSDSPTZUemszQcb5                                           │
+│  └──                                                                                              │
+│  ┌──                                                                                              │
+│  │ ID: 0xc05f19767b0198321a8ef49bcafcfc55d1dea868766807accce3149bbc5ee2c4                         │
+│  │ Owner: Shared( 206482967 )                                                                     │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: 9cSEwisYjfuJ4sLX8RAQiAoJe8Z1dyRw8rDJfKEtc9Yh                                           │
+│  └──                                                                                              │
+│  ┌──                                                                                              │
+│  │ ID: 0xe5cb0c6e0cd34a448012d0023bf0e74c3bc0fc4138f52dc97935d0a6b786afe3                         │
+│  │ Owner: Shared( 206482967 )                                                                     │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: Ag4orKC4543Rt1Fj693DHEmCBbTM5fegnQm713NBkh1U                                           │
 │  └──                                                                                              │
 │ Mutated Objects:                                                                                  │
 │  ┌──                                                                                              │
 │  │ ID: 0xc2eb13432bf1f88615a279a8304ba079eb8ddb8a3de14af26b439129cdcabaa6                         │
 │  │ Owner: Account Address ( 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc )  │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: CJ2GDSM2abMK9LP7oJsD3NuawV8HhcM8juKJt2ZMFv6C                                           │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: 96d176AP4y8G1M9UypME9gK2FzQfMyywZZR6TeqHBjHd                                           │
 │  └──                                                                                              │
 │ Gas Object:                                                                                       │
 │  ┌──                                                                                              │
 │  │ ID: 0xc2eb13432bf1f88615a279a8304ba079eb8ddb8a3de14af26b439129cdcabaa6                         │
 │  │ Owner: Account Address ( 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc )  │
-│  │ Version: 92611848                                                                              │
-│  │ Digest: CJ2GDSM2abMK9LP7oJsD3NuawV8HhcM8juKJt2ZMFv6C                                           │
+│  │ Version: 206482967                                                                             │
+│  │ Digest: 96d176AP4y8G1M9UypME9gK2FzQfMyywZZR6TeqHBjHd                                           │
 │  └──                                                                                              │
 │ Gas Cost Summary:                                                                                 │
-│    Storage Cost: 94118400 MIST                                                                    │
+│    Storage Cost: 94285600 MIST                                                                    │
 │    Computation Cost: 1000000 MIST                                                                 │
 │    Storage Rebate: 978120 MIST                                                                    │
 │    Non-refundable Storage Fee: 9880 MIST                                                          │
 │                                                                                                   │
 │ Transaction Dependencies:                                                                         │
 │    2KKFDYfXCwBWaS1e3i4gLnjW1DsQoWqYQMb4SVBZFQR2                                                   │
-│    5eQ5ab4qeKswgceZaafPUvS9QKbRPWrBH82Vf4JHb42V                                                   │
 │    DAXHSJRDTaWXx7KVH37eugMwxA7WAthps6jMowdvy3Za                                                   │
+│    Dr1L1kGPc7zUZ6BCxW1A34XnxZGgYjYq2epdYuUtCaDh                                                   │
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─────────────────────────────╮
 │ No transaction block events │
@@ -294,76 +306,76 @@ The Cross module implements the core cross-chain token bridge functionality.
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ Created Objects:                                                                                                 │
 │  ┌──                                                                                                             │
-│  │ ObjectID: 0x055ef17bbc5ae1f50c0b16d6166f09b09393085080309df237376c6444da793f                                  │
+│  │ ObjectID: 0x1ea85a71fc4ee11cbe8b1ae57bb3b06fc024336fef680493978b8d88da91c1c6                                  │
 │  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
-│  │ Owner: Shared( 92611848 )                                                                                     │
-│  │ ObjectType: 0x5df67891a012983c27b5d8190a90badb1043d1c7ad5d3974e5ecea265ce4dfb6::oracle::OracleStorage         │
-│  │ Version: 92611848                                                                                             │
-│  │ Digest: DkjuZgJj5TA9Qv8JDePZFZd9Stxmm8ykGszM5hYbMdfy                                                          │
+│  │ Owner: Shared( 206482967 )                                                                                    │
+│  │ ObjectType: 0x2562e8676228628f4349754865f6f2d457e885997cba71fb7d764b8c53783a6a::admin::Admin                  │
+│  │ Version: 206482967                                                                                            │
+│  │ Digest: 7FJmNJ6gNptu75jxLvRhw6kR979hcjpQnUJgcvHqvxoU                                                          │
 │  └──                                                                                                             │
 │  ┌──                                                                                                             │
-│  │ ObjectID: 0x171786b5ed62cbaafb2d04771e6c8f32a9abd94f1c9515c38aa0da74a53fe916                                  │
+│  │ ObjectID: 0x2858c2e257f8df2551656fd0e5a53b131527329a1eee1d97959296ef7424b26e                                  │
 │  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
-│  │ Owner: Shared( 92611848 )                                                                                     │
-│  │ ObjectType: 0x5df67891a012983c27b5d8190a90badb1043d1c7ad5d3974e5ecea265ce4dfb6::cross::PauseConfig            │
-│  │ Version: 92611848                                                                                             │
-│  │ Digest: 21XZXJhcmymXBK9QAyE558TMiVqaaJgFY7cYv6vxGyLn                                                          │
+│  │ Owner: Shared( 206482967 )                                                                                    │
+│  │ ObjectType: 0x2562e8676228628f4349754865f6f2d457e885997cba71fb7d764b8c53783a6a::cross::TreasuryCapsRegistry   │
+│  │ Version: 206482967                                                                                            │
+│  │ Digest: EF77kvrcGvmVXLPVWg7gr6NmHXFGHDaLPteEEnvaXZJF                                                          │
 │  └──                                                                                                             │
 │  ┌──                                                                                                             │
-│  │ ObjectID: 0x51ec3523cc19f1ea4bc7c28b706e34a4cc7caae16c7f815e136d98985c03dd5c                                  │
+│  │ ObjectID: 0x49df5a1155a5283d449f5e2a515480f0814df898068efe41bbafe4891a39fde7                                  │
+│  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
+│  │ Owner: Shared( 206482967 )                                                                                    │
+│  │ ObjectType: 0x2562e8676228628f4349754865f6f2d457e885997cba71fb7d764b8c53783a6a::cross::PauseConfig            │
+│  │ Version: 206482967                                                                                            │
+│  │ Digest: 7XJVE6t2MeYjUhZE7ioMYzEtXDno3VR4CQTjGVYsfLuz                                                          │
+│  └──                                                                                                             │
+│  ┌──                                                                                                             │
+│  │ ObjectID: 0x6a5353a9d918f3796c1bc5b3b772146b68aaac2c2d18b5de96a616934d5244b1                                  │
+│  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
+│  │ Owner: Shared( 206482967 )                                                                                    │
+│  │ ObjectType: 0x2562e8676228628f4349754865f6f2d457e885997cba71fb7d764b8c53783a6a::cross::TokenPairRegistry      │
+│  │ Version: 206482967                                                                                            │
+│  │ Digest: AREaxAKiDerbi5XxcoUcpg4PwQG5DRjPeHrtNSZdoMmG                                                          │
+│  └──                                                                                                             │
+│  ┌──                                                                                                             │
+│  │ ObjectID: 0x6c05f707c086c0616579ff1270c560a930ed6206047c807d8e6cf94976f35db2                                  │
 │  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
 │  │ Owner: Account Address ( 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc )                 │
 │  │ ObjectType: 0x2::package::UpgradeCap                                                                          │
-│  │ Version: 92611848                                                                                             │
-│  │ Digest: VnEDdAoqDXhDeLfwQno5wVKkabD3CKd4pncanR75i7h                                                           │
+│  │ Version: 206482967                                                                                            │
+│  │ Digest: 3q4wt92TKM6jxe46g4At2a9XHDVefLDkteDEfVM4pwFT                                                          │
 │  └──                                                                                                             │
 │  ┌──                                                                                                             │
-│  │ ObjectID: 0x8f3c6444769e44ade3acc3e5b7f212415415ee5c2da7d69042deb241a4e9b058                                  │
+│  │ ObjectID: 0xb2d2a1ca56d5cdbedbaadf7583d6403f96c09b25a1b43d79c8acb93c41db4e6d                                  │
 │  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
-│  │ Owner: Shared( 92611848 )                                                                                     │
-│  │ ObjectType: 0x5df67891a012983c27b5d8190a90badb1043d1c7ad5d3974e5ecea265ce4dfb6::cross::TokenVault             │
-│  │ Version: 92611848                                                                                             │
-│  │ Digest: AZhEPT2AHDFgdB5WHxxqa5D5kipNBtYMBsCAE5T5GwSk                                                          │
+│  │ Owner: Shared( 206482967 )                                                                                    │
+│  │ ObjectType: 0x2562e8676228628f4349754865f6f2d457e885997cba71fb7d764b8c53783a6a::cross::FoundationConfig       │
+│  │ Version: 206482967                                                                                            │
+│  │ Digest: 9MjMsG789HdqW2VsiN7ouCTh5Cn6LM9fUFmY2zmHAEZL                                                          │
 │  └──                                                                                                             │
 │  ┌──                                                                                                             │
-│  │ ObjectID: 0xb1c62a6fb9f6d5ea707dec03d1bc7107888aaa2816f73d614c61d90dc8192b1f                                  │
+│  │ ObjectID: 0xb484a99730935d8e8eeeb843538c36e81bdeb98cf1cad0be562fa85e83457989                                  │
 │  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
-│  │ Owner: Shared( 92611848 )                                                                                     │
-│  │ ObjectType: 0x5df67891a012983c27b5d8190a90badb1043d1c7ad5d3974e5ecea265ce4dfb6::cross::FoundationConfig       │
-│  │ Version: 92611848                                                                                             │
-│  │ Digest: 2Da2sjdUXxsE4hchEptYmwaepa6oCXeNYiWGWz9F3Rvr                                                          │
+│  │ Owner: Shared( 206482967 )                                                                                    │
+│  │ ObjectType: 0x2562e8676228628f4349754865f6f2d457e885997cba71fb7d764b8c53783a6a::oracle::OracleStorage         │
+│  │ Version: 206482967                                                                                            │
+│  │ Digest: Fn8oezhrUUxsjZox2kziTjB2fPuwbSDSPTZUemszQcb5                                                          │
 │  └──                                                                                                             │
 │  ┌──                                                                                                             │
-│  │ ObjectID: 0xbfe4dd5c4589c92df855f2d124c2e3b508bd2d67d5ec67107514eeafe7f05a06                                  │
+│  │ ObjectID: 0xc05f19767b0198321a8ef49bcafcfc55d1dea868766807accce3149bbc5ee2c4                                  │
 │  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
-│  │ Owner: Shared( 92611848 )                                                                                     │
-│  │ ObjectType: 0x5df67891a012983c27b5d8190a90badb1043d1c7ad5d3974e5ecea265ce4dfb6::cross::TreasuryCapsRegistry   │
-│  │ Version: 92611848                                                                                             │
-│  │ Digest: DMevnrkjivB1QNDZFZNtQEbPADTtf3FPD4WLb2h1pKs7                                                          │
+│  │ Owner: Shared( 206482967 )                                                                                    │
+│  │ ObjectType: 0x2562e8676228628f4349754865f6f2d457e885997cba71fb7d764b8c53783a6a::cross::ProcessedTransactions  │
+│  │ Version: 206482967                                                                                            │
+│  │ Digest: 9cSEwisYjfuJ4sLX8RAQiAoJe8Z1dyRw8rDJfKEtc9Yh                                                          │
 │  └──                                                                                                             │
 │  ┌──                                                                                                             │
-│  │ ObjectID: 0xc21ecacd7614303927540366becbef43f9a4f9349cf75c8a0b784289b698653a                                  │
+│  │ ObjectID: 0xe5cb0c6e0cd34a448012d0023bf0e74c3bc0fc4138f52dc97935d0a6b786afe3                                  │
 │  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
-│  │ Owner: Shared( 92611848 )                                                                                     │
-│  │ ObjectType: 0x5df67891a012983c27b5d8190a90badb1043d1c7ad5d3974e5ecea265ce4dfb6::admin::Admin                  │
-│  │ Version: 92611848                                                                                             │
-│  │ Digest: 2oENy2g5kwaqzsHSehAFHVgDptRNHP9HNHvXgUJZheAo                                                          │
-│  └──                                                                                                             │
-│  ┌──                                                                                                             │
-│  │ ObjectID: 0xd7f3e5e559da6d20e6613ed5f4b301eb32e1db227ebf62bee68d6796e40dcfad                                  │
-│  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
-│  │ Owner: Shared( 92611848 )                                                                                     │
-│  │ ObjectType: 0x5df67891a012983c27b5d8190a90badb1043d1c7ad5d3974e5ecea265ce4dfb6::cross::TokenPairRegistry      │
-│  │ Version: 92611848                                                                                             │
-│  │ Digest: 36TWhFY66uGn5bEG7wnm6wBywy2mnLuCThzW9PfhMXt3                                                          │
-│  └──                                                                                                             │
-│  ┌──                                                                                                             │
-│  │ ObjectID: 0xdd6e0a43febb004d1dc09dcba0448050f06e5c3ea9e22513cc44edc7df33e683                                  │
-│  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
-│  │ Owner: Shared( 92611848 )                                                                                     │
-│  │ ObjectType: 0x5df67891a012983c27b5d8190a90badb1043d1c7ad5d3974e5ecea265ce4dfb6::cross::ProcessedTransactions  │
-│  │ Version: 92611848                                                                                             │
-│  │ Digest: 7jdne5GH1B24pCv5FYgvrY1vE8zwZfJoJiUV8yQqxWzW                                                          │
+│  │ Owner: Shared( 206482967 )                                                                                    │
+│  │ ObjectType: 0x2562e8676228628f4349754865f6f2d457e885997cba71fb7d764b8c53783a6a::cross::TokenVault             │
+│  │ Version: 206482967                                                                                            │
+│  │ Digest: Ag4orKC4543Rt1Fj693DHEmCBbTM5fegnQm713NBkh1U                                                          │
 │  └──                                                                                                             │
 │ Mutated Objects:                                                                                                 │
 │  ┌──                                                                                                             │
@@ -371,14 +383,14 @@ The Cross module implements the core cross-chain token bridge functionality.
 │  │ Sender: 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc                                    │
 │  │ Owner: Account Address ( 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc )                 │
 │  │ ObjectType: 0x2::coin::Coin<0x2::sui::SUI>                                                                    │
-│  │ Version: 92611848                                                                                             │
-│  │ Digest: CJ2GDSM2abMK9LP7oJsD3NuawV8HhcM8juKJt2ZMFv6C                                                          │
+│  │ Version: 206482967                                                                                            │
+│  │ Digest: 96d176AP4y8G1M9UypME9gK2FzQfMyywZZR6TeqHBjHd                                                          │
 │  └──                                                                                                             │
 │ Published Objects:                                                                                               │
 │  ┌──                                                                                                             │
-│  │ PackageID: 0x5df67891a012983c27b5d8190a90badb1043d1c7ad5d3974e5ecea265ce4dfb6                                 │
+│  │ PackageID: 0x2562e8676228628f4349754865f6f2d457e885997cba71fb7d764b8c53783a6a                                 │
 │  │ Version: 1                                                                                                    │
-│  │ Digest: 5ipLFg91nstVLFHVuVC7MZBJDcZZH1YZhvC93cqcM94x                                                          │
+│  │ Digest: RZa3BWpWn4z6eFDcQkRhkKMCAeWM2KBhy642ot6V3jz                                                           │
 │  │ Modules: admin, cross, oracle                                                                                 │
 │  └──                                                                                                             │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
@@ -388,7 +400,7 @@ The Cross module implements the core cross-chain token bridge functionality.
 │  ┌──                                                                                              │
 │  │ Owner: Account Address ( 0x09212c719c1c62cd75a33a1cd70f34468b6096a26179f9e943621953168adbfc )  │
 │  │ CoinType: 0x2::sui::SUI                                                                        │
-│  │ Amount: -94140280                                                                              │
+│  │ Amount: -94307480                                                                              │
 │  └──                                                                                              │
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
