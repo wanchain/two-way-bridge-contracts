@@ -3317,6 +3317,7 @@ import {
     TupleReader
 } from '@ton/core';
 
+/*
 // @ts-ignore
 import parse from 'core-js-pure/actual/json/parse';
 // @ts-ignore
@@ -3355,6 +3356,12 @@ const JSONStringify = (value: any) =>
             return value;
         }
     );
+*/
+
+import JSONbig from 'json-bigint';
+
+const JSONParse = (source: string) => JSONbig.parse(source);
+const JSONStringify = (value: any) => JSONbig.stringify(value);
 
 class HttpClient {
     public baseUrl: string = 'https://tonapi.io';
@@ -6050,8 +6057,8 @@ export class TonApiClient {
     }):Promise<TonCoreTransaction[] | null>{
         let res = await this.blockchain.getBlockchainAccountTransactions(address,{
             limit:opts.limit,
-            before_lt:BigInt(opts.to_lt),
-            after_lt:BigInt(opts.lt),
+            before_lt:opts.lt ? BigInt(opts.lt):BigInt(0),
+            after_lt:opts.to_lt ? BigInt(opts.to_lt):BigInt(0),
             sort_order:'desc'
         })
         if(res){

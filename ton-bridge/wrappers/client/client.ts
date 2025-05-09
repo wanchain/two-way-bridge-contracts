@@ -85,7 +85,7 @@ export async function getClient():Promise<WanTonClient> {
         let urls = g_tonConfig.urls;
         const totalUrls = urls.length;
         const indexUsed = await getSecureRandomNumber(0,totalUrls)
-        if(urls[indexUsed].vendor.toLowerCase() == 'tonapi'){
+        if(urls[indexUsed].vendor?.toLowerCase() == 'tonapi'){
             return new TonApiClient({
                 baseUrl:urls[indexUsed].url
             });

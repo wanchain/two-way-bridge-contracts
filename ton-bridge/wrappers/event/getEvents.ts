@@ -209,7 +209,6 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
 }
 
 export async function getTransaction(client:WanTonClient,scAddress:string,lt:string,tranHash:string){
-    // todo should add below code
     console.log("Entering getTransaction","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
     let retTranFromDb = await getTransactionFromDb(client,scAddress,lt,toBase64(tranHash));
     console.log("getTransaction","getTransactionFromDb","retTranFromDb",retTranFromDb);

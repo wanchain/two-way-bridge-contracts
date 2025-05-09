@@ -279,11 +279,11 @@ function isHexStringWithPrefix(str) {
 }
 
 function isEvenLengthHex(str) {
-    return /^[0-9a-fA-F]+$/.test(str) && str.length % 2 === 0;
+    return (/^[0-9a-fA-F]+$/.test(str)) && (str.length % 2 === 0);
 }
 
 export function isValidHexString(str:string){
-    return isHexStringWithPrefix && isValidHexString;
+    return isEvenLengthHex(remove0x(str));
 }
 
 
@@ -305,7 +305,7 @@ export function isNotBase64(str) {
 
 export function toBase64(str){
     if(isValidHexString(str)){
-        return Buffer.from(str,'hex').toString('base64');
+        return Buffer.from(remove0x(str),'hex').toString('base64');
     }else{
         if(!isNotBase64(str)){
             return str;
