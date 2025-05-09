@@ -9684,7 +9684,6 @@ function createProvider(
             return {
                 balance: account.balance,
                 last: last,
-                extracurrency:null,  // add by Jacob, becuase of @core/ton 0.60.1
                 state: stateGetters[account.status](account)
             };
         },
