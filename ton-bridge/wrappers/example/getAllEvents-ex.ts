@@ -1,6 +1,6 @@
 import {bigIntReplacer, sleep} from "../utils/utils";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApi} from "../config/config-ex";
 import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 import {getEventByTranHash, getEvents} from "../event/getEvents";
 import { logger } from "../utils/logger";
@@ -10,8 +10,10 @@ import {Address} from "@ton/core";
 const args = process.argv.slice(2);
 
 async function main(){
-    await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
+    //await wanTonSdkInit(configMainnet);
+    //await wanTonSdkInit(configTestnet);
+    await wanTonSdkInit(configTestTonApi);
+
     let scBridgeAddr = args[0];
     let dbAcces = await DBAccess.getDBAccess();
     if(!dbAcces){
@@ -49,10 +51,9 @@ async function main(){
                     console.error(err.code, err.response?.data?.error)
                 }
                 await sleep(1000);
-                break; //todo should delete
             }
         }
-    },10000)
+    },100000)
 
 }
 
