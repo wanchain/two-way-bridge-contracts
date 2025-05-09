@@ -107,12 +107,12 @@ export async function getUpperStepsFromDb(client:WanTonClient,scAddr:Address,tra
                 foundInDb = true;
             }
         }catch(err){
-            console.log("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry);
+            console.log("getUpperStepsFromDb from db err",formatError(err),"retry ",maxRetry);
         }
         await sleep(2000);
     }
     if(maxRetry == 0 && !foundInDb){
-        throw new Error(`Fail to look for parent. upDb: ${upperAddress.toString()}`)
+        throw new Error(`Fail to look for parent. upperAddress: ${upperAddress.toString()}`)
     }
     if(foundInDb && transFromDb){
         console.log("getUpperStepsFromDB success","hash",tran.hash().toString('hex'),"parent hash",transFromDb.hash().toString('hex'));
@@ -470,6 +470,7 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
                 return transFromDb;
             }
         }catch(err){
+            console.error(err);
             console.error("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry);
         }
         await sleep(2000);
@@ -515,7 +516,7 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
                 maxRetry = retry;
 
             }catch(e){
-                console.error("err ",formatError(e));
+                console.error("getTranByMsgHash from rpc err ",formatError(e));
                 await sleep(2000);
             }
         }
@@ -547,7 +548,7 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
                 return transFromDb;
             }
         }catch(err){
-            console.error("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry);
+            console.error("getTranByOnlyMsgHash from db err",formatError(err),"retry ",maxRetry);
         }
         await sleep(2000);
     }

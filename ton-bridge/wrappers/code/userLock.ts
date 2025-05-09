@@ -265,11 +265,13 @@ export async function getJettonAdminAddr(client:WanTonClient|Blockchain,jettonMa
 export async function getTokenPairInfo(client:WanTonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number){
     let tokePairInfo ;
     let tokenAccount = "";
-
+    console.log("Entering getTokenPairInfo............","client",client);
     if(IsWanTonClient(client)){
+        console.log("Entering getTokenPairInfo IsWanTonClient true");
         let ba = new BridgeAccess(client,bridgeScAddr)
         tokePairInfo = await ba.readContract("getTokenPair",[tokenPairID])
     }else{
+        console.log("Entering getTokenPairInfo IsWanTonClient false");
         let b = Bridge.createFromAddress(bridgeScAddr);
         let opened = await client.openContract(b);
         tokePairInfo = await opened.getTokenPair(tokenPairID)

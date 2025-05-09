@@ -6055,12 +6055,40 @@ export class TonApiClient {
         inclusive?: boolean;
         archival?: boolean;
     }):Promise<TonCoreTransaction[] | null>{
-        let res = await this.blockchain.getBlockchainAccountTransactions(address,{
+        let tonApiOpts:{
+            /**
+             * omit this parameter to get last transactions
+             * @format bigint
+             * @example 39787624000003
+             */
+            after_lt?: bigint;
+            /**
+             * omit this parameter to get last transactions
+             * @format bigint
+             * @example 39787624000003
+             */
+            before_lt?: bigint;
+            /**
+             * @format int32
+             * @min 1
+             * @max 1000
+             * @default 100
+             * @example 100
+             */
+            limit?: number;
+            /**
+             * used to sort the result-set in ascending or descending order by lt.
+             * @default "desc"
+             */
+            sort_order?: 'desc' | 'asc';
+        } = {
             limit:opts.limit,
             before_lt:opts.lt ? BigInt(opts.lt):BigInt(0),
             after_lt:opts.to_lt ? BigInt(opts.to_lt):BigInt(0),
             sort_order:'desc'
-        })
+        }
+        console.log("tonApi getTransactions","address",address,"tonApiOpts",tonApiOpts);
+        let res = await this.blockchain.getBlockchainAccountTransactions(address,tonApiOpts)
         if(res){
             let retTrans:TonCoreTransaction[] = [];
             for(let tran of res.transactions){

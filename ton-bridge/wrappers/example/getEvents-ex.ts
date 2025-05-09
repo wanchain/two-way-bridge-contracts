@@ -1,13 +1,14 @@
 import {sleep} from "../utils/utils";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApi} from "../config/config-ex";
 import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 import {getEvents} from "../event/getEvents";
 import { logger } from "../utils/logger";
 
 async function init(){
-    await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
+    //await wanTonSdkInit(configMainnet);
+    //await wanTonSdkInit(configTestnet);
+    await wanTonSdkInit(configTestTonApi)
 }
 
 const scAddress = require('../testData/contractAddress.json');

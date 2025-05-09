@@ -1,15 +1,17 @@
 import {sleep} from "../utils/utils";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApi} from "../config/config-ex";
 import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 import {getEventByTranHash, getEvents} from "../event/getEvents";
 import { logger } from "../utils/logger";
+import {IsWanTonClient} from "../client/client-interface";
 
 const args = process.argv.slice(2);
 
 async function main(){
-    await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
+    //await wanTonSdkInit(configMainnet);
+    //await wanTonSdkInit(configTestnet);
+    await wanTonSdkInit(configTestTonApi)
     try{
         let client = await getClient();
         let scBridgeAddr = args[0];
@@ -17,6 +19,7 @@ async function main(){
         let tranHash = Buffer.from(args[2],'hex').toString('base64');
 
         console.log("scBridgeAddr",scBridgeAddr,"lt",lt,"tranHash",tranHash);
+        console.log("before getEventByTranHash","client is WanTonClient",IsWanTonClient(client));
         let ret = await getEventByTranHash(client,scBridgeAddr,lt,tranHash);
 
         console.log("ret = ",ret);

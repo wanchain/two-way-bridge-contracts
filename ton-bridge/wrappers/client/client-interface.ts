@@ -50,6 +50,6 @@ export function IsWanTonClient(obj: any): obj is WanTonClient {
         typeof obj === 'object' &&
         obj !== null &&
         'provider' in obj &&
-        typeof obj.methodName === 'function'
+        typeof obj.provider === 'function'
     );
 }

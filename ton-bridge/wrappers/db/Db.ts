@@ -446,7 +446,9 @@ class DB {
                             minScannedHash = ret[ret.length-1].hash().toString('base64');
                             let cci = (ret[ret.length-1].inMessage.info as unknown as CommonMessageInfoInternal);
                             //console.log("cci=>",cci);
-                            oldestTimeStamp = cci.createdAt;
+                            if(cci?.createdAt){
+                                oldestTimeStamp = cci.createdAt;
+                            }
                         }
                         console.log("maxScanedLt",maxScanedLt,"minScanedLt",minScanedLt,"scAddress or dbName",this.dbName);
 
@@ -592,7 +594,11 @@ class DB {
         }finally {
             copy = null;
         }
-        console.log("after getParentTx","tran hash",tran.hash,"parent hash",result[0].hash,"dbName",this.dbName);
+        if(result && result.length>0){
+            console.log("after getParentTx","tran hash",tran.hash,"result",result,"parent hash",result[0].hash,"dbName",this.dbName);
+        }else{
+            console.error("after getParentTx (no parent found)","tran hash",tran.hash,"dbName",this.dbName);
+        }
         return result;
     }
 

@@ -23,7 +23,7 @@ import {
 
 import {MAX_LIMIT,MAX_RETRY} from "../const/const-value";
 import {DBAccess} from "../db/DbAccess";
-import {WanTonClient} from "../client/client-interface";
+import {IsWanTonClient, WanTonClient} from "../client/client-interface";
 /*
 example of ret:
 
@@ -158,6 +158,7 @@ export async function getAllTransactions(client:WanTonClient,scAddress:string,li
 }
 
 export async function getEventFromTran(client:WanTonClient,tran:Transaction, scAddress:string){
+    console.log("getEventFromTran entering","client is WanTonClient",IsWanTonClient(client));
     let bodyCell = tran.inMessage?.body;
     if(!bodyCell){
         console.error("body is empty","tran",tran.hash().toString("base64"));
@@ -184,7 +185,7 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
         // handle userLock
         if(opCode == opcodes.OP_CROSS_UserLock){
             logger.info(formatUtil.format("getEventFromTran OP_CROSS_UserLock"));
-
+            console.log("getEventFromTran before handleUserLockEvent","client is WanTonClient",IsWanTonClient(client));
             let handleResult = await handleUserLockEvent(client,Address.parse(scAddress),tran)
             if (!handleResult.valid){
                 logger.error(formatUtil.format("handleResult OP_CROSS_UserLock is not valid"));
@@ -322,6 +323,7 @@ export async function getTransactionFromDb(client:WanTonClient,scAddress:string,
 export async function getEventByTranHash(client:WanTonClient, scAddress:string, lt:string, tranHash:string){
     let tran = await getTransaction(client,scAddress,lt,tranHash);
     console.log("getEventByTranHash getTransaction success",tran, "tranHash ",tran.hash().toString('hex'));
+    console.log("getEventByTranHash before getEventFromTran","client is WanTonClient",IsWanTonClient(client));
     return await getEventFromTran(client,tran,scAddress);
 }
 
@@ -346,7 +348,7 @@ export async function getOpCodeFromCell(cell:Cell){
 
 async function handleUserLockEvent(client:WanTonClient, scAddr:Address,tran:Transaction){
 
-    logger.info(formatUtil.format("Entering handleUserLockEvent"));
+    logger.info(formatUtil.format("Entering handleUserLockEvent"),"IsWanTonClient(client)",IsWanTonClient(client));
 
     let transResult  = await getTransResult(client,scAddr,tran);
     if (!transResult.success){
@@ -363,12 +365,14 @@ async function handleUserLockEvent(client:WanTonClient, scAddr:Address,tran:Tran
 
     //handle bridge->bridge(userLock)
     // get parent trans
+    console.log("handleUserLockEvent before get pre transaction","client is WanTonClient",IsWanTonClient(client));
     let preTx = await getTransaction(client,scAddr.toString(),tran.prevTransactionLt.toString(10),bigIntToBytes32(tran.prevTransactionHash).toString('base64'));
     let bodyCell = preTx.inMessage.body
     let bodySlice = bodyCell.beginParse();
     let op = bodySlice.loadUint(32);
     if(op == opcodes.OP_TRANSFER_NOTIFICATION){
         let fromAddrHead = preTx.inMessage.info.src
+        console.log("handleUserLockEvent before getTokenPairInfo","client is WanTonClient",IsWanTonClient(client));
         let ret = await getTokenPairInfo(client,scAddr,decodedResult.tokenPairID)
         // 1. check tokenAccount content with the one get by tokenPairId
         if(!isAddressEqual(decodedResult.addrTokenAccount,ret.tokenAccount)){

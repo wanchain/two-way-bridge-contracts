@@ -1,6 +1,6 @@
 import {formatError, sleep} from "../utils/utils";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApi} from "../config/config-ex";
 import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
 import {getEventByTranHash, getEvents, getTransaction} from "../event/getEvents";
 import { logger } from "../utils/logger";
@@ -11,8 +11,9 @@ const args = process.argv.slice(2);
 
 async function main(){
     try{
-        await wanTonSdkInit(configMainnet);
-        await wanTonSdkInit(configTestnet);
+        //await wanTonSdkInit(configMainnet);
+        //await wanTonSdkInit(configTestnet);
+        await wanTonSdkInit(configTestTonApi)
         let client = await getClient();
         let scBridgeAddr = args[0];
         let lt = args[1];
@@ -25,7 +26,9 @@ async function main(){
         let opts = {
             limit:10,lt,to_lt,hash,archival:true
         }
+        console.log("client.getTransactions begin","addr",scBridgeAddr,"opts",opts);
         let trans = await client.getTransactions(Address.parse(scBridgeAddr),opts)
+        console.log("client.getTransactions end","addr",scBridgeAddr,"opts",opts);
 
         for(let tran of trans){
             console.log("txHash",tran.hash().toString('hex'),"lt",tran.lt.toString(10));
