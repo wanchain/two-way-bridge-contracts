@@ -3,6 +3,7 @@ module sui_bridge_contracts::token_pair_tests {
     use sui::test_scenario;
     use sui_bridge_contracts::cross::{Self, TokenPairRegistry};
     use sui_bridge_contracts::admin::{Self, Admin};
+    use std::ascii;
     
     // Test account addresses
     const ADMIN: address = @0xA;
@@ -40,10 +41,10 @@ module sui_bridge_contracts::token_pair_tests {
                 &mut registry,
                 &admin_cap,
                 TOKEN_PAIR_ID_1,
-                b"0x2::sui::SUI",
+                ascii::string(b"0x2::sui::SUI"),
                 TOKEN_TYPE_NATIVE,
                 EXTERNAL_CHAIN_ID,
-                b"0xExternal",
+                ascii::string(b"0xExternal"),
                 test_scenario::ctx(&mut scenario)
             );
             
@@ -80,10 +81,10 @@ module sui_bridge_contracts::token_pair_tests {
                 &mut registry,
                 &admin_cap,
                 TOKEN_PAIR_ID_1,
-                b"0x2::sui::SUI",
+                ascii::string(b"0x2::sui::SUI"),
                 TOKEN_TYPE_NATIVE,
                 EXTERNAL_CHAIN_ID,
-                b"0xExternal",
+                ascii::string(b"0xExternal"),
                 test_scenario::ctx(&mut scenario)
             );
             
@@ -102,10 +103,10 @@ module sui_bridge_contracts::token_pair_tests {
                 &mut registry,
                 &admin_cap,
                 TOKEN_PAIR_ID_1,
-                b"0x2::sui::SUI",
+                ascii::string(b"0x2::sui::SUI"),
                 TOKEN_TYPE_NATIVE,
                 EXTERNAL_CHAIN_ID,
-                b"0xNewExternal",
+                ascii::string(b"0xNewExternal"),
                 false, // set inactive
                 test_scenario::ctx(&mut scenario)
             );
@@ -152,10 +153,10 @@ module sui_bridge_contracts::token_pair_tests {
                 &mut registry,
                 &admin_cap,
                 TOKEN_PAIR_ID_1,
-                b"0x2::sui::SUI",
+                ascii::string(b"0x2::sui::SUI"),
                 TOKEN_TYPE_NATIVE,
                 EXTERNAL_CHAIN_ID,
-                b"0xExternal",
+                ascii::string(b"0xExternal"),
                 test_scenario::ctx(&mut scenario)
             );
             
@@ -210,10 +211,10 @@ module sui_bridge_contracts::token_pair_tests {
                 &mut registry,
                 &admin_cap,
                 TOKEN_PAIR_ID_1,
-                b"0x2::sui::SUI",
+                ascii::string(b"0x2::sui::SUI"),
                 TOKEN_TYPE_NATIVE,
                 EXTERNAL_CHAIN_ID,
-                b"0xExternal1",
+                ascii::string(b"0xExternal1"),
                 test_scenario::ctx(&mut scenario)
             );
             
@@ -222,10 +223,10 @@ module sui_bridge_contracts::token_pair_tests {
                 &mut registry,
                 &admin_cap,
                 TOKEN_PAIR_ID_2,
-                b"0x2::example::USDC",
+                ascii::string(b"0x2::example::USDC"),
                 TOKEN_TYPE_WRAPPED,
                 EXTERNAL_CHAIN_ID,
-                b"0xExternal2",
+                ascii::string(b"0xExternal2"),
                 test_scenario::ctx(&mut scenario)
             );
             

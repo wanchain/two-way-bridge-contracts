@@ -1,13 +1,13 @@
 module sui_bridge_contracts::cross {
     use sui::table;
     use sui::event;
-    use std::string;
     use sui_bridge_contracts::admin;
     use sui::coin::{Self, TreasuryCap, Coin};
     use sui::balance;
     use sui::dynamic_field as df;
     use std::type_name;
     use std::bcs;
+    use std::ascii;
     use sui::clock::{Clock};
     use sui_bridge_contracts::oracle;
     use cctp_helper::fee_manager::{Self, FeeConfig};
@@ -39,11 +39,11 @@ module sui_bridge_contracts::cross {
     /// TokenPair struct to store cross-chain token mapping
     public struct TokenPair has store, drop, copy {
         token_pair_id: u64,
-        sui_token_address: vector<u8>,
+        sui_token_address: ascii::String,
         sui_token_type: u8, // 1 = native token, 2 = wrapped by contract
 
         external_chain_id: u64,
-        external_token_address: vector<u8>,
+        external_token_address: ascii::String,
         is_active: bool
     }
 
@@ -74,31 +74,31 @@ module sui_bridge_contracts::cross {
     /// Events
     public struct TokenPairAdded has copy, drop {
         token_pair_id: u64,
-        sui_token_address: string::String,
+        sui_token_address: ascii::String,
         external_chain_id: u64,
-        external_token_address: string::String,
+        external_token_address: ascii::String,
         sui_token_type: u8
     }
 
     public struct TokenPairRemoved has copy, drop {
         token_pair_id: u64,
-        sui_token_address: string::String,
+        sui_token_address: ascii::String,
         external_chain_id: u64,
-        external_token_address: string::String
+        external_token_address: ascii::String
     }
 
     public struct TokenPairUpdated has copy, drop {
         token_pair_id: u64,
-        sui_token_address: string::String,
+        sui_token_address: ascii::String,
         external_chain_id: u64,
-        external_token_address: string::String,
+        external_token_address: ascii::String,
         sui_token_type: u8,
         is_active: bool
     }
 
     /// Treasury cap received event
     public struct TreasuryCapReceived has copy, drop {
-        token_type: string::String,
+        token_type: ascii::String,
         receiver: address
     }
 
@@ -107,12 +107,12 @@ module sui_bridge_contracts::cross {
         smg_id: vector<u8>,
         token_pair_id: u64,
         sender: address,
-        recipient: vector<u8>,
+        recipient: ascii::String,
         amount: u64,
-        sui_token_address: string::String,
+        sui_token_address: ascii::String,
         external_chain_id: u64,
-        external_token_address: string::String,
-        token_type: string::String
+        external_token_address: ascii::String,
+        token_type: ascii::String
     }
 
     /// User burn event
@@ -120,12 +120,12 @@ module sui_bridge_contracts::cross {
         smg_id: vector<u8>,
         token_pair_id: u64,
         sender: address,
-        recipient: vector<u8>,
+        recipient: ascii::String,
         amount: u64,
-        sui_token_address: string::String,
+        sui_token_address: ascii::String,
         external_chain_id: u64,
-        external_token_address: string::String,
-        token_type: string::String
+        external_token_address: ascii::String,
+        token_type: ascii::String
     }
 
     /// Mint event for cross-chain transfer
@@ -137,7 +137,7 @@ module sui_bridge_contracts::cross {
         amount: u64,
         serviceFee: u64,
         fee_recipient: address,
-        token_type: string::String
+        token_type: ascii::String
     }
 
     /// Release event for cross-chain transfer
@@ -149,7 +149,7 @@ module sui_bridge_contracts::cross {
         amount: u64,
         serviceFee: u64,
         fee_recipient: address,
-        token_type: string::String
+        token_type: ascii::String
     }
 
     /// Fee collected event
@@ -190,21 +190,6 @@ module sui_bridge_contracts::cross {
         id: UID,
         // Map from transaction unique_id to bool (true if processed)
         processed: table::Table<vector<u8>, bool>
-    }
-
-    /// Assert that two byte vectors are equal
-    fun assert_bytes_equal(a: &vector<u8>, b: &vector<u8>, error_code: u64) {
-        assert!(vector::length(a) == vector::length(b), error_code);
-        
-        let mut i = 0;
-        let len = vector::length(a);
-        while (i < len) {
-            assert!(
-                *vector::borrow(a, i) == *vector::borrow(b, i),
-                error_code
-            );
-            i = i + 1;
-        };
     }
 
     /// Initialize the cross-chain bridge
@@ -268,10 +253,10 @@ module sui_bridge_contracts::cross {
         registry: &mut TokenPairRegistry,
         admin_cap: &admin::Admin,
         token_pair_id: u64,
-        sui_token_address: vector<u8>,
+        sui_token_address: ascii::String,
         sui_token_type: u8,
         external_chain_id: u64, 
-        external_token_address: vector<u8>,
+        external_token_address: ascii::String,
         ctx: &mut TxContext
     ) {
         // Verify caller has admin permission
@@ -280,8 +265,8 @@ module sui_bridge_contracts::cross {
         // Validate input parameters
         assert!(token_pair_id > 0, EInvalidChainId);
         assert!(external_chain_id > 0, EInvalidChainId);
-        assert!(vector::length(&sui_token_address) > 0, EInvalidTokenAddress);
-        assert!(vector::length(&external_token_address) > 0, EInvalidTokenAddress);
+        assert!(ascii::length(&sui_token_address) > 0, EInvalidTokenAddress);
+        assert!(ascii::length(&external_token_address) > 0, EInvalidTokenAddress);
         assert!(sui_token_type == TOKEN_TYPE_NATIVE || sui_token_type == TOKEN_TYPE_WRAPPED, EInvalidTokenType);
         
         // Ensure token pair ID does not exist
@@ -300,9 +285,9 @@ module sui_bridge_contracts::cross {
         // Emit event
         event::emit(TokenPairAdded {
             token_pair_id,
-            sui_token_address: string::utf8(sui_token_address),
+            sui_token_address,
             external_chain_id,
-            external_token_address: string::utf8(external_token_address),
+            external_token_address,
             sui_token_type
         });
     }
@@ -326,9 +311,9 @@ module sui_bridge_contracts::cross {
         // Emit event
         event::emit(TokenPairRemoved {
             token_pair_id,
-            sui_token_address: string::utf8(token_pair.sui_token_address),
+            sui_token_address: token_pair.sui_token_address,
             external_chain_id: token_pair.external_chain_id,
-            external_token_address: string::utf8(token_pair.external_token_address)
+            external_token_address: token_pair.external_token_address
         });
     }
 
@@ -337,10 +322,10 @@ module sui_bridge_contracts::cross {
         registry: &mut TokenPairRegistry,
         admin_cap: &admin::Admin,
         token_pair_id: u64,
-        sui_token_address: vector<u8>,
+        sui_token_address: ascii::String,
         sui_token_type: u8,
         external_chain_id: u64,
-        external_token_address: vector<u8>,
+        external_token_address: ascii::String,
         is_active: bool,
         ctx: &mut TxContext
     ) {
@@ -349,8 +334,8 @@ module sui_bridge_contracts::cross {
         
         // Validate input parameters
         assert!(external_chain_id > 0, EInvalidChainId);
-        assert!(vector::length(&sui_token_address) > 0, EInvalidTokenAddress);
-        assert!(vector::length(&external_token_address) > 0, EInvalidTokenAddress);
+        assert!(ascii::length(&sui_token_address) > 0, EInvalidTokenAddress);
+        assert!(ascii::length(&external_token_address) > 0, EInvalidTokenAddress);
         assert!(sui_token_type == TOKEN_TYPE_NATIVE || sui_token_type == TOKEN_TYPE_WRAPPED, EInvalidTokenType);
         
         // Ensure the token pair exists
@@ -367,9 +352,9 @@ module sui_bridge_contracts::cross {
         // Emit event
         event::emit(TokenPairUpdated {
             token_pair_id,
-            sui_token_address: string::utf8(sui_token_address),
+            sui_token_address: sui_token_address,
             external_chain_id,
-            external_token_address: string::utf8(external_token_address),
+            external_token_address: external_token_address,
             sui_token_type,
             is_active
         });
@@ -379,7 +364,7 @@ module sui_bridge_contracts::cross {
     public fun get_token_pair_by_id(
         registry: &TokenPairRegistry,
         token_pair_id: u64
-    ): (vector<u8>, vector<u8>, u64, u8, bool) {
+    ): (ascii::String, ascii::String, u64, u8, bool) {
         // Ensure the token pair exists
         assert!(table::contains(&registry.pairs_by_id, token_pair_id), ETokenPairNotFound);
         
@@ -410,13 +395,13 @@ module sui_bridge_contracts::cross {
         // Store treasury cap in registry
         df::add(&mut treasury_caps_registry.id, type_name_val, treasury_cap);
         
-        // Convert type name to string and then to bytes for the event
+        // Get type name for the coin
+        let type_name_val = type_name::get<CoinType>();
         let type_name_str = type_name::into_string(type_name_val);
-        let type_bytes = bcs::to_bytes(&type_name_str);
         
         // Emit event
         event::emit(TreasuryCapReceived {
-            token_type: string::utf8(type_bytes),
+            token_type: type_name_str,
             receiver: tx_context::sender(ctx)
         });
     }
@@ -530,7 +515,7 @@ module sui_bridge_contracts::cross {
         clock: &Clock,
         smg_id: vector<u8>,
         token_pair_id: u64,
-        recipient: vector<u8>,
+        recipient: ascii::String,
         coin_in: coin::Coin<T>,
         fee_coin: &mut Coin<SUI>,
         ctx: &mut tx_context::TxContext
@@ -572,10 +557,9 @@ module sui_bridge_contracts::cross {
         // Verify coin type matches token pair's sui_token_address
         let type_name_val = type_name::get<T>();
         let type_str = type_name::into_string(type_name_val);
-        let type_bytes = bcs::to_bytes(&type_str);
         
-        // Compare type bytes with token pair's sui_token_address
-        assert_bytes_equal(&type_bytes, &token_pair.sui_token_address, ETokenAddressMismatch);
+        // Compare type string with token pair's sui_token_address
+        assert!(type_str == token_pair.sui_token_address, ETokenAddressMismatch);
         
         // Get coin amount
         let amount = coin::value(&coin_in);
@@ -613,9 +597,6 @@ module sui_bridge_contracts::cross {
         // Get user address
         let sender = tx_context::sender(ctx);
         
-        // Get address bytes for the event
-        let address_bytes = bcs::to_bytes(&type_name::get_address(&type_name_val));
-        
         // Emit event
         event::emit(UserLockLogger {
             smg_id,
@@ -623,10 +604,10 @@ module sui_bridge_contracts::cross {
             sender,
             recipient,
             amount,
-            sui_token_address: string::utf8(token_pair.sui_token_address),
+            sui_token_address: token_pair.sui_token_address,
             external_chain_id: token_pair.external_chain_id,
-            external_token_address: string::utf8(token_pair.external_token_address),
-            token_type: string::utf8(address_bytes)
+            external_token_address: token_pair.external_token_address,
+            token_type: type_str
         });
     }
 
@@ -640,7 +621,7 @@ module sui_bridge_contracts::cross {
         clock: &Clock,
         smg_id: vector<u8>,
         token_pair_id: u64,
-        recipient: vector<u8>,
+        recipient: ascii::String,
         coin_in: coin::Coin<CoinType>,
         fee_coin: &mut Coin<SUI>,
         ctx: &mut tx_context::TxContext
@@ -686,10 +667,9 @@ module sui_bridge_contracts::cross {
         // Verify coin type matches token pair's sui_token_address
         let type_name_val = type_name::get<CoinType>();
         let type_str = type_name::into_string(type_name_val);
-        let type_bytes = bcs::to_bytes(&type_str);
         
-        // Compare type bytes with token pair's sui_token_address
-        assert_bytes_equal(&type_bytes, &token_pair.sui_token_address, ETokenAddressMismatch);
+        // Compare type string with token pair's sui_token_address
+        assert!(type_str == token_pair.sui_token_address, ETokenAddressMismatch);
         
         // Check if treasury cap exists
         assert!(df::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
@@ -713,8 +693,6 @@ module sui_bridge_contracts::cross {
         let sender = tx_context::sender(ctx);
         
         // Get type bytes for the event
-        let type_bytes = bcs::to_bytes(&type_str);
-        
         // Emit event
         event::emit(UserBurnLogger {
             smg_id,
@@ -722,10 +700,10 @@ module sui_bridge_contracts::cross {
             sender,
             recipient,
             amount,
-            sui_token_address: string::utf8(token_pair.sui_token_address),
+            sui_token_address: token_pair.sui_token_address,
             external_chain_id: token_pair.external_chain_id,
-            external_token_address: string::utf8(token_pair.external_token_address),
-            token_type: string::utf8(type_bytes)
+            external_token_address: token_pair.external_token_address,
+            token_type: type_str
         });
     }
 
@@ -769,10 +747,9 @@ module sui_bridge_contracts::cross {
         
         // Verify coin type matches token pair's sui_token_address
         let type_str = type_name::into_string(type_name_val);
-        let type_bytes = bcs::to_bytes(&type_str);
         
-        // Compare type bytes with token pair's sui_token_address
-        assert_bytes_equal(&type_bytes, &token_pair.sui_token_address, ETokenAddressMismatch);
+        // Compare type string with token pair's sui_token_address
+        assert!(type_str == token_pair.sui_token_address, ETokenAddressMismatch);
         
         // Check if treasury cap exists
         assert!(df::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
@@ -828,7 +805,7 @@ module sui_bridge_contracts::cross {
             amount,
             serviceFee,
             fee_recipient,
-            token_type: string::utf8(type_bytes)
+            token_type: type_str
         });
     }
 
@@ -870,10 +847,9 @@ module sui_bridge_contracts::cross {
         // Verify coin type matches token pair's sui_token_address
         let type_name_val = type_name::get<CoinType>();
         let type_str = type_name::into_string(type_name_val);
-        let type_bytes = bcs::to_bytes(&type_str);
         
-        // Compare type bytes with token pair's sui_token_address
-        assert_bytes_equal(&type_bytes, &token_pair.sui_token_address, ETokenAddressMismatch);
+        // Compare type string with token pair's sui_token_address
+        assert!(type_str == token_pair.sui_token_address, ETokenAddressMismatch);
         
         // Get fee recipient from foundation config
         let fee_recipient = foundation_config.fee_recipient;
@@ -941,7 +917,7 @@ module sui_bridge_contracts::cross {
             amount,
             serviceFee,
             fee_recipient,
-            token_type: string::utf8(type_bytes)
+            token_type: type_str
         });
     }
 }
