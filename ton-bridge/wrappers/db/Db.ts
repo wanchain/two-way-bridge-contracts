@@ -365,6 +365,8 @@ class DB {
             }catch(err){
                 console.error("err", formatError(err));
                 throw err;
+            }finally{
+                client = null;
             }
             let retTask = [];
             if(tranPovit?.lt > rangeStartLt){
@@ -486,6 +488,8 @@ class DB {
         }catch(err){
             console.error("err",formatError(err));
             needSlitRange = true;
+        }finally {
+            client = null;
         }
         if(transCount ==0 || retraced){
             console.log("scan success","startLt",rangeStartLt.toString(10),"endLt",rangeEndLt.toString(10),"rangeOpen",rangeOpen);
