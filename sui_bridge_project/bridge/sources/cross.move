@@ -109,6 +109,7 @@ module sui_bridge_contracts::cross {
         sender: address,
         recipient: ascii::String,
         amount: u64,
+        network_fee: u64,
         sui_token_address: ascii::String,
         external_chain_id: u64,
         external_token_address: ascii::String,
@@ -122,6 +123,7 @@ module sui_bridge_contracts::cross {
         sender: address,
         recipient: ascii::String,
         amount: u64,
+        network_fee: u64,
         sui_token_address: ascii::String,
         external_chain_id: u64,
         external_token_address: ascii::String,
@@ -135,7 +137,7 @@ module sui_bridge_contracts::cross {
         token_pair_id: u64,
         recipient: address,
         amount: u64,
-        serviceFee: u64,
+        service_fee: u64,
         fee_recipient: address,
         token_type: ascii::String
     }
@@ -147,7 +149,7 @@ module sui_bridge_contracts::cross {
         token_pair_id: u64,
         recipient: address,
         amount: u64,
-        serviceFee: u64,
+        service_fee: u64,
         fee_recipient: address,
         token_type: ascii::String
     }
@@ -604,6 +606,7 @@ module sui_bridge_contracts::cross {
             sender,
             recipient,
             amount,
+            network_fee: required_fee,
             sui_token_address: token_pair.sui_token_address,
             external_chain_id: token_pair.external_chain_id,
             external_token_address: token_pair.external_token_address,
@@ -700,6 +703,7 @@ module sui_bridge_contracts::cross {
             sender,
             recipient,
             amount,
+            network_fee: required_fee,
             sui_token_address: token_pair.sui_token_address,
             external_chain_id: token_pair.external_chain_id,
             external_token_address: token_pair.external_token_address,
@@ -720,7 +724,7 @@ module sui_bridge_contracts::cross {
         token_pair_id: u64,
         to_account: address,
         amount: u64,
-        serviceFee: u64,
+        service_fee: u64,
         signature: vector<u8>,
         ctx: &mut TxContext
     ) {
@@ -758,13 +762,13 @@ module sui_bridge_contracts::cross {
         let fee_recipient = foundation_config.fee_recipient;
         
         // Create message hash for signature verification
-        // Format: unique_id + token_pair_id + to_account + amount + serviceFee
+        // Format: unique_id + token_pair_id + to_account + amount + service_fee
         let mut message = vector::empty<u8>();
         vector::append(&mut message, unique_id);
         vector::append(&mut message, bcs::to_bytes(&token_pair_id));
         vector::append(&mut message, bcs::to_bytes(&to_account));
         vector::append(&mut message, bcs::to_bytes(&amount));
-        vector::append(&mut message, bcs::to_bytes(&serviceFee));
+        vector::append(&mut message, bcs::to_bytes(&service_fee));
         
         // Verify signature using oracle module
         oracle::verify_signature(
@@ -788,8 +792,8 @@ module sui_bridge_contracts::cross {
         transfer::public_transfer(minted_coins, to_account);
         
         // Mint service fee coins if fee is greater than zero
-        if (serviceFee > 0) {
-            let fee_coins = coin::mint(treasury_cap, serviceFee, ctx);
+        if (service_fee > 0) {
+            let fee_coins = coin::mint(treasury_cap, service_fee, ctx);
             transfer::public_transfer(fee_coins, fee_recipient);
         };
         
@@ -803,7 +807,7 @@ module sui_bridge_contracts::cross {
             token_pair_id,
             recipient: to_account,
             amount,
-            serviceFee,
+            service_fee,
             fee_recipient,
             token_type: type_str
         });
@@ -822,7 +826,7 @@ module sui_bridge_contracts::cross {
         token_pair_id: u64,
         to_account: address,
         amount: u64,
-        serviceFee: u64,
+        service_fee: u64,
         signature: vector<u8>,
         ctx: &mut TxContext
     ) {
@@ -855,13 +859,13 @@ module sui_bridge_contracts::cross {
         let fee_recipient = foundation_config.fee_recipient;
         
         // Create message for signature verification
-        // Format: unique_id + token_pair_id + to_account + amount + serviceFee
+        // Format: unique_id + token_pair_id + to_account + amount + service_fee
         let mut message = vector::empty<u8>();
         vector::append(&mut message, unique_id);
         vector::append(&mut message, bcs::to_bytes(&token_pair_id));
         vector::append(&mut message, bcs::to_bytes(&to_account));
         vector::append(&mut message, bcs::to_bytes(&amount));
-        vector::append(&mut message, bcs::to_bytes(&serviceFee));
+        vector::append(&mut message, bcs::to_bytes(&service_fee));
         
         // Verify signature using oracle module
         oracle::verify_signature(
@@ -887,7 +891,7 @@ module sui_bridge_contracts::cross {
         );
         
         // Check if vault has enough balance for both amount and service fee
-        assert!(balance::value(&token_balance.balance) >= (amount + serviceFee), EInsufficientBalance);
+        assert!(balance::value(&token_balance.balance) >= (amount + service_fee), EInsufficientBalance);
         
         // Take tokens from vault balance for the user
         let withdrawn_balance = balance::split(&mut token_balance.balance, amount);
@@ -899,8 +903,8 @@ module sui_bridge_contracts::cross {
         transfer::public_transfer(coin_out, to_account);
         
         // Process service fee if greater than zero
-        if (serviceFee > 0) {
-            let fee_balance = balance::split(&mut token_balance.balance, serviceFee);
+        if (service_fee > 0) {
+            let fee_balance = balance::split(&mut token_balance.balance, service_fee);
             let fee_coin = coin::from_balance(fee_balance, ctx);
             transfer::public_transfer(fee_coin, fee_recipient);
         };
@@ -915,7 +919,7 @@ module sui_bridge_contracts::cross {
             token_pair_id,
             recipient: to_account,
             amount,
-            serviceFee,
+            service_fee,
             fee_recipient,
             token_type: type_str
         });
