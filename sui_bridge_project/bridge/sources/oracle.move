@@ -36,6 +36,10 @@ module sui_bridge_contracts::oracle {
         new_status: u8
     }
 
+    public struct SmgRemoved has copy, drop {
+        smg_id: vector<u8>
+    }
+
     /// Storeman Group information
     public struct SmgInfo has store, drop {
         gpk: vector<u8>,         // Group public key
@@ -140,6 +144,28 @@ module sui_bridge_contracts::oracle {
             smg_id,
             old_status,
             new_status
+        });
+    }
+
+    /// Remove an SMG from the system (Oracle only)
+    public entry fun remove_smg_info(
+        admin: &Admin,
+        oracle_storage: &mut OracleStorage,
+        smg_id: vector<u8>,
+        ctx: &mut TxContext
+    ) {
+        // Verify caller is oracle
+        admin::assert_oracle(admin, ctx);
+        
+        // Verify SMG exists
+        assert!(table::contains(&oracle_storage.smgs, smg_id), ESmgIdNotFound);
+        
+        // Remove the SMG
+        let _removed_smg = table::remove(&mut oracle_storage.smgs, smg_id);
+        
+        // Emit event
+        event::emit(SmgRemoved {
+            smg_id
         });
     }
 

@@ -60,6 +60,11 @@ const config = {
     },
   },
   networks: {
+    shidoTestnet: {
+      url: 'https://shido-testnet-archive-lb-q1ifr9jpz.zeeve.net/USjg7xqUmCZ4wCsqEOOE/rpc',
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741856,
+    },
     edexaMainnet: {
       url: 'https://rpc.edexa.com',
       accounts: [process.env.PK],
