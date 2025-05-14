@@ -171,7 +171,7 @@ export const codeTable = {
     },
     [opcodes.OP_FEE_SetTokenPairFee]: {
         "enCode": function (opts: any): Cell {
-            logger.info(formatUtil.format("Entering enCode Function OP_CROSS_SmgRelease"));
+            logger.info(formatUtil.format("Entering enCode Function OP_FEE_SetTokenPairFee"));
             return beginCell()
                 .storeUint(opcodes.OP_FEE_SetTokenPairFee, 32)
                 .storeUint(opts.queryID ?? 0, 64)
@@ -236,7 +236,7 @@ export const codeTable = {
     },
     [opcodes.OP_GROUPAPPROVE_Proposol_DelCrossAdmin]: {
         "enCode": function (opts: any): Cell {
-            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_AddCrossAdmin"));
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_DelCrossAdmin"));
             let msg = beginCell()
                 .storeUint(opcodes.OP_FEE_DelCrossAdmin, 32) // op (op #1 = increment)
                 .storeAddress(opts.admin)
@@ -255,7 +255,7 @@ export const codeTable = {
     },
     [opcodes.OP_GROUPAPPROVE_Proposol_TransferOwner]: {
         "enCode": function (opts: any): Cell {
-            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_AddCrossAdmin"));
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_TransferOwner"));
             let msg = beginCell()
                 .storeUint(opcodes.OP_COMMON_TransferOwner, 32) // op (op #1 = increment)
                 .storeAddress(opts.owner)
@@ -293,7 +293,7 @@ export const codeTable = {
     },
     [opcodes.OP_GROUPAPPROVE_Proposol_SetHalt]: {
         "enCode": function (opts: any): Cell {
-            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_AddCrossAdmin"));
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_SetHalt"));
             let msg = beginCell()
                 .storeUint(opcodes.OP_COMMON_SetHalt, 32)
                 .storeUint(opts.halt, 2)
@@ -411,7 +411,7 @@ export const codeTable = {
     },
     [opcodes.OP_GROUPAPPROVE_Proposol_UpgradeSc]: {
         "enCode": function (opts: any): Cell {
-            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_TranferFoundation"));
+            logger.info(formatUtil.format("Entering enCode Function OP_GROUPAPPROVE_Proposol_UpgradeSc"));
             let msg = beginCell()
                 .storeUint(opcodes.OP_UPGRADE_Code, 32) // op (op #1 = increment)
                 .storeRef(opts.code)
@@ -451,7 +451,7 @@ export const codeTable = {
     },
     [opcodes.OP_FEE_SetTokenPairFees]: {
         "enCode": function (opts: any): Cell {
-            console.log("Entering enCode Function OP_CROSS_SmgReleases");
+            console.log("Entering enCode Function OP_FEE_SetTokenPairFees");
             let count = opts.tokenPairID.length
             let data = beginCell()
             .storeUint(opcodes.OP_FEE_SetTokenPairFees, 32)
@@ -469,7 +469,7 @@ export const codeTable = {
     },
     [opcodes.OP_FEE_SetChainFee]: {
         "enCode": function (opts: any): Cell {
-            console.log("Entering enCode Function OP_FEE_SetChainFees");
+            console.log("Entering enCode Function OP_FEE_SetChainFee");
             return beginCell()
                 .storeUint(opcodes.OP_FEE_SetChainFee, 32)
                 .storeUint(opts.queryID ?? 0, 64)
@@ -485,7 +485,7 @@ export const codeTable = {
     },
     [opcodes.OP_FEE_SetChainFees]: {
         "enCode": function (opts: any): Cell {
-            console.log("Entering enCode Function OP_FEE_SetChainFee");
+            console.log("Entering enCode Function OP_FEE_SetChainFees");
             let count = opts.srcChainId.length
 
             let data =  beginCell()
