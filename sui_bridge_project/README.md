@@ -150,7 +150,7 @@ The Cross module implements the core cross-chain token bridge functionality.
 ```
 const TESTNET_CONFIG = {
   // Bridge Package ID
-  PACKAGE_ID: '0x3a3945cef7cd48b4935bd322b49fc819fc7a5d1e31e267ab86f2ee8dda460607',
+  PACKAGE_ID: '0x3167e13ea9d67ba83234c827ab796d1b63e34b369dff41b1111771f0183ecd11',
 
   UPGRADE_CAP_OBJECT_ID: '0xd20e3f65c2db96ee42d05a639adffa6b46d3b21ed4f6b66e5ae221c13cb80435',
 
@@ -184,9 +184,9 @@ const TESTNET_CONFIG = {
   
   // USDT Token
   USDT: {
-    PACKAGE_ID: '0x9bbf46710d1c571d49be2e1ebea2470f5ec73d5f785f18812a9d2993a8c31e16',
-    TREASURY_CAP: '0x5e28e24d001b6ce9f4ecf1ed04f1e8ea093d16bccd52782175d23922fbc8111c',
-    METADATA: '0xbff19f56aaa29741924e45a9cc6190bb70560eeaf242b07a0933eddf993a62e9',
+    PACKAGE_ID: '0xdc6543a0f794b255cd6245494696763f431de2450fb3c85e9cc9e7ca2d73dde0',
+    TREASURY_CAP: '0xc65c067b90c97cfd29004caa4dac2a39f17fb2b3455b69c901c5e38dfa88a2e7',
+    METADATA: '0x8ffa189fdbc224d576fe3351309388e4c67b983b5adbe03dd1ad46f53b7380ea',
   },
   
   // USDC Token
@@ -196,6 +196,7 @@ const TESTNET_CONFIG = {
     METADATA: '0x5a2d9b8a2cbea39a2ce6186a31031496dd02b3b3eef59b7962bd3e2f6ddd988f',
   },
 };
+
 ```
 
 

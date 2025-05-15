@@ -5,6 +5,7 @@ module sui_bridge_contracts::cross {
     use sui::coin::{Self, TreasuryCap, Coin};
     use sui::balance;
     use sui::dynamic_field as df;
+    use sui::dynamic_object_field as dof;
     use std::type_name;
     use std::bcs;
     use std::ascii;
@@ -392,10 +393,10 @@ module sui_bridge_contracts::cross {
         let type_name_val = type_name::get<CoinType>();
         
         // Check if treasury cap already exists
-        assert!(!df::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsAlreadyExists);
+        assert!(!dof::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsAlreadyExists);
         
-        // Store treasury cap in registry
-        df::add(&mut treasury_caps_registry.id, type_name_val, treasury_cap);
+        // Store treasury cap in registry as an object field
+        dof::add(&mut treasury_caps_registry.id, type_name_val, treasury_cap);
         
         // Get type name for the coin
         let type_name_val = type_name::get<CoinType>();
@@ -424,10 +425,10 @@ module sui_bridge_contracts::cross {
         let type_name_val = type_name::get<CoinType>();
         
         // Check if treasury cap exists
-        assert!(df::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
+        assert!(dof::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
         
         // Borrow treasury cap
-        let treasury_cap = df::borrow_mut<type_name::TypeName, TreasuryCap<CoinType>>(
+        let treasury_cap = dof::borrow_mut<type_name::TypeName, TreasuryCap<CoinType>>(
             &mut treasury_caps_registry.id, 
             type_name_val
         );
@@ -454,10 +455,10 @@ module sui_bridge_contracts::cross {
         let type_name_val = type_name::get<CoinType>();
         
         // Check if treasury cap exists
-        assert!(df::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
+        assert!(dof::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
         
         // Borrow treasury cap
-        let treasury_cap = df::borrow_mut<type_name::TypeName, TreasuryCap<CoinType>>(
+        let treasury_cap = dof::borrow_mut<type_name::TypeName, TreasuryCap<CoinType>>(
             &mut treasury_caps_registry.id, 
             type_name_val
         );
@@ -675,7 +676,7 @@ module sui_bridge_contracts::cross {
         assert!(type_str == token_pair.sui_token_address, ETokenAddressMismatch);
         
         // Check if treasury cap exists
-        assert!(df::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
+        assert!(dof::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
 
         oracle::verify_smg_id(
             oracle_storage,
@@ -684,7 +685,7 @@ module sui_bridge_contracts::cross {
         );
         
         // Borrow treasury cap
-        let treasury_cap = df::borrow_mut<type_name::TypeName, TreasuryCap<CoinType>>(
+        let treasury_cap = dof::borrow_mut<type_name::TypeName, TreasuryCap<CoinType>>(
             &mut treasury_caps_registry.id, 
             type_name_val
         );
@@ -756,7 +757,7 @@ module sui_bridge_contracts::cross {
         assert!(type_str == token_pair.sui_token_address, ETokenAddressMismatch);
         
         // Check if treasury cap exists
-        assert!(df::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
+        assert!(dof::exists_(&treasury_caps_registry.id, type_name_val), ETreasuryCapsNotFound);
         
         // Get fee recipient from foundation config
         let fee_recipient = foundation_config.fee_recipient;
