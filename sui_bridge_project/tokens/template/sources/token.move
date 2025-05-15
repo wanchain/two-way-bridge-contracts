@@ -5,16 +5,16 @@ module TOKEN_NAME::TOKEN_NAME {
     use std::option;
 
     /// Token type
-    struct TOKEN_NAME has drop {}
+    struct TOKEN_SYMBOL has drop {}
 
     /// Initialization function
-    fun init(witness: TOKEN_NAME, ctx: &mut TxContext) {
+    fun init(witness: TOKEN_SYMBOL, ctx: &mut TxContext) {
         // Create currency
         let (treasury_cap, metadata) = coin::create_currency(
             witness, 
             DECIMALS, // Decimals
             b"TOKEN_SYMBOL", 
-            b"TOKEN_FULL_NAME", 
+            b"TOKEN_NAME", 
             b"TOKEN_DESCRIPTION", 
             option::none(), 
             ctx
@@ -32,7 +32,7 @@ module TOKEN_NAME::TOKEN_NAME {
     /// @param amount: The amount of tokens to mint
     /// @param recipient: The address to receive the minted tokens
     public entry fun mint(
-        treasury_cap: &mut coin::TreasuryCap<TOKEN_NAME>,
+        treasury_cap: &mut coin::TreasuryCap<TOKEN_SYMBOL>,
         amount: u64,
         recipient: address,
         ctx: &mut TxContext
@@ -47,8 +47,8 @@ module TOKEN_NAME::TOKEN_NAME {
     /// @param treasury_cap: The treasury capability for the token
     /// @param coin: The coin to burn
     public entry fun burn(
-        treasury_cap: &mut coin::TreasuryCap<TOKEN_NAME>,
-        coin: coin::Coin<TOKEN_NAME>
+        treasury_cap: &mut coin::TreasuryCap<TOKEN_SYMBOL>,
+        coin: coin::Coin<TOKEN_SYMBOL>
     ) {
         // Burn the tokens
         coin::burn(treasury_cap, coin);
