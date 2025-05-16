@@ -762,15 +762,14 @@ module sui_bridge_contracts::cross {
         // Get fee recipient from foundation config
         let fee_recipient = foundation_config.fee_recipient;
         
-        // Create message hash for signature verification
-        // Format: chainId + unique_id + token_pair_id + amount + service_fee + type_str + to_account
+        // Create message for signature verification
+        // Format: chainId + unique_id + token_pair_id + amount + service_fee + to_account
         let mut message = vector::empty<u8>();
         vector::append(&mut message, bcs::to_bytes(&CHAIN_ID));
         vector::append(&mut message, unique_id);
         vector::append(&mut message, bcs::to_bytes(&token_pair_id));
         vector::append(&mut message, bcs::to_bytes(&amount));
         vector::append(&mut message, bcs::to_bytes(&service_fee));
-        vector::append(&mut message, bcs::to_bytes(&type_str));
         vector::append(&mut message, bcs::to_bytes(&to_account));
         
         // Verify signature using oracle module
@@ -863,14 +862,13 @@ module sui_bridge_contracts::cross {
         let fee_recipient = foundation_config.fee_recipient;
         
         // Create message for signature verification
-        // Format: chainId + unique_id + token_pair_id + amount + service_fee + type_str + to_account
+        // Format: chainId + unique_id + token_pair_id + amount + service_fee + to_account
         let mut message = vector::empty<u8>();
         vector::append(&mut message, bcs::to_bytes(&CHAIN_ID));
         vector::append(&mut message, unique_id);
         vector::append(&mut message, bcs::to_bytes(&token_pair_id));
         vector::append(&mut message, bcs::to_bytes(&amount));
         vector::append(&mut message, bcs::to_bytes(&service_fee));
-        vector::append(&mut message, bcs::to_bytes(&type_str));
         vector::append(&mut message, bcs::to_bytes(&to_account));
         
         // Verify signature using oracle module

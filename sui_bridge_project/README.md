@@ -150,7 +150,7 @@ The Cross module implements the core cross-chain token bridge functionality.
 ```
 const TESTNET_CONFIG = {
   // Bridge Package ID
-  PACKAGE_ID: '0xbfb4971fd4681d758511f01d94b2a855d037b8c4a946890700a29dea669d5f4f',
+  PACKAGE_ID: '0x15251beb15541ccfda9e00bcc4efefa69b3cf1dcda0e6bdd0677794fb1d06f39',
 
   UPGRADE_CAP_OBJECT_ID: '0xd20e3f65c2db96ee42d05a639adffa6b46d3b21ed4f6b66e5ae221c13cb80435',
 
