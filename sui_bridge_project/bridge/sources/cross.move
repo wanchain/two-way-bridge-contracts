@@ -14,7 +14,6 @@ module sui_bridge_contracts::cross {
     use cctp_helper::fee_manager::{Self, FeeConfig};
     use sui::sui::SUI;
 
-    #[allow(unused_const)]
     const CHAIN_ID: u64 = 2147484432; // SUI chain bip44 chainId
 
     /// Error codes
@@ -712,6 +711,7 @@ module sui_bridge_contracts::cross {
         });
     }
 
+    #[allow(implicit_const_copy)]
     public entry fun smg_mint<CoinType>(
         registry: &TokenPairRegistry,
         treasury_caps_registry: &mut TreasuryCapsRegistry,
@@ -762,14 +762,15 @@ module sui_bridge_contracts::cross {
         // Get fee recipient from foundation config
         let fee_recipient = foundation_config.fee_recipient;
         
-        // Create message hash for signature verification
-        // Format: unique_id + token_pair_id + to_account + amount + service_fee
+        // Create message for signature verification
+        // Format: chain_id + unique_id + token_pair_id + amount + service_fee + to_account
         let mut message = vector::empty<u8>();
+        vector::append(&mut message, bcs::to_bytes(&CHAIN_ID));
         vector::append(&mut message, unique_id);
         vector::append(&mut message, bcs::to_bytes(&token_pair_id));
-        vector::append(&mut message, bcs::to_bytes(&to_account));
         vector::append(&mut message, bcs::to_bytes(&amount));
         vector::append(&mut message, bcs::to_bytes(&service_fee));
+        vector::append(&mut message, bcs::to_bytes(&to_account));
         
         // Verify signature using oracle module
         oracle::verify_signature(
@@ -781,7 +782,7 @@ module sui_bridge_contracts::cross {
         );
         
         // Borrow treasury cap
-        let treasury_cap = df::borrow_mut<type_name::TypeName, TreasuryCap<CoinType>>(
+        let treasury_cap = dof::borrow_mut<type_name::TypeName, TreasuryCap<CoinType>>(
             &mut treasury_caps_registry.id, 
             type_name_val
         );
@@ -814,6 +815,7 @@ module sui_bridge_contracts::cross {
         });
     }
 
+    #[allow(implicit_const_copy)]
     public entry fun smg_release<CoinType>(
         registry: &TokenPairRegistry,
         vault: &mut TokenVault,
@@ -860,13 +862,14 @@ module sui_bridge_contracts::cross {
         let fee_recipient = foundation_config.fee_recipient;
         
         // Create message for signature verification
-        // Format: unique_id + token_pair_id + to_account + amount + service_fee
+        // Format: chain_id + unique_id + token_pair_id + amount + service_fee + to_account
         let mut message = vector::empty<u8>();
+        vector::append(&mut message, bcs::to_bytes(&CHAIN_ID));
         vector::append(&mut message, unique_id);
         vector::append(&mut message, bcs::to_bytes(&token_pair_id));
-        vector::append(&mut message, bcs::to_bytes(&to_account));
         vector::append(&mut message, bcs::to_bytes(&amount));
         vector::append(&mut message, bcs::to_bytes(&service_fee));
+        vector::append(&mut message, bcs::to_bytes(&to_account));
         
         // Verify signature using oracle module
         oracle::verify_signature(
