@@ -102,6 +102,11 @@ module sui_bridge_contracts::cross {
         receiver: address
     }
 
+    /// Partner event
+    public struct PartnerEvent has copy, drop {
+        partner_name: ascii::String,
+    }
+
     /// User lock event
     public struct UserLockLogger has copy, drop {
         smg_id: vector<u8>,
@@ -520,6 +525,7 @@ module sui_bridge_contracts::cross {
         recipient: ascii::String,
         coin_in: coin::Coin<T>,
         fee_coin: &mut Coin<SUI>,
+        partner_name: ascii::String,
         ctx: &mut tx_context::TxContext
     ) {
         // Check if bridge is paused
@@ -598,6 +604,11 @@ module sui_bridge_contracts::cross {
         
         // Get user address
         let sender = tx_context::sender(ctx);
+
+        // Emit partner event
+        event::emit(PartnerEvent {
+            partner_name
+        });
         
         // Emit event
         event::emit(UserLockLogger {
@@ -627,6 +638,7 @@ module sui_bridge_contracts::cross {
         recipient: ascii::String,
         coin_in: coin::Coin<CoinType>,
         fee_coin: &mut Coin<SUI>,
+        partner_name: ascii::String,
         ctx: &mut tx_context::TxContext
     ) {
         // Check if bridge is paused
@@ -694,6 +706,11 @@ module sui_bridge_contracts::cross {
         
         // Get user address
         let sender = tx_context::sender(ctx);
+
+        // Emit partner event
+        event::emit(PartnerEvent {
+            partner_name
+        });
         
         // Get type bytes for the event
         // Emit event
