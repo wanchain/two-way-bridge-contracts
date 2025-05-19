@@ -1,4 +1,4 @@
-import {getQueryID, remove0x} from "../utils/utils";
+import {AddressToBig, getQueryID, remove0x} from "../utils/utils";
 import {isAddrDepolyed} from "../wallet/walletContract";
 import {JettonMaster, TonClient} from "@ton/ton";
 import {BridgeAccess} from "../contractAccess/bridgeAccess";
@@ -30,8 +30,8 @@ export async function buildUserLockMessages(opts: {
     client:WanTonClient|Blockchain,
     senderAccount:string,
 }){
-
-    console.log("buildUserLockMessages","opts",opts);
+    const {client,...filtered} = opts;
+    console.log("buildUserLockMessages","opts",filtered);
 
     let queryID = await getQueryID();
     if(! Address.isAddress(Address.parse(opts.bridgeScAddr))){
@@ -145,9 +145,9 @@ async function buildLockOriginalTokenMessages(opts: {
     client:WanTonClient|Blockchain,
     senderAccount:string,
 },jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
-    console.log("buildLockOriginalTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
+    console.log("buildLockOriginalTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"jwAddrSrcBig",AddressToBig(jwAddrSrc),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
 
-    if(opts.value < (lockFee + TON_FEE.NOTIFY_FEE_USER_LOCK)){ //todo value > lockFee + transUserLockFee
+    if(opts.value < (lockFee + TON_FEE.NOTIFY_FEE_USER_LOCK)){ //todo value > lockFee + transUserLockFeea
         throw new Error("insufficient ton balance");
     }
     // forward payLoad
@@ -166,7 +166,8 @@ async function buildLockOriginalTokenMessages(opts: {
         .endCell()
     let body = beginCell()
         .storeUint(opcodes.OP_CROSS_UserLock, 32)
-        .storeUint(queryId, 64)
+        //.storeUint(queryId, 64) //todo should restore
+        .storeUint(queryId+1, 64)
         .storeUint(BigInt(opts.smgID), 256)
         .storeUint(opts.tokenPairID, 32)
         .storeUint(opts.crossValue, 256)
@@ -265,7 +266,6 @@ export async function getJettonAdminAddr(client:WanTonClient|Blockchain,jettonMa
 export async function getTokenPairInfo(client:WanTonClient|Blockchain,bridgeScAddr:Address,tokenPairID:number){
     let tokePairInfo ;
     let tokenAccount = "";
-    console.log("Entering getTokenPairInfo............","client",client);
     if(IsWanTonClient(client)){
         console.log("Entering getTokenPairInfo IsWanTonClient true");
         let ba = new BridgeAccess(client,bridgeScAddr)

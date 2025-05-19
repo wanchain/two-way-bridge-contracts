@@ -209,6 +209,7 @@
         (slice originAddress, var refundValue,var _oracle) = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle,ca_fee,sender_address);
 
         if ( op == OP_TRANSFER_NOTIFICATION ){
+            ~strdump("OP_TRANSFER_NOTIFICATION before save_data");
             save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
             return ();
         }

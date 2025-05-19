@@ -314,3 +314,30 @@ export function toBase64(str){
         }
     }
 }
+
+export function BigToAddress(big:bigint):Address{
+    let bufHash = bigIntToBuffer(big);
+
+    return new Address(0,bufHash);
+}
+
+export function bigIntToBuffer(big:bigint) {
+    let buffer = Buffer.from(big.toString(16),'hex')
+    let bufferLeft = Buffer.alloc(32-buffer.length);
+    return Buffer.concat([bufferLeft,buffer]);
+}
+
+
+export function bufferToBigInt(buffer: Buffer, isBigEndian = true): bigint {
+    let result = 0n;
+    const bytes = isBigEndian ? buffer : [...buffer].reverse();
+    for (const byte of bytes) {
+        result = (result << 8n) | BigInt(byte);
+    }
+    return result;
+}
+
+export function AddressToBig(addr:Address){
+    let hash = addr.hash;
+    return bufferToBigInt(hash);
+}

@@ -15,23 +15,7 @@ import {CommonMessageInfo} from "@ton/core";
 
 const JSONbig = require('json-bigint');
 
-export type TransactionSlim = {
-    address: bigint|Address,
-    lt: bigint,
-    prevTransactionHash: bigint,
-    //prevTransactionLt: bigint,
-    //now: number,
-    outMessagesCount: number,
-    oldStatus: AccountStatus,
-    endStatus: AccountStatus,
-    inMessage: string,
-    outMessages: string;
-    totalFees: string,
-    stateUpdate: HashUpdate,
-    description: string,
-    //raw: Cell,
-    hash: () => Buffer,
-};
+export type TransactionSlim = any;
 
 export type EventSlim = EventAccountCreated | EventAccountDestroyed | EventMessageSent;
 
@@ -59,24 +43,48 @@ function bigIntToBuffer(big:bigint) {
     return Buffer.concat([bufferLeft,buffer]);
 }
 
+
+export function bufferToBigInt(buffer: Buffer, isBigEndian = true): bigint {
+    let result = 0n;
+    const bytes = isBigEndian ? buffer : [...buffer].reverse();
+    for (const byte of bytes) {
+        result = (result << 8n) | BigInt(byte);
+    }
+    return result;
+}
+
+export function AddressToBig(addr:Address){
+    let hash = addr.hash;
+    return bufferToBigInt(hash);
+}
+
 export const slimSndMsgResult = (smr :SendMessageResult) => {
+    console.log("Entering slimSndMsgResult....................................");
     let trans:TransactionSlim[] = [];
     for(let tran of smr.transactions){
-        let tranSlim ={
+        // let tranSlim ={
+        //     address: BigToAddress(tran.address),
+        //     lt: tran.lt,
+        //     prevTransactionHash: tran.prevTransactionHash,
+        //     outMessagesCount: tran.outMessagesCount,
+        //     oldStatus: tran.oldStatus,
+        //     endStatus: tran.endStatus,
+        //     inMessage: JSONbig.stringify(tran.inMessage.info),
+        //     outMessages: JSONbig.stringify(tran.outMessages),
+        //     totalFees: JSONbig.stringify(tran.totalFees),
+        //     stateUpdate: tran.stateUpdate,
+        //     description: JSONbig.stringify(tran.description),
+        //     hash: tran.hash,
+        // }
+        //const {address,description,debugLogs,vmLogs,...filtered} = tran;
+
+        trans.push({
             address: BigToAddress(tran.address),
-            lt: tran.lt,
-            prevTransactionHash: tran.prevTransactionHash,
-            outMessagesCount: tran.outMessagesCount,
-            oldStatus: tran.oldStatus,
-            endStatus: tran.endStatus,
-            inMessage: JSONbig.stringify(tran.inMessage.info),
-            outMessages: JSONbig.stringify(tran.outMessages),
-            totalFees: JSONbig.stringify(tran.totalFees),
-            stateUpdate: tran.stateUpdate,
-            description: JSONbig.stringify(tran.description),
-            hash: tran.hash,
-        }
-        trans.push(tranSlim);
+            addressBig:tran.address,
+            description:JSONbig.stringify(tran.description),
+            debugLogs:tran.debugLogs,
+            vmLogs:tran.vmLogs,
+        });
     }
     return {
         transactions:trans,

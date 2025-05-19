@@ -14,7 +14,7 @@ const prvList = require('../testData/prvlist')
 let client = null;
 let queryID;
 let deployer;
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApiNoDb} from "../config/config-ex";
 
 const scAddresses = require('../testData/contractAddress.json');
 (async function main() {
@@ -41,8 +41,9 @@ const scAddresses = require('../testData/contractAddress.json');
 })()
 
 async function init(){
-    await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
+    //await wanTonSdkInit(configMainnet);
+    //await wanTonSdkInit(configTestnet);
+    await wanTonSdkInit(configTestTonApiNoDb);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     queryID = await getQueryID();
     client = await getClient();

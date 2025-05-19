@@ -38,6 +38,7 @@
 () send_token(int queryId, int amount, slice toAddress , slice jwBridgeAddr, int fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
     {--
     1. bridge send inter_transfer to JW_bridge address
+    2. toAddress is not jetton wallet address
     -}
 
     cell transfer_request = begin_cell()
@@ -58,6 +59,33 @@
         .store_coins(totalTonAmount)
         .store_msgbody_prefix_ref(transfer_request);
     send_raw_message(msg.end_cell(), PAY_FEES_SEPARATELY); ;; revert on errors
+
+    return ();
+}
+
+() revert_token(int queryId, int amount, slice toAddress , slice jwBridgeAddr, int fwdTonAmount, int totalTonAmount, slice excessAddr) impure {
+    {--
+    1. bridge send inter_transfer to JW_bridge address
+    2. toAddress is not jetton wallet address
+    -}
+
+    cell transfer_request = begin_cell()
+        .store_op(op::transfer)
+        .store_query_id(queryId)
+        .store_coins( amount)
+        .store_slice(toAddress)
+        .store_slice(excessAddr)
+        .store_maybe_ref(begin_cell().end_cell())   ;; customPayload
+        .store_coins(fwdTonAmount)            ;; forward_amount, 4 bit if zero
+        .store_maybe_ref(begin_cell().end_cell())   ;; forwardPayload
+        .end_cell();
+
+    var msg = begin_cell()
+        .store_msg_flag(msg_flag::bounceable)
+        .store_slice(jwBridgeAddr)
+        .store_coins(totalTonAmount)
+        .store_msgbody_prefix_ref(transfer_request);
+    send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS); ;; revert on errors
 
     return ();
 }
@@ -195,11 +223,27 @@
         slice lockBodySlice = lockBody.begin_parse();
         (_, int queryIdFromLockBody,_,_,int crossValue) =
         (lockBodySlice~load_uint(32),lockBodySlice~load_uint(64),lockBodySlice~load_uint(256),lockBodySlice~load_uint(32),lockBodySlice~load_uint(256));
+        ~strdump("111");
+        (slice extraSlice) = lockBodySlice~load_ref().begin_parse();
+        (slice tokenAcountFromMsg,slice jwAddressSrc, slice jwAddressBridge) = (extraSlice~load_msg_addr(),extraSlice~load_msg_addr(),extraSlice~load_msg_addr());
+        ~strdump("222");
+        (slice extraSlice2) = lockBodySlice~load_ref().begin_parse();
+        slice originAddress = extraSlice2~load_msg_addr();
+        int lockFee = extraSlice2~load_uint(256);
+        ~strdump("333");
         if ( queryIdFromLockBody != queryId){
-            throw_arg("queryId not equal",error::cross_query_id_not_equal);
+            ~strdump("queryId is not equal");
+            (_, int hash) = parse_std_addr(jwAddressSrc);
+            ~dump(hash);
+            revert_token(queryId,jettonAmount,originAddress,jwAddressBridge,0,0,originAddress);
+            ;;throw_arg("queryId not equal",error::cross_query_id_not_equal);
+            return (originAddress,refundValue,oracle);
         }
         if ( jettonAmount != crossValue){
-            throw_arg("jettonAmount is not equal to crossValue",error::cross_invalid_jetton_amount); ;;//
+            ;;send_token(queryId,jettonAmount,originAddress,jwAddressBridge,0,200000000,my_address());
+            revert_token(queryId,jettonAmount,originAddress,jwAddressBridge,0,0,originAddress);
+            ;;throw_arg("jettonAmount is not equal to crossValue",error::cross_invalid_jetton_amount); ;;//
+            return (originAddress,refundValue,oracle);
         }
 
         ;; send message to itself and invoke userLock

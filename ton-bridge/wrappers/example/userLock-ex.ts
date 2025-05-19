@@ -7,7 +7,7 @@ import {BridgeAccess} from "../contractAccess/bridgeAccess";
 import {sleep} from "../utils/utils";
 import {TON_FEE} from "../fee/fee";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApi, configTestTonApiNoDb} from "../config/config-ex";
 const prvList = require('../testData/prvlist')
 const prvAlice = Buffer.from(prvList[1],'hex');
 const prvBob = Buffer.from(prvList[2],'hex');
@@ -29,8 +29,9 @@ let aliceSender;
 let client = null;
 let aliceWallet,aliceAddress;
 async function init(){
-    await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
+    //await wanTonSdkInit(configMainnet);
+    //await wanTonSdkInit(configTestnet);
+    await wanTonSdkInit(configTestTonApiNoDb);
     client = await getClient();
      aliceWallet = await getWalletByPrvKey(prvAlice);
      aliceAddress = aliceWallet.address.toString();
@@ -38,14 +39,15 @@ async function init(){
 }
 
 async function userLock(){
+    console.log("Entering userLock..");
     try{
         let transValue:bigint = transValueUserLock;
         let ba = BridgeAccess.create(client,bridgeScAddr);
         for(let key of Object.keys(tokenInfo)) {
             console.log("key:",key);
-            // if(key.toString().toLowerCase() !== ("coin").toLowerCase()){
-            //     continue;
-            // }
+            if(key.toString().toLowerCase() !== ("tokenorg").toLowerCase()){
+                continue;
+            }
 
             if(key.toString().toLowerCase() !== ("coin").toLowerCase()){
                 transValue = TON_FEE.TRANS_FEE_USER_LOCK_TOKEN;

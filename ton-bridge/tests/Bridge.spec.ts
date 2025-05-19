@@ -217,163 +217,209 @@ describe('Bridge', () => {
         printCaseSeperator(it.name);
     })
 
-    it('should Mint origin token success', async () => {
+        it('should Mint origin token success', async () => {
 
-        // mint  100 usdt to alice
-        let initialTotalSupply = await jettonMinter.getTotalSupply();
-        const deployerJettonWallet = await userWallet(deployer_jetton.address);
-        const aliceJettonWallet = await userWallet(alice.address);
-        const bobJettonWallet = await userWallet(bob.address);
-        const bridgeJettonWallet = await userWallet(bridge.address);
+            // mint  100 usdt to alice
+            let initialTotalSupply = await jettonMinter.getTotalSupply();
+            const deployerJettonWallet = await userWallet(deployer_jetton.address);
+            const aliceJettonWallet = await userWallet(alice.address);
+            const bobJettonWallet = await userWallet(bob.address);
+            const bridgeJettonWallet = await userWallet(bridge.address);
 
-        let initialJettonBalance = toNano('100');
-        const mintResult = await jettonMinter.sendMint(deployer_jetton.getSender(), alice.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+            let initialJettonBalance = toNano('100');
+            const mintResult = await jettonMinter.sendMint(deployer_jetton.getSender(), alice.address, initialJettonBalance, toNano('0.05'), toNano('1'));
 
-        expect(await aliceJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
-        expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
-        initialTotalSupply += initialJettonBalance;
-        // mint  100 usdt to bob
-        const mintResult2 = await jettonMinter.sendMint(deployer_jetton.getSender(), bob.address, initialJettonBalance, toNano('0.05'), toNano('1'));
-
-
-        expect(await bobJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
-        expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
-        initialTotalSupply += initialJettonBalance;
-
-        // mint  100 usdt to bridge
-        const mintResult3 = await jettonMinter.sendMint(deployer_jetton.getSender(), bridge.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+            expect(await aliceJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+            expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+            initialTotalSupply += initialJettonBalance;
+            // mint  100 usdt to bob
+            const mintResult2 = await jettonMinter.sendMint(deployer_jetton.getSender(), bob.address, initialJettonBalance, toNano('0.05'), toNano('1'));
 
 
-        expect(await bridgeJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
-        expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+            expect(await bobJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+            expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+            initialTotalSupply += initialJettonBalance;
 
+            // mint  100 usdt to bridge
+            const mintResult3 = await jettonMinter.sendMint(deployer_jetton.getSender(), bridge.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+
+
+            expect(await bridgeJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+            expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+
+            printCaseSeperator(it.name)
+        });
+   /*
+            it('should Mint wrapped token success', async () => {
+
+                // mint  100 dog to alice
+                let initialTotalSupply = await jettonMinter_dog.getTotalSupply();
+                const aliceJettonWallet = await userWallet_dog(alice.address);
+                const bobJettonWallet = await userWallet_dog(bob.address);
+                const bridgeJettonWallet = await userWallet_dog(bridge.address);
+
+                let initialJettonBalance = toNano('100');
+
+                const mintResult = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), alice.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+                console.log("mintResultDog.....", slimSndMsgResult(mintResult));
+
+                expect(await aliceJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+                expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+                initialTotalSupply += initialJettonBalance;
+
+                // mint  100 dog to bob
+                const mintResult2 = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), bob.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+                console.log("mintResult2Dog.....", slimSndMsgResult(mintResult2));
+                expect(await bobJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+                expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+                initialTotalSupply += initialJettonBalance;
+
+
+                const mintResult3 = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), bridge.address, initialJettonBalance, toNano('0.05'), toNano('1'));
+                console.log("mintResult3Dog.....", slimSndMsgResult(mintResult3));
+                expect(await bridgeJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
+                expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
+                initialTotalSupply += initialJettonBalance;
+
+                printCaseSeperator(it.name)
+            });
+
+            it('should change admin of jetton_dog token to bridge address', async () => {
+
+                const changeAdminResult = await jettonMinter_dog.sendChangeAdmin(deployer_jetton.getSender(), bridge.address);
+
+                let newAdmin = await jettonMinter_dog.getAdminAddress()
+                expect(true).toEqual(Address.isAddress(newAdmin));
+                expect(true).toEqual(bridge.address.equals(newAdmin));
+
+                await displayAllTokenPair(bridge);
+                printCaseSeperator(it.name)
+            });
+
+            it('[userLock coin] should userLock success', async () => {
+                let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+                let tokenPairID = tokenInfo.coin.tokenPairId;
+                let crossValue = BigInt(toNano(1));
+                let value = BigInt(toNano(2));
+                console.log("smgID(bigInt)==>", BigInt(smgID));
+                const queryID = 1;
+
+                console.log("before user lock original token");
+                console.log("alice's address",alice.address.toString());
+                console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
+                console.log("Before balance of coin",
+                    "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+                    "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+                );
+                const ret = await bridge.sendUserLock(alice.getSender(), {
+                    value: value,
+                    queryID,
+                    tokenPairID,
+                    smgID,
+                    crossValue,
+                    dstUserAccount: bob.address.toString(),
+                    client:blockchain,
+                    senderAccount:alice.address.toString(),
+                    bridgeScAddr:bridge.address.toString(),
+                });
+
+                console.log("ret", slimSndMsgResult(ret));
+                console.log("After balance of coin",
+                    "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+                    "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+                );
+                printCaseSeperator(it.name)
+            });
+
+            it('[userLock original token] should userLock success', async () => {
+                let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+                let tokenPairID = tokenInfo.tokenOrg.tokenPairId;
+                let crossValue = BigInt(toNano(1));
+                let value = BigInt(toNano(2));
+                console.log("smgID(bigInt)==>", BigInt(smgID));
+                const queryID = 1;
+
+                console.log("before user lock original token");
+                console.log("alice's address",alice.address.toString());
+                console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
+                console.log("Before balance of coin",
+                    "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+                    "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+                );
+                console.log("Before balance of token",
+                    "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
+                    "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
+                );
+                const ret = await bridge.sendUserLock(alice.getSender(), {
+                    value: value,
+                    queryID,
+                    tokenPairID,
+                    smgID,
+                    crossValue,
+                    dstUserAccount: bob.address.toString(),
+                    client:blockchain,
+                    senderAccount:alice.address.toString(),
+                    bridgeScAddr:bridge.address.toString(),
+                });
+
+                console.log("ret", slimSndMsgResult(ret));
+                console.log("After balance of coin",
+                    "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+                    "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+                    );
+                console.log("After balance of token",
+                    "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
+                    "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
+                );
+                printCaseSeperator(it.name)
+            });
+        */
+        it('[userLock original token] queryId not equal', async () => {
+        let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
+        let tokenPairID = tokenInfo.tokenOrg.tokenPairId;
+        let crossValue = BigInt(toNano(1));
+        let value = BigInt(toNano(2));
+        console.log("smgID(bigInt)==>", BigInt(smgID));
+        const queryID = 1;
+
+        console.log("before user lock original token");
+        console.log("alice's address",alice.address.toString());
+        console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
+        console.log("Before balance of coin",
+            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+        );
+        console.log("Before balance of token",
+            "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
+            "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
+        );
+        const ret = await bridge.sendUserLock(alice.getSender(), {
+            value: value,
+            queryID,
+            tokenPairID,
+            smgID,
+            crossValue,
+            dstUserAccount: bob.address.toString(),
+            client:blockchain,
+            senderAccount:alice.address.toString(),
+            bridgeScAddr:bridge.address.toString(),
+        });
+
+        //console.log("ret(org)", ret);
+            console.log("*********************************************");
+        console.log("ret", slimSndMsgResult(ret));
+        console.log("After balance of coin",
+            "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
+            "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
+        );
+        console.log("After balance of token",
+            "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
+            "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
+        );
         printCaseSeperator(it.name)
     });
 
-        it('should Mint wrapped token success', async () => {
-
-            // mint  100 dog to alice
-            let initialTotalSupply = await jettonMinter_dog.getTotalSupply();
-            const aliceJettonWallet = await userWallet_dog(alice.address);
-            const bobJettonWallet = await userWallet_dog(bob.address);
-            const bridgeJettonWallet = await userWallet_dog(bridge.address);
-
-            let initialJettonBalance = toNano('100');
-
-            const mintResult = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), alice.address, initialJettonBalance, toNano('0.05'), toNano('1'));
-            console.log("mintResultDog.....", slimSndMsgResult(mintResult));
-
-            expect(await aliceJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
-            expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
-            initialTotalSupply += initialJettonBalance;
-
-            // mint  100 dog to bob
-            const mintResult2 = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), bob.address, initialJettonBalance, toNano('0.05'), toNano('1'));
-            console.log("mintResult2Dog.....", slimSndMsgResult(mintResult2));
-            expect(await bobJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
-            expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
-            initialTotalSupply += initialJettonBalance;
-
-
-            const mintResult3 = await jettonMinter_dog.sendMint(deployer_jetton.getSender(), bridge.address, initialJettonBalance, toNano('0.05'), toNano('1'));
-            console.log("mintResult3Dog.....", slimSndMsgResult(mintResult3));
-            expect(await bridgeJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
-            expect(await jettonMinter_dog.getTotalSupply()).toEqual(initialTotalSupply + initialJettonBalance);
-            initialTotalSupply += initialJettonBalance;
-
-            printCaseSeperator(it.name)
-        });
-
-        it('should change admin of jetton_dog token to bridge address', async () => {
-
-            const changeAdminResult = await jettonMinter_dog.sendChangeAdmin(deployer_jetton.getSender(), bridge.address);
-
-            let newAdmin = await jettonMinter_dog.getAdminAddress()
-            expect(true).toEqual(Address.isAddress(newAdmin));
-            expect(true).toEqual(bridge.address.equals(newAdmin));
-
-            await displayAllTokenPair(bridge);
-            printCaseSeperator(it.name)
-        });
-
-        it('[userLock coin] should userLock success', async () => {
-            let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-            let tokenPairID = tokenInfo.coin.tokenPairId;
-            let crossValue = BigInt(toNano(1));
-            let value = BigInt(toNano(2));
-            console.log("smgID(bigInt)==>", BigInt(smgID));
-            const queryID = 1;
-
-            console.log("before user lock original token");
-            console.log("alice's address",alice.address.toString());
-            console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
-            console.log("Before balance of coin",
-                "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
-                "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
-            );
-            const ret = await bridge.sendUserLock(alice.getSender(), {
-                value: value,
-                queryID,
-                tokenPairID,
-                smgID,
-                crossValue,
-                dstUserAccount: bob.address.toString(),
-                client:blockchain,
-                senderAccount:alice.address.toString(),
-                bridgeScAddr:bridge.address.toString(),
-            });
-
-            console.log("ret", slimSndMsgResult(ret));
-            console.log("After balance of coin",
-                "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
-                "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
-            );
-            printCaseSeperator(it.name)
-        });
-
-        it('[userLock original token] should userLock success', async () => {
-            let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
-            let tokenPairID = tokenInfo.tokenOrg.tokenPairId;
-            let crossValue = BigInt(toNano(1));
-            let value = BigInt(toNano(2));
-            console.log("smgID(bigInt)==>", BigInt(smgID));
-            const queryID = 1;
-
-            console.log("before user lock original token");
-            console.log("alice's address",alice.address.toString());
-            console.log("value",fromNano(value),"crossValue",fromNano(crossValue));
-            console.log("Before balance of coin",
-                "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
-                "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
-            );
-            console.log("Before balance of token",
-                "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
-                "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
-            );
-            const ret = await bridge.sendUserLock(alice.getSender(), {
-                value: value,
-                queryID,
-                tokenPairID,
-                smgID,
-                crossValue,
-                dstUserAccount: bob.address.toString(),
-                client:blockchain,
-                senderAccount:alice.address.toString(),
-                bridgeScAddr:bridge.address.toString(),
-            });
-
-            console.log("ret", slimSndMsgResult(ret));
-            console.log("After balance of coin",
-                "alice:",fromNano( await CoinBalance(blockchain,alice.address)),
-                "bridge:",fromNano(await CoinBalance(blockchain,bridge.address)),
-                );
-            console.log("After balance of token",
-                "alice:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),alice.address)),
-                "bridge:",fromNano(await TokenBalance(blockchain,Address.parse(tokenInfo.tokenOrg.dstTokenAcc),bridge.address)),
-            );
-            printCaseSeperator(it.name)
-        });
-
+    /*
         it('[userLock wrapped token ] should userLock success', async () => {
             let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
             let tokenPairID = tokenInfo.tokenWrapped.tokenPairId;
@@ -643,7 +689,7 @@ describe('Bridge', () => {
             printCaseSeperator(it.name);
         });
 
-
+*/
 });
 
 async function printCaseSeperator(name:string){

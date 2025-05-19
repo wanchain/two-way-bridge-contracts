@@ -45,6 +45,18 @@ export const configTestTonApi:TonConfig =  {
         }]
 }
 
+export const configTestTonApiNoDb:TonConfig =  {
+    network:{
+        network:"testnet", // testnet|mainnet
+    },
+    urls:[
+        {
+            url:'https://testnet.tonapi.io',
+            //apiKey:'',
+            vendor:'tonapi',
+        }]
+}
+
 export const configMainTonApi:TonConfig =  {
     network:{
         network:"mainnet", // testnet|mainnet
