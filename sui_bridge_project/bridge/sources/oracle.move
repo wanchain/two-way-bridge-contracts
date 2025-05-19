@@ -240,9 +240,22 @@ module sui_bridge_contracts::oracle {
         let gpk = smg_info.gpk;
         
         // Perform ECDSA signature verification using Sui's ecdsa_k1 module.
-        let recovered_public_key = ecdsa_k1::secp256k1_ecrecover(&signature, &message_body, smg_info.hash_type);
+        let recovered_compressed_key = ecdsa_k1::secp256k1_ecrecover(&signature, &message_body, smg_info.hash_type);
         
-        // Assert that the recovered public key matches the stored GPK
+        // Decompress the recovered public key
+        let recovered_uncompressed_key = ecdsa_k1::decompress_pubkey(&recovered_compressed_key);
+        
+        // Remove the first byte from the uncompressed key (the format byte)
+        let recovered_key_len = vector::length(&recovered_uncompressed_key);
+        assert!(recovered_key_len > 0, EInvalidSignature);
+        let mut recovered_public_key = vector::empty<u8>();
+        let mut i = 1;
+        while (i < recovered_key_len) {
+            vector::push_back(&mut recovered_public_key, *vector::borrow(&recovered_uncompressed_key, i));
+            i = i + 1;
+        };
+        
+        // Assert that the processed recovered public key matches the stored GPK
         assert!(recovered_public_key == gpk, EInvalidSignature);
     }
 
