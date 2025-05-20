@@ -12,6 +12,8 @@ module sui_bridge_contracts::oracle {
     const ESmgNotActive: u64 = 5;
     const ESmgExpired: u64 = 6;
     const EInvalidHashType: u64 = 7;
+    const EInvalidStatus: u64 = 8;
+    const EActiveTooEarly: u64 = 9;
 
     /// Status constants for SMG
     const SMG_STATUS_ACTIVE: u8 = 5;
@@ -27,7 +29,8 @@ module sui_bridge_contracts::oracle {
         status: u8,
         start_time: u64,
         end_time: u64,
-        hash_type: u8
+        hash_type: u8,
+        added_time: u64
     }
 
     public struct SmgStatusChanged has copy, drop {
@@ -46,7 +49,9 @@ module sui_bridge_contracts::oracle {
         status: u8,              // Status (active/inactive)
         start_time: u64,         // Start timestamp
         end_time: u64,           // End timestamp
-        hash_type: u8            // Hash function type (0 = KECCAK256, 1 = SHA256)
+        hash_type: u8,           // Hash function type (0 = KECCAK256, 1 = SHA256)
+        added_time: u64,         // Timestamp when SMG was added
+        active: bool             // Whether the SMG is active
     }
 
     /// Oracle storage for managing SMG information
@@ -77,6 +82,7 @@ module sui_bridge_contracts::oracle {
     public entry fun add_smg_info(
         admin: &Admin,
         oracle_storage: &mut OracleStorage,
+        clock: &Clock,
         smg_id: vector<u8>,
         gpk: vector<u8>,
         status: u8,
@@ -92,13 +98,21 @@ module sui_bridge_contracts::oracle {
         assert!(start_time < end_time, EInvalidTimeRange);
         assert!(hash_type == HASH_KECCAK256 || hash_type == HASH_SHA256, EInvalidHashType);
         
+        // Status cannot be SMG_STATUS_ACTIVE (5) during addition
+        assert!(status != SMG_STATUS_ACTIVE, EInvalidStatus);
+        
+        // Get current time
+        let current_time = clock::timestamp_ms(clock) / 1000; // Convert to seconds
+        
         // Create new SMG info
         let new_smg_info = SmgInfo {
             gpk,
             status,
             start_time,
             end_time,
-            hash_type
+            hash_type,
+            added_time: current_time,
+            active: false
         };
         
         // If SMG already exists, update it; otherwise add new
@@ -116,8 +130,35 @@ module sui_bridge_contracts::oracle {
             status,
             start_time,
             end_time,
-            hash_type
+            hash_type,
+            added_time: current_time
         });
+    }
+
+    public entry fun activate_smg(
+        admin: &Admin,
+        oracle_storage: &mut OracleStorage,
+        clock: &Clock,
+        smg_id: vector<u8>,
+        ctx: &mut TxContext
+    ) {
+        // Verify caller is oracle
+        admin::assert_oracle(admin, ctx);
+        
+        // Verify SMG exists
+        assert!(table::contains(&oracle_storage.smgs, smg_id), ESmgIdNotFound);
+        
+        // Get SMG info
+        let smg_info = table::borrow_mut(&mut oracle_storage.smgs, smg_id);
+        
+        // Get current time
+        let current_time = clock::timestamp_ms(clock) / 1000; // Convert to seconds
+        
+        // only can be active after added 24 hours 
+        assert!(current_time >= smg_info.added_time + 86400, EActiveTooEarly);
+        
+        // Activate SMG
+        smg_info.active = true;
     }
 
     /// Update SMG status (Oracle only)
@@ -134,8 +175,10 @@ module sui_bridge_contracts::oracle {
         // Verify SMG exists
         assert!(table::contains(&oracle_storage.smgs, smg_id), ESmgIdNotFound);
         
-        // Update status
+        // Get SMG info
         let smg_info = table::borrow_mut(&mut oracle_storage.smgs, smg_id);
+        
+        // Update status
         let old_status = smg_info.status;
         smg_info.status = new_status;
         
@@ -155,7 +198,7 @@ module sui_bridge_contracts::oracle {
         ctx: &mut TxContext
     ) {
         // Verify caller is oracle
-        admin::assert_oracle(admin, ctx);
+        admin::assert_operator(admin, ctx);
         
         // Verify SMG exists
         assert!(table::contains(&oracle_storage.smgs, smg_id), ESmgIdNotFound);
@@ -231,6 +274,9 @@ module sui_bridge_contracts::oracle {
         
         // Check if SMG is active
         assert!(smg_info.status == SMG_STATUS_ACTIVE, ESmgNotActive);
+
+        // Check if SMG is active
+        assert!(smg_info.active, ESmgNotActive);
         
         // Check if current time is within valid range
         let current_time = clock::timestamp_ms(clock) / 1000; // Convert to seconds

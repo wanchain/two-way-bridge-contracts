@@ -75,7 +75,12 @@ module sui_bridge_contracts::admin {
 
     /// Check if caller is operator
     public fun assert_operator(admin: &Admin, ctx: &TxContext) {
-        assert!(tx_context::sender(ctx) == admin.operator, ENotAuthorized);
+        assert!(
+            tx_context::sender(ctx) == admin.owner || 
+            tx_context::sender(ctx) == admin.admin || 
+            tx_context::sender(ctx) == admin.operator, 
+            ENotAuthorized
+        );
     }
 
     /// Get owner address
