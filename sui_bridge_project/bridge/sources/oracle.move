@@ -12,7 +12,6 @@ module sui_bridge_contracts::oracle {
     const ESmgNotActive: u64 = 5;
     const ESmgExpired: u64 = 6;
     const EInvalidHashType: u64 = 7;
-    const EInvalidStatus: u64 = 8;
     const EActiveTooEarly: u64 = 9;
 
     /// Status constants for SMG
@@ -97,9 +96,6 @@ module sui_bridge_contracts::oracle {
         // Validate inputs
         assert!(start_time < end_time, EInvalidTimeRange);
         assert!(hash_type == HASH_KECCAK256 || hash_type == HASH_SHA256, EInvalidHashType);
-        
-        // Status cannot be SMG_STATUS_ACTIVE (5) during addition
-        assert!(status != SMG_STATUS_ACTIVE, EInvalidStatus);
         
         // Get current time
         let current_time = clock::timestamp_ms(clock) / 1000; // Convert to seconds
@@ -218,7 +214,7 @@ module sui_bridge_contracts::oracle {
     public fun get_smg_info(
         oracle_storage: &OracleStorage,
         smg_id: vector<u8>
-    ): (vector<u8>, u8, u64, u64, u8) {
+    ): (vector<u8>, u8, u64, u64, u8, bool) {
         assert!(table::contains(&oracle_storage.smgs, smg_id), ESmgIdNotFound);
         
         let smg_info = table::borrow(&oracle_storage.smgs, smg_id);
@@ -227,7 +223,8 @@ module sui_bridge_contracts::oracle {
             smg_info.status,
             smg_info.start_time,
             smg_info.end_time,
-            smg_info.hash_type
+            smg_info.hash_type,
+            smg_info.active
         )
     }
 
