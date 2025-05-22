@@ -38,7 +38,6 @@ const scDict = {
   OracleProxy: "OracleProxy",
   SignatureVerifier: "SignatureVerifier",
   Bn128SchnorrVerifier: "Bn128SchnorrVerifier",
-  Secp256k1SchnorrVerifier: "Secp256k1SchnorrVerifier",
   HTLCTxLib: "HTLCTxLib",
   HTLCDebtLib: "HTLCDebtLib",
   RapidityLib: "RapidityLib",

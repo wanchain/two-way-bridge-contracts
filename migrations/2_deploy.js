@@ -51,7 +51,6 @@ const OracleDelegate = artifacts.require('OracleDelegate');
 const OracleProxy = artifacts.require('OracleProxy');
 
 const Bn128SchnorrVerifier = artifacts.require('Bn128SchnorrVerifier');
-const Secp256k1SchnorrVerifier = artifacts.require('Secp256k1SchnorrVerifier');
 const SignatureVerifier = artifacts.require('SignatureVerifier');
 
 const ConfigDelegate = artifacts.require('ConfigDelegate');
@@ -110,7 +109,6 @@ module.exports = async function (deployer, network) {
     // signature verifier
     await deployer.deploy(SignatureVerifier);
     await deployer.deploy(Bn128SchnorrVerifier);
-    await deployer.deploy(Secp256k1SchnorrVerifier);
 
     // cross approach smart contracts
     await deployer.deploy(HTLCTxLib);
@@ -253,9 +251,7 @@ module.exports = async function (deployer, network) {
     // config SignatureVerifier
     let signatureVerifier = await SignatureVerifier.deployed();
     let bn128 = await Bn128SchnorrVerifier.deployed();
-    let secp256K1 = await Secp256k1SchnorrVerifier.deployed();
     signatureVerifier.register(curveMap.get('bn256'), bn128.address);
-    signatureVerifier.register(curveMap.get('secp256k1'), secp256K1.address);
 
     // config crossApproach
     if (!isMainnet) {

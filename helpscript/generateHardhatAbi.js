@@ -18,9 +18,6 @@ const abiFiles = [
         `${dirpath}/gpk/lib/GpkLib.sol/GpkLib.json`,
     ],
     [
-        `${dirpath}/schnorr/Secp256k1SchnorrVerifier.sol/Secp256k1SchnorrVerifier.json`,
-    ],
-    [
         `${dirpath}/schnorr/EcSchnorrVerifier.sol/EcSchnorrVerifier.json`,
     ],
     [

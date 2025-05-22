@@ -75,8 +75,7 @@ contract('Test Cross Approach', (accounts) => {
         const aliceAccounts = {WAN: accounts[5], ETH: accounts[6], BTC: userBTCAccount};
         const smgAccounts = { src: {WAN: accounts[7], ETH: accounts[8]}, dest: {WAN: accounts[7], ETH: accounts[8]} }
         const operatorAccounts = {WAN: accounts[9], ETH: accounts[9]};
-        // const curveIDs = {WAN: defaultCurve.secp256k1, ETH: defaultCurve.bn128};
-        const curveIDs = {WAN: defaultCurve.secp256k1, ETH: defaultCurve.bn128, BTC: defaultCurve.ecSchnorr};
+        const curveIDs = {WAN: defaultCurve.bn128, ETH: defaultCurve.bn128, BTC: defaultCurve.ecSchnorr};
 
         console.log(`Deploy contracts, wait...`);
         let tokenPairs = {};
@@ -201,7 +200,6 @@ async function deployCrossContracts(owner, options) {
     const OracleProxy               = artifacts.require('OracleProxy.sol');
 
     const Bn128SchnorrVerifier      = artifacts.require('Bn128SchnorrVerifier.sol');
-    const Secp256k1SchnorrVerifier  = artifacts.require('Secp256k1SchnorrVerifier.sol');
     const EcSchnorrVerifier         = artifacts.require('EcSchnorrVerifier.sol');
     const SignatureVerifier         = artifacts.require('SignatureVerifier.sol');
 
@@ -218,7 +216,6 @@ async function deployCrossContracts(owner, options) {
         chainType: chainTypes.WAN,
         depositSymbol: coins.WAN.symbol,
         tokenPairs: {},
-        // curveIDs:{ WAN:defaultCurve.secp256k1, ETH:defaultCurve.bn128, BTC: defaultCurve.ecSchnorr },
         curveIDs:{ WAN:defaultCurve.bn128, ETH:defaultCurve.bn128, BTC: defaultCurve.ecSchnorr },
         alice: null,
         admin: null,
@@ -265,25 +262,19 @@ async function deployCrossContracts(owner, options) {
     await updateOracle(oracle, storemanGroups, owner)
 
     // signature verifier
-    let secp256k1 = await Secp256k1SchnorrVerifier.new({from: owner});
     let signatureVerifier = await SignatureVerifier.new({from: owner});
     let bn128 = await Bn128SchnorrVerifier.new({from: owner});
     let ecSchnorr = await EcSchnorrVerifier.new({from: owner});
    // register signature verifier contracts
-   await signatureVerifier.register(defaultCurve.secp256k1, secp256k1.address, {from: owner});
    await signatureVerifier.register(defaultCurve.bn128, bn128.address, {from: owner});
     await signatureVerifier.register(defaultCurve.ecSchnorr, ecSchnorr.address, {from: owner});
-    scAddr["Secp256k1SchnorrVerifier"] = secp256k1.address;
     scAddr["SignatureVerifier"] = signatureVerifier.address;
     scAddr["Bn128SchnorrVerifier"] = bn128.address;
     scAddr["EcSchnorrVerifier"] = ecSchnorr.address;
     // console.log("register bn128:", defaultCurve.bn128, bn128.address)
     // console.log("register ecSchnorr:", defaultCurve.ecSchnorr, ecSchnorr.address)
     web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.bn128))
-    assert.equal(web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.secp256k1))
-        , web3.utils.toChecksumAddress(secp256k1.address)
-        , `check registered secp256k1 signature verifier sc failed`
-    );
+
     assert.equal(web3.utils.toChecksumAddress(await signatureVerifier.verifierMap(defaultCurve.bn128))
         , web3.utils.toChecksumAddress(bn128.address)
         , `check registered bn128 signature verifier sc failed`

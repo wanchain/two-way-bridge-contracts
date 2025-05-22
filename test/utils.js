@@ -10,7 +10,6 @@ const hre = require('hardhat')
 // const TestHelper = artifacts.require('./test/TestHelper.sol');
 const TestBasicStorage = artifacts.require('./test/TestBasicStorage.sol');
 const Bn128SchnorrVerifier = artifacts.require('./schnorr/Bn128SchnorrVerifier.sol');
-const Secp256k1SchnorrVerifier = artifacts.require('./schnorr/Secp256k1SchnorrVerifier.sol');
 const SignatureVerifier = artifacts.require('./schnorr/SignatureVerifier.sol');
 
 const BigNumber = require('bignumber.js');
@@ -87,18 +86,14 @@ const getContractAt = (contract, address) => {
 
 const getSchnorrVerifierContracts = async (accounts) => {
     const bn128 = await newContract(Bn128SchnorrVerifier);
-    const secp256 = await newContract(Secp256k1SchnorrVerifier);
     const verifier = await newContract(SignatureVerifier);
     // console.log('bn128', bn128._address);
-    // console.log('secp256', secp256._address);
     // console.log('verifier', verifier._address);
 
-    await verifier.methods.register(0, secp256._address).send({from: accounts[0], gas: 1e7});
     await verifier.methods.register(1, bn128._address).send({from: accounts[0], gas: 1e7});
 
     return {
         bn128,
-        secp256,
         verifier
     };
 }

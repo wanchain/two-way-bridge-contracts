@@ -2,8 +2,6 @@ module.exports = {
     skipFiles: [
         'crossApproach/CrossDelegateXinFin.sol',
         'crossApproach/lib/HTLCTxLib.sol',
-        'schnorr/Secp256k1.sol',
-        'schnorr/Secp256k1SchnorrVerifier.sol',
         'lib/Bn256Curve.sol',
         'lib/Secp256k1Curve.sol',
         'lib/Multicall2.sol',

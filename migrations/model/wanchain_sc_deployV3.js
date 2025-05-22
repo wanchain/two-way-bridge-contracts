@@ -73,16 +73,6 @@ async function deploy(cfg, isMainnet, options = {}) {
     contract[scDict.Bn128SchnorrVerifier] = bn128.address;
     abi[scDict.SignatureVerifier] = signatureVerifier.abi;
 
-    // secp256K1
-    if (wanNetworkNames.includes(cfg.name)) {
-      await deployer.deploy(scDict.Secp256k1SchnorrVerifier);
-      let secp256K1 = await deployer.deployed(scDict.Secp256k1SchnorrVerifier);
-      txData = await signatureVerifier.methods.register(curveMap.get('secp256k1'), secp256K1.address).encodeABI();
-      await deployer.sendTx(signatureVerifier.address, txData);
-
-      contract[scDict.Secp256k1SchnorrVerifier] = secp256K1.address;
-    }
-
     // cross approach smart contracts
     await deployer.deploy(scDict.HTLCTxLib);
     let htlcTxLib = await deployer.deployed(scDict.HTLCTxLib);
