@@ -331,7 +331,6 @@ export function bigIntToBuffer(big:bigint) {
     return Buffer.concat([bufferLeft,buffer]);
 }
 
-
 export function bufferToBigInt(buffer: Buffer, isBigEndian = true): bigint {
     let result = 0n;
     const bytes = isBigEndian ? buffer : [...buffer].reverse();

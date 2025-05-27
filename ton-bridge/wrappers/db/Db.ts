@@ -9,8 +9,7 @@ import {
     removeFile,
     sleep
 } from "../utils/utils";
-import {getClient, TonClientConfig,getDBDataDir} from "../client/client";
-import {TonClient} from "@ton/ton";
+import {getClient,getDBDataDir} from "../client/client";
 import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
 import formatUtil from "util";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
@@ -19,17 +18,6 @@ import {WanTonClient} from "../client/client-interface";
 import {Logger} from "../utils/logger";
 
 const LOG_ROOT = path.join(__dirname,"../log/")
-
-//todo how to provide testnet | mainnet information.
-// const config:TonClientConfig =  {
-//     network:"testnet", // testnet|mainnet
-//     tonClientTimeout: 60 * 1000 * 1000,
-// }
-
-const config:TonClientConfig =  {
-    network:"mainnet", // testnet|mainnet
-    tonClientTimeout: 60 * 1000 * 1000,
-}
 
 var _ = require('lodash');
 
@@ -700,6 +688,32 @@ class DB {
             })
         } catch (err) {
             this.logger.error("getTxByHashLt", "err", formatError(err),"txHash",txHash,"lt",lt,"dbName",this.dbName);
+        } finally {
+            copy = null;
+        }
+        return result;
+    }
+
+    async getTxsByLtRange(lt:bigint,to_lt:bigint){
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            this.logger.info("getTxByHashLt");
+            copy = _.cloneDeep(this.db.get('trans').value());
+        } catch (err) {
+            this.logger.error("getTxsByLtRange", "err", formatError(err),"to_lt",to_lt,"lt",lt);
+        } finally {
+            release();
+        }
+
+        let result: TonTransaction = null;
+        try {
+            this.logger.error("getTxsByLtRange","lt",lt,"dbName",this.dbName);
+            result = _.filter(copy, (item) => {
+                return ((item.lt > to_lt) && item.lt <= lt);
+            })
+        } catch (err) {
+            this.logger.error("getTxsByLtRange", "err", formatError(err),"to_lt",to_lt,"lt",lt,"dbName",this.dbName);
         } finally {
             copy = null;
         }

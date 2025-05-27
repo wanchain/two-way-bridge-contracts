@@ -125,6 +125,18 @@ export class DBAccess {
         return (convertTonTransToTrans(tonTran))[0];
     }
 
+    async getTxsByLtRange(dbName:string,lt:bigint,to_lt:bigint){
+        console.log("Entering getTxsByLtRange........","dbName",dbName,"lt",lt,"to_lt",to_lt);
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxsByLtRange(lt,to_lt);
+        if(!tonTran || (tonTran.length  == 0) ){
+            return null;
+        }
+        return convertTonTransToTrans(tonTran);
+    }
+
     async getParentTx(dbName:string,tran:TonTransaction){
 
         if(!this.has(dbName)){

@@ -12,7 +12,7 @@ export {
 } from "./const/const-value"
 
 export {
-    getEvents,getTransactions,getAllTransactions,getEventFromTran,getTransaction,getTransactionFromDb,getEventByTranHash,getOpCodeFromCell
+    getEvents,getEventFromTran,getTransaction,getTransactionFromDb,getEventByTranHash,getOpCodeFromCell
 } from "./event/getEvents"
 
 export {TON_FEE} from "./fee/fee"

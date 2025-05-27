@@ -47,7 +47,7 @@ example of ret:
 //todo  in send Message, message body-> txhash.
 
 
-export async function getEvents(client: WanTonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string):Promise<any> {
+export async function getEvents(client: WanTonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string,hash?:string):Promise<any> {
 
     logger.info("scAddress:%s,limit:%s,lt:%s,to_lt:%s,eventName:%s",scAddress,limit,lt,to_lt,eventName);
     if (!client){
@@ -63,15 +63,7 @@ export async function getEvents(client: WanTonClient,scAddress:string,limit:numb
     let events = [];
     let trans = [];
 
-    while(true){
-        try {
-            trans = await getAllTransactions(client, scAddress, limit, MAX_RETRY);
-            break;
-        }catch(e){
-            logger.error(formatError(e));
-            await sleep(5000);
-        }
-    }
+    trans = await getTransactions(client,scAddress,{limit,lt,to_lt,archival:true});
 
     for(let tran of trans){
         logger.info(formatUtil.format("tran=>",tran.hash().toString('base64')));
@@ -96,17 +88,54 @@ export async function getTransactions(client:WanTonClient,scAddress:string,opts:
     archival?: boolean;
 }):Promise<any> {
     logger.info("getTransactions opts = %s",opts);
+    let ret = await getTransactionsFromDb(client, scAddress, opts);
+    if(ret && ret.length != 0){
+        return ret;
+    }
+
+    logger.info("getTransactions from RPC server opts = %s",opts);
     let scAddr = Address.parse(scAddress);
     logger.info(formatUtil.format("contractAddr=>",scAddress));
-    let ret;
     try{
-        //todo check change back
         ret = await client.getTransactions(scAddr,opts)
-        //ret = await client.getTransactions(scAddr,{limit:3})
     }catch(err){
         logger.error(formatError(err));
     }
     return ret;
+}
+
+async function getTransactionsFromDb(client:WanTonClient,scAddress:string,opts:{
+    limit: number;
+    lt?: string;
+    hash?: string;
+    to_lt?: string;
+    inclusive?: boolean;
+    archival?: boolean;
+}):Promise<any> {
+    logger.info("getTransactionsFromDb opts = %s",opts);
+    let scAddr = Address.parse(scAddress);
+    logger.info(formatUtil.format("contractAddr=>",scAddress));
+
+    let dbAccess = await DBAccess.getDBAccess();
+    if(!dbAccess){
+        logger.error("not using db cache");
+        return null;
+    }
+    let retTx = null;
+    let retry = MAX_RETRY;
+    while(retry-- > 0 && !retTx){
+        try{
+            if(!dbAccess?.has(scAddress)){
+                await dbAccess.addDbByName(scAddress);
+            }
+            retTx = await dbAccess?.getTxsByLtRange(scAddress,opts.lt?BigInt(opts.lt):BigInt(0),opts.to_lt?BigInt(opts.to_lt):BigInt(0))
+        }catch(err){
+            logger.error("getTxByHashLt err",formatError(err),"retry",retry,"dbName","scAddress",scAddress,"opts",opts)
+        }
+        await sleep(10000);
+    }
+    logger.info("getTransactionsFromDb success","scAddress",scAddress,"lt",opts.lt,"tranHash",opts.hash,"retTx",retTx);
+    return retTx
 }
 
 export async function getAllTransactions(client:WanTonClient,scAddress:string,limit:number, retry:number){
