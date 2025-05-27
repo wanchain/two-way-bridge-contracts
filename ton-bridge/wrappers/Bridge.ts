@@ -181,6 +181,7 @@ export class Bridge implements Contract {
             toChainID:number,
             toAccount:string,
             jettonAdminAddr:string,
+            walletCodeBase64?:string,
         }
     ) {
 
@@ -245,7 +246,6 @@ export class Bridge implements Contract {
         via: Sender,
         opts: {
             value: bigint,
-            queryID?: number,
             smgID:string,
             tokenPairID:number,
             crossValue:bigint,
@@ -253,7 +253,7 @@ export class Bridge implements Contract {
             client:WanTonClient|Blockchain,
             senderAccount:string,
             bridgeScAddr:string,
-        },
+        },differentQueryID?: number,
     ) {
 
         let ret = await buildUserLockMessages({
@@ -265,7 +265,7 @@ export class Bridge implements Contract {
             bridgeScAddr: opts.bridgeScAddr,
             client: opts.client,
             senderAccount: opts.senderAccount
-        })
+        },differentQueryID)
         console.log("ret==>",ret);
         console.log("ret.to==>",ret.to);
 
@@ -385,7 +385,17 @@ export class Bridge implements Contract {
         let toChainID = result.stack.readNumber();
         let toAccount = result.stack.readBuffer();
         let jettonAdminAddr = result.stack.readBuffer();
-        let pair =  {fromChainID, toChainID, fromAccount:"", toAccount:"", jettonAdminAddr:""}
+        let exist = 1
+        if(result.stack.remaining){
+            exist = result.stack.readNumber();
+        }
+        let walletCode = Cell.EMPTY
+        if(result.stack.remaining){
+            walletCode = result.stack.readCellOpt();
+        }
+
+
+        let pair =  {fromChainID, toChainID, fromAccount:"", toAccount:"", jettonAdminAddr:"", walletCodeBase64:"",exist:""}
         if(pair.fromChainID == 0 || pair.toChainID == 0) {
             return pair
         }
@@ -398,7 +408,9 @@ export class Bridge implements Contract {
             pair['toAccount'] = addr.toString()
             pair['fromAccount'] = "0x"+fromAccount.toString('hex')
         }
+        pair['exist'] = exist.toString();
         pair['jettonAdminAddr'] = (new Address(0, jettonAdminAddr)).toString()
+        pair['walletCodeBase64'] = walletCode.toBoc().toString('base64');
         return pair
     }
 

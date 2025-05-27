@@ -54,6 +54,7 @@ async function addTokenPair(){
         toChainID: tokenInfo[tokenType].dstChainId,
         toAccount: tokenInfo[tokenType].dstTokenAcc,
         jettonAdminAddr:TON_COIN_ACCOUNT_STR,    //todo check jettonAddr
+        walletCodeBase64:tokenInfo[tokenType].walletCodeBase64,
     }
     console.log("opt=>",opt);
     let via = await getSenderByPrvKey(client,Buffer.from(prvList[0],'hex'));

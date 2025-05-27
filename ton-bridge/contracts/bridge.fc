@@ -41,14 +41,14 @@
 
 () cb_executed(slice sender_address, int query_id) impure {
     var msg = begin_cell()
-        .store_uint(0x18, 6)     ;;
+        .store_uint(msg_flag::bounceable, 6)     ;;
         .store_slice(sender_address)
         .store_coins(0)
         .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
         .store_uint(OP_COMMON_Finished, 32)
         .store_uint(query_id, 64)
         .end_cell();
-    send_raw_message(msg,80);
+    send_raw_message(msg,16 + CARRY_REMAINING_GAS);
     return ();
 }
 
@@ -68,7 +68,7 @@
         .store_uint(OP_COMMON_Finished, 32)
         .store_uint(query_id, 64)
         .end_cell();
-    send_raw_message(msg,1);
+    send_raw_message(msg,PAY_FEES_SEPARATELY);
     return ();
 }
 
@@ -180,7 +180,7 @@
     if(op & 0xFF000000 == OP_COMMON) {
         if(op == OP_COMMON_SetHalt) {
             int _halt = in_msg_body~load_uint(2);
-            (int workchain, int hash) = parse_std_addr(sender_address);
+            ;;(int workchain, int hash) = parse_std_addr(sender_address);
             cb_executed(sender_address, query_id);
             save_data(cross_owner, _halt, init, ca_fee, oracle, token_manager, extend);
             return ();
@@ -307,7 +307,7 @@
     return oracle_get_next_smg_id(oracle, id, 1);
 }
 ;; getter for tokenManager
-(int, slice, int, slice,slice) get_token_pair(int id) method_id {
+(int, slice, int, slice,slice,int,cell) get_token_pair(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return tm_get_token_pair(token_manager, id);
 }

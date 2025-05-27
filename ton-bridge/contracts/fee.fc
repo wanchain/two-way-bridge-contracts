@@ -158,3 +158,17 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
     }
     return (0, 0);
 }
+
+(int) fee_get(cell refCell, int tokenpairID, int _src_chain_id, int _dst_chain_id) method_id {
+    int fee = 0;
+    (int tpFee)= fee_get_tokenpair_fee(refCell,tokenpairID);
+    if (tpFee == 0){
+        (int contracFee,int agentFee)= fee_get_chain_fee(refCell,_src_chain_id,_dst_chain_id);
+        if (contracFee != 0){
+            fee = contracFee;
+        }
+    } else {
+        fee = tpFee;
+    }
+    return (fee);
+}

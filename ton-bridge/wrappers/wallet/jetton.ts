@@ -3,28 +3,49 @@ import {TonClient} from "@ton/ton";
 import {JettonMaster,JettonWallet} from "@ton/ton";
 import {DictionaryKey, DictionaryKeyTypes, DictionaryValue} from "@ton/core"
 import {sha256_sync} from "@ton/crypto";
-import {WanTonClient} from "../client/client-interface";
+import {IsWanTonClient, WanTonClient} from "../client/client-interface";
+import {Blockchain} from "@ton/sandbox";
 
-export async function getJettonBalance(client:WanTonClient,jettonMasterAddr:Address, userAddress:Address): Promise<bigint> {
-    let jettonWalletAddress = await getJettonAddress(client,jettonMasterAddr,userAddress);
-    let jettonWalletContract = JettonWallet.create(jettonWalletAddress);
-    return  await (client.open(jettonWalletContract)).getBalance();
+export async function getJettonBalance(client:WanTonClient|Blockchain,jettonMasterAddr:Address, userAddress:Address): Promise<bigint> {
+    if(IsWanTonClient(client)){
+        let jettonWalletAddress = await getJettonAddress(client,jettonMasterAddr,userAddress);
+        let jettonWalletContract = JettonWallet.create(jettonWalletAddress);
+        return  await (client.open(jettonWalletContract)).getBalance();
+    }else{
+        let jettonWalletAddress = await getJettonAddress(client,jettonMasterAddr,userAddress);
+        let jettonWalletContract = JettonWallet.create(jettonWalletAddress);
+        return  await (client.openContract(jettonWalletContract)).getBalance();
+    }
 }
 
-export async function getJettonAddress(client:WanTonClient,jettonMasterAddr:Address,userAddress:Address){
-    let jettonMasterContract = JettonMaster.create(jettonMasterAddr);
-    return await (client.open(jettonMasterContract).getWalletAddress(userAddress));
+export async function getJettonAddress(client:WanTonClient|Blockchain,jettonMasterAddr:Address,userAddress:Address){
+    if(IsWanTonClient(client)){
+        let jettonMasterContract = JettonMaster.create(jettonMasterAddr);
+        return await (client.open(jettonMasterContract).getWalletAddress(userAddress));
+    }else{
+        let jettonMasterContract = JettonMaster.create(jettonMasterAddr);
+        return await (client.openContract(jettonMasterContract).getWalletAddress(userAddress));
+    }
 }
 
-export async function getJettonData(client:WanTonClient,jettonMasterAddr:Address){
-    let jettonMasterContract = JettonMaster.create(jettonMasterAddr);
-    return await (client.open(jettonMasterContract).getJettonData());
+export async function getJettonData(client:WanTonClient|Blockchain,jettonMasterAddr:Address){
+    if(IsWanTonClient(client)){
+        let jettonMasterContract = JettonMaster.create(jettonMasterAddr);
+        let openedContract = await client.open(jettonMasterContract);
+        return await openedContract.getJettonData();
+    }else{
+        let jettonMasterContract = JettonMaster.create(jettonMasterAddr);
+        let openedContract = await client.openContract(jettonMasterContract);
+        return await openedContract.getJettonData();
+    }
 }
 
+export async function getJettonWalletCode(client:WanTonClient|Blockchain,jettonMasterAddr:Address){
+    return (await getJettonData(client,jettonMasterAddr)).walletCode;
+}
 
-export async function getJettonDataContent(client:WanTonClient,jettonMasterAddr:Address){
-    let jettonMasterContract = JettonMaster.create(jettonMasterAddr);
-    return (await (client.open(jettonMasterContract).getJettonData())).content;
+export async function getJettonDataContent(client:WanTonClient|Blockchain,jettonMasterAddr:Address){
+    return  (await getJettonData(client,jettonMasterAddr)).content;    
 }
 
 /*
@@ -66,10 +87,13 @@ async function getRidofProp(originalObj:any,propertiesToRemove:string[]):Promise
 export async function buildWrappedJettonContent(opts:any):Promise<Cell>{
     const dict = Dictionary.empty(Dictionary.Keys.BigUint(KEYLEN), Dictionary.Values.Cell());
 
-    let newOpts = await getRidofProp(opts,['tokenAddress']);
+    let newOpts = await getRidofProp(opts,['tokenAddress','walletCodeBase64']);
     Object.entries(newOpts).forEach(([k, v]: [string, string | undefined]) => {
-        if (!jettonOnChainMetadataSpec[k])
-            throw new Error(`Unsupported token key: ${k}`);
+        if (!jettonOnChainMetadataSpec[k]){
+            //throw new Error(`Unsupported token key: ${k}`);
+            console.error(`Unsupported token key: ${k}`);
+            return;
+        }
         if (v === undefined || v === "") return;
 
         let bufferToStore = Buffer.from(v, jettonOnChainMetadataSpec[k]);

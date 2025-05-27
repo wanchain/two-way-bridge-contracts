@@ -29,7 +29,7 @@ export async function buildUserLockMessages(opts: {
     bridgeScAddr:string,
     client:WanTonClient|Blockchain,
     senderAccount:string,
-}){
+},differentQueryID?:number){
     const {client,...filtered} = opts;
     console.log("buildUserLockMessages","opts",filtered);
 
@@ -62,14 +62,17 @@ export async function buildUserLockMessages(opts: {
         jwAddrBridgeSc = await getJettonWalletAddr(opts.client,addrTokenAccount,Address.parse(opts.bridgeScAddr))
         jwAddrSrc = await getJettonWalletAddr(opts.client,addrTokenAccount,Address.parse(opts.senderAccount))
 
+        console.log("jwAddrBridgeSc(big)",AddressToBig(jwAddrBridgeSc),"addrTokenAccount(big)",AddressToBig(addrTokenAccount),"bridgeScAddr(big)",AddressToBig(Address.parse(opts.bridgeScAddr)));
+        console.log("jwAddrSrc(big)",AddressToBig(jwAddrSrc),"addrTokenAccount(big)",AddressToBig(addrTokenAccount),"AddrSrc(big)",AddressToBig(Address.parse(opts.senderAccount)));
+
         let jettonAdminAddr:Address;
         jettonAdminAddr = await getJettonAdminAddr(opts.client,addrTokenAccount);
         console.log("jettonAdminAddr from getJettonAdminAddr",jettonAdminAddr.toString());
         addrTokenAccount = Address.parse(tokenAccount);
         if(jettonAdminAddr.toString() == opts.bridgeScAddr.toString()){
-            return buildLockWrappedTokenMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee);
+            return buildLockWrappedTokenMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee,BigInt(differentQueryID | 0));
         }else{
-            return buildLockOriginalTokenMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee);
+            return buildLockOriginalTokenMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee,BigInt(differentQueryID | 0));
         }
     }
     throw new Error("unknown tokenAccount");
@@ -143,8 +146,8 @@ async function buildLockOriginalTokenMessages(opts: {
     dstUserAccount:string, // hex string
     bridgeScAddr:string,
     client:WanTonClient|Blockchain,
-    senderAccount:string,
-},jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
+    senderAccount:string,differentQueryID?:bigint
+},jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint,differentQueryID?:bigint){
     console.log("buildLockOriginalTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"jwAddrSrcBig",AddressToBig(jwAddrSrc),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
 
     if(opts.value < (lockFee + TON_FEE.NOTIFY_FEE_USER_LOCK)){ //todo value > lockFee + transUserLockFeea
@@ -166,8 +169,7 @@ async function buildLockOriginalTokenMessages(opts: {
         .endCell()
     let body = beginCell()
         .storeUint(opcodes.OP_CROSS_UserLock, 32)
-        //.storeUint(queryId, 64) //todo should restore
-        .storeUint(queryId+1, 64)
+        .storeUint(differentQueryID  == BigInt(0)?queryId:differentQueryID, 64)
         .storeUint(BigInt(opts.smgID), 256)
         .storeUint(opts.tokenPairID, 32)
         .storeUint(opts.crossValue, 256)
@@ -206,7 +208,7 @@ async function buildLockOriginalTokenMessages(opts: {
     }
 }
 
-async function buildLockWrappedTokenMessages(opts:any,jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
+async function buildLockWrappedTokenMessages(opts:any,jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint,differentQueryID?:bigint){
     console.log("buildLockWrappedTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
     let ret =  (await buildLockOriginalTokenMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee));
     ret.lockType = LOCK_TYPE.tokenWrapped;

@@ -49,7 +49,7 @@ example of ret:
 
 export async function getEvents(client: WanTonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string):Promise<any> {
 
-    console.log("scAddress:%s,limit:%s,lt:%s,to_lt:%s,eventName:%s",scAddress,limit,lt,to_lt,eventName);
+    logger.info("scAddress:%s,limit:%s,lt:%s,to_lt:%s,eventName:%s",scAddress,limit,lt,to_lt,eventName);
     if (!client){
         throw new Error("client does not exist");
     }
@@ -68,7 +68,7 @@ export async function getEvents(client: WanTonClient,scAddress:string,limit:numb
             trans = await getAllTransactions(client, scAddress, limit, MAX_RETRY);
             break;
         }catch(e){
-            console.error(formatError(e));
+            logger.error(formatError(e));
             await sleep(5000);
         }
     }
@@ -77,7 +77,7 @@ export async function getEvents(client: WanTonClient,scAddress:string,limit:numb
         logger.info(formatUtil.format("tran=>",tran.hash().toString('base64')));
         let event = await getEventFromTran(client,tran,scAddress);
         if(event != null){
-            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!==found event==!!!!!!!!!!!!!!!!!!!!!!!!!!!",event);
+            logger.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!==found event==!!!!!!!!!!!!!!!!!!!!!!!!!!!",event);
             if(eventName && event.eventName.toLowerCase() != eventName.toLowerCase()){
                 continue;
             }
@@ -95,7 +95,7 @@ export async function getTransactions(client:WanTonClient,scAddress:string,opts:
     inclusive?: boolean;
     archival?: boolean;
 }):Promise<any> {
-    console.log("getTransactions opts = %s",opts);
+    logger.info("getTransactions opts = %s",opts);
     let scAddr = Address.parse(scAddress);
     logger.info(formatUtil.format("contractAddr=>",scAddress));
     let ret;
@@ -128,12 +128,12 @@ export async function getAllTransactions(client:WanTonClient,scAddress:string,li
         let getSuccess = false
         while(maxRetry-- >0 && (!getSuccess)){
            try{
-               console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,JSON.stringify(opts,bigIntReplacer));
+               logger.info("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,JSON.stringify(opts,bigIntReplacer));
                let ret = await client.getTransactions(Address.parse(scAddress),opts)
                transCount = ret.length;
-               console.log("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount);
+               logger.info("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount);
                for(let tran of ret){
-                   console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
+                   logger.info("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                    trans.push(tran);
                }
                if(ret.length){
@@ -143,7 +143,7 @@ export async function getAllTransactions(client:WanTonClient,scAddress:string,li
                getSuccess = true;
                maxRetry = retry;
            }catch(e){
-               console.error("err ",formatError(e));
+               logger.error("err ",formatError(e));
                await sleep(2000);
            }
         }
@@ -153,15 +153,15 @@ export async function getAllTransactions(client:WanTonClient,scAddress:string,li
 
         await sleep(2000);
     }
-    console.log("getAllTransactions success");
+    logger.info("getAllTransactions success");
     return trans;
 }
 
 export async function getEventFromTran(client:WanTonClient,tran:Transaction, scAddress:string){
-    console.log("getEventFromTran entering","client is WanTonClient",IsWanTonClient(client));
+    logger.info("getEventFromTran entering","client is WanTonClient",IsWanTonClient(client));
     let bodyCell = tran.inMessage?.body;
     if(!bodyCell){
-        console.error("body is empty","tran",tran.hash().toString("base64"));
+        logger.error("body is empty","tran",tran.hash().toString("base64"));
         return null;
     }
     try{
@@ -169,12 +169,12 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
         logger.info(formatUtil.format("opCode=>",opCode.toString(16)));
         logger.info(formatUtil.format("codeTable[opCode]=>",codeTable[opCode]));
         if(!codeTable[opCode]){
-            console.error("opCode is empty","tran","opCode",opCode.toString(16));
+            logger.error("opCode is empty","tran","opCode",opCode.toString(16));
             return null;
         }
-        console.log("before decode bodyCell");
+        logger.info("before decode bodyCell");
         let decoded = await codeTable[opCode]["deCode"](bodyCell);
-        console.log("after decode bodyCell");
+        logger.info("after decode bodyCell");
         decoded.txHashBase64 = tran.hash().toString("base64");
         decoded.txHash = tran.hash().toString("hex");
 
@@ -185,7 +185,7 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
         // handle userLock
         if(opCode == opcodes.OP_CROSS_UserLock){
             logger.info(formatUtil.format("getEventFromTran OP_CROSS_UserLock"));
-            console.log("getEventFromTran before handleUserLockEvent","client is WanTonClient",IsWanTonClient(client));
+            logger.info("getEventFromTran before handleUserLockEvent","client is WanTonClient",IsWanTonClient(client));
             let handleResult = await handleUserLockEvent(client,Address.parse(scAddress),tran)
             if (!handleResult.valid){
                 logger.error(formatUtil.format("handleResult OP_CROSS_UserLock is not valid"));
@@ -210,9 +210,9 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
 }
 
 export async function getTransaction(client:WanTonClient,scAddress:string,lt:string,tranHash:string){
-    console.log("Entering getTransaction","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
+    logger.info("Entering getTransaction","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
     let retTranFromDb = await getTransactionFromDb(client,scAddress,lt,toBase64(tranHash));
-    console.log("getTransaction","getTransactionFromDb","retTranFromDb",retTranFromDb);
+    logger.info("getTransaction","getTransactionFromDb","retTranFromDb",retTranFromDb);
     if(retTranFromDb){
         return retTranFromDb;
     }
@@ -228,12 +228,12 @@ export async function getTransaction(client:WanTonClient,scAddress:string,lt:str
 
     while(retry-- > 0){
         try{
-            console.log("before client.getTransaction","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
+            logger.info("before client.getTransaction","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
             tran = await client.getTransaction(Address.parse(scAddress),lt,toBase64(tranHash)); //  cannot compute block with specified transaction: cannot find block (0,e56031f43e6493da) lt=33028010000003: lt not in db'
-            console.log("client.getTransaction success", "scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash),"tran = > ",tran);
+            logger.info("client.getTransaction success", "scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash),"tran = > ",tran);
             return tran;
         }catch(err){
-            console.error("getTransaction","client.getTransaction error",formatError(err),"scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
+            logger.error("getTransaction","client.getTransaction error",formatError(err),"scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
             await sleep(2000);
         }
     }
@@ -257,13 +257,13 @@ export async function getTransaction(client:WanTonClient,scAddress:string,lt:str
         while(--retry > 0 && !status){
             try{
 
-                console.log("getTransactions","scAddress",scAddress,"opts",opts);
+                logger.info("getTransactions","scAddress",scAddress,"opts",opts);
                 trans = await client.getTransactions(Address.parse(scAddress),opts);
                 status = true;
                 retry = MAX_RETRY;
             }catch(err){
-                //console.error(err.message,err.response?.data?.error,err);
-                console.error(formatError(err))
+                //logger.error(err.message,err.response?.data?.error,err);
+                logger.error(formatError(err))
                 await sleep(2000);
             }
         }
@@ -279,7 +279,7 @@ export async function getTransaction(client:WanTonClient,scAddress:string,lt:str
                 opts.lt = tx.lt.toString(10);
                 opts.hash = tx.hash().toString('base64');
             }
-            console.log("getTransactions from rpc","i",i,"txHash",tx.hash().toString("base64"));
+            logger.info("getTransactions from rpc","i",i,"txHash",tx.hash().toString("base64"));
             if(tx.hash().toString('base64') == toBase64(tranHash)){
                 tran = tx;
                 foundTran = true;
@@ -297,10 +297,10 @@ export async function getTransaction(client:WanTonClient,scAddress:string,lt:str
 }
 // tranHash: base64
 export async function getTransactionFromDb(client:WanTonClient,scAddress:string,lt:string,tranHash:string){
-    console.log("Entering getTransactionFromDb","scAddress",scAddress,"lt",lt,"tranHash",tranHash);
+    logger.info("Entering getTransactionFromDb","scAddress",scAddress,"lt",lt,"tranHash",tranHash);
     let dbAccess = await DBAccess.getDBAccess();
     if(!dbAccess){
-        console.error("not using db cache");
+        logger.error("not using db cache");
         return null;
     }
     let retTx = null;
@@ -312,18 +312,18 @@ export async function getTransactionFromDb(client:WanTonClient,scAddress:string,
             }
             retTx = await dbAccess?.getTxByHashLt(scAddress,tranHash,lt)
         }catch(err){
-            console.error("getTxByHashLt err",formatError(err),"retry",retry,"dbName","scAddress",scAddress,"hash",tranHash)
+            logger.error("getTxByHashLt err",formatError(err),"retry",retry,"dbName","scAddress",scAddress,"hash",tranHash)
         }
         await sleep(10000);
     }
-    console.log("getTransactionFromDb success","scAddress",scAddress,"lt",lt,"tranHash",tranHash,"retTx",retTx);
+    logger.info("getTransactionFromDb success","scAddress",scAddress,"lt",lt,"tranHash",tranHash,"retTx",retTx);
     return retTx
 }
 
 export async function getEventByTranHash(client:WanTonClient, scAddress:string, lt:string, tranHash:string){
     let tran = await getTransaction(client,scAddress,lt,tranHash);
-    console.log("getEventByTranHash getTransaction success",tran, "tranHash ",tran.hash().toString('hex'));
-    console.log("getEventByTranHash before getEventFromTran","client is WanTonClient",IsWanTonClient(client));
+    logger.info("getEventByTranHash getTransaction success",tran, "tranHash ",tran.hash().toString('hex'));
+    logger.info("getEventByTranHash before getEventFromTran","client is WanTonClient",IsWanTonClient(client));
     return await getEventFromTran(client,tran,scAddress);
 }
 
@@ -348,7 +348,7 @@ export async function getOpCodeFromCell(cell:Cell){
 
 async function handleUserLockEvent(client:WanTonClient, scAddr:Address,tran:Transaction){
 
-    logger.info(formatUtil.format("Entering handleUserLockEvent"),"IsWanTonClient(client)",IsWanTonClient(client));
+    /*logger.info(formatUtil.format("Entering handleUserLockEvent"),"IsWanTonClient(client)",IsWanTonClient(client));
 
     let transResult  = await getTransResult(client,scAddr,tran);
     if (!transResult.success){
@@ -361,18 +361,18 @@ async function handleUserLockEvent(client:WanTonClient, scAddr:Address,tran:Tran
 
     let bodyCellLock = tran.inMessage.body
     let decodedResult = await decodeUserLock(bodyCellLock);
-    console.log("decodeResult of decodeUserLock", decodedResult);
+    logger.info("decodeResult of decodeUserLock", decodedResult);
 
     //handle bridge->bridge(userLock)
     // get parent trans
-    console.log("handleUserLockEvent before get pre transaction","client is WanTonClient",IsWanTonClient(client));
+    logger.info("handleUserLockEvent before get pre transaction","client is WanTonClient",IsWanTonClient(client));
     let preTx = await getTransaction(client,scAddr.toString(),tran.prevTransactionLt.toString(10),bigIntToBytes32(tran.prevTransactionHash).toString('base64'));
     let bodyCell = preTx.inMessage.body
     let bodySlice = bodyCell.beginParse();
     let op = bodySlice.loadUint(32);
     if(op == opcodes.OP_TRANSFER_NOTIFICATION){
         let fromAddrHead = preTx.inMessage.info.src
-        console.log("handleUserLockEvent before getTokenPairInfo","client is WanTonClient",IsWanTonClient(client));
+        logger.info("handleUserLockEvent before getTokenPairInfo","client is WanTonClient",IsWanTonClient(client));
         let ret = await getTokenPairInfo(client,scAddr,decodedResult.tokenPairID)
         // 1. check tokenAccount content with the one get by tokenPairId
         if(!isAddressEqual(decodedResult.addrTokenAccount,ret.tokenAccount)){
@@ -381,7 +381,7 @@ async function handleUserLockEvent(client:WanTonClient, scAddr:Address,tran:Tran
         // 2. check from address is content with the one computed by getJettonAddress
         // build jettonAddress
         let jwAddr = await getJettonAddress(client,Address.parse(ret.tokenAccount),scAddr)
-        console.log("======jwAddr",jwAddr.toString(),"preTx.inMessage.info.src",(preTx.inMessage.info.src as unknown as Address ).toString());
+        logger.info("======jwAddr",jwAddr.toString(),"preTx.inMessage.info.src",(preTx.inMessage.info.src as unknown as Address ).toString());
         if(!isAddressEqual(jwAddr,(preTx.inMessage.info.src as unknown as Address ))){
             throw Error("invalid from address of transfer notification");
         }
@@ -389,7 +389,8 @@ async function handleUserLockEvent(client:WanTonClient, scAddr:Address,tran:Tran
     return {
         valid:true,
         origin:transResult.originAddr.toString()
-    }
+    }*/
+    return handleCommonEvent(client,scAddr,tran);
 }
 
 async function handleCommonEvent(client:WanTonClient, scAddr:Address,tran:Transaction){

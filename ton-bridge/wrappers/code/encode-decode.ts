@@ -507,6 +507,7 @@ export const codeTable = {
     },
     [opcodes.OP_TOKENPAIR_Upsert]: {
         "enCode": function (opts: any): Cell {
+            //console.log("opcodes.OP_TOKENPAIR_Upsert enCode","opts",opts);
             let toBuffer, fromBuffer;
             if (opts.fromChainID == BIP44_CHAINID) {
                 if (opts.fromAccount == "") {
@@ -535,7 +536,10 @@ export const codeTable = {
             } else {
                 jettonAdminBuffer = Address.parseFriendly(opts.jettonAdminAddr).address.hash
             }
-
+            let walletCodeCell = Cell.EMPTY;
+            if(!!opts.walletCodeBase64){
+                walletCodeCell = Cell.fromBase64(opts.walletCodeBase64);
+            }
             logger.info(formatUtil.format("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex')));
             return beginCell()
                 .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
@@ -548,6 +552,7 @@ export const codeTable = {
                 .storeRef(beginCell().storeBuffer(fromBuffer).endCell())
                 .storeRef(beginCell().storeBuffer(toBuffer).endCell())
                 .storeBuffer(jettonAdminBuffer)
+                .storeMaybeRef(walletCodeCell)
                 .endCell()
         },
         "deCode": function (cell: Cell): any {
@@ -569,11 +574,14 @@ export const codeTable = {
             let toBuffer = sliceTo.loadBits(8*toLength);
             sliceTo.endParse();
             logger.info(formatUtil.format("toBuffer=>",toBuffer));
-            let jettonAdmin = slice.loadBits(256)
+            let jettonAdmin = slice.loadBits(256);
+            console.log("OP_TOKENPAIR_Upsert before loadMybeRef begin");
+            let walletCodeCell = slice.loadMaybeRef();
+            console.log("OP_TOKENPAIR_Upsert before loadMybeRef end");
             slice.endParse();
 
             return {
-                opCode,queryID,tokenPairID,fromChainID,toChainID,fromAccount:fromBuffer,toAccount:toBuffer,jettonAdmin:jettonAdmin
+                opCode,queryID,tokenPairID,fromChainID,toChainID,fromAccount:fromBuffer,toAccount:toBuffer,jettonAdmin:jettonAdmin,walletCodeBase64:walletCodeCell.toBoc().toString('base64'),
             }
         },
         "emitEvent": function(opts){

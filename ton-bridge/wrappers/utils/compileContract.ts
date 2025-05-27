@@ -53,7 +53,7 @@ export async function doCompile(conf:CompilerConfig,resultFilePath?:string){
         let codeCell = Cell.fromBoc(Buffer.from(ret?.codeBase64, "base64"))[0];
         return {
             status:true,
-            codeCell:codeCell
+            codeCell:codeCell,
         }
     }
 

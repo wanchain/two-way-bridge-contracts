@@ -7,7 +7,7 @@ const jettonTokenInfoPath = "../testData/jettonTokenInfo.json";
 let tokenInfo = require('../testData/tokenInfo.json')
 const tokenInfoPath = "../testData/tokenInfo.json";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApiNoDb} from "../config/config-ex";
 
 import {Address, toNano, Sender} from '@ton/core';
 import {
@@ -43,12 +43,14 @@ async function writeJettonTokenInfo(path:string,jettonTokenInfo:any){
 async function writeTokenInfo(path:string,jettonTokenInfo:any,jettonName:string){
     console.log("tokenInfo=>",tokenInfo);
     tokenInfo[jettonName].dstTokenAcc = jettonTokenInfo[jettonName].tokenAddress;
+    tokenInfo[jettonName].walletCodeBase64 = jettonTokenInfo[jettonName].walletCodeBase64;
     fs.writeFileSync(path,JSON.stringify(tokenInfo,null,2));
 }
 
 async function init(){
-    await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
+    //await wanTonSdkInit(configMainnet);
+    //await wanTonSdkInit(configTestnet);
+    await wanTonSdkInit(configTestTonApiNoDb);
     client = await getClient();
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     nonDeployer = await getWalletByPrvKey(Buffer.from(prvList[1],'hex'));
@@ -97,8 +99,8 @@ async function main() {
                 wallet_code: retWallet.codeCell,
             },
             retMinter.codeCell));
-
     jettonTokenInfo[jettonName].tokenAddress =jettonMinterOpened.address.toString();
+    jettonTokenInfo[jettonName].walletCodeBase64 = retWallet.codeCell.toBoc().toString('base64');
     await writeJettonTokenInfo(jettonTokenInfoPath,JSON.stringify(jettonTokenInfo,null,2));
     await writeTokenInfo(tokenInfoPath,jettonTokenInfo,jettonName);
 

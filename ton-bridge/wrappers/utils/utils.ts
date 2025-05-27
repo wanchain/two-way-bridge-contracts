@@ -267,6 +267,10 @@ function extractErrorDetails(err, depth = 0, maxDepth = 3) {
     if(err.response?.data){
         details['response.data.error'] = err.response?.data;
     }
+
+    if(err instanceof Error) {
+        details['stack'] = err.stack
+    }
     return details;
 }
 

@@ -2,7 +2,7 @@
 
 #include "imports/std/stdlib.fc";
 #include "imports/common/opcode.fc";
-
+#include "imports/common/wkchain.fc";
 
 
 {-
@@ -36,7 +36,7 @@ const int DICTIONARY_KEY_LEN = 32;
 
 
 ;; Helper functions for tokenPair struct
-(int, slice, int, slice,slice) load_tokenPair(slice cs) inline {
+(int, slice, int, slice,slice,cell) load_tokenPair(slice cs) inline {
     var fromChainID = cs~load_uint(32);
     var toChainID = cs~load_uint(32);
     var fromAccountLen = cs~load_uint(8);
@@ -44,23 +44,40 @@ const int DICTIONARY_KEY_LEN = 32;
     var toAccountLen = cs~load_uint(8);
     var toAccount = cs~load_bits(8 * toAccountLen);
     var jettonAdminAddr = cs~load_bits(256);
-    return (fromChainID, fromAccount, toChainID, toAccount,jettonAdminAddr);
+
+    var walletCodeCell = cs~load_maybe_ref();
+    return (fromChainID, fromAccount, toChainID, toAccount,jettonAdminAddr,walletCodeCell);
 }
 
 
 ;; Get a tokenPair by ID
-(int, slice, int, slice,slice) tm_get_token_pair(cell refcell, int id) method_id {
+(int, slice, int, slice,slice,int,cell) tm_get_token_pair(cell refcell, int id) method_id {
     cell tokenPairs = tm_load_data(refcell);
     if (cell_null?(tokenPairs)) {
-        return (0, "", 0,"","");
+        return (0, "", 0,"","",0,begin_cell().end_cell());
     }
     var (tokenPair_slice, found?) = tokenPairs.udict_get?(DICTIONARY_KEY_LEN, id);
     if (found?) {
-        var (fromChainID, fromAccount, toChainID, toAccount, jettonAdminAddr) = load_tokenPair(tokenPair_slice);
-        return (fromChainID, fromAccount, toChainID, toAccount,jettonAdminAddr);
+        var (fromChainID, fromAccount, toChainID, toAccount, jettonAdminAddr, walletCodeCell) = load_tokenPair(tokenPair_slice);
+        return (fromChainID, fromAccount, toChainID, toAccount,jettonAdminAddr,-1,walletCodeCell);
     } else {
-        return (0, "", 0,"",""); ;; Return default values if not found
+        return (0, "", 0,"","",0,begin_cell().end_cell()); ;; Return default values if not found
     }
+}
+
+;; Get a tokenPair by ID
+(slice,int) tm_get_token_address(cell refcell, int id) method_id {
+    (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr,int exist,_) = tm_get_token_pair(refcell, id);
+    if ( exist  == 0 ){
+        return ("",0);
+    }
+    slice tokenAccount = begin_cell().end_cell().begin_parse();
+    if (srcChainId == BIP44_CHAINID) {
+        tokenAccount = fromAccount;
+    } else {
+        tokenAccount = dstAccount;
+    }
+    return (tokenAccount,-1);
 }
 
 
@@ -111,6 +128,8 @@ const int DICTIONARY_KEY_LEN = 32;
         slice toAccount = toAccountSlice~load_bits(8 * toAccountLen);
         slice jettonAdminAddr = in_msg_body~load_bits(256);
 
+        cell walletCode = in_msg_body~load_maybe_ref();
+
         ~strdump("333");
         tokenPairs~udict_set_builder(DICTIONARY_KEY_LEN, id, 
             begin_cell().store_uint(fromChainID, 32)
@@ -120,6 +139,7 @@ const int DICTIONARY_KEY_LEN = 32;
             .store_uint(toAccountLen, 8)
             .store_slice(toAccount)
             .store_slice(jettonAdminAddr)
+            .store_maybe_ref(walletCode)
         );
         ~strdump("444");
         return tm_generate_data(tokenPairs);

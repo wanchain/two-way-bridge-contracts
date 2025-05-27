@@ -3,11 +3,12 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 const moment = require('moment');
 const path = require('path');
 
+
 const customFormat = winston.format.printf(({ level, message, timestamp}) => {
     return `${timestamp} [${level}]: ${message}`;
 });
 
-class Logger {
+export class Logger {
     private filePath: any;
     private errorFilePath: string;
     private level: string;
@@ -45,9 +46,12 @@ class Logger {
                 // - Write to all logs with level `level` and below to file
                 // - Write all logs error (and below) to errorFile.
                 //
-                new winston.transports.Console({
-                    handleExceptions: true
-                }),
+
+
+                // new winston.transports.Console({
+                //     handleExceptions: true
+                // }),
+
                 new (DailyRotateFile)({
                     filename: this.filePath,
                     level: level,
@@ -62,35 +66,41 @@ class Logger {
     }
 
     debug(...params) {
+        let msgFull = params.join(" ")
         try {
-            this.logger.debug(...params);
+            this.logger.debug(msgFull);
         } catch (err) {
             this.error(err);
         }
     }
 
     info(...params) {
+        let msgFull = params.join(" ")
         try {
-            this.logger.info(...params);
+            this.logger.info(msgFull);
         } catch (err) {
             this.error(err);
         }
     }
 
     warn(...params) {
+        let msgFull = params.join(" ")
         try {
-            this.logger.warning(...params);
+            this.logger.warning(msgFull);
         } catch (err) {
             this.error(err);
         }
     }
 
     error(...params) {
+        let msgFull = params.join(" ")
         try {
-            this.logger.error(...params);
+            this.logger.error(msgFull);
         } catch (err) {
             console.log(err);
         }
     }
 }
-export const logger = new Logger("wan-ton-sdk", './log/wan-ton-sdk.out', './log/wan-ton-sdk.err', global.SDK_LOG_LEVEL);
+
+const LOG_ROOT = path.join(__dirname,"../log/")
+export const logger = new Logger("wan-ton-sdk", path.join(LOG_ROOT,'wan-ton-sdk.out'),path.join(LOG_ROOT,'wan-ton-sdk.err'), global.SDK_LOG_LEVEL);

@@ -20,7 +20,7 @@ const prvList = require('../testData/prvlist')
 let client = null;
 
 async function init(){
-    await wanTonSdkInit(configMainnet);
+    //await wanTonSdkInit(configMainnet);
     await wanTonSdkInit(configTestnet);
     client = await getClient();
 }
@@ -39,6 +39,9 @@ async function main() {
 }
 
 main();
+
+// ts-node getJettonInfo-ex.ts EQB7MS_HPERUy7btkQlbgn3L4GQN_eqoev_D3jv6DvH9OxqL
+// ts-node getJettonInfo-ex.ts EQDPFoyEUdur7g9c0nNn8rGX08TedRsvc_aik0nohFn8v1eF
 
 // ts-node getJettonInfo-ex.ts EQC9vzT9V5F6wHXRnpDU2blgMBdeQBMJvLUmw_JISfpYKud7
 // ts-node getJettonInfo-ex.ts kQBPs490SptIknaQy18XUJ5zUMrQ4Gl8BgHgfxPf-_59R7Mw
