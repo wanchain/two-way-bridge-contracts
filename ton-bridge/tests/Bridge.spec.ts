@@ -286,6 +286,7 @@ describe('Bridge', () => {
 
         printCaseSeperator(it.name)
     });
+
     it('should Mint wrapped token success', async () => {
 
         // mint  100 dog to alice
@@ -404,7 +405,7 @@ describe('Bridge', () => {
         );
         printCaseSeperator(it.name)
     });
-    /*it('[userLock original token] queryId not equal', async () => {
+    it('[userLock original token] queryId not equal', async () => {
         let smgID = "0x000000000000000000000000000000000000000000746573746e65745f303638";
         let tokenPairID = tokenInfo.tokenOrg.tokenPairId;
         let crossValue = BigInt(toNano(1));

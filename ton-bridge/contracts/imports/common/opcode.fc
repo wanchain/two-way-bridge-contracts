@@ -10,6 +10,7 @@ const OP_COMMON_SetHalt                 = 0x20000004;
 ;; const OP_COMMON_Initialize              = 0x20000005;
 const OP_COMMON_Finished                = 0x2000000F;
 
+
 const OP_FEE                            = 0x30000000;
 const OP_FEE_SetChainFee                = 0x30000001;
 const OP_FEE_SetChainFees               = 0x30000002;
@@ -27,6 +28,7 @@ const OP_CROSS_UserBurn                 = 0x40000003;
 const OP_CROSS_UserRelease              = 0x40000004;
 const OP_CROSS_SmgRelease               = 0x40000005;
 const OP_CROSS_TransOwner               = 0x40000006;
+const OP_CROSS_ERROR                    = 0x40000007;
 
 
 const OP_TOKENPAIR                      = 0x50000000;
@@ -66,8 +68,10 @@ const OP_GROUPAPPROVE_Proposol_TransferOracleAdmin    = 0xa0000018;
 const OP_GROUPAPPROVE_Proposol_TransferOperator    = 0xa000001;
 const OP_GROUPAPPROVE_Proposol_UpgradeSc    = 0xa000001a;
 
-
 const OP_FETCH_GPK                         = 0xb0000001;
+
+const OP_COMMON_ERROR_CODE = 0xc0000001;
+
 const OP_TRANSFER_NOTIFICATION = 0x7362d09c; ;;op::transfer_notification = 0x7362d09c;
 const OP_TRANSFER = 0xf8a7ea5;  ;; transfer const int op::transfer = 0xf8a7ea5;
 const OP_EXCESSES = 0xd53276db; ;;const int op::excesses = 0xd53276db;

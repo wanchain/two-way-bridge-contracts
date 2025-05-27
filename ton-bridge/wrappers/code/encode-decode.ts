@@ -1,9 +1,3 @@
-import {
-    OP_CROSS_SmgRelease,
-    OP_FEE_SetSmgFeeProxy,
-    OP_GROUPAPPROVE_Execute,
-    OP_GROUPAPPROVE_Proposol_SetSmgFeeProxy
-} from "../opcodes";
 import {Address, beginCell, Cell, SendMode} from "@ton/core";
 import * as opcodes from "../opcodes";
 import {BIP44_CHAINID, TON_COIN_ACCOUT, TON_COIN_ACCOUNT_STR, WK_CHIANID} from "../const/const-value";

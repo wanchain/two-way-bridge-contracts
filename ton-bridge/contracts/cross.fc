@@ -14,6 +14,8 @@
 #include "imports/signature/sig-header.fc";
 #include "fee.fc";
 
+const SEND_SELF_TRAN_VALUE = 400000000;
+
 () send_fee_to_proxy(slice proxyAddress, int fee) impure {
     ~strdump("send_fee_to_proxy....");
     var msg = begin_cell()
@@ -23,6 +25,25 @@
         .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
         .end_cell();
     send_raw_message(msg, IGNORE_ERRORS + PAY_FEES_SEPARATELY);
+    return ();
+
+}
+
+() send_error_code_to_self(int queryId,int errorCode) impure {
+    ~strdump("Entering send_error_code_to_self");
+    var errorCode = begin_cell()
+        .store_uint(OP_CROSS_ERROR, 32)
+        .store_uint(queryId, 64)
+        .store_uint(errorCode, 256)
+        .end_cell();
+
+    var msg = begin_cell()
+        .store_uint(msg_flag::bounceable, 6)
+        .store_slice(my_address())
+        .store_coins(SEND_SELF_TRAN_VALUE)
+        .store_msgbody_prefix_ref(errorCode)
+        .end_cell();
+    send_raw_message(msg,PAY_FEES_SEPARATELY);
     return ();
 
 }
@@ -190,12 +211,8 @@
             slice myAddressHashSlice = int_to_slice(hash, 256);
 
             if (equal_slices(hashSenderSlice, myAddressHashSlice) == 0) {
-                ;;
-                ;; throw("token lock not from my_address");
-                ;; check the token lock message from my_address.
-                ;; how to compute the from address is the Jetton wallet address of my_address?
+                throw(error::cross_lock_token_invalid_sender);
             }
-
 
             if (equal_slices(jettonAdminAddr, myAddressHashSlice)) {
                 userLock_wrapped_jetton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount, intProxyFeeAddr);
@@ -228,12 +245,14 @@
             ~dump(hash);
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             ;;throw_arg("queryId not equal",error::cross_query_id_not_equal);
+            send_error_code_to_self(queryId,error::cross_query_id_not_equal);
             return (originAddress, refundValue, oracle);
         }
         if (jettonAmount != crossValue) {
             ~strdump("555");
             ;;send_token(queryId,jettonAmount,originAddress,jwAddressBridgeFromMsg,0,200000000,my_address());
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
+            send_error_code_to_self(queryId,error::cross_invalid_jetton_amount);
             ;;throw_arg("jettonAmount is not equal to crossValue",error::cross_invalid_jetton_amount); ;;//
             return (originAddress, refundValue, oracle);
         }
@@ -245,6 +264,7 @@
             ~strdump("666");
             ;;throw_if(error::cross_ton_not_enough, fee  > msgValue );
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
+            send_error_code_to_self(queryId,error::cross_ton_not_enough);
             return (originAddress, refundValue, oracle);
         }
 
@@ -252,14 +272,17 @@
         (slice tokenAccount, int exist) = tm_get_token_address(tokenManager, tokenPairId);
         if (exist == 0) {
             ~strdump("777");
-            ;;throw_unless( error::tm_tokenpair_not_exist, exist);
+
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
+            send_error_code_to_self(queryId,error::tm_tokenpair_not_exist);
             return (originAddress, refundValue, oracle);
         }
 
-        (_, slice tokenAcountFromMsgHash) =  parse_std_addr(tokenAcountFromMsg);
-        if (equal_slice_bits(tokenAcountFromMsgHash, tokenAccount) == 0) {
+        (_, int tokenAcountFromMsgHash) =  parse_std_addr(tokenAcountFromMsg);
+        slice tokenAcountFromMsgHashSlice = int_to_slice(tokenAcountFromMsgHash,256);
+        if (equal_slice_bits(tokenAcountFromMsgHashSlice, tokenAccount) == 0) {
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
+            send_error_code_to_self(queryId,error::cross_lock_token_account_error);
             return (originAddress, refundValue, oracle);
         }
 
@@ -269,6 +292,7 @@
         if (equal_slice_bits(jwAddrBridge, senderAddr) == 0) {
 
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
+            send_error_code_to_self(queryId,error::cross_lock_token_invalid_sender);
             return (originAddress, refundValue, oracle);
         }
         ;; send message to itself and invoke userLock
@@ -363,6 +387,14 @@
             }
         }
         return (originAddress, refundValue, new_oracle);
+    }
+
+    if ( op == OP_CROSS_ERROR ) {
+        ~strdump("Entering OP_CROSS_ERROR");
+        int errorCode = inMsgBody~load_uint(256);
+        ~dump(errorCode);
+        throw(errorCode);
+        return (originAddress, refundValue, oracle);
     }
 
     throw(0xffff);
