@@ -256,57 +256,17 @@
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             return (originAddress, refundValue, oracle);
         }
+
+        (_, slice tokenAcountFromMsgHash) =  parse_std_addr(tokenAcountFromMsg);
+        if (equal_slice_bits(tokenAcountFromMsgHash, tokenAccount) == 0) {
+            revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
+            return (originAddress, refundValue, oracle);
+        }
+
         ;; check sender is JettonWallet(my_address)
-        ;;slice jwAddrBridge = calc_user_wallet(my_address(), tokenAccount, walletCode);
         slice jwAddrBridge = calc_user_wallet(my_address(), tokenAcountFromMsg, walletCode);
 
-        (_, int senderAddrHash) = parse_std_addr(senderAddr);
-        (_, int jwAddrBridgeHash) = parse_std_addr(jwAddrBridge);
-        ~strdump("77771");
-        ~dump(senderAddrHash);
-
-        ~strdump("77772");
-        ~dump(jwAddrBridgeHash);
-        ~dump(jwAddrBridge);
-
         if (equal_slice_bits(jwAddrBridge, senderAddr) == 0) {
-            ~strdump("888");
-
-            {-~dump(jwAddrBridge);
-            ~dump(jwAddressBridgeFromMsg);
-            ~dump(jwAddressSrc);
-            ~dump(jettonAdminAddr);
-            ~dump(senderAddr);
-            ~dump(my_address());-}
-
-            ;;~strdump("999");
-            {-~strdump("8881");
-            (_, int jwAddrBridgeHash) = parse_std_addr(jwAddrBridge);
-            ~dump(jwAddrBridgeHash);-}
-
-            {-~strdump("8882");
-            (_, int jwAddressBridgeFromMsgHash) = parse_std_addr(jwAddressBridgeFromMsg);
-            ~dump(jwAddressBridgeFromMsgHash);-}
-
-            {-~strdump("8883");
-            (_, int jwAddressSrcHash) = parse_std_addr(jwAddressSrc);
-            ~dump(jwAddressSrcHash);-}
-
-            {-~strdump("8884");
-            (_, int jettonAdminAddrHash) = parse_std_addr(jettonAdminAddr);
-            ~dump(jettonAdminAddrHash);-}
-
-            ~strdump("8884");
-            (int tokenAccountHash) = slice_to_int(tokenAccount,256);
-            ~dump(tokenAccountHash);
-
-            ~strdump("8885");
-            (_, int senderAddrHash) = parse_std_addr(senderAddr);
-            ~dump(senderAddrHash);
-
-            ~strdump("8886");
-            (_, int my_addressHash) = parse_std_addr(my_address());
-            ~dump(my_addressHash);
 
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             return (originAddress, refundValue, oracle);
