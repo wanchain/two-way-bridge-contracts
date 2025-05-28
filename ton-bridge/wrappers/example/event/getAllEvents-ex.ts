@@ -6,6 +6,7 @@ import {getEventByTranHash, getEvents} from "../../event/getEvents";
 import {logger} from "../../utils/logger";
 import {DBAccess} from "../../db/DbAccess";
 import {Address} from "@ton/core";
+import {convertTranToTonTrans} from "../../db/common";
 
 const args = process.argv.slice(2);
 
@@ -29,6 +30,10 @@ async function main() {
     let client = await getClient();
 
     setInterval(async () => {
+
+        console.log("\n\n\n===================================getAllEvents===================================\n");
+        console.log("\n===================================getAllEvents===================================\n\n\n");
+
         let tonTrans = [];
         if (!dbAcces?.has(scBridgeAddr)) {
             await dbAcces.addDbByName(scBridgeAddr);
@@ -46,7 +51,8 @@ async function main() {
                 console.log("scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
                 let ret = await getEventByTranHash(client, scBridgeAddr, tonTran.lt.toString(10), tonTran.hash().toString('hex'));
                 console.log("JacobEvent ret = ", ret);
-
+                let tranTonTemp = convertTranToTonTrans([tonTran]);
+                await dbAcces.setTranHandleFlag(scBridgeAddr,tranTonTemp[0],true);
             } catch (err) {
                 console.error(err.code, err.response?.data?.error)
             }

@@ -197,7 +197,7 @@ class DB {
         let copy = {};
         const release = await this.mutex.acquire();
         try {
-            this.logger.info("Entering setTranHandleFlag");
+            this.logger.info("Entering setTranHandleFlag","hash",tran.hash,"lt",tran.lt,"dbName",this.dbName,"finishOrNot",finishOrNot);
             copy = _.cloneDeep(this.db.getState())
 
             this.db.get('trans').find({hash: tran.hash,lt:tran.lt})
@@ -205,7 +205,7 @@ class DB {
                 .write()
         } catch (err) {
             this.db.setState(copy)
-            this.logger.info("setTranHandleFlag","err",formatError(err));
+            this.logger.error("Entering setTranHandleFlag","err",formatError(err),"hash",tran.hash,"lt",tran.lt,"dbName",this.dbName,"finishOrNot",finishOrNot);
         }
         finally {
             release();
@@ -222,7 +222,7 @@ class DB {
                 await this.setTranHandleFlag(trans[i],finishOrNots[i]);
             }
         }catch(err){
-            this.logger.info("setTranHandleFlag","err",formatError(err));
+            this.logger.info("setTranHandleFlags","err",formatError(err));
         }
     }
     // isInitial (true->false)
@@ -235,7 +235,7 @@ class DB {
             this.db.set('isInitial', false).write();
         }catch(err){
             this.db.setState(copy);
-            this.logger.info("setScanStarted","err",formatError(err));
+            this.logger.error("setScanStarted","err",formatError(err));
         }
         finally {
             release();
@@ -251,7 +251,7 @@ class DB {
             return this.db.get('isInitial').value();
         }catch(err){
             this.db.setState(copy);
-            this.logger.info("setScanStarted","err",formatError(err));
+            this.logger.error("setScanStarted","err",formatError(err));
         }
         finally {
             release();
@@ -309,7 +309,7 @@ class DB {
                 this.logger.info("----------------------after scanTonTxByTask--------------","output tasks",retOneTask,"input task",tasks[i]);
                 retTask.push(...retOneTask);
             }catch(err){
-                this.logger.info("scanTonTxByTasks err",formatError(err));
+                this.logger.error("scanTonTxByTasks err",formatError(err));
                 retTask.push(tasks[i]);
             }
         }
@@ -765,7 +765,7 @@ class DB {
             this.logger.info("getTxByMsg");
             copy = _.cloneDeep(this.db.get('trans').value());
         } catch (err) {
-            this.logger.info("getTxByMsg", "err", formatError(err),"dbName",this.dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
+            this.logger.error("getTxByMsg", "err", formatError(err),"dbName",this.dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
         } finally {
             release();
         }
@@ -778,7 +778,7 @@ class DB {
                     BigInt(item.in.createdLt) == lt);
             })
         } catch (err) {
-            this.logger.info("getTxByMsg", "err", formatError(err),"dbName",this.dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
+            this.logger.error("getTxByMsg", "err", formatError(err),"dbName",this.dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
         } finally {
             copy = null;
         }
@@ -792,7 +792,7 @@ class DB {
             this.logger.info("getTxByMsg");
             copy = _.cloneDeep(this.db.get('trans').value());
         } catch (err) {
-            this.logger.info("getTxByOnlyMsgHash", "err", formatError(err),"dbName",this.dbName,"msgHash",msgHash);
+            this.logger.error("getTxByOnlyMsgHash", "err", formatError(err),"dbName",this.dbName,"msgHash",msgHash);
         } finally {
             release();
         }
