@@ -3,13 +3,13 @@ import {bigIntReplacer, sleep} from "../../utils/utils";
 import {configTestnet, configMainnet, configTestTonApi, configTestTonApiNoDb} from "../../config/config-ex";
 import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
 import {getEventByTranHash, getEvents} from "../../event/getEvents";
-import { logger } from "../../utils/logger";
+import {logger} from "../../utils/logger";
 import {DBAccess} from "../../db/DbAccess";
 import {Address} from "@ton/core";
 
 const args = process.argv.slice(2);
 
-async function main(){
+async function main() {
     //await wanTonSdkInit(configMainnet);
     //await wanTonSdkInit(configTestnet);
     await wanTonSdkInit(configTestTonApi);
@@ -17,13 +17,13 @@ async function main(){
 
     let scBridgeAddr = args[0];
     let dbAcces = await DBAccess.getDBAccess();
-    if(!dbAcces){
+    if (!dbAcces) {
         console.error("not using db cache");
         return;
     }
 
-    console.log("scBridgeAddr",scBridgeAddr);
-    console.log("scBridgeAddr final address",Address.parse(scBridgeAddr).toString());
+    console.log("scBridgeAddr", scBridgeAddr);
+    console.log("scBridgeAddr final address", Address.parse(scBridgeAddr).toString());
 
 
     let client = await getClient();
@@ -36,25 +36,24 @@ async function main(){
         }
         try {
             tonTrans = await dbAcces.getAllTransNotHandled(args[0])
-            console.log("getAllTransNotHandled tonTrans", tonTrans);
+            console.log("getAllTransNotHandled tonTrans.length", tonTrans.length);
         } catch (err) {
             console.error(err.code, err.response?.data?.error)
         }
-        if (tonTrans != null) {
-            for (let tonTran of tonTrans) {
-                try {
 
-                    console.log("scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
-                    let ret = await getEventByTranHash(client, scBridgeAddr, tonTran.lt.toString(10), tonTran.hash().toString('hex'));
-                    console.log("JacobEvent ret = ", ret);
+        for (let tonTran of tonTrans) {
+            try {
+                console.log("scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
+                let ret = await getEventByTranHash(client, scBridgeAddr, tonTran.lt.toString(10), tonTran.hash().toString('hex'));
+                console.log("JacobEvent ret = ", ret);
 
-                } catch (err) {
-                    console.error(err.code, err.response?.data?.error)
-                }
-                await sleep(1000);
+            } catch (err) {
+                console.error(err.code, err.response?.data?.error)
             }
+            await sleep(1000);
         }
-    },100000)
+
+    }, 100000)
 
 }
 

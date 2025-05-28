@@ -130,7 +130,7 @@ async function getTransactionsFromDb(client:WanTonClient,scAddress:string,opts:{
             }
             retTx = await dbAccess?.getTxsByLtRange(scAddress,opts.lt?BigInt(opts.lt):BigInt(0),opts.to_lt?BigInt(opts.to_lt):BigInt(0))
         }catch(err){
-            logger.error("getTxByHashLt err",formatError(err),"retry",retry,"dbName","scAddress",scAddress,"opts",opts)
+            logger.error("getTxsByLtRange err",formatError(err),"retry",retry,"dbName","scAddress",scAddress,"opts",opts)
         }
         await sleep(10000);
     }

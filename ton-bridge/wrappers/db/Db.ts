@@ -693,7 +693,7 @@ class DB {
 
         let result: TonTransaction = null;
         try {
-            this.logger.error("getTxByHashLt","txHash",txHash,"lt",lt,"dbName",this.dbName);
+            this.logger.info("getTxByHashLt","txHash",txHash,"lt",lt,"dbName",this.dbName);
             result = _.filter(copy, (item) => {
                 return ((item.hash == txHash) && item.lt == lt);
             })
@@ -719,7 +719,7 @@ class DB {
 
         let result: TonTransaction = null;
         try {
-            this.logger.error("getTxsByLtRange","lt",lt,"dbName",this.dbName);
+            this.logger.info("getTxsByLtRange","lt",lt,"dbName",this.dbName,"to_lt",to_lt);
             result = _.filter(copy, (item) => {
                 return ((item.lt > to_lt) && item.lt <= lt);
             })
@@ -730,6 +730,33 @@ class DB {
         }
         return result;
     }
+
+    async getAllTransNotHandledByRange(lt:bigint,to_lt:bigint){
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            this.logger.info("getAllTransNotHandledByRange");
+            copy = _.cloneDeep(this.db.get('trans').value());
+        } catch (err) {
+            this.logger.error("getAllTransNotHandledByRange", "err", formatError(err),"to_lt",to_lt,"lt",lt);
+        } finally {
+            release();
+        }
+
+        let result: TonTransaction = null;
+        try {
+            this.logger.info("getAllTransNotHandledByRange","lt",lt,"dbName",this.dbName,"to_lt",to_lt);
+            result = _.filter(copy, (item) => {
+                return ((item.lt > to_lt) && item.lt <= lt) && (item.emitEventOrNot == false);
+            })
+        } catch (err) {
+            this.logger.error("getAllTransNotHandledByRange", "err", formatError(err),"to_lt",to_lt,"lt",lt,"dbName",this.dbName);
+        } finally {
+            copy = null;
+        }
+        return result;
+    }
+
 
     async getTxByMsg(msgHash:string,bodyHash:string,lt:bigint){
         let copy = {};

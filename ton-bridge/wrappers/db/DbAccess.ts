@@ -178,6 +178,18 @@ export class DBAccess {
         }
     }
 
+    async getAllTransNotHandledByRange(dbName:string,lt:bigint,to_lt:bigint){
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getAllTransNotHandledByRange(lt,to_lt);
+        if(!ret || ret.length == 0) {
+            return null;
+        }else{
+            return convertTonTransToTrans(ret);
+        }
+    }
+
     async getTxByOnlyMsgHash(dbName:string,msgCellHash:string){
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
