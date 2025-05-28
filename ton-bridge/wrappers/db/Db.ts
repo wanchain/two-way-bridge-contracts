@@ -151,8 +151,19 @@ class DB {
         try {
             copy = _.cloneDeep(this.db.getState())
             _.forEach(trans, tran => {
-                this.db.get('trans').value().push(tran);
+                /*let exist = null;
+                exist = this.db.get('trans').find({lt:tran.lt});*/
+                const exist = this.db.get('trans').find({lt:tran.lt}).value();
+                this.logger.info("insertTrans ","dbName",this.dbName,"lt",tran.lt,"exist",exist);
+                if(!!!exist){
+                    this.db.get('trans').value().push(tran);
+                    this.logger.info("insertTrans inserting ","dbName",this.dbName,"lt",tran.lt);
+                }else{
+                    this.logger.info("insertTrans duplicated","dbName",this.dbName,"lt",tran.lt);
+                }
+                //this.db.get('trans').value().push(tran);
             });
+            //let uniqueTrans = _.uniqBy(this.db.get('trans').value(),'lt');
             this.db.write();
         }catch(err){
             this.db.setState(copy);

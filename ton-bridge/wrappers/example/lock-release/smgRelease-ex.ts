@@ -1,29 +1,29 @@
 import {TonClient} from "@ton/ton";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {buildUserLockMessages} from "../code/userLock";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
+import {buildUserLockMessages} from "../../code/userLock";
 import {Address, toNano} from "@ton/core";
-import {BridgeAccess} from "../contractAccess/bridgeAccess";
-import {getQueryID, sleep} from "../utils/utils";
-import {common} from "../common";
-import {BIP44_CHAINID, TON_COIN_ACCOUNT_STR, TON_COIN_ACCOUT} from "../const/const-value";
+import {BridgeAccess} from "../../contractAccess/bridgeAccess";
+import {getQueryID, sleep} from "../../utils/utils";
+import {common} from "../../common";
+import {BIP44_CHAINID, TON_COIN_ACCOUNT_STR, TON_COIN_ACCOUT} from "../../const/const-value";
 
-import {getJettonAddress } from "../wallet/jetton";
+import {getJettonAddress } from "../../wallet/jetton";
 
-const schnorr = require("../sign/tools-secp256k1.js");
+const schnorr = require("../../sign/tools-secp256k1.js");
 import * as util from "node:util";
-import {TON_FEE} from "../fee/fee";
+import {TON_FEE} from "../../fee/fee";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
-import {WanTonClient} from "../client/client-interface";
-const prvList = require('../testData/prvlist')
+import {configTestnet,configMainnet} from "../../config/config-ex";
+import {WanTonClient} from "../../client/client-interface";
+const prvList = require('../../testData/prvlist')
 const prvAlice = Buffer.from(prvList[1],'hex');
 const prvBob = Buffer.from(prvList[2],'hex');
 
-const scAddresses = require('../testData/contractAddress.json');
+const scAddresses = require('../../testData/contractAddress.json');
 
-const smgCfg = require('../testData/smg.json');
-const tokenInfo = require('../testData/tokenInfo.json');
+const smgCfg = require('../../testData/smg.json');
+const tokenInfo = require('../../testData/tokenInfo.json');
 let smgID = smgCfg.smgId
 let smgReleaseValue = toNano('0.1')
 let bridgeScAddr = scAddresses.bridgeAddress
@@ -32,7 +32,7 @@ let smgAgentFee = BigInt(1000); // should get from contract.
 let dstUserAccount = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"
 let aliceSender;
 
-let smgConfig = require('../testData/smg.json')
+let smgConfig = require('../../testData/smg.json')
 
 
 let client = null;
@@ -65,7 +65,7 @@ async function getAgentFee(tokenPairID:number,srcChainId:number,dstChainId:numbe
         return tokenPairFee.agentFee
     }
 }
-const jetton = require('../wallet/jetton');
+const jetton = require('../../wallet/jetton');
 
 async function getJettonWalletAddr(client:WanTonClient,tokenAccountAddr:Address,ownerAddress:Address){
     if(tokenAccountAddr.equals(Address.parse(TON_COIN_ACCOUNT_STR))){

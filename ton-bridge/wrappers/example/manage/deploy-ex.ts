@@ -1,16 +1,16 @@
-import {TON_FEE} from "../fee/fee";
+import {TON_FEE} from "../../fee/fee";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet,configMainnet} from "../../config/config-ex";
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
-import {Bridge} from '../Bridge';
-import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {compileContract, CR, writeCR,doCompile} from "../utils/compileContract";
+import {Bridge} from '../../Bridge';
+import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {compileContract, CR, writeCR,doCompile} from "../../utils/compileContract";
 import fs_1 from "fs";
 
 
-const prvList = require('../testData/prvlist')
-const addressList = require('../testData/addressList')
+const prvList = require('../../testData/prvlist')
+const addressList = require('../../testData/addressList')
 
 let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let client = null;
@@ -20,8 +20,8 @@ let bridgeOpened = null;
 
 let deployerValue = TON_FEE.TRANS_FEE_DEPLOY;
 
-import {conf } from "../testData/bridge.compile.func"
-let filePath = "../testData/bridge.compiled.json";
+import {conf } from "../../testData/bridge.compile.func"
+let filePath = "../../testData/bridge.compiled.json";
 
 async function buildCodeCell(){
 

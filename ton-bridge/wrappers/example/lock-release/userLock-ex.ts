@@ -1,21 +1,21 @@
 import {TonClient} from "@ton/ton";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {buildUserLockMessages} from "../code/userLock";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
+import {buildUserLockMessages} from "../../code/userLock";
 import {toNano} from "@ton/core";
-import {BridgeAccess} from "../contractAccess/bridgeAccess";
-import {sleep} from "../utils/utils";
-import {TON_FEE} from "../fee/fee";
+import {BridgeAccess} from "../../contractAccess/bridgeAccess";
+import {sleep} from "../../utils/utils";
+import {TON_FEE} from "../../fee/fee";
 
-import {configTestnet, configMainnet, configTestTonApi, configTestTonApiNoDb} from "../config/config-ex";
-const prvList = require('../testData/prvlist')
+import {configTestnet, configMainnet, configTestTonApi, configTestTonApiNoDb} from "../../config/config-ex";
+const prvList = require('../../testData/prvlist')
 const prvAlice = Buffer.from(prvList[1],'hex');
 const prvBob = Buffer.from(prvList[2],'hex');
 
-const scAddresses = require('../testData/contractAddress.json');
+const scAddresses = require('../../testData/contractAddress.json');
 
-const smgCfg = require('../testData/smg.json');
-const tokenInfo = require('../testData/tokenInfo.json');
+const smgCfg = require('../../testData/smg.json');
+const tokenInfo = require('../../testData/tokenInfo.json');
 let smgID = smgCfg.smgId
 let crossValue = toNano('0.1')
 let bridgeScAddr = scAddresses.bridgeAddress

@@ -1,3 +1,6 @@
+import {wanTonSdkInit} from "../client/client";
+import {configTestTonApi, configTestTonApiNoDb} from "../config/config-ex";
+
 const DB = require("../db/Db").DB;
 const RangeOpen = require("../db/Db").RangeOpen;
 let testDB;
@@ -79,6 +82,7 @@ describe('DB', () => {
 
 
     beforeEach(async () => {
+        await wanTonSdkInit(configTestTonApiNoDb);
         console.log("DB beforeAll");
         testDB = new DB('test');
         await testDB.init('testDb');

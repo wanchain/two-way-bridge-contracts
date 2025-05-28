@@ -1,22 +1,22 @@
-import {conf } from "../testData/bridge.compile.func"
-let filePath = "../testData/bridge.compiled.json";
-import {doCompile} from "../utils/compileContract";
-import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {getQueryID} from "../utils/utils";
-import {BridgeAccess} from "../contractAccess/bridgeAccess";
+import {conf } from "../../testData/bridge.compile.func"
+let filePath = "../../testData/bridge.compiled.json";
+import {doCompile} from "../../utils/compileContract";
+import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {getQueryID} from "../../utils/utils";
+import {BridgeAccess} from "../../contractAccess/bridgeAccess";
 import {toNano} from "@ton/core";
-import {TON_COIN_ACCOUNT_STR} from "../const/const-value";
-import {TON_FEE} from "../fee/fee";
+import {TON_COIN_ACCOUNT_STR} from "../../const/const-value";
+import {TON_FEE} from "../../fee/fee";
 
-const prvList = require('../testData/prvlist')
+const prvList = require('../../testData/prvlist')
 
 let client = null;
 let queryID;
 let deployer;
-import {configTestnet, configMainnet, configTestTonApiNoDb} from "../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
 
-const scAddresses = require('../testData/contractAddress.json');
+const scAddresses = require('../../testData/contractAddress.json');
 (async function main() {
     await init();
     let ret = await doCompile(conf,filePath);

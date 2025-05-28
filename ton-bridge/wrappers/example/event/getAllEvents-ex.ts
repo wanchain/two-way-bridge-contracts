@@ -1,10 +1,10 @@
-import {bigIntReplacer, sleep} from "../utils/utils";
+import {bigIntReplacer, sleep} from "../../utils/utils";
 
-import {configTestnet, configMainnet, configTestTonApi} from "../config/config-ex";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {getEventByTranHash, getEvents} from "../event/getEvents";
-import { logger } from "../utils/logger";
-import {DBAccess} from "../db/DbAccess";
+import {configTestnet, configMainnet, configTestTonApi, configTestTonApiNoDb} from "../../config/config-ex";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {getEventByTranHash, getEvents} from "../../event/getEvents";
+import { logger } from "../../utils/logger";
+import {DBAccess} from "../../db/DbAccess";
 import {Address} from "@ton/core";
 
 const args = process.argv.slice(2);
@@ -13,6 +13,7 @@ async function main(){
     //await wanTonSdkInit(configMainnet);
     //await wanTonSdkInit(configTestnet);
     await wanTonSdkInit(configTestTonApi);
+    //await wanTonSdkInit(configTestTonApiNoDb);
 
     let scBridgeAddr = args[0];
     let dbAcces = await DBAccess.getDBAccess();

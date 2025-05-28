@@ -9,6 +9,8 @@ import {Address} from "@ton/core";
 import {getGlobalTonConfig,getDBDataDir} from "../client/client";
 import {ensureDirectoryExists, ensurePath} from "../utils/utils";
 
+import {logger} from '../utils/logger'
+
 let dbAccess:DBAccess = null;
 
 async function runAsyncTask(db:typeof DB) {
@@ -63,7 +65,7 @@ export class DBAccess {
     }
 
     async addDbByName(dbName:string){
-        console.log("before addDbByName","dbName",dbName,"dbs.length",this.dbs.size);
+        logger.info("before addDbByName","dbName",dbName,"dbs.length",this.dbs.size);
         if(this.has(dbName)){
             throw new Error(`db ${dbName} already exists`);
         }
@@ -71,7 +73,7 @@ export class DBAccess {
         let db = new DB(dbNameFinal);
         await db.init(dbNameFinal);
         this.dbs.set(db.getDbName(),db);
-        console.log("after addDbByName","dbName",dbName,"dbNameFinal",dbNameFinal,"dbs.length",this.dbs.size);
+        logger.info("after addDbByName","dbName",dbName,"dbNameFinal",dbNameFinal,"dbs.length",this.dbs.size);
         await runAsyncTask(db);
     }
 
@@ -103,6 +105,7 @@ export class DBAccess {
     }
 
     async getTxByHashLt(dbName:string,txHash: string,lt:string) {
+        logger.info("Entering getTxByHashLt........","dbName",dbName,"txHash",txHash,"lt",lt);
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
@@ -110,11 +113,12 @@ export class DBAccess {
         if(!tonTran || (tonTran.length  == 0) ){
             return null;
         }
+        logger.info("Entering getTxByHashLt before convertTonTransToTrans........","dbName",dbName,"txHash",txHash,"lt",lt,"tonTran.length",tonTran.length);
         return (convertTonTransToTrans(tonTran))[0];
     }
 
     async getTxByMsg(dbName:string,msgHash:string,bodyHash:string,lt:bigint){
-        console.log("Entering getTxByMsg........","dbName",dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
+        logger.info("Entering getTxByMsg........","dbName",dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
@@ -126,7 +130,7 @@ export class DBAccess {
     }
 
     async getTxsByLtRange(dbName:string,lt:bigint,to_lt:bigint){
-        console.log("Entering getTxsByLtRange........","dbName",dbName,"lt",lt,"to_lt",to_lt);
+        logger.info("Entering getTxsByLtRange........","dbName",dbName,"lt",lt,"to_lt",to_lt);
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }

@@ -1,7 +1,7 @@
-import {getClient} from "../client/client";
+import {getClient} from "../../client/client";
 
-const DBAccess = require("../db/DbAccess").DBAccess;
-const scAddress = require('../testData/contractAddress.json');
+const DBAccess = require("../../db/DbAccess").DBAccess;
+const scAddress = require('../../testData/contractAddress.json');
 let scBridgeAddr = scAddress.bridgeAddress;
 
 async function main(){

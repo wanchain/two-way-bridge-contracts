@@ -1,21 +1,21 @@
 import {TonClient} from "@ton/ton";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet,configMainnet} from "../../config/config-ex";
 
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 import {
     getJettonDataContent,
     getJettonData,
     parseWrappedJettonContent
-} from "../wallet/jetton";
+} from "../../wallet/jetton";
 
 let args = process.argv.slice(2)
 let jettonTokenAddress = args[0]
 
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {WanTonClient} from "../client/client-interface";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {WanTonClient} from "../../client/client-interface";
 
-const prvList = require('../testData/prvlist')
+const prvList = require('../../testData/prvlist')
 
 let client = null;
 

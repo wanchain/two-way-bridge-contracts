@@ -1,26 +1,26 @@
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet,configMainnet} from "../../config/config-ex";
 
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 
-import {Bridge} from '../Bridge';
-import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR,BIP44_WANCHAIN_CHAINID} from '../const/const-value';
+import {Bridge} from '../../Bridge';
+import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR,BIP44_WANCHAIN_CHAINID} from '../../const/const-value';
 
-import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
+import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
 
-const smgCfg = require('../testData/smg.json');
+const smgCfg = require('../../testData/smg.json');
 
 const args = process.argv.slice(2);
-const prvList = require('../testData/prvlist')
+const prvList = require('../../testData/prvlist')
 
 let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let client = null;
 
-const scAddresses = require('../testData/contractAddress.json');
-import { BridgeAccess } from "../contractAccess/bridgeAccess";
-import {getQueryID} from "../utils/utils";
+const scAddresses = require('../../testData/contractAddress.json');
+import { BridgeAccess } from "../../contractAccess/bridgeAccess";
+import {getQueryID} from "../../utils/utils";
 import {SandboxContract, TreasuryContract} from "@ton/sandbox";
-import {TON_FEE} from "../fee/fee";
+import {TON_FEE} from "../../fee/fee";
 
 
 async function init(){
@@ -31,9 +31,9 @@ async function init(){
     console.log("client=>",client);
 }
 
-const schnorr = require("../sign/tools-secp256k1.js");
+const schnorr = require("../../sign/tools-secp256k1.js");
 
-let tokenInfo = require('../testData/tokenInfo.json')
+let tokenInfo = require('../../testData/tokenInfo.json')
 
 
 async  function setFee(){

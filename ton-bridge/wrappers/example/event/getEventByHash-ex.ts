@@ -1,10 +1,10 @@
-import {sleep} from "../utils/utils";
+import {sleep} from "../../utils/utils";
 
-import {configTestnet, configMainnet, configTestTonApi} from "../config/config-ex";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {getEventByTranHash, getEvents} from "../event/getEvents";
-import { logger } from "../utils/logger";
-import {IsWanTonClient} from "../client/client-interface";
+import {configTestnet, configMainnet, configTestTonApi} from "../../config/config-ex";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {getEventByTranHash, getEvents} from "../../event/getEvents";
+import { logger } from "../../utils/logger";
+import {IsWanTonClient} from "../../client/client-interface";
 
 const args = process.argv.slice(2);
 
