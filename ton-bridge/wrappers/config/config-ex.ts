@@ -37,6 +37,7 @@ export const configTestTonApi:TonConfig =  {
         network:"testnet", // testnet|mainnet
     },
     usingDbCache:true,
+    scanTrans:false,
     urls:[
         {
             url:'https://testnet.tonapi.io',

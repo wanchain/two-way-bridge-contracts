@@ -54,6 +54,7 @@ export const codeTable = {
             }
         },
         "emitEvent": function (opts){
+            logger.info("begin emitEvent","txHashBase64",opts.txHashBase64,"lt",opts?.lt);
             return {
                 eventName:"UserLockLogger",
                 uniqueID:opts.uniqueID,

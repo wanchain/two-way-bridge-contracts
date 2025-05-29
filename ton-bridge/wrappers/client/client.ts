@@ -25,6 +25,7 @@ export interface TonConfig {
     network:TonClientConfig;
     urls?:TonUrlConfig[];
     usingDbCache?: boolean;
+    scanTrans?:boolean;
 }
 
 
@@ -67,7 +68,7 @@ export async function wanTonSdkInit(tcf:TonConfig){
 
     let dbAccess = await DBAccess.getDBAccess();
     if(dbAccess){
-        await dbAccess.init();
+        await dbAccess.init(g_tonConfig.scanTrans);
     }
 }
 

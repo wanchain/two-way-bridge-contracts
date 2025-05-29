@@ -5,7 +5,7 @@ import {bigIntReplacer, formatError} from "../utils/utils";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
 import {DBAccess} from "../db/DbAccess";
 import {convertTranToTonTrans} from "../db/common";
-import { MAX_LIMIT } from "../const/const-value";
+import {MAX_LIMIT, MAX_RETRY} from "../const/const-value";
 import {WanTonClient} from "../client/client-interface";
 const formatUtil = require('util');
 
@@ -453,7 +453,7 @@ export async function findOnlyMsgCellHashInTran(tran:Transaction,msgCellHash:str
 
 export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgCellHash:string,msgBodyHash:string,lt:string=''):Promise<Transaction> {
     let limit = MAX_LIMIT;
-    let retry = 5
+    let retry = MAX_RETRY;
     let maxRetry = retry;
     //get from scanned db
     let dbAccess = await DBAccess.getDBAccess();
@@ -467,6 +467,7 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
             }
             transFromDb = await dbAccess?.getTxByMsg(scAddr.toString(),msgCellHash,msgBodyHash,BigInt(lt));
             if(transFromDb){  // found from db
+                console.info("getTranByMsgHash from db success","scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
                 return transFromDb;
             }
         }catch(err){
@@ -476,6 +477,7 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
         await sleep(2000);
     }
 
+    console.info("begin getTranByMsgHash from rpc","scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
     //get from rpc
     maxRetry = retry;
 
@@ -500,7 +502,7 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
                 console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,JSON.stringify(opts,bigIntReplacer));
                 let ret = await client.getTransactions(scAddr,opts)
                 transCount = ret.length;
-                console.log("getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
+                console.log("getTranByMsgHash getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
                 for(let tran of ret){
                     console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                     let found = await findMsgCellHashInTran(tran,msgCellHash,msgBodyHash,lt);
@@ -531,7 +533,7 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
 
 export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, msgCellHash:string):Promise<Transaction> {
     let limit = MAX_LIMIT;
-    let retry = 5
+    let retry = MAX_RETRY;
     let maxRetry = retry;
     //get from scanned db
     let dbAccess = await DBAccess.getDBAccess();
@@ -541,7 +543,7 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
             let inDb = await dbAccess?.has(scAddr.toString());
             if(!inDb){
                 await dbAccess.addDbByName(scAddr.toString());
-                await sleep(2000);
+                await sleep(10);
             }
             transFromDb = await dbAccess?.getTxByOnlyMsgHash(scAddr.toString(),msgCellHash);
             if(transFromDb){  // found from db
@@ -550,7 +552,7 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
         }catch(err){
             console.error("getTranByOnlyMsgHash from db err",formatError(err),"retry ",maxRetry);
         }
-        await sleep(2000);
+        await sleep(10);
     }
 
     //get from rpc
@@ -577,7 +579,7 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
                 console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,JSON.stringify(opts,bigIntReplacer));
                 let ret = await client.getTransactions(scAddr,opts)
                 transCount = ret.length;
-                console.log("getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
+                console.log("getTranByOnlyMsgHash getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
                 for(let tran of ret){
                     console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                     let found = await findOnlyMsgCellHashInTran(tran,msgCellHash);

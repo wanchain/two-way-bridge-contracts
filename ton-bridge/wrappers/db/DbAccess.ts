@@ -13,19 +13,26 @@ import {logger} from '../utils/logger'
 
 let dbAccess:DBAccess = null;
 
-async function runAsyncTask(db:typeof DB) {
-    await db.feedTrans();
+async function runAsyncTask(db:typeof DB,scanTran:boolean=true) {
+    logger.info("DbAccess runAsyncTask......","dbName",db.getDbName(),"scanTran",scanTran);
+    if(scanTran){
+        await db.feedTrans();
+    }
 }
 
 export class DBAccess {
     private dbs: Map<string, typeof DB>;
     private inited: boolean;
+    private scanTran: boolean;
+
     constructor() {
         this.dbs = new Map();
         this.inited = false;
+        this.scanTran = true;
     }
 
-    async init(){
+    async init(scanTran:boolean){
+        logger.info("begin DbAccess init","scanTran",scanTran);
         if(this.inited){
             return;
         }
@@ -36,9 +43,11 @@ export class DBAccess {
             let db = new DB(dbName);
             await db.init(dbName);
             this.dbs.set(dbName,db);
-            await runAsyncTask(db);
+            await runAsyncTask(db,scanTran);
         }
         this.inited = true;
+        this.scanTran = scanTran;
+        logger.info("end DbAccess init");
     }
 
     async clear(){
@@ -74,7 +83,7 @@ export class DBAccess {
         await db.init(dbNameFinal);
         this.dbs.set(db.getDbName(),db);
         logger.info("after addDbByName","dbName",dbName,"dbNameFinal",dbNameFinal,"dbs.length",this.dbs.size);
-        await runAsyncTask(db);
+        await runAsyncTask(db,this.scanTran);
     }
 
     async removeDbByName(dbName:string){
@@ -126,6 +135,7 @@ export class DBAccess {
         if(!tonTran || (tonTran.length  == 0) ){
             return null;
         }
+        logger.info("Ending getTxByMsg........","dbName",dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10),"tonTran.length",tonTran.length);
         return (convertTonTransToTrans(tonTran))[0];
     }
 
@@ -167,6 +177,7 @@ export class DBAccess {
     }
 
     async getAllTransNotHandled(dbName:string){
+        logger.info("begin getAllTransNotHandled","dbName",dbName)
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);
         }
@@ -174,7 +185,11 @@ export class DBAccess {
         if(!ret || ret.length == 0) {
             return null;
         }else{
-            return convertTonTransToTrans(ret);
+            logger.info("end getAllTransNotHandled","dbName",dbName)
+            logger.info("begin convertTonTransToTrans","dbName",dbName,"tran.length",ret.length);
+            let finalRet = convertTonTransToTrans(ret);
+            logger.info("end convertTonTransToTrans","dbName",dbName,"tran.length",ret.length);
+            return finalRet;
         }
     }
 

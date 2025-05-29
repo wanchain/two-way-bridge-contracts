@@ -131,7 +131,7 @@ class DB {
         if(!(await ensurePath(`../log/${dbName}`))){
             throw new Error(`init db log path error ${dbName}`);
         }
-
+        this.logger.info("finish init","dbName",dbName);
     }
 
     async stopFeedTrans(){
@@ -204,7 +204,7 @@ class DB {
                 .assign({emitEventOrNot: finishOrNot})
                 .write()
         } catch (err) {
-            this.db.setState(copy)
+            this.db.setState(copy);
             this.logger.error("Entering setTranHandleFlag","err",formatError(err),"hash",tran.hash,"lt",tran.lt,"dbName",this.dbName,"finishOrNot",finishOrNot);
         }
         finally {
@@ -273,15 +273,6 @@ class DB {
             await this.setScanStarted();
         }
 
-
-        /*try{
-            this.logger.info(`***************************first time feedTrans is working**************************************`,this.dbName);
-            await this.scanFun();
-        }catch(e){
-            this.logger.error(`first time feedTrans error. db:${this.dbName}, err:`,formatError(e));
-        }*/
-
-
         let isRunning = false;
         setInterval(async () => {
             let self = this;
@@ -317,7 +308,10 @@ class DB {
     }
 
     async scanTonTxByTask(task:Task) {
-        let client:WanTonClient = await getClient();   //todo check how to provide config.
+        this.logger.info("scanTonTxByTask","before getClient");
+        let client:WanTonClient = await getClient();
+        this.logger.info("scanTonTxByTask","end getClient");
+
         let rawAddr = Address.parseFriendly(this.dbName).address
         this.logger.info("entering scanTonTxByTask:", this.dbName,"rawAddr",rawAddr,"task", JSON.stringify(task, bigIntReplacer), "typeof task.rangeStart", typeof task.rangeStart);
         let rangeStartLt = BigInt(0);
@@ -448,7 +442,7 @@ class DB {
                         getSuccess = true;
 
                         transCount = ret.length;
-                        this.logger.info("getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"dbName",this.dbName);
+                        this.logger.info("scanTonTxByTask getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"dbName",this.dbName);
                         for(let tran of ret){
                             this.logger.info("(scanTonTxByTask) =====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10),"dbName",this.dbName);
                             trans.push(tran);

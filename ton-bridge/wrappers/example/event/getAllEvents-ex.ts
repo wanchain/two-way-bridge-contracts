@@ -48,9 +48,9 @@ async function main() {
 
         for (let tonTran of tonTrans) {
             try {
-                console.log("scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
+                console.log("begin getEventByTranHash","scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
                 let ret = await getEventByTranHash(client, scBridgeAddr, tonTran.lt.toString(10), tonTran.hash().toString('hex'));
-                console.log("JacobEvent ret = ", ret);
+                console.log("end getEventByTranHash JacobEvent ret = ", ret);
                 let tranTonTemp = convertTranToTonTrans([tonTran]);
                 await dbAcces.setTranHandleFlag(scBridgeAddr,tranTonTemp[0],true);
             } catch (err) {

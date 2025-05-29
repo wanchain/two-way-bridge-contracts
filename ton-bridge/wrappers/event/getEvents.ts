@@ -160,7 +160,7 @@ export async function getAllTransactions(client:WanTonClient,scAddress:string,li
                logger.info("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,JSON.stringify(opts,bigIntReplacer));
                let ret = await client.getTransactions(Address.parse(scAddress),opts)
                transCount = ret.length;
-               logger.info("getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddress",scAddress);
+               logger.info("getAllTransactions getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddress",scAddress);
                for(let tran of ret){
                    logger.info("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                    trans.push(tran);
@@ -241,11 +241,11 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
 export async function getTransaction(client:WanTonClient,scAddress:string,lt:string,tranHash:string){
     logger.info("Entering getTransaction","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
     let retTranFromDb = await getTransactionFromDb(client,scAddress,lt,toBase64(tranHash));
-    logger.info("getTransaction","getTransactionFromDb","retTranFromDb",retTranFromDb);
     if(retTranFromDb){
+        logger.info("getTransaction success","getTransactionFromDb","retTranFromDb",retTranFromDb.hash().toString("base64"));
         return retTranFromDb;
     }
-
+    logger.info("getTransaction","getTransaction from rpc","scAddress",scAddress,"lt",lt,"hash",tranHash,"hash(base64)",toBase64(tranHash));
     let tran:Transaction;
     let trans:Transaction[] = [];
     let retry = 2
@@ -350,6 +350,7 @@ export async function getTransactionFromDb(client:WanTonClient,scAddress:string,
 }
 
 export async function getEventByTranHash(client:WanTonClient, scAddress:string, lt:string, tranHash:string){
+    logger.info("entering getEventByTranHash getTransaction success","tranHash ",tranHash,"lt",lt,"dbName",scAddress);
     let tran = await getTransaction(client,scAddress,lt,tranHash);
     logger.info("getEventByTranHash getTransaction success",tran, "tranHash ",tran.hash().toString('hex'));
     logger.info("getEventByTranHash before getEventFromTran","client is WanTonClient",IsWanTonClient(client));
@@ -376,49 +377,6 @@ export async function getOpCodeFromCell(cell:Cell){
  */
 
 async function handleUserLockEvent(client:WanTonClient, scAddr:Address,tran:Transaction){
-
-    /*logger.info(formatUtil.format("Entering handleUserLockEvent"),"IsWanTonClient(client)",IsWanTonClient(client));
-
-    let transResult  = await getTransResult(client,scAddr,tran);
-    if (!transResult.success){
-        logger.error("the trans tree is not success")
-        return {
-            valid:false,
-            origin:transResult.originAddr.toString()
-        }
-    }
-
-    let bodyCellLock = tran.inMessage.body
-    let decodedResult = await decodeUserLock(bodyCellLock);
-    logger.info("decodeResult of decodeUserLock", decodedResult);
-
-    //handle bridge->bridge(userLock)
-    // get parent trans
-    logger.info("handleUserLockEvent before get pre transaction","client is WanTonClient",IsWanTonClient(client));
-    let preTx = await getTransaction(client,scAddr.toString(),tran.prevTransactionLt.toString(10),bigIntToBytes32(tran.prevTransactionHash).toString('base64'));
-    let bodyCell = preTx.inMessage.body
-    let bodySlice = bodyCell.beginParse();
-    let op = bodySlice.loadUint(32);
-    if(op == opcodes.OP_TRANSFER_NOTIFICATION){
-        let fromAddrHead = preTx.inMessage.info.src
-        logger.info("handleUserLockEvent before getTokenPairInfo","client is WanTonClient",IsWanTonClient(client));
-        let ret = await getTokenPairInfo(client,scAddr,decodedResult.tokenPairID)
-        // 1. check tokenAccount content with the one get by tokenPairId
-        if(!isAddressEqual(decodedResult.addrTokenAccount,ret.tokenAccount)){
-            throw Error("invalid tokenpairid or tokenAccount");
-        }
-        // 2. check from address is content with the one computed by getJettonAddress
-        // build jettonAddress
-        let jwAddr = await getJettonAddress(client,Address.parse(ret.tokenAccount),scAddr)
-        logger.info("======jwAddr",jwAddr.toString(),"preTx.inMessage.info.src",(preTx.inMessage.info.src as unknown as Address ).toString());
-        if(!isAddressEqual(jwAddr,(preTx.inMessage.info.src as unknown as Address ))){
-            throw Error("invalid from address of transfer notification");
-        }
-    }
-    return {
-        valid:true,
-        origin:transResult.originAddr.toString()
-    }*/
     return handleCommonEvent(client,scAddr,tran);
 }
 
@@ -434,6 +392,7 @@ async function handleCommonEvent(client:WanTonClient, scAddr:Address,tran:Transa
             origin:transResult.originAddr.toString()
         }
     }
+    logger.info(formatUtil.format("Ending handleCommonEvent"));
     return {
         valid:true,
         origin:transResult.originAddr.toString()
