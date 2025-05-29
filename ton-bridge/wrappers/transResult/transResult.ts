@@ -500,7 +500,7 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
                 console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,JSON.stringify(opts,bigIntReplacer));
                 let ret = await client.getTransactions(scAddr,opts)
                 transCount = ret.length;
-                console.log("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount);
+                console.log("getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
                 for(let tran of ret){
                     console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                     let found = await findMsgCellHashInTran(tran,msgCellHash,msgBodyHash,lt);
@@ -577,7 +577,7 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
                 console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,JSON.stringify(opts,bigIntReplacer));
                 let ret = await client.getTransactions(scAddr,opts)
                 transCount = ret.length;
-                console.log("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount);
+                console.log("getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
                 for(let tran of ret){
                     console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                     let found = await findOnlyMsgCellHashInTran(tran,msgCellHash);

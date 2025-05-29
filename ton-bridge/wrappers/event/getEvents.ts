@@ -160,7 +160,7 @@ export async function getAllTransactions(client:WanTonClient,scAddress:string,li
                logger.info("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddress,JSON.stringify(opts,bigIntReplacer));
                let ret = await client.getTransactions(Address.parse(scAddress),opts)
                transCount = ret.length;
-               logger.info("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount);
+               logger.info("getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddress",scAddress);
                for(let tran of ret){
                    logger.info("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                    trans.push(tran);

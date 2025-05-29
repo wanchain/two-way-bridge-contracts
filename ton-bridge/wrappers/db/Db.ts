@@ -448,7 +448,7 @@ class DB {
                         getSuccess = true;
 
                         transCount = ret.length;
-                        this.logger.info("getTransactions success","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"dbName",this.dbName);
+                        this.logger.info("getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"dbName",this.dbName);
                         for(let tran of ret){
                             this.logger.info("(scanTonTxByTask) =====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10),"dbName",this.dbName);
                             trans.push(tran);
