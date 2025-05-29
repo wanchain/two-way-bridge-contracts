@@ -246,6 +246,12 @@ const util = require('util');
 
 const ERROR_WHITELIST = new Set(['message', 'code', 'cause', 'name', 'status']);
 
+function formatErrorStack(error: Error): string[] {
+    if (!error.stack) return [];
+    const stackLines = error.stack.split('\n');
+    return stackLines.slice(1).map(line => line.trim());
+}
+
 function extractErrorDetails(err, depth = 0, maxDepth = 3) {
     if (depth > maxDepth) return '[Max Depth Exceeded]';
     if (!err || typeof err !== 'object') return err;
@@ -269,13 +275,15 @@ function extractErrorDetails(err, depth = 0, maxDepth = 3) {
     }
 
     if(err instanceof Error) {
-        details['stack'] = err.stack
+        details['stack'] = formatErrorStack(err);
     }
     return details;
 }
 
+
+
 export function formatError(err:any):string{
-    return JSON.stringify(extractErrorDetails(err))
+    return JSON.stringify(extractErrorDetails(err),null,2)
 }
 
 function isHexStringWithPrefix(str) {
