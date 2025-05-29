@@ -86,6 +86,7 @@ describe('DB', () => {
         console.log("DB beforeAll");
         testDB = new DB('test');
         await testDB.init('testDb');
+
     }, 50000);
 
     afterEach(async () => {
@@ -94,6 +95,9 @@ describe('DB', () => {
         testDB = null;
     }, 50000);
 
+    it('DB empty', async () => {
+
+    }, 500000);
     it('DB setScanStarted', async () => {
         console.log("DB setScanStarted");
         await testDB.setScanStarted();
@@ -122,7 +126,7 @@ describe('DB', () => {
         console.log(tasks);
     }, 500000);
 
-    it('DB setTranHandleFlag', async () => {
+    it('DB getTasks', async () => {
         console.log("DB updateTasks");
         let tasks = await testDB.getTasks();
         console.log(tasks);
@@ -173,6 +177,55 @@ describe('DB', () => {
             },
         ]
         await testDB.insertTrans(trans);
+
+    }, 500000);
+
+    it('DB updateHandled', async () => {
+        console.log("DB updateHandled");
+        let trans = [
+            {
+                hash: "0x1234",
+                lt: 1n,
+                raw: '',
+                in: {
+                    src: 'src',
+                    inMsgHash: 'inMsgHash',
+                    inBodyHash: 'inMsgBodyHash',
+                    createdLt: 3n,
+                    createAt: 4n,
+                },
+                out: [{
+                    dst: 'dst',
+                    outMsgHash: 'outMsgHash',
+                    outBodyHash: 'outBodyHash',
+                    createdLt: 2n,
+                    createAt: 3n,
+                }],
+                emitEventOrNot: false,
+            },
+            {
+                hash: "0x5678",
+                lt: 2n,
+                raw: '',
+                in: {
+                    src: 'src',
+                    inMsgHash: 'inMsgHash',
+                    inBodyHash: 'inMsgBodyHash',
+                    createdLt: 3n,
+                    createAt: 4n,
+                },
+                out: [{
+                    dst: 'dst',
+                    outMsgHash: 'outMsgHash',
+                    outBodyHash: 'outBodyHash',
+                    createdLt: 2n,
+                    createAt: 3n,
+                }],
+                emitEventOrNot: false,
+            },
+        ]
+        await testDB.insertTrans(trans);
+        //await testDB.setTranHandleFlags(trans,[true,true]);
 
     }, 500000);
 

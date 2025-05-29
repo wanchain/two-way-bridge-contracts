@@ -79,11 +79,13 @@ const defaultData:Data = {
 }
 
 var serializeWithBig = function(obj:any){
-    return JSON.stringify(obj,bigIntReplacer,2)
+    let ret = JSON.stringify(obj,bigIntReplacer,2);
+    return ret;
 }
 
 var deserializeWithBig = function(str:string){
-    return JSON.parse(str,bigIntReplacer);
+    let ret = JSON.parse(str,bigIntReplacer);
+    return ret;
 }
 
 class DB {
@@ -150,20 +152,18 @@ class DB {
         const release = await this.mutex.acquire();
         try {
             copy = _.cloneDeep(this.db.getState())
+
             _.forEach(trans, tran => {
-                /*let exist = null;
-                exist = this.db.get('trans').find({lt:tran.lt});*/
-                const exist = this.db.get('trans').find({lt:tran.lt}).value();
-                this.logger.info("insertTrans ","dbName",this.dbName,"lt",tran.lt,"exist",exist);
-                if(!!!exist){
+                let result = null;
+                result = this.db.get("trans").find({lt:tran.lt.toString(10)}).value();
+                this.logger.info("insertTrans ", "dbName", this.dbName, "lt", tran.lt, "result", result);
+                if (!result) {
                     this.db.get('trans').value().push(tran);
                     this.logger.info("insertTrans inserting ","dbName",this.dbName,"lt",tran.lt);
                 }else{
                     this.logger.info("insertTrans duplicated","dbName",this.dbName,"lt",tran.lt);
                 }
-                //this.db.get('trans').value().push(tran);
             });
-            //let uniqueTrans = _.uniqBy(this.db.get('trans').value(),'lt');
             this.db.write();
         }catch(err){
             this.db.setState(copy);
@@ -200,7 +200,7 @@ class DB {
             this.logger.info("Entering setTranHandleFlag","hash",tran.hash,"lt",tran.lt,"dbName",this.dbName,"finishOrNot",finishOrNot);
             copy = _.cloneDeep(this.db.getState())
 
-            this.db.get('trans').find({hash: tran.hash,lt:tran.lt})
+            this.db.get('trans').find({hash: tran.hash,lt:tran.lt.toString(10)}).value()
                 .assign({emitEventOrNot: finishOrNot})
                 .write()
         } catch (err) {
