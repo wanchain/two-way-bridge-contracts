@@ -135,8 +135,8 @@ export class DBAccess {
         if(!tonTran || (tonTran.length  == 0) ){
             return null;
         }
-        logger.info("Ending getTxByMsg........","dbName",dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10),"tonTran.length",tonTran.length);
-        return (convertTonTransToTrans(tonTran))[0];
+        logger.info("Ending getTxByMsg success........","dbName",dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10),"tonTran.length",tonTran.length);
+        return (convertTonTransToTrans([tonTran[0]]))[0];
     }
 
     async getTxsByLtRange(dbName:string,lt:bigint,to_lt:bigint){
