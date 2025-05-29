@@ -1,12 +1,7 @@
-import {configTestnet,configMainnet} from "../config/config-ex";
-
+import {configTestnet,configMainnet} from "../../config/config-ex";
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
-
-import {Bridge} from '../Bridge';
-import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR,BIP44_WANCHAIN_CHAINID} from '../const/const-value';
-
-import {getSenderByPrvKey, getTonAddrByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
+import {getSenderByPrvKey, getTonAddrByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
 
 const smgCfg = require('../testData/smg.json');
 
@@ -23,9 +18,6 @@ let aliceWallet, bobWallet;
 let client = null;
 
 const scAddresses = require('../testData/contractAddress.json');
-import { BridgeAccess } from "../contractAccess/bridgeAccess";
-import {getQueryID} from "../utils/utils";
-
 
 let contractProvider =null;
 async function init(){
@@ -46,12 +38,10 @@ const schnorr = require("../sign/tools-secp256k1.js");
 
 let tokenInfo = require('../testData/tokenInfo.json')
 
-import{JettonMinter} from "../JettonMinter";
-import{JettonWallet} from "../JettonWallet";
-import {CoinBalance,TokenBalance} from "../wallet/balance";
-import {TonClient} from "@ton/ton";
-import {TON_FEE} from "../fee/fee";
-import {WanTonClient} from "../client/client-interface";
+import{JettonMinter} from "../../JettonMinter";
+import {CoinBalance,TokenBalance} from "../../wallet/balance";
+import {TON_FEE} from "../../fee/fee";
+import {WanTonClient} from "../../client/client-interface";
 
 
 async function mintToken(client:WanTonClient,tokenType: string, to: Address, amount: bigint) {

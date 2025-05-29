@@ -1,14 +1,11 @@
-import {TON_FEE} from "../fee/fee";
+import {TON_FEE} from "../../fee/fee";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
+import {configTestnet,configMainnet} from "../../config/config-ex";
 
-import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
+import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR,BIP44_WANCHAIN_CHAINID} from '../../const/const-value';
 
-import {Bridge} from '../Bridge';
-import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR,BIP44_WANCHAIN_CHAINID} from '../const/const-value';
-
-import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
+import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
 
 const args = process.argv.slice(2);
 //let tokenType = "coin";
@@ -23,8 +20,8 @@ let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let client = null;
 
 const scAddresses = require('../testData/contractAddress.json');
-import { BridgeAccess } from "../contractAccess/bridgeAccess";
-import {getQueryID} from "../utils/utils";
+import { BridgeAccess } from "../../contractAccess/bridgeAccess";
+import {getQueryID} from "../../utils/utils";
 
 let queryID;
 

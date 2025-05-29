@@ -1,11 +1,8 @@
-import {formatError, sleep} from "../utils/utils";
-
-import {configTestnet, configMainnet, configTestTonApi} from "../config/config-ex";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {getEventByTranHash, getEvents, getTransaction} from "../event/getEvents";
-import { logger } from "../utils/logger";
+import {formatError, sleep} from "../../utils/utils";
+import {configTestnet, configMainnet, configTestTonApi} from "../../config/config-ex";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
 import {Address} from "@ton/core";
-import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
+
 
 const args = process.argv.slice(2);
 

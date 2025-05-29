@@ -1,10 +1,10 @@
-import {sleep} from "../utils/utils";
+import {sleep} from "../../utils/utils";
 
-import {configTestnet,configMainnet} from "../config/config-ex";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {getEventByTranHash, getEvents, getTransaction} from "../event/getEvents";
-import { logger } from "../utils/logger";
-import {isTranSuccess} from "../transResult/transResult";
+import {configTestnet,configMainnet} from "../../config/config-ex";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {getEventByTranHash, getEvents, getTransaction} from "../../event/getEvents";
+import { logger } from "../../utils/logger";
+import {isTranSuccess} from "../../transResult/transResult";
 
 const args = process.argv.slice(2);
 

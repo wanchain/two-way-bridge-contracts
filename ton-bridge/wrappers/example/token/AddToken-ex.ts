@@ -7,7 +7,7 @@ const jettonTokenInfoPath = "../testData/jettonTokenInfo.json";
 let tokenInfo = require('../testData/tokenInfo.json')
 const tokenInfoPath = "../testData/tokenInfo.json";
 
-import {configTestnet, configMainnet, configTestTonApiNoDb} from "../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
 
 import {Address, toNano, Sender} from '@ton/core';
 import {
@@ -15,19 +15,19 @@ import {
     getJettonData,
     buildWrappedJettonContent,
     parseWrappedJettonContent, getJettonBalance, getJettonAddress
-} from "../wallet/jetton";
-import {doCompile} from "../utils/compileContract";
-import {JettonMinter} from "../JettonMinter";
+} from "../../wallet/jetton";
+import {doCompile} from "../../utils/compileContract";
+import {JettonMinter} from "../../JettonMinter";
 
 let args = process.argv.slice(2);
 let jettonName = args[0];
 
 const JettonCofig = jettonTokenInfo[jettonName]
 
-import {getSenderByPrvKey, getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {conf as JettonMinterCompilerConfig} from "../testData/JettonMinter.compile.func"
-import {conf as JettonWalletCompilerConfig} from "../testData/JettonWallet.compile.func"
+import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {conf as JettonMinterCompilerConfig} from "../../testData/JettonMinter.compile.func"
+import {conf as JettonWalletCompilerConfig} from "../../testData/JettonWallet.compile.func"
 
 const prvList = require('../testData/prvlist')
 
@@ -61,10 +61,10 @@ async function init(){
 
 }
 
-import {isAddrDepolyed} from "../wallet/walletContract";
-import {sleep} from "../utils/utils";
-import {TON_FEE} from "../fee/fee";
-import {WanTonClient} from "../client/client-interface";
+import {isAddrDepolyed} from "../../wallet/walletContract";
+import {sleep} from "../../utils/utils";
+import {TON_FEE} from "../../fee/fee";
+import {WanTonClient} from "../../client/client-interface";
 
 async function DisplayJettonInfo(client:WanTonClient,addr:Address){
     let ret = await getJettonData(client,addr);

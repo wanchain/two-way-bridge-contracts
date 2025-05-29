@@ -1,11 +1,7 @@
-import {bigIntToBytes32, sleep} from "../utils/utils";
-
-import {configTestnet,configMainnet} from "../config/config-ex";
-
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
-import {getEventByTranHash, getEvents, getTransaction} from "../event/getEvents";
-import { logger } from "../utils/logger";
-import {convertTonTransToTrans, convertTranToTonTrans} from "../db/common";
+import {configTestnet,configMainnet} from "../../config/config-ex";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {getEventByTranHash, getEvents, getTransaction} from "../../event/getEvents";
+import {convertTonTransToTrans, convertTranToTonTrans} from "../../db/common";
 
 const args = process.argv.slice(2);
 

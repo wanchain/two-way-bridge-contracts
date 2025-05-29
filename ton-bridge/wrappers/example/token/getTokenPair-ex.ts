@@ -1,9 +1,6 @@
-import {configTestnet,configMainnet} from "../config/config-ex";
-
-import {TON_COIN_ACCOUT, BIP44_CHAINID} from '../const/const-value';
-
-import {getWalletByPrvKey} from "../wallet/walletContract";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../client/client";
+import {configTestnet,configMainnet} from "../../config/config-ex";
+import {getWalletByPrvKey} from "../../wallet/walletContract";
+import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
 
 let args = process.argv.slice(2);
 let tokenPairId=args[0];
@@ -13,7 +10,7 @@ let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let client = null;
 
 const scAddresses = require('../testData/contractAddress.json');
-import { BridgeAccess } from "../contractAccess/bridgeAccess";
+import { BridgeAccess } from "../../contractAccess/bridgeAccess";
 
 async function init(){
     await wanTonSdkInit(configMainnet);
