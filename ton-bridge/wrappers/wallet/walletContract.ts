@@ -98,6 +98,9 @@ export async function isAddrDepolyed(client:WanTonClient|Blockchain,addrStr:stri
     }
 }
 
+/*
+    there is no function getWalletAddrBySecPublicKey,because tonAddr should use public of ED25519.
+ */
 export async function getWalletAddrByPublicKey(publicKey: Buffer){
     let ret = WalletContractV4.create({publicKey: publicKey, workchain: 0});
     return ret.address.toString();

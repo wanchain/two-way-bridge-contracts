@@ -225,7 +225,7 @@ describe('DB', () => {
             },
         ]
         await testDB.insertTrans(trans);
-        //await testDB.setTranHandleFlags(trans,[true,true]);
+        await testDB.setTranHandleFlags(trans,[true,true]);
 
     }, 500000);
 

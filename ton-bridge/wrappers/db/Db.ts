@@ -198,11 +198,13 @@ class DB {
         const release = await this.mutex.acquire();
         try {
             this.logger.info("Entering setTranHandleFlag","hash",tran.hash,"lt",tran.lt,"dbName",this.dbName,"finishOrNot",finishOrNot);
-            copy = _.cloneDeep(this.db.getState())
+            copy = _.cloneDeep(this.db.getState());
 
-            this.db.get('trans').find({hash: tran.hash,lt:tran.lt.toString(10)}).value()
+            this.db.get('trans').find({hash: tran.hash,lt:tran.lt.toString(10)})
                 .assign({emitEventOrNot: finishOrNot})
-                .write()
+                .value();
+
+            this.db.write();
         } catch (err) {
             this.db.setState(copy);
             this.logger.error("Entering setTranHandleFlag","err",formatError(err),"hash",tran.hash,"lt",tran.lt,"dbName",this.dbName,"finishOrNot",finishOrNot);
