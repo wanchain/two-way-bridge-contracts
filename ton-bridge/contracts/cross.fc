@@ -179,7 +179,11 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 
         int lockFee = extraSlice2~load_uint(256);
 
-        (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr, _, _) = tm_get_token_pair(tokenManager, tokenPairId);
+        (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr, int tokenPairExist, _) = tm_get_token_pair(tokenManager, tokenPairId);
+        throw_unless(error::tm_tokenpair_not_exist, tokenPairExist);
+
+        (slice tokenAccount, int exist) = tm_get_token_address(tokenManager, tokenPairId);
+        throw_unless(error::cross_tokenaccount_not_exist, exist);
 
         int fee = 0;
         ~strdump("fee_get_tokenpair_fee....");
@@ -190,14 +194,14 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         (slice smgFeeProxy, _) = fee_get_config(caFee);
         ~dump(smgFeeProxy);
 
-        (slice tokenAccount, int exist) = tm_get_token_address(tokenManager, tokenPairId);
+
         int hashProxyFeeAddr = smgFeeProxy~load_uint(256);
         slice intProxyFeeAddr = get_serialized_address(WORKING_CHAINID, hashProxyFeeAddr);
 
         ~strdump("compare tokenAccount and ZERO_ACCOUNT....");
         if (equal_slices(tokenAccount, ZERO_ACCOUNT)) {
             throw_if(error::cross_ton_not_enough, (fee + crossValue) > msgValue);
-            throw_unless(error::tm_tokenpair_not_exist, exist);
+
             refundValue = msgValue - fee - crossValue;
             userLock_ton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount, intProxyFeeAddr);
         } else {

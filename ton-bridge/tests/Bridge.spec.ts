@@ -637,7 +637,6 @@ describe('Bridge', () => {
 
             expect(true).toEqual(afterBobUsdt == (beforeBobUsdt + releaseValue - fee));
             expect(true).toEqual(afterBridgeUsdt == (beforeBridgeUsdt - releaseValue));
-
             console.log("ret.transaction=>", slimSndMsgResult(ret));
 
             printCaseSeperator(it.name);

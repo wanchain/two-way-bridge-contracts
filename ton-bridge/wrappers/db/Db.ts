@@ -13,7 +13,7 @@ import {getClient,getDBDataDir} from "../client/client";
 import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
 import formatUtil from "util";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
-import {MAX_BACKTRACE_SECONDS, MAX_LIMIT, MAX_RETRY} from "../const/const-value";
+import {MAX_BACKTRACE_SECONDS, MAX_LIMIT, MAX_RETRY, RETRY_INTERNAL_TIME} from "../const/const-value";
 import {WanTonClient} from "../client/client-interface";
 import {Logger} from "../utils/logger";
 
@@ -361,14 +361,14 @@ class DB {
                     } catch (e) {
 
                         this.logger.error("get transcations one err ", formatError(e));
-                        await sleep(2000);
+                        await sleep(RETRY_INTERNAL_TIME);
                     }
                 }
                 if (maxRetry < 0) {
                     this.logger.info(" get transcations one maxRetry == 0, before throw err");
                     throw new Error(formatUtil.format("fail by max_retry getTransactions one failed after %d retry. opts is %s", MAX_RETRY, JSON.stringify(optsOne)))
                 }
-                await sleep(2000);
+                await sleep(RETRY_INTERNAL_TIME);
             }catch(err){
                 this.logger.error("err", formatError(err));
                 throw err;
@@ -481,7 +481,7 @@ class DB {
                         minScanedLt = oldMinScanedLt;
 
                         this.logger.error("err ",formatError(e));
-                        await sleep(2000);
+                        await sleep(RETRY_INTERNAL_TIME);
                     }
                 }
                 if(maxRetry < 0){
@@ -489,7 +489,7 @@ class DB {
                     throw new Error(formatUtil.format("fail by max_retry getTransactions failed after %d retry. opts is %s",retry,JSON.stringify(opts)))
                 }
 
-                await sleep(2000);
+                await sleep(RETRY_INTERNAL_TIME);
                 this.logger.info("last loop transCount",transCount,"retry",maxRetry);
             }
         }catch(err){
