@@ -354,29 +354,23 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             throw(error::cross_smg_release_duplicated_error);
         }
 
-        (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr, _, _) = tm_get_token_pair(tokenManager, tokenPairId);
+        (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr, int tokenPairExist, _) = tm_get_token_pair(tokenManager, tokenPairId);
+        throw_unless(error::tm_tokenpair_not_exist, tokenPairExist);
 
-        slice tokenAccountFromTp = begin_cell().end_cell().begin_parse();
-        if (srcChainId == BIP44_CHAINID) {
-            tokenAccountFromTp = fromAccount;
-        } else {
-            if (dstChainId == BIP44_CHAINID) {
-                tokenAccountFromTp = dstAccount;
-            } else {
-                throw_arg("invalid tokenPairID", error::cross_invalid_tokenpair_id);
-            }
-        }
+        (slice tokenAccount, int exist) = tm_get_token_address(tokenManager, tokenPairId);
+        throw_unless(error::cross_tokenaccount_not_exist, exist);
+
 
         ;; check signature
         ~strdump("before compute_hash");
-        int msg_hash = compute_hash(BIP44_CHAINID, uniqId, tokenPairId, releaseValue, fee, tokenAccountFromTp, userAccount);
+        int msg_hash = compute_hash(BIP44_CHAINID, uniqId, tokenPairId, releaseValue, fee, tokenAccount, userAccount);
         ~strdump("end compute_hash");
 
         ~strdump("before verify_sec");
         throw_unless(0xffee, verify_sec(s, gpk_x, gpk_y, e, p, msg_hash));
         ~strdump("after verify_sec");
 
-        if (equal_slices(tokenAccountFromTp, ZERO_ACCOUNT)) {
+        if (equal_slices(tokenAccount, ZERO_ACCOUNT)) {
             ~strdump("before entering smgRelease_ton...");
             smgRelease_ton(queryId, releaseValue, fee, userAccount, smgFeeProxy);
         } else {
