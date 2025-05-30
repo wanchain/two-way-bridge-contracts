@@ -40,7 +40,8 @@ const int error::cross_ton_not_enough               = 0xEE56;
 
 const int error::tm_tokenpair_not_exist             = 0xEE57;
 const int error::cross_tokenaccount_not_exist       = 0xEE58;
-const int error::cross_lock_token_invalid_sender      = 0xEE59;
+const int error::cross_lock_token_invalid_sender    = 0xEE59;
 const int error::cross_lock_token_account_error      = 0xEE60;
+const int error::cross_smg_release_duplicated_error      = 0xEE61;
 
 

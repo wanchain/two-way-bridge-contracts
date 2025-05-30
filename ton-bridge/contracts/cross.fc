@@ -351,10 +351,9 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         ~strdump("after oracle_handle_uniqid");
         if (unique_found?) {
             ~strdump("duplicated......................................................");
-            throw(0xffff);
+            throw(error::cross_smg_release_duplicated_error);
         }
 
-        ;; todo check the fee
         (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr, _, _) = tm_get_token_pair(tokenManager, tokenPairId);
 
         slice tokenAccountFromTp = begin_cell().end_cell().begin_parse();
@@ -407,6 +406,6 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         return (originAddress, refundValue, oracle, revertToken);
     }
 
-    throw(0xffff);
+    throw(error::recv_unknown_opcode);
     return (originAddress, refundValue, oracle, revertToken);
 }
