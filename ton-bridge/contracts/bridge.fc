@@ -39,6 +39,7 @@
 }
 
 
+
 () cb_executed(slice sender_address, int query_id) impure {
     var msg = begin_cell()
         .store_uint(msg_flag::bounceable, 6)     ;;
@@ -69,6 +70,15 @@
         .store_uint(query_id, 64)
         .end_cell();
     send_raw_message(msg,PAY_FEES_SEPARATELY);
+    return ();
+}
+
+() refundTon(slice sender_address, slice originalAddress, int query_id, int refundValue) impure {
+    if ( refundValue == 0){
+        cb_executed(sender_address,query_id);
+    } else {
+        refund_executed(sender_address,originalAddress,query_id,refundValue);
+    }
     return ();
 }
 
@@ -207,19 +217,19 @@
         ~strdump("Entering op_cross...");
         ~dump(op);
 
-        (slice originAddress, var refundValue,var _oracle) = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle,ca_fee,sender_address);
+        (slice originAddress, var refundValue,var _oracle, int revertToken) = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle,ca_fee,sender_address);
 
         if ( op == OP_TRANSFER_NOTIFICATION ){
             ~strdump("OP_TRANSFER_NOTIFICATION before save_data");
             save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
-            return ();
+            if ( revertToken ) {
+                refundTon(sender_address,originAddress,query_id,refundValue);
+            } else {
+                return ();
+            }
         }
 
-        if ( refundValue == 0){
-            cb_executed(sender_address,query_id);
-        } else {
-            refund_executed(sender_address,originAddress,query_id,refundValue);
-        }
+        refundTon(sender_address,originAddress,query_id,refundValue);
 
         save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
         return ();

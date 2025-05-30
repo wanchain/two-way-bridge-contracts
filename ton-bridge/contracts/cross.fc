@@ -160,8 +160,9 @@ const SEND_SELF_TRAN_VALUE = 400000000;
     return msg.end_cell().cell_hash();
 }
 
-(slice, int, cell) cross_recv_internal(int op, int queryId, cell tokenManager, int msgValue, cell inMsgFull, slice inMsgBody, cell oracle, cell caFee, slice senderAddr) impure {
+(slice, int, cell,int) cross_recv_internal(int op, int queryId, cell tokenManager, int msgValue, cell inMsgFull, slice inMsgBody, cell oracle, cell caFee, slice senderAddr) impure {
     int refundValue = 0;
+    int revertToken = 0;
     slice originAddress = begin_cell().end_cell().begin_parse();
     ~strdump("cross_recv_internal....");
     slice ZERO_ACCOUNT = begin_cell().store_int(0, 256).end_cell().begin_parse();
@@ -201,7 +202,6 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         ~strdump("compare tokenAccount and ZERO_ACCOUNT....");
         if (equal_slices(tokenAccount, ZERO_ACCOUNT)) {
             throw_if(error::cross_ton_not_enough, (fee + crossValue) > msgValue);
-
             refundValue = msgValue - fee - crossValue;
             userLock_ton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount, intProxyFeeAddr);
         } else {
@@ -224,7 +224,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
                 userLock_org_jetton(queryId, smgId, tokenPairId, crossValue, fee, tokenAccount, userAccount, intProxyFeeAddr);
             }
         }
-        return (originAddress, refundValue, oracle);
+        return (originAddress, refundValue, oracle, revertToken);
     }
 
     if (op == OP_TRANSFER_NOTIFICATION) {
@@ -250,7 +250,8 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             ;;throw_arg("queryId not equal",error::cross_query_id_not_equal);
             send_error_code_to_self(queryId,error::cross_query_id_not_equal);
-            return (originAddress, refundValue, oracle);
+            revertToken = -1;
+            return (originAddress, refundValue, oracle, revertToken);
         }
         if (jettonAmount != crossValue) {
             ~strdump("555");
@@ -258,7 +259,8 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId,error::cross_invalid_jetton_amount);
             ;;throw_arg("jettonAmount is not equal to crossValue",error::cross_invalid_jetton_amount); ;;//
-            return (originAddress, refundValue, oracle);
+            revertToken = -1;
+            return (originAddress, refundValue, oracle, revertToken);
         }
 
         (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr, _, cell walletCode) = tm_get_token_pair(tokenManager, tokenPairId);
@@ -269,7 +271,8 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             ;;throw_if(error::cross_ton_not_enough, fee  > msgValue );
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId,error::cross_ton_not_enough);
-            return (originAddress, refundValue, oracle);
+            revertToken = -1;
+            return (originAddress, refundValue, oracle, revertToken);
         }
 
         ;; check tokenpair
@@ -279,7 +282,8 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId,error::tm_tokenpair_not_exist);
-            return (originAddress, refundValue, oracle);
+            revertToken = -1;
+            return (originAddress, refundValue, oracle, revertToken);
         }
 
         (_, int tokenAcountFromMsgHash) =  parse_std_addr(tokenAcountFromMsg);
@@ -287,7 +291,8 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         if (equal_slice_bits(tokenAcountFromMsgHashSlice, tokenAccount) == 0) {
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId,error::cross_lock_token_account_error);
-            return (originAddress, refundValue, oracle);
+            revertToken = -1;
+            return (originAddress, refundValue, oracle, revertToken);
         }
 
         ;; check sender is JettonWallet(my_address)
@@ -297,7 +302,8 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId,error::cross_lock_token_invalid_sender);
-            return (originAddress, refundValue, oracle);
+            revertToken = -1;
+            return (originAddress, refundValue, oracle, revertToken);
         }
         ;; send message to itself and invoke userLock
         var msg = begin_cell()
@@ -307,7 +313,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             .store_msgbody_prefix_ref(lockBody);
         ~strdump("begin send userLock triggered by notification");
         send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS);
-        return (originAddress, refundValue, oracle);
+        return (originAddress, refundValue, oracle, revertToken);
     }
 
     if (op == OP_CROSS_SmgRelease) {
@@ -390,7 +396,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
                 smgRelease_org_jetton(queryId, releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr, fwTonAmount, totalTonAmount, senderAddr);
             }
         }
-        return (originAddress, refundValue, new_oracle);
+        return (originAddress, refundValue, new_oracle, revertToken);
     }
 
     if ( op == OP_CROSS_ERROR ) {
@@ -398,9 +404,9 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         int errorCode = inMsgBody~load_uint(256);
         ~dump(errorCode);
         throw(errorCode);
-        return (originAddress, refundValue, oracle);
+        return (originAddress, refundValue, oracle, revertToken);
     }
 
     throw(0xffff);
-    return (originAddress, refundValue, oracle);
+    return (originAddress, refundValue, oracle, revertToken);
 }
