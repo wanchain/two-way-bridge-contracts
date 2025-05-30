@@ -29,8 +29,7 @@ async function main() {
 
     let client = await getClient();
 
-    setInterval(async () => {
-
+    let scanEvent = async () => {
         console.log("\n\n\n===================================getAllEvents===================================\n");
         console.log("\n===================================getAllEvents===================================\n\n\n");
 
@@ -48,15 +47,27 @@ async function main() {
 
         for (let tonTran of tonTrans) {
             try {
-                console.log("begin getEventByTranHash","scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
+                console.log("begin getEventByTranHash", "scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
                 let ret = await getEventByTranHash(client, scBridgeAddr, tonTran.lt.toString(10), tonTran.hash().toString('hex'));
                 console.log("end getEventByTranHash JacobEvent ret = ", ret);
                 let tranTonTemp = convertTranToTonTrans([tonTran]);
-                await dbAcces.setTranHandleFlag(scBridgeAddr,tranTonTemp[0],true);
+                console.log("begin setTranHandleFlag", "scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
+                await dbAcces.setTranHandleFlag(scBridgeAddr, tranTonTemp[0], true);
             } catch (err) {
                 console.error(err.code, err.response?.data?.error)
             }
             await sleep(1000);
+        }
+    }
+
+    let round = 1;
+    let busy = false;
+    setInterval(async () => {
+        if(!busy){
+            busy = true;
+            console.log("round = ",round++);
+            await scanEvent();
+            busy = false;
         }
 
     }, 100000)

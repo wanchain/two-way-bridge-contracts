@@ -13,9 +13,17 @@ import {getClient,getDBDataDir} from "../client/client";
 import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
 import formatUtil from "util";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
-import {MAX_BACKTRACE_SECONDS, MAX_LIMIT, MAX_RETRY, RETRY_INTERNAL_TIME} from "../const/const-value";
+import {
+    MAX_BACKTRACE_SECONDS,
+    MAX_LIMIT,
+    MAX_RETRY,
+    MAX_SCAN_INTER,
+    MIN_SCAN_INTER,
+    RETRY_INTERNAL_TIME
+} from "../const/const-value";
 import {WanTonClient} from "../client/client-interface";
 import {Logger} from "../utils/logger";
+import {getSecureRandomNumber} from "@ton/crypto";
 
 const LOG_ROOT = path.join(__dirname,"../log/")
 
@@ -270,6 +278,8 @@ class DB {
     // scan history and increased new trans into db.
     async feedTrans(){
         this.logger.info("Entering feedTrans..............",this.dbName);
+        let randInternal = await getSecureRandomNumber(MIN_SCAN_INTER,MAX_SCAN_INTER);
+        this.logger.info("feedTrans..............",this.dbName,"randInternal",randInternal);
         let scanInit = await this.getScanStatus();
         if(scanInit){
             await this.setScanStarted();
@@ -289,7 +299,7 @@ class DB {
             }finally {
                 isRunning = false;
             }
-        }, 60000);
+        }, randInternal);
     }
 
     async scanTonTxByTasks(tasks:Task[]){
