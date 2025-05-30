@@ -24,7 +24,7 @@
         int p = extra_slice~load_uint(256);
         int msg = extra_slice~load_uint(256);
         int verifyRet = verify_sec(s, gpk_x, gpk_y, e, p, msg);
-        throw_unless(0xffed, verifyRet == -1); ;;todo add error_ennum
+        throw_unless(error::signature_verify_error, verifyRet == -1);
         return ();
     }
     if (op == OP_SIG_VerifyEcdsa) {
@@ -36,13 +36,10 @@
         int e = extra_slice~load_uint(256);
         int p = extra_slice~load_uint(256);
         int msg = extra_slice~load_uint(256);
-
-
         int verifyRet = verify_ecdsa(s, gpk_x, gpk_y, e, p, msg);
-        ;;throw(0xffee); ;;todo should delete
-        throw_unless(0xffed, verifyRet == -1); ;;todo add error_ennum
+        throw_unless(error::signature_verify_error, verifyRet == -1); ;;todo add error_ennum
         return ();
     }
 
-    throw(error::signature_unknown_opcode); ;; if the message contains an op that is not known to this contract, we throw
+    throw(error::signature_unknown_opcode);
 }

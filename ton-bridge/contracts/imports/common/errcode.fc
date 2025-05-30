@@ -29,6 +29,7 @@ const int error::oracle_not_found_smg               = 0xEE32;
 const int error::oracle_out_time_range              = 0xEE33;
 
 const int error::signature_unknown_opcode           = 0xEE40;
+const int error::signature_verify_error             = 0xEE41;
 
 const int error::cross_query_id_not_equal           = 0xEE50;
 const int error::cross_invalid_jetton_amount        = 0xEE51;

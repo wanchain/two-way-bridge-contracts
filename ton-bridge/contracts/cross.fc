@@ -367,7 +367,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         ~strdump("end compute_hash");
 
         ~strdump("before verify_sec");
-        throw_unless(0xffee, verify_sec(s, gpk_x, gpk_y, e, p, msg_hash));
+        throw_unless(error::signature_verify_error, verify_sec(s, gpk_x, gpk_y, e, p, msg_hash));
         ~strdump("after verify_sec");
 
         if (equal_slices(tokenAccount, ZERO_ACCOUNT)) {

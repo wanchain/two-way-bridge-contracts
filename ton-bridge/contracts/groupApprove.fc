@@ -136,7 +136,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
         int hash = begin_cell().store_uint(proposalId, 64).store_uint(BIP44_CHAINID,32).end_cell().cell_hash();
 
         ~strdump("before verify_sec hash:"); ~dump(hash);
-        throw_unless(0xffee, verify_sec(_s, gpkx, gpky, _e, _p, hash));
+        throw_unless(error::signature_verify_error, verify_sec(_s, gpkx, gpky, _e, _p, hash));
         ~strdump("after verify_sec");
         
         ;; check if the task has existed
