@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "outDir": "../wan-ton-sdk/dist",
+    "outDir": "./dist",
     "module": "commonjs",
     "rootDir": "./",
     "declaration": true,
@@ -13,7 +13,11 @@
     "allowJs": true,
     "types": ["jest","node"]
   },
-  "include": ["./**/*"],
+  "include": ["./**/**/*"],
   "exclude": [
-    "node_modules", "./*.spec.ts","./*/*log*","./log/*"]
+    "node_modules",
+    "./**/*.spec.ts",
+    "./log/**/**/*",
+    "./data/**/*"
+  ]
 }

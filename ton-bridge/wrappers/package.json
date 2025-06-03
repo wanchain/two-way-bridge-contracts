@@ -1,11 +1,15 @@
 {
   "name": "wan-ton-sdk",
-  "version": "0.0.7",
+  "version": "0.0.10",
   "scripts": {
-    "build": "rm -rf ../wan-ton-sdk/dist && tsc",
+    "build": "rm -rf ./dist && tsc",
     "test": "jest --verbose",
-    "main": "../wan-ton-sdk/dist/index.js"
+    "main": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "v16.18.1",

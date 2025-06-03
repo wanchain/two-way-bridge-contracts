@@ -1,12 +1,15 @@
 #!/bin/bash
 
+# ./publish.sh true
+# ./publish.sh false 
+
 # ------------------- 配置 -------------------
 PROJECT_ROOT=$(pwd)        # 项目根目录，默认为脚本执行目录
-OUTPUT_DIR="dist"          # TypeScript 编译输出目录
+OUTPUT_DIR="../wan-ton-sdk/dist"          # TypeScript 编译输出目录
 NPM_COMMAND="npm"          # npm 命令，如果你的环境不同可以修改
 BUILD_COMMAND="npm run build" # 执行 TypeScript 编译的命令
 TEST_COMMAND="npm run test"   # 执行测试的命令 (可选)
-DRY_RUN=false              # 是否进行 npm publish 的 dry-run (模拟发布)
+DRY_RUN=$1 # 是否进行 npm publish 的 dry-run (模拟发布)
 # --------------------------------------------
 
 echo "开始自动编译和发布 TypeScript 项目..."
@@ -66,6 +69,7 @@ if $DRY_RUN; then
   echo "npm publish --dry-run 成功。"
 else
   echo "执行 npm publish..."
+  $NPM_COMMAND version patch
   if ! $NPM_COMMAND publish; then
     echo "错误: npm publish 失败，请检查你的 npm 配置和包版本。"
     exit 1
