@@ -7,7 +7,7 @@ import {
     formatError,
     isAddressEqual,
     removeFile,
-    sleep
+    sleep, toBase64
 } from "../utils/utils";
 import {getClient,getDBDataDir} from "../client/client";
 import {Address, beginCell, storeMessage, Transaction} from "@ton/core";
@@ -208,7 +208,8 @@ class DB {
             this.logger.info("Entering setTranHandleFlag","hash",tran.hash,"lt",tran.lt,"dbName",this.dbName,"finishOrNot",finishOrNot);
             copy = _.cloneDeep(this.db.getState());
 
-            this.db.get('trans').find({hash: tran.hash,lt:tran.lt.toString(10)})
+            let txHashBas64 = toBase64(tran.hash);
+            this.db.get('trans').find({hash: txHashBas64,lt:tran.lt.toString(10)})
                 .assign({emitEventOrNot: finishOrNot})
                 .value();
 
@@ -269,10 +270,14 @@ class DB {
     }
 
     async scanFun(){
-        let tasks = await this.getTasks();
-        this.logger.info("scanFun","dbName",this.dbName,"tasks",JSON.stringify(tasks,bigIntReplacer));
-        let retTasks = await this.scanTonTxByTasks(tasks);
-        await this.updateTask(retTasks);
+        try{
+            let tasks = await this.getTasks();
+            this.logger.info("scanFun","dbName",this.dbName,"tasks",JSON.stringify(tasks,bigIntReplacer));
+            let retTasks = await this.scanTonTxByTasks(tasks);
+            await this.updateTask(retTasks);
+        }catch(err){
+            this.logger.error("scanFun","scanFun","dbName",this.dbName,"scanFun","err",formatError(err));
+        }
     }
 
     // scan history and increased new trans into db.
@@ -286,17 +291,18 @@ class DB {
         }
 
         let isRunning = false;
+        //let isRunning = true;
         setInterval(async () => {
-            let self = this;
+            this.logger.info(`***************************Entering feedTrans setInterval ${this.dbName} isRunning: ${isRunning}`);
             if (isRunning) return;
             isRunning = true;
-
             try {
-                this.logger.info(`***************************feedTrans is working**************************************`,this.dbName);
-                await self.scanFun();
+                this.logger.info(`***************************feedTrans is working**************************************`,this.dbName,"isRunning",isRunning);
+                await this.scanFun();
             } catch (e) {
                 this.logger.error("feedTrans error",formatError(e));
             }finally {
+                this.logger.info("**************************finish one round feedTrans********************************",this.dbName,"isRunning:",isRunning,"\n\n\n");
                 isRunning = false;
             }
         }, randInternal);

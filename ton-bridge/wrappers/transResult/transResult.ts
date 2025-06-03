@@ -5,7 +5,7 @@ import {bigIntReplacer, formatError} from "../utils/utils";
 import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
 import {DBAccess} from "../db/DbAccess";
 import {convertTranToTonTrans} from "../db/common";
-import {MAX_LIMIT, MAX_RETRY} from "../const/const-value";
+import {MAX_LIMIT, MAX_RETRY, RETRY_INTERNAL_TIME} from "../const/const-value";
 import {WanTonClient} from "../client/client-interface";
 const formatUtil = require('util');
 
@@ -99,7 +99,7 @@ export async function getUpperStepsFromDb(client:WanTonClient,scAddr:Address,tra
             let inDb = await dbAccess?.has(upperAddress.toString());
             if(!inDb){
                 await dbAccess?.addDbByName(upperAddress.toString());
-                await sleep(2000);
+                await sleep(RETRY_INTERNAL_TIME);
             }
             console.log("getUpperStepsFromDb before dbAccess.getParentTx","tran hash",tran.hash().toString('hex'),"upperAddress",upperAddress.toString());
             transFromDb = await dbAccess?.getParentTx(upperAddress.toString(),convertTranToTonTrans([tran])[0]);
@@ -109,7 +109,7 @@ export async function getUpperStepsFromDb(client:WanTonClient,scAddr:Address,tra
         }catch(err){
             console.log("getUpperStepsFromDb from db err",formatError(err),"retry ",maxRetry);
         }
-        await sleep(2000);
+        await sleep(RETRY_INTERNAL_TIME);
     }
     if(maxRetry == 0 && !foundInDb){
         throw new Error(`Fail to look for parent. upperAddress: ${upperAddress.toString()}`)
@@ -229,7 +229,7 @@ export async function getUpperSteps(client:WanTonClient,scAddr:Address,tran:Tran
                 break; // found the upper tx
             }
         }
-        await sleep(2000);
+        await sleep(RETRY_INTERNAL_TIME);
         transChecked += transactions.length;
     }
 
@@ -463,7 +463,7 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
             let inDb = await dbAccess?.has(scAddr.toString());
             if(!inDb){
                 await dbAccess.addDbByName(scAddr.toString());
-                await sleep(2000);
+                await sleep(RETRY_INTERNAL_TIME);
             }
             transFromDb = await dbAccess?.getTxByMsg(scAddr.toString(),msgCellHash,msgBodyHash,BigInt(lt));
             if(transFromDb){  // found from db
@@ -472,9 +472,9 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
             }
         }catch(err){
             console.error(err);
-            console.error("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry);
+            console.error("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry,"scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
         }
-        await sleep(2000);
+        await sleep(RETRY_INTERNAL_TIME);
     }
 
     console.info("begin getTranByMsgHash from rpc","scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
@@ -519,14 +519,14 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
 
             }catch(e){
                 console.error("getTranByMsgHash from rpc err ",formatError(e));
-                await sleep(2000);
+                await sleep(RETRY_INTERNAL_TIME);
             }
         }
         if(maxRetry == 0){
             throw(new Error(formatUtil("getTransactions failed after %d retry. opts is %s",retry,JSON.stringify(opts))));
         }
 
-        await sleep(2000);
+        await sleep(RETRY_INTERNAL_TIME);
     }
 
 }
@@ -596,14 +596,14 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
 
             }catch(e){
                 console.error("err ",formatError(e));
-                await sleep(2000);
+                await sleep(RETRY_INTERNAL_TIME);
             }
         }
         if(maxRetry == 0){
             throw(new Error(formatUtil("getTransactions failed after %d retry. opts is %s",retry,JSON.stringify(opts))));
         }
 
-        await sleep(2000);
+        await sleep(RETRY_INTERNAL_TIME);
     }
 
 }

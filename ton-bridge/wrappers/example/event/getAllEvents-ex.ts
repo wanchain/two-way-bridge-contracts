@@ -44,7 +44,9 @@ async function main() {
         } catch (err) {
             console.error(err.code, err.response?.data?.error)
         }
-
+        if(!tonTrans){
+            return;
+        }
         for (let tonTran of tonTrans) {
             try {
                 console.log("begin getEventByTranHash", "scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
