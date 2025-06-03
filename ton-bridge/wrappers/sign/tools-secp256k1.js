@@ -183,7 +183,7 @@ function getSecSchnorrS(sk, typesArray, parameters) {
 function getSecSchnorrSByMsgHash(sk, msgHash) {
     // let MBuff = computeM(typesArray, parameters);
     // let M1Buff = computeM1(MBuff);
-    console.log("getSecSchnorrSByMsgHash sk=>",sk);
+    logger.info("getSecSchnorrSByMsgHash sk=>",sk);
     let pk = getPKBySk(sk);
     let pkBuf = Buffer.from(pk.substring(2), 'hex');
     let eBuffHexStr = computeE(R, getPararity(pkBuf), getXBytesFromPk(pkBuf), msgHash);

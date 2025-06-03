@@ -13,6 +13,7 @@ import {Bridge} from "../Bridge";
 import {TON_FEE} from "../fee/fee";
 import {IsWanTonClient, WanTonClient} from "../client/client-interface";
 const formatUtil = require('util');
+import {logger} from '../utils/logger';
 
 export const LOCK_TYPE={
     coin:1,
@@ -31,7 +32,7 @@ export async function buildUserLockMessages(opts: {
     senderAccount:string,
 },differentQueryID?:number){
     const {client,...filtered} = opts;
-    console.log("buildUserLockMessages","opts",filtered);
+    logger.info("buildUserLockMessages","opts",filtered);
 
     let queryID = await getQueryID();
     if(! Address.isAddress(Address.parse(opts.bridgeScAddr))){
@@ -47,13 +48,13 @@ export async function buildUserLockMessages(opts: {
     let dstChainID = tokenPairInfo.toChainID
 
     let lockFee = BigInt(await getFee(opts.client,Address.parse(opts.bridgeScAddr),opts.tokenPairID,fromChainID,dstChainID));
-    console.log("lockFee=%s",lockFee.toString(10));
+    logger.info("lockFee=%s",lockFee.toString(10));
     let addrTokenAccount:Address;
     let jwAddrBridgeSc:Address;
     let jwAddrSrc:Address;
 
-    console.log("tokenAccount",tokenAccount);
-    console.log("TON_COIN_ACCOUNT_STR",TON_COIN_ACCOUNT_STR);
+    logger.info("tokenAccount",tokenAccount);
+    logger.info("TON_COIN_ACCOUNT_STR",TON_COIN_ACCOUNT_STR);
     if(tokenAccount == TON_COIN_ACCOUNT_STR){
         jwAddrBridgeSc = jwAddrSrc = addrTokenAccount = Address.parse(TON_COIN_ACCOUNT_STR)
         return buildLockCoinMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee);
@@ -62,12 +63,12 @@ export async function buildUserLockMessages(opts: {
         jwAddrBridgeSc = await getJettonWalletAddr(opts.client,addrTokenAccount,Address.parse(opts.bridgeScAddr))
         jwAddrSrc = await getJettonWalletAddr(opts.client,addrTokenAccount,Address.parse(opts.senderAccount))
 
-        console.log("jwAddrBridgeSc(big)",AddressToBig(jwAddrBridgeSc),"addrTokenAccount(big)",AddressToBig(addrTokenAccount),"bridgeScAddr(big)",AddressToBig(Address.parse(opts.bridgeScAddr)));
-        console.log("jwAddrSrc(big)",AddressToBig(jwAddrSrc),"addrTokenAccount(big)",AddressToBig(addrTokenAccount),"AddrSrc(big)",AddressToBig(Address.parse(opts.senderAccount)));
+        logger.info("jwAddrBridgeSc(big)",AddressToBig(jwAddrBridgeSc),"addrTokenAccount(big)",AddressToBig(addrTokenAccount),"bridgeScAddr(big)",AddressToBig(Address.parse(opts.bridgeScAddr)));
+        logger.info("jwAddrSrc(big)",AddressToBig(jwAddrSrc),"addrTokenAccount(big)",AddressToBig(addrTokenAccount),"AddrSrc(big)",AddressToBig(Address.parse(opts.senderAccount)));
 
         let jettonAdminAddr:Address;
         jettonAdminAddr = await getJettonAdminAddr(opts.client,addrTokenAccount);
-        console.log("jettonAdminAddr from getJettonAdminAddr",jettonAdminAddr.toString());
+        logger.info("jettonAdminAddr from getJettonAdminAddr",jettonAdminAddr.toString());
         addrTokenAccount = Address.parse(tokenAccount);
         if(jettonAdminAddr.toString() == opts.bridgeScAddr.toString()){
             return buildLockWrappedTokenMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee,BigInt(differentQueryID | 0));
@@ -99,10 +100,10 @@ async function buildLockCoinMessages(opts: {
     client:WanTonClient|Blockchain,
     senderAccount:string,
 },jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
-    console.log("buildLockCoinMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
+    logger.info("buildLockCoinMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
     let totalValue:bigint;
     totalValue = opts.value + opts.crossValue;
-    console.log("totalValue=>",totalValue);
+    logger.info("totalValue=>",totalValue);
     let queryId = await getQueryID();
     let dstUserAccountBuffer = Buffer.from(opts.dstUserAccount,'hex');
     let dstUserAccountBufferLen = dstUserAccountBuffer.length
@@ -148,7 +149,7 @@ async function buildLockOriginalTokenMessages(opts: {
     client:WanTonClient|Blockchain,
     senderAccount:string,differentQueryID?:bigint
 },jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint,differentQueryID?:bigint){
-    console.log("buildLockOriginalTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"jwAddrSrcBig",AddressToBig(jwAddrSrc),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
+    logger.info("buildLockOriginalTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"jwAddrSrcBig",AddressToBig(jwAddrSrc),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
 
     if(opts.value < (lockFee + TON_FEE.NOTIFY_FEE_USER_LOCK)){ //todo value > lockFee + transUserLockFeea
         throw new Error("insufficient ton balance");
@@ -182,7 +183,7 @@ async function buildLockOriginalTokenMessages(opts: {
     // sendToken payLoad
     //let forwardAmount = lockFee + toNano('0.3');
     let forwardAmount = lockFee + TON_FEE.NOTIFY_FEE_USER_LOCK;
-    console.log("forwardAmount=>",forwardAmount);
+    logger.info("forwardAmount=>",forwardAmount);
     let sendTokenAmount = opts.crossValue;
     let sendJettonCel = beginCell()
         .storeUint(0xf8a7ea5, 32) // const int op::transfer = 0xf8a7ea5;
@@ -209,7 +210,7 @@ async function buildLockOriginalTokenMessages(opts: {
 }
 
 async function buildLockWrappedTokenMessages(opts:any,jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint,differentQueryID?:bigint){
-    console.log("buildLockWrappedTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
+    logger.info("buildLockWrappedTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
     let ret =  (await buildLockOriginalTokenMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee));
     ret.lockType = LOCK_TYPE.tokenWrapped;
     return ret;
@@ -239,7 +240,7 @@ export async function getFee(client:WanTonClient|Blockchain,bridgeScAddr:Address
 }
 
 export async function getJettonWalletAddr(client:WanTonClient|Blockchain,jettonMasterAddr:Address,ownerAddr:Address){
-    console.log("in getJettonWalletAddr", "jettonMasterAddr", jettonMasterAddr.toString(),"ownerAddr",ownerAddr.toString());
+    logger.info("in getJettonWalletAddr", "jettonMasterAddr", jettonMasterAddr.toString(),"ownerAddr",ownerAddr.toString());
     if(IsWanTonClient(client)){
         let jettonMasterSc = JettonMaster.create(jettonMasterAddr)
         let jettonMasterScOpened = await client.open(jettonMasterSc)
@@ -253,7 +254,7 @@ export async function getJettonWalletAddr(client:WanTonClient|Blockchain,jettonM
 }
 
 export async function getJettonAdminAddr(client:WanTonClient|Blockchain,jettonMasterAddr:Address){
-    console.log("in getJettonAdminAddr", "jettonMasterAddr", jettonMasterAddr.toString());
+    logger.info("in getJettonAdminAddr", "jettonMasterAddr", jettonMasterAddr.toString());
     if(IsWanTonClient(client)){
         let jettonMasterSc = JettonMaster.create(jettonMasterAddr)
         let jettonMasterScOpened = await client.open(jettonMasterSc)
@@ -269,16 +270,16 @@ export async function getTokenPairInfo(client:WanTonClient|Blockchain,bridgeScAd
     let tokePairInfo ;
     let tokenAccount = "";
     if(IsWanTonClient(client)){
-        console.log("Entering getTokenPairInfo IsWanTonClient true");
+        logger.info("Entering getTokenPairInfo IsWanTonClient true");
         let ba = new BridgeAccess(client,bridgeScAddr)
         tokePairInfo = await ba.readContract("getTokenPair",[tokenPairID])
     }else{
-        console.log("Entering getTokenPairInfo IsWanTonClient false");
+        logger.info("Entering getTokenPairInfo IsWanTonClient false");
         let b = Bridge.createFromAddress(bridgeScAddr);
         let opened = await client.openContract(b);
         tokePairInfo = await opened.getTokenPair(tokenPairID)
     }
-    console.log("in getTokenPairInfo","tokenPairInfo",tokePairInfo,"tokenPairId",tokenPairID);
+    logger.info("in getTokenPairInfo","tokenPairInfo",tokePairInfo,"tokenPairId",tokenPairID);
     if (tokePairInfo.fromChainID == BIP44_CHAINID){
         tokenAccount = tokePairInfo.fromAccount;
     }else{

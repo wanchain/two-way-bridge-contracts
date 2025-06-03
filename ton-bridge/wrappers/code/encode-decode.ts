@@ -17,15 +17,15 @@ export const codeTable = {
             let slice = cell.beginParse();
             let opCode = slice.loadUint(32);
             let queryID = slice.loadUint(64);
-            console.log("33333");
+            logger.info("33333");
             let smgID = slice.loadUintBig(256); // why not use .loadUintBig(256)? should change all loadUint(256) to loadUintBig(256)?
-            console.log("4444");
+            logger.info("4444");
             let tokenPairID = slice.loadUint(32);
             let crossValue = slice.loadUintBig(256);
 
             let dstUserAccountLen = slice.loadUint(8);
             let dstUserAccountBuff = slice.loadBuffer(dstUserAccountLen);
-            console.log("22222");
+            logger.info("22222");
             let extraCell = slice.loadRef().beginParse();
             let addrTokenAccount = extraCell.loadAddress();
             let jwAddrSrc = extraCell.loadAddress();
@@ -34,7 +34,7 @@ export const codeTable = {
 
             let extraCell2 = slice.loadRef().beginParse();
             let senderAccount = extraCell2.loadAddress();
-            console.log("1111111");
+            logger.info("1111111");
             let fee = extraCell2.loadUintBig(256);
             extraCell2.endParse();
 
@@ -446,7 +446,7 @@ export const codeTable = {
     },
     [opcodes.OP_FEE_SetTokenPairFees]: {
         "enCode": function (opts: any): Cell {
-            console.log("Entering enCode Function OP_FEE_SetTokenPairFees");
+            logger.info("Entering enCode Function OP_FEE_SetTokenPairFees");
             let count = opts.tokenPairID.length
             let data = beginCell()
             .storeUint(opcodes.OP_FEE_SetTokenPairFees, 32)
@@ -464,7 +464,7 @@ export const codeTable = {
     },
     [opcodes.OP_FEE_SetChainFee]: {
         "enCode": function (opts: any): Cell {
-            console.log("Entering enCode Function OP_FEE_SetChainFee");
+            logger.info("Entering enCode Function OP_FEE_SetChainFee");
             return beginCell()
                 .storeUint(opcodes.OP_FEE_SetChainFee, 32)
                 .storeUint(opts.queryID ?? 0, 64)
@@ -480,7 +480,7 @@ export const codeTable = {
     },
     [opcodes.OP_FEE_SetChainFees]: {
         "enCode": function (opts: any): Cell {
-            console.log("Entering enCode Function OP_FEE_SetChainFees");
+            logger.info("Entering enCode Function OP_FEE_SetChainFees");
             let count = opts.srcChainId.length
 
             let data =  beginCell()
@@ -502,7 +502,7 @@ export const codeTable = {
     },
     [opcodes.OP_TOKENPAIR_Upsert]: {
         "enCode": function (opts: any): Cell {
-            //console.log("opcodes.OP_TOKENPAIR_Upsert enCode","opts",opts);
+            //logger.info("opcodes.OP_TOKENPAIR_Upsert enCode","opts",opts);
             let toBuffer, fromBuffer;
             if (opts.fromChainID == BIP44_CHAINID) {
                 if (opts.fromAccount == "") {
@@ -570,9 +570,9 @@ export const codeTable = {
             sliceTo.endParse();
             logger.info(formatUtil.format("toBuffer=>",toBuffer));
             let jettonAdmin = slice.loadBits(256);
-            console.log("OP_TOKENPAIR_Upsert before loadMybeRef begin");
+            logger.info("OP_TOKENPAIR_Upsert before loadMybeRef begin");
             let walletCodeCell = slice.loadMaybeRef();
-            console.log("OP_TOKENPAIR_Upsert before loadMybeRef end");
+            logger.info("OP_TOKENPAIR_Upsert before loadMybeRef end");
             slice.endParse();
 
             return {

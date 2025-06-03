@@ -50,8 +50,8 @@ let buildDBdataDir = ()=>{
         DBDataDir = path.join(...[__dirname,"/../data/mainnet/"]);
     }
 
-    console.log("__dirname",__dirname);
-    console.log("DBDataDir",DBDataDir);
+    logger.info("__dirname",__dirname);
+    logger.info("DBDataDir",DBDataDir);
 
 };
 

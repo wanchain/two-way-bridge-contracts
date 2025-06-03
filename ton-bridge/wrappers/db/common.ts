@@ -5,10 +5,10 @@ import {CommonMessageInfoInternal} from "@ton/core/src/types/CommonMessageInfo";
 import {TonTransaction} from "./Db";
 import {loadTransaction} from "@ton/core";
 import {formatError} from "../utils/utils";
-
+import {logger} from '../utils/logger'
 export  function listJsonFiles(dir: string, fileList: string[] = []): string[] {
     const files = fs.readdirSync(dir);
-    console.log("files",files);
+    logger.info("files",files);
     for (const file of files) {
         const filePath = path.join(dir, file);
         const stat = fs.statSync(filePath);
@@ -83,7 +83,7 @@ export function convertTonTransToTrans(tonTrans:TonTransaction[]){
             let tranTemp:Transaction = loadTransaction(tranCell.asSlice());
             trans.push(tranTemp);
         }catch(err){
-            console.error("convertTonTransToTrans","tonTran",tonTran,"err",formatError(err));
+            logger.error("convertTonTransToTrans","tonTran",tonTran,"err",formatError(err));
         }
     }
     return trans;

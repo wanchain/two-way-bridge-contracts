@@ -97,7 +97,7 @@ export class Logger {
         try {
             this.logger.error(msgFull);
         } catch (err) {
-            console.log(err);
+            logger.info(err);
         }
     }
 }

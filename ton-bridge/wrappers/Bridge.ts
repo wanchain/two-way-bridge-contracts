@@ -266,11 +266,11 @@ export class Bridge implements Contract {
             client: opts.client,
             senderAccount: opts.senderAccount
         },differentQueryID)
-        console.log("ret==>",ret);
-        console.log("ret.to==>",ret.to);
+        logger.info("ret==>",ret);
+        logger.info("ret.to==>",ret.to);
 
         if(ret.to.toString() == this.address.toString()){
-            console.log("entering lock coin");
+            logger.info("entering lock coin");
             let totalValue:bigint;
             totalValue = ret.value;
             await provider.internal(via, {
@@ -278,7 +278,7 @@ export class Bridge implements Contract {
                 sendMode: SendMode.PAY_GAS_SEPARATELY,
                 body: ret.body});
         }else{
-             console.log("entering lock token");
+             logger.info("entering lock token");
              let provider = await opts.client.provider(ret.to as unknown as Address);
              await provider.internal(via, {
                  value: opts.value,
@@ -308,7 +308,7 @@ export class Bridge implements Contract {
             totalTonAmount:bigint,
         }
     ) {
-        console.log("opts1",opts);
+        logger.info("opts1",opts);
         let body = codeTable[opcodes.OP_CROSS_SmgRelease].enCode(opts);
         await provider.internal(via, {
             value: opts.value,

@@ -5,7 +5,7 @@ import {DictionaryKey, DictionaryKeyTypes, DictionaryValue} from "@ton/core"
 import {sha256_sync} from "@ton/crypto";
 import {IsWanTonClient, WanTonClient} from "../client/client-interface";
 import {Blockchain} from "@ton/sandbox";
-
+import {logger} from '../utils/logger'
 export async function getJettonBalance(client:WanTonClient|Blockchain,jettonMasterAddr:Address, userAddress:Address): Promise<bigint> {
     if(IsWanTonClient(client)){
         let jettonWalletAddress = await getJettonAddress(client,jettonMasterAddr,userAddress);
@@ -91,7 +91,7 @@ export async function buildWrappedJettonContent(opts:any):Promise<Cell>{
     Object.entries(newOpts).forEach(([k, v]: [string, string | undefined]) => {
         if (!jettonOnChainMetadataSpec[k]){
             //throw new Error(`Unsupported token key: ${k}`);
-            console.error(`Unsupported token key: ${k}`);
+            logger.error(`Unsupported token key: ${k}`);
             return;
         }
         if (v === undefined || v === "") return;
@@ -166,7 +166,7 @@ export async function parseWrappedJettonContent(cell:Cell){
 
     const content = cell.beginParse()
     const type = content.loadUint(8)
-    console.log(`type is ${JSON.stringify(type)}`)
+    logger.info(`type is ${JSON.stringify(type)}`)
     const contentDict   = Dictionary.load(Dictionary.Keys.BigUint(256), contentValue, content);
     const contentMap = {};
 
@@ -179,6 +179,6 @@ export async function parseWrappedJettonContent(cell:Cell){
             contentMap[name] = dictValue;
         }
     }
-    console.log(`jetton has content ${JSON.stringify(contentMap, null, 2)}`)
+    logger.info(`jetton has content ${JSON.stringify(contentMap, null, 2)}`)
     return contentMap
 }

@@ -18,7 +18,7 @@ export async function compileContract(conf: CompilerConfig) {
     let result = await compileFunc(conf);
 
     if (result.status === 'error') {
-        console.error(result.message)
+        logger.error(result.message)
         return;
     }
 

@@ -9,6 +9,7 @@
  * ---------------------------------------------------------------
  */
 
+import {logger} from '../utils/logger'
 
 import {
     Transaction as TonCoreTransaction,
@@ -6087,7 +6088,7 @@ export class TonApiClient {
             after_lt:opts.to_lt ? BigInt(opts.to_lt):BigInt(0),
             sort_order:'desc'
         }
-        console.log("tonApi getTransactions","address",address,"tonApiOpts",tonApiOpts);
+        logger.info("tonApi getTransactions","address",address,"tonApiOpts",tonApiOpts);
         let res = await this.blockchain.getBlockchainAccountTransactions(address,tonApiOpts)
         if(res){
             let retTrans:TonCoreTransaction[] = [];
@@ -9808,7 +9809,7 @@ function createProvider(
             hash: Buffer,
             limit?: number
         ): Promise<TonCoreTransaction[]> {
-            console.info(
+            logger.info(
                 'hash param in getTransactions action ignored, beacause not supported',
                 hash.toString('hex')
             );

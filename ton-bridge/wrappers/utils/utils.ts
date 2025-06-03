@@ -1,6 +1,7 @@
 
 import { Address, toNano, fromNano } from "@ton/core";
 import {getSecureRandomNumber} from '@ton/crypto';
+import {logger} from '../utils/logger'
 
 export const randomAddress = (wc: number = 0) => {
     const buf = Buffer.alloc(32);
@@ -146,7 +147,7 @@ const path = require('node:path');
 export async function ensureFileAndPath(fullFilePath:string):Promise<boolean>{
     try {
         await fs.access(fullFilePath);
-        console.log(`file exist: ${fullFilePath}`);
+        logger.info(`file exist: ${fullFilePath}`);
     } catch (error) {
         if (error.code === 'ENOENT') {
             const directoryPath = path.dirname(fullFilePath);
@@ -155,23 +156,23 @@ export async function ensureFileAndPath(fullFilePath:string):Promise<boolean>{
                 await fs.access(directoryPath);
             } catch (dirError) {
                 if (dirError.code === 'ENOENT') {
-                    console.log(`mkdir: ${directoryPath}`);
+                    logger.info(`mkdir: ${directoryPath}`);
                     await fs.mkdir(directoryPath, { recursive: true });
                 } else {
-                    console.error(`mkdir (${directoryPath}):`, dirError);
+                    logger.error(`mkdir (${directoryPath}):`, dirError);
                     return false;
                 }
             }
 
             try {
                 await fs.writeFile(fullFilePath, '');
-                console.log(`file created: ${fullFilePath}`);
+                logger.info(`file created: ${fullFilePath}`);
             } catch (fileError) {
-                console.error(`create file fail (${fullFilePath}):`, fileError);
+                logger.error(`create file fail (${fullFilePath}):`, fileError);
                 return false;
             }
         } else {
-            console.error(`access file fail (${fullFilePath}):`, error);
+            logger.error(`access file fail (${fullFilePath}):`, error);
             return false
         }
     }
@@ -181,7 +182,7 @@ export async function ensureFileAndPath(fullFilePath:string):Promise<boolean>{
 export async function ensurePath(fullFilePath:string):Promise<boolean>{
     try {
         await fs.access(fullFilePath);
-        console.log(`file exist: ${fullFilePath}`);
+        logger.info(`file exist: ${fullFilePath}`);
     } catch (error) {
         if (error.code === 'ENOENT') {
             const directoryPath = path.dirname(fullFilePath);
@@ -190,15 +191,15 @@ export async function ensurePath(fullFilePath:string):Promise<boolean>{
                 await fs.access(directoryPath);
             } catch (dirError) {
                 if (dirError.code === 'ENOENT') {
-                    console.log(`mkdir: ${directoryPath}`);
+                    logger.info(`mkdir: ${directoryPath}`);
                     await fs.mkdir(directoryPath, { recursive: true });
                 } else {
-                    console.error(`mkdir (${directoryPath}):`, dirError);
+                    logger.error(`mkdir (${directoryPath}):`, dirError);
                     return false;
                 }
             }
         } else {
-            console.error(`access file fail (${fullFilePath}):`, error);
+            logger.error(`access file fail (${fullFilePath}):`, error);
             return false
         }
     }
@@ -208,18 +209,18 @@ export async function ensurePath(fullFilePath:string):Promise<boolean>{
 export async function ensureDirectoryExists(directoryPath) {
     try {
         await fs.access(directoryPath);
-        console.log(`目录 "${directoryPath}" 已存在。`);
+        logger.info(`目录 "${directoryPath}" 已存在。`);
     } catch (error) {
         if (error.code === 'ENOENT') {
             try {
                 await fs.mkdir(directoryPath, { recursive: true });
-                console.log(`目录 "${directoryPath}" 创建成功。`);
+                logger.info(`目录 "${directoryPath}" 创建成功。`);
             } catch (mkdirError) {
-                console.error(`创建目录 "${directoryPath}" 失败:`, mkdirError);
+                logger.error(`创建目录 "${directoryPath}" 失败:`, mkdirError);
                 throw mkdirError; // Re-throw the error if directory creation fails
             }
         } else {
-            console.error(`检查目录 "${directoryPath}" 失败:`, error);
+            logger.error(`检查目录 "${directoryPath}" 失败:`, error);
             throw error; // Re-throw other errors during access check
         }
     }
@@ -229,13 +230,13 @@ export async function ensureDirectoryExists(directoryPath) {
 export async function removeFile(fullFilePath:string):Promise<boolean>{
     try {
         await fs.access(fullFilePath);
-        console.log(`file exist: ${fullFilePath}`);
+        logger.info(`file exist: ${fullFilePath}`);
         await fs.unlink(fullFilePath);
     } catch (error) {
         if (error.code === 'ENOENT') {
             return true
         } else {
-            console.error(`access file fail (${fullFilePath}):`, formatError(error));
+            logger.error(`access file fail (${fullFilePath}):`, formatError(error));
             return false
         }
     }

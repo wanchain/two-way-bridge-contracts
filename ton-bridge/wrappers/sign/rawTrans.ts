@@ -19,7 +19,7 @@ import {internal} from "@ton/core";
 import {StateInit} from "@ton/core";
 import {TonClient} from "@ton/ton";
 import {WanTonClient} from "../client/client-interface";
-
+import {logger} from '../utils/logger'
 export async function buildInternalMessage(from:Address,src: {
     to: Address | string,
     value: bigint | string,
@@ -116,7 +116,7 @@ export async function sendRawTransaction(client:WanTonClient, senderAddress:Addr
 export function getMsgHash(msgs:Message[]){
     let ret = [];
     for(let m of msgs){
-        console.log("==========msg=>",JSON.stringify(m,bigIntReplacer));
+        logger.info("==========msg=>",JSON.stringify(m,bigIntReplacer));
         ret.push(beginCell().store(storeMessage(m)).endCell().hash().toString('hex'));
     }
     return ret;

@@ -7,6 +7,7 @@ import {DBAccess} from "../db/DbAccess";
 import {convertTranToTonTrans} from "../db/common";
 import {MAX_LIMIT, MAX_RETRY, RETRY_INTERNAL_TIME} from "../const/const-value";
 import {WanTonClient} from "../client/client-interface";
+import {logger} from '../utils/logger'
 const formatUtil = require('util');
 
 function sleep(ms) {
@@ -76,12 +77,12 @@ async function isTranPathSuccess(allTranPathInfo:TranPathInfo):Promise<boolean>{
 
 
 export async function getUpperStepsFromDb(client:WanTonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
-    console.log("getUpperStepsFromDb","tran hash",tran.hash().toString('hex'));
+    logger.info("getUpperStepsFromDb","tran hash",tran.hash().toString('hex'));
     if(tran.inMessage.info.type == 'external-in'){
         return
     }
     const inMessageCell = beginCell().store(storeMessage( tran.inMessage)).endCell();
-    console.log("getUpperStepsFromDb inMessageCell==>","hash",tran.hash().toString('hex'));
+    logger.info("getUpperStepsFromDb inMessageCell==>","hash",tran.hash().toString('hex'));
 
     let upperAddress = tran.inMessage.info.src as Address;
 
@@ -89,7 +90,7 @@ export async function getUpperStepsFromDb(client:WanTonClient,scAddr:Address,tra
     //get from scanned db
     let dbAccess = await DBAccess.getDBAccess();
     if(!dbAccess){
-        console.error("not using db cache");
+        logger.error("not using db cache");
         throw new Error("not using db cache");
     }
     let transFromDb = null;
@@ -101,13 +102,13 @@ export async function getUpperStepsFromDb(client:WanTonClient,scAddr:Address,tra
                 await dbAccess?.addDbByName(upperAddress.toString());
                 await sleep(RETRY_INTERNAL_TIME);
             }
-            console.log("getUpperStepsFromDb before dbAccess.getParentTx","tran hash",tran.hash().toString('hex'),"upperAddress",upperAddress.toString());
+            logger.info("getUpperStepsFromDb before dbAccess.getParentTx","tran hash",tran.hash().toString('hex'),"upperAddress",upperAddress.toString());
             transFromDb = await dbAccess?.getParentTx(upperAddress.toString(),convertTranToTonTrans([tran])[0]);
             if(transFromDb){  // found from db
                 foundInDb = true;
             }
         }catch(err){
-            console.log("getUpperStepsFromDb from db err",formatError(err),"retry ",maxRetry);
+            logger.info("getUpperStepsFromDb from db err",formatError(err),"retry ",maxRetry);
         }
         await sleep(RETRY_INTERNAL_TIME);
     }
@@ -115,7 +116,7 @@ export async function getUpperStepsFromDb(client:WanTonClient,scAddr:Address,tra
         throw new Error(`Fail to look for parent. upperAddress: ${upperAddress.toString()}`)
     }
     if(foundInDb && transFromDb){
-        console.log("getUpperStepsFromDB success","hash",tran.hash().toString('hex'),"parent hash",transFromDb.hash().toString('hex'));
+        logger.info("getUpperStepsFromDB success","hash",tran.hash().toString('hex'),"parent hash",transFromDb.hash().toString('hex'));
         let stepInfoTemp :TranStepInfo = {
             addr:upperAddress as Address,
             txHash:transFromDb.hash().toString('hex'),
@@ -138,12 +139,12 @@ export async function getUpperSteps(client:WanTonClient,scAddr:Address,tran:Tran
         await getUpperStepsFromDb(client,scAddr,tran,path);
         return;
     }catch(err){
-        console.log("getUpperStepsFromDb error",formatError(err));
+        logger.info("getUpperStepsFromDb error",formatError(err));
     }
 
-    console.log("getUpperSteps from rpc","scAddr",scAddr,"tran hash",tran.hash().toString('hex'));
+    logger.info("getUpperSteps from rpc","scAddr",scAddr,"tran hash",tran.hash().toString('hex'));
     const inMessageCell = beginCell().store(storeMessage( tran.inMessage)).endCell();
-    console.log("inMessageCell==>",inMessageCell.toBoc().toString('hex'));
+    logger.info("inMessageCell==>",inMessageCell.toBoc().toString('hex'));
     let tranInMsgHash = inMessageCell.hash().toString('hex');
 
     let tranInMsgBodyCellHash = tran.inMessage.body.hash().toString('hex');
@@ -173,14 +174,14 @@ export async function getUpperSteps(client:WanTonClient,scAddr:Address,tran:Tran
         let transactions:Transaction[] = [];
         while(--retry > 0  && !status){
             try{
-                console.log("getUpperSteps getTransactions ","scAddress",upperAddress,"opts",opts);
+                logger.info("getUpperSteps getTransactions ","scAddress",upperAddress,"opts",opts);
                 transactions = await client.getTransactions(upperAddress, opts);
                 transCount = transactions.length;
                 status = true;
                 retry = 5;
             }catch(e){
                 await sleep(1000);
-                console.error(formatError(e))
+                logger.error(formatError(e))
             }
         }
         if(retry == 0){
@@ -194,14 +195,14 @@ export async function getUpperSteps(client:WanTonClient,scAddr:Address,tran:Tran
                 opts.hash = tx.hash().toString('base64');
             }
             const transactionHash = tx.hash().toString('base64');
-            console.log("tx hash is:",i, tx.lt, transactionHash,tx.hash().toString('hex'))
+            logger.info("tx hash is:",i, tx.lt, transactionHash,tx.hash().toString('hex'))
             const outMessages = tx.outMessages;
             let foundInOutMsgs = false;
             for(let outMsgKey of outMessages.keys()){
                 let outMsg = outMessages.get(outMsgKey);
                 let outMsgHash = beginCell().store(storeMessage(outMsg)).endCell().hash().toString('hex');
                 let outMsgBodyHash = outMsg.body.hash().toString('hex');
-                console.log("outMsgHash",outMsgHash,"tranInMsgHash",tranInMsgHash,"outMsgBodyHash",outMsgBodyHash,"tranInMsgBodyCellHash",tranInMsgBodyCellHash);
+                logger.info("outMsgHash",outMsgHash,"tranInMsgHash",tranInMsgHash,"outMsgBodyHash",outMsgBodyHash,"tranInMsgBodyCellHash",tranInMsgBodyCellHash);
                 if (outMsgHash == tranInMsgHash || outMsgBodyHash == tranInMsgBodyCellHash){
                     if((outMsg.info.dest as unknown as Address).equals(scAddr)){
                         if((outMsg.info as unknown as CommonMessageInfoInternal).createdLt == (tran.inMessage.info as unknown as CommonMessageInfoInternal).createdLt){
@@ -223,7 +224,7 @@ export async function getUpperSteps(client:WanTonClient,scAddr:Address,tran:Tran
             }
 
             if (foundInOutMsgs){
-                console.log("found upper tx",tx.hash().toString('base64'));
+                logger.info("found upper tx",tx.hash().toString('base64'));
                 await getUpperSteps(client,upperAddress,tx,path);
                 foundUpper = true;
                 break; // found the upper tx
@@ -239,7 +240,7 @@ export async function getUpperSteps(client:WanTonClient,scAddr:Address,tran:Tran
 }
 
 export async function getLowerSteps(client:WanTonClient,scAddr:Address,tran:Transaction, path:TranPathInfo){
-    console.log("Entering getLowerSteps","scAddr",scAddr);
+    logger.info("Entering getLowerSteps","scAddr",scAddr);
     if(tran.outMessages.keys().length == 0){
         return
     }
@@ -250,7 +251,7 @@ export async function getLowerSteps(client:WanTonClient,scAddr:Address,tran:Tran
         let lowerAddr = outMsg.info.dest as Address;
         let msgCellHash = beginCell().store(storeMessage(outMsg)).endCell().hash().toString('hex');
         let msgBodyHash = outMsg.body.hash().toString('hex');
-        console.log("===========================before getTranByMsgHash","outMsg",outMsg);
+        logger.info("===========================before getTranByMsgHash","outMsg",outMsg);
         let lowerTx = await getTranByMsgHash(client,lowerAddr,msgCellHash,msgBodyHash,(outMsg.info as unknown as CommonMessageInfoInternal).createdLt.toString(10));
 
         let stepInfoTemp :TranStepInfo = {
@@ -266,7 +267,7 @@ export async function getLowerSteps(client:WanTonClient,scAddr:Address,tran:Tran
 }
 
 async function getTranPathInfoByPivotTran(client:WanTonClient,scAddr:Address,pivotTran:Transaction):Promise<TranPathInfo>{
-    console.log("Entering getTranPathInfoByPivotTran");
+    logger.info("Entering getTranPathInfoByPivotTran");
     let allTranPathInfo: TranPathInfo = [];
     let beforePivotTranPathInfo: TranPathInfo = [];
     let afterPivotTranPathInfo: TranPathInfo = [];
@@ -279,19 +280,19 @@ async function getTranPathInfoByPivotTran(client:WanTonClient,scAddr:Address,piv
         lt:pivotTran.lt.toString(),
     }
 
-    console.log("Entering get children tx");
+    logger.info("Entering get children tx");
     await getLowerSteps(client,scAddr,pivotTran,afterPivotTranPathInfo);   // find children tx //todo check it carefully.
-    console.log("End get children tx");
+    logger.info("End get children tx");
 
-    console.log("Entering get parent tx");
+    logger.info("Entering get parent tx");
     await getUpperSteps(client,scAddr,pivotTran,beforePivotTranPathInfo);  // find parent tx
-    console.log("End get parent tx");
+    logger.info("End get parent tx");
 
-    console.log("[pivoltTranStepInfo]====>",[pivoltTranStepInfo]);
-    console.log("[beforePivotTranPathInfo]====>",beforePivotTranPathInfo);
-    console.log("[afterPivotTranPathInfo]====>",afterPivotTranPathInfo);
+    logger.info("[pivoltTranStepInfo]====>",[pivoltTranStepInfo]);
+    logger.info("[beforePivotTranPathInfo]====>",beforePivotTranPathInfo);
+    logger.info("[afterPivotTranPathInfo]====>",afterPivotTranPathInfo);
     let ret = allTranPathInfo.concat(beforePivotTranPathInfo,[pivoltTranStepInfo],afterPivotTranPathInfo);
-    console.log("========================ret = >", ret);
+    logger.info("========================ret = >", ret);
     return ret;
 }
 
@@ -377,7 +378,7 @@ export async function getTranResultByTxHash(client:WanTonClient,scAddr:Address,t
 }
 
 export async function getTranResultByTran(client:WanTonClient,scAddr:Address,tran:Transaction):Promise<TranResult>{
-    console.log("Entering getTranResultByTran");
+    logger.info("Entering getTranResultByTran");
     let path = await  getTranPathInfoByPivotTran(client,scAddr,tran);
     let success = await isTranPathSuccess(path);
     return {
@@ -467,17 +468,17 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
             }
             transFromDb = await dbAccess?.getTxByMsg(scAddr.toString(),msgCellHash,msgBodyHash,BigInt(lt));
             if(transFromDb){  // found from db
-                console.info("getTranByMsgHash from db success","scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
+                logger.info("getTranByMsgHash from db success","scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
                 return transFromDb;
             }
         }catch(err){
-            console.error(err);
-            console.error("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry,"scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
+            logger.error(err);
+            logger.error("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry,"scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
         }
         await sleep(RETRY_INTERNAL_TIME);
     }
 
-    console.info("begin getTranByMsgHash from rpc","scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
+    logger.info("begin getTranByMsgHash from rpc","scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
     //get from rpc
     maxRetry = retry;
 
@@ -499,12 +500,12 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
         let getSuccess = false
         while(maxRetry-- >0 && (!getSuccess)){
             try{
-                console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,JSON.stringify(opts,bigIntReplacer));
+                logger.info("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,JSON.stringify(opts,bigIntReplacer));
                 let ret = await client.getTransactions(scAddr,opts)
                 transCount = ret.length;
-                console.log("getTranByMsgHash getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
+                logger.info("getTranByMsgHash getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
                 for(let tran of ret){
-                    console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
+                    logger.info("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                     let found = await findMsgCellHashInTran(tran,msgCellHash,msgBodyHash,lt);
                     if(found){
                         return tran;
@@ -518,7 +519,7 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
                 maxRetry = retry;
 
             }catch(e){
-                console.error("getTranByMsgHash from rpc err ",formatError(e));
+                logger.error("getTranByMsgHash from rpc err ",formatError(e));
                 await sleep(RETRY_INTERNAL_TIME);
             }
         }
@@ -550,7 +551,7 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
                 return transFromDb;
             }
         }catch(err){
-            console.error("getTranByOnlyMsgHash from db err",formatError(err),"retry ",maxRetry);
+            logger.error("getTranByOnlyMsgHash from db err",formatError(err),"retry ",maxRetry);
         }
         await sleep(10);
     }
@@ -576,12 +577,12 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
         let getSuccess = false
         while(maxRetry-- >0 && (!getSuccess)){
             try{
-                console.log("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,JSON.stringify(opts,bigIntReplacer));
+                logger.info("maxRetry = %s, getSuccess = %s, transCount = %s, scAddress = %s opts = %s",maxRetry,getSuccess,transCount,scAddr,JSON.stringify(opts,bigIntReplacer));
                 let ret = await client.getTransactions(scAddr,opts)
                 transCount = ret.length;
-                console.log("getTranByOnlyMsgHash getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
+                logger.info("getTranByOnlyMsgHash getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
                 for(let tran of ret){
-                    console.log("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
+                    logger.info("=====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10));
                     let found = await findOnlyMsgCellHashInTran(tran,msgCellHash);
                     if(found){
                         return tran;
@@ -595,7 +596,7 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
                 maxRetry = retry;
 
             }catch(e){
-                console.error("err ",formatError(e));
+                logger.error("err ",formatError(e));
                 await sleep(RETRY_INTERNAL_TIME);
             }
         }
