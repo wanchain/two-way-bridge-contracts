@@ -4,10 +4,9 @@ PayAttention:
     for interface support all version of wallet contract, you can refer tonWeb sdk.
 */
 
-//import {mnemonicToWalletKey, keyPairFromSecretKey} from "ton-crypto";
 import {mnemonicToWalletKey, keyPairFromSecretKey} from "@ton/crypto";
-import {address, TonClient, WalletContractV4} from "@ton/ton";
-import {Address, ContractProvider, OpenedContract, Sender} from "@ton/core";
+import { WalletContractV4} from "@ton/ton";
+import {Address,  OpenedContract, Sender} from "@ton/core";
 import {keyPairFromSeed} from "@ton/crypto";
 import {Blockchain} from "@ton/sandbox";
 import {IsWanTonClient, WanTonClient} from "../client/client-interface";

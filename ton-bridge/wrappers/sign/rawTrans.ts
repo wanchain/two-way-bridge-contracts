@@ -1,23 +1,17 @@
 import {bigIntReplacer} from "../utils/utils";
-
-import {configTestnet,configMainnet} from "../config/config-ex";
 import {
     Address,
     beginCell,
     Builder,
     Cell,
-    MessageRelaxed,
     storeMessage,
     Message,
-    storeMessageRelaxed,
     external
 } from "@ton/core";
 import {Maybe} from "@ton/ton/dist/utils/maybe";
 import {sign} from "@ton/crypto";
-import {getClient, TonClientConfig} from "../client/client";
 import {internal} from "@ton/core";
 import {StateInit} from "@ton/core";
-import {TonClient} from "@ton/ton";
 import {WanTonClient} from "../client/client-interface";
 import {logger} from '../utils/logger'
 export async function buildInternalMessage(from:Address,src: {
@@ -109,9 +103,6 @@ export async function sendRawTransaction(client:WanTonClient, senderAddress:Addr
         externalInMessageHash:beginCell().store(storeMessage(externalInMessage)).endCell().hash().toString('hex'),
     }
 }
-
-
-
 
 export function getMsgHash(msgs:Message[]){
     let ret = [];

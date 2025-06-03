@@ -1,22 +1,13 @@
-import {Address, Cell, loadTransaction, openContract, Transaction} from "@ton/core";
-import {TonClient} from "@ton/ton";
+import {Address, Cell, Transaction} from "@ton/core";
 import {codeTable} from "../code/encode-decode";
 
-
 import {logger} from '../utils/logger'
-import {getTranResultByTran, getTranResultByTxHash, TranResult} from "../transResult/transResult";
-import {ZERO_ACCOUNT_STR} from "../const/const-value";
+import {getTranResultByTran} from "../transResult/transResult";
 const formatUtil = require('util');
 import * as opcodes from "../opcodes";
-import {OP_TRANSFER_NOTIFICATION} from "../opcodes";
-import {getJettonAddress} from "../wallet/jetton";
-import {getTokenPairInfo} from "../code/userLock";
 import {
     bigIntReplacer,
-    bigIntToBytes32,
     formatError,
-    isAddressEqual,
-    isValidHexString,
     sleep,
     toBase64
 } from "../utils/utils";
@@ -24,28 +15,6 @@ import {
 import {MAX_LIMIT,MAX_RETRY} from "../const/const-value";
 import {DBAccess} from "../db/DbAccess";
 import {IsWanTonClient, WanTonClient} from "../client/client-interface";
-/*
-example of ret:
-
-[{
-  eventName: 'AddTokenPair',
-  id: 3,
-  fromChainID: 4660,
-  fromAccount: 833589FCD6EDB6E08F4C7C32D4F71B54BDA02913,
-  toChainID: 17767,
-  toAccount: 0000000000000000000000000000000000000000000000000000000000000000,
-  txHashBase64: 'rqSZE1h0tWjn2EqI5awDLIDB4sLhUEwSdW+5fRUMmQE=',
-  txHash: 'aea499135874b568e7d84a88e5ac032c80c1e2c2e1504c12756fb97d150c9901',
-  lt: 29170426000001n
-}]
-
- */
-
-//todo  block number (seq)
-//todo  from (first layer user, origin user.), and first layer hash.
-//todo  gas used (accumuted, summary.)
-//todo  in send Message, message body-> txhash.
-
 
 export async function getEvents(client: WanTonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string,hash?:string):Promise<any> {
 

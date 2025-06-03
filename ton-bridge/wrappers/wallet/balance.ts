@@ -1,4 +1,3 @@
-import {JettonMaster,  TonClient} from "@ton/ton";
 import {Blockchain} from "@ton/sandbox";
 import {Address} from "@ton/core";
 import {getJettonBalance} from "./jetton";

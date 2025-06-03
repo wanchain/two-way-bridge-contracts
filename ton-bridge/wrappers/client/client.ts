@@ -43,7 +43,7 @@ export function isTestnet(){
 }
 
 let DBDataDir: string;
-let buildDBdataDir = ()=>{
+let buildDBDataDir = ()=>{
     if(isTestnet()){
         DBDataDir = path.join(...[__dirname,"/../data/testnet/"]);
     }else{
@@ -64,7 +64,7 @@ export async function wanTonSdkInit(tcf:TonConfig){
     }
     g_tonConfig = tcf;
 
-    buildDBdataDir();
+    buildDBDataDir();
 
     let dbAccess = await DBAccess.getDBAccess();
     if(dbAccess){

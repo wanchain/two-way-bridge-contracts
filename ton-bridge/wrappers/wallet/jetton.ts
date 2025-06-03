@@ -1,7 +1,5 @@
-import {Address, beginCell, BitString, Builder, Cell, Dictionary} from "@ton/core";
-import {TonClient} from "@ton/ton";
+import {Address, beginCell, Builder, Cell, Dictionary} from "@ton/core";
 import {JettonMaster,JettonWallet} from "@ton/ton";
-import {DictionaryKey, DictionaryKeyTypes, DictionaryValue} from "@ton/core"
 import {sha256_sync} from "@ton/crypto";
 import {IsWanTonClient, WanTonClient} from "../client/client-interface";
 import {Blockchain} from "@ton/sandbox";

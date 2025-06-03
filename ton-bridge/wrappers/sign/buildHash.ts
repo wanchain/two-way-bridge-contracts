@@ -30,14 +30,14 @@ export function computeHash(currentChainId: bigint, uniqueId: bigint, tokenPairI
                 .storeBuffer(tokenAccountBuf)
                 .endCell()
         );
-    logger.info(formatUtil.format("jacob tokenAccount...", tokenAccount));
-    logger.info(formatUtil.format("jacob tokenAccountBuf......", tokenAccountBuf.toString('hex'), tokenAccountBuf.length));
-    logger.info(formatUtil.format("(bigInt)jacob tokenAccountBuf......", BigInt("0x" + tokenAccountBuf.toString('hex'))));
+    logger.info(formatUtil.format("computeHash tokenAccount...", tokenAccount));
+    logger.info(formatUtil.format("computeHash tokenAccountBuf......", tokenAccountBuf.toString('hex'), tokenAccountBuf.length));
+    logger.info(formatUtil.format("computeHash (bigInt)tokenAccountBuf......", BigInt("0x" + tokenAccountBuf.toString('hex'))));
 
-    logger.info(formatUtil.format("jacob userAccount...", userAccount));
-    logger.info(formatUtil.format("jacob userAccountBuf......", userAccountBuf.toString('hex'), userAccountBuf.length));
-    logger.info(formatUtil.format("(bigInt)jacob userAccountBuf......", BigInt("0x" + userAccountBuf.toString('hex'))));
-    logger.info(formatUtil.format("user_account_cell(cell)", msg.endCell()));
+    logger.info(formatUtil.format("computeHash userAccount...", userAccount));
+    logger.info(formatUtil.format("computeHash userAccountBuf......", userAccountBuf.toString('hex'), userAccountBuf.length));
+    logger.info(formatUtil.format("(bigInt)computeHash userAccountBuf......", BigInt("0x" + userAccountBuf.toString('hex'))));
+    logger.info(formatUtil.format("computeHash user_account_cell(cell)", msg.endCell()));
     let hashBuf = msg.endCell().hash();
     return {
         hashHex: hashBuf.toString('hex'),

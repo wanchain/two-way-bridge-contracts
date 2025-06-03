@@ -17,15 +17,15 @@ export const codeTable = {
             let slice = cell.beginParse();
             let opCode = slice.loadUint(32);
             let queryID = slice.loadUint(64);
-            logger.info("33333");
+            logger.info("before load smgID");
             let smgID = slice.loadUintBig(256); // why not use .loadUintBig(256)? should change all loadUint(256) to loadUintBig(256)?
-            logger.info("4444");
+            logger.info("before load tokenPairID");
             let tokenPairID = slice.loadUint(32);
             let crossValue = slice.loadUintBig(256);
 
             let dstUserAccountLen = slice.loadUint(8);
             let dstUserAccountBuff = slice.loadBuffer(dstUserAccountLen);
-            logger.info("22222");
+            logger.info("before load extraCell");
             let extraCell = slice.loadRef().beginParse();
             let addrTokenAccount = extraCell.loadAddress();
             let jwAddrSrc = extraCell.loadAddress();
@@ -34,7 +34,7 @@ export const codeTable = {
 
             let extraCell2 = slice.loadRef().beginParse();
             let senderAccount = extraCell2.loadAddress();
-            logger.info("1111111");
+            logger.info("before load fee");
             let fee = extraCell2.loadUintBig(256);
             extraCell2.endParse();
 

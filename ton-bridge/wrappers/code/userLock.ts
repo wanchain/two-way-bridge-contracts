@@ -1,9 +1,9 @@
 import {AddressToBig, getQueryID, remove0x} from "../utils/utils";
 import {isAddrDepolyed} from "../wallet/walletContract";
-import {JettonMaster, TonClient} from "@ton/ton";
+import {JettonMaster} from "@ton/ton";
 import {BridgeAccess} from "../contractAccess/bridgeAccess";
-import {Address, beginCell, ContractProvider, internal, toNano} from "@ton/core";
-import {BIP44_CHAINID, TON_COIN_ACCOUNT_STR,LOCK_COIN,LOCK_ORIGINAL_TOKEN,LOCK_WRAPPED_TOKEN} from "../const/const-value";
+import {Address, beginCell,  internal} from "@ton/core";
+import {BIP44_CHAINID, TON_COIN_ACCOUNT_STR} from "../const/const-value";
 import * as opcodes from "../opcodes";
 import {Maybe} from "@ton/core/src/utils/maybe";
 import {StateInit} from "@ton/core";
