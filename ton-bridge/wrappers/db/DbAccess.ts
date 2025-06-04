@@ -193,6 +193,23 @@ export class DBAccess {
         }
     }
 
+    async getAllTrans(dbName:string){
+        logger.info("begin getAllTrans","dbName",dbName)
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getAllTrans();
+        if(!ret || ret.length == 0) {
+            return null;
+        }else{
+            logger.info("end getAllTrans","dbName",dbName)
+            logger.info("begin convertTonTransToTrans","dbName",dbName,"tran.length",ret.length);
+            let finalRet = convertTonTransToTrans(ret);
+            logger.info("end convertTonTransToTrans","dbName",dbName,"tran.length",ret.length);
+            return finalRet;
+        }
+    }
+
     async getAllTransNotHandledByRange(dbName:string,lt:bigint,to_lt:bigint){
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);

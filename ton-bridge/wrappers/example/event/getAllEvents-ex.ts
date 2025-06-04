@@ -39,7 +39,8 @@ async function main() {
             await sleep(2000);
         }
         try {
-            tonTrans = await dbAcces.getAllTransNotHandled(args[0])
+            //tonTrans = await dbAcces.getAllTransNotHandled(args[0])
+            tonTrans = await dbAcces.getAllTrans(args[0])
             console.log("getAllTransNotHandled tonTrans.length", tonTrans.length);
         } catch (err) {
             console.error(err.code, err.response?.data?.error)
@@ -52,7 +53,9 @@ async function main() {
                 console.log("begin getEventByTranHash", "scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
                 let ret = await getEventByTranHash(client, scBridgeAddr, tonTran.lt.toString(10), tonTran.hash().toString('hex'));
                 console.log("end getEventByTranHash JacobEvent ret = ", ret);
+
                 let tranTonTemp = convertTranToTonTrans([tonTran]);
+
                 console.log("begin setTranHandleFlag", "scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
                 await dbAcces.setTranHandleFlag(scBridgeAddr, tranTonTemp[0], true);
             } catch (err) {

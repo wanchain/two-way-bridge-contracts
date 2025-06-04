@@ -1,7 +1,7 @@
 import {convertTranToTonTrans} from './common'
 import path from 'path';
 import {
-    bigIntReplacer,
+    bigIntReplacer, bigIntReviver,
     ensureFileAndPath,
     ensurePath,
     formatError,
@@ -87,14 +87,29 @@ const defaultData:Data = {
 }
 
 var serializeWithBig = function(obj:any){
-    let ret = JSON.stringify(obj,bigIntReplacer,2);
+    function _bigIntReplacer(_, value) {
+        return typeof value === 'bigint' ? `#bigint:${value}` : value;
+    }
+    let ret = JSON.stringify(obj,_bigIntReplacer,2);
     return ret;
 }
 
 var deserializeWithBig = function(str:string){
-    let ret = JSON.parse(str,bigIntReplacer);
+    function _bigIntReviver(_, value) {
+        if (typeof value === 'string' && value.startsWith('#bigint:')) {
+            return BigInt(value.slice(8));
+        }
+        return value;
+    }
+    let ret = JSON.parse(str,_bigIntReviver);
     return ret;
 }
+
+// var deserializeWithBig = function(str:string){
+//     //let ret = JSON.parse(str,bigIntReviver); // Cannot convert Azo8veFVYACuH8FrRflqqjH7qNjMbAv8nXP0fPwDX50= to a BigInt
+//     let ret = JSON.parse(str,bigIntReplacer);
+//     return ret;
+// }
 
 class DB {
     private readonly dbName: string;
@@ -163,8 +178,9 @@ class DB {
 
             _.forEach(trans, tran => {
                 let result = null;
-                result = this.db.get("trans").find({lt:tran.lt.toString(10)}).value();
-                this.logger.info("insertTrans ", "dbName", this.dbName, "lt", tran.lt, "result", result);
+                //result = this.db.get("trans").find({lt:tran.lt.toString(10)}).value();
+                result = this.db.get("trans").find({hash:tran.hash,lt:tran.lt}).value();
+                this.logger.info("insertTrans ", "dbName", this.dbName, "lt", tran.lt, "result.hash", result?.hash,"result.lt",result?.lt.toString(10));
                 if (!result) {
                     this.db.get('trans').value().push(tran);
                     this.logger.info("insertTrans inserting ","dbName",this.dbName,"lt",tran.lt);
@@ -208,14 +224,18 @@ class DB {
         try {
             copy = _.cloneDeep(this.db.getState());
             this.logger.info("Entering setTranHandleFlag","hash",tran.hash,"lt",tran.lt,"hashBase64",txHashBas64,"dbName",this.dbName,"finishOrNot",finishOrNot);
-            this.db.get('trans').find({hash: txHashBas64,lt:tran.lt.toString(10)})
+
+            let tranFounded = await this.db.get('trans').find({hash: tran.hash,lt:tran.lt}).value();
+            this.logger.info("setTranHandleFlag","tranFounded",tranFounded?.hash,{hash: txHashBas64,lt:tran.lt.toString(10)});
+            this.db.get('trans').find({hash: tran.hash,lt:tran.lt})
                 .assign({emitEventOrNot: finishOrNot})
                 .value();
 
             this.db.write();
+
         } catch (err) {
             this.db.setState(copy);
-            this.logger.error("Entering setTranHandleFlag","err",formatError(err),"hash",tran.hash,"lt",tran.lt,"hashBase64",txHashBas64,"dbName",this.dbName,"finishOrNot",finishOrNot);
+            this.logger.error("Entering setTranHandleFlag","err",formatError(err),"hash",tran.hash,"lt",tran.lt.toString(10),"hashBase64",txHashBas64,"dbName",this.dbName,"finishOrNot",finishOrNot);
         }
         finally {
             release();
@@ -575,6 +595,33 @@ class DB {
         return result;
     }
 
+    async getAllTrans() {
+        let copy = {};
+        const release = await this.mutex.acquire();
+        try {
+            this.logger.info("getAllTrans");
+            copy = _.cloneDeep(this.db.get('trans').value());
+        } catch (err) {
+            this.logger.error("getAllTrans cloneDeep", "err", formatError(err));
+        } finally {
+            release();
+        }
+
+        let result: TonTransaction[] = [];
+        try {
+
+            result = _.filter(copy, (item) => {
+                return true;
+            })
+        } catch (err) {
+            this.logger.error("getAllTrans error","dbName",this.dbName,"err",formatError(err))
+        } finally {
+            copy = null;
+        }
+        return result;
+    }
+
+
     async getTasks(){
         const release = await this.mutex.acquire();
         try {
@@ -708,7 +755,7 @@ class DB {
         try {
             this.logger.info("getTxByHashLt","txHash",txHash,"lt",lt,"dbName",this.dbName);
             result = _.filter(copy, (item) => {
-                return ((item.hash == txHash) && item.lt == lt);
+                return ((item.hash == txHash) && BigInt(item.lt) == BigInt(lt));
             })
         } catch (err) {
             this.logger.error("getTxByHashLt", "err", formatError(err),"txHash",txHash,"lt",lt,"dbName",this.dbName);

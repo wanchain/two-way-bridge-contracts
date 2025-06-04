@@ -100,7 +100,48 @@ export class Logger {
 }
 
 
-function concatMsg(params: any[]): string {
+export function concatMsg(params: any[]): string {
+    let msgFull = "";
+    try {
+        // Process each element safely
+        const stringParts = params.map((elem) => {
+            if (elem instanceof Array) {
+                let stringObjects = elem.map(item => {
+                    if(item instanceof Object) {
+                        return JSON.stringify(item, (_, value) => {
+                            if (typeof value === 'bigint') {
+                                return value.toString(); // Convert BigInt to string
+                            }
+                            return value;
+                        })
+                    }else{
+                        return String(elem);
+                    }
+                })
+                return '[' + stringObjects.join(' ') + ']';
+            } else {
+                if(elem instanceof Object) {
+                    return JSON.stringify(elem, (_, value) => {
+                        if (typeof value === 'bigint') {
+                            return value.toString(); // Convert BigInt to string
+                        }
+                        return value;
+                    })
+                }else{
+                    return String(elem);
+                }
+            }
+        });
+        // Join processed parts with spaces
+        msgFull = stringParts.join(' ');
+    } catch (err) {
+        // Fallback: join original elements with spaces
+        msgFull = params.join(' ');
+    }
+    return msgFull;
+}
+
+function concatMsg1(params: any[]): string {
     let msgFull = "";
     try {
         // Process each element safely

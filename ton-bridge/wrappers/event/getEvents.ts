@@ -313,14 +313,14 @@ export async function getTransactionFromDb(client:WanTonClient,scAddress:string,
             await sleep(RETRY_INTERNAL_TIME);
         }
     }
-    logger.info("getTransactionFromDb success","scAddress",scAddress,"lt",lt,"tranHash",tranHash,"retTx",retTx);
+    logger.info("getTransactionFromDb success","scAddress",scAddress,"lt",lt,"tranHash",tranHash,"retTx.hash",retTx?.hash().toString('base64'));
     return retTx
 }
 
 export async function getEventByTranHash(client:WanTonClient, scAddress:string, lt:string, tranHash:string){
     logger.info("entering getEventByTranHash getTransaction success","tranHash ",tranHash,"lt",lt,"dbName",scAddress);
     let tran = await getTransaction(client,scAddress,lt,tranHash);
-    logger.info("getEventByTranHash getTransaction success",tran, "tranHash ",tran.hash().toString('hex'));
+    logger.info("getEventByTranHash getTransaction success","tranHash ",tran.hash().toString('hex'));
     logger.info("getEventByTranHash before getEventFromTran","client is WanTonClient",IsWanTonClient(client));
     return await getEventFromTran(client,tran,scAddress);
 }

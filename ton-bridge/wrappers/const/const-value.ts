@@ -29,5 +29,5 @@ export const RETRY_INTERNAL_TIME = 20;
 
 export const TONCLINET_TIMEOUT = 60 * 1000 * 1000;
 
-export const MIN_SCAN_INTER = 60*1000;
-export const MAX_SCAN_INTER = 90*1000;
+export const MIN_SCAN_INTER = 10*1000;
+export const MAX_SCAN_INTER = 20*1000;

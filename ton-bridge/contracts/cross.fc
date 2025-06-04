@@ -118,7 +118,9 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 
 () smgRelease_org_jetton(int queryId, int releaseValue, int fee, slice userAccount, slice proxyAddress, slice jwBridgeAddr, fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
     send_token(queryId, (releaseValue - fee), userAccount, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
-    send_token(queryId, fee, proxyAddress, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
+    if ( fee > 0){
+        send_token(queryId, fee, proxyAddress, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
+    }
     return ();
 }
 
@@ -207,6 +209,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         } else {
 
             ;; fake user lock handle
+            ;; user send userLockToken directory, not from my_address()
             (_, int hashSender) = parse_std_addr(senderAddr);
             slice hashSenderSlice = int_to_slice(hashSender, 256);
 
