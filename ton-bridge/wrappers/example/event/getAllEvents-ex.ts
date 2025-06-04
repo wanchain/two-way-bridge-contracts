@@ -72,7 +72,7 @@ async function main() {
             busy = false;
         }
 
-    }, 100000)
+    }, 10000)
 
 }
 

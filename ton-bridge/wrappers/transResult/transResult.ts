@@ -181,7 +181,7 @@ export async function getUpperSteps(client:WanTonClient,scAddr:Address,tran:Tran
                 retry = 5;
             }catch(e){
                 await sleep(1000);
-                logger.error(formatError(e))
+                logger.error(formatError(e),"getUpperSteps getTransactions ","scAddress",upperAddress,"opts",opts)
             }
         }
         if(retry == 0){
@@ -472,7 +472,6 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
                 return transFromDb;
             }
         }catch(err){
-            logger.error(err);
             logger.error("getTranByMsgHash from db err",formatError(err),"retry ",maxRetry,"scAddr",scAddr,"msgCellHash",msgCellHash,"msgBodyHash",msgBodyHash,"lt",lt);
         }
         await sleep(RETRY_INTERNAL_TIME);
@@ -519,7 +518,7 @@ export async function getTranByMsgHash(client:WanTonClient, scAddr:Address, msgC
                 maxRetry = retry;
 
             }catch(e){
-                logger.error("getTranByMsgHash from rpc err ",formatError(e));
+                logger.error("getTranByMsgHash from rpc err ",formatError(e),"opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"scAddr",scAddr);
                 await sleep(RETRY_INTERNAL_TIME);
             }
         }
@@ -551,7 +550,7 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
                 return transFromDb;
             }
         }catch(err){
-            logger.error("getTranByOnlyMsgHash from db err",formatError(err),"retry ",maxRetry);
+            logger.error("getTranByOnlyMsgHash from db err",formatError(err),"retry ",maxRetry,"msgCellHash",msgCellHash);
         }
         await sleep(10);
     }
@@ -596,7 +595,7 @@ export async function getTranByOnlyMsgHash(client:WanTonClient, scAddr:Address, 
                 maxRetry = retry;
 
             }catch(e){
-                logger.error("err ",formatError(e));
+                logger.error("err ",formatError(e),"getTranByOnlyMsgHash getTransactions error from rpc","opts",JSON.stringify(opts,bigIntReplacer),transCount,"scAddr",scAddr);
                 await sleep(RETRY_INTERNAL_TIME);
             }
         }

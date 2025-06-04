@@ -1,5 +1,6 @@
 import winston from "winston";
 import DailyRotateFile from 'winston-daily-rotate-file';
+import {bigIntReplacer} from "./utils";
 const moment = require('moment');
 const path = require('path');
 
@@ -66,40 +67,70 @@ export class Logger {
     }
 
     debug(...params) {
-        let msgFull = params.join(" ")
         try {
-            this.logger.debug(msgFull);
+            this.logger.debug(concatMsg(params));
         } catch (err) {
             this.error(err);
         }
     }
 
     info(...params) {
-        let msgFull = params.join(" ")
         try {
-            this.logger.info(msgFull);
+            this.logger.info(concatMsg(params));
         } catch (err) {
             this.error(err);
         }
     }
 
     warn(...params) {
-        let msgFull = params.join(" ")
         try {
-            this.logger.warning(msgFull);
+            this.logger.warning(concatMsg(params));
         } catch (err) {
             this.error(err);
         }
     }
 
     error(...params) {
-        let msgFull = params.join(" ")
         try {
-            this.logger.error(msgFull);
+            this.logger.error(concatMsg(params));
         } catch (err) {
             logger.info(err);
         }
     }
+}
+
+
+function concatMsg(params: any[]): string {
+    let msgFull = "";
+    try {
+        // Process each element safely
+        const stringParts = params.map((elem) => {
+            if (elem instanceof Array) {
+                let stringObjects = elem.map(item => {
+                    if(item instanceof Object) {
+                        return JSON.stringify(item, (_, value) => {
+                            if (typeof value === 'bigint') {
+                                return value.toString(); // Convert BigInt to string
+                            }
+                            return value;
+                        }, 2)
+                    }else{
+                        return String(elem);
+                    }
+                })
+                return stringObjects.join(' ');
+            } else {
+                // Handle primitives (including BigInt, symbol, etc.)
+                return String(elem);
+            }
+        });
+        // Join processed parts with spaces
+        msgFull = stringParts.join(' ');
+    } catch (err) {
+        // Fallback: join original elements with spaces
+        msgFull = params.join(' ');
+    }
+    return msgFull;
 }
 
 const LOG_ROOT = path.join(__dirname,"../log/")

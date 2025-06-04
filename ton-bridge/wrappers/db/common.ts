@@ -83,7 +83,7 @@ export function convertTonTransToTrans(tonTrans:TonTransaction[]){
             let tranTemp:Transaction = loadTransaction(tranCell.asSlice());
             trans.push(tranTemp);
         }catch(err){
-            logger.error("convertTonTransToTrans","tonTran",tonTran,"err",formatError(err));
+            logger.error("convertTonTransToTrans","tonTran.hash",tonTran.hash,"err",formatError(err));
         }
     }
     return trans;

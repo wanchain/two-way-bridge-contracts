@@ -46,7 +46,7 @@ export class BridgeAccess {
             logger.info(formatUtil.format("methodName=>",methodName));
             return await cOpened[methodName](...parameters);
         }catch(err){
-            logger.error(formatUtil.format(formatError(err)));
+            logger.error(formatUtil.format(formatError(err)),"methodName",methodName,"parameters",parameters);
             throw new Error(`${methodName} is not supported Non send method`);
         }
     }

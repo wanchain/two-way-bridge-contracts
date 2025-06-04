@@ -12,7 +12,7 @@ import {
     toBase64
 } from "../utils/utils";
 
-import {MAX_LIMIT,MAX_RETRY} from "../const/const-value";
+import {MAX_LIMIT, MAX_RETRY, RETRY_INTERNAL_TIME} from "../const/const-value";
 import {DBAccess} from "../db/DbAccess";
 import {IsWanTonClient, WanTonClient} from "../client/client-interface";
 
@@ -68,7 +68,7 @@ export async function getTransactions(client:WanTonClient,scAddress:string,opts:
     try{
         ret = await client.getTransactions(scAddr,opts)
     }catch(err){
-        logger.error(formatError(err));
+        logger.error(formatError(err),"getTransactions from RPC server opts = %s",opts);
     }
     return ret;
 }
@@ -87,7 +87,7 @@ async function getTransactionsFromDb(client:WanTonClient,scAddress:string,opts:{
 
     let dbAccess = await DBAccess.getDBAccess();
     if(!dbAccess){
-        logger.error("not using db cache");
+        logger.error("not using db cache","getTransactionsFromDb opts = %s",opts);
         return null;
     }
     let retTx = null;
@@ -141,7 +141,7 @@ export async function getAllTransactions(client:WanTonClient,scAddress:string,li
                getSuccess = true;
                maxRetry = retry;
            }catch(e){
-               logger.error("err ",formatError(e));
+               logger.error("err ",formatError(e),"getAllTransactions getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"scAddress",scAddress);
                await sleep(2000);
            }
         }
@@ -167,7 +167,7 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
         logger.info(formatUtil.format("opCode=>",opCode.toString(16)));
         logger.info(formatUtil.format("codeTable[opCode]=>",codeTable[opCode]));
         if(!codeTable[opCode]){
-            logger.error("opCode is empty","tran","opCode",opCode.toString(16));
+            logger.error("opCode is empty","tran","opCode",opCode.toString(16),tran.hash().toString("base64"));
             return null;
         }
         logger.info("before decode bodyCell");
@@ -186,7 +186,7 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
             logger.info("getEventFromTran before handleUserLockEvent","client is WanTonClient",IsWanTonClient(client));
             let handleResult = await handleUserLockEvent(client,Address.parse(scAddress),tran)
             if (!handleResult.valid){
-                logger.error(formatUtil.format("handleResult OP_CROSS_UserLock is not valid"));
+                logger.error(formatUtil.format("handleResult OP_CROSS_UserLock is not valid","tran.hash",tran.hash().toString("base64")));
                 return null;
             }
             decoded.origin = handleResult.origin;
@@ -194,7 +194,7 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
             let handleResult = await handleCommonEvent(client,Address.parse(scAddress),
                 tran)
             if (!handleResult.valid){
-                logger.error(formatUtil.format("handleResult handleCommonEvent is not valid"));
+                logger.error(formatUtil.format("handleResult handleCommonEvent is not valid","tran.hash",tran.hash().toString("base64")));
                 return null;
             }
             decoded.origin = handleResult.origin;
@@ -202,7 +202,7 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
 
         return await codeTable[opCode]["emitEvent"](decoded);
     }catch(err){
-        logger.error(formatUtil.format("getEventFromTran err",formatError(err)));
+        logger.error(formatUtil.format("getEventFromTran err",formatError(err)),"tran.hash",tran.hash().toString("base64"));
         return null;
     }
 }
@@ -260,8 +260,7 @@ export async function getTransaction(client:WanTonClient,scAddress:string,lt:str
                 status = true;
                 retry = MAX_RETRY;
             }catch(err){
-                //logger.error(err.message,err.response?.data?.error,err);
-                logger.error(formatError(err))
+                logger.error(formatError(err),"getTransactions","scAddress",scAddress,"opts",opts)
                 await sleep(2000);
             }
         }
@@ -311,8 +310,8 @@ export async function getTransactionFromDb(client:WanTonClient,scAddress:string,
             retTx = await dbAccess?.getTxByHashLt(scAddress,tranHash,lt)
         }catch(err){
             logger.error("getTxByHashLt err",formatError(err),"retry",retry,"dbName","scAddress",scAddress,"hash",tranHash)
+            await sleep(RETRY_INTERNAL_TIME);
         }
-        await sleep(10000);
     }
     logger.info("getTransactionFromDb success","scAddress",scAddress,"lt",lt,"tranHash",tranHash,"retTx",retTx);
     return retTx
@@ -355,13 +354,13 @@ async function handleCommonEvent(client:WanTonClient, scAddr:Address,tran:Transa
 
     let transResult  = await getTransResult(client,scAddr,tran);
     if (!transResult.success){
-        logger.error("the trans tree is not success")
+        logger.error("the trans tree is not success","tran.hash",tran.hash().toString('base64'))
         return {
             valid:false,
             origin:transResult.originAddr.toString()
         }
     }
-    logger.info(formatUtil.format("Ending handleCommonEvent"));
+    logger.info(formatUtil.format("Ending handleCommonEvent"),"tran.hash",tran.hash().toString('base64'));
     return {
         valid:true,
         origin:transResult.originAddr.toString()
