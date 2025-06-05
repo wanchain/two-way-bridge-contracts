@@ -251,7 +251,7 @@ export async function getLowerSteps(client:WanTonClient,scAddr:Address,tran:Tran
         let lowerAddr = outMsg.info.dest as Address;
         let msgCellHash = beginCell().store(storeMessage(outMsg)).endCell().hash().toString('hex');
         let msgBodyHash = outMsg.body.hash().toString('hex');
-        logger.info("===========================before getTranByMsgHash","outMsg",outMsg);
+        logger.info("===========================before getTranByMsgHash","outMsg.key",outMsgKey);
         let lowerTx = await getTranByMsgHash(client,lowerAddr,msgCellHash,msgBodyHash,(outMsg.info as unknown as CommonMessageInfoInternal).createdLt.toString(10));
 
         let stepInfoTemp :TranStepInfo = {
