@@ -1,4 +1,4 @@
-# TON-WAN-SDK
+# wan-ton-sdk
 
 
 ## Features
