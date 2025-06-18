@@ -4,11 +4,18 @@ import {sha256_sync} from "@ton/crypto";
 import {IsWanTonClient, WanTonClient} from "../client/client-interface";
 import {Blockchain} from "@ton/sandbox";
 import {logger} from '../utils/logger'
+import {formatError} from "../utils/utils";
 export async function getJettonBalance(client:WanTonClient|Blockchain,jettonMasterAddr:Address, userAddress:Address): Promise<bigint> {
     if(IsWanTonClient(client)){
-        let jettonWalletAddress = await getJettonAddress(client,jettonMasterAddr,userAddress);
-        let jettonWalletContract = JettonWallet.create(jettonWalletAddress);
-        return  await (client.open(jettonWalletContract)).getBalance();
+        try{
+            let jettonWalletAddress = await getJettonAddress(client,jettonMasterAddr,userAddress);
+            let jettonWalletContract = JettonWallet.create(jettonWalletAddress);
+            return  await (client.open(jettonWalletContract)).getBalance();
+        }catch(err){
+            logger.error("getJettonBalance error",formatError(err),"jettonMasterAddr",jettonMasterAddr.toString(),"userAddress",userAddress);
+            return BigInt(0);
+        }
+
     }else{
         let jettonWalletAddress = await getJettonAddress(client,jettonMasterAddr,userAddress);
         let jettonWalletContract = JettonWallet.create(jettonWalletAddress);

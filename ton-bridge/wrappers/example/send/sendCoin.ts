@@ -37,3 +37,4 @@ async function main() {
 
 main();
 // ts-node sendCoin.ts <destAddress> <amount>
+// ts-node sendCoin.ts EQCGOHmrNm3u_ilZ5qdtpIDmfVfkQsWsqxyvPywT_7_fOzZh 1000

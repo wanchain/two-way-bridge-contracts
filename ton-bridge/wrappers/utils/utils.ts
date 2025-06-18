@@ -340,5 +340,5 @@ export function AddressToBig(addr:Address){
 }
 
 export function toNumberByDecimal(totalSupply:bigint,decimal:number){
-    return totalSupply*BigInt(decimal);
+    return totalSupply*BigInt(10)**BigInt(decimal);
 }

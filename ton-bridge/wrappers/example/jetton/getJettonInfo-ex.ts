@@ -1,6 +1,6 @@
 import {TonClient} from "@ton/ton";
 
-import {configTestnet,configMainnet} from "../../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
 
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 import {
@@ -21,7 +21,7 @@ let client = null;
 
 async function init(){
     //await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
+    await wanTonSdkInit(configTestTonApiNoDb);
     client = await getClient();
 }
 async function DisplayJettonInfo(client:WanTonClient,addr:Address){

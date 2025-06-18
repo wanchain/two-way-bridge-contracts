@@ -1,73 +1,63 @@
 import {configTestnet, configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
-import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
+import {Address,Sender} from '@ton/core';
 import {getSenderByPrvKey, getTonAddrByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
 import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
-
-const smgCfg = require('../../testData/smg.json');
+import{JettonMinter} from "../../JettonMinter";
+import {CoinBalance,TokenBalance} from "../../wallet/balance";
+import {TON_FEE} from "../../fee/fee";
+import {WanTonClient} from "../../client/client-interface";
+import {toNumberByDecimal} from "../../utils/utils";
 
 const args = process.argv.slice(2);
-let tokenType = args[0];
-let amount = args[1];
 const prvList = require('../../testData/prvlist.json')
 
-let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
-let alicePrv,bobPrv = null;
-let aliceAddr:Address
-let bobAddr :Address
-let aliceWallet, bobWallet;
-let client = null;
-
-const scAddresses = require('../../testData/contractAddress.json');
+let deployer , client;
 
 let contractProvider =null;
 async function init(){
     //await wanTonSdkInit(configMainnet);
     await wanTonSdkInit(configTestTonApiNoDb);
-    deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
-    aliceWallet = await getWalletByPrvKey(Buffer.from(prvList[1],'hex'));
-    bobWallet = await getWalletByPrvKey(Buffer.from(prvList[2],'hex'));
-
-    aliceAddr = aliceWallet.address;
-    bobAddr = bobWallet.address;
-
     client = await getClient();
-    //console.log("client=>", typeof(client));
+    deployer = await getSenderByPrvKey(client,Buffer.from(prvList[0],'hex'));
 }
-
-const schnorr = require("../sign/tools-secp256k1.js");
-
-let tokenInfo = require('../testData/tokenInfo.json')
-
-import{JettonMinter} from "../../JettonMinter";
-import {CoinBalance,TokenBalance} from "../../wallet/balance";
-import {TON_FEE} from "../../fee/fee";
-import {WanTonClient} from "../../client/client-interface";
-
-
-async function mintToken(client:WanTonClient,tokenType: string, to: Address, amount: bigint) {
-    let jettonTokenAddr = tokenInfo[tokenType].dstTokenAcc
-    console.log("tokenAddress = %s, tokenType = %s,to= %s,amount=%d",jettonTokenAddr,tokenType,to.toString(),amount)
-    console.log("before mintToken to:%s, coin:%d,token:%d", to.toString(), await CoinBalance(client, to), await TokenBalance(client, Address.parse(jettonTokenAddr), to));
-    let via = await getSenderByPrvKey(client, Buffer.from(prvList[0], 'hex'));
+async function mintToken(client:WanTonClient,tokenAddress: Address, to: Address, amount: bigint) {
+    let jettonTokenAddr = tokenAddress
+    console.log("tokenAddress = %s,to= %s,amount=%d",jettonTokenAddr,to.toString(),amount)
+    console.log("before mintToken to:%s, coin:%d,token:%d", to.toString(), await CoinBalance(client, to), await TokenBalance(client,jettonTokenAddr, to));
+    let via = deployer;
 
 
     let jettonMinter = JettonMinter.createFromAddress(jettonTokenAddr);
-    let contractProvider = client.provider(jettonTokenAddr);
+    let contractProvider = client.provider(jettonMinter.address);
 
     let mintResult = await jettonMinter.sendMint(contractProvider, via, to, amount, TON_FEE.FWD_FEE_MINT_JETTON, TON_FEE.TOTAL_FEE_MINT_JETTON)
     console.log("mintResult",mintResult);
-    console.log("after mintToken to:%s, coin:%d,token:%d", to.toString(), await CoinBalance(client, to), await TokenBalance(client, Address.parse(jettonTokenAddr), to));
+    console.log("after mintToken to:%s, coin:%d,token:%d", to.toString(), await CoinBalance(client, to), await TokenBalance(client, jettonTokenAddr, to));
 
 }
 
 async function main(){
+    console.log("argv",process.argv);
     console.log("Entering main function");
     await init();
-    await mintToken(client,tokenType,aliceAddr,toNano(amount));
-    await mintToken(client,tokenType,bobAddr,toNano(amount));
+    let tokenAddr = Address.parse(args[0]);
+    let decimal = parseInt(args[1]);
+    let rcvAddress = Address.parse(args[2]);
+    let amount = (toNumberByDecimal(BigInt(args[3]),decimal));
+    await mintToken(client,tokenAddr,rcvAddress,amount);
 };
 
 main();
 
 // ts-node mintToken-ex.ts tokenWrapped  1.0
 // ts-node mintToken-ex.ts tokenOrg     1.0
+
+// ts-node mintToken-ex.ts <tokenAddress> <decimal> <rcvAddress> <amount>
+//usdt
+// ts-node mintToken-ex.ts kQDPFoyEUdur7g9c0nNn8rGX08TedRsvc_aik0nohFn8v-wP 6 EQCGOHmrNm3u_ilZ5qdtpIDmfVfkQsWsqxyvPywT_7_fOzZh  1000
+// ts-node mintToken-ex.ts kQDPFoyEUdur7g9c0nNn8rGX08TedRsvc_aik0nohFn8v-wP 6 kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr  1000
+
+
+//wan
+// ts-node mintToken-ex.ts kQA_L8-V29GTQwfi9LruGuQf9JwqLggBIB3ByDC8KLReK0x3 18 kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr  210000000
+

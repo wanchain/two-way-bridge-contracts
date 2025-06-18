@@ -151,5 +151,5 @@ async function main() {
 }
 
 main();
-// ts-node AddToken-ex.ts tokenWrapped
-// ts-node AddToken-ex.ts tokenOrg
+// ts-node AddToken-ex.ts usdt
+// ts-node AddToken-ex.ts wan
