@@ -28,7 +28,7 @@ async function init(){
     await wanTonSdkInit(configTestnet);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     client = await getClient();
-    console.log("client=>",client);
+    //console.log("client=>", typeof(client));
 
     feeProxy = await getWalletByPrvKey(Buffer.from(prvList[4],'hex'));
 }

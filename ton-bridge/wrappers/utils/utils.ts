@@ -338,3 +338,7 @@ export function AddressToBig(addr:Address){
     let hash = addr.hash;
     return bufferToBigInt(hash);
 }
+
+export function toNumberByDecimal(totalSupply:bigint,decimal:number){
+    return totalSupply*BigInt(decimal);
+}

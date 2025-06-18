@@ -1,11 +1,11 @@
 import {TonClient} from "@ton/ton";
 const fs = require("fs");
 
-let jettonTokenInfo = require('../testData/jettonTokenInfo.json')
-const jettonTokenInfoPath = "../testData/jettonTokenInfo.json";
+let jettonTokenInfo = require('../../testData/jettonTokenInfo.json')
+const jettonTokenInfoPath = "../../testData/jettonTokenInfo.json";
 
-let tokenInfo = require('../testData/tokenInfo.json')
-const tokenInfoPath = "../testData/tokenInfo.json";
+let tokenInfo = require('../../testData/tokenInfo.json')
+const tokenInfoPath = "../../testData/tokenInfo.json";
 
 import {configTestnet, configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
 
@@ -29,7 +29,7 @@ import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
 import {conf as JettonMinterCompilerConfig} from "../../testData/JettonMinter.compile.func"
 import {conf as JettonWalletCompilerConfig} from "../../testData/JettonWallet.compile.func"
 
-const prvList = require('../testData/prvlist')
+const prvList = require('../../testData/prvlist.json')
 
 let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let nonDeployer = null;
@@ -113,6 +113,7 @@ async function main() {
         console.log(retDeploy);
     }
 
+    /*
     let jwAddrDeployer = await getJettonAddress(client,jettonMinterOpened.address,deployer.address);
     console.log("deployer.jettonAddress=>",jwAddrDeployer.toString());
     let b = await getJettonBalance(client,jettonMinterOpened.address,deployer.address);
@@ -139,10 +140,13 @@ async function main() {
     console.log("End Mint to nonDeployer.....");
 
     await sleep(5000)
-    await DisplayJettonInfo(client,jettonMinterOpened.address);
 
+     */
+    await DisplayJettonInfo(client,jettonMinterOpened.address);
+    /*
     b = await getJettonBalance(client,jettonMinterOpened.address,nonDeployer.address);
     console.log("nonDeployer After mint balance = %s",b.toString(10));
+     */
     // await DisplayJettonInfo(client, Address.parse('EQCsALeDy_a3dzj21ZGMz-tuG9KIZVLmNUapfNtqGia8oqLk'));
 }
 

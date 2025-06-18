@@ -1,6 +1,6 @@
 import {TON_FEE} from "../../fee/fee";
 
-import {configTestnet,configMainnet} from "../../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
 
 import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR,BIP44_WANCHAIN_CHAINID} from '../../const/const-value';
 
@@ -11,29 +11,29 @@ const args = process.argv.slice(2);
 //let tokenType = "coin";
 let tokenType = args[0];
 
-let jettonTokenInfo = require('../testData/jettonTokenInfo.json');
-let tokenInfo = require('../testData/tokenInfo.json')
+let jettonTokenInfo = require('../../testData/jettonTokenInfo.json');
+let tokenInfo = require('../../testData/tokenInfo.json')
 
-const prvList = require('../testData/prvlist')
+const prvList = require('../../testData/prvlist.json')
 
 let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let client = null;
 
-const scAddresses = require('../testData/contractAddress.json');
+const scAddresses = require('../../testData/contractAddress.json');
 import { BridgeAccess } from "../../contractAccess/bridgeAccess";
 import {getQueryID} from "../../utils/utils";
 
 let queryID;
 
 async function init(){
-    await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
+    //await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestTonApiNoDb);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     smgFeeProxy = deployer;
     oracleAdmin = deployer;
     robotAdmin = deployer;
     client = await getClient();
-    console.log("client=>",client);
+    //console.log("client=>", typeof(client));
     queryID = await getQueryID();
 
 }

@@ -1,26 +1,26 @@
-import {configTestnet,configMainnet} from "../../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApi, configTestTonApiNoDb} from "../../config/config-ex";
 import {getWalletByPrvKey} from "../../wallet/walletContract";
 import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
 
 let args = process.argv.slice(2);
 let tokenPairId=args[0];
-const prvList = require('../testData/prvlist')
+const prvList = require('../../testData/prvlist.json')
 
 let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let client = null;
 
-const scAddresses = require('../testData/contractAddress.json');
+const scAddresses = require('../../testData/contractAddress.json');
 import { BridgeAccess } from "../../contractAccess/bridgeAccess";
 
 async function init(){
-    await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
+    //await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestTonApiNoDb);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     smgFeeProxy = deployer;
     oracleAdmin = deployer;
     robotAdmin = deployer;
     client = await getClient();
-    console.log("client=>",client);
+    //console.log("client=>", typeof(client));
 }
 
 

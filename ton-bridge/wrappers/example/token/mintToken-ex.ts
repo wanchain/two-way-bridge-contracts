@@ -1,14 +1,14 @@
-import {configTestnet,configMainnet} from "../../config/config-ex";
+import {configTestnet, configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
 import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
 import {getSenderByPrvKey, getTonAddrByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
 import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
 
-const smgCfg = require('../testData/smg.json');
+const smgCfg = require('../../testData/smg.json');
 
 const args = process.argv.slice(2);
 let tokenType = args[0];
 let amount = args[1];
-const prvList = require('../testData/prvlist')
+const prvList = require('../../testData/prvlist.json')
 
 let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
 let alicePrv,bobPrv = null;
@@ -17,12 +17,12 @@ let bobAddr :Address
 let aliceWallet, bobWallet;
 let client = null;
 
-const scAddresses = require('../testData/contractAddress.json');
+const scAddresses = require('../../testData/contractAddress.json');
 
 let contractProvider =null;
 async function init(){
-    await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
+    //await wanTonSdkInit(configMainnet);
+    await wanTonSdkInit(configTestTonApiNoDb);
     deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
     aliceWallet = await getWalletByPrvKey(Buffer.from(prvList[1],'hex'));
     bobWallet = await getWalletByPrvKey(Buffer.from(prvList[2],'hex'));
@@ -31,7 +31,7 @@ async function init(){
     bobAddr = bobWallet.address;
 
     client = await getClient();
-    console.log("client=>",client);
+    //console.log("client=>", typeof(client));
 }
 
 const schnorr = require("../sign/tools-secp256k1.js");

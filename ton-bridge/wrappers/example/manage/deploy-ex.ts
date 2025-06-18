@@ -40,7 +40,6 @@ async function init(){
     robotAdmin = deployer;
 
     client = await getClient();
-    console.log("client=>",client);
     let code = await buildCodeCell();
     bridge = Bridge.createFromConfig(
         {
