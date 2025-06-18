@@ -30,7 +30,8 @@ async function mintToken(client:WanTonClient,tokenAddress: Address, to: Address,
     let jettonMinter = JettonMinter.createFromAddress(jettonTokenAddr);
     let contractProvider = client.provider(jettonMinter.address);
 
-    let mintResult = await jettonMinter.sendMint(contractProvider, via, to, amount, TON_FEE.FWD_FEE_MINT_JETTON, TON_FEE.TOTAL_FEE_MINT_JETTON)
+    //let mintResult = await jettonMinter.sendMint(contractProvider, via, to, amount, TON_FEE.FWD_FEE_MINT_JETTON, TON_FEE.TOTAL_FEE_MINT_JETTON)
+    let mintResult = await jettonMinter.sendMint(contractProvider, via, to, amount, BigInt(0), TON_FEE.TOTAL_FEE_MINT_JETTON)
     console.log("mintResult",mintResult);
     console.log("after mintToken to:%s, coin:%d,token:%d", to.toString(), await CoinBalance(client, to), await TokenBalance(client, jettonTokenAddr, to));
 
