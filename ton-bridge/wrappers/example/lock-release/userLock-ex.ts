@@ -7,7 +7,13 @@ import {BridgeAccess} from "../../contractAccess/bridgeAccess";
 import {sleep} from "../../utils/utils";
 import {TON_FEE} from "../../fee/fee";
 
-import {configTestnet, configMainnet, configTestTonApi, configTestTonApiNoDb} from "../../config/config-ex";
+import {
+    configTestnet,
+    configMainnet,
+    configTestTonApi,
+    configTestTonApiNoDb,
+    configTestnetNoDb
+} from "../../config/config-ex";
 const prvList = require('../../testData/prvlist')
 const prvAlice = Buffer.from(prvList[1],'hex');
 const prvBob = Buffer.from(prvList[2],'hex');
@@ -17,7 +23,7 @@ const scAddresses = require('../../testData/contractAddress.json');
 const smgCfg = require('../../testData/smg.json');
 const tokenInfo = require('../../testData/tokenInfo.json');
 let smgID = smgCfg.smgId
-let crossValue = toNano('0.1')
+let crossValue = toNano('0.001')
 let bridgeScAddr = scAddresses.bridgeAddress
 //let transValueUserLock = toNano('0.4')
 let transValueUserLock = toNano('1')
@@ -32,6 +38,7 @@ async function init(){
     //await wanTonSdkInit(configMainnet);
     //await wanTonSdkInit(configTestnet);
     await wanTonSdkInit(configTestTonApiNoDb);
+    //await wanTonSdkInit(configTestnetNoDb);
     client = await getClient();
      aliceWallet = await getWalletByPrvKey(prvAlice);
      aliceAddress = aliceWallet.address.toString();
@@ -45,12 +52,10 @@ async function userLock(){
         let ba = BridgeAccess.create(client,bridgeScAddr);
         for(let key of Object.keys(tokenInfo)) {
             console.log("key:",key);
-            if(key.toString().toLowerCase() !== ("tokenorg").toLowerCase()){
-                continue;
-            }
 
-            if(key.toString().toLowerCase() !== ("coin").toLowerCase()){
+            if(key.toString().toLowerCase() !== ("ton").toLowerCase()){
                 transValue = TON_FEE.TRANS_FEE_USER_LOCK_TOKEN;
+                continue;
             }
 
             let ret = await ba.writeContract('sendUserLock', aliceSender, {
@@ -69,6 +74,7 @@ async function userLock(){
 
     }catch(e){
         console.log("err  =%s",e.Error);
+        console.log("err(detailed):",e);
     }
 }
 async function main() {

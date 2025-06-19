@@ -19,6 +19,18 @@ export const configTestnetObs:TonConfig =  {
     usingDbCache:true,
 }
 
+export const configTestnetNoDb:TonConfig =  {
+    network:{
+        network:"testnet", // testnet|mainnet
+    },
+    usingDbCache:false,
+    urls:[
+        {
+            //url:'',
+            //apiKey:''
+        }]
+}
+
 export const configMainnet:TonConfig =  {
     network:{
         network:"mainnet", // testnet|mainnet

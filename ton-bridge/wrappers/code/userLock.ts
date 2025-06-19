@@ -105,7 +105,7 @@ async function buildLockCoinMessages(opts: {
     totalValue = opts.value + opts.crossValue;
     logger.info("totalValue=>",totalValue);
     let queryId = await getQueryID();
-    let dstUserAccountBuffer = Buffer.from(opts.dstUserAccount,'hex');
+    let dstUserAccountBuffer = Buffer.from(remove0x(opts.dstUserAccount),'hex');
     let dstUserAccountBufferLen = dstUserAccountBuffer.length
     let extraCell = beginCell()
         .storeAddress(addrTokenAccount)

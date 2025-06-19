@@ -25,6 +25,8 @@ export const codeTable = {
 
             let dstUserAccountLen = slice.loadUint(8);
             let dstUserAccountBuff = slice.loadBuffer(dstUserAccountLen);
+            console.log("dstUserAccountBuff",dstUserAccountBuff.toString('hex'));
+            console.log("dstUserAccountBuffLen",dstUserAccountLen);
             logger.info("before load extraCell");
             let extraCell = slice.loadRef().beginParse();
             let addrTokenAccount = extraCell.loadAddress();
