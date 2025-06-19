@@ -40,7 +40,7 @@ let aliceWallet,aliceAddressStr,aliceAddress;
 let bobWallet,bobAddress,bobAddressStr;
 
 async function init() {
-    await wanTonSdkInit(configMainnet);
+    //await wanTonSdkInit(configMainnet);
     await wanTonSdkInit(configTestnet);
     client = await getClient();
     aliceWallet = await getWalletByPrvKey(prvAlice);
@@ -139,7 +139,7 @@ async function smgRelease(){
             //     continue;
             // }
 
-            if(key.toString().toLowerCase() !== "coin".toLowerCase()){
+            if(key.toString().toLowerCase() !== "ton".toLowerCase()){
                 transValueSmg = TON_FEE.TRANS_FEE_USER_LOCK_TOKEN;
             }
 

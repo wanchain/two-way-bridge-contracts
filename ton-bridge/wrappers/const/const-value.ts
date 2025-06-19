@@ -23,7 +23,8 @@ export const MAX_LIMIT = 90;
 
 export const MAX_RETRY = 3;
 
-export const MAX_BACKTRACE_SECONDS = 30*86400;
+//export const MAX_BACKTRACE_SECONDS = 30*86400;
+export const MAX_BACKTRACE_SECONDS = 86400;
 
 export const RETRY_INTERNAL_TIME = 20;
 
