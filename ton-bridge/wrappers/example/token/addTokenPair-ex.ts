@@ -66,6 +66,6 @@ async function main(){
 
 main();
 
-// ts-node addTokenPair-ex.ts coin
-// ts-node addTokenPair-ex.ts tokenWrapped
-// ts-node addTokenPair-ex.ts tokenOrg
+// ts-node addTokenPair-ex.ts ton
+// ts-node addTokenPair-ex.ts wan
+// ts-node addTokenPair-ex.ts usdt
