@@ -102,7 +102,7 @@ async function buildLockCoinMessages(opts: {
 },jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint){
     logger.info("buildLockCoinMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
     let totalValue:bigint;
-    totalValue = opts.value + opts.crossValue;
+    totalValue = opts.value + opts.crossValue + lockFee;
     logger.info("totalValue=>",totalValue);
     let queryId = await getQueryID();
     let dstUserAccountBuffer = Buffer.from(remove0x(opts.dstUserAccount),'hex');
