@@ -202,7 +202,7 @@ contract WanCctpV2 is ReentrancyGuard, Initializable, AccessControl {
             Address.sendValue(payable(feeToAddress), fee);
         }
         IERC20(burnToken).safeTransferFrom(msg.sender, address(this), amount);
-        IERC20(burnToken).safeApprove(circleTokenMessengerSC, amount);
+        IERC20(burnToken).forceApprove(circleTokenMessengerSC, amount);
         ICircleTokenMessengerV2(circleTokenMessengerSC).depositForBurn(amount, destinationDomain, mintRecipient, burnToken, destinationCaller, maxFee, minFinalityThreshold);
 
         bytes memory _emptyHookData = msg.data[0:0];
