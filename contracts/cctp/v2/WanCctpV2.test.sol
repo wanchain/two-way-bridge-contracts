@@ -45,7 +45,7 @@ contract WanCctpV2Test {
             Address.sendValue(payable(msg.sender), msg.value - feeDouble);
         }
         IERC20(burnToken).safeTransferFrom(msg.sender, address(this), amount);
-        IERC20(burnToken).safeApprove(feeV2, amount);
+        IERC20(burnToken).forceApprove(feeV2, amount);
 
         uint256 amount1 = amount / 2;
         IWanCctpV2(feeV2).depositForBurn{value: fee}(amount1, destinationDomain, mintRecipient, burnToken, destinationCaller, maxFee, minFinalityThreshold);
