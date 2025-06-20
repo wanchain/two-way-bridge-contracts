@@ -387,7 +387,8 @@ class DB {
             try {
                 let getSuccess = false
                 let maxRetry = MAX_RETRY;
-                while ((maxRetry-- > 0) && (!getSuccess)) {
+                let insertSuccess = false;
+                while ((maxRetry-- > 0) && (!getSuccess || !insertSuccess)) {
                     try {
 
                         //let trans = await client.getTransactions(scAddress, optsOne)
@@ -395,8 +396,11 @@ class DB {
                         getSuccess = true;
                         this.logger.info("scanTonTxByTask get transcations one success","optsOne",optsOne,"pivolt tran hash",trans[0].hash().toString('hex'));
                         tranPovit = trans[0];
+                        let tonTrans = convertTranToTonTrans(trans)
+                        this.logger.info("before insert povit tran","db",this.dbName,"tranPovit.hash",tranPovit.hash().toString('base64'));
+                        await this.insertTrans(tonTrans)
+                        insertSuccess = true;
                     } catch (e) {
-
                         this.logger.error("get transcations one err ", formatError(e),"optsOne",optsOne);
                         await sleep(RETRY_INTERNAL_TIME);
                     }
@@ -482,7 +486,11 @@ class DB {
                         this.logger.info("scanTonTxByTask getTransactions success from rpc","opts",JSON.stringify(opts,bigIntReplacer),"len of getTransactions",transCount,"dbName",this.dbName);
                         for(let tran of ret){
                             this.logger.info("(scanTonTxByTask) =====> tranHash = %s lt = %s",tran.hash().toString('base64'),tran.lt.toString(10),"dbName",this.dbName);
-                            trans.push(tran);
+
+                            let cci = (tran.inMessage.info as unknown as CommonMessageInfoInternal);
+                            if(cci?.createdAt && (BigInt(cci?.createdAt)+BigInt(MAX_BACKTRACE_SECONDS) >= BigInt(nowTimeStamp))){
+                                trans.push(tran); // oldest tran should not be inserted into db.
+                            }
                         }
                         if(ret.length){
                             opts.lt = ret[ret.length-1].lt.toString(10);

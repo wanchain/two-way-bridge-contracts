@@ -39,8 +39,8 @@ async function main() {
             await sleep(2000);
         }
         try {
-            //tonTrans = await dbAcces.getAllTransNotHandled(args[0])
-            tonTrans = await dbAcces.getAllTrans(args[0])
+            tonTrans = await dbAcces.getAllTransNotHandled(args[0])
+            //tonTrans = await dbAcces.getAllTrans(args[0])
             console.log("getAllTransNotHandled tonTrans.length", tonTrans.length);
         } catch (err) {
             console.error(err.code, err.response?.data?.error)
