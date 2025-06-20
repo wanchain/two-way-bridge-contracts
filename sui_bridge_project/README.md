@@ -156,17 +156,17 @@ const TESTNET_CONFIG = {
 
   SUI_CLOCK_OBJECT_ID: '0x6',
 
-  // Admin模块
+  // Admin module
   ADMIN: {
     OBJECT_ID: '0x04e59504361b901796f119bfc0a89b90b132aceaea3d883f6ecf110b4e4fdbb0',
   },
   
-  // Oracle模块
+  // Oracle module
   ORACLE: {
     OBJECT_ID: '0x2a24a4c7bf712b688a3df7044f0011d52bb44a4c076d561612d60d0a1f647ad1',
   },
   
-  // Cross模块
+  // Cross module
   CROSS: {
     TOKEN_PAIR_REGISTRY: '0x71b6dcd9e89c45d75c7cabf132830edaa7f8bc60b0c7160ad346b4c6909cc0e5',
     TREASURY_CAPS_REGISTRY: '0x296177fcd9033f68f23f29bf174c99801f972258f79c6d2797ad02c9c58a3859',
@@ -201,3 +201,55 @@ const TESTNET_CONFIG = {
 ```
 
 
+# Mainnet Deployment
+
+```
+const MAINNET_CONFIG = {
+  // Bridge Package ID
+  PACKAGE_ID: '0x1c8b984b5d896a916b356171ee7c48eb5b62d8685ffe8da6f5ac30cc1def8c6a',
+
+  UPGRADE_CAP_OBJECT_ID: '0xe3d2d50aa68192f8c666cdd340b49f743f469a04a089730e8ba7db6d8fa9f091',
+
+  SUI_CLOCK_OBJECT_ID: '0x6',
+
+  // Admin module
+  ADMIN: {
+    OBJECT_ID: '0x76210fa68de097be761fd3c758628c64fc5b51f8a150dcba20474e2691f618cd',
+  },
+  
+  // Oracle module
+  ORACLE: {
+    OBJECT_ID: '0x30e1529ff5b1bcaac4dcdc9095ea5a3562c6a26607e6b26b0dfd296ed230c2d1',
+  },
+  
+  // Cross module
+  CROSS: {
+    TOKEN_PAIR_REGISTRY: '0x1706cef6192f49db4d5650eb93a912ae81694d0f8b90f591e6f489959829b987',
+    TREASURY_CAPS_REGISTRY: '0xfd4426caebdca527d2c68c4f9864611a8298819d8f5bd3e494e2347b1dc2bf84',
+    TOKEN_VAULT: '0xc22e2bf69d38889a92559f45fd8769838d98dfc85f9e42925c0cb34bd7da06c7',
+    PROCESSED_TRANSACTIONS: '0xbfa60efaaa411e97444b7f1e51adb7616da36087b0b6c91bed25fae7a372a1ab',
+    FOUNDATION_CONFIG: '0x8a47c0bcca85466f679a0f5b1e1e1ca0bed02a1ea33dad829fa22e8bfa97bf54',
+    PAUSE_CONFIG: '0xfd6f639b37679637d77389038bcfad8e7a128122c18a9b0706d101670af21505',
+  },
+  
+  // FeeConfig
+  FEE_CONFIG: {
+    OBJECT_ID: '0xbb93514a7e8774a4f9aca575793f766e3a21d0a936785129be4f99c0263e1d0f',
+    COLLECTOR_OBJECT_ID: '0xc259516354cac6854e0b40b135a6eec493a55c03f1d865e9c4c4e74f69d8c4cf',
+  },
+  
+  // USDT Token
+  USDT: {
+    PACKAGE_ID: '',
+    TREASURY_CAP: '',
+    METADATA: '',
+  },
+  
+  // USDC Token
+  USDC: {
+    PACKAGE_ID: '0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7',
+    TREASURY_CAP: '0x57d6725e7a8b49a7b2a612f6bd66ab5f39fc95332ca48be421c3229d514a6de7',
+    METADATA: '0x69b7a7c3c200439c1b5f3b19d7d495d5966d5f08de66c69276152f8db3992ec6',
+  },
+};
+```
