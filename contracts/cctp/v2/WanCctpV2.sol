@@ -101,7 +101,7 @@ contract WanCctpV2 is ReentrancyGuard, Initializable, AccessControl {
 
     /** Modifier */
     modifier onlyAdmin() {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "not admin");
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WanCctpV2: not admin");
         _;
     }
 
@@ -151,7 +151,7 @@ contract WanCctpV2 is ReentrancyGuard, Initializable, AccessControl {
     }
 
     function estimateFee(uint32 destinationDomain) public view returns(uint256 fee) {
-        require(circlePathToBip44[destinationDomain] != 0, "Fee: Invalid destination domain");
+        require(circlePathToBip44[destinationDomain] != 0, "WanCctpV2: Invalid destination domain");
         uint256 bip44ChainID = circlePathToBip44[destinationDomain];
         fee = feeMap[bip44ChainID];
         if (fee == 0 && feeReadSC != address(0)) {
