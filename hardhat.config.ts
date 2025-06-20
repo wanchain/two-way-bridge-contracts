@@ -228,6 +228,15 @@ const config = {
       url: 'https://optimism-sepolia.blockpi.network/v1/rpc/public',
       accounts: [process.env.PK],
       gasPrice: 1.5e9,
+      bip44ChainId: 2147484262,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x08bad1A48b0B08Bf769f83ba30c1DaD0F8Bb8b6B",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     ethSepolia: {
       url: 'https://ethereum-sepolia.publicnode.com',
@@ -274,8 +283,17 @@ const config = {
       bip44ChainId: 1073741848,
     },
     opSepolia: {
-      url: 'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+      url: 'https://sepolia.optimism.io',
       accounts: [process.env.PK],
+      bip44ChainId: 2147484262,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x08bad1A48b0B08Bf769f83ba30c1DaD0F8Bb8b6B",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     amoy: {
       url: "https://rpc.ankr.com/polygon_amoy",
@@ -472,7 +490,9 @@ const config = {
     },  
   },
   etherscan: {
-    apiKey: '',
+    apiKey: {
+      opSepolia: "PLACEHOLDER_STRING",
+    },
     customChains: [
       {
         network: "x1Mainnet",
