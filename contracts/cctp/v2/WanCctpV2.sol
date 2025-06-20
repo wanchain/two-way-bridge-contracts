@@ -41,9 +41,6 @@ interface ICircleTokenMessengerV2 {
         uint256 maxFee,
         uint32 minFinalityThreshold
     ) external;
-
-
-    function remoteTokenMessengers(uint32 domain) external view returns(bytes32 remoteTokenMessenger);
 }
 
 interface ICircleMessageTransmitterV2 {
@@ -54,7 +51,7 @@ interface ICircleMessageTransmitterV2 {
 
 }
 
-contract FeeV2 is ReentrancyGuard, Initializable, AccessControl {
+contract WanCctpV2 is ReentrancyGuard, Initializable, AccessControl {
     using SafeERC20 for IERC20;
 
     address public feeToAddress;
@@ -200,10 +197,7 @@ contract FeeV2 is ReentrancyGuard, Initializable, AccessControl {
         uint32 minFinalityThreshold
     ) external payable nonReentrant {
         uint256 fee = estimateFee(destinationDomain);
-        require(msg.value >= fee, "Fee: Insufficient fee");
-        if (msg.value > fee) {
-            Address.sendValue(payable(msg.sender), msg.value - fee);
-        }
+        require(msg.value == fee, "WanCctpV2: Mismatch fee");
         if (fee > 0) {
             Address.sendValue(payable(feeToAddress), fee);
         }
@@ -214,6 +208,7 @@ contract FeeV2 is ReentrancyGuard, Initializable, AccessControl {
         bytes memory _emptyHookData = msg.data[0:0];
         emit DepositForBurnWithFee(burnToken, amount, mintRecipient, destinationDomain, destinationCaller, maxFee, fee, minFinalityThreshold, _emptyHookData);
     }
+
 
     /**
      * @notice Receive a message. Messages can only be broadcast once for a given nonce.

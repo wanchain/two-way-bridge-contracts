@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 
-interface IFeeV2 {
+interface IWanCctpV2 {
     function depositForBurn(
         uint256 amount,
         uint32 destinationDomain,
@@ -25,7 +25,7 @@ interface IFeeV2 {
 
 }
 
-contract FeeV2Test {
+contract WanCctpV2Test {
     using SafeERC20 for IERC20;
 
     function doubleDepositForBurn(
@@ -38,7 +38,7 @@ contract FeeV2Test {
         uint256 maxFee,
         uint32 minFinalityThreshold
     ) external payable {
-        uint256 fee = IFeeV2(feeV2).estimateFee(destinationDomain);
+        uint256 fee = IWanCctpV2(feeV2).estimateFee(destinationDomain);
         uint256 feeDouble = fee * 2;
         require(msg.value >= feeDouble, "Fee: Insufficient fee");
         if (msg.value > feeDouble) {
@@ -48,9 +48,9 @@ contract FeeV2Test {
         IERC20(burnToken).safeApprove(feeV2, amount);
 
         uint256 amount1 = amount / 2;
-        IFeeV2(feeV2).depositForBurn{value: fee}(amount1, destinationDomain, mintRecipient, burnToken, destinationCaller, maxFee, minFinalityThreshold);
+        IWanCctpV2(feeV2).depositForBurn{value: fee}(amount1, destinationDomain, mintRecipient, burnToken, destinationCaller, maxFee, minFinalityThreshold);
 
         uint256 amount2 = amount - amount1;
-        IFeeV2(feeV2).depositForBurn{value: fee}(amount2, destinationDomain, mintRecipient, burnToken, destinationCaller, maxFee, minFinalityThreshold);
+        IWanCctpV2(feeV2).depositForBurn{value: fee}(amount2, destinationDomain, mintRecipient, burnToken, destinationCaller, maxFee, minFinalityThreshold);
     }
 }
