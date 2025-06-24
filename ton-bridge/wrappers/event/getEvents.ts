@@ -155,7 +155,7 @@ export async function getAllTransactions(client:WanTonClient,scAddress:string,li
     return trans;
 }
 
-export async function getEventFromTran(client:WanTonClient,tran:Transaction, scAddress:string){
+export async function getEventFromTran(client:WanTonClient,tran:Transaction, scAddress:string,slim:boolean=false){
     logger.info("getEventFromTran entering","client is WanTonClient",IsWanTonClient(client));
     let bodyCell = tran.inMessage?.body;
     if(!bodyCell){
@@ -184,27 +184,32 @@ export async function getEventFromTran(client:WanTonClient,tran:Transaction, scA
         if(opCode == opcodes.OP_CROSS_UserLock){
             logger.info(formatUtil.format("getEventFromTran OP_CROSS_UserLock"));
             logger.info("getEventFromTran before handleUserLockEvent","client is WanTonClient",IsWanTonClient(client));
-            let handleResult = await handleUserLockEvent(client,Address.parse(scAddress),tran)
+            let handleResult = await handleUserLockEvent(client,Address.parse(scAddress),tran,slim)
             if (!handleResult.valid){
                 logger.error(formatUtil.format("handleResult OP_CROSS_UserLock is not valid","tran.hash",tran.hash().toString("base64")));
                 return null;
             }
-            decoded.origin = handleResult.origin;
+
+            decoded.origin = decoded.sendAccount ? decoded.sendAccount : handleResult.origin
+
         }else{
-            let handleResult = await handleCommonEvent(client,Address.parse(scAddress),
-                tran)
+            let handleResult = await handleCommonEvent(client,Address.parse(scAddress),tran,slim)
             if (!handleResult.valid){
-                logger.error(formatUtil.format("handleResult handleCommonEvent is not valid","tran.hash",tran.hash().toString("base64")));
+                logger.error(formatUtil.format("handleResult handleCommonEvent is not valid","tran.hash",tran.hash().toString("base64"),"slim",slim));
                 return null;
             }
-            decoded.origin = handleResult.origin;
+            decoded.origin = decoded.sendAccount ? decoded.sendAccount : handleResult.origin
         }
 
         return await codeTable[opCode]["emitEvent"](decoded);
     }catch(err){
         logger.error(formatUtil.format("getEventFromTran err",formatError(err)),"tran.hash",tran.hash().toString("base64"));
-        return null;
+        throw new Error(formatUtil.format("getEventFromTran err",formatError(err)));
     }
+}
+
+export async function getSlimEventFromTran(client:WanTonClient,tran:Transaction, scAddress:string){
+    return await getEventFromTran(client,tran,scAddress,true);
 }
 
 export async function getTransaction(client:WanTonClient,scAddress:string,lt:string,tranHash:string){
@@ -325,6 +330,14 @@ export async function getEventByTranHash(client:WanTonClient, scAddress:string, 
     return await getEventFromTran(client,tran,scAddress);
 }
 
+export async function getSlimEventByTranHash(client:WanTonClient, scAddress:string, lt:string, tranHash:string){
+    logger.info("entering getSlimEventByTranHash getTransaction success","tranHash ",tranHash,"lt",lt,"dbName",scAddress);
+    let tran = await getTransaction(client,scAddress,lt,tranHash);
+    logger.info("getSlimEventByTranHash getTransaction success","tranHash ",tran.hash().toString('hex'));
+    logger.info("getSlimEventByTranHash before getEventFromTran","client is WanTonClient",IsWanTonClient(client));
+    return await getSlimEventFromTran(client,tran,scAddress);
+}
+
 export async function getOpCodeFromCell(cell:Cell){
     if(cell.equals(Cell.EMPTY)){
         throw new Error("empty cell");
@@ -344,15 +357,15 @@ export async function getOpCodeFromCell(cell:Cell){
 }
  */
 
-async function handleUserLockEvent(client:WanTonClient, scAddr:Address,tran:Transaction){
-    return handleCommonEvent(client,scAddr,tran);
+async function handleUserLockEvent(client:WanTonClient, scAddr:Address,tran:Transaction,slim:boolean=false){
+    return handleCommonEvent(client,scAddr,tran,slim);
 }
 
-async function handleCommonEvent(client:WanTonClient, scAddr:Address,tran:Transaction){
+async function handleCommonEvent(client:WanTonClient, scAddr:Address,tran:Transaction,slim:boolean=false){
 
     logger.info(formatUtil.format("Entering handleCommonEvent"));
 
-    let transResult  = await getTransResult(client,scAddr,tran);
+    let transResult  = await getTransResult(client,scAddr,tran,slim);
     if (!transResult.success){
         logger.error("the trans tree is not success","tran.hash",tran.hash().toString('base64'))
         return {
@@ -397,6 +410,6 @@ async function decodeUserLock(bodyCell:Cell){
     }
 }
 
-async function getTransResult(client:WanTonClient, scAddr:Address,tran:Transaction){
-    return await getTranResultByTran(client,scAddr,tran);
+async function getTransResult(client:WanTonClient, scAddr:Address,tran:Transaction,slim:boolean=false){
+    return await getTranResultByTran(client,scAddr,tran,slim);
 }

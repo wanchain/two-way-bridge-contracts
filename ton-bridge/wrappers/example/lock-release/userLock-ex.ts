@@ -55,6 +55,10 @@ async function userLock(){
 
             if(key.toString().toLowerCase() !== ("ton").toLowerCase()){
                 transValue = TON_FEE.TRANS_FEE_USER_LOCK_TOKEN;
+                //continue;
+            }
+
+            if(key.toString().toLowerCase() !== ("wan").toLowerCase()){
                 continue;
             }
 

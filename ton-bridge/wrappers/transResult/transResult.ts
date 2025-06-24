@@ -266,8 +266,8 @@ export async function getLowerSteps(client:WanTonClient,scAddr:Address,tran:Tran
     }
 }
 
-async function getTranPathInfoByPivotTran(client:WanTonClient,scAddr:Address,pivotTran:Transaction):Promise<TranPathInfo>{
-    logger.info("Entering getTranPathInfoByPivotTran");
+async function getTranPathInfoByPivotTran(client:WanTonClient,scAddr:Address,pivotTran:Transaction,slim:boolean=false):Promise<TranPathInfo>{
+    logger.info("Entering getTranPathInfoByPivotTran","slim",slim);
     let allTranPathInfo: TranPathInfo = [];
     let beforePivotTranPathInfo: TranPathInfo = [];
     let afterPivotTranPathInfo: TranPathInfo = [];
@@ -284,9 +284,11 @@ async function getTranPathInfoByPivotTran(client:WanTonClient,scAddr:Address,piv
     await getLowerSteps(client,scAddr,pivotTran,afterPivotTranPathInfo);   // find children tx //todo check it carefully.
     logger.info("End get children tx");
 
-    logger.info("Entering get parent tx");
-    await getUpperSteps(client,scAddr,pivotTran,beforePivotTranPathInfo);  // find parent tx
-    logger.info("End get parent tx");
+    if(!slim){
+        logger.info("Entering get parent tx");
+        await getUpperSteps(client,scAddr,pivotTran,beforePivotTranPathInfo);  // find parent tx
+        logger.info("End get parent tx");
+    }
 
     logger.info("[pivoltTranStepInfo]====>",[pivoltTranStepInfo]);
     logger.info("[beforePivotTranPathInfo]====>",beforePivotTranPathInfo);
@@ -377,9 +379,9 @@ export async function getTranResultByTxHash(client:WanTonClient,scAddr:Address,t
     };
 }
 
-export async function getTranResultByTran(client:WanTonClient,scAddr:Address,tran:Transaction):Promise<TranResult>{
+export async function getTranResultByTran(client:WanTonClient,scAddr:Address,tran:Transaction,slim:boolean=false):Promise<TranResult>{
     logger.info("Entering getTranResultByTran");
-    let path = await  getTranPathInfoByPivotTran(client,scAddr,tran);
+    let path = await  getTranPathInfoByPivotTran(client,scAddr,tran,slim);
     let success = await isTranPathSuccess(path);
     return {
         addr: scAddr,

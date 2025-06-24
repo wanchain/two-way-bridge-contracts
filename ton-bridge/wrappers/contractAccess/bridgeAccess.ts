@@ -31,8 +31,8 @@ export class BridgeAccess {
                 let  cOpened =  this.client.open(c);
                 return await cOpened[methodName](via,opts);
             }catch(err){
-                logger.info(formatUtil.format("writeContract err=>","methodName",methodName,"opts",JSON.stringify(opts,bigIntReplacer),"err",formatError(err)));
-                throw new Error(`${methodName} is not supported Non send method`);
+                logger.error(formatUtil.format("writeContract err=>","methodName",methodName,"opts",JSON.stringify(opts,bigIntReplacer),"err",formatError(err)));
+                throw new Error(`writeContract ${methodName} error ${formatError(err)}`);
             }
     }
 
@@ -47,7 +47,7 @@ export class BridgeAccess {
             return await cOpened[methodName](...parameters);
         }catch(err){
             logger.error(formatUtil.format(formatError(err)),"methodName",methodName,"parameters",parameters);
-            throw new Error(`${methodName} is not supported Non send method`);
+            throw new Error(`readContract ${methodName} error ${formatError(err)}`);
         }
     }
 }

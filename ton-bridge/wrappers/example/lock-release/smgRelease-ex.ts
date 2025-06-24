@@ -128,37 +128,43 @@ async function smgRelease(){
         let transValueSmg : bigint = transValueSmgRelease;
         let ba = BridgeAccess.create(client,bridgeScAddr);
         for(let key of Object.keys(tokenInfo)) {
-            console.log("key:",key);
-            // if(key.toString().toLowerCase() !== "tokenwrapped"){
-            //     continue;
-            // }
-            // if(key.toString().toLowerCase() !== "coin"){
-            //     continue;
-            // }
-            // if(key.toString().toLowerCase() !== "tokenOrg".toLowerCase()){
-            //     continue;
-            // }
+            try{
+                console.log("key:",key);
+                // if(key.toString().toLowerCase() !== "tokenwrapped"){
+                //     continue;
+                // }
+                // if(key.toString().toLowerCase() !== "coin"){
+                //     continue;
+                // }
+                // if(key.toString().toLowerCase() !== "tokenOrg".toLowerCase()){
+                //     continue;
+                // }
 
-            if(key.toString().toLowerCase() !== "ton".toLowerCase()){
-                transValueSmg = TON_FEE.TRANS_FEE_USER_LOCK_TOKEN;
+                if(key.toString().toLowerCase() !== "ton".toLowerCase()){
+                    transValueSmg = TON_FEE.TRANS_FEE_USER_LOCK_TOKEN;
+                }
+
+                let smgReleasePara = await buildSmgReleaseParameters(client,{
+                    smgID:smgConfig.smgId,
+                    tokenPairID:tokenInfo[key].tokenPairId,
+                    releaseValue:smgReleaseValue,
+                    value:transValueSmg,
+                    queryID:BigInt(await getQueryID()),
+                    uniqueID:BigInt(await getQueryID()),  // should be txHas->bigInt, here is the example.
+                    tokenCoinAccount:Address.parse(tokenInfo[key].dstTokenAcc),
+                    //tokenCoinAccount:Address.parseFriendly(tokenInfo.tokenOrg.dstTokenAcc).address,
+                    destAccount:bobAddress,
+                    fwTonAmount:TON_FEE.FWD_TON_AMOUNT_TRANSFER_JETTON,
+                    totalTonAmount:TON_FEE.TOTAL_TON_AMOUNT_TRANSFER_JETTON
+                },tokenInfo[key].srcChainId,tokenInfo[key].dstChainId,Address.parse(bridgeScAddr))
+                let ret = await ba.writeContract('sendSmgRelease', aliceSender, smgReleasePara)
+                await sleep(3000);
+                console.log("key = %s, ret of smRelease is %s",key,ret);
+            }catch(err){
+                console.error("key = %s, error: %s",key,err);
             }
 
-            let smgReleasePara = await buildSmgReleaseParameters(client,{
-                smgID:smgConfig.smgId,
-                tokenPairID:tokenInfo[key].tokenPairId,
-                releaseValue:smgReleaseValue,
-                value:transValueSmg,
-                queryID:BigInt(await getQueryID()),
-                uniqueID:BigInt(await getQueryID()),  // should be txHas->bigInt, here is the example.
-                tokenCoinAccount:Address.parse(tokenInfo[key].dstTokenAcc),
-                //tokenCoinAccount:Address.parseFriendly(tokenInfo.tokenOrg.dstTokenAcc).address,
-                destAccount:bobAddress,
-                fwTonAmount:TON_FEE.FWD_TON_AMOUNT_TRANSFER_JETTON,
-                totalTonAmount:TON_FEE.TOTAL_TON_AMOUNT_TRANSFER_JETTON
-            },tokenInfo[key].srcChainId,tokenInfo[key].dstChainId,Address.parse(bridgeScAddr))
-            let ret = await ba.writeContract('sendSmgRelease', aliceSender, smgReleasePara)
             await sleep(3000);
-            console.log("key = %s, ret of smRelease is %s",key,ret);
         }
 
     }catch(e){

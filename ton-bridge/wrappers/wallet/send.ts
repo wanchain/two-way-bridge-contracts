@@ -8,12 +8,13 @@ import {TON_FEE} from "../fee/fee";
 
 
 export async function sendToken(client: WanTonClient | Blockchain, via: Sender,
+                                senderAddr:Address,
                                 tokenAccount: Address,
-                                jetton_amount: bigint,
-                                to: Address) {
+                                to: Address,
+                                jetton_amount: bigint) {
     if (IsWanTonClient(client)) {
-        let srcAddr = via.address;
-        let jwSrc = await getJettonAddress(client, tokenAccount, srcAddr);
+        let jwSrc = await getJettonAddress(client, tokenAccount, senderAddr);
+        console.log("jwSrc==>",jwSrc.toString());
         let c = JettonWallet.createFromAddress(jwSrc)
         let cOpened = client.open(c);
         await cOpened.sendTransfer(via, TON_FEE.TRANS_FEE_NORMAL, jetton_amount, to, to, Cell.EMPTY, TON_FEE.FWD_TON_AMOUNT_TRANSFER_JETTON, Cell.EMPTY);
