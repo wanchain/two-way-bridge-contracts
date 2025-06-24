@@ -68,7 +68,7 @@ export const codeTable = {
                 txHashBase64:opts.txHashBase64,
                 txHash:opts.txHash,
                 lt:opts?.lt,
-                from:opts?.origin,
+                from:(opts?.senderAccount as Address).equals(Address.parse(TON_COIN_ACCOUNT_STR)) ? opts?.origin:opts?.senderAccount,
                 prevTransactionHash:opts?.prevTransactionHash,
                 prevTransactionLt:opts?.prevTransactionLt,
             }
