@@ -79,8 +79,7 @@ export async function buildUserLockMessages(opts: {
     throw new Error("unknown tokenAccount");
 }
 
-
-async function buildInternalMessage(src: {
+export async function buildInternalMessage(src: {
     to: Address | string,
     value: bigint | string,
     bounce?: Maybe<boolean>,
@@ -90,7 +89,7 @@ async function buildInternalMessage(src: {
     return internal(src);
 }
 
-async function buildLockCoinMessages(opts: {
+export async function buildLockCoinMessages(opts: {
     value: bigint,
     smgID:string,
     tokenPairID:number,
@@ -139,7 +138,7 @@ async function buildLockCoinMessages(opts: {
     }
 }
 
-async function buildLockOriginalTokenMessages(opts: {
+export async function buildLockOriginalTokenMessages(opts: {
     value: bigint,
     smgID:string,
     tokenPairID:number,
@@ -209,7 +208,7 @@ async function buildLockOriginalTokenMessages(opts: {
     }
 }
 
-async function buildLockWrappedTokenMessages(opts:any,jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint,differentQueryID?:bigint){
+export async function buildLockWrappedTokenMessages(opts:any,jwAddrBridgeSc:Address,jwAddrSrc:Address,addrTokenAccount:Address,lockFee:bigint,differentQueryID?:bigint){
     logger.info("buildLockWrappedTokenMessages","jwAddrBridgeSc",jwAddrBridgeSc.toString(),"jwAddrSrc",jwAddrSrc.toString(),"addrTokenAccount",addrTokenAccount.toString(),"lockFee",lockFee);
     let ret =  (await buildLockOriginalTokenMessages(opts,jwAddrBridgeSc,jwAddrSrc,addrTokenAccount,lockFee));
     ret.lockType = LOCK_TYPE.tokenWrapped;
