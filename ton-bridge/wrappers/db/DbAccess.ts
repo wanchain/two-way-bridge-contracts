@@ -210,6 +210,12 @@ export class DBAccess {
         }
     }
 
+    async insertTrans(dbName:string,trans:TonTransaction[]){
+        if(!this.has(dbName)){
+            throw new Error(`db ${dbName} not exists`);
+        }
+        await this.dbs.get(this.getDbNameFinal(dbName)).inserTrans(trans);
+    }
     async getAllTransNotHandledByRange(dbName:string,lt:bigint,to_lt:bigint){
         if(!this.has(dbName)){
             throw new Error(`db ${dbName} not exists`);

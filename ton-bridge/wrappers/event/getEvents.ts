@@ -15,6 +15,9 @@ import {
 import {MAX_LIMIT, MAX_RETRY, RETRY_INTERNAL_TIME} from "../const/const-value";
 import {DBAccess} from "../db/DbAccess";
 import {IsWanTonClient, WanTonClient} from "../client/client-interface";
+import {TonTransaction} from "../db/Db";
+import {convert} from "@ton/blueprint/dist/cli/convert";
+import {convertTranToTonTrans} from "../db/common";
 
 export async function getEvents(client: WanTonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string,hash?:string):Promise<any> {
 
@@ -67,10 +70,22 @@ export async function getTransactions(client:WanTonClient,scAddress:string,opts:
     logger.info(formatUtil.format("contractAddr=>",scAddress));
     try{
         ret = await client.getTransactions(scAddr,opts)
+        await insertTransByRpc(scAddr,ret);
     }catch(err){
         logger.error(formatError(err),"getTransactions from RPC server opts = %s",opts);
     }
     return ret;
+}
+
+async function insertTransByRpc(scAddress:Address,trans:Transaction[]){
+    let dbAccess = await DBAccess.getDBAccess();
+    if(!dbAccess){
+        logger.error("insertTransByRpc dbAccess null","scAddress",scAddress.toString(),"trans.lenth",trans.length)
+        return null;
+    }
+    let tonTrans = convertTranToTonTrans(trans);
+    await dbAccess.insertTrans(scAddress.toString(),tonTrans);
+    logger.error("insertTransByRpc successfully","scAddress",scAddress.toString(),"trans.lenth",trans.length)
 }
 
 async function getTransactionsFromDb(client:WanTonClient,scAddress:string,opts:{
