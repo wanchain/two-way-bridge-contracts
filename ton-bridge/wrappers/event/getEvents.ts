@@ -15,8 +15,6 @@ import {
 import {MAX_LIMIT, MAX_RETRY, RETRY_INTERNAL_TIME} from "../const/const-value";
 import {DBAccess} from "../db/DbAccess";
 import {IsWanTonClient, WanTonClient} from "../client/client-interface";
-import {TonTransaction} from "../db/Db";
-import {convert} from "@ton/blueprint/dist/cli/convert";
 import {convertTranToTonTrans} from "../db/common";
 
 export async function getEvents(client: WanTonClient,scAddress:string,limit:number,lt?:string,to_lt?:string,eventName?:string,hash?:string):Promise<any> {
