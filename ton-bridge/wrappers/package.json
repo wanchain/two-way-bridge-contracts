@@ -1,6 +1,6 @@
 {
   "name": "wan-ton-sdk",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "scripts": {
     "build": "rm -rf ./dist && tsc",
     "test": "jest --verbose"

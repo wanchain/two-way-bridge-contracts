@@ -1,3 +1,3 @@
 export * from './buildHash'
 export * from './rawTrans'
-export const toolsSec256k1 = require('./tools-secp256k1')
+//export const toolsSec256k1 = require('./tools-secp256k1')  // only for internal use.
