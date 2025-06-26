@@ -78,6 +78,9 @@ const toncenter_apikey ="16f38715eb1a0984abf42148d5ed042589f8bf11768141ecb944fea
 const default_test_url= "https://testnet.toncenter.com/api/v2/jsonRPC"
 const default_url= "https://toncenter.com/api/v2/jsonRPC"
 
+const tonapi_apikey="AH4MNTSJ5HBH4KAAAAAJQ2O2QNEXAKZWGAMTFLFJC4BMWNGDNFYXSKUOPQ4KRJSXJDSL65I";
+const tonapi_testnet_apikey="AH4MNTSJ5HBH4KAAAAAJQ2O2QNEXAKZWGAMTFLFJC4BMWNGDNFYXSKUOPQ4KRJSXJDSL65I";
+
 export async function getClient():Promise<WanTonClient> {
     logger.info(formatUtil.format("getClient config %s",JSON.stringify(g_tonConfig)));
 
@@ -88,7 +91,8 @@ export async function getClient():Promise<WanTonClient> {
         const indexUsed = await getSecureRandomNumber(0,totalUrls)
         if(urls[indexUsed].vendor?.toLowerCase() == 'tonapi'){
             return new TonApiClient({
-                baseUrl:urls[indexUsed].url
+                baseUrl:urls[indexUsed].url,
+                apiKey: urls[indexUsed].apiKey ?? (g_tonConfig.network.network === 'mainnet' ? tonapi_apikey : tonapi_testnet_apikey)
             });
         }else{
             return  new TonClient({ endpoint:urls[indexUsed].url ?? (g_tonConfig.network.network === 'mainnet' ? default_url:default_test_url),
