@@ -177,7 +177,30 @@ export const codeTable = {
                 .endCell()
         },
         "deCode": function (cell: Cell): any {
-            return 0;
+            logger.info(formatUtil.format("Entering deCode Function OP_FEE_SetTokenPairFee"));
+            let slice = cell.beginParse();
+            let opCode = slice.loadUint(32);
+            let queryID = slice.loadUint(64);
+            let tokenPairID = slice.loadUint(32);
+            let fee = slice.loadUint(32);
+            slice.endParse();
+            return {
+                opCode,
+                queryID,
+                tokenPairID,
+                fee
+            };
+        },
+        "emitEvent": function (opts){
+            return {
+                eventName:"SetTokenPairFeeLogger",
+                tokenPairID:opts.tokenPairID,
+                fee:opts.fee,
+                userAccount:opts.userAccount,
+                txHashBase64:opts.txHashBase64,
+                txHash:opts.txHash,
+                lt:opts?.lt
+            }
         }
     },
     [opcodes.OP_FEE_SetSmgFeeProxy]: {
@@ -190,7 +213,27 @@ export const codeTable = {
                 .endCell()
         },
         "deCode": function (cell: Cell): any {
-            return 0;
+            logger.info(formatUtil.format("Entering deCode Function OP_FEE_SetSmgFeeProxy"));
+            let slice = cell.beginParse();
+            let opCode = slice.loadUint(32);
+            let queryID = slice.loadUint(64);
+            let smgFeeProxyAddr = slice.loadAddress();
+            slice.endParse();
+            return {
+                opCode,
+                queryID,
+                smgFeeProxyAddr
+            };
+        },
+        "emitEvent": function (opts){
+            return {
+                eventName:"SetSmgFeeProxyLogger",
+                smgFeeProxyAddr:opts.smgFeeProxyAddr.toString(),
+                userAccount:opts.userAccount,
+                txHashBase64:opts.txHashBase64,
+                txHash:opts.txHash,
+                lt:opts?.lt,
+            }
         }
     },
     [opcodes.OP_GROUPAPPROVE_Proposol_SetSmgFeeProxy]: {
@@ -477,7 +520,36 @@ export const codeTable = {
                 .endCell()
         },
         "deCode": function (cell: Cell): any {
-            return 0;
+            logger.info(formatUtil.format("Entering deCode Function OP_FEE_SetChainFee"));
+            let slice = cell.beginParse();
+            let opCode = slice.loadUint(32);
+            let queryID = slice.loadUint(64);
+            let srcChainId = slice.loadUint(32);
+            let dstChainId = slice.loadUint(32);
+            let contractFee = slice.loadUint(32);
+            let agentFee = slice.loadUint(32);
+            slice.endParse();
+            return {
+                opCode,
+                queryID,
+                srcChainId,
+                dstChainId,
+                contractFee,
+                agentFee
+            };
+        },
+        "emitEvent": function (opts){
+            return {
+                eventName:"SetChainFeeLogger",
+                srcChainId:opts.srcChainId,
+                dstChainId:opts.dstChainId,
+                contractFee:opts.contractFee,
+                agentFee:opts.agentFee,
+                userAccount:opts.userAccount,
+                txHashBase64:opts.txHashBase64,
+                txHash:opts.txHash,
+                lt:opts?.lt,
+            }
         }
     },
     [opcodes.OP_FEE_SetChainFees]: {

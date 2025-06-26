@@ -12,8 +12,8 @@ const args = process.argv.slice(2);
 
 async function main() {
     //await wanTonSdkInit(configMainnet);
-    //await wanTonSdkInit(configTestnet);
-    await wanTonSdkInit(configTestTonApi);
+    await wanTonSdkInit(configTestnet);
+    //await wanTonSdkInit(configTestTonApi);
     //await wanTonSdkInit(configTestTonApiNoDb);
 
     let scBridgeAddr = args[0];

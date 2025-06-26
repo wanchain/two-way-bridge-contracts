@@ -84,20 +84,25 @@ const tonapi_testnet_apikey="AH4MNTSJ5HBH4KAAAAAJQ2O2QNEXAKZWGAMTFLFJC4BMWNGDNFY
 export async function getClient():Promise<WanTonClient> {
     logger.info(formatUtil.format("getClient config %s",JSON.stringify(g_tonConfig)));
 
+    let finalClientConfig = null;
     // get client by url
     if(g_tonConfig.urls?.length){
         let urls = g_tonConfig.urls;
         const totalUrls = urls.length;
         const indexUsed = await getSecureRandomNumber(0,totalUrls)
         if(urls[indexUsed].vendor?.toLowerCase() == 'tonapi'){
-            return new TonApiClient({
+            finalClientConfig = {
                 baseUrl:urls[indexUsed].url,
                 apiKey: urls[indexUsed].apiKey ?? (g_tonConfig.network.network === 'mainnet' ? tonapi_apikey : tonapi_testnet_apikey)
-            });
+            }
+            logger.info(formatUtil.format("getClient final config %s",JSON.stringify(finalClientConfig)));
+            return new TonApiClient(finalClientConfig);
         }else{
-            return  new TonClient({ endpoint:urls[indexUsed].url ?? (g_tonConfig.network.network === 'mainnet' ? default_url:default_test_url),
+            finalClientConfig = { endpoint:urls[indexUsed].url ?? (g_tonConfig.network.network === 'mainnet' ? default_url:default_test_url),
                 timeout:g_tonConfig.network.tonClientTimeout ?? TONCLINET_TIMEOUT,
-                apiKey: urls[indexUsed].apiKey ?? (g_tonConfig.network.network === 'mainnet' ? toncenter_apikey : toncenter_testnet_apikey) });
+                apiKey: urls[indexUsed].apiKey ?? (g_tonConfig.network.network === 'mainnet' ? toncenter_apikey : toncenter_testnet_apikey) }
+            logger.info(formatUtil.format("getClient final config %s",JSON.stringify(finalClientConfig)));
+            return  new TonClient(finalClientConfig);
         }
     }
 
