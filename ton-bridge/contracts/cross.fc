@@ -46,7 +46,6 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 
 }
 
-
 () send_token(int queryId, int amount, slice toAddress, slice jwBridgeAddr, int fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
     {--
     1. bridge send inter_transfer to JW_bridge address

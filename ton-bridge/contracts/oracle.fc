@@ -53,7 +53,6 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
 }
 
 
-
 ;; Get a smg by ID
 (int, int, int, int, int) oracle_get_smg(cell refcell, int id, int commited ) method_id {
     (_, cell smgConfig, cell smgConfigCommit, _) = oracle_load_data(refcell);

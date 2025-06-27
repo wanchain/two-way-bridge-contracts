@@ -38,8 +38,6 @@
     );
 }
 
-
-
 () cb_executed(slice sender_address, int query_id) impure {
     var msg = begin_cell()
         .store_msg_flag(msg_flag::bounceable)
@@ -52,7 +50,6 @@
     send_raw_message(msg,16 + CARRY_REMAINING_GAS);
     return ();
 }
-
 
 () refund_executed(slice sender_address, slice originalAddress, int query_id, int refundAmout) impure {
     slice refundAddress = begin_cell().end_cell().begin_parse();
@@ -84,6 +81,7 @@
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_smg(oracle, id, 1);
 }
+
 () check_privilege(int op, slice sender_address, slice cross_owner, cell oracle, cell feeCell ) impure {
     if(( op == OP_TRANSFER_NOTIFICATION ) | ( op == OP_EXCESSES )){
         return ();
@@ -136,6 +134,7 @@
     }
     throw(error::privilege_unknown_opcode);
 }
+
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     if (in_msg_body.slice_empty?()) {
@@ -272,7 +271,6 @@
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return fee_get_config(ca_fee);
 }
-
 (int, int, int,int,int) get_smgConfig(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_smg(oracle, id, 0);
@@ -303,6 +301,8 @@
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_next_smg_id(oracle, id, 1);
 }
+
+
 ;; getter for tokenManager
 (int, slice, int, slice,slice,int,cell,slice) get_token_pair(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
@@ -326,12 +326,6 @@
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return fee_get_next_crossAdmin(ca_fee, adminAddr);
 }
-
-;; for test.
-;; (int) get_updated_int() method_id {
-;;     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-;;     return ext_get_updated_int(extend);
-;; }
 
 (slice) version() method_id {
     return "0.1";

@@ -34,7 +34,6 @@ const int DICTIONARY_KEY_LEN = 32;
             .end_cell();
 }
 
-
 ;; Helper functions for tokenPair struct
 (int, slice, int, slice,slice,cell) load_tokenPair(slice cs) inline {
     var fromChainID = cs~load_uint(32);
@@ -71,22 +70,6 @@ const int DICTIONARY_KEY_LEN = 32;
         return (0, "", 0,"","",0,begin_cell().end_cell(),tokenAccount); ;; Return default values if not found
     }
 }
-
-;; Get a tokenPair by ID
-;; (slice,int) tm_get_token_address(cell refcell, int id) method_id {
-;;     (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr,int exist,_) = tm_get_token_pair(refcell, id);
-;;     if ( exist  == 0 ){
-;;         return ("",0);
-;;     }
-;;     slice tokenAccount = begin_cell().end_cell().begin_parse();
-;;     if (srcChainId == BIP44_CHAINID) {
-;;         tokenAccount = fromAccount;
-;;     } else {
-;;         tokenAccount = dstAccount;
-;;     }
-;;     return (tokenAccount,-1);
-;; }
-
 
 ;; Get the first tokenPair in the dictionary
 (int) tm_get_first_tokenpair_id(cell refcell) method_id {
