@@ -187,13 +187,11 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             ;; fake user lock handle
             ;; user send userLockToken directory, not from my_address()
             (_, int hashSender) = parse_std_addr(senderAddr);
-            slice hashSenderSlice = int_to_slice(hashSender, 256);
+            (_, int hash) = parse_std_addr(my_address());
 
             refundValue = msgValue - fee;  ;; for token, handle exception in op_notification. ;;tokenpair handle in op_notification
-            (_, int hash) = parse_std_addr(my_address());
-            slice myAddressHashSlice = int_to_slice(hash, 256);
 
-            if (equal_slices(hashSenderSlice, myAddressHashSlice) == 0) {
+            ifnot (hash == hashSender) {
                 throw(error::cross_lock_token_invalid_sender);
             }
             userLock_jetton(fee, intProxyFeeAddr);
