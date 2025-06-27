@@ -340,7 +340,9 @@ const SEND_SELF_TRAN_VALUE = 400000000;
     if (op == OP_CROSS_ERROR) {
         int errorCode = inMsgBody~load_uint(256);
         throw(errorCode);
+        return (originAddress, refundValue, oracle, revertToken);
     }
 
     throw(error::recv_unknown_opcode);
+    return (originAddress, refundValue, oracle, revertToken);
 }
