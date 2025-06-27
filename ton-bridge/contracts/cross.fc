@@ -112,16 +112,13 @@ const SEND_SELF_TRAN_VALUE = 400000000;
     return ();
 }
 
-() smgRelease_org_jetton(int queryId, int releaseValue, int fee, slice userAccount, slice proxyAddress, slice jwBridgeAddr, fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
-    send_token(queryId, (releaseValue - fee), userAccount, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
+
+() smgRelease_jetton(int queryId, int releaseValue, int fee, slice userAccount, slice proxyAddress, slice jwBridgeAddr, fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
+    send_token(queryId, releaseValue, userAccount, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
     if (fee > 0) {
         send_token(queryId, fee, proxyAddress, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
     }
     return ();
-}
-
-() smgRelease_wrapped_jetton(int queryId, int releaseValue, int fee, slice userAccount, slice proxyAddress, slice jwBridgeAddr, int fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
-    smgRelease_org_jetton(queryId, releaseValue, fee, userAccount, proxyAddress, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
 }
 
 () userLock_ton(int fee, slice smgFeeProxy) impure {
@@ -335,13 +332,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             } else {
                 refundValue = msgValue - 2 * totalTonAmount;
             }
-            (_, int hash) = parse_std_addr(my_address());
-            slice myAddressHashSlice = int_to_slice(hash, 256);
-            if (equal_slices(jettonAdminAddr, myAddressHashSlice)) {
-                smgRelease_wrapped_jetton(queryId, releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr, fwTonAmount, totalTonAmount, senderAddr);
-            } else {
-                smgRelease_org_jetton(queryId, releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr, fwTonAmount, totalTonAmount, senderAddr);
-            }
+            smgRelease_jetton(queryId, releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr, fwTonAmount, totalTonAmount, senderAddr);
         }
         return (originAddress, refundValue, new_oracle, revertToken);
     }
