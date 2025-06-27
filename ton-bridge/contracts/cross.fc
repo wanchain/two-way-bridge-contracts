@@ -267,7 +267,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         ;; check sender is JettonWallet(my_address)
         slice jwAddrBridge = calc_user_wallet(my_address(), tokenAcountFromMsg, walletCode);
 
-        if (equal_slice_bits(jwAddrBridge, senderAddr) == 0) {
+        ifnot (equal_slice_bits(jwAddrBridge, senderAddr)) {
 
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId, error::cross_lock_token_invalid_sender);
