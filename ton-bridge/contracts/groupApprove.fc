@@ -4,6 +4,7 @@
 #include "imports/signature/sig-header.fc";
 #include "imports/common/wkchain.fc";
 #include "imports/common/errcode.fc";
+#include "jetton/messages.func";
 
 #pragma version >=0.2.0;
 
@@ -29,14 +30,14 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
 }
 () cb_executed(slice sender_address, int query_id) impure {
     var msg = begin_cell()
-        .store_uint(0x18, 6)     ;;
+        .store_msg_flag(msg_flag::bounceable)
         .store_slice(sender_address)
         .store_coins(0)
-        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_msgbody_prefix_slice()
         .store_uint(OP_COMMON_Finished, 32)
         .store_uint(query_id, 64)
         .end_cell();
-    send_raw_message(msg,80);
+    send_raw_message(msg,16 + CARRY_REMAINING_GAS);
     return ();
 }
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -97,16 +98,16 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
         var proof = in_msg_body~load_ref();
         ~strdump("OP_GROUPAPPROVE_Execute"); ~dump(slice_bits(in_msg_body));
         var msg = begin_cell()
-            .store_uint(0x10, 6)     ;;
+            .store_msg_flag(msg_flag::non_bounceable)
             .store_slice(bridge)
             .store_coins(0)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_msgbody_prefix_slice()
             .store_uint(OP_FETCH_GPK, 32)
             .store_uint(query_id, 64)
             .store_uint(SmgID, 256)
             .store_ref(begin_cell().store_uint(taskID, 64).store_ref(proof).end_cell())
             .end_cell();
-        send_raw_message(msg,80);
+        send_raw_message(msg,16 + CARRY_REMAINING_GAS);
         return();
     }
     if (op == OP_GROUPAPPROVE_Execute_WithGPK) {
@@ -168,10 +169,10 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
             }
             ~strdump("end OP_GROUPAPPROVE_Execute_WithGPK   1");
             var msg = begin_cell()
-                .store_uint(0x10, 6)     ;;
+                .store_msg_flag(msg_flag::non_bounceable)
                 .store_slice(toAddr)
                 .store_coins(0)
-                .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+                .store_msgbody_prefix_slice()
                 .store_uint(op2, 32)
                 .store_uint(proposalId, 64) ;; used as query id
                 .store_slice(paras);
@@ -186,7 +187,7 @@ const int GP_TASK_DICTIONARY_KEY_LEN = 256;
                 msg = msg.store_ref(fromb).store_ref(tob);                
             }
 
-            send_raw_message(msg.end_cell(),80);
+            send_raw_message(msg.end_cell(),16 + CARRY_REMAINING_GAS);
             ~strdump("end OP_GROUPAPPROVE_Execute_WithGPK");
             return ();
         } else {

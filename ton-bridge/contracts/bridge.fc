@@ -42,10 +42,10 @@
 
 () cb_executed(slice sender_address, int query_id) impure {
     var msg = begin_cell()
-        .store_uint(msg_flag::bounceable, 6)     ;;
+        .store_msg_flag(msg_flag::bounceable)
         .store_slice(sender_address)
         .store_coins(0)
-        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_msgbody_prefix_slice()
         .store_uint(OP_COMMON_Finished, 32)
         .store_uint(query_id, 64)
         .end_cell();
@@ -62,10 +62,10 @@
         refundAddress = originalAddress;
     }
     var msg = begin_cell()
-        .store_uint(0x18, 6)     ;;
+        .store_msg_flag(msg_flag::bounceable)
         .store_slice(refundAddress)
         .store_coins(refundAmout)
-        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_msgbody_prefix_slice()
         .store_uint(OP_COMMON_Finished, 32)
         .store_uint(query_id, 64)
         .end_cell();
@@ -173,17 +173,17 @@
         throw_unless(error::gpk_invalid_timestamp, (now() > startTime) & (now() < endTime));
 
         var msg = begin_cell()
-            .store_uint(0x18, 6)     ;;
+            .store_msg_flag(msg_flag::bounceable)
             .store_slice(sender_address)
             .store_coins(0)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_msgbody_prefix_slice()
             .store_uint(OP_GROUPAPPROVE_Execute_WithGPK, 32)
             .store_uint(query_id, 64)
             .store_uint(gpkx, 256)
             .store_uint(gpky, 256)
             .store_ref(in_msg_body~load_ref())
             .end_cell();
-        return send_raw_message(msg,80);
+        return send_raw_message(msg,16 + CARRY_REMAINING_GAS);
     }
     if(op & 0xFF000000 == OP_COMMON) {
         if(op == OP_COMMON_SetHalt) {
