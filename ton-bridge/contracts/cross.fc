@@ -275,6 +275,15 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             return (originAddress, refundValue, oracle, revertToken);
         }
 
+        ifnot (lockFee == fee) {
+            ~strdump("666");
+            ;;throw_if(error::cross_ton_not_enough, fee  > msgValue );
+            revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
+            send_error_code_to_self(queryId,error::cross_invalid_lock_fee);
+            revertToken = -1;
+            return (originAddress, refundValue, oracle, revertToken);
+        }
+
         ;; check tokenpair
         if (tokenPairExist == 0) {
             ~strdump("777");
