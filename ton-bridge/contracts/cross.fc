@@ -17,7 +17,6 @@
 const SEND_SELF_TRAN_VALUE = 400000000;
 
 () send_fee_to_proxy(slice proxyAddress, int fee) impure {
-    ~strdump("send_fee_to_proxy....");
     var msg = begin_cell()
         .store_msg_flag(msg_flag::non_bounceable) ;; we should not bounce here cause receiver can have uninitialized contract
         .store_slice(proxyAddress)
@@ -30,7 +29,6 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 }
 
 () send_error_code_to_self(int queryId,int errorCode) impure {
-    ~strdump("Entering send_error_code_to_self");
     var errorCode = begin_cell()
         .store_uint(OP_CROSS_ERROR, 32)
         .store_uint(queryId, 64)
@@ -105,7 +103,6 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 }
 
 () smgRelease_ton(int queryId, int releaseValue, int fee, slice userAccount, slice proxyAddress) impure {
-    ~strdump("smgRelease_ton.....");
     var msg = begin_cell()
         .store_msg_flag(msg_flag::non_bounceable)
         .store_slice(userAccount)
@@ -129,19 +126,16 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 }
 
 () userLock_ton(int queryId, int smgId, int tokenPairId, int lockValue, int fee, slice tokenAccount, slice userAccount, slice smgFeeProxy) impure {
-    ~strdump("userLock_ton....");
     send_fee_to_proxy(smgFeeProxy, fee);
     return ();
 }
 
 () userLock_org_jetton(int queryId, int smgId, int tokenPairId, int lockValue, int fee, slice tokenAccount, slice userAccount, slice smgFeeProxy) impure {
-    ~strdump("userLock_org_jetton....");
     send_fee_to_proxy(smgFeeProxy, fee);
     return ();
 }
 
 () userLock_wrapped_jetton(int queryId, int smgId, int tokenPairId, int lockValue, int fee, slice tokenAccount, slice userAccount, slice smgFeeProxy) impure {
-    ~strdump("userLock_wrapped_jetton....");
     send_fee_to_proxy(smgFeeProxy, fee);
     return ();
 }
@@ -166,9 +160,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
     int refundValue = 0;
     int revertToken = 0;
     slice originAddress = begin_cell().end_cell().begin_parse();
-    ~strdump("cross_recv_internal....");
     slice ZERO_ACCOUNT = begin_cell().store_int(0, 256).end_cell().begin_parse();
-    ~dump(op);
     if (op == OP_CROSS_UserLock) {
 
         (int smgId, int tokenPairId, int crossValue, int userAccountLen) = (inMsgBody~load_uint(256), inMsgBody~load_uint(32), inMsgBody~load_uint(256), inMsgBody~load_uint(8));
@@ -186,19 +178,15 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         throw_unless(error::tm_tokenpair_not_exist, tokenPairExist);
 
         int fee = 0;
-        ~strdump("fee_get_tokenpair_fee....");
         fee = fee_get(caFee, tokenPairId, srcChainId, dstChainId);
 
         throw_unless(error::cross_invalid_lock_fee, lockFee == fee);
-        ~strdump("fee_get_config....");
         (slice smgFeeProxy, _) = fee_get_config(caFee);
-        ~dump(smgFeeProxy);
 
 
         int hashProxyFeeAddr = smgFeeProxy~load_uint(256);
         slice intProxyFeeAddr = get_serialized_address(WORKING_CHAINID, hashProxyFeeAddr);
 
-        ~strdump("compare tokenAccount and ZERO_ACCOUNT....");
         if (equal_slices(tokenAccount, ZERO_ACCOUNT)) {
             throw_if(error::cross_ton_not_enough, (fee + crossValue) > msgValue);
             refundValue = msgValue - fee - crossValue;
@@ -228,25 +216,18 @@ const SEND_SELF_TRAN_VALUE = 400000000;
     }
 
     if (op == OP_TRANSFER_NOTIFICATION) {
-        ~strdump("entering OP_TRANSFER_NOTIFICATION...");
         (int jettonAmount, slice a) = (inMsgBody~load_coins(), inMsgBody~load_msg_addr());
         cell lockBody = inMsgBody~load_maybe_ref();
         slice lockBodySlice = lockBody.begin_parse();
         (_, int queryIdFromLockBody, _, int tokenPairId, int crossValue) =
         (lockBodySlice~load_uint(32), lockBodySlice~load_uint(64), lockBodySlice~load_uint(256), lockBodySlice~load_uint(32), lockBodySlice~load_uint(256));
-        ;;~strdump("111");
         (slice extraSlice) = lockBodySlice~load_ref().begin_parse();
         (slice tokenAcountFromMsg, slice jwAddressSrc, slice jwAddressBridgeFromMsg) = (extraSlice~load_msg_addr(), extraSlice~load_msg_addr(), extraSlice~load_msg_addr());
-        ;;~strdump("222");
         (slice extraSlice2) = lockBodySlice~load_ref().begin_parse();
         slice originAddress = extraSlice2~load_msg_addr();
         int lockFee = extraSlice2~load_uint(256);
-        ;;~strdump("333");
         if (queryIdFromLockBody != queryId) {
-            ~strdump("444");
-            ~strdump("queryId is not equal");
             (_, int hash) = parse_std_addr(jwAddressSrc);
-            ~dump(hash);
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             ;;throw_arg("queryId not equal",error::cross_query_id_not_equal);
             send_error_code_to_self(queryId,error::cross_query_id_not_equal);
@@ -254,7 +235,6 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             return (originAddress, refundValue, oracle, revertToken);
         }
         if (jettonAmount != crossValue) {
-            ~strdump("555");
             ;;send_token(queryId,jettonAmount,originAddress,jwAddressBridgeFromMsg,0,200000000,my_address());
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId,error::cross_invalid_jetton_amount);
@@ -267,7 +247,6 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         int fee = fee_get(caFee, tokenPairId, srcChainId, dstChainId);
 
         if (fee > msgValue) {
-            ~strdump("666");
             ;;throw_if(error::cross_ton_not_enough, fee  > msgValue );
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId,error::cross_ton_not_enough);
@@ -276,7 +255,6 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         }
 
         ifnot (lockFee == fee) {
-            ~strdump("666");
             ;;throw_if(error::cross_ton_not_enough, fee  > msgValue );
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId,error::cross_invalid_lock_fee);
@@ -286,7 +264,6 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 
         ;; check tokenpair
         if (tokenPairExist == 0) {
-            ~strdump("777");
 
             revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId,error::tm_tokenpair_not_exist);
@@ -319,17 +296,14 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             .store_slice(my_address())
             .store_coins(0)
             .store_msgbody_prefix_ref(lockBody);
-        ~strdump("begin send userLock triggered by notification");
         send_raw_message(msg.end_cell(), CARRY_REMAINING_GAS);
         return (originAddress, refundValue, oracle, revertToken);
     }
 
     if (op == OP_CROSS_SmgRelease) {
         ;;(slice oracleAdmin, cell smgConfig, cell smgConfigCommit, cell smgTxUniqueId) = oracle_load_data(oracle);
-        ~strdump("entering OP_CROSS_SmgRelease...");
 
         (slice smgFeeProxy, _) = fee_get_config(caFee);
-        ~dump(smgFeeProxy);
 
         (int uniqId, int smgId, int tokenPairId, int releaseValue) = (inMsgBody~load_uint(256), inMsgBody~load_uint(256), inMsgBody~load_uint(32), inMsgBody~load_uint(256));
 
@@ -346,19 +320,13 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         (int fwTonAmount, int totalTonAmount) = (part3~load_uint(256), part3~load_uint(256));
         part3.end_parse();
 
-        ~strdump("before oracle_get_smg");
         (int gpk_x, int gpk_y, int start_time, int endTime, int timestamp) = oracle_get_smg(oracle, smgId, 0); ;; TODO, use commited.
-        ~strdump("ssssssss oracle_get_smg"); ~dump(now()); ~dump(start_time); ~dump(endTime);
         throw_unless(error::oracle_out_time_range, (now() >= start_time) & (now() <= endTime));
 
-        ~strdump("end oracle_get_smg");
 
         ;; check unique tx
-        ~strdump("before oracle_handle_uniqid");
         var (new_oracle, unique_found?) = oracle_handle_uniqid(oracle, smgId, uniqId);
-        ~strdump("after oracle_handle_uniqid");
         if (unique_found?) {
-            ~strdump("duplicated......................................................");
             throw(error::cross_smg_release_duplicated_error);
         }
 
@@ -366,16 +334,11 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         throw_unless(error::tm_tokenpair_not_exist, tokenPairExist);
 
         ;; check signature
-        ~strdump("before compute_hash");
         int msg_hash = compute_hash(BIP44_CHAINID, uniqId, tokenPairId, releaseValue, fee, tokenAccount, userAccount);
-        ~strdump("end compute_hash");
 
-        ~strdump("before verify_sec");
         throw_unless(error::signature_verify_error, verify_sec(s, gpk_x, gpk_y, e, p, msg_hash));
-        ~strdump("after verify_sec");
 
         if (equal_slices(tokenAccount, ZERO_ACCOUNT)) {
-            ~strdump("before entering smgRelease_ton...");
             smgRelease_ton(queryId, releaseValue, fee, userAccount, smgFeeProxy);
         } else {
             if (fee == 0) {
@@ -386,10 +349,8 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             (_, int hash) = parse_std_addr(my_address());
             slice myAddressHashSlice = int_to_slice(hash, 256);
             if (equal_slices(jettonAdminAddr, myAddressHashSlice)) {
-                ~strdump("before entering smgRelease_wrapped_jetton...");
                 smgRelease_wrapped_jetton(queryId, releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr, fwTonAmount, totalTonAmount, senderAddr);
             } else {
-                ~strdump("before entering smgRelease_org_jetton...");
                 smgRelease_org_jetton(queryId, releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr, fwTonAmount, totalTonAmount, senderAddr);
             }
         }
@@ -397,9 +358,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
     }
 
     if ( op == OP_CROSS_ERROR ) {
-        ~strdump("Entering OP_CROSS_ERROR");
         int errorCode = inMsgBody~load_uint(256);
-        ~dump(errorCode);
         throw(errorCode);
         return (originAddress, refundValue, oracle, revertToken);
     }

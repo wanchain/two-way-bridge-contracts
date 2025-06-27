@@ -78,17 +78,14 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
     var (smg_cell, smg_found?) = smg_dict.udict_get_ref?(SMGID_DICTIONARY_KEY_LEN, smg_id);
 
     if (smg_found?){
-        ~strdump("111");
         var ds = smg_cell.begin_parse();
         var uniq_dict = ds~load_dict();
         ds.end_parse();
 
         var (_, unique_found?) = uniq_dict.udict_get?(UNIQ_DICTIONARY_KEY_LEN, uniqid);
         if (unique_found?) {
-            ~strdump("222");
             return ( refcell, -1);
         } else {
-            ~strdump("333");
             ;;todo maybe dict_msg is not changed.
             uniq_dict~udict_set(UNIQ_DICTIONARY_KEY_LEN,uniqid,begin_cell().end_cell().begin_parse());
             cell smg_cell_new = begin_cell().store_dict(uniq_dict).end_cell();
@@ -96,7 +93,6 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
             return ( oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smg_dict),0 );
         }
     } else {
-        ~strdump("444");
         cell dict_unique = new_dict();
         dict_unique~udict_set(UNIQ_DICTIONARY_KEY_LEN,uniqid,begin_cell().end_cell().begin_parse());
         cell smg_cell_new = begin_cell().store_dict(dict_unique).end_cell();

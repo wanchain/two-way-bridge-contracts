@@ -118,17 +118,14 @@ const int DICTIONARY_KEY_LEN = 32;
 ;; Example of how to use in recv_internal
 (cell) tm_recv_internal(int op, cell refcell, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     (cell tokenPairs) = tm_load_data(refcell);
-    ~strdump("tm_recv_internal"); ~dump(op);
 
     if (op == OP_TOKENPAIR_Upsert) {
-        ~strdump("111");
         int id = in_msg_body~load_uint(32);
         int fromChainID = in_msg_body~load_uint(32);
         int toChainID = in_msg_body~load_uint(32);
         int fromAccountLen = in_msg_body~load_uint(8);
         int toAccountLen = in_msg_body~load_uint(8);
 
-        ~strdump("222");
         slice fromAccountSlice = in_msg_body~load_ref().begin_parse(); 
         slice fromAccount = fromAccountSlice~load_bits(8 * fromAccountLen);
         slice toAccountSlice = in_msg_body~load_ref().begin_parse();
@@ -137,7 +134,6 @@ const int DICTIONARY_KEY_LEN = 32;
 
         cell walletCode = in_msg_body~load_maybe_ref();
 
-        ~strdump("333");
         tokenPairs~udict_set_builder(DICTIONARY_KEY_LEN, id, 
             begin_cell().store_uint(fromChainID, 32)
             .store_uint(toChainID, 32)
@@ -148,7 +144,6 @@ const int DICTIONARY_KEY_LEN = 32;
             .store_slice(jettonAdminAddr)
             .store_maybe_ref(walletCode)
         );
-        ~strdump("444");
         return tm_generate_data(tokenPairs);
     }  ;; there  is no elseif 
     if (op == OP_TOKENPAIR_Remove) { ;; Delete tokenPair operation

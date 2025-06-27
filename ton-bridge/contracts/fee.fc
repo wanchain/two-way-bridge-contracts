@@ -41,7 +41,6 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
 
 ;; Example of how to use in recv_internal
 (cell) fee_recv_internal(int op, cell refcell, int msg_value, cell in_msg_full, slice in_msg_body) impure {
-    ~strdump("fee_recv_internal");
     (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
     if (op == OP_FEE_SetSmgFeeProxy) {
         slice _smgFeeProxy = in_msg_body~load_msg_addr();
@@ -90,14 +89,12 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
     if (op == OP_FEE_AddCrossAdmin) {
         slice admin = in_msg_body~load_msg_addr();
         (int workchain, int hash) = parse_std_addr(admin);
-        ~strdump("exec OP_FEE_AddCrossAdmin"); ~dump(workchain);~dump(hash);
         crossAdmin~udict_set_builder(CROSSADMIN_DICTIONARY_KEY_LEN, hash, begin_cell().store_int(1, 2));
         return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee,crossAdmin);
     }
     if (op == OP_FEE_DelCrossAdmin) {
         slice admin = in_msg_body~load_msg_addr();
         (int workchain, int hash) = parse_std_addr(admin);
-        ~strdump("exec OP_FEE_DelCrossAdmin"); ~dump(workchain);~dump(hash);
         crossAdmin~udict_delete?(CROSSADMIN_DICTIONARY_KEY_LEN, hash);
         return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee,crossAdmin);
     }
@@ -120,14 +117,10 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
     (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
     slice admin = adminAddr~load_msg_addr();
     (int workchain, int hash) = parse_std_addr(admin);
-    ~strdump("fee_get_next_crossAdmin");~dump(hash);
     (int id, slice value, int success) = crossAdmin.udict_get_next?(CROSSADMIN_DICTIONARY_KEY_LEN, hash);
-    ~strdump("33333");
     if (success) {
-        ~strdump("fee_get_next_crossAdmin found");
         return begin_cell().store_uint(id, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
     } else {
-        ~strdump("fee_get_next_crossAdmin not found");
         return begin_cell().store_uint(0, CROSSADMIN_DICTIONARY_KEY_LEN).end_cell().begin_parse();
     }
 }

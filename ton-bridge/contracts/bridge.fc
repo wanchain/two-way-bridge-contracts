@@ -85,8 +85,6 @@
     return oracle_get_smg(oracle, id, 1);
 }
 () check_privilege(int op, slice sender_address, slice cross_owner, cell oracle, cell feeCell ) impure {
-    ~strdump("check_privilege");
-    ~dump(op);
     if(( op == OP_TRANSFER_NOTIFICATION ) | ( op == OP_EXCESSES )){
         return ();
     }
@@ -167,9 +165,7 @@
     if( op == OP_FETCH_GPK) {
         var smgID = in_msg_body~load_uint(256);
         ;; TODO, set gpk first
-        ~strdump("OP_FETCH_GPK"); ~dump(smgID);
         (int gpkx, int gpky, int startTime, int endTime, int timestamp) = get_smgConfigCommited(smgID);
-        ~strdump("OP_FETCH_GPK"); ~dump(gpkx);~dump(gpky);
         throw_unless(error::gpk_invalid_timestamp, (now() > startTime) & (now() < endTime));
 
         var msg = begin_cell()
@@ -212,13 +208,10 @@
         }
         ;; var _extend = cross_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
         ;; save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
-        ~strdump("Entering op_cross...");
-        ~dump(op);
 
         (slice originAddress, var refundValue,var _oracle, int revertToken) = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle,ca_fee,sender_address);
 
         if ( op == OP_TRANSFER_NOTIFICATION ){
-            ~strdump("OP_TRANSFER_NOTIFICATION before save_data");
             save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
             return ();
         }
