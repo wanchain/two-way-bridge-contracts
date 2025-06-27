@@ -51,34 +51,41 @@ const int DICTIONARY_KEY_LEN = 32;
 
 
 ;; Get a tokenPair by ID
-(int, slice, int, slice,slice,int,cell) tm_get_token_pair(cell refcell, int id) method_id {
+(int, slice, int, slice,slice,int,cell,slice) tm_get_token_pair(cell refcell, int id) method_id {
+    slice tokenAccount = begin_cell().end_cell().begin_parse();
     cell tokenPairs = tm_load_data(refcell);
     if (cell_null?(tokenPairs)) {
-        return (0, "", 0,"","",0,begin_cell().end_cell());
+        return (0, "", 0,"","",0,begin_cell().end_cell(),tokenAccount);
     }
     var (tokenPair_slice, found?) = tokenPairs.udict_get?(DICTIONARY_KEY_LEN, id);
     if (found?) {
         var (fromChainID, fromAccount, toChainID, toAccount, jettonAdminAddr, walletCodeCell) = load_tokenPair(tokenPair_slice);
-        return (fromChainID, fromAccount, toChainID, toAccount,jettonAdminAddr,-1,walletCodeCell);
+
+        if (fromChainID == BIP44_CHAINID) {
+            tokenAccount = fromAccount;
+        } else {
+            tokenAccount = toAccount;
+        }
+        return (fromChainID, fromAccount, toChainID, toAccount,jettonAdminAddr,-1,walletCodeCell,tokenAccount);
     } else {
-        return (0, "", 0,"","",0,begin_cell().end_cell()); ;; Return default values if not found
+        return (0, "", 0,"","",0,begin_cell().end_cell(),tokenAccount); ;; Return default values if not found
     }
 }
 
 ;; Get a tokenPair by ID
-(slice,int) tm_get_token_address(cell refcell, int id) method_id {
-    (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr,int exist,_) = tm_get_token_pair(refcell, id);
-    if ( exist  == 0 ){
-        return ("",0);
-    }
-    slice tokenAccount = begin_cell().end_cell().begin_parse();
-    if (srcChainId == BIP44_CHAINID) {
-        tokenAccount = fromAccount;
-    } else {
-        tokenAccount = dstAccount;
-    }
-    return (tokenAccount,-1);
-}
+;; (slice,int) tm_get_token_address(cell refcell, int id) method_id {
+;;     (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr,int exist,_) = tm_get_token_pair(refcell, id);
+;;     if ( exist  == 0 ){
+;;         return ("",0);
+;;     }
+;;     slice tokenAccount = begin_cell().end_cell().begin_parse();
+;;     if (srcChainId == BIP44_CHAINID) {
+;;         tokenAccount = fromAccount;
+;;     } else {
+;;         tokenAccount = dstAccount;
+;;     }
+;;     return (tokenAccount,-1);
+;; }
 
 
 ;; Get the first tokenPair in the dictionary

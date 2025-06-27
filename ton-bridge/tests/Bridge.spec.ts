@@ -13,7 +13,6 @@ const schnorr = require('./tools-secp256k1.js');
 import {slimSndMsgResult} from "./transaction";
 import {getQueryID} from "../wrappers/utils/utils";
 import {CoinBalance, TokenBalance} from "../wrappers/wallet/balance";
-import {getSenderByPrvKey} from "../wrappers";
 
 function AccountToBig(addr: Address) {
     return BigInt("0x" + addr.hash.toString('hex'));
