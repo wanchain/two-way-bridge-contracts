@@ -77,12 +77,6 @@ async function DisplayJettonInfo(client:WanTonClient,addr:Address){
 const fwdAmount = TON_FEE.FWD_FEE_MINT_JETTON;
 const totalAmount = TON_FEE.TOTAL_FEE_MINT_JETTON;
 
-async function Mint(client:WanTonClient,via:Sender,jettonMasterAddr:Address,addr:Address, amount:bigint){
-    let jettMasterSc = await JettonMinter.createFromAddress(jettonMasterAddr);
-    let jettMasterScOpened = await client.open(jettMasterSc)
-    let ret = await jettMasterScOpened.sendMint(via,addr,amount,fwdAmount,totalAmount);
-}
-
 async function main() {
     console.log("Entering main function");
     await init();
@@ -112,42 +106,7 @@ async function main() {
         console.log("jettonMinter address :",jettonMinterOpened.address.toString());
         console.log(retDeploy);
     }
-
-    /*
-    let jwAddrDeployer = await getJettonAddress(client,jettonMinterOpened.address,deployer.address);
-    console.log("deployer.jettonAddress=>",jwAddrDeployer.toString());
-    let b = await getJettonBalance(client,jettonMinterOpened.address,deployer.address);
-    console.log("Before mint balance = %s",b.toString(10));
-    console.log("Begin Mint.....");
-    await Mint(client,via,jettonMinterOpened.address,deployer.address,toNano('2'))
-    console.log("End Mint.....");
-
-    await sleep(5000)
     await DisplayJettonInfo(client,jettonMinterOpened.address);
-
-    b = await getJettonBalance(client,jettonMinterOpened.address,deployer.address);
-    console.log("After mint balance = %s",b.toString(10));
-
-
-
-    let jwAddrNonDeployer = await getJettonAddress(client,jettonMinterOpened.address,nonDeployer.address);
-    console.log("nonDeployer.address=>",nonDeployer.address.toString());
-    console.log("nonDeployer.jettonAddress=>",jwAddrNonDeployer.toString());
-    b = await getJettonBalance(client,jettonMinterOpened.address,nonDeployer.address);
-    console.log("nonDeployer Before mint balance = %s",b.toString(10));
-    console.log("Begin Mint to nonDeployer.....");
-    await Mint(client,via,jettonMinterOpened.address,nonDeployer.address,toNano('3'))
-    console.log("End Mint to nonDeployer.....");
-
-    await sleep(5000)
-
-     */
-    await DisplayJettonInfo(client,jettonMinterOpened.address);
-    /*
-    b = await getJettonBalance(client,jettonMinterOpened.address,nonDeployer.address);
-    console.log("nonDeployer After mint balance = %s",b.toString(10));
-     */
-    // await DisplayJettonInfo(client, Address.parse('EQCsALeDy_a3dzj21ZGMz-tuG9KIZVLmNUapfNtqGia8oqLk'));
 }
 
 main();

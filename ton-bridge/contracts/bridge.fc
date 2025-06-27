@@ -74,9 +74,7 @@
 }
 
 () refundTon(slice sender_address, slice originalAddress, int query_id, int refundValue) impure {
-    if ( refundValue == 0){
-        cb_executed(sender_address,query_id);
-    } else {
+    if ( refundValue > 0){
         refund_executed(sender_address,originalAddress,query_id,refundValue);
     }
     return ();
@@ -222,15 +220,10 @@
         if ( op == OP_TRANSFER_NOTIFICATION ){
             ~strdump("OP_TRANSFER_NOTIFICATION before save_data");
             save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
-            if ( revertToken ) {
-                refundTon(sender_address,originAddress,query_id,refundValue);
-            } else {
-                return ();
-            }
+            return ();
         }
 
         refundTon(sender_address,originAddress,query_id,refundValue);
-
         save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
         return ();
     }

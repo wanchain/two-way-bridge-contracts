@@ -58,7 +58,7 @@ async function userLock(){
                 //continue;
             }
 
-            if(key.toString().toLowerCase() !== ("wan").toLowerCase()){
+            if(key.toString().toLowerCase() !== ("ton").toLowerCase()){
                 continue;
             }
 

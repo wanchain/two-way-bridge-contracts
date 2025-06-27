@@ -114,6 +114,7 @@ export async function buildLockCoinMessages(opts: {
     let extraCell2 = beginCell()
         .storeAddress(Address.parse(opts.senderAccount))
         .storeUint(lockFee, 256)
+        //.storeUint(1, 256)  //todo should delete
         .endCell()
 
     let body = beginCell()
@@ -155,6 +156,8 @@ export async function buildLockOriginalTokenMessages(opts: {
     }
     // forward payLoad
     let queryId = await getQueryID();
+
+    //differentQueryID = BigInt(1); //todo should delete
 
     let dstUserAccountBuffer = Buffer.from(remove0x(opts.dstUserAccount),'hex');
     let dstUserAccountBufferLen = dstUserAccountBuffer.length
