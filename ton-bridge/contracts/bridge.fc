@@ -201,10 +201,11 @@
         }
     }
 
-    if ((op & 0xFF000000 == OP_CROSS) | (op == OP_TRANSFER_NOTIFICATION) | (op == OP_EXCESSES)) {
-        if (op == OP_EXCESSES) {
-            return ();
-        }
+    if (op == OP_EXCESSES) {
+        return ();
+    }
+
+    if ((op & 0xFF000000 == OP_CROSS) | (op == OP_TRANSFER_NOTIFICATION)) {
         ;; var _extend = cross_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
         ;; save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
 
