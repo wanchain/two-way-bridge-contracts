@@ -47,13 +47,13 @@
         .store_uint(OP_COMMON_Finished, 32)
         .store_uint(query_id, 64)
         .end_cell();
-    send_raw_message(msg,16 + CARRY_REMAINING_GAS);
+    send_raw_message(msg, 16 + CARRY_REMAINING_GAS);
     return ();
 }
 
 () refund_executed(slice sender_address, slice originalAddress, int query_id, int refundAmout) impure {
     slice refundAddress = begin_cell().end_cell().begin_parse();
-    if (  slice_empty?(originalAddress) == -1 ) {
+    if (slice_empty?(originalAddress) == -1) {
         refundAddress = sender_address;
     } else {
         refundAddress = originalAddress;
@@ -66,13 +66,13 @@
         .store_uint(OP_COMMON_Finished, 32)
         .store_uint(query_id, 64)
         .end_cell();
-    send_raw_message(msg,PAY_FEES_SEPARATELY);
+    send_raw_message(msg, PAY_FEES_SEPARATELY);
     return ();
 }
 
 () refundTon(slice sender_address, slice originalAddress, int query_id, int refundValue) impure {
-    if ( refundValue > 0){
-        refund_executed(sender_address,originalAddress,query_id,refundValue);
+    if (refundValue > 0) {
+        refund_executed(sender_address, originalAddress, query_id, refundValue);
     }
     return ();
 }
@@ -82,15 +82,15 @@
     return oracle_get_smg(oracle, id, 1);
 }
 
-() check_privilege(int op, slice sender_address, slice cross_owner, cell oracle, cell feeCell ) impure {
-    if(( op == OP_TRANSFER_NOTIFICATION ) | ( op == OP_EXCESSES )){
+() check_privilege(int op, slice sender_address, slice cross_owner, cell oracle, cell feeCell) impure {
+    if ((op == OP_TRANSFER_NOTIFICATION) | (op == OP_EXCESSES)) {
         return ();
     }
 
-    if((op & 0xFF000000 == OP_CROSS) | (op == OP_FETCH_GPK)){
+    if ((op & 0xFF000000 == OP_CROSS) | (op == OP_FETCH_GPK)) {
         return ();
     }
-    if((op == OP_COMMON_TransferOwner) | (op == OP_COMMON_SetHalt)) {
+    if ((op == OP_COMMON_TransferOwner) | (op == OP_COMMON_SetHalt)) {
         throw_unless(error::unauthorized_set_common_config, equal_slices(sender_address, cross_owner));
         return ();
     }
@@ -98,28 +98,28 @@
         throw_unless(error::unauthorized_set_fee_config, equal_slices(sender_address, cross_owner));
         return ();
     }
-    if((op == OP_FEE_AddCrossAdmin) | (op == OP_FEE_DelCrossAdmin)) {
+    if ((op == OP_FEE_AddCrossAdmin) | (op == OP_FEE_DelCrossAdmin)) {
         throw_unless(error::unauthorized_set_fee_admin, equal_slices(sender_address, cross_owner));
         return ();
     }
 
     if ((op == OP_FEE_SetChainFee) | (op == OP_FEE_SetChainFees) | (op == OP_FEE_SetTokenPairFee) | (op == OP_FEE_SetTokenPairFees)) {
         (_, slice feeOperator) = fee_get_config(feeCell);
-        if(equal_slices(sender_address, feeOperator)) {
+        if (equal_slices(sender_address, feeOperator)) {
             return ();
         }
-        if( 1 == fee_isCrodsAdmin(feeCell, sender_address)) {
+        if (1 == fee_isCrodsAdmin(feeCell, sender_address)) {
             return ();
         }
         throw(error::unauthorized_set_fee);
     }
 
-    if(op == OP_ORACLE_TransferOracleAdmin) {
+    if (op == OP_ORACLE_TransferOracleAdmin) {
         throw_unless(error::unauthorized_transfer_oracle_admin, equal_slices(sender_address, cross_owner));
         return ();
     }
 
-    if((op == OP_ORACLE_SetSMG) | (op == OP_ORACLE_CommitSMG) |(op == OP_ORACLE_DeleteSMG)) {
+    if ((op == OP_ORACLE_SetSMG) | (op == OP_ORACLE_CommitSMG) | (op == OP_ORACLE_DeleteSMG)) {
         slice oracleAdmin = oracle_get_OracleAdmin(oracle);
         throw_unless(error::unauthorized_set_oracle_smg, (equal_slices(sender_address, cross_owner) | equal_slices(sender_address, oracleAdmin)));
         return ();
@@ -160,8 +160,8 @@
     int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
     int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    check_privilege(op, sender_address, cross_owner, oracle, ca_fee );
-    if( op == OP_FETCH_GPK) {
+    check_privilege(op, sender_address, cross_owner, oracle, ca_fee);
+    if (op == OP_FETCH_GPK) {
         var smgID = in_msg_body~load_uint(256);
         ;; TODO, set gpk first
         (int gpkx, int gpky, int startTime, int endTime, int timestamp) = get_smgConfigCommited(smgID);
@@ -178,10 +178,10 @@
             .store_uint(gpky, 256)
             .store_ref(in_msg_body~load_ref())
             .end_cell();
-        return send_raw_message(msg,16 + CARRY_REMAINING_GAS);
+        return send_raw_message(msg, 16 + CARRY_REMAINING_GAS);
     }
-    if(op & 0xFF000000 == OP_COMMON) {
-        if(op == OP_COMMON_SetHalt) {
+    if (op & 0xFF000000 == OP_COMMON) {
+        if (op == OP_COMMON_SetHalt) {
             int _halt = in_msg_body~load_uint(2);
             ;;(int workchain, int hash) = parse_std_addr(sender_address);
             cb_executed(sender_address, query_id);
@@ -193,7 +193,7 @@
         ;;     save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
         ;;     return ();
         ;; }
-        if(op == OP_COMMON_TransferOwner) {
+        if (op == OP_COMMON_TransferOwner) {
             slice _cross_owner = in_msg_body~load_msg_addr();
             cb_executed(sender_address, query_id);
             save_data(_cross_owner, halt, init, ca_fee, oracle, token_manager, extend);
@@ -201,26 +201,48 @@
         }
     }
 
-    if ((op & 0xFF000000 == OP_CROSS) | (op == OP_TRANSFER_NOTIFICATION) | (op == OP_EXCESSES )) {
-        if ( op == OP_EXCESSES  ){
+    if ((op & 0xFF000000 == OP_CROSS) | (op == OP_TRANSFER_NOTIFICATION) | (op == OP_EXCESSES)) {
+        if (op == OP_EXCESSES) {
             return ();
         }
         ;; var _extend = cross_recv_internal(op, extend, msg_value, in_msg_full, in_msg_body);
         ;; save_data(cross_owner, halt, init, ca_fee, oracle, token_manager, _extend);
 
-        (slice originAddress, var refundValue,var _oracle, int revertToken) = cross_recv_internal(op, query_id, token_manager,msg_value, in_msg_full, in_msg_body,oracle,ca_fee,sender_address);
+        (slice originAddress, var refundValue, var _oracle, int revertToken) = cross_recv_internal(op, query_id, token_manager, msg_value, in_msg_full, in_msg_body, oracle, ca_fee, sender_address);
 
-        if ( op == OP_TRANSFER_NOTIFICATION ){
+        if (op == OP_TRANSFER_NOTIFICATION) {
+            ;; notifiction error, refund remaining ton coin
+            if (revertToken) {
+                cb_executed(originAddress, query_id);
+            }
+            ;; notificaiton sucess, carry ton coin to userLock, so no need to refund ton coin to originAddress
             save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
             return ();
         }
 
-        refundTon(sender_address,originAddress,query_id,refundValue);
-        save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
-        return ();
+        if (op == OP_CROSS_UserLock) {
+            ;; refundValue > 0 , userLock coin, because userLock can not sub crossValue, so do not refund by remainning mod
+            refundTon(sender_address, originAddress, query_id, refundValue);
+            save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
+            return ();
+        }
+
+        if (op == OP_CROSS_SmgRelease) {
+            ;; decline trans value and send back the remainning toncoin
+            if (refundValue == 0) {
+                cb_executed(sender_address, query_id);
+                save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
+                return ();
+            } else {
+                ;; decline trans value ( include jetton tran fee),and send back the remainning value
+                refundTon(sender_address, originAddress, query_id, refundValue);
+                save_data(cross_owner, halt, init, ca_fee, _oracle, token_manager, extend);
+                return ();
+            }
+        }
     }
 
-    if (op & 0xFF000000 == OP_FEE ) {
+    if (op & 0xFF000000 == OP_FEE) {
         var _ca_fee = fee_recv_internal(op, ca_fee, msg_value, in_msg_full, in_msg_body);
         cb_executed(sender_address, query_id);
         save_data(cross_owner, halt, init, _ca_fee, oracle, token_manager, extend);
@@ -271,31 +293,31 @@
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return fee_get_config(ca_fee);
 }
-(int, int, int,int,int) get_smgConfig(int id) method_id {
+(int, int, int, int, int) get_smgConfig(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return oracle_get_smg(oracle, id, 0);
 }
 
 (int, int) get_chain_fee(int _src_chain_id, int _dst_chain_id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return fee_get_chain_fee(ca_fee,_src_chain_id,_dst_chain_id);
+    return fee_get_chain_fee(ca_fee, _src_chain_id, _dst_chain_id);
 }
 (int) get_tokenpair_fee(int tokenpairID) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return fee_get_tokenpair_fee(ca_fee,tokenpairID);
+    return fee_get_tokenpair_fee(ca_fee, tokenpairID);
 }
 (int) get_first_smg_id() method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return oracle_get_first_smg_id(oracle,0);
+    return oracle_get_first_smg_id(oracle, 0);
 }
 (int) get_next_smg_id(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return oracle_get_next_smg_id(oracle, id,0);
+    return oracle_get_next_smg_id(oracle, id, 0);
 }
 
 (int) get_first_smg_id_Commited() method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
-    return oracle_get_first_smg_id(oracle, 1);    
+    return oracle_get_first_smg_id(oracle, 1);
 }
 (int) get_next_smg_id_Commited(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
@@ -304,7 +326,7 @@
 
 
 ;; getter for tokenManager
-(int, slice, int, slice,slice,int,cell,slice) get_token_pair(int id) method_id {
+(int, slice, int, slice, slice, int, cell, slice) get_token_pair(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return tm_get_token_pair(token_manager, id);
 }

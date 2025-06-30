@@ -322,9 +322,12 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         if (equal_slices(tokenAccount, ZERO_ACCOUNT)) {
             smgRelease_ton(queryId, releaseValue, fee, userAccount, smgFeeProxy);
         } else {
+            ;; here the totalTonAmount value not from this contract, because it belongs the trans fee.
             if (fee == 0) {
+                throw_unless(error::cross_ton_not_enough, msgValue > totalTonAmount);
                 refundValue = msgValue - totalTonAmount;
             } else {
+                throw_unless(error::cross_ton_not_enough, msgValue > 2 * totalTonAmount);
                 refundValue = msgValue - 2 * totalTonAmount;
             }
             smgRelease_jetton(queryId, releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr, fwTonAmount, totalTonAmount, senderAddr);
