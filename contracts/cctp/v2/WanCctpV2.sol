@@ -91,6 +91,8 @@ contract WanCctpV2 is ReentrancyGuard, Initializable, AccessControl {
         bytes hookData
     );
 
+    event ReceiveMessage();
+
     event UpdateFeeTo(address to);
     event UpdateFeeReadSC(address feeReadSC);
 
@@ -242,23 +244,7 @@ contract WanCctpV2 is ReentrancyGuard, Initializable, AccessControl {
      */
     function receiveMessage(bytes calldata message, bytes calldata attestation) external nonReentrant returns (bool success) {
         success = ICircleMessageTransmitterV2(circleMessageTransmitterSC).receiveMessage(message, attestation);
-        /* receiveMessage
-        * @notice Emitted when a new message is received
-        * @param caller Caller (msg.sender) on destination domain
-        * @param sourceDomain The source domain this message originated from
-        * @param nonce The nonce unique to this message
-        * @param sender The sender of this message
-        * @param finalityThresholdExecuted The finality at which message was attested to
-        * @param messageBody message body bytes
-        event MessageReceived(
-            address indexed caller,
-            uint32 sourceDomain,
-            bytes32 indexed nonce,
-            bytes32 sender,
-            uint32 indexed finalityThresholdExecuted,
-            bytes messageBody
-        );
-        */
+        emit ReceiveMessage();
     }
 
     function setFeeToAddress(address _feeToAddress) external onlyAdmin {
