@@ -1,22 +1,47 @@
-import {bigIntReplacer, sleep} from "../../utils/utils";
+import {sleep} from "../../utils/utils";
 
-import {configTestnet, configMainnet, configTestTonApi, configTestTonApiNoDb} from "../../config/config-ex";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
-import {getEventByTranHash, getEvents} from "../../event/getEvents";
-import {logger} from "../../utils/logger";
+import {configMainnet, configTestTonApi} from "../../config/config-ex";
+import {getClient, wanTonSdkInit} from "../../client/client";
+import {getEventByTranHash} from "../../event/getEvents";
 import {DBAccess} from "../../db/DbAccess";
 import {Address} from "@ton/core";
 import {convertTranToTonTrans} from "../../db/common";
 
-const args = process.argv.slice(2);
+const optimist = require('optimist');
+let argv = optimist
+    .usage("Usage: $0")
+    .alias('h', 'help')
+    .describe('network', 'network name testnet|mainnet')
+    .describe('contractAddr', 'contractAddr')
+    .argv;
 
-async function main() {
-    //await wanTonSdkInit(configMainnet);
-    //await wanTonSdkInit(configTestnet);
-    await wanTonSdkInit(configTestTonApi);
-    //await wanTonSdkInit(configTestTonApiNoDb);
+console.log(optimist.argv);
+console.log((Object.getOwnPropertyNames(optimist.argv)).length);
 
-    let scBridgeAddr = args[0];
+
+if ((Object.getOwnPropertyNames(optimist.argv)).length < 4) {
+    optimist.showHelp();
+    process.exit(0);
+}
+
+
+global.network = argv["network"];
+const config = require('../../config/config');
+
+let client = null;
+
+async function init() {
+    if (global.network == 'testnet') {
+        await wanTonSdkInit(configTestTonApi);
+    } else {
+        await wanTonSdkInit(configMainnet);
+    }
+
+    client = await getClient();
+}
+
+async function doingWork() {
+    let scBridgeAddr = argv['contractAddr'];
     let dbAcces = await DBAccess.getDBAccess();
     if (!dbAcces) {
         console.error("not using db cache");
@@ -25,9 +50,6 @@ async function main() {
 
     console.log("scBridgeAddr", scBridgeAddr);
     console.log("scBridgeAddr final address", Address.parse(scBridgeAddr).toString());
-
-
-    let client = await getClient();
 
     let scanEvent = async () => {
         console.log("\n\n\n===================================getAllEvents===================================\n");
@@ -39,13 +61,12 @@ async function main() {
             await sleep(2000);
         }
         try {
-            tonTrans = await dbAcces.getAllTransNotHandled(args[0])
-            //tonTrans = await dbAcces.getAllTrans(args[0])
+            tonTrans = await dbAcces.getAllTransNotHandled(scBridgeAddr);
             console.log("getAllTransNotHandled tonTrans.length", tonTrans.length);
         } catch (err) {
             console.error(err.code, err.response?.data?.error)
         }
-        if(!tonTrans){
+        if (!tonTrans) {
             return;
         }
         for (let tonTran of tonTrans) {
@@ -68,17 +89,21 @@ async function main() {
     let round = 1;
     let busy = false;
     setInterval(async () => {
-        if(!busy){
+        if (!busy) {
             busy = true;
-            console.log("round = ",round++);
+            console.log("round = ", round++);
             await scanEvent();
             busy = false;
         }
 
     }, 10000)
+}
 
+async function main() {
+    await init();
+    await doingWork();
 }
 
 main();
 
-// ts-node getAllEvents-ex.ts kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr
+// ts-node getAllEvents-ex.ts --network testnet --contractAddr kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr

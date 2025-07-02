@@ -1,21 +1,19 @@
 import {TonTransaction} from "./Db";
+import {convertTonTransToTrans, listJsonFiles} from './common'
+import {Address} from "@ton/core";
+import {getDBDataDir, getGlobalTonConfig} from "../client/client";
+import {ensureDirectoryExists} from "../utils/utils";
+
+import {logger} from '../utils/logger'
 
 const DB = require("../db/Db").DB;
 const RangeOpen = require("../db/Db").RangeOpen;
 
-import {convertTonTransToTrans} from './common'
-import {listJsonFiles} from './common'
-import {Address} from "@ton/core";
-import {getGlobalTonConfig,getDBDataDir} from "../client/client";
-import {ensureDirectoryExists, ensurePath} from "../utils/utils";
+let dbAccess: DBAccess = null;
 
-import {logger} from '../utils/logger'
-
-let dbAccess:DBAccess = null;
-
-async function runAsyncTask(db:typeof DB,scanTran:boolean=true) {
-    logger.info("DbAccess runAsyncTask......","dbName",db.getDbName(),"scanTran",scanTran);
-    if(scanTran){
+async function runAsyncTask(db: typeof DB, scanTran: boolean = true) {
+    logger.info("DbAccess runAsyncTask......", "dbName", db.getDbName(), "scanTran", scanTran);
+    if (scanTran) {
         await db.feedTrans();
     }
 }
@@ -31,37 +29,9 @@ export class DBAccess {
         this.scanTran = true;
     }
 
-    async init(scanTran:boolean){
-        logger.info("begin DbAccess init","scanTran",scanTran);
-        if(this.inited){
-            return;
-        }
-        let dbNames:string[] = [];
-        await ensureDirectoryExists(getDBDataDir());
-        listJsonFiles(getDBDataDir(),dbNames);
-        for(let dbName of dbNames){
-            let db = new DB(dbName);
-            await db.init(dbName);
-            this.dbs.set(dbName,db);
-            await runAsyncTask(db,scanTran);
-        }
-        this.inited = true;
-        this.scanTran = scanTran;
-        logger.info("end DbAccess init");
-    }
-
-    async clear(){
-        for(let key of this.dbs.keys()){
-            let db = this.dbs.get(key);
-            await db.stopFeedTrans()
-            await db.clearDb();
-            db = null;
-        }
-        this.dbs.clear();
-    }
-
     static getDBAccess() {
-        if (!getGlobalTonConfig().usingDbCache) {
+        let isUsing = getGlobalTonConfig().usingDbCache ?? false;
+        if (!isUsing) {
             return null
         }
 
@@ -73,21 +43,50 @@ export class DBAccess {
         }
     }
 
-    async addDbByName(dbName:string){
-        logger.info("before addDbByName","dbName",dbName,"dbs.length",this.dbs.size);
-        if(this.has(dbName)){
+    async init(scanTran: boolean) {
+        logger.info("begin DbAccess init", "scanTran", scanTran);
+        if (this.inited) {
+            return;
+        }
+        let dbNames: string[] = [];
+        await ensureDirectoryExists(getDBDataDir());
+        listJsonFiles(getDBDataDir(), dbNames);
+        for (let dbName of dbNames) {
+            let db = new DB(dbName);
+            await db.init(dbName);
+            this.dbs.set(dbName, db);
+            await runAsyncTask(db, scanTran);
+        }
+        this.inited = true;
+        this.scanTran = scanTran;
+        logger.info("end DbAccess init");
+    }
+
+    async clear() {
+        for (let key of this.dbs.keys()) {
+            let db = this.dbs.get(key);
+            await db.stopFeedTrans()
+            await db.clearDb();
+            db = null;
+        }
+        this.dbs.clear();
+    }
+
+    async addDbByName(dbName: string) {
+        logger.info("before addDbByName", "dbName", dbName, "dbs.length", this.dbs.size);
+        if (this.has(dbName)) {
             throw new Error(`db ${dbName} already exists`);
         }
         let dbNameFinal = this.getDbNameFinal(dbName);
         let db = new DB(dbNameFinal);
         await db.init(dbNameFinal);
-        this.dbs.set(db.getDbName(),db);
-        logger.info("after addDbByName","dbName",dbName,"dbNameFinal",dbNameFinal,"dbs.length",this.dbs.size);
-        await runAsyncTask(db,this.scanTran);
+        this.dbs.set(db.getDbName(), db);
+        logger.info("after addDbByName", "dbName", dbName, "dbNameFinal", dbNameFinal, "dbs.length", this.dbs.size);
+        await runAsyncTask(db, this.scanTran);
     }
 
-    async removeDbByName(dbName:string){
-        if(!this.has(dbName)){
+    async removeDbByName(dbName: string) {
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
 
@@ -95,159 +94,161 @@ export class DBAccess {
         this.dbs.delete(this.getDbNameFinal(dbName));
     }
 
-    async setTranHandleFlag(dbName:string,tran:TonTransaction,finishOrNot:boolean){
-        if(!this.has(dbName)){
+    async setTranHandleFlag(dbName: string, tran: TonTransaction, finishOrNot: boolean) {
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
-        await this.dbs.get(this.getDbNameFinal(dbName)).setTranHandleFlag(tran,finishOrNot);
+        await this.dbs.get(this.getDbNameFinal(dbName)).setTranHandleFlag(tran, finishOrNot);
     }
 
-    async getTxByTxHash(dbName:string,txHash: string) {
-        if(!this.has(dbName)){
+    async getTxByTxHash(dbName: string, txHash: string) {
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
         let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxByTxHash(txHash);
-        if(!tonTran || (tonTran.length  == 0) ){
+        if (!tonTran || (tonTran.length == 0)) {
             return null;
         }
         return (convertTonTransToTrans(tonTran))[0];
     }
 
-    async getTxByHashLt(dbName:string,txHash: string,lt:string) {
-        logger.info("Entering getTxByHashLt........","dbName",dbName,"txHash",txHash,"lt",lt);
-        if(!this.has(dbName)){
+    async getTxByHashLt(dbName: string, txHash: string, lt: string) {
+        logger.info("Entering getTxByHashLt........", "dbName", dbName, "txHash", txHash, "lt", lt);
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
-        let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxByHashLt(txHash,lt);
-        if(!tonTran || (tonTran.length  == 0) ){
+        let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxByHashLt(txHash, lt);
+        if (!tonTran || (tonTran.length == 0)) {
             return null;
         }
-        logger.info("Entering getTxByHashLt before convertTonTransToTrans........","dbName",dbName,"txHash",txHash,"lt",lt,"tonTran.length",tonTran.length);
+        logger.info("Entering getTxByHashLt before convertTonTransToTrans........", "dbName", dbName, "txHash", txHash, "lt", lt, "tonTran.length", tonTran.length);
         return (convertTonTransToTrans(tonTran))[0];
     }
 
-    async getTxByMsg(dbName:string,msgHash:string,bodyHash:string,lt:bigint){
-        logger.info("Entering getTxByMsg........","dbName",dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10));
-        if(!this.has(dbName)){
+    async getTxByMsg(dbName: string, msgHash: string, bodyHash: string, lt: bigint) {
+        logger.info("Entering getTxByMsg........", "dbName", dbName, "msgHash", msgHash, "bodyHash", bodyHash, "lt", lt.toString(10));
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
-        let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxByMsg(msgHash,bodyHash,lt);
-        if(!tonTran || (tonTran.length  == 0) ){
+        let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxByMsg(msgHash, bodyHash, lt);
+        if (!tonTran || (tonTran.length == 0)) {
             return null;
         }
-        logger.info("Ending getTxByMsg success........","dbName",dbName,"msgHash",msgHash,"bodyHash",bodyHash,"lt",lt.toString(10),"tonTran.length",tonTran.length);
+        logger.info("Ending getTxByMsg success........", "dbName", dbName, "msgHash", msgHash, "bodyHash", bodyHash, "lt", lt.toString(10), "tonTran.length", tonTran.length);
         return (convertTonTransToTrans([tonTran[0]]))[0];
     }
 
-    async getTxsByLtRange(dbName:string,lt:bigint,to_lt:bigint){
-        logger.info("Entering getTxsByLtRange........","dbName",dbName,"lt",lt,"to_lt",to_lt);
-        if(!this.has(dbName)){
+    async getTxsByLtRange(dbName: string, lt: bigint, to_lt: bigint) {
+        logger.info("Entering getTxsByLtRange........", "dbName", dbName, "lt", lt, "to_lt", to_lt);
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
-        let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxsByLtRange(lt,to_lt);
-        if(!tonTran || (tonTran.length  == 0) ){
+        let tonTran = await this.dbs.get(this.getDbNameFinal(dbName)).getTxsByLtRange(lt, to_lt);
+        if (!tonTran || (tonTran.length == 0)) {
             return null;
         }
         return convertTonTransToTrans(tonTran);
     }
 
-    async getParentTx(dbName:string,tran:TonTransaction){
+    async getParentTx(dbName: string, tran: TonTransaction) {
 
-        if(!this.has(dbName)){
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
         let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getParentTx(tran);
-        if(!ret || ret.length == 0) {
+        if (!ret || ret.length == 0) {
             return null;
-        }else{
+        } else {
             return convertTonTransToTrans(ret)[0];
         }
     }
 
-    async getChildTxs(dbName:string,tran:TonTransaction){
-        if(!this.has(dbName)){
+    async getChildTxs(dbName: string, tran: TonTransaction) {
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
         let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getChildTxs(tran);
-        if(!ret || ret.length == 0) {
+        if (!ret || ret.length == 0) {
             return null;
-        }else{
+        } else {
             return convertTonTransToTrans(ret);
         }
     }
 
-    async getAllTransNotHandled(dbName:string){
-        logger.info("begin getAllTransNotHandled","dbName",dbName)
-        if(!this.has(dbName)){
+    async getAllTransNotHandled(dbName: string) {
+        logger.info("begin getAllTransNotHandled", "dbName", dbName)
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
         let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getAllTransNotHandled();
-        if(!ret || ret.length == 0) {
+        if (!ret || ret.length == 0) {
             return null;
-        }else{
-            logger.info("end getAllTransNotHandled","dbName",dbName)
-            logger.info("begin convertTonTransToTrans","dbName",dbName,"tran.length",ret.length);
+        } else {
+            logger.info("end getAllTransNotHandled", "dbName", dbName)
+            logger.info("begin convertTonTransToTrans", "dbName", dbName, "tran.length", ret.length);
             let finalRet = convertTonTransToTrans(ret);
-            logger.info("end convertTonTransToTrans","dbName",dbName,"tran.length",ret.length);
+            logger.info("end convertTonTransToTrans", "dbName", dbName, "tran.length", ret.length);
             return finalRet;
         }
     }
 
-    async getAllTrans(dbName:string){
-        logger.info("begin getAllTrans","dbName",dbName)
-        if(!this.has(dbName)){
+    async getAllTrans(dbName: string) {
+        logger.info("begin getAllTrans", "dbName", dbName)
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
         let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getAllTrans();
-        if(!ret || ret.length == 0) {
+        if (!ret || ret.length == 0) {
             return null;
-        }else{
-            logger.info("end getAllTrans","dbName",dbName)
-            logger.info("begin convertTonTransToTrans","dbName",dbName,"tran.length",ret.length);
+        } else {
+            logger.info("end getAllTrans", "dbName", dbName)
+            logger.info("begin convertTonTransToTrans", "dbName", dbName, "tran.length", ret.length);
             let finalRet = convertTonTransToTrans(ret);
-            logger.info("end convertTonTransToTrans","dbName",dbName,"tran.length",ret.length);
+            logger.info("end convertTonTransToTrans", "dbName", dbName, "tran.length", ret.length);
             return finalRet;
         }
     }
 
-    async insertTrans(dbName:string,trans:TonTransaction[]){
-        if(!this.has(dbName)){
+    async insertTrans(dbName: string, trans: TonTransaction[]) {
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
         await this.dbs.get(this.getDbNameFinal(dbName)).inserTrans(trans);
     }
-    async getAllTransNotHandledByRange(dbName:string,lt:bigint,to_lt:bigint){
-        if(!this.has(dbName)){
+
+    async getAllTransNotHandledByRange(dbName: string, lt: bigint, to_lt: bigint) {
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
-        let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getAllTransNotHandledByRange(lt,to_lt);
-        if(!ret || ret.length == 0) {
+        let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getAllTransNotHandledByRange(lt, to_lt);
+        if (!ret || ret.length == 0) {
             return null;
-        }else{
+        } else {
             return convertTonTransToTrans(ret);
         }
     }
 
-    async getTxByOnlyMsgHash(dbName:string,msgCellHash:string){
-        if(!this.has(dbName)){
+    async getTxByOnlyMsgHash(dbName: string, msgCellHash: string) {
+        if (!this.has(dbName)) {
             throw new Error(`db ${dbName} not exists`);
         }
         let ret = await this.dbs.get(this.getDbNameFinal(dbName)).getTxByOnlyMsgHash(msgCellHash);
-        if(!ret || ret.length == 0) {
+        if (!ret || ret.length == 0) {
             return null;
-        }else{
+        } else {
             return convertTonTransToTrans(ret);
         }
     }
 
-    getDbNameFinal(dbName:string){
+    getDbNameFinal(dbName: string) {
         let dbNameFinal = dbName;
-        if(Address.parse(dbName).toString()  != dbName){
+        if (Address.parse(dbName).toString() != dbName) {
             dbNameFinal = Address.parse(dbName).toString()
         }
         return dbNameFinal;
     }
-    has(dbName:string){
+
+    has(dbName: string) {
         let dbAliasName = Address.parse(dbName).toString();
         return this.dbs.has(dbName) || this.dbs.has(dbAliasName);
     }
