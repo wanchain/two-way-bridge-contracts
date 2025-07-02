@@ -14,6 +14,7 @@ import {JettonMinter} from "../../JettonMinter";
 import {TON_FEE} from "../../fee/fee";
 import {conf as JettonMinterCompilerConfig} from "../../testData/JettonMinter.compile.func"
 import {conf as JettonWalletCompilerConfig} from "../../testData/JettonWallet.compile.func"
+import {sleep} from "../../utils/utils";
 
 
 const optimist = require('optimist');
@@ -109,15 +110,17 @@ async function main() {
     if (await isAddrDepolyed(client, jettonMinterOpened.address.toString())) {
         console.log("jettonMinter address :", jettonMinterOpened.address.toString(), "has already deployed");
     } else {
+        console.log("begin deploy jettonMinter address :", jettonMinterOpened.address.toString());
         let retDeploy = await jettonMinterOpened.sendDeploy(via, TON_FEE.TRANS_FEE_NORMAL)
         console.log("jettonMinter address :", jettonMinterOpened.address.toString());
         console.log(retDeploy);
         await writeJettonTokenInfo(config.tokenOutput, JSON.stringify(jettonAll, null, 2));
+        await sleep(5000);
     }
     await DisplayJettonInfo(client, jettonMinterOpened.address);
 }
 
 main();
-// ts-node AddToken-ex.ts --network testnet --name usdt
-// ts-node AddToken-ex.ts --network testnet --name wan
+// ts-node addToken-ex.ts --network testnet --name usdt
+// ts-node addToken-ex.ts --network testnet --name wan
 

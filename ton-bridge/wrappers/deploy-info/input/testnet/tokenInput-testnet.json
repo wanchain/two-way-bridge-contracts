@@ -8,5 +8,10 @@
     "name": "wan@ton",
     "symbol": "wan",
     "decimals": "18"
+  },
+  "test-jacob1": {
+    "name": "test-jacob1@ton",
+    "symbol": "test-jacob1",
+    "decimals": "18"
   }
 }
