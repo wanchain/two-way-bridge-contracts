@@ -1,85 +1,96 @@
 import {TonConfig} from "../client/client";
 
-export const configTestnet:TonConfig =  {
-    network:{
-        network:"testnet", // testnet|mainnet
+export const configTestnet: TonConfig = {
+    network: {
+        network: "testnet", // testnet|mainnet
     },
-    usingDbCache:true,
-    urls:[
+    usingDbCache: true,
+    urls: [
         {
             //url:'',
             //apiKey:''
         }]
 }
 
-export const configTestnetObs:TonConfig =  {
-    network:{
-        network:"testnet", // testnet|mainnet
+export const configTestnetObs: TonConfig = {
+    network: {
+        network: "testnet", // testnet|mainnet
     },
-    usingDbCache:true,
+    usingDbCache: true,
 }
 
-export const configTestnetNoDb:TonConfig =  {
-    network:{
-        network:"testnet", // testnet|mainnet
+export const configTestnetNoDb: TonConfig = {
+    network: {
+        network: "testnet", // testnet|mainnet
     },
-    usingDbCache:false,
-    urls:[
+    usingDbCache: false,
+    urls: [
         {
             //url:'',
             //apiKey:''
         }]
 }
 
-export const configMainnet:TonConfig =  {
-    network:{
-        network:"mainnet", // testnet|mainnet
+export const configMainnet: TonConfig = {
+    network: {
+        network: "mainnet", // testnet|mainnet
     },
-    usingDbCache:true,
-    urls:[
+    usingDbCache: true,
+    urls: [
         {
             //url:'',
             //apiKey:''
         }]
 }
 
-
-export const configTestTonApi:TonConfig =  {
-    network:{
-        network:"testnet", // testnet|mainnet
+export const configMainnetNoDb: TonConfig = {
+    network: {
+        network: "mainnet", // testnet|mainnet
     },
-    usingDbCache:true,
+    usingDbCache: false,
+    urls: [
+        {
+            //url:'',
+            //apiKey:''
+        }]
+}
+
+export const configTestTonApi: TonConfig = {
+    network: {
+        network: "testnet", // testnet|mainnet
+    },
+    usingDbCache: true,
     //scanTrans:false,
-    scanTrans:true,
-    urls:[
+    scanTrans: true,
+    urls: [
         {
-            url:'https://testnet.tonapi.io',
+            url: 'https://testnet.tonapi.io',
             //apiKey:'',
-            vendor:'tonapi',
+            vendor: 'tonapi',
         }]
 }
 
-export const configTestTonApiNoDb:TonConfig =  {
-    network:{
-        network:"testnet", // testnet|mainnet
+export const configTestTonApiNoDb: TonConfig = {
+    network: {
+        network: "testnet", // testnet|mainnet
     },
-    urls:[
+    urls: [
         {
-            url:'https://testnet.tonapi.io',
+            url: 'https://testnet.tonapi.io',
             //apiKey:'',
-            vendor:'tonapi',
+            vendor: 'tonapi',
         }]
 }
 
-export const configMainTonApi:TonConfig =  {
-    network:{
-        network:"mainnet", // testnet|mainnet
+export const configMainTonApi: TonConfig = {
+    network: {
+        network: "mainnet", // testnet|mainnet
     },
-    usingDbCache:true,
-    urls:[
+    usingDbCache: true,
+    urls: [
         {
-            url:'https://tonapi.io',
+            url: 'https://tonapi.io',
             //apiKey:'',
-            vendor:'tonapi',
+            vendor: 'tonapi',
         }]
 }

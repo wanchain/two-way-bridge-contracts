@@ -1,0 +1,12 @@
+{
+  "usdt": {
+    "name": "USDT@ton",
+    "symbol": "USDT",
+    "decimals": "6"
+  },
+  "wan": {
+    "name": "wan@ton",
+    "symbol": "wan",
+    "decimals": "18"
+  }
+}

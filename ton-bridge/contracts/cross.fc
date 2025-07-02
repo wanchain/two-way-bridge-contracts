@@ -165,7 +165,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 
         int lockFee = extraSlice2~load_uint(256);
 
-        (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr, int tokenPairExist, _, slice tokenAccount) = tm_get_token_pair(tokenManager, tokenPairId);
+        (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, int tokenPairExist, _, slice tokenAccount) = tm_get_token_pair(tokenManager, tokenPairId);
         throw_unless(error::tm_tokenpair_not_exist, tokenPairExist);
 
         int fee = 0;
@@ -211,7 +211,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         slice originAddress = extraSlice2~load_msg_addr();
         int lockFee = extraSlice2~load_uint(256);
 
-        (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr, int tokenPairExist, cell walletCode, slice tokenAccount) = tm_get_token_pair(tokenManager, tokenPairId);
+        (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, int tokenPairExist, cell walletCode, slice tokenAccount) = tm_get_token_pair(tokenManager, tokenPairId);
 
         ;; check tokenpair
         if (tokenPairExist == 0) {
@@ -311,7 +311,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             throw(error::cross_smg_release_duplicated_error);
         }
 
-        (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, slice jettonAdminAddr, int tokenPairExist, _, slice tokenAccount) = tm_get_token_pair(tokenManager, tokenPairId);
+        (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, int tokenPairExist, _, slice tokenAccount) = tm_get_token_pair(tokenManager, tokenPairId);
         throw_unless(error::tm_tokenpair_not_exist, tokenPairExist);
 
         ;; check signature

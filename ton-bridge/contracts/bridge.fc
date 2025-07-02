@@ -327,7 +327,7 @@
 
 
 ;; getter for tokenManager
-(int, slice, int, slice, slice, int, cell, slice) get_token_pair(int id) method_id {
+(int, slice, int, slice, int, cell, slice) get_token_pair(int id) method_id {
     (slice cross_owner, int halt, int init, cell ca_fee, cell oracle, cell token_manager, cell extend) = load_data();
     return tm_get_token_pair(token_manager, id);
 }

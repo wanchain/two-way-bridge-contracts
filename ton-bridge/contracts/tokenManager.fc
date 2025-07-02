@@ -30,44 +30,43 @@ const int DICTIONARY_KEY_LEN = 32;
 
 (cell) tm_generate_data(cell tokenPair) impure {
     return begin_cell()
-            .store_dict(tokenPair)
-            .end_cell();
+        .store_dict(tokenPair)
+        .end_cell();
 }
 
 ;; Helper functions for tokenPair struct
-(int, slice, int, slice,slice,cell) load_tokenPair(slice cs) inline {
+(int, slice, int, slice, cell) load_tokenPair(slice cs) inline {
     var fromChainID = cs~load_uint(32);
     var toChainID = cs~load_uint(32);
     var fromAccountLen = cs~load_uint(8);
     var fromAccount = cs~load_bits(8 * fromAccountLen);
     var toAccountLen = cs~load_uint(8);
     var toAccount = cs~load_bits(8 * toAccountLen);
-    var jettonAdminAddr = cs~load_bits(256);
 
     var walletCodeCell = cs~load_maybe_ref();
-    return (fromChainID, fromAccount, toChainID, toAccount,jettonAdminAddr,walletCodeCell);
+    return (fromChainID, fromAccount, toChainID, toAccount, walletCodeCell);
 }
 
 
 ;; Get a tokenPair by ID
-(int, slice, int, slice,slice,int,cell,slice) tm_get_token_pair(cell refcell, int id) method_id {
+(int, slice, int, slice, int, cell, slice) tm_get_token_pair(cell refcell, int id) method_id {
     slice tokenAccount = begin_cell().end_cell().begin_parse();
     cell tokenPairs = tm_load_data(refcell);
     if (cell_null?(tokenPairs)) {
-        return (0, "", 0,"","",0,begin_cell().end_cell(),tokenAccount);
+        return (0, "", 0, "", 0, begin_cell().end_cell(), tokenAccount);
     }
     var (tokenPair_slice, found?) = tokenPairs.udict_get?(DICTIONARY_KEY_LEN, id);
     if (found?) {
-        var (fromChainID, fromAccount, toChainID, toAccount, jettonAdminAddr, walletCodeCell) = load_tokenPair(tokenPair_slice);
+        var (fromChainID, fromAccount, toChainID, toAccount, walletCodeCell) = load_tokenPair(tokenPair_slice);
 
         if (fromChainID == BIP44_CHAINID) {
             tokenAccount = fromAccount;
         } else {
             tokenAccount = toAccount;
         }
-        return (fromChainID, fromAccount, toChainID, toAccount,jettonAdminAddr,-1,walletCodeCell,tokenAccount);
+        return (fromChainID, fromAccount, toChainID, toAccount, -1, walletCodeCell, tokenAccount);
     } else {
-        return (0, "", 0,"","",0,begin_cell().end_cell(),tokenAccount); ;; Return default values if not found
+        return (0, "", 0, "", 0, begin_cell().end_cell(), tokenAccount); ;; Return default values if not found
     }
 }
 
@@ -109,27 +108,26 @@ const int DICTIONARY_KEY_LEN = 32;
         int fromAccountLen = in_msg_body~load_uint(8);
         int toAccountLen = in_msg_body~load_uint(8);
 
-        slice fromAccountSlice = in_msg_body~load_ref().begin_parse(); 
+        slice fromAccountSlice = in_msg_body~load_ref().begin_parse();
         slice fromAccount = fromAccountSlice~load_bits(8 * fromAccountLen);
         slice toAccountSlice = in_msg_body~load_ref().begin_parse();
         slice toAccount = toAccountSlice~load_bits(8 * toAccountLen);
-        slice jettonAdminAddr = in_msg_body~load_bits(256);
 
         cell walletCode = in_msg_body~load_maybe_ref();
 
-        tokenPairs~udict_set_builder(DICTIONARY_KEY_LEN, id, 
+        tokenPairs~udict_set_builder(DICTIONARY_KEY_LEN, id,
             begin_cell().store_uint(fromChainID, 32)
-            .store_uint(toChainID, 32)
-            .store_uint(fromAccountLen, 8)
-            .store_slice(fromAccount)
-            .store_uint(toAccountLen, 8)
-            .store_slice(toAccount)
-            .store_slice(jettonAdminAddr)
-            .store_maybe_ref(walletCode)
+                .store_uint(toChainID, 32)
+                .store_uint(fromAccountLen, 8)
+                .store_slice(fromAccount)
+                .store_uint(toAccountLen, 8)
+                .store_slice(toAccount)
+                .store_maybe_ref(walletCode)
         );
         return tm_generate_data(tokenPairs);
     }  ;; there  is no elseif 
-    if (op == OP_TOKENPAIR_Remove) { ;; Delete tokenPair operation
+    if (op == OP_TOKENPAIR_Remove) {
+        ;; Delete tokenPair operation
         int id = in_msg_body~load_uint(32);
         tokenPairs~udict_delete?(DICTIONARY_KEY_LEN, id);
         return tm_generate_data(tokenPairs);
