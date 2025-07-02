@@ -2,7 +2,7 @@ import {sleep} from "../../utils/utils";
 
 import {configMainnet, configTestTonApi} from "../../config/config-ex";
 import {getClient, wanTonSdkInit} from "../../client/client";
-import {getEventByTranHash} from "../../event/getEvents";
+import {getEventByTranHash, getSlimEventByTranHash} from "../../event/getEvents";
 import {DBAccess} from "../../db/DbAccess";
 import {Address} from "@ton/core";
 import {convertTranToTonTrans} from "../../db/common";
@@ -13,6 +13,8 @@ let argv = optimist
     .alias('h', 'help')
     .describe('network', 'network name testnet|mainnet')
     .describe('contractAddr', 'contractAddr')
+    .describe('slim', 'slim or not')
+    .default('slim', false)
     .argv;
 
 console.log(optimist.argv);
@@ -71,9 +73,15 @@ async function doingWork() {
         }
         for (let tonTran of tonTrans) {
             try {
-                console.log("begin getEventByTranHash", "scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
-                let ret = await getEventByTranHash(client, scBridgeAddr, tonTran.lt.toString(10), tonTran.hash().toString('hex'));
-                console.log("end getEventByTranHash JacobEvent ret = ", ret);
+                if (argv['slim']) {
+                    console.log("begin getSlimEventByTranHash", "scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
+                    let ret = await getSlimEventByTranHash(client, scBridgeAddr, tonTran.lt.toString(10), tonTran.hash().toString('hex'));
+                    console.log("end getSlimEventByTranHash JacobEvent ret = ", ret);
+                } else {
+                    console.log("begin getEventByTranHash", "scBridgeAddr", scBridgeAddr, "lt", tonTran.lt.toString(10), "tranHash", tonTran.hash().toString('hex'));
+                    let ret = await getEventByTranHash(client, scBridgeAddr, tonTran.lt.toString(10), tonTran.hash().toString('hex'));
+                    console.log("end getEventByTranHash JacobEvent ret = ", ret);
+                }
 
                 let tranTonTemp = convertTranToTonTrans([tonTran]);
 
@@ -106,4 +114,5 @@ async function main() {
 
 main();
 
+// ts-node getAllEvents-ex.ts --network testnet --contractAddr kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr --slim
 // ts-node getAllEvents-ex.ts --network testnet --contractAddr kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr
