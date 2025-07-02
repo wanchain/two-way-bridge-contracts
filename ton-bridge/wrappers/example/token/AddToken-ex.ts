@@ -1,81 +1,86 @@
-import {TonClient} from "@ton/ton";
-const fs = require("fs");
-
-let jettonTokenInfo = require('../../testData/jettonTokenInfo.json')
-const jettonTokenInfoPath = "../../testData/jettonTokenInfo.json";
-
-let tokenInfo = require('../../testData/tokenInfo.json')
-const tokenInfoPath = "../../testData/tokenInfo.json";
-
-import {configTestnet, configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
-
-import {Address, toNano, Sender} from '@ton/core';
+import {getClient, wanTonSdkInit} from "../../client/client";
+import {configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
+import {getSenderByPrvKey, getWalletByPrvKey, isAddrDepolyed} from "../../wallet/walletContract";
+import {WanTonClient} from "../../client/client-interface";
+import {Address} from "@ton/core";
 import {
-    getJettonDataContent,
-    getJettonData,
     buildWrappedJettonContent,
-    parseWrappedJettonContent, getJettonBalance, getJettonAddress
+    getJettonData,
+    getJettonDataContent,
+    parseWrappedJettonContent
 } from "../../wallet/jetton";
 import {doCompile} from "../../utils/compileContract";
 import {JettonMinter} from "../../JettonMinter";
-
-let args = process.argv.slice(2);
-let jettonName = args[0];
-
-const JettonCofig = jettonTokenInfo[jettonName]
-
-import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {TON_FEE} from "../../fee/fee";
 import {conf as JettonMinterCompilerConfig} from "../../testData/JettonMinter.compile.func"
 import {conf as JettonWalletCompilerConfig} from "../../testData/JettonWallet.compile.func"
 
+
+const optimist = require('optimist');
+let argv = optimist
+    .usage("Usage: $0")
+    .alias('h', 'help')
+    .describe('network', 'network name')
+    .describe('name', 'jetton token name')
+    .argv;
+
+console.log(optimist.argv);
+console.log((Object.getOwnPropertyNames(optimist.argv)).length);
+
+
+if ((Object.getOwnPropertyNames(optimist.argv)).length < 4) {
+    optimist.showHelp();
+    process.exit(0);
+}
+
+
+global.network = argv["network"];
+const config = require('../../config/config');
+
+let jettonName = argv['name'];
+
+console.log("config", config);
+
+const fs = require("fs");
+
+let jettonInput = require(config["tokenInput"]);
+const JettonCofig = jettonInput[jettonName];
+
 const prvList = require('../../testData/prvlist.json')
 
-let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
+let deployer = null, smgFeeProxy = null, oracleAdmin = null, robotAdmin = null;
 let nonDeployer = null;
 let client = null;
 let via;
 
-async function writeJettonTokenInfo(path:string,jettonTokenInfo:any){
-    fs.writeFileSync(path,jettonTokenInfo);
+async function writeJettonTokenInfo(path: string, jettonTokenInfo: any) {
+    fs.writeFileSync(path, jettonTokenInfo);
 }
 
-async function writeTokenInfo(path:string,jettonTokenInfo:any,jettonName:string){
-    console.log("tokenInfo=>",tokenInfo);
-    tokenInfo[jettonName].dstTokenAcc = jettonTokenInfo[jettonName].tokenAddress;
-    tokenInfo[jettonName].walletCodeBase64 = jettonTokenInfo[jettonName].walletCodeBase64;
-    fs.writeFileSync(path,JSON.stringify(tokenInfo,null,2));
-}
+async function init() {
+    if (global.network == 'testnet') {
+        await wanTonSdkInit(configTestTonApiNoDb);
+    } else {
+        await wanTonSdkInit(configMainnet);
+    }
 
-async function init(){
-    //await wanTonSdkInit(configMainnet);
-    //await wanTonSdkInit(configTestnet);
-    await wanTonSdkInit(configTestTonApiNoDb);
     client = await getClient();
-    deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
-    nonDeployer = await getWalletByPrvKey(Buffer.from(prvList[1],'hex'));
-    via = await getSenderByPrvKey(client,Buffer.from(prvList[0],'hex'));
+    deployer = await getWalletByPrvKey(Buffer.from(prvList[0], 'hex'));
+    nonDeployer = await getWalletByPrvKey(Buffer.from(prvList[1], 'hex'));
+    via = await getSenderByPrvKey(client, Buffer.from(prvList[0], 'hex'));
     smgFeeProxy = deployer;
     oracleAdmin = deployer;
     robotAdmin = deployer;
 
 }
 
-import {isAddrDepolyed} from "../../wallet/walletContract";
-import {sleep} from "../../utils/utils";
-import {TON_FEE} from "../../fee/fee";
-import {WanTonClient} from "../../client/client-interface";
+async function DisplayJettonInfo(client: WanTonClient, addr: Address) {
+    let ret = await getJettonData(client, addr);
+    console.log("getJettonData=>", ret)
 
-async function DisplayJettonInfo(client:WanTonClient,addr:Address){
-    let ret = await getJettonData(client,addr);
-    console.log("getJettonData=>",ret)
-
-    let retJettonContent = await getJettonDataContent(client,addr);
-    console.log("getJettonDataContent=>",await parseWrappedJettonContent(retJettonContent));
+    let retJettonContent = await getJettonDataContent(client, addr);
+    console.log("getJettonDataContent=>", await parseWrappedJettonContent(retJettonContent));
 }
-
-const fwdAmount = TON_FEE.FWD_FEE_MINT_JETTON;
-const totalAmount = TON_FEE.TOTAL_FEE_MINT_JETTON;
 
 async function main() {
     console.log("Entering main function");
@@ -93,22 +98,26 @@ async function main() {
                 wallet_code: retWallet.codeCell,
             },
             retMinter.codeCell));
-    jettonTokenInfo[jettonName].tokenAddress =jettonMinterOpened.address.toString();
-    jettonTokenInfo[jettonName].walletCodeBase64 = retWallet.codeCell.toBoc().toString('base64');
-    await writeJettonTokenInfo(jettonTokenInfoPath,JSON.stringify(jettonTokenInfo,null,2));
-    await writeTokenInfo(tokenInfoPath,jettonTokenInfo,jettonName);
+    let jettonTokenInfo = Object.assign({}, JettonCofig);
+    jettonTokenInfo.tokenAddress = jettonMinterOpened.address.toString();
+    jettonTokenInfo.walletCodeBase64 = retWallet.codeCell.toBoc().toString('base64');
 
-    if(await isAddrDepolyed(client,jettonMinterOpened.address.toString())){
-        console.log("jettonMinter address :",jettonMinterOpened.address.toString(),"has already deployed");
-        return;
-    }else{
+    let jettonAll = require(config.tokenOutput);
+    console.log("jettonAll", jettonAll);
+    jettonAll[jettonName] = jettonTokenInfo;
+
+    if (await isAddrDepolyed(client, jettonMinterOpened.address.toString())) {
+        console.log("jettonMinter address :", jettonMinterOpened.address.toString(), "has already deployed");
+    } else {
         let retDeploy = await jettonMinterOpened.sendDeploy(via, TON_FEE.TRANS_FEE_NORMAL)
-        console.log("jettonMinter address :",jettonMinterOpened.address.toString());
+        console.log("jettonMinter address :", jettonMinterOpened.address.toString());
         console.log(retDeploy);
+        await writeJettonTokenInfo(config.tokenOutput, JSON.stringify(jettonAll, null, 2));
     }
-    await DisplayJettonInfo(client,jettonMinterOpened.address);
+    await DisplayJettonInfo(client, jettonMinterOpened.address);
 }
 
 main();
-// ts-node AddToken-ex.ts usdt
-// ts-node AddToken-ex.ts wan
+// ts-node AddToken-ex.ts --network testnet --name usdt
+// ts-node AddToken-ex.ts --network testnet --name wan
+

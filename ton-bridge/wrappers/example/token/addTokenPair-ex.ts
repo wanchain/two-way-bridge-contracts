@@ -1,34 +1,50 @@
 import {TON_FEE} from "../../fee/fee";
 
-import {configTestnet, configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
-
-import {TON_COIN_ACCOUT, BIP44_CHAINID,TON_COIN_ACCOUNT_STR,BIP44_WANCHAIN_CHAINID} from '../../const/const-value';
+import {configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
 
 import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {getClient, wanTonSdkInit} from "../../client/client";
+import {BridgeAccess} from "../../contractAccess/bridgeAccess";
+import {getQueryID} from "../../utils/utils";
 
-const args = process.argv.slice(2);
-//let tokenType = "coin";
-let tokenType = args[0];
+const optimist = require('optimist');
+let argv = optimist
+    .usage("Usage: $0")
+    .alias('h', 'help')
+    .describe('network', 'network name testnet|mainnet')
+    .describe('tpId', 'tokenPairId')
+    .argv;
 
-let jettonTokenInfo = require('../../testData/jettonTokenInfo.json');
-let tokenInfo = require('../../testData/tokenInfo.json')
+console.log(optimist.argv);
+console.log((Object.getOwnPropertyNames(optimist.argv)).length);
+
+
+if ((Object.getOwnPropertyNames(optimist.argv)).length < 4) {
+    optimist.showHelp();
+    process.exit(0);
+}
+
+
+global.network = argv["network"];
+const config = require('../../config/config');
+console.log("config=>", config);
+
 
 const prvList = require('../../testData/prvlist.json')
 
-let deployer =null,smgFeeProxy=null,oracleAdmin = null,robotAdmin = null;
+let deployer = null, smgFeeProxy = null, oracleAdmin = null, robotAdmin = null;
 let client = null;
-
-const scAddresses = require('../../testData/contractAddress.json');
-import { BridgeAccess } from "../../contractAccess/bridgeAccess";
-import {getQueryID} from "../../utils/utils";
 
 let queryID;
 
-async function init(){
-    //await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestTonApiNoDb);
-    deployer = await getWalletByPrvKey(Buffer.from(prvList[0],'hex'));
+async function init() {
+    if (global.network == 'testnet') {
+        await wanTonSdkInit(configTestTonApiNoDb);
+    } else {
+        await wanTonSdkInit(configMainnet);
+    }
+
+    deployer = await getWalletByPrvKey(Buffer.from(prvList[0], 'hex'));
     smgFeeProxy = deployer;
     oracleAdmin = deployer;
     robotAdmin = deployer;
@@ -38,34 +54,40 @@ async function init(){
 
 }
 
-async function addTokenPair(){
+async function addTokenPair() {
+    const tpId = argv["tpId"];
+    console.log("tpId = ", tpId);
+    let scAddresses = require(config.contractOutput);
+    console.log("scAddresses=>", scAddresses);
+    const tokenPairs = require(config.tokenpairInput);
+    console.log("tokenPairs=>", tokenPairs);
+    const tokenPair = tokenPairs[tpId];
 
-    let ba = BridgeAccess.create(client,scAddresses.bridgeAddress);
+    let ba = BridgeAccess.create(client, scAddresses.bridgeAddress);
     // write contract
     let opt = {
         value: TON_FEE.TRANS_FEE_NORMAL,
         queryID,
-        tokenPairId: tokenInfo[tokenType].tokenPairId,
-        fromChainID: tokenInfo[tokenType].srcChainId,
-        fromAccount: tokenInfo[tokenType].srcTokenAcc,
-        toChainID: tokenInfo[tokenType].dstChainId,
-        toAccount: tokenInfo[tokenType].dstTokenAcc,
-        jettonAdminAddr:TON_COIN_ACCOUNT_STR,    //todo check jettonAddr
-        walletCodeBase64:tokenInfo[tokenType].walletCodeBase64,
+        tokenPairId: tokenPair.tokenPairId,
+        fromChainID: tokenPair.srcChainId,
+        fromAccount: tokenPair.srcTokenAcc,
+        toChainID: tokenPair.dstChainId,
+        toAccount: tokenPair.dstTokenAcc,
+        //jettonAdminAddr: TON_COIN_ACCOUNT_STR,    // cancel because original token and wrapped token has same logic.
+        walletCodeBase64: tokenPair.walletCodeBase64,
     }
-    console.log("opt=>",opt);
-    let via = await getSenderByPrvKey(client,Buffer.from(prvList[0],'hex'));
-    let ret = await ba.writeContract('sendAddTokenPair',via,opt);
-    console.log("sendAddTokenPair",ret);
+    console.log("opt=>", opt);
+    let via = await getSenderByPrvKey(client, Buffer.from(prvList[0], 'hex'));
+    let ret = await ba.writeContract('sendAddTokenPair', via, opt);
+    console.log("sendAddTokenPair", ret);
 }
-async function main(){
+
+async function main() {
     console.log("Entering main function");
     await init();
     await addTokenPair();
-};
+}
 
 main();
 
-// ts-node addTokenPair-ex.ts ton
-// ts-node addTokenPair-ex.ts wan
-// ts-node addTokenPair-ex.ts usdt
+// ts-node addTokenPair-ex.ts --network testnet --tpId 1030
