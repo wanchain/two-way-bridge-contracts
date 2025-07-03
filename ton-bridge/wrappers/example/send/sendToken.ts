@@ -62,7 +62,6 @@ async function main() {
     let tokenAccountAddr = Address.parse(argv['tokenAddr'])
     let destAddr = Address.parse(argv['toAddr'])
     let decimal = argv['decimal']
-    let amount = argv['amount']
     let finnalAmount = toNumberByDecimal(argv['amount'], decimal)
     let balance = await TokenBalance(client, tokenAccountAddr, destAddr);
     console.log(`before balance of ${argv['toAddr']} is ${balance}`);
@@ -72,5 +71,5 @@ async function main() {
 }
 
 main();
-// ts-node sendToken.ts --network testnet --tokenAddr EQA_L8-V29GTQwfi9LruGuQf9JwqLggBIB3ByDC8KLReK_f9 --toAddr 0QALz9kOW8wETujt9zDgLCaEfevg3PU6sljgead4op81Jixq --decimal 6 --amount 1000
+//ts-node sendToken.ts --network testnet --tokenAddr EQA_L8-V29GTQwfi9LruGuQf9JwqLggBIB3ByDC8KLReK_f9 --toAddr 0QALz9kOW8wETujt9zDgLCaEfevg3PU6sljgead4op81Jixq --decimal 18 --amount 0.1
 
