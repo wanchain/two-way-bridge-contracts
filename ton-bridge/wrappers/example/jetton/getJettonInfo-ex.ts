@@ -1,48 +1,58 @@
-import {TonClient} from "@ton/ton";
+import {configMainnetNoDb, configTestTonApiNoDb} from "../../config/config-ex";
 
-import {configTestnet, configMainnet, configTestTonApiNoDb} from "../../config/config-ex";
-
-import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
-import {
-    getJettonDataContent,
-    getJettonData,
-    parseWrappedJettonContent
-} from "../../wallet/jetton";
-
-let args = process.argv.slice(2)
-let jettonTokenAddress = args[0]
-
-import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
+import {Address} from '@ton/core';
+import {getJettonData, getJettonDataContent, parseWrappedJettonContent} from "../../wallet/jetton";
+import {getClient, wanTonSdkInit} from "../../client/client";
 import {WanTonClient} from "../../client/client-interface";
 
 const prvList = require('../../testData/prvlist')
+const optimist = require('optimist');
+let argv = optimist
+    .usage("Usage: $0")
+    .alias('h', 'help')
+    .describe('network', 'network name testnet|mainnet')
+    .describe('tokenAddr', 'token address')
+    .argv;
+
+console.log(optimist.argv);
+console.log((Object.getOwnPropertyNames(optimist.argv)).length);
+
+
+if ((Object.getOwnPropertyNames(optimist.argv)).length < 2) {
+    optimist.showHelp();
+    process.exit(0);
+}
+
+
+global.network = argv["network"];
+const config = require('../../config/config');
 
 let client = null;
 
-async function init(){
-    //await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestTonApiNoDb);
+async function init() {
+    if (global.network == 'testnet') {
+        await wanTonSdkInit(configTestTonApiNoDb);
+    } else {
+        await wanTonSdkInit(configMainnetNoDb);
+    }
+
     client = await getClient();
 }
-async function DisplayJettonInfo(client:WanTonClient,addr:Address){
-    let ret = await getJettonData(client,addr);
-    console.log("getJettonData=>",ret)
 
-    let retJettonContent = await getJettonDataContent(client,addr);
-    console.log("getJettonDataContent=>",await parseWrappedJettonContent(retJettonContent));
+async function DisplayJettonInfo(client: WanTonClient, addr: Address) {
+    let ret = await getJettonData(client, addr);
+    console.log("getJettonData=>", ret)
+
+    let retJettonContent = await getJettonDataContent(client, addr);
+    console.log("getJettonDataContent=>", await parseWrappedJettonContent(retJettonContent));
 }
 
 async function main() {
     console.log("Entering main function");
     await init();
-    await DisplayJettonInfo(client,Address.parse(jettonTokenAddress));
+    await DisplayJettonInfo(client, Address.parse(argv['tokenAddr']));
 }
 
 main();
 
-// ts-node getJettonInfo-ex.ts EQB7MS_HPERUy7btkQlbgn3L4GQN_eqoev_D3jv6DvH9OxqL
-// ts-node getJettonInfo-ex.ts EQDPFoyEUdur7g9c0nNn8rGX08TedRsvc_aik0nohFn8v1eF
-
-// ts-node getJettonInfo-ex.ts EQC9vzT9V5F6wHXRnpDU2blgMBdeQBMJvLUmw_JISfpYKud7
-// ts-node getJettonInfo-ex.ts kQBPs490SptIknaQy18XUJ5zUMrQ4Gl8BgHgfxPf-_59R7Mw
-// ts-node getJettonInfo-ex.ts EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c
+// ts-node getJettonInfo-ex.ts --network testnet --tokenAddr EQB7MS_HPERUy7btkQlbgn3L4GQN_eqoev_D3jv6DvH9OxqL

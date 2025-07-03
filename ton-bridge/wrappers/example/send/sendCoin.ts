@@ -1,41 +1,71 @@
 import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
-import {getClient, TonClientConfig, wanTonSdkInit} from "../../client/client";
-let client,deployer,via;
-
+import {getClient, wanTonSdkInit} from "../../client/client";
 import {WanTonClient} from "../../client/client-interface";
-import {configTestTonApiNoDb} from "../../config/config-ex";
+import {configMainnetNoDb, configTestTonApiNoDb} from "../../config/config-ex";
 import {Address, Sender} from "@ton/core";
 import {sendCoin} from "../../wallet/send";
 import {CoinBalance} from "../../wallet/balance";
-import {sleep} from "../../utils/utils";
+import {sleep, toNumberByDecimal} from "../../utils/utils";
+
+let deployer, via;
 
 const prvList = require('../../testData/prvlist.json')
 
-async function init(){
-    await wanTonSdkInit(configTestTonApiNoDb);
-    client = await getClient();
-    deployer = await getWalletByPrvKey(Buffer.from(prvList[1],'hex'));
-    via = await getSenderByPrvKey(client,Buffer.from(prvList[1],'hex'));
+const optimist = require('optimist');
+let argv = optimist
+    .usage("Usage: $0")
+    .alias('h', 'help')
+    .describe('network', 'network name testnet|mainnet')
+    .describe('toAddr', 'to address')
+    .describe('decimal', 'decimal')
+    .describe('amount', 'amount (the minest unit)')
+    .string('amount')
+    .argv;
+
+console.log(optimist.argv);
+console.log((Object.getOwnPropertyNames(optimist.argv)).length);
+
+
+if ((Object.getOwnPropertyNames(optimist.argv)).length < 4) {
+    optimist.showHelp();
+    process.exit(0);
 }
 
-async function send(client:WanTonClient,via:Sender,amount:bigint,dest:Address){
-    return (await sendCoin(client,via,dest,amount))
+global.network = argv["network"];
+const config = require('../../config/config');
+
+let client = null;
+
+async function init() {
+    if (global.network == 'testnet') {
+        await wanTonSdkInit(configTestTonApiNoDb);
+    } else {
+        await wanTonSdkInit(configMainnetNoDb);
+    }
+
+    client = await getClient();
+    deployer = await getWalletByPrvKey(Buffer.from(prvList[1], 'hex'));
+    via = await getSenderByPrvKey(client, Buffer.from(prvList[1], 'hex'));
 }
-let argv = process.argv
+
+async function send(client: WanTonClient, via: Sender, amount: bigint, dest: Address) {
+    return (await sendCoin(client, via, dest, amount))
+}
+
 async function main() {
     console.log("Entering main function");
     console.log(process.argv);
     await init();
-    let destAddr = Address.parse(argv[2])
-    let amount = BigInt(argv[3]);  // decimal 9
-    let balance = await CoinBalance(client,destAddr);
-    console.log(`before balance of ${argv[2]} is ${balance}`);
-    let ret = await send(client,via,amount,destAddr)
+    let destAddr = Address.parse(argv['toAddr'])
+    let decimal = Number(argv['decimal']);
+    let amount = argv['amount'];  // decimal 9
+    let finalAmount = toNumberByDecimal(amount, decimal);
+    let balance = await CoinBalance(client, destAddr);
+    console.log(`before balance of ${argv['toAddr']} is ${balance}`);
+    let ret = await send(client, via, finalAmount, destAddr)
     await sleep(5000)
-    console.log(`After balance of ${argv[2]} is ${ret}`);
+    console.log(`After balance of ${argv['toAddr']} is ${ret}`);
 }
 
 main();
-// ts-node sendCoin.ts <destAddress> <amount>
-// ts-node sendCoin.ts EQCGOHmrNm3u_ilZ5qdtpIDmfVfkQsWsqxyvPywT_7_fOzZh 1000
-// ts-node sendCoin.ts 0QALz9kOW8wETujt9zDgLCaEfevg3PU6sljgead4op81Jixq 1000000000
+// ts-node sendCoin.ts --network testnet --toAddr EQCGOHmrNm3u_ilZ5qdtpIDmfVfkQsWsqxyvPywT_7_fOzZh --decimal 9 --amount 0.01
