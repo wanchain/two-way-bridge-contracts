@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 
 contract CommonProxy is ITransparentUpgradeableProxy, TransparentUpgradeableProxy {
     constructor(address _logic, address admin_, bytes memory _data) 
-        public 
         payable 
         TransparentUpgradeableProxy(_logic, admin_, _data) {}
 
