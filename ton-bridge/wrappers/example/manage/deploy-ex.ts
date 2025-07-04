@@ -1,14 +1,16 @@
 import {TON_FEE} from "../../fee/fee";
 
 import {configMainnetNoDb, configTestTonApiNoDb} from "../../config/config-ex";
-import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
+import {getSenderByPrvKey, getWalletByPrvKey, isAddrDepolyed} from "../../wallet/walletContract";
 import {getClient, wanTonSdkInit} from "../../client/client";
 import {doCompile} from "../../utils/compileContract";
 import {CompilerConfig} from "@ton-community/func-js";
 import {BIP44_CHAINID} from "../../const/const-value";
+import fs from 'fs';
+import {Address} from "@ton/core";
 
 
-let deployer = null, smgFeeProxy = null, oracleAdmin = null, robotAdmin = null, via = null;
+let deployer = null, smgFeeProxy = null, oracleAdmin = null, robotAdmin = null, via = null, foundation = null;
 
 const prvList = require('../../testData/prvlist')
 
@@ -49,6 +51,7 @@ async function init() {
     smgFeeProxy = deployer;
     oracleAdmin = deployer;
     robotAdmin = deployer;
+    foundation = deployer;
 }
 
 async function buildCodeCell(conf: CompilerConfig) {
@@ -80,16 +83,16 @@ async function deploy() {
             operator: oracleAdmin.address,
         }
     } else {
-        if (argv['contractName'].trim().toLowerCase() == 'groupApprove') {
+        if (argv['contractName'].trim().toLowerCase() == 'groupapprove') {
             accessPath = "../../GroupApprove";
             moudleAccessClassName = "GroupApprove";
             contractAddressName = "groupApproveAddress";
 
             deployConfig = {
                 chainId: BIP44_CHAINID,
-                taskId: 0, // todo why need this?
-                foundation: smgFeeProxy.address, //todo change
-                bridge: smgFeeProxy.address //todo change
+                taskId: 0,
+                foundation: foundation.address,
+                bridge: Address.parse(scAddresses['bridgeAddress'])
             }
         } else {
             throw new Error("contractName error!")
@@ -102,9 +105,20 @@ async function deploy() {
     let contract = moduleAccess[`${moudleAccessClassName}`].createFromConfig(deployConfig, code);
     let contractOpened = await client.open(contract);
 
-    let ret = await contractOpened.sendDeploy(via, TON_FEE.TRANS_FEE_DEPLOY);
-    console.log("contract address :", contractOpened.address, "contractName", argv['contractName']);
-    console.log(ret);
+    if (await isAddrDepolyed(client, scAddresses[`${contractAddressName}`])) {
+        console.log("contract has been deployed address :", scAddresses[`${contractAddressName}`], "contractName", argv['contractName']);
+        return;
+    }
+
+    if (await isAddrDepolyed(client, contractOpened.address.toString())) {
+        console.log("contract has been deployed address :", contractOpened.address, "contractName", argv['contractName']);
+    } else {
+        let ret = await contractOpened.sendDeploy(via, TON_FEE.TRANS_FEE_DEPLOY);
+        console.log("contract address :", contractOpened.address, "contractName", argv['contractName']);
+        scAddresses[`${contractAddressName}`] = contractOpened.address.toString();
+        fs.writeFileSync(config.contractOutput, JSON.stringify(scAddresses, null, 2));
+        console.log(ret);
+    }
 }
 
 async function main() {
