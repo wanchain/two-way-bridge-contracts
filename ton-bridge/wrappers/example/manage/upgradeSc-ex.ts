@@ -1,4 +1,3 @@
-//import {conf} from "../../testData/bridge.compile.func"
 import {doCompile} from "../../utils/compileContract";
 import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
 import {getClient, wanTonSdkInit} from "../../client/client";
@@ -6,9 +5,6 @@ import {getQueryID} from "../../utils/utils";
 import {TON_FEE} from "../../fee/fee";
 import {configMainnetNoDb, configTestTonApiNoDb} from "../../config/config-ex";
 import path from "path";
-
-let filePath = "../../testData/bridge.compiled.json";
-
 
 let deployer, via;
 const prvList = require('../../testData/prvlist')
@@ -65,8 +61,9 @@ async function upgrade() {
     let moduleAccess = await import(`${accessPath}`);
     console.log("moduleAccess", moduleAccess);
     let moudleAccessClassName = argv['contractName'].trim().toLowerCase().slice(0, 1).toUpperCase() + argv['contractName'].trim().toLowerCase().slice(1) + "Access";
+    let contractAddressName = argv['contractName'].trim().toLowerCase() + "Address";
     let newCode = ret.codeCell;
-    let contractAccess = moduleAccess[`${moudleAccessClassName}`].create(client, scAddresses.bridgeAddress);
+    let contractAccess = moduleAccess[`${moudleAccessClassName}`].create(client, scAddresses[`${contractAddressName}`]);
     console.log("contractAccess", contractAccess);
     // write contract
     let opt = {
@@ -85,4 +82,4 @@ async function upgrade() {
     await upgrade();
 })()
 
-// ts-node upgradeBridgeSc-ex.ts --network testnet --contractName Bridge --compileConf /home/jacob/wanchain/two-way-bridge-contracts-opBnb/ton-bridge/wrappers/compile-info/input/bridge.compile.func.ts
+// ts-node upgradeSc-ex.ts --network testnet --contractName Bridge --compileConf /home/jacob/wanchain/two-way-bridge-contracts-opBnb/ton-bridge/wrappers/compile-info/input/bridge.compile.func.ts
