@@ -4,7 +4,6 @@ import {getClient, wanTonSdkInit} from "../../client/client";
 import {getQueryID} from "../../utils/utils";
 import {TON_FEE} from "../../fee/fee";
 import {configMainnetNoDb, configTestTonApiNoDb} from "../../config/config-ex";
-import path from "path";
 
 let deployer, via;
 const prvList = require('../../testData/prvlist')
@@ -45,9 +44,6 @@ async function init() {
     via = await getSenderByPrvKey(client, Buffer.from(prvList[0], 'hex'));
 }
 
-
-const scAddresses = require('../../testData/contractAddress.json');
-
 async function upgrade() {
     const module = await import(`${argv['compileConf']}`);
     console.log("compile config module", module);
@@ -55,16 +51,30 @@ async function upgrade() {
     if (ret) {
         console.log("compile  result", ret);
     }
-
+    let accessPath = null, moduleAccess = null, moudleAccessClassName = null,
+        contractAddressName = null;
     let scAddresses = require(config.contractOutput)
-    let accessPath = path.join("../../contractAccess", argv['contractName'].trim().toLowerCase() + "Access");
-    let moduleAccess = await import(`${accessPath}`);
+
+    if (argv['contractName'].trim().toLowerCase() == 'bridge') {
+        accessPath = "../../contractAccess/bridgeAccess";
+        moudleAccessClassName = "BridgeAccess";
+        contractAddressName = "bridgeAddress";
+    } else {
+        if (argv['contractName'].trim().toLowerCase() == 'groupApprove') {
+            accessPath = "../../contractAccess/groupApproveAccess";
+            moudleAccessClassName = "GroupApproveAccess";
+            contractAddressName = "groupApproveAddress";
+        } else {
+            throw new Error("contractName error!")
+        }
+    }
+
+    moduleAccess = await import(`${accessPath}`);
     console.log("moduleAccess", moduleAccess);
-    let moudleAccessClassName = argv['contractName'].trim().toLowerCase().slice(0, 1).toUpperCase() + argv['contractName'].trim().toLowerCase().slice(1) + "Access";
-    let contractAddressName = argv['contractName'].trim().toLowerCase() + "Address";
     let newCode = ret.codeCell;
     let contractAccess = moduleAccess[`${moudleAccessClassName}`].create(client, scAddresses[`${contractAddressName}`]);
     console.log("contractAccess", contractAccess);
+
     // write contract
     let opt = {
         sender: via,
