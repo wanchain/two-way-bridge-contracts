@@ -1,52 +1,52 @@
-import core_1, { Address, Cell, Contract, ContractProvider, MessageRelaxed, Sender, SendMode } from "@ton/core";
-import {TonClient} from "@ton/ton";
+import {Address, Sender} from "@ton/core";
 import {Bridge} from '../Bridge';
 
 import {logger} from '../utils/logger'
 import {bigIntReplacer, formatError} from "../utils/utils";
 import {WanTonClient} from "../client/client-interface";
+
 const formatUtil = require('util');
 
 export class BridgeAccess {
     private client: WanTonClient;
     private readonly contractAddr: Address;
 
-    static create(client:WanTonClient,contractAddr:string):BridgeAccess {
-        let addr = Address.parse(contractAddr);
-        return new BridgeAccess(client, addr);
-    }
-
-    constructor(client:WanTonClient,contractAddr:Address){
+    constructor(client: WanTonClient, contractAddr: Address) {
         this.client = client;
         this.contractAddr = contractAddr;
     }
 
-    async writeContract(methodName:string,via:Sender,opts:any){
-        if(!methodName.startsWith('send')){
-            throw new Error(`${methodName} is not supported Non send method`);
-        }
-        try{
-                let  c =  Bridge.createFromAddress(this.contractAddr);
-                logger.info(formatUtil.format("writeContract contractAddress",this.contractAddr));
-                let  cOpened =  this.client.open(c);
-                return await cOpened[methodName](via,opts);
-            }catch(err){
-                logger.error(formatUtil.format("writeContract err=>","methodName",methodName,"opts",JSON.stringify(opts,bigIntReplacer),"err",formatError(err)));
-                throw new Error(`writeContract ${methodName} error ${formatError(err)}`);
-            }
+    static create(client: WanTonClient, contractAddr: string): BridgeAccess {
+        let addr = Address.parse(contractAddr);
+        return new BridgeAccess(client, addr);
     }
 
-    async readContract(methodName:string,parameters:any[]){
-        if(!methodName.startsWith('get')){
+    async writeContract(methodName: string, via: Sender, opts: any) {
+        if (!methodName.startsWith('send')) {
             throw new Error(`${methodName} is not supported Non send method`);
         }
-        try{
-            let  c =  Bridge.createFromAddress(this.contractAddr);
-            let  cOpened = this.client.open(c);
-            logger.info(formatUtil.format("methodName=>",methodName));
+        try {
+            let c = Bridge.createFromAddress(this.contractAddr);
+            logger.info(formatUtil.format("writeContract contractAddress", this.contractAddr));
+            let cOpened = this.client.open(c);
+            return await cOpened[methodName](via, opts);
+        } catch (err) {
+            logger.error(formatUtil.format("writeContract err=>", "methodName", methodName, "opts", JSON.stringify(opts, bigIntReplacer), "err", err));
+            throw new Error(`writeContract ${methodName} error ${formatError(err)}`);
+        }
+    }
+
+    async readContract(methodName: string, parameters: any[]) {
+        if (!methodName.startsWith('get')) {
+            throw new Error(`${methodName} is not supported Non send method`);
+        }
+        try {
+            let c = Bridge.createFromAddress(this.contractAddr);
+            let cOpened = this.client.open(c);
+            logger.info(formatUtil.format("methodName=>", methodName));
             return await cOpened[methodName](...parameters);
-        }catch(err){
-            logger.error(formatUtil.format(formatError(err)),"methodName",methodName,"parameters",parameters);
+        } catch (err) {
+            logger.error(formatUtil.format(formatError(err)), "methodName", methodName, "parameters", parameters);
             throw new Error(`readContract ${methodName} error ${formatError(err)}`);
         }
     }

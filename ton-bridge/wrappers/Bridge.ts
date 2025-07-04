@@ -359,7 +359,9 @@ export class Bridge implements Contract {
 
     async getTokenPairFee(provider: ContractProvider, tokenpair: number) {
         const result = await provider.get('get_tokenpair_fee', [{type: 'int', value: BigInt(tokenpair)}]);
-        return result.stack.readNumber()
+        let ret = result.stack.readNumber()
+        logger.info("getTokenPairFee", "tokenpair", tokenpair, "tokenPairFee", ret)
+        return ret;
     }
 
     async getTokenPair(provider: ContractProvider, tokenPairId: number) {

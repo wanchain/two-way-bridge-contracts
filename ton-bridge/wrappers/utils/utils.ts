@@ -9,6 +9,8 @@ export const randomAddress = (wc: number = 0) => {
     }
     return new Address(wc, buf);
 };
+87
+
 
 const getRandom = (min: number, max: number) => {
     return Math.random() * (max - min) + min;
@@ -338,7 +340,7 @@ export function AddressToBig(addr: Address) {
 }
 
 export function toNumberByDecimal(src: number | string | bigint, decimal: number): bigint {
-
+    logger.info("toNumberByDecimal", "src", src, "decimal", decimal)
     if (typeof src === 'bigint') {
         return src * BigInt(10) ** BigInt(decimal);
     } else {
@@ -347,8 +349,8 @@ export function toNumberByDecimal(src: number | string | bigint, decimal: number
                 throw Error('Invalid number');
             }
 
-            if (Math.log10(src) <= 6) {
-                src = src.toLocaleString('en', {minimumFractionDigits: 9, useGrouping: false});
+            if (Math.log10(src) <= decimal) {
+                src = src.toLocaleString('en', {minimumFractionDigits: decimal, useGrouping: false});
             } else if (src - Math.trunc(src) === 0) {
                 src = src.toLocaleString('en', {maximumFractionDigits: 0, useGrouping: false});
             } else {
@@ -375,6 +377,8 @@ export function toNumberByDecimal(src: number | string | bigint, decimal: number
         // Prepare parts
         let whole = parts[0];
         let frac = parts[1];
+        logger.info("whole", whole);
+        logger.info("frac", frac);
         if (!whole) {
             whole = '0';
         }

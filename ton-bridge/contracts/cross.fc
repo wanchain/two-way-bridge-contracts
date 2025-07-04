@@ -190,7 +190,6 @@ const SEND_SELF_TRAN_VALUE = 400000000;
             (_, int hash) = parse_std_addr(my_address());
 
             refundValue = msgValue - fee;  ;; for token, handle exception in op_notification. ;;tokenpair handle in op_notification
-
             ifnot (hash == hashSender) {
                 throw(error::cross_lock_token_invalid_sender);
             }
@@ -231,10 +230,10 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         }
 
         ;; check sender is JettonWallet(my_address)
-        slice jwAddrBridge = calc_user_wallet(my_address(), tokenAccount, walletCode);
-
-        ifnot (equal_slice_bits(jwAddrBridge, senderAddr)) {
-
+        slice jwAddrBridge = calc_user_wallet(my_address(), tokenAcountFromMsg, walletCode);
+        (_, int hashSender) = parse_std_addr(senderAddr);
+        (_, int hashJwAddrBridge) = parse_std_addr(jwAddrBridge);
+        ifnot (hashSender == hashJwAddrBridge) {
             ;;revert_token(queryId, jettonAmount, originAddress, jwAddressBridgeFromMsg, 0, 0, originAddress);
             send_error_code_to_self(queryId, error::cross_lock_token_invalid_sender);
             revertToken = -1;
