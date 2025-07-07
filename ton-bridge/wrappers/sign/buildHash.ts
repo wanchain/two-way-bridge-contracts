@@ -1,9 +1,8 @@
-import {
-    Address,
-    beginCell,
-} from '@ton/core';
+import {Address, beginCell,} from '@ton/core';
 
 import {logger} from '../utils/logger'
+import {add0x, remove0x} from "../utils/utils";
+
 const formatUtil = require('util');
 
 export function computeHash(currentChainId: bigint, uniqueId: bigint, tokenPairId: bigint, value: bigint, fee: bigint, tokenAccount: Address | string, userAccount: Address) {
@@ -44,4 +43,19 @@ export function computeHash(currentChainId: bigint, uniqueId: bigint, tokenPairI
         hashBig: BigInt(`0x${hashBuf.toString('hex')}`),
         hashBuf: hashBuf
     };
+}
+
+export function getEpsFromMpcSig(fullSig: string) {
+    let fullSigNo0x = remove0x(fullSig)
+    if (fullSigNo0x.length != 128) {
+        throw "invalid length signature"
+    }
+    return {
+        e: BigInt(add0x(fullSigNo0x.slice(0, 64))),
+        p: BigInt(add0x(fullSigNo0x.slice(64, 128))),
+        s: BigInt(add0x(fullSigNo0x.slice(128, 192))),
+        eHex: add0x(fullSigNo0x.slice(0, 64)),
+        pHex: add0x(fullSigNo0x.slice(64, 128)),
+        sHex: add0x(fullSigNo0x.slice(128, 192))
+    }
 }
