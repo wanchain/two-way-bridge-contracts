@@ -184,3 +184,4 @@ async function main() {
 main();
 
 //ts-node smgRelease-ex.ts --network testnet --tpId 1030 --releaseValue 100 --releaseFee 10 --decimal 6 --smgId 0x000000000000000000000000000000000000000000746573746e65745f303638 --destAddr EQCGOHmrNm3u_ilZ5qdtpIDmfVfkQsWsqxyvPywT_7_fOzZh
+//ts-node smgRelease-ex.ts --network testnet --tpId 1032 --releaseValue 0.003 --releaseFee 0.002 --decimal 9 --smgId 0x000000000000000000000000000000000000000000746573746e65745f303638 --destAddr EQC8A1FkKCiSm4VDJh83MabRub9ES5j3J8u0zugaqf4gspwk

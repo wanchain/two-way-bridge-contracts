@@ -19,6 +19,7 @@ export const TON_FEE = {
     TRANS_FEE_SMG_RELEASE: toNano('1'),
     TRANS_FEE_SMG_RELEASE_TOKEN: toNano('0.5'),        // for smgRelease, the first tx value
     FWD_TON_AMOUNT_TRANSFER_JETTON: toNano('0.0'),     // for smgRelease , send token
+    //FWD_TON_AMOUNT_TRANSFER_JETTON: toNano('0.1'),     // for smgRelease , send token, if > 0, will send notification to owner_address (not jwAddress)
     TOTAL_TON_AMOUNT_TRANSFER_JETTON: toNano('0.2'),   // for smgRelease , send token
 }
 
