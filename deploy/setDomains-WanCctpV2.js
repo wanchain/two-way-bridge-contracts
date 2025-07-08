@@ -3,12 +3,12 @@ const path = require("path");
 
 
 const CCTP_DOMAIN = {
-  ethereum: 0, avalanche: 1, optimism: 2, arbitrum: 3, solana: 5, base: 6, linea: 11,
+  ethereum: 0, avalanche: 1, optimism: 2, arbitrum: 3, solana: 5, base: 6, polygon: 7, linea: 11,
   sonic: 13, worldChain: 14
   // codex: 12, sonic: 13, worldChain: 14
 };
 const CCTP_BIP44 = {
-  ethereum: 2147483708, avalanche: 2147492648, optimism: 2147484262, arbitrum: 1073741826, solana: 2147484149, base: 1073741841, linea: 1073741842,
+  ethereum: 2147483708, avalanche: 2147492648, optimism: 2147484262, arbitrum: 1073741826, solana: 2147484149, base: 1073741841, polygon: 2147484614, linea: 1073741842,
   sonic: 2147493655, worldChain: 1073741857
   // codex: 12, sonic: 2147493655, worldChain: 14
 };
