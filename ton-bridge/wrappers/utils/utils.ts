@@ -1,6 +1,7 @@
 import {Address, toNano} from "@ton/core";
 import {getSecureRandomNumber} from '@ton/crypto';
 import {logger} from '../utils/logger'
+import {DEFAUT_PARTNER} from "../const/const-value";
 
 export const randomAddress = (wc: number = 0) => {
     const buf = Buffer.alloc(32);
@@ -399,4 +400,18 @@ export function toNumberByDecimal(src: number | string | bigint, decimal: number
         }
         return r;
     }
+}
+
+export function fromStringToBuffer(str: string, targetLen: number) {
+    let strRet: string = '';
+    if (!str) {
+        strRet = DEFAUT_PARTNER;
+    } else {
+        if (str.length >= targetLen) {
+            strRet = str.slice(0, targetLen);
+        } else {
+            strRet = str.padStart(targetLen);
+        }
+    }
+    return Buffer.from(strRet, 'utf-8');
 }

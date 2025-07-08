@@ -246,8 +246,8 @@ export class Bridge implements Contract {
             senderAccount: opts.senderAccount
         }, differentQueryID)
         logger.info("ret==>", ret);
+        logger.info("ret.body==>", ret.body.toBoc().toString('base64'));
         logger.info("ret.to==>", ret.to);
-
         if (ret.to.toString() == this.address.toString()) {
             logger.info("entering lock coin");
             let totalValue: bigint;

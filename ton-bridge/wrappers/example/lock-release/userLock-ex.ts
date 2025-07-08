@@ -74,7 +74,8 @@ async function userLock() {
             dstUserAccount: argv['destAddr'],
             bridgeScAddr,
             client,
-            senderAccount: aliceAddress
+            senderAccount: aliceAddress,
+            partner: 'jacob',
         })
         await sleep(3000);
         console.log("ret of userLock is %s", ret);

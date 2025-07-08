@@ -38,6 +38,8 @@ export const codeTable = {
             let senderAccount = extraCell2.loadAddress();
             logger.info("before load fee");
             let fee = extraCell2.loadUintBig(256);
+            console.log("before load partner");
+            let partner = extraCell2.loadBuffer(8); // fix 8 bytes.
             extraCell2.endParse();
 
             slice.endParse();
@@ -53,6 +55,7 @@ export const codeTable = {
                 jwAddrBridgeSc,
                 senderAccount,
                 fee,
+                partner,
             }
         },
         "emitEvent": function (opts) {
@@ -71,6 +74,7 @@ export const codeTable = {
                 from: (opts?.senderAccount as Address).equals(Address.parse(TON_COIN_ACCOUNT_STR)) ? opts?.origin : opts?.senderAccount,
                 prevTransactionHash: opts?.prevTransactionHash,
                 prevTransactionLt: opts?.prevTransactionLt,
+                partner: opts.partner,
             }
         }
     },

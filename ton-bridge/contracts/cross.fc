@@ -16,6 +16,7 @@
 
 const SEND_SELF_TRAN_VALUE = 400000000;
 const SEND_NORMAL_TRAN_VALUE = 300000000;
+const PARTNER_LEN = 8;
 
 () send_fee_to_proxy(slice proxyAddress, int fee) impure {
     var msg = begin_cell()
@@ -168,6 +169,7 @@ const SEND_NORMAL_TRAN_VALUE = 300000000;
         originAddress = extraSlice2~load_msg_addr();
 
         int lockFee = extraSlice2~load_uint(256);
+        (slice partner) = inMsgBody~load_bits(8 * PARTNER_LEN);
 
         (int srcChainId, slice fromAccount, int dstChainId, slice dstAccount, int tokenPairExist, _, slice tokenAccount) = tm_get_token_pair(tokenManager, tokenPairId);
         throw_unless(error::tm_tokenpair_not_exist, tokenPairExist);

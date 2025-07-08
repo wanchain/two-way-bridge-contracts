@@ -1,9 +1,9 @@
-import {AddressToBig, getQueryID, remove0x} from "../utils/utils";
+import {AddressToBig, fromStringToBuffer, getQueryID, remove0x} from "../utils/utils";
 import {isAddrDepolyed} from "../wallet/walletContract";
 import {JettonMaster} from "@ton/ton";
 import {BridgeAccess} from "../contractAccess/bridgeAccess";
 import {Address, beginCell, Cell, internal, StateInit} from "@ton/core";
-import {BIP44_CHAINID, TON_COIN_ACCOUNT_STR} from "../const/const-value";
+import {BIP44_CHAINID, PARTNER_LEN, TON_COIN_ACCOUNT_STR} from "../const/const-value";
 import * as opcodes from "../opcodes";
 import {Maybe} from "@ton/core/src/utils/maybe";
 import {Blockchain} from "@ton/sandbox";
@@ -29,6 +29,7 @@ export async function buildUserLockMessages(opts: {
     bridgeScAddr: string,
     client: WanTonClient | Blockchain,
     senderAccount: string,
+    partner?: string,//max length is 8 bytes
 }, differentQueryID?: number) {
     const {client, ...filtered} = opts;
     logger.info("buildUserLockMessages", "opts", filtered);
@@ -97,6 +98,7 @@ export async function buildLockCoinMessages(opts: {
     bridgeScAddr: string,
     client: WanTonClient | Blockchain,
     senderAccount: string,
+    partner?: string,//max length is 8 bytes
 }, jwAddrBridgeSc: Address, jwAddrSrc: Address, addrTokenAccount: Address, lockFee: bigint) {
     logger.info("buildLockCoinMessages", "jwAddrBridgeSc", jwAddrBridgeSc.toString(), "jwAddrSrc", jwAddrSrc.toString(), "addrTokenAccount", addrTokenAccount.toString(), "lockFee", lockFee);
     let totalValue: bigint;
@@ -105,6 +107,9 @@ export async function buildLockCoinMessages(opts: {
     let queryId = await getQueryID();
     let dstUserAccountBuffer = Buffer.from(remove0x(opts.dstUserAccount), 'hex');
     let dstUserAccountBufferLen = dstUserAccountBuffer.length
+
+    let partnerBuffer = fromStringToBuffer(opts.partner, PARTNER_LEN)
+
     let extraCell = beginCell()
         .storeAddress(addrTokenAccount)
         .storeAddress(jwAddrSrc)
@@ -113,7 +118,7 @@ export async function buildLockCoinMessages(opts: {
     let extraCell2 = beginCell()
         .storeAddress(Address.parse(opts.senderAccount))
         .storeUint(lockFee, 256)
-        //.storeUint(1, 256)  //todo should delete
+        .storeBuffer(partnerBuffer, PARTNER_LEN)
         .endCell()
 
     let body = beginCell()
@@ -146,7 +151,8 @@ export async function buildLockOriginalTokenMessages(opts: {
     dstUserAccount: string, // hex string
     bridgeScAddr: string,
     client: WanTonClient | Blockchain,
-    senderAccount: string, differentQueryID?: bigint
+    senderAccount: string, differentQueryID?: bigint,
+    partner?: string,//max length is 8 bytes
 }, jwAddrBridgeSc: Address, jwAddrSrc: Address, addrTokenAccount: Address, lockFee: bigint, differentQueryID?: bigint) {
     logger.info("buildLockOriginalTokenMessages", "jwAddrBridgeSc", jwAddrBridgeSc.toString(), "jwAddrSrc", jwAddrSrc.toString(), "jwAddrSrcBig", AddressToBig(jwAddrSrc), "addrTokenAccount", addrTokenAccount.toString(), "lockFee", lockFee);
 
@@ -160,6 +166,9 @@ export async function buildLockOriginalTokenMessages(opts: {
 
     let dstUserAccountBuffer = Buffer.from(remove0x(opts.dstUserAccount), 'hex');
     let dstUserAccountBufferLen = dstUserAccountBuffer.length
+
+    let partnerBuffer = fromStringToBuffer(opts.partner, PARTNER_LEN)
+
     let extraCell = beginCell()
         .storeAddress(addrTokenAccount)
         .storeAddress(jwAddrSrc)
@@ -168,6 +177,7 @@ export async function buildLockOriginalTokenMessages(opts: {
     let extraCell2 = beginCell()
         .storeAddress(Address.parse(opts.senderAccount))
         .storeUint(lockFee, 256)
+        .storeBuffer(partnerBuffer, PARTNER_LEN)
         .endCell()
     let body = beginCell()
         .storeUint(opcodes.OP_CROSS_UserLock, 32)
