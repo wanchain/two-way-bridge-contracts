@@ -15,6 +15,7 @@
 #include "fee.fc";
 
 const SEND_SELF_TRAN_VALUE = 400000000;
+const SEND_NORMAL_TRAN_VALUE = 300000000;
 
 () send_fee_to_proxy(slice proxyAddress, int fee) impure {
     var msg = begin_cell()
@@ -23,7 +24,7 @@ const SEND_SELF_TRAN_VALUE = 400000000;
         .store_coins(fee)
         .store_msgbody_prefix_slice()
         .end_cell();
-    send_raw_message(msg, IGNORE_ERRORS + PAY_FEES_SEPARATELY);
+    send_raw_message(msg, PAY_FEES_SEPARATELY);
     return ();
 
 }
@@ -102,6 +103,9 @@ const SEND_SELF_TRAN_VALUE = 400000000;
 }
 
 () smgRelease_ton(int queryId, int releaseValue, int fee, slice userAccount, slice proxyAddress) impure {
+
+    throw_if(error::cross_smg_release_ton_not_enough_error, get_balance().pair_first() < (releaseValue + fee + 2 * SEND_NORMAL_TRAN_VALUE));
+
     var msg = begin_cell()
         .store_msg_flag(msg_flag::non_bounceable)
         .store_slice(userAccount)
