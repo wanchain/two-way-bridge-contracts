@@ -2,7 +2,7 @@
 
 #include "imports/std/stdlib.fc";
 #include "imports/common/opcode.fc";
-
+#include "imports/common/errcode.fc";
 
 
 {-
@@ -31,33 +31,32 @@ const int TIMELOCK = 1;  ;; TODO  for test  86400;
 
 (cell) oracle_generate_data(slice oracleAdmin, cell smgConfig, cell smgConfigCommit, cell smgTxUniqueId) impure {
     return begin_cell()
-            .store_slice(oracleAdmin)
-            .store_dict(smgConfig)
-            .store_dict(smgConfigCommit)
-            .store_dict(smgTxUniqueId)
-            .end_cell();
+        .store_slice(oracleAdmin)
+        .store_dict(smgConfig)
+        .store_dict(smgConfigCommit)
+        .store_dict(smgTxUniqueId)
+        .end_cell();
 }
 
 ;; Helper functions for smg struct
 ;; gpkx gpky startTime endTime
-(int, int, int,int, int) load_smg(slice cs) inline {
+(int, int, int, int, int) load_smg(slice cs) inline {
     return (cs~load_uint(256), cs~load_uint(256), cs~load_uint(64), cs~load_uint(64), cs~load_uint(64));
 }
 
-builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int timestamp)  {
+builder store_smg(builder b, int gpkX, int gpkY, int startTime, int endTime, int timestamp) {
     return b.store_uint(gpkX, 256)
-            .store_uint(gpkY, 256)
-            .store_uint(startTime, 64)
-	        .store_uint(endTime, 64)
-            .store_uint(timestamp, 64);
+        .store_uint(gpkY, 256)
+        .store_uint(startTime, 64)
+        .store_uint(endTime, 64)
+        .store_uint(timestamp, 64);
 }
 
-
 ;; Get a smg by ID
-(int, int, int, int, int) oracle_get_smg(cell refcell, int id, int commited ) method_id {
+(int, int, int, int, int) oracle_get_smg(cell refcell, int id, int commited) method_id {
     (_, cell smgConfig, cell smgConfigCommit, _) = oracle_load_data(refcell);
     var dict = smgConfig;
-    if(commited == 1) {
+    if (commited == 1) {
         dict = smgConfigCommit;
     }
     var (smg_slice, found?) = dict.udict_get?(SMGID_DICTIONARY_KEY_LEN, id);
@@ -70,33 +69,33 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
 }
 
 ;; check uniqid exisit or not
-(cell, int ) oracle_handle_uniqid(cell refcell, int smg_id, int uniqid ) impure {
+(cell, int) oracle_handle_uniqid(cell refcell, int smg_id, int uniqid) impure {
     ;; smg_id->dict(uniqid->int(0))
     (slice oracleAdmin, cell smgConfig, cell smgConfigCommit, cell smg_dict) = oracle_load_data(refcell);
     ;;var dict_smg = smgTxUniqueId;
     var (smg_cell, smg_found?) = smg_dict.udict_get_ref?(SMGID_DICTIONARY_KEY_LEN, smg_id);
 
-    if (smg_found?){
+    if (smg_found?) {
         var ds = smg_cell.begin_parse();
         var uniq_dict = ds~load_dict();
         ds.end_parse();
 
         var (_, unique_found?) = uniq_dict.udict_get?(UNIQ_DICTIONARY_KEY_LEN, uniqid);
         if (unique_found?) {
-            return ( refcell, -1);
+            return (refcell, -1);
         } else {
             ;;todo maybe dict_msg is not changed.
-            uniq_dict~udict_set(UNIQ_DICTIONARY_KEY_LEN,uniqid,begin_cell().end_cell().begin_parse());
+            uniq_dict~udict_set(UNIQ_DICTIONARY_KEY_LEN, uniqid, begin_cell().end_cell().begin_parse());
             cell smg_cell_new = begin_cell().store_dict(uniq_dict).end_cell();
-            smg_dict~udict_set_ref( SMGID_DICTIONARY_KEY_LEN, smg_id,smg_cell_new);
-            return ( oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smg_dict),0 );
+            smg_dict~udict_set_ref(SMGID_DICTIONARY_KEY_LEN, smg_id, smg_cell_new);
+            return (oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smg_dict), 0);
         }
     } else {
         cell dict_unique = new_dict();
-        dict_unique~udict_set(UNIQ_DICTIONARY_KEY_LEN,uniqid,begin_cell().end_cell().begin_parse());
+        dict_unique~udict_set(UNIQ_DICTIONARY_KEY_LEN, uniqid, begin_cell().end_cell().begin_parse());
         cell smg_cell_new = begin_cell().store_dict(dict_unique).end_cell();
-        smg_dict~udict_set_ref( SMGID_DICTIONARY_KEY_LEN, smg_id,smg_cell_new);
-        return ( oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smg_dict),0 );
+        smg_dict~udict_set_ref(SMGID_DICTIONARY_KEY_LEN, smg_id, smg_cell_new);
+        return (oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smg_dict), 0);
     }
 }
 
@@ -104,7 +103,7 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
 (int) oracle_get_first_smg_id(cell refcell, int commited) method_id {
     (_, cell smgConfig, cell smgConfigCommit, _) = oracle_load_data(refcell);
     var dict = smgConfig;
-    if(commited == 1) {
+    if (commited == 1) {
         dict = smgConfigCommit;
     }
     (int id, _, int success) = dict.udict_get_min?(SMGID_DICTIONARY_KEY_LEN);
@@ -114,11 +113,12 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
         return 0;
     }
 }
+
 ;; Get the first smg in the dictionary
 (int) oracle_get_next_smg_id(cell refcell, int id, int commited) method_id {
     (_, cell smgConfig, cell smgConfigCommit, _) = oracle_load_data(refcell);
     var dict = smgConfig;
-    if(commited == 1) {
+    if (commited == 1) {
         dict = smgConfigCommit;
     }
     (int id, _, int success) = dict.udict_get_next?(SMGID_DICTIONARY_KEY_LEN, id);
@@ -128,6 +128,7 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
         return 0;
     }
 }
+
 (slice) oracle_get_OracleAdmin(cell refcell) method_id {
     (slice oracleAdmin, _, _, _) = oracle_load_data(refcell);
     return oracleAdmin;
@@ -136,12 +137,12 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
 () clean_expired_smgs(smgs, smgTxUniqueId) impure {
     int count = 0;
     int current_id = 0;
-    
-    (int id, slice value, int success) = smgs.udict_get_min?(DICTIONARY_KEY_LEN);
+
+    (int id, slice value, int success) = smgs.udict_get_min?(SMGID_DICTIONARY_KEY_LEN);
     if (success) {
         (int gpkX, int gpkY, int startTime, int endTime, int timestamp) = load_smg(value);
-        if(now() > endTime) {
-            smgs~udict_delete?(DICTIONARY_KEY_LEN, id);
+        if (now() > endTime) {
+            smgs~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
             smgTxUniqueId~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
         }
         ;;
@@ -150,12 +151,12 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
     } else {
         return ();
     }
-    while(count < MAX_CLEAN_COUNT)  {
-        (current_id, slice value, int success) = smgs.udict_get_next?(DICTIONARY_KEY_LEN, current_id);
+    while (count < MAX_CLEAN_COUNT) {
+        (current_id, slice value, int success) = smgs.udict_get_next?(SMGID_DICTIONARY_KEY_LEN, current_id);
         if (success) {
             (int gpkX, int gpkY, int startTime, int endTime, int timestamp) = load_smg(value);
-            if(now() > endTime) {
-                smgs~udict_delete?(DICTIONARY_KEY_LEN, id);
+            if (now() > endTime) {
+                smgs~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
                 smgTxUniqueId~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
             }
             count += 1;
@@ -163,13 +164,13 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
             return ();
         }
     }
-    return ();    
+    return ();
 }
 
 ;; Example of how to use in recv_internal
 (cell) oracle_recv_internal(int op, cell refcell, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     (slice oracleAdmin, cell smgConfig, cell smgConfigCommit, cell smgTxUniqueId) = oracle_load_data(refcell);
-    if(op == OP_ORACLE_TransferOracleAdmin) {
+    if (op == OP_ORACLE_TransferOracleAdmin) {
         slice oracleAdmin_ = in_msg_body~load_msg_addr();
         return oracle_generate_data(oracleAdmin_, smgConfig, smgConfigCommit, smgTxUniqueId);
     }
@@ -180,7 +181,7 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
         int startTime = in_msg_body~load_uint(64);
         int endTime = in_msg_body~load_uint(64);
         int timestamp = now();
-        
+
         smgConfig~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime, timestamp));
         return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
     }  ;; there  is no elseif 
@@ -205,7 +206,8 @@ builder store_smg(builder b, int gpkX, int gpkY,int startTime, int endTime, int 
         }
 
     }  ;; t
-    if (op == OP_ORACLE_DeleteSMG) { ;; Delete smg operation
+    if (op == OP_ORACLE_DeleteSMG) {
+        ;; Delete smg operation
         int id = in_msg_body~load_uint(256);
         smgConfig~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
         smgConfigCommit~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
