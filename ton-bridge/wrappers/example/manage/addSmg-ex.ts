@@ -1,4 +1,4 @@
-import {configMainnet, configTestnet} from "../../config/config-ex";
+import {configMainnetNoDb, configTestTonApiNoDb} from "../../config/config-ex";
 
 import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
 import {getClient, wanTonSdkInit} from "../../client/client";
@@ -13,18 +13,46 @@ const args = process.argv.slice(2);
 const prvList = require('../../testData/prvlist')
 
 let deployer = null, smgFeeProxy = null, oracleAdmin = null, robotAdmin = null;
-let client = null;
 
-const scAddresses = require('../../testData/contractAddress.json');
+
+const optimist = require('optimist');
+let argv = optimist
+    .usage("Usage: $0")
+    .alias('h', 'help')
+    .describe('network', 'network name testnet|mainnet')
+    .describe('commited', 'commited or prepare')
+    .boolean('commited')
+    .argv;
+
+console.log(optimist.argv);
+console.log((Object.getOwnPropertyNames(optimist.argv)).length);
+
+
+if ((Object.getOwnPropertyNames(optimist.argv)).length < 2) {
+    optimist.showHelp();
+    process.exit(0);
+}
+
+global.network = argv["network"];
+const config = require('../../config/config');
+const scAddresses = require(config.contractOutput);
+
+
+let client = null;
 
 
 async function init() {
-    await wanTonSdkInit(configMainnet);
-    await wanTonSdkInit(configTestnet);
-    deployer = await getWalletByPrvKey(Buffer.from(prvList[0], 'hex'));
+
+    if (global.network == 'testnet') {
+        await wanTonSdkInit(configTestTonApiNoDb);
+    } else {
+        await wanTonSdkInit(configMainnetNoDb);
+    }
+
     client = await getClient();
-    console.log("client=>", typeof (client));
+    deployer = await getWalletByPrvKey(Buffer.from(prvList[0], 'hex'));
 }
+
 
 const schnorr = require("../../sign/tools-secp256k1.js");
 
@@ -55,12 +83,19 @@ async function addSmg() {
     }
     console.log("opt=>", opt);
     let via = await getSenderByPrvKey(client, Buffer.from(prvList[0], 'hex'));
-    let ret = await ba.writeContract('sendSetStoremanGroupConfig', via, opt);
-    console.log("sendSetStoremanGroupConfig", ret);
+    if (!argv['commited']) {
+        let ret = await ba.writeContract('sendSetStoremanGroupConfig', via, opt);
+        console.log("sendSetStoremanGroupConfig", ret);
 
-    let retGetSmg = await ba.readContract('getStoremanGroupConfig', [BigInt(smgId)]);
-    console.log("retGetSmg", retGetSmg);
+        let retGetSmg = await ba.readContract('getStoremanGroupConfig', [BigInt(smgId)]);
+        console.log("retGetSmg", retGetSmg);
+    } else {
+        let ret = await ba.writeContract('sendSetStoremanGroupConfigCommit', via, opt);
+        console.log("sendSetStoremanGroupConfigCommit", ret);
 
+        let retGetSmg = await ba.readContract('getStoremanGroupConfigCommited', [BigInt(smgId)]);
+        console.log("retGetSmg commited", retGetSmg);
+    }
 }
 
 async function main() {
@@ -72,4 +107,4 @@ async function main() {
 main();
 
 // only for testnet ,  and only for test (fake gpk)
-// ts-node addSmg-ex.ts
+// ts-node addSmg-ex.ts --network testnet

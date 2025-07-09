@@ -450,6 +450,7 @@ export class Bridge implements Contract {
             gpkY: stack.readBigNumber(),
             startTime: stack.readBigNumber(),
             endTime: stack.readBigNumber(),
+            timeStamp: stack.readBigNumber(),
         }
     }
 
@@ -460,6 +461,7 @@ export class Bridge implements Contract {
             gpkY: stack.readBigNumber(),
             startTime: stack.readBigNumber(),
             endTime: stack.readBigNumber(),
+            timeStamp: stack.readBigNumber(),
         }
     }
 

@@ -135,26 +135,21 @@ builder store_smg(builder b, int gpkX, int gpkY, int startTime, int endTime, int
     return oracleAdmin;
 }
 
-() clean_expired_smgs(cell smgs, cell smgTxUniqueId, int deleteUniqueDic) impure {
-    int count = 0;
-    int current_id = 0;
-
+(cell, cell) clean_expired_smgs(cell smgs, cell smgTxUniqueId, int deleteUniqueDic) impure {
     (int id, slice value, int success) = smgs.udict_get_min?(SMGID_DICTIONARY_KEY_LEN);
-    while (id) {
-        if (success) {
-            (int gpkX, int gpkY, int startTime, int endTime, int timestamp) = load_smg(value);
-            if (now() > endTime) {
-                smgs~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
-                if (deleteUniqueDic == -1) {
-                    smgTxUniqueId~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
-                }
-            } else {
-                return ();
+    int nowTime = now();
+    while (success) {
+
+        (int gpkX, int gpkY, int startTime, int endTime, int timestamp) = load_smg(value);
+        if (nowTime > endTime) {
+            smgs~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
+            if (deleteUniqueDic == -1) {
+                smgTxUniqueId~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
             }
-            (id, value, success) = smgs.udict_get_next?(SMGID_DICTIONARY_KEY_LEN, current_id);
         }
+        (id, value, success) = smgs.udict_get_next?(SMGID_DICTIONARY_KEY_LEN, id);
     }
-    return ();
+    return (smgs, smgTxUniqueId);
 }
 
 ;; Example of how to use in recv_internal
@@ -173,8 +168,9 @@ builder store_smg(builder b, int gpkX, int gpkY, int startTime, int endTime, int
         int timestamp = now();
 
         smgConfig~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime, timestamp));
-        clean_expired_smgs(smgConfig, smgTxUniqueId, 0);
-        return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
+        (cell newSmgConfig, cell newSmgTxUniqueId) = clean_expired_smgs(smgConfig, smgTxUniqueId, 0);
+        return oracle_generate_data(oracleAdmin, newSmgConfig, smgConfigCommit, newSmgTxUniqueId);
+        ;;return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
     }  ;; there  is no elseif 
     if (op == OP_ORACLE_CommitSMG) {
         int id = in_msg_body~load_uint(256);
@@ -191,9 +187,8 @@ builder store_smg(builder b, int gpkX, int gpkY, int startTime, int endTime, int
             throw_unless(error::oracle_invalid_timestamp, timestamp >= timestamp1 + TIMELOCK);
             throw_unless(error::oracle_not_matched_gpk, (gpkX1 == gpkX) & (gpkY1 == gpkY) & (startTime == startTime1) & (endTime == endTime1));
             smgConfigCommit~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime, timestamp));
-
-            clean_expired_smgs(smgConfig, smgTxUniqueId, -1);
-            return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
+            (cell newSmgConfigCommit, cell newSmgTxUniqueId) = clean_expired_smgs(smgConfigCommit, smgTxUniqueId, -1);
+            return oracle_generate_data(oracleAdmin, smgConfig, newSmgConfigCommit, newSmgTxUniqueId);
         } else {
             throw(error::oracle_not_found_smg);
         }
