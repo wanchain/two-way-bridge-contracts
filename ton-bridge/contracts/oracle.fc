@@ -16,7 +16,7 @@ endTime: uint 64
 ;; Constants
 const int SMGID_DICTIONARY_KEY_LEN = 256;
 const int UNIQ_DICTIONARY_KEY_LEN = 256;
-const int MAX_CLEAN_COUNT = 100;
+;;const int MAX_CLEAN_COUNT = 100;
 const int TIMELOCK = 1;  ;; TODO  for test  86400;
 
 (slice, cell, cell, cell) oracle_load_data(cell refcell) impure {
@@ -51,6 +51,7 @@ builder store_smg(builder b, int gpkX, int gpkY, int startTime, int endTime, int
         .store_uint(endTime, 64)
         .store_uint(timestamp, 64);
 }
+
 
 ;; Get a smg by ID
 (int, int, int, int, int) oracle_get_smg(cell refcell, int id, int commited) method_id {
@@ -134,34 +135,23 @@ builder store_smg(builder b, int gpkX, int gpkY, int startTime, int endTime, int
     return oracleAdmin;
 }
 
-() clean_expired_smgs(smgs, smgTxUniqueId) impure {
+() clean_expired_smgs(cell smgs, cell smgTxUniqueId, int deleteUniqueDic) impure {
     int count = 0;
     int current_id = 0;
 
     (int id, slice value, int success) = smgs.udict_get_min?(SMGID_DICTIONARY_KEY_LEN);
-    if (success) {
-        (int gpkX, int gpkY, int startTime, int endTime, int timestamp) = load_smg(value);
-        if (now() > endTime) {
-            smgs~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
-            smgTxUniqueId~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
-        }
-        ;;
-        count += 1;
-        current_id = id;
-    } else {
-        return ();
-    }
-    while (count < MAX_CLEAN_COUNT) {
-        (current_id, slice value, int success) = smgs.udict_get_next?(SMGID_DICTIONARY_KEY_LEN, current_id);
+    while (id) {
         if (success) {
             (int gpkX, int gpkY, int startTime, int endTime, int timestamp) = load_smg(value);
             if (now() > endTime) {
                 smgs~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
-                smgTxUniqueId~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
+                if (deleteUniqueDic == -1) {
+                    smgTxUniqueId~udict_delete?(SMGID_DICTIONARY_KEY_LEN, id);
+                }
+            } else {
+                return ();
             }
-            count += 1;
-        } else {
-            return ();
+            (id, value, success) = smgs.udict_get_next?(SMGID_DICTIONARY_KEY_LEN, current_id);
         }
     }
     return ();
@@ -183,6 +173,7 @@ builder store_smg(builder b, int gpkX, int gpkY, int startTime, int endTime, int
         int timestamp = now();
 
         smgConfig~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime, timestamp));
+        clean_expired_smgs(smgConfig, smgTxUniqueId, 0);
         return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
     }  ;; there  is no elseif 
     if (op == OP_ORACLE_CommitSMG) {
@@ -200,6 +191,8 @@ builder store_smg(builder b, int gpkX, int gpkY, int startTime, int endTime, int
             throw_unless(error::oracle_invalid_timestamp, timestamp >= timestamp1 + TIMELOCK);
             throw_unless(error::oracle_not_matched_gpk, (gpkX1 == gpkX) & (gpkY1 == gpkY) & (startTime == startTime1) & (endTime == endTime1));
             smgConfigCommit~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime, timestamp));
+
+            clean_expired_smgs(smgConfig, smgTxUniqueId, -1);
             return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
         } else {
             throw(error::oracle_not_found_smg);

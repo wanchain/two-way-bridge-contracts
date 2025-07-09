@@ -294,7 +294,7 @@ const PARTNER_LEN = 8;
         (int uniqId, int smgId, int tokenPairId, int releaseValue) = (inMsgBody~load_uint(256), inMsgBody~load_uint(256), inMsgBody~load_uint(32), inMsgBody~load_uint(256));
 
         (int gpk_x, int gpk_y, int start_time, int endTime, int timestamp) = oracle_get_smg(oracle, smgId, 1);
-        throw_if(error::oracle_not_found_smg, gpk_x == 0 | gpk_y == 0);
+        throw_if(error::oracle_not_found_smg, (gpk_x == 0) | (gpk_y == 0));
         throw_unless(error::oracle_out_time_range, (now() >= start_time) & (now() <= endTime));
 
         slice part1 = inMsgBody~load_ref().begin_parse();
