@@ -47,7 +47,7 @@ export function computeHash(currentChainId: bigint, uniqueId: bigint, tokenPairI
 
 export function getEpsFromMpcSig(fullSig: string) {
     let fullSigNo0x = remove0x(fullSig)
-    if (fullSigNo0x.length != 128) {
+    if (fullSigNo0x.length != 192) {
         throw "invalid length signature"
     }
     return {
