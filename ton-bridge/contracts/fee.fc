@@ -18,17 +18,17 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
     return (smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);
 }
 
-(cell) fee_generate_data(slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee,cell crossAdmin) impure {
+(cell) fee_generate_data(slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) impure {
     return begin_cell()
-            .store_slice(smgFeeProxy)
-            .store_slice(feeOperator)
-            .store_dict(tokenPairFee)
-            .store_dict(contractFee)
-            .store_dict(crossAdmin)
-            .end_cell();
+        .store_slice(smgFeeProxy)
+        .store_slice(feeOperator)
+        .store_dict(tokenPairFee)
+        .store_dict(contractFee)
+        .store_dict(crossAdmin)
+        .end_cell();
 }
 
-(int) fee_isCrodsAdmin(cell refcell, slice addr) impure {
+(int) fee_isCrossAdmin(cell refcell, slice addr) impure {
     (slice smgFeeProxy, slice feeOperator, cell tokenPairFee, cell contractFee, cell crossAdmin) = fee_load_data(refcell);
     (_, int hash) = parse_std_addr(addr);
     (_, int success) = crossAdmin.udict_get?(CROSSADMIN_DICTIONARY_KEY_LEN, hash);
@@ -58,7 +58,7 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
     }
     if (op == OP_FEE_SetTokenPairFees) {
         int count = in_msg_body~load_uint(32); ;;TODO. only support 3 for cell size limit
-        while(count > 0) {
+        while (count > 0) {
             int tpId = in_msg_body~load_uint(32);
             int fee = in_msg_body~load_uint(32);
             tokenPairFee~udict_set_builder(TOKENPAIR_DICTIONARY_KEY_LEN, tpId, begin_cell().store_int(fee, 32));
@@ -77,26 +77,26 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
     }
     if (op == OP_FEE_SetChainFees) {
         int count = in_msg_body~load_uint(32); ;;TODO. only support 3 for cell size limit
-        while(count > 0) {
+        while (count > 0) {
             int fromChain = in_msg_body~load_uint(32);
             int toChain = in_msg_body~load_uint(32);
             int fee = in_msg_body~load_uint(64);
             contractFee~udict_set_builder(CHAINFEE_DICTIONARY_KEY_LEN, (fromChain << 32) + toChain, begin_cell().store_int(fee, 64));
             count -= 1;
         }
-        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee,crossAdmin);
-    }    
+        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);
+    }
     if (op == OP_FEE_AddCrossAdmin) {
         slice admin = in_msg_body~load_msg_addr();
         (int workchain, int hash) = parse_std_addr(admin);
         crossAdmin~udict_set_builder(CROSSADMIN_DICTIONARY_KEY_LEN, hash, begin_cell().store_int(1, 2));
-        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee,crossAdmin);
+        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);
     }
     if (op == OP_FEE_DelCrossAdmin) {
         slice admin = in_msg_body~load_msg_addr();
         (int workchain, int hash) = parse_std_addr(admin);
         crossAdmin~udict_delete?(CROSSADMIN_DICTIONARY_KEY_LEN, hash);
-        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee,crossAdmin);
+        return fee_generate_data(smgFeeProxy, feeOperator, tokenPairFee, contractFee, crossAdmin);
     }
     return refcell;
 }
@@ -131,7 +131,7 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
     return (smgFeeProxy, feeOperator);
 }
 (int) fee_get_tokenpair_fee(cell refCell, int tokenpairID) method_id {
-    (_,_, cell tpFee, _,_) = fee_load_data(refCell);
+    (_, _, cell tpFee, _, _) = fee_load_data(refCell);
 
     (slice cs, int find) = udict_get?(tpFee, 32, tokenpairID);
     if (find) {
@@ -140,7 +140,7 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
     return (0);
 }
 (int, int) fee_get_chain_fee(cell refCell, int _src_chain_id, int _dst_chain_id) method_id {
-    (_,_,_, cell chainFee,_) = fee_load_data(refCell);
+    (_, _, _, cell chainFee, _) = fee_load_data(refCell);
     int key_int = (_src_chain_id << 32) + _dst_chain_id;
     (slice cs, int find) = udict_get?(chainFee, 64, key_int);
     if (find) {
@@ -150,10 +150,10 @@ const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
 }
 (int) fee_get(cell refCell, int tokenpairID, int _src_chain_id, int _dst_chain_id) method_id {
     int fee = 0;
-    (int tpFee)= fee_get_tokenpair_fee(refCell,tokenpairID);
-    if (tpFee == 0){
-        (int contracFee,int agentFee)= fee_get_chain_fee(refCell,_src_chain_id,_dst_chain_id);
-        if (contracFee != 0){
+    (int tpFee) = fee_get_tokenpair_fee(refCell, tokenpairID);
+    if (tpFee == 0) {
+        (int contracFee, int agentFee) = fee_get_chain_fee(refCell, _src_chain_id, _dst_chain_id);
+        if (contracFee != 0) {
             fee = contracFee;
         }
     } else {

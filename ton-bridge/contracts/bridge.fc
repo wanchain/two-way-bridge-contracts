@@ -108,7 +108,7 @@
         if (equal_slices(sender_address, feeOperator)) {
             return ();
         }
-        if (1 == fee_isCrodsAdmin(feeCell, sender_address)) {
+        if (1 == fee_isCrossAdmin(feeCell, sender_address)) {
             return ();
         }
         throw(error::unauthorized_set_fee);
