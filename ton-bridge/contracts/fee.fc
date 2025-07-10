@@ -2,10 +2,8 @@
 
 #include "imports/std/stdlib.fc";
 #include "imports/common/opcode.fc";
+#include "imports/common/const.fc";
 
-const int TOKENPAIR_DICTIONARY_KEY_LEN = 32;
-const int CHAINFEE_DICTIONARY_KEY_LEN = 64;
-const int CROSSADMIN_DICTIONARY_KEY_LEN = 256;
 
 (slice, slice, cell, cell, cell) fee_load_data(cell refcell) impure {
     var ds = refcell.begin_parse();

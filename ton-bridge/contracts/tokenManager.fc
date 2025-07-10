@@ -3,6 +3,7 @@
 #include "imports/std/stdlib.fc";
 #include "imports/common/opcode.fc";
 #include "imports/common/wkchain.fc";
+#include "imports/common/const.fc";
 
 
 {-
@@ -18,8 +19,6 @@
         bytes calldata jettonAdminAddr 256b
 -}
 
-;; Constants
-const int DICTIONARY_KEY_LEN = 32;
 
 (cell) tm_load_data(cell ca_tm) impure {
     var ds = ca_tm.begin_parse();

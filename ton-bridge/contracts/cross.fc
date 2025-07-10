@@ -6,6 +6,7 @@
 #include "imports/crypto/secp256k1.fc";
 #include "imports/common/wkchain.fc";
 #include "imports/common/errcode.fc";
+#include "imports/common/const.fc";
 #include "jetton/messages.func";
 #include "jetton/jetton-utils.func";
 #include "tokenManager.fc";
@@ -14,9 +15,6 @@
 #include "imports/signature/sig-header.fc";
 #include "fee.fc";
 
-const SEND_SELF_TRAN_VALUE = 400000000;
-const SEND_NORMAL_TRAN_VALUE = 300000000;
-const PARTNER_LEN = 8;
 
 () send_fee_to_proxy(slice proxyAddress, int fee) impure {
     var msg = begin_cell()

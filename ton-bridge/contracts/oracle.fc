@@ -3,6 +3,7 @@
 #include "imports/std/stdlib.fc";
 #include "imports/common/opcode.fc";
 #include "imports/common/errcode.fc";
+#include "imports/common/const.fc";
 
 
 {-
@@ -13,11 +14,7 @@ startTime: uint 64
 endTime: uint 64
 -}
 
-;; Constants
-const int SMGID_DICTIONARY_KEY_LEN = 256;
-const int UNIQ_DICTIONARY_KEY_LEN = 256;
-;;const int MAX_CLEAN_COUNT = 100;
-const int TIMELOCK = 1;  ;; TODO  for test  86400;
+
 
 (slice, cell, cell, cell) oracle_load_data(cell refcell) impure {
     var ds = refcell.begin_parse();
