@@ -80,12 +80,84 @@ export function isAddressEqual(src: Address | string, dst: Address | string) {
 
 export function bigIntToBytes32(value: bigint) {
 
+    const hex = bigIntToBytes32Hex(value);
+    return Buffer.from(remove0x(hex), 'hex');
+}
+
+export function bigIntToBytes32Hex(value: bigint) {
+
     if (value < 0n || value >= 2n ** 256n) {
         throw new Error("Value must be a 256-bit unsigned integer");
     }
     const hex = value.toString(16).padStart(64, '0');
-    return Buffer.from(hex, 'hex');
+    return add0x(hex);
 }
+
+export function contactTwoBigToHexStr(gpkX: bigint, gpkY: bigint) {
+    return bigIntToBytes32Hex(gpkX) + remove0x(bigIntToBytes32Hex(gpkY));
+}
+
+let hex_change = function (v) {
+    let res;
+    switch (v) {
+        case "a":
+            res = 10;
+            break;
+        case "b":
+            res = 11;
+            break;
+        case "c":
+            res = 12;
+            break;
+        case "d":
+            res = 13;
+            break;
+        case "e":
+            res = 14;
+            break;
+        case "f":
+            res = 15;
+            break;
+        case "1":
+        case "2":
+        case "3":
+        case "4":
+        case "5":
+        case "6":
+        case "7":
+        case "8":
+        case "9":
+            res = Number(v);
+            break;
+        default:
+            res = 0;
+            break;
+    }
+    return res;
+}
+
+export function byte32ToString(grpIdStr) {
+    let grpId;
+    if (grpIdStr.substring(0, 2).toLowerCase() == '0x') {
+        grpId = grpIdStr.substring(2);
+    }
+    let count = grpId.length / 2;
+    if (grpId.length % 2) {
+        throw new Error("invalid string");
+    }
+    let ret = '';
+    for (let i = 0; i < count; i++) {
+        let code = 0;
+        code += Number(hex_change(grpId[2 * i])) * 16;
+        code += Number(hex_change(grpId[2 * i + 1]));
+        if (!!code) {
+            ret += '' + String.fromCharCode(code);
+        }
+    }
+
+    return ret;
+}
+
 
 export function int64ToByte32(int64Value) {
     // 确保输入是 BigInt

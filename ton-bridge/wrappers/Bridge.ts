@@ -451,6 +451,7 @@ export class Bridge implements Contract {
             startTime: stack.readBigNumber(),
             endTime: stack.readBigNumber(),
             timeStamp: stack.readBigNumber(),
+            id: BigInt(id),
         }
     }
 
@@ -462,6 +463,7 @@ export class Bridge implements Contract {
             startTime: stack.readBigNumber(),
             endTime: stack.readBigNumber(),
             timeStamp: stack.readBigNumber(),
+            id: BigInt(id),
         }
     }
 

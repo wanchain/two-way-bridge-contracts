@@ -3,7 +3,7 @@ import {configMainnetNoDb, configTestTonApiNoDb} from "../../config/config-ex";
 import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract";
 import {getClient, wanTonSdkInit} from "../../client/client";
 import {BridgeAccess} from "../../contractAccess/bridgeAccess";
-import {getQueryID} from "../../utils/utils";
+import {bigIntToBytes32Hex, getQueryID} from "../../utils/utils";
 import {TON_FEE} from "../../fee/fee";
 
 
@@ -88,13 +88,22 @@ async function addSmg() {
         console.log("sendSetStoremanGroupConfig", ret);
 
         let retGetSmg = await ba.readContract('getStoremanGroupConfig', [BigInt(smgId)]);
-        console.log("retGetSmg", retGetSmg);
+        console.log("retGetSmg", "id", bigIntToBytes32Hex(retGetSmg.id), retGetSmg);
     } else {
+        let retGetSmg = await ba.readContract('getStoremanGroupConfig', [BigInt(smgId)]);
+        console.log("retGetSmg", retGetSmg);
+        opt.endTime = retGetSmg.endTime;
+        opt.startTime = retGetSmg.startTime;
+        opt.gpkX = retGetSmg.gpkX;
+        opt.gpkY = retGetSmg.gpkY;
+        opt.id = retGetSmg.id;
+
+
         let ret = await ba.writeContract('sendSetStoremanGroupConfigCommit', via, opt);
         console.log("sendSetStoremanGroupConfigCommit", ret);
 
-        let retGetSmg = await ba.readContract('getStoremanGroupConfigCommited', [BigInt(smgId)]);
-        console.log("retGetSmg commited", retGetSmg);
+        let retGetSmgCommit = await ba.readContract('getStoremanGroupConfigCommited', [BigInt(smgId)]);
+        console.log("retGetSmg commited", "id", bigIntToBytes32Hex(retGetSmgCommit.id), retGetSmgCommit);
     }
 }
 

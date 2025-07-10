@@ -4,6 +4,7 @@ import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract"
 import {getClient, wanTonSdkInit} from "../../client/client";
 import {BridgeAccess} from "../../contractAccess/bridgeAccess";
 import {sleep} from "@ton/blueprint";
+import {bigIntToBytes32Hex, byte32ToString, contactTwoBigToHexStr} from "../../utils/utils";
 
 
 let deployer, via;
@@ -63,7 +64,7 @@ async function getAllSmg() {
         } else {
             retGetSmg = await ba.readContract('getStoremanGroupConfig', [BigInt(smgId)]);
         }
-        console.log("retGetSmg", "smgId", smgId, "smgInfo", retGetSmg);
+        console.log("retGetSmg", "smgId", byte32ToString(bigIntToBytes32Hex(BigInt(smgId))), "gpk", contactTwoBigToHexStr(retGetSmg.gpkX, retGetSmg.gpkY), "smgInfo", retGetSmg);
 
         if (argv['commited']) {
             smgId = await ba.readContract('getNextStoremanGroupIDCommited', [BigInt(smgId)]);
