@@ -5,6 +5,7 @@ import {getQueryID} from "../../utils/utils";
 import {TON_FEE} from "../../fee/fee";
 import {configMainnetNoDb, configTestTonApiNoDb} from "../../config/config-ex";
 
+const path = require('path');
 let deployer, via;
 const prvList = require('../../testData/prvlist')
 
@@ -45,9 +46,12 @@ async function init() {
 }
 
 async function upgrade() {
+
+    const compiledResultFile = path.join("../../deploy-info/output", argv["network"], argv["contractName"].toLowerCase() + "_compiled.json");
+    console.log("compiledResultFile", compiledResultFile);
     const module = await import(`${argv['compileConf']}`);
     console.log("compile config module", module);
-    let ret = await doCompile(module.conf);
+    let ret = await doCompile(module.conf, compiledResultFile);
     if (ret) {
         console.log("compile  result", ret);
     }

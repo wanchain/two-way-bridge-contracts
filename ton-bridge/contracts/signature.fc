@@ -1,3 +1,5 @@
+#pragma version =0.4.4;
+
 #include "imports/signature/sig-header.fc";
 
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts

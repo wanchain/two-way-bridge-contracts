@@ -1,3 +1,4 @@
+#pragma version =0.4.4;
 #include "../std/stdlib.fc";
 ;; ton working chain id
 const WORKING_CHAINID       = 0x00;

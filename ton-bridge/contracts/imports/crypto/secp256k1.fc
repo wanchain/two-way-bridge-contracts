@@ -1,3 +1,4 @@
+#pragma version =0.4.4;
 {-
     curve_math.func
 
@@ -14,7 +15,9 @@ const Inf               = 1;
 const U255_MAX_PLUS_1   = 57896044618658097711785492504343953926634992332820282019728792003956564819968;
 const U128_MAX          = 340282366920938463463374607431768211455;
 
-int mulmod(int a, int b, int m) inline { (_, int r) = muldivmod(a, b, m); return r; }
+int mulmod(int a, int b, int m) inline {
+    (_, int r) = muldivmod(a, b, m); return r;
+}
 int addmod(int a, int b, int m) inline {
     if 0 == b {
         return a;

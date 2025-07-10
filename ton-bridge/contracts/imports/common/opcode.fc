@@ -1,3 +1,4 @@
+#pragma version =0.4.4;
 const OP_SIG                            = 0x10000000;
 const OP_SIG_Verify                     = 0x10000001;
 const OP_SIG_VerifyEcdsa                = 0x10000002;

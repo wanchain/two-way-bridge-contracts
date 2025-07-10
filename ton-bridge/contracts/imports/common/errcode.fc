@@ -1,3 +1,4 @@
+#pragma version =0.4.4;
 const int ERROR::INVALID_WKID                       = 0x01;
 const int ERROR::INVALID_HASH                       = 0x02;
 
