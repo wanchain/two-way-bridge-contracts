@@ -28,6 +28,7 @@ let argv = optimist
     .describe('decimal', 'decimal of the lock token or coin')
     .describe('smgId', 'storeman group Id')
     .describe('destAddr', 'address of ton address')
+    .describe('uniqId', 'uniqId')
     .string(['smgId'])
     .argv;
 
@@ -155,7 +156,7 @@ async function smgRelease() {
             releaseFee,
             value: transValueSmg,
             queryID: BigInt(await getQueryID()),
-            uniqueID: BigInt(await getQueryID()),  // should be txHas->bigInt, here is the example.
+            uniqueID: BigInt(argv['uniqId']),  // should be txHas->bigInt, here is the example.
             tokenCoinAccount: Address.parse(retTp.tokenAccount),
             destAccount: Address.parse(argv['destAddr']),
             fwTonAmount: TON_FEE.FWD_TON_AMOUNT_TRANSFER_JETTON,
@@ -183,5 +184,5 @@ async function main() {
 
 main();
 
-//ts-node smgRelease-ex.ts --network testnet --tpId 1030 --releaseValue 100 --releaseFee 10 --decimal 6 --smgId 0x000000000000000000000000000000000000000000746573746e65745f303638 --destAddr EQCGOHmrNm3u_ilZ5qdtpIDmfVfkQsWsqxyvPywT_7_fOzZh
-//ts-node smgRelease-ex.ts --network testnet --tpId 1032 --releaseValue 0.003 --releaseFee 0.002 --decimal 9 --smgId 0x000000000000000000000000000000000000000000746573746e65745f303638 --destAddr EQC8A1FkKCiSm4VDJh83MabRub9ES5j3J8u0zugaqf4gspwk
+//ts-node smgRelease-ex.ts --network testnet --tpId 1030 --releaseValue 100 --releaseFee 10 --decimal 6 --smgId 0x000000000000000000000000000000000000000000746573746e65745f303638 --destAddr EQCGOHmrNm3u_ilZ5qdtpIDmfVfkQsWsqxyvPywT_7_fOzZh  --uniqId 0x001
+//ts-node smgRelease-ex.ts --network testnet --tpId 1032 --releaseValue 0.003 --releaseFee 0.002 --decimal 9 --smgId 0x000000000000000000000000000000000000000000746573746e65745f303638 --destAddr EQC8A1FkKCiSm4VDJh83MabRub9ES5j3J8u0zugaqf4gspwk --uniqId 0x002
