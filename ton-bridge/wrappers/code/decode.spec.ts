@@ -1,6 +1,6 @@
 import {Cell} from "@ton/core";
 import {codeTable} from "./encode-decode";
-import {OP_TOKENPAIR_Upsert} from "../opcodes"
+import {OP_INTERNAL_TRANSFER, OP_TOKENPAIR_Upsert} from "../opcodes"
 import {BIP44_CHAINID, TON_COIN_ACCOUT} from "../const/const-value";
 import {getQueryID} from "../utils/utils";
 import {TON_FEE} from "../fee/fee";
@@ -119,6 +119,15 @@ describe('decode', () => {
         let bodyCelStr = "te6cckECAwEAARwAAspAAAABAAAAACqqcekAAAAAAAAAAAAAAAAAAAAAAAAAAAB0ZXN0bmV0XzA2OAAABAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJiWgBT26zy0sYfTIBr7+Wo45iNnMlsp+QECAMmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQACTgAF5+yHLeYCJ3R2+5hwFhNCPvXwbnqdWSxwPNO8UU+akwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH0u7C3MbQwtLdCeu6OC";
         let bodyCell = Cell.fromBoc(Buffer.from(bodyCelStr, 'base64'))[0];
         let opCode = 0x40000001;
+        let decode = codeTable[opCode]["deCode"](bodyCell);
+        console.log(decode);
+    })
+
+    it('decode internalTransfer', async () => {
+        let bodyCelStr = "b5ee9c720101020100590001a7178d451900000000685a63a1405f5e100801cac063e87cc927b512609cb72e4ed32819818599f9ae2eb00d9edc29d0fb5a270024fbacc73beca70f7223a5c55f9d7e16162bb462b01ee5100746cded9fd3ebd403010000";
+        let bodyCell = Cell.fromBoc(Buffer.from(bodyCelStr, 'hex'))[0];
+        console.log("bodyCell", bodyCell);
+        let opCode = OP_INTERNAL_TRANSFER;
         let decode = codeTable[opCode]["deCode"](bodyCell);
         console.log(decode);
     })

@@ -698,5 +698,29 @@ export const codeTable = {
                 lt: opts?.lt,
             }
         }
+    },
+    [opcodes.OP_INTERNAL_TRANSFER]: {
+        "enCode": function (opts: any): Cell {
+            throw "not support";
+        },
+        "deCode": function (cell: Cell): any {
+            let slice = cell.beginParse();
+            let opCode = slice.loadUint(32);
+            let queryID = slice.loadUint(64);
+            let jettonAmount = slice.loadCoins();
+            let ownerAddress = slice.loadAddress();
+            let responseAddress = slice.loadAddress();
+            let forwardTon = slice.loadCoins();
+            let remainingBit = slice.remainingBits;
+            let fwdPayLoad = slice.loadMaybeRef();
+            slice.endParse();
+
+            return {
+                opCode, queryID, jettonAmount, ownerAddress, responseAddress, forwardTon, fwdPayLoad
+            }
+        },
+        "emitEvent": function (opts) {
+            throw "not support";
+        }
     }
 }
