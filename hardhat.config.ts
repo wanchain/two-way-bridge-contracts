@@ -153,8 +153,8 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 2147483708,
       cctpV2: {
-        proxyAdmin: "0xA1223a59a55eAad135BCe9F513181C388072cC71",
-        delegateAdmin: "",
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
         feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
         feeReadSC: "0xfCeAAaEB8D564a9D0e71Ef36f027b9D162bC334e",
         tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
@@ -166,8 +166,8 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 2147492648,
       cctpV2: {
-        proxyAdmin: "0xb30778550a959C207601d77ff13Fe38A5Abb2546",
-        delegateAdmin: "",
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
         feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
         feeReadSC: "0x74e121a34a66D54C33f3291f2cdf26B1cd037c3a",
         tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
@@ -179,8 +179,8 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 1073741826,
       cctpV2: {
-        proxyAdmin: "0x8D42d317B2bd6B60183461ed41bd00F17C3f3fE8",
-        delegateAdmin: "",
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
         feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
         feeReadSC: "0xF7Ba155556E2CD4Dfe3Fe26e506A14d2f4b97613",
         tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
@@ -196,8 +196,8 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 2147484614,
       cctpV2: {
-        proxyAdmin: "0x329f162550e3d5d9898a0Aae05e21bfCd5f1cF83",
-        delegateAdmin: "",
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
         feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
         feeReadSC: "0x2216072A246A84f7b9CE0f1415Dd239C9bF201aB",
         tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
@@ -435,8 +435,8 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 2147484262,
       cctpV2: {
-        proxyAdmin: "0x329f162550e3d5d9898a0Aae05e21bfCd5f1cF83",
-        delegateAdmin: "",
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
         feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
         feeReadSC: "0xC6Ae1Db6C66d909F7bFEeEb24F9adb8620bf9dbf",
         tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
@@ -535,8 +535,8 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 1073741841,
       cctpV2: {
-        proxyAdmin: "0xd97de67b982d79ED9f7EB2b1A13abC704b2cA082",
-        delegateAdmin: "",
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
         feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
         feeReadSC: "0x2715aA7156634256aE75240C2c5543814660CD04",
         tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
@@ -614,6 +614,14 @@ const config = {
       accounts: [process.env.PK],
       chainId: 480,
       bip44ChainId: 1073741857,
+      cctpV2: {
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0x0000000000000000000000000000000000000000",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      }
     },
     bitrockTestnet: {
       url: "https://testnet.bit-rock.io",
