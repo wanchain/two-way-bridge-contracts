@@ -36,7 +36,6 @@ async function main() {
 
   const WanCctpV2 = await hre.ethers.getContractFactory("WanCctpV2");
   const wanCctpV2 = await hre.ethers.getContractAt("WanCctpV2", scAddr.WanCctpV2);
-  console.log("WanCctpV2 deployed to:", wanCctpV2.address);
   await verify(hre, WanCctpV2, wanCctpV2.address, "contracts/cctp/v2/WanCctpV2.sol:WanCctpV2");
 
 

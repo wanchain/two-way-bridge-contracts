@@ -151,14 +151,41 @@ const config = {
     mainnet: {
       url: 'https://ethereum-rpc.publicnode.com',
       accounts: [process.env.PK],
+      bip44ChainId: 2147483708,
+      cctpV2: {
+        proxyAdmin: "0xA1223a59a55eAad135BCe9F513181C388072cC71",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0xfCeAAaEB8D564a9D0e71Ef36f027b9D162bC334e",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     avalanche: {
       url: 'https://api.avax.network/ext/bc/C/rpc',
       accounts: [process.env.PK],
+      bip44ChainId: 2147492648,
+      cctpV2: {
+        proxyAdmin: "0xb30778550a959C207601d77ff13Fe38A5Abb2546",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0x74e121a34a66D54C33f3291f2cdf26B1cd037c3a",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     arbitrum: {
       url: 'https://1rpc.io/arb',
       accounts: [process.env.PK],
+      bip44ChainId: 1073741826,
+      cctpV2: {
+        proxyAdmin: "0x8D42d317B2bd6B60183461ed41bd00F17C3f3fE8",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0xF7Ba155556E2CD4Dfe3Fe26e506A14d2f4b97613",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     okt: {
       url: 'https://1rpc.io/oktc',
@@ -167,6 +194,15 @@ const config = {
     polygon: {
       url: "https://polygon-bor-rpc.publicnode.com",
       accounts: [process.env.PK],
+      bip44ChainId: 2147484614,
+      cctpV2: {
+        proxyAdmin: "0x329f162550e3d5d9898a0Aae05e21bfCd5f1cF83",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0x2216072A246A84f7b9CE0f1415Dd239C9bF201aB",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     bsc: {
       url: 'https://bsc-dataseed2.bnbchain.org',
@@ -397,6 +433,15 @@ const config = {
     optimisticEthereum: {
       url: "https://optimism-rpc.publicnode.com",
       accounts: [process.env.PK],
+      bip44ChainId: 2147484262,
+      cctpV2: {
+        proxyAdmin: "0x329f162550e3d5d9898a0Aae05e21bfCd5f1cF83",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0xC6Ae1Db6C66d909F7bFEeEb24F9adb8620bf9dbf",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     telos_testnet: {
       url: "https://testnet.telos.net/evm",
@@ -489,6 +534,14 @@ const config = {
       url: "https://base.publicnode.com",
       accounts: [process.env.PK],
       bip44ChainId: 1073741841,
+      cctpV2: {
+        proxyAdmin: "0xd97de67b982d79ED9f7EB2b1A13abC704b2cA082",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0x2715aA7156634256aE75240C2c5543814660CD04",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     energiMainnet: {
       url: "https://nodeapi.energi.network",
@@ -556,6 +609,12 @@ const config = {
         messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
       }
     },
+    worldChainMainnet: {
+      url: "https://worldchain-mainnet.g.alchemy.com/public",
+      accounts: [process.env.PK],
+      chainId: 480,
+      bip44ChainId: 1073741857,
+    },
     bitrockTestnet: {
       url: "https://testnet.bit-rock.io",
       accounts: [process.env.PK],
@@ -597,9 +656,10 @@ const config = {
       arbSepolia: "Placeholder",
       baseSepolia: "Placeholder",
       amoy: "Placeholder",
-     lineaSepoliaTestnet: "Placeholder",
-     sonicTestnet: "Placeholder",
-     worldChainSepoliaTestnet: "Placeholder",
+      lineaSepoliaTestnet: "Placeholder",
+      sonicTestnet: "Placeholder",
+      worldChainSepoliaTestnet: "Placeholder",
+      worldChainMainnet: "Placeholder",
     },
     customChains: [
       {
@@ -765,6 +825,14 @@ const config = {
         urls: {
           apiURL: "https://api.etherscan.io/v2/api?chainid=4801",
           browserURL: "https://sepolia.worldscan.org/"
+        }
+      },
+      {
+        network: "worldChainMainnet",
+        chainId: 480,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=480",
+          browserURL: "https://worldscan.org/"
         }
       },
       {

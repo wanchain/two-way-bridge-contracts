@@ -5,14 +5,12 @@ const path = require("path");
 
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const CCTP_DOMAIN = {
-  ethereum: 0, avalanche: 1, optimism: 2, arbitrum: 3, solana: 5, base: 6, linea: 11,
-  sonic: 13, worldChain: 14
-  // codex: 12, sonic: 13, worldChain: 14
+  ethereum: 0, avalanche: 1, optimism: 2, arbitrum: 3, base: 6, polygon: 7, worldChain: 14
+  // ,solana: 5,  linea: 11, sonic: 13, codex: 12, 
 };
 const CCTP_BIP44 = {
-  ethereum: 2147483708, avalanche: 2147492648, optimism: 2147484262, arbitrum: 1073741826, solana: 2147484149, base: 1073741841, linea: 1073741842,
-  sonic: 2147493655, worldChain: 1073741857
-  // codex: 12, sonic: 2147493655, worldChain: 14
+  ethereum: 2147483708, avalanche: 2147492648, optimism: 2147484262, arbitrum: 1073741826, base: 1073741841, polygon: 2147484614, worldChain: 1073741857
+  // ,solana: 2147484149,  linea: 1073741842, sonic: 2147493655, codex: 12, 
 };
 const BIP44_DOMAIN_SET_PARAMS = Object.values(Object.keys(CCTP_BIP44).reduce((reduced, chain) => {
   const bip44ChainId = CCTP_BIP44[chain];
@@ -61,16 +59,12 @@ const verify = async (hre, artifact, address, pathName, constructorArgs) => {
   console.log(hre.network.name, address, "etherscanChain?.urls?.apiURL:", etherscanChain?.urls?.apiURL, "isV2:", etherscanChain?.urls?.apiURL?.includes('api.etherscan.io/v2/api'));
 
   try {
-    let network = await hre.ethers.provider.getNetwork();
-    console.log("network:", network)
-
     let verificationId = await hre.run("verify:verify", {
       address: address,
       contract: pathName,
       constructorArguments: constructorArgs || [],
       bytecode: artifact.bytecode,
       noCompile: true, // Skip compilation if already compiled
-      chainid: network.chainId,
     });
     console.log(`${pathName || artifact.contractName || "Contract"} verified! VerificationId: ${verificationId}`)
   } catch (error) {
