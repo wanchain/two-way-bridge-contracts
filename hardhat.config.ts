@@ -151,14 +151,41 @@ const config = {
     mainnet: {
       url: 'https://ethereum-rpc.publicnode.com',
       accounts: [process.env.PK],
+      bip44ChainId: 2147483708,
+      cctpV2: {
+        proxyAdmin: "0xA1223a59a55eAad135BCe9F513181C388072cC71",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0xfCeAAaEB8D564a9D0e71Ef36f027b9D162bC334e",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     avalanche: {
       url: 'https://api.avax.network/ext/bc/C/rpc',
       accounts: [process.env.PK],
+      bip44ChainId: 2147492648,
+      cctpV2: {
+        proxyAdmin: "0xb30778550a959C207601d77ff13Fe38A5Abb2546",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0x74e121a34a66D54C33f3291f2cdf26B1cd037c3a",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     arbitrum: {
       url: 'https://1rpc.io/arb',
       accounts: [process.env.PK],
+      bip44ChainId: 1073741826,
+      cctpV2: {
+        proxyAdmin: "0x8D42d317B2bd6B60183461ed41bd00F17C3f3fE8",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0xF7Ba155556E2CD4Dfe3Fe26e506A14d2f4b97613",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     okt: {
       url: 'https://1rpc.io/oktc',
@@ -167,6 +194,15 @@ const config = {
     polygon: {
       url: "https://polygon-bor-rpc.publicnode.com",
       accounts: [process.env.PK],
+      bip44ChainId: 2147484614,
+      cctpV2: {
+        proxyAdmin: "0x329f162550e3d5d9898a0Aae05e21bfCd5f1cF83",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0x2216072A246A84f7b9CE0f1415Dd239C9bF201aB",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     bsc: {
       url: 'https://bsc-dataseed2.bnbchain.org',
@@ -216,22 +252,59 @@ const config = {
       accounts: [process.env.PK],
     },
     baseSepolia: {
-      url: 'https://base-sepolia.blockpi.network/v1/rpc/public',
+      url: 'https://sepolia.base.org',
       accounts: [process.env.PK],
       gasPrice: 1.5e9,
+      bip44ChainId: 1073741841,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x08bad1A48b0B08Bf769f83ba30c1DaD0F8Bb8b6B",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     arbSepolia: {
       url: 'https://sepolia-rollup.arbitrum.io/rpc',
       accounts: [process.env.PK],
+      bip44ChainId: 1073741826,
+      timeout: 60000,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x08bad1A48b0B08Bf769f83ba30c1DaD0F8Bb8b6B",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     optSepolia: {
       url: 'https://optimism-sepolia.blockpi.network/v1/rpc/public',
       accounts: [process.env.PK],
       gasPrice: 1.5e9,
+      bip44ChainId: 2147484262,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x08bad1A48b0B08Bf769f83ba30c1DaD0F8Bb8b6B",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     ethSepolia: {
       url: 'https://ethereum-sepolia.publicnode.com',
       accounts: [process.env.PK],
+      bip44ChainId: 2147483708,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x589E12D073020f99FEBF32B739e58216748c9ed4",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     xdcTestnet: {
       url: 'https://rpc.apothem.network',
@@ -274,20 +347,59 @@ const config = {
       bip44ChainId: 1073741848,
     },
     opSepolia: {
-      url: 'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+      url: 'https://sepolia.optimism.io',
+      // url: 'https://optimism-sepolia.blockpi.network/v1/rpc/public',
       accounts: [process.env.PK],
+      bip44ChainId: 2147484262,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x08bad1A48b0B08Bf769f83ba30c1DaD0F8Bb8b6B",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     amoy: {
-      url: "https://rpc.ankr.com/polygon_amoy",
+      url: "https://rpc-amoy.polygon.technology",
+      // url: "https://polygon-amoy-bor-rpc.publicnode.com",
       accounts: [process.env.PK],
+      bip44ChainId: 2147484614,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0xFb06346e587ffB494438102515D576086bE750F4",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     sepolia: {
-      url: "https://rpc.ankr.com/eth_sepolia",
+      url: 'https://ethereum-sepolia.publicnode.com',
+      // url: "https://rpc.ankr.com/eth_sepolia",
       accounts: [process.env.PK],
+      bip44ChainId: 2147483708,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x589E12D073020f99FEBF32B739e58216748c9ed4",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
       accounts: [process.env.PK],
+      bip44ChainId: 2147492648,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x4c200A0867753454Db78AF84d147Bd03e567f234",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     bscTestnet: {
       url: "https://bsc-testnet-rpc.publicnode.com",
@@ -321,6 +433,15 @@ const config = {
     optimisticEthereum: {
       url: "https://optimism-rpc.publicnode.com",
       accounts: [process.env.PK],
+      bip44ChainId: 2147484262,
+      cctpV2: {
+        proxyAdmin: "0x329f162550e3d5d9898a0Aae05e21bfCd5f1cF83",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0xC6Ae1Db6C66d909F7bFEeEb24F9adb8620bf9dbf",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     telos_testnet: {
       url: "https://testnet.telos.net/evm",
@@ -413,6 +534,14 @@ const config = {
       url: "https://base.publicnode.com",
       accounts: [process.env.PK],
       bip44ChainId: 1073741841,
+      cctpV2: {
+        proxyAdmin: "0xd97de67b982d79ED9f7EB2b1A13abC704b2cA082",
+        delegateAdmin: "",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0x2715aA7156634256aE75240C2c5543814660CD04",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     energiMainnet: {
       url: "https://nodeapi.energi.network",
@@ -426,6 +555,19 @@ const config = {
       signCurveId: 0, // ecdsa
       hashType: 1, // keccak256
     },
+    lineaSepoliaTestnet: {
+      url: "https://rpc.sepolia.linea.build",
+      accounts: [process.env.PK],
+      bip44ChainId: 1073741842,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0xD25DB04661C468ea27C720970e9521d3F259690d",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
+    },
     lineaTestnet: {
       gasPrice: 3e9, // can not delete.
       url: "https://rpc.goerli.linea.build",
@@ -437,6 +579,41 @@ const config = {
       url: "https://1rpc.io/linea",
       accounts: [process.env.PK],
       bip44ChainId: 1073741842,
+    },
+    sonicTestnet: {
+      url: "https://rpc.blaze.soniclabs.com/",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147493655,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x05211bBC9E0C1ED3bE0252021Cf558718ab65189",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
+    },
+    worldChainSepoliaTestnet: {
+      url: "https://worldchain-sepolia.g.alchemy.com/public",
+      // url: "https://worldchain-sepolia.drpc.org",
+      // url: "https://4801.rpc.thirdweb.com",
+      accounts: [process.env.PK],
+      chainId: 4801,
+      bip44ChainId: 1073741857,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x5292B2936daD44EdFbFB2929f9f246304167843b",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
+    },
+    worldChainMainnet: {
+      url: "https://worldchain-mainnet.g.alchemy.com/public",
+      accounts: [process.env.PK],
+      chainId: 480,
+      bip44ChainId: 1073741857,
     },
     bitrockTestnet: {
       url: "https://testnet.bit-rock.io",
@@ -472,8 +649,39 @@ const config = {
     },  
   },
   etherscan: {
-    apiKey: '',
+    apiKey: {
+      sepolia: "Placeholder",
+      fuji: "Placeholder",
+      opSepolia: "Placeholder",
+      arbSepolia: "Placeholder",
+      baseSepolia: "Placeholder",
+      amoy: "Placeholder",
+      lineaSepoliaTestnet: "Placeholder",
+      sonicTestnet: "Placeholder",
+      worldChainSepoliaTestnet: "Placeholder",
+      worldChainMainnet: "Placeholder",
+    },
     customChains: [
+      {
+        network: "sepolia",
+        chainid: 11155111,
+        chainId: 11155111,
+        urls: {
+            apiURL: "https://api.etherscan.io/v2/api?chainid=11155111",
+            browserURL: "https://sepolia.etherscan.io"
+        }
+      },
+      {
+        network: "fuji",
+        chainid: 43113,
+        chainId: 43113,
+        urls: {
+            // apiURL: "https://api.etherscan.io/v2/api?chainid=43113",
+            // browserURL: "https://testnet.snowscan.xyz/"
+            apiURL: "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan",
+            browserURL: "https://avalanche.testnet.localhost:8080"
+        }
+      },
       {
         network: "x1Mainnet",
         chainId: 196, //196 for mainnet
@@ -547,6 +755,14 @@ const config = {
         },
       },
       {
+        network: "baseSepolia",
+        chainId: 84532,
+        urls: {
+          apiURL: "https://api-sepolia.basescan.org/api",
+          browserURL: "https://sepolia.basescan.org/"
+        },
+      },
+      {
         network: "sepolia",
         chainId: 11155111,
         urls: {
@@ -584,6 +800,39 @@ const config = {
         urls: {
          apiURL: "https://api.lineascan.build/api",
          browserURL: "https://lineascan.build"
+        }
+      },
+      {
+        network: "lineaSepoliaTestnet",
+        chainId: 59141,
+        urls: {
+          // apiURL: "https://api.sepolia.lineascan.build/api",
+          apiURL: "https://api.etherscan.io/v2/api?chainid=59141",
+          browserURL: "https://sepolia.lineascan.build/"
+        }
+      },
+      {
+        network: "sonicTestnet",
+        chainId: 57054,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=57054",
+          browserURL: "https://testnet.sonicscan.org/"
+        }
+      },
+      {
+        network: "worldChainSepoliaTestnet",
+        chainId: 4801,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=4801",
+          browserURL: "https://sepolia.worldscan.org/"
+        }
+      },
+      {
+        network: "worldChainMainnet",
+        chainId: 480,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=480",
+          browserURL: "https://worldscan.org/"
         }
       },
       {
