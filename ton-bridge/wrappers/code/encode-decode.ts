@@ -7,6 +7,11 @@ import {add0x, bigIntReplacer, int64ToByte32} from "../utils/utils";
 
 const formatUtil = require('util');
 
+export function getOpCode(cell: Cell) {
+    let slice = cell.beginParse();
+    return slice.loadUint(32);
+}
+
 export const codeTable = {
     [opcodes.OP_CROSS_UserLock]: {
         "enCode": function (opts: any): Cell {

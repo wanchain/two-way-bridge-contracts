@@ -14,6 +14,7 @@ const int error::unauthorized_upgrade               = 0xEE08;
 
 const int error::privilege_unknown_opcode           = 0xEE10;
 const int error::recv_unknown_opcode                = 0xEE11;
+const int error::recv_no_opcode                     = 0xEE12;
 
 const int error::gpk_invalid_timestamp              = 0xEE20;
 const int error::group_error_chainid                = 0xEE21;

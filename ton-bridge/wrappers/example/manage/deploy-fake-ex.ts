@@ -94,7 +94,7 @@ async function deploy() {
     let module = await import(`${argv['compileConf']}`);
     let code = await buildCodeCell(module.conf);
     let data = Cell.EMPTY;
-
+    //
     let fake = Fake.createFromConfig(data, code);
     let fakeOpened = await client.open(fake);
     let ret = await fakeOpened.sendDeploy(via, toNano('0.01'))
@@ -102,18 +102,19 @@ async function deploy() {
     console.log("contract address", fakeOpened.address.toString())
     console.log("ret", ret)
 
-    /*
-    const init = {code, data};
-    let scAddr = contractAddress(0, init);
-    let provider = await client.provider(scAddr);
-    let ret = await provider.internal(via, {
-        value: TON_FEE.TRANS_FEE_DEPLOY,
-        sendMode: SendMode.PAY_GAS_SEPARATELY,
-        body: beginCell().endCell()
-    });
-    console.log("contract address", scAddr.toString())
-    console.log("ret", ret)
-     */
+
+    // const init = {code, data};
+    // let scAddr = contractAddress(0, init);
+    // let provider = await client.provider(scAddr, init);
+    // let ret = await provider.internal(via, {
+    //     value: TON_FEE.TRANS_FEE_DEPLOY,
+    //     sendMode: SendMode.PAY_GAS_SEPARATELY,
+    //     body: beginCell().endCell(),
+    //
+    // });
+    // console.log("contract address", scAddr.toString())
+    // console.log("ret", ret)
+
 }
 
 async function main() {

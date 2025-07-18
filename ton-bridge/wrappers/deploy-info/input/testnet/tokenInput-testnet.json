@@ -13,5 +13,10 @@
     "name": "test-jacob1@ton",
     "symbol": "test-jacob1",
     "decimals": "18"
+  },
+  "usdt_jacob": {
+    "name": "usdt_jacob@ton",
+    "symbol": "usdt_jacob",
+    "decimals": "6"
   }
 }

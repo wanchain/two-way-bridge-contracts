@@ -1,7 +1,7 @@
 import {getClient, wanTonSdkInit} from "../../client/client";
 import {configMainnetNoDb, configTestTonApiNoDb} from "../../config/config-ex";
-import {Address} from "@ton/core";
-import {CoinBalance} from "../../wallet/balance";
+import {getWalletStatus} from "../../wallet/walletContract";
+import {WanTonClient} from "../../client/client-interface";
 
 let deployer, via;
 
@@ -14,13 +14,14 @@ let argv = optimist
     .describe('network', 'network name testnet|mainnet')
     .describe('Addr', 'account address')
     .string(['Addr'])
+    .alias('h', 'help')
     .argv;
 
 console.log(optimist.argv);
 console.log((Object.getOwnPropertyNames(optimist.argv)).length);
 
 
-if ((Object.getOwnPropertyNames(optimist.argv)).length < 2) {
+if ((Object.getOwnPropertyNames(optimist.argv)).length < 1) {
     optimist.showHelp();
     process.exit(0);
 }
@@ -40,14 +41,17 @@ async function init() {
     client = await getClient();
 }
 
+async function getStatus(client: WanTonClient, address: string) {
+    return await getWalletStatus(client, address);
+}
+
 async function main() {
     console.log("Entering main function");
     console.log(process.argv);
     await init();
-    let addr = Address.parse(argv['Addr'])
-    let balance = await CoinBalance(client, addr);
-    console.log(`balance of ${argv['Addr']} is ${balance}`);
+    let ret = await getStatus(client, argv['Addr']);
+    console.log("wallet status:", "address", argv['Addr'], "status", ret);
 }
 
 main();
-// ts-node coinBalance.ts --network testnet --Addr 0QCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUGu7
+// ts-node getWalletStatus.ts --network testnet --Addr kQDlYDH0PmST2okwTluXJ2mUDMDCzPzXF1gGz24U6H2tE9Wr

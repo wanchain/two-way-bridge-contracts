@@ -1,7 +1,6 @@
 import {getClient, wanTonSdkInit} from "../../client/client";
 import {configMainnetNoDb, configTestTonApiNoDb} from "../../config/config-ex";
-import {Address} from "@ton/core";
-import {CoinBalance} from "../../wallet/balance";
+import {newWallet} from "../../wallet/walletContract";
 
 let deployer, via;
 
@@ -11,16 +10,13 @@ const optimist = require('optimist');
 let argv = optimist
     .usage("Usage: $0")
     .alias('h', 'help')
-    .describe('network', 'network name testnet|mainnet')
-    .describe('Addr', 'account address')
-    .string(['Addr'])
     .argv;
 
 console.log(optimist.argv);
 console.log((Object.getOwnPropertyNames(optimist.argv)).length);
 
 
-if ((Object.getOwnPropertyNames(optimist.argv)).length < 2) {
+if ((Object.getOwnPropertyNames(optimist.argv)).length < 1) {
     optimist.showHelp();
     process.exit(0);
 }
@@ -40,14 +36,18 @@ async function init() {
     client = await getClient();
 }
 
+async function newTonWallet() {
+    return newWallet();
+}
+
 async function main() {
     console.log("Entering main function");
     console.log(process.argv);
     await init();
-    let addr = Address.parse(argv['Addr'])
-    let balance = await CoinBalance(client, addr);
-    console.log(`balance of ${argv['Addr']} is ${balance}`);
+
+    let w = await newTonWallet();
+    console.log("wallet created:", w);
 }
 
 main();
-// ts-node coinBalance.ts --network testnet --Addr 0QCT7rMc77KcPciOlxV-dfhYWK7RisB7lEAdGze2f0-vUGu7
+// ts-node newWallet.ts

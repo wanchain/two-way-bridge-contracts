@@ -39,7 +39,7 @@
         int p = extra_slice~load_uint(256);
         int msg = extra_slice~load_uint(256);
         int verifyRet = verify_ecdsa(s, gpk_x, gpk_y, e, p, msg);
-        throw_unless(error::signature_verify_error, verifyRet == -1); ;;todo add error_ennum
+        throw_unless(error::signature_verify_error, verifyRet == -1);
         return ();
     }
 

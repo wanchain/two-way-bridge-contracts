@@ -63,8 +63,6 @@
     cs~skip_bits(1); ;; skip extracurrency collection
     cs~load_coins(); ;; skip ihr_fee
 
-    ;;todo should check the rights
-
     (int taskCount, slice foundation, slice bridge, cell taskDict) = load_data();
 
     int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op

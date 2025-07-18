@@ -1,24 +1,20 @@
 import {Blockchain, SandboxContract, TreasuryContract} from '@ton/sandbox';
-import {Address, Cell, toNano, TupleItemInt, fromNano, beginCell, Sender} from '@ton/core';
-import {TON_COIN_ACCOUT, BIP44_CHAINID, BIP44_WANCHAIN_CHAINID} from '../wrappers/const/const-value';
+import {Address, beginCell, Cell, fromNano, toNano} from '@ton/core';
+import {BIP44_CHAINID, BIP44_WANCHAIN_CHAINID} from '../wrappers/const/const-value';
 import {Bridge} from '../wrappers/Bridge';
 import '@ton/test-utils';
 import {compile} from '@ton/blueprint';
 import {JettonMinter} from "../wrappers/JettonMinter";
 import {JettonWallet} from "../wrappers/JettonWallet";
-import {BufferrToHexString, HexStringToBuffer} from "./utils";
-import {common} from '../wrappers/common';
-
-const schnorr = require('./tools-secp256k1.js');
 import {slimSndMsgResult} from "./transaction";
 import {getQueryID} from "../wrappers/utils/utils";
 import {CoinBalance, TokenBalance} from "../wrappers/wallet/balance";
 
+const schnorr = require('./tools-secp256k1.js');
+
 function AccountToBig(addr: Address) {
     return BigInt("0x" + addr.hash.toString('hex'));
-};
-import {TON_FEE} from '../wrappers/fee/fee';
-import {getJettonWalletCode} from "../wrappers/wallet/jetton";
+}
 
 const skSmg = Buffer.from("097e961933fa62e3fef5cedef9a728a6a927a4b29f06a15c6e6c52c031a6cb2b", 'hex');
 const gpk = schnorr.getPKBySk(skSmg);
@@ -220,7 +216,7 @@ describe('Bridge', () => {
             const queryID = 1;
             const ret = await bridge.getTokenPair(tokenInfo[key].tokenPairId);
 
-            console.log(`TokenPairId ${tokenInfo[key].tokenPairId}`,ret);
+            console.log(`TokenPairId ${tokenInfo[key].tokenPairId}`, ret);
         }
 
         // 4. set gpk (used to check sig)
@@ -375,12 +371,12 @@ describe('Bridge', () => {
         console.log("alice's address", alice.address.toString());
         console.log("value", fromNano(value), "crossValue", fromNano(crossValue));
         console.log("Before balance of coin",
-            "alice:", fromNano(await CoinBalance(blockchain, alice.address)),
-            "bridge:", fromNano(await CoinBalance(blockchain, bridge.address)),
+            "alice:", (await CoinBalance(blockchain, alice.address)),
+            "bridge:", (await CoinBalance(blockchain, bridge.address)),
         );
         console.log("Before balance of token",
-            "alice:", fromNano(await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), alice.address)),
-            "bridge:", fromNano(await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), bridge.address)),
+            "alice:", (await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), alice.address)),
+            "bridge:", (await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), bridge.address)),
         );
         const ret = await bridge.sendUserLock(alice.getSender(), {
             value: value,
@@ -395,12 +391,12 @@ describe('Bridge', () => {
 
         console.log("ret", slimSndMsgResult(ret));
         console.log("After balance of coin",
-            "alice:", fromNano(await CoinBalance(blockchain, alice.address)),
-            "bridge:", fromNano(await CoinBalance(blockchain, bridge.address)),
+            "alice:", (await CoinBalance(blockchain, alice.address)),
+            "bridge:", (await CoinBalance(blockchain, bridge.address)),
         );
         console.log("After balance of token",
-            "alice:", fromNano(await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), alice.address)),
-            "bridge:", fromNano(await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), bridge.address)),
+            "alice:", (await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), alice.address)),
+            "bridge:", (await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), bridge.address)),
         );
         printCaseSeperator(it.name)
     });
@@ -416,12 +412,12 @@ describe('Bridge', () => {
         console.log("alice's address", alice.address.toString());
         console.log("value", fromNano(value), "crossValue", fromNano(crossValue));
         console.log("Before balance of coin",
-            "alice:", fromNano(await CoinBalance(blockchain, alice.address)),
-            "bridge:", fromNano(await CoinBalance(blockchain, bridge.address)),
+            "alice:", (await CoinBalance(blockchain, alice.address)),
+            "bridge:", (await CoinBalance(blockchain, bridge.address)),
         );
         console.log("Before balance of token",
-            "alice:", fromNano(await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), alice.address)),
-            "bridge:", fromNano(await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), bridge.address)),
+            "alice:", (await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), alice.address)),
+            "bridge:", (await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), bridge.address)),
         );
         const ret = await bridge.sendUserLock(alice.getSender(), {
             value: value,
@@ -438,12 +434,12 @@ describe('Bridge', () => {
         console.log("*********************************************");
         console.log("ret", slimSndMsgResult(ret));
         console.log("After balance of coin",
-            "alice:", fromNano(await CoinBalance(blockchain, alice.address)),
-            "bridge:", fromNano(await CoinBalance(blockchain, bridge.address)),
+            "alice:", (await CoinBalance(blockchain, alice.address)),
+            "bridge:", (await CoinBalance(blockchain, bridge.address)),
         );
         console.log("After balance of token",
-            "alice:", fromNano(await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), alice.address)),
-            "bridge:", fromNano(await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), bridge.address)),
+            "alice:", (await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), alice.address)),
+            "bridge:", (await TokenBalance(blockchain, Address.parse(tokenInfo.tokenOrg.dstTokenAcc), bridge.address)),
         );
         printCaseSeperator(it.name)
     });
