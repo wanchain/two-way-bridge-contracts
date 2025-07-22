@@ -24,7 +24,9 @@ async function main() {
     try {
         let cell = Cell.fromBoc(Buffer.from(remove0x(argv['body']), 'hex'))[0];
         let opCode = await getOpCodeFromCell(cell);
-        let ret = await codeTable[opCode]['decode'](cell);
+        console.log("opCode = ", opCode, opCode.toString(16));
+        console.log(codeTable);
+        let ret = await codeTable[opCode]['deCode'](cell);
         console.log("opCode = ", opCode, opCode.toString(16));
         console.log("decoded = ", ret);
     } catch (err) {
