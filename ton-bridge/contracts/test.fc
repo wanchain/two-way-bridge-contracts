@@ -1,0 +1,101 @@
+#include "./imports/std/stdlib.fc";
+#include "./jetton/messages.func";
+
+
+
+
+
+(cell) load_data() inline {
+    var ds = get_data().begin_parse();
+    return (
+        ds~load_dict()      ;; task
+    );
+}
+
+() save_data(cell taskDict) impure inline {
+    set_data(begin_cell()
+        .store_dict(taskDict)
+        .end_cell());
+}
+
+
+
+() refund_executed(refundAddress) impure {
+    var msg = begin_cell()
+        .store_msg_flag(0x18)
+        .store_slice(refundAddress)
+        .store_coins(0)
+        .store_msgbody_prefix_slice()
+        .store_uint(0, 64)
+        .end_cell();
+    send_raw_message(msg, 128);
+    return ();
+}
+
+
+
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) {
+        ;; ignore all empty messages
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    if (flags & 1) {
+        ;; ignore all bounced messages
+        return ();
+    }
+
+    slice sender_address = cs~load_msg_addr();
+    slice dest_address = cs~load_msg_addr(); ;; skip dst
+    cs~load_coins(); ;; skip value
+    cs~skip_bits(1); ;; skip extracurrency collection
+    cs~load_coins(); ;; skip ihr_fee
+
+    (cell dict) = load_data();
+
+    int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+    int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+    if (op == 0x12345678) {
+        var (tslice, found?) = dict.udict_get?(256, query_id);
+        if (found?) {
+        } else {
+            int count = in_msg_body~load_uint(64); ;;TODO. only support 3 for cell size limit
+            while (count > 0) {
+                dict~udict_set_builder(256, query_id + count, begin_cell().store_int(count, 256));
+                count -= 1;
+                ~dump(count);
+            }
+            save_data(dict);
+        }
+        refund_executed(sender_address);
+    }
+    if (op == 0x12345611) {
+        ~strdump("xxxxx");
+    }
+
+    return ();
+}
+;; (slice) version() method_id {
+;;     return "0.1";
+;; }
+;; (slice) get_first_id() method_id {
+;;     (cell dict) = load_data();
+;;     (int id, slice value, int success) = dict.udict_get_min?(256);
+;;     if (success) {
+;;         return begin_cell().store_uint(id, 256).end_cell().begin_parse();
+;;     } else {
+;;         return begin_cell().store_uint(0, 256).end_cell().begin_parse();
+;;     }
+;; }
+;; (slice) get_next_id(int id) method_id {
+;;     (cell dict) = load_data();
+;;     (int nid, slice value, int success) = dict.udict_get_next?(256, id);
+;;     if (success) {
+;;         return begin_cell().store_uint(nid, 256).end_cell().begin_parse();
+;;     } else {
+;;         return begin_cell().store_uint(0, 256).end_cell().begin_parse();
+;;     }
+;; }
