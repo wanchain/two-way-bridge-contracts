@@ -3,17 +3,8 @@ import {getSenderByPrvKey, getWalletByPrvKey} from "../../wallet/walletContract"
 import {getClient, wanTonSdkInit} from "../../client/client";
 import {doCompile} from "../../utils/compileContract";
 import {CompilerConfig} from "@ton-community/func-js";
-import {
-    Address,
-    beginCell,
-    Cell,
-    Contract,
-    contractAddress,
-    ContractProvider,
-    Sender,
-    SendMode,
-    toNano
-} from "@ton/core";
+import {beginCell, Cell, contractAddress, SendMode} from "@ton/core";
+import {TON_FEE} from "../../fee/fee";
 
 
 let deployer = null, smgFeeProxy = null, oracleAdmin = null, robotAdmin = null, via = null, foundation = null;
@@ -61,29 +52,6 @@ async function init() {
 }
 
 
-class Fake implements Contract {
-    constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {
-    }
-
-    static createFromAddress(address: Address) {
-        return new Fake(address);
-    }
-
-    static createFromConfig(data: Cell, code: Cell, workchain = 0) {
-        const init = {code, data};
-        return new Fake(contractAddress(workchain, init), init);
-    }
-
-    async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
-        await provider.internal(via, {
-            value,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().endCell(),
-            bounce: false,
-        });
-    }
-}
-
 async function buildCodeCell(conf: CompilerConfig) {
     console.log("conf", conf);
     let ret = await doCompile(conf);
@@ -94,26 +62,18 @@ async function deploy() {
     let module = await import(`${argv['compileConf']}`);
     let code = await buildCodeCell(module.conf);
     let data = Cell.EMPTY;
-    //
-    let fake = Fake.createFromConfig(data, code);
-    let fakeOpened = await client.open(fake);
-    let ret = await fakeOpened.sendDeploy(via, toNano('0.01'))
 
-    console.log("contract address", fakeOpened.address.toString())
+    const init = {code, data};
+    let scAddr = contractAddress(0, init);
+    let provider = await client.provider(scAddr, init);
+    let ret = await provider.internal(via, {
+        value: TON_FEE.TRANS_FEE_DEPLOY,
+        sendMode: SendMode.PAY_GAS_SEPARATELY,
+        body: beginCell().endCell(),
+        bounce: false,
+    });
+    console.log("contract address", scAddr.toString())
     console.log("ret", ret)
-
-
-    // const init = {code, data};
-    // let scAddr = contractAddress(0, init);
-    // let provider = await client.provider(scAddr, init);
-    // let ret = await provider.internal(via, {
-    //     value: TON_FEE.TRANS_FEE_DEPLOY,
-    //     sendMode: SendMode.PAY_GAS_SEPARATELY,
-    //     body: beginCell().endCell(),
-    //
-    // });
-    // console.log("contract address", scAddr.toString())
-    // console.log("ret", ret)
 
 }
 

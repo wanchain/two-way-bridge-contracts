@@ -12,10 +12,68 @@
 import {logger} from '../utils/logger'
 
 import {
+    Address,
+    beginCell,
+    Cell,
+    comment,
+    Contract,
+    ContractProvider,
+    ContractState,
+    external,
+    loadTransaction,
+    openContract,
+    OpenedContract,
+    StateInit as TonCoreStateInit,
+    storeMessage,
+    toNano,
     Transaction as TonCoreTransaction,
+    TupleItem,
+    TupleReader,
 } from "@ton/core";
 
 import {Buffer} from "buffer";
+
+/*
+// @ts-ignore
+import parse from 'core-js-pure/actual/json/parse';
+// @ts-ignore
+import rawJSON from 'core-js-pure/actual/json/raw-json';
+// @ts-ignore
+import stringify from 'core-js-pure/actual/json/stringify';
+
+const JSONParse = (source: string) =>
+    parse(
+        source,
+        // @ts-ignore JSON bigint support from core-js
+        (_: any, value: any, context: any): any => {
+            if (typeof value === 'number') {
+                const string = context.source as string;
+                return Number.isSafeInteger(value)
+                    ? value
+                    : /[\.eE]/.test(string)
+                        ? value
+                        : BigInt(string);
+            }
+
+            return value;
+        }
+    );
+
+const JSONStringify = (value: any) =>
+    stringify(
+        value,
+        // @ts-ignore JSON bigint support from core-js
+        (_: any, value: any): any => {
+            if (typeof value === 'bigint') {
+                // @ts-ignore JSON rawJSON support from core-js
+                return rawJSON(value.toString());
+            }
+
+            return value;
+        }
+    );
+*/
+import JSONbig from 'json-bigint';
 
 export interface Error {
     /** @example "error description" */
@@ -3306,61 +3364,6 @@ export enum ContentType {
     Text = 'text/plain'
 }
 
-import {
-    Address,
-    beginCell,
-    Cell, comment, Contract,
-    ContractProvider,
-    ContractState,
-    external, loadTransaction, openContract, OpenedContract,
-    storeMessage, toNano,
-    TupleItem,
-    TupleReader
-} from '@ton/core';
-
-/*
-// @ts-ignore
-import parse from 'core-js-pure/actual/json/parse';
-// @ts-ignore
-import rawJSON from 'core-js-pure/actual/json/raw-json';
-// @ts-ignore
-import stringify from 'core-js-pure/actual/json/stringify';
-
-const JSONParse = (source: string) =>
-    parse(
-        source,
-        // @ts-ignore JSON bigint support from core-js
-        (_: any, value: any, context: any): any => {
-            if (typeof value === 'number') {
-                const string = context.source as string;
-                return Number.isSafeInteger(value)
-                    ? value
-                    : /[\.eE]/.test(string)
-                        ? value
-                        : BigInt(string);
-            }
-
-            return value;
-        }
-    );
-
-const JSONStringify = (value: any) =>
-    stringify(
-        value,
-        // @ts-ignore JSON bigint support from core-js
-        (_: any, value: any): any => {
-            if (typeof value === 'bigint') {
-                // @ts-ignore JSON rawJSON support from core-js
-                return rawJSON(value.toString());
-            }
-
-            return value;
-        }
-    );
-*/
-
-import JSONbig from 'json-bigint';
-
 const JSONParse = (source: string) => JSONbig.parse(source);
 const JSONStringify = (value: any) => JSONbig.stringify(value);
 
@@ -3368,14 +3371,33 @@ class HttpClient {
     public baseUrl: string = 'https://tonapi.io';
     private abortControllers = new Map<CancelToken, AbortController>();
     private providedFetch: typeof fetch | null = null;
-    private customFetch = (...fetchParams: Parameters<typeof fetch>) =>
-        this.providedFetch ? this.providedFetch(...fetchParams) : fetch(...fetchParams);
-
     private baseApiParams: RequestParams = {
         credentials: 'same-origin',
         headers: {},
         redirect: 'follow',
         referrerPolicy: 'no-referrer'
+    };
+    private contentFormatters: Record<ContentType, (input: any) => any> = {
+        [ContentType.Json]: (input: any) =>
+            input !== null && (typeof input === 'object' || typeof input === 'string')
+                ? JSONStringify(input)
+                : input,
+        [ContentType.Text]: (input: any) =>
+            input !== null && typeof input !== 'string' ? JSONStringify(input) : input,
+        [ContentType.FormData]: (input: any) =>
+            Object.keys(input || {}).reduce((formData, key) => {
+                const property = input[key];
+                formData.append(
+                    key,
+                    property instanceof Blob
+                        ? property
+                        : typeof property === 'object' && property !== null
+                            ? JSONStringify(property)
+                            : `${property}`
+                );
+                return formData;
+            }, new FormData()),
+        [ContentType.UrlEncoded]: (input: any) => this.toQueryString(input)
     };
 
     constructor(apiConfig: ApiConfig = {}) {
@@ -3383,11 +3405,11 @@ class HttpClient {
         const providedFetch = apiConfig.fetch ?? (tonapi && tonapi.fetch) ?? null;
 
         const baseApiParams = apiConfig.baseApiParams || {};
-        const { apiKey, ...apiConfigWithoutApiKey } = apiConfig;
+        const {apiKey, ...apiConfigWithoutApiKey} = apiConfig;
 
         const headers = {
             ...(baseApiParams.headers ?? {}),
-            ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+            ...(apiKey ? {Authorization: `Bearer ${apiKey}`} : {}),
             'x-tonapi-client': `tonapi-js@0.4.0`
         };
 
@@ -3402,6 +3424,81 @@ class HttpClient {
 
         Object.assign(this, preparedApiConfig);
     }
+
+    public abortRequest = (cancelToken: CancelToken) => {
+        const abortController = this.abortControllers.get(cancelToken);
+
+        if (abortController) {
+            abortController.abort();
+            this.abortControllers.delete(cancelToken);
+        }
+    };
+
+    public request = async <T = any, E = any>({
+                                                  body,
+                                                  secure,
+                                                  path,
+                                                  type,
+                                                  query,
+                                                  queryImplode,
+                                                  format,
+                                                  baseUrl,
+                                                  cancelToken,
+                                                  ...params
+                                              }: FullRequestParams): Promise<T> => {
+        const requestParams = this.mergeRequestParams(params);
+        const queryString = query && this.toQueryString(query, queryImplode);
+        const contentType = type ?? ContentType.Json;
+        const payloadFormatter = this.contentFormatters[contentType];
+        const responseFormat = format || requestParams.format;
+
+        return this.customFetch(
+            `${baseUrl || this.baseUrl || ''}${path}${queryString ? `?${queryString}` : ''}`,
+            {
+                ...requestParams,
+                headers: {
+                    ...(requestParams.headers || {}),
+                    ...(contentType && contentType !== ContentType.FormData
+                        ? {'Content-Type': contentType}
+                        : {})
+                },
+                signal:
+                    (cancelToken ? this.createAbortSignal(cancelToken) : requestParams.signal) ||
+                    null,
+                body: typeof body === 'undefined' || body === null ? null : payloadFormatter(body)
+            }
+        ).then(async response => {
+            const r = response as HttpResponse<T, E>;
+            r.data = null as unknown as T;
+            r.error = null as unknown as E;
+
+            const customResponseFormat = responseFormat === 'json' ? 'text' : responseFormat;
+
+            const result = !customResponseFormat
+                ? r
+                : await response[customResponseFormat!]()
+                    .then(data => {
+                        if (r.ok) {
+                            r.data = responseFormat === 'json' ? JSONParse(data as string) : data;
+                            return r;
+                        }
+                        r.error = data as E;
+
+                        return r;
+                    })
+                    .catch(e => {
+                        r.error = e;
+                        return r;
+                    });
+
+            if (cancelToken) {
+                this.abortControllers.delete(cancelToken);
+            }
+
+            if (!response.ok) throw result;
+            return result.data;
+        });
+    };
 
     protected encodeQueryParam(key: string, value: any) {
         const encodedKey = encodeURIComponent(key);
@@ -3444,29 +3541,6 @@ class HttpClient {
         return queryString ? `?${queryString}` : '';
     }
 
-    private contentFormatters: Record<ContentType, (input: any) => any> = {
-        [ContentType.Json]: (input: any) =>
-            input !== null && (typeof input === 'object' || typeof input === 'string')
-                ? JSONStringify(input)
-                : input,
-        [ContentType.Text]: (input: any) =>
-            input !== null && typeof input !== 'string' ? JSONStringify(input) : input,
-        [ContentType.FormData]: (input: any) =>
-            Object.keys(input || {}).reduce((formData, key) => {
-                const property = input[key];
-                formData.append(
-                    key,
-                    property instanceof Blob
-                        ? property
-                        : typeof property === 'object' && property !== null
-                            ? JSONStringify(property)
-                            : `${property}`
-                );
-                return formData;
-            }, new FormData()),
-        [ContentType.UrlEncoded]: (input: any) => this.toQueryString(input)
-    };
-
     protected mergeRequestParams(params1: RequestParams, params2?: RequestParams): RequestParams {
         return {
             ...this.baseApiParams,
@@ -3494,112 +3568,40 @@ class HttpClient {
         return abortController.signal;
     };
 
-    public abortRequest = (cancelToken: CancelToken) => {
-        const abortController = this.abortControllers.get(cancelToken);
-
-        if (abortController) {
-            abortController.abort();
-            this.abortControllers.delete(cancelToken);
-        }
-    };
-
-    public request = async <T = any, E = any>({
-                                                  body,
-                                                  secure,
-                                                  path,
-                                                  type,
-                                                  query,
-                                                  queryImplode,
-                                                  format,
-                                                  baseUrl,
-                                                  cancelToken,
-                                                  ...params
-                                              }: FullRequestParams): Promise<T> => {
-        const requestParams = this.mergeRequestParams(params);
-        const queryString = query && this.toQueryString(query, queryImplode);
-        const contentType = type ?? ContentType.Json;
-        const payloadFormatter = this.contentFormatters[contentType];
-        const responseFormat = format || requestParams.format;
-
-        return this.customFetch(
-            `${baseUrl || this.baseUrl || ''}${path}${queryString ? `?${queryString}` : ''}`,
-            {
-                ...requestParams,
-                headers: {
-                    ...(requestParams.headers || {}),
-                    ...(contentType && contentType !== ContentType.FormData
-                        ? { 'Content-Type': contentType }
-                        : {})
-                },
-                signal:
-                    (cancelToken ? this.createAbortSignal(cancelToken) : requestParams.signal) ||
-                    null,
-                body: typeof body === 'undefined' || body === null ? null : payloadFormatter(body)
-            }
-        ).then(async response => {
-            const r = response as HttpResponse<T, E>;
-            r.data = null as unknown as T;
-            r.error = null as unknown as E;
-
-            const customResponseFormat = responseFormat === 'json' ? 'text' : responseFormat;
-
-            const result = !customResponseFormat
-                ? r
-                : await response[customResponseFormat!]()
-                    .then(data => {
-                        if (r.ok) {
-                            r.data = responseFormat === 'json' ? JSONParse(data as string) : data;
-                            return r;
-                        }
-                        r.error = data as E;
-
-                        return r;
-                    })
-                    .catch(e => {
-                        r.error = e;
-                        return r;
-                    });
-
-            if (cancelToken) {
-                this.abortControllers.delete(cancelToken);
-            }
-
-            if (!response.ok) throw result;
-            return result.data;
-        });
-    };
+    private customFetch = (...fetchParams: Parameters<typeof fetch>) =>
+        this.providedFetch ? this.providedFetch(...fetchParams) : fetch(...fetchParams);
 }
 
 const components = {
     '#/components/schemas/Error': {
         type: 'object',
         required: ['error'],
-        properties: { error: { type: 'string' } }
+        properties: {error: {type: 'string'}}
     },
     '#/components/schemas/AccountAddress': {
         type: 'object',
         required: ['address', 'is_scam', 'is_wallet'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            name: { type: 'string' },
-            is_scam: { type: 'boolean' },
-            icon: { type: 'string' },
-            is_wallet: { type: 'boolean' }
+            address: {type: 'string', format: 'address'},
+            name: {type: 'string'},
+            is_scam: {type: 'boolean'},
+            icon: {type: 'string'},
+            is_wallet: {type: 'boolean'}
         }
     },
     '#/components/schemas/BlockCurrencyCollection': {
         type: 'object',
         required: ['grams', 'other'],
         properties: {
-            grams: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            grams: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
             other: {
                 type: 'array',
                 items: {
                     type: 'object',
                     required: ['id', 'value'],
                     properties: {
-                        id: { type: 'integer', format: 'int64' },
-                        value: { type: 'string', 'x-js-format': 'bigint' }
+                        id: {type: 'integer', format: 'int64'},
+                        value: {type: 'string', 'x-js-format': 'bigint'}
                     }
                 }
             }
@@ -3619,25 +3621,25 @@ const components = {
             'minted'
         ],
         properties: {
-            from_prev_blk: { $ref: '#/components/schemas/BlockCurrencyCollection' },
-            to_next_blk: { $ref: '#/components/schemas/BlockCurrencyCollection' },
-            imported: { $ref: '#/components/schemas/BlockCurrencyCollection' },
-            exported: { $ref: '#/components/schemas/BlockCurrencyCollection' },
-            fees_collected: { $ref: '#/components/schemas/BlockCurrencyCollection' },
-            burned: { $ref: '#/components/schemas/BlockCurrencyCollection' },
-            fees_imported: { $ref: '#/components/schemas/BlockCurrencyCollection' },
-            recovered: { $ref: '#/components/schemas/BlockCurrencyCollection' },
-            created: { $ref: '#/components/schemas/BlockCurrencyCollection' },
-            minted: { $ref: '#/components/schemas/BlockCurrencyCollection' }
+            from_prev_blk: {$ref: '#/components/schemas/BlockCurrencyCollection'},
+            to_next_blk: {$ref: '#/components/schemas/BlockCurrencyCollection'},
+            imported: {$ref: '#/components/schemas/BlockCurrencyCollection'},
+            exported: {$ref: '#/components/schemas/BlockCurrencyCollection'},
+            fees_collected: {$ref: '#/components/schemas/BlockCurrencyCollection'},
+            burned: {$ref: '#/components/schemas/BlockCurrencyCollection'},
+            fees_imported: {$ref: '#/components/schemas/BlockCurrencyCollection'},
+            recovered: {$ref: '#/components/schemas/BlockCurrencyCollection'},
+            created: {$ref: '#/components/schemas/BlockCurrencyCollection'},
+            minted: {$ref: '#/components/schemas/BlockCurrencyCollection'}
         }
     },
     '#/components/schemas/ServiceStatus': {
         type: 'object',
         required: ['indexing_latency', 'rest_online', 'last_known_masterchain_seqno'],
         properties: {
-            rest_online: { type: 'boolean', default: true },
-            indexing_latency: { type: 'integer' },
-            last_known_masterchain_seqno: { type: 'integer', format: 'int32' }
+            rest_online: {type: 'boolean', default: true},
+            indexing_latency: {type: 'integer'},
+            last_known_masterchain_seqno: {type: 'integer', format: 'int32'}
         }
     },
     '#/components/schemas/ReducedBlock': {
@@ -3652,14 +3654,14 @@ const components = {
             'parent'
         ],
         properties: {
-            workchain_id: { type: 'integer', format: 'int32' },
-            shard: { type: 'string' },
-            seqno: { type: 'integer', format: 'int32' },
-            master_ref: { type: 'string' },
-            tx_quantity: { type: 'integer' },
-            utime: { type: 'integer', format: 'int64' },
-            shards_blocks: { type: 'array', items: { type: 'string' } },
-            parent: { type: 'array', items: { type: 'string' } }
+            workchain_id: {type: 'integer', format: 'int32'},
+            shard: {type: 'string'},
+            seqno: {type: 'integer', format: 'int32'},
+            master_ref: {type: 'string'},
+            tx_quantity: {type: 'integer'},
+            utime: {type: 'integer', format: 'int64'},
+            shards_blocks: {type: 'array', items: {type: 'string'}},
+            parent: {type: 'array', items: {type: 'string'}}
         }
     },
     '#/components/schemas/BlockchainBlock': {
@@ -3694,50 +3696,50 @@ const components = {
             'tx_quantity'
         ],
         properties: {
-            tx_quantity: { type: 'integer' },
-            value_flow: { $ref: '#/components/schemas/BlockValueFlow' },
-            workchain_id: { type: 'integer', format: 'int32' },
-            shard: { type: 'string' },
-            seqno: { type: 'integer', format: 'int32' },
-            root_hash: { type: 'string' },
-            file_hash: { type: 'string' },
-            global_id: { type: 'integer', format: 'int32' },
-            version: { type: 'integer', format: 'int32' },
-            after_merge: { type: 'boolean' },
-            before_split: { type: 'boolean' },
-            after_split: { type: 'boolean' },
-            want_split: { type: 'boolean' },
-            want_merge: { type: 'boolean' },
-            key_block: { type: 'boolean' },
-            gen_utime: { type: 'integer', format: 'int64' },
-            start_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            end_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            vert_seqno: { type: 'integer', format: 'int32' },
-            gen_catchain_seqno: { type: 'integer', format: 'int32' },
-            min_ref_mc_seqno: { type: 'integer', format: 'int32' },
-            prev_key_block_seqno: { type: 'integer', format: 'int32' },
-            gen_software_version: { type: 'integer', format: 'int32' },
-            gen_software_capabilities: { type: 'integer', format: 'int64' },
-            master_ref: { type: 'string' },
-            prev_refs: { type: 'array', items: { type: 'string' } },
-            in_msg_descr_length: { type: 'integer', format: 'int64' },
-            out_msg_descr_length: { type: 'integer', format: 'int64' },
-            rand_seed: { type: 'string' },
-            created_by: { type: 'string' }
+            tx_quantity: {type: 'integer'},
+            value_flow: {$ref: '#/components/schemas/BlockValueFlow'},
+            workchain_id: {type: 'integer', format: 'int32'},
+            shard: {type: 'string'},
+            seqno: {type: 'integer', format: 'int32'},
+            root_hash: {type: 'string'},
+            file_hash: {type: 'string'},
+            global_id: {type: 'integer', format: 'int32'},
+            version: {type: 'integer', format: 'int32'},
+            after_merge: {type: 'boolean'},
+            before_split: {type: 'boolean'},
+            after_split: {type: 'boolean'},
+            want_split: {type: 'boolean'},
+            want_merge: {type: 'boolean'},
+            key_block: {type: 'boolean'},
+            gen_utime: {type: 'integer', format: 'int64'},
+            start_lt: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            end_lt: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            vert_seqno: {type: 'integer', format: 'int32'},
+            gen_catchain_seqno: {type: 'integer', format: 'int32'},
+            min_ref_mc_seqno: {type: 'integer', format: 'int32'},
+            prev_key_block_seqno: {type: 'integer', format: 'int32'},
+            gen_software_version: {type: 'integer', format: 'int32'},
+            gen_software_capabilities: {type: 'integer', format: 'int64'},
+            master_ref: {type: 'string'},
+            prev_refs: {type: 'array', items: {type: 'string'}},
+            in_msg_descr_length: {type: 'integer', format: 'int64'},
+            out_msg_descr_length: {type: 'integer', format: 'int64'},
+            rand_seed: {type: 'string'},
+            created_by: {type: 'string'}
         }
     },
     '#/components/schemas/BlockchainBlocks': {
         type: 'object',
         required: ['blocks'],
         properties: {
-            blocks: { type: 'array', items: { $ref: '#/components/schemas/BlockchainBlock' } }
+            blocks: {type: 'array', items: {$ref: '#/components/schemas/BlockchainBlock'}}
         }
     },
     '#/components/schemas/ReducedBlocks': {
         type: 'object',
         required: ['blocks'],
         properties: {
-            blocks: { type: 'array', items: { $ref: '#/components/schemas/ReducedBlock' } }
+            blocks: {type: 'array', items: {$ref: '#/components/schemas/ReducedBlock'}}
         }
     },
     '#/components/schemas/BlockchainBlockShards': {
@@ -3750,8 +3752,8 @@ const components = {
                     type: 'object',
                     required: ['last_known_block_id', 'last_known_block'],
                     properties: {
-                        last_known_block_id: { type: 'string' },
-                        last_known_block: { $ref: '#/components/schemas/BlockchainBlock' }
+                        last_known_block_id: {type: 'string'},
+                        last_known_block: {$ref: '#/components/schemas/BlockchainBlock'}
                     }
                 }
             }
@@ -3765,8 +3767,8 @@ const components = {
         type: 'object',
         required: ['boc', 'interfaces'],
         properties: {
-            boc: { type: 'string', format: 'cell' },
-            interfaces: { type: 'array', items: { type: 'string' } }
+            boc: {type: 'string', format: 'cell'},
+            interfaces: {type: 'array', items: {type: 'string'}}
         }
     },
     '#/components/schemas/Message': {
@@ -3785,24 +3787,24 @@ const components = {
             'hash'
         ],
         properties: {
-            msg_type: { type: 'string', enum: ['int_msg', 'ext_in_msg', 'ext_out_msg'] },
-            created_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            ihr_disabled: { type: 'boolean' },
-            bounce: { type: 'boolean' },
-            bounced: { type: 'boolean' },
-            value: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            value_extra: { type: 'array', items: { $ref: '#/components/schemas/ExtraCurrency' } },
-            fwd_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            ihr_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            destination: { $ref: '#/components/schemas/AccountAddress' },
-            source: { $ref: '#/components/schemas/AccountAddress' },
-            import_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            created_at: { type: 'integer', format: 'int64' },
-            op_code: { type: 'string', 'x-js-format': 'bigint' },
-            init: { $ref: '#/components/schemas/StateInit' },
-            hash: { type: 'string' },
-            raw_body: { type: 'string', format: 'cell' },
-            decoded_op_name: { type: 'string' },
+            msg_type: {type: 'string', enum: ['int_msg', 'ext_in_msg', 'ext_out_msg']},
+            created_lt: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            ihr_disabled: {type: 'boolean'},
+            bounce: {type: 'boolean'},
+            bounced: {type: 'boolean'},
+            value: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            value_extra: {type: 'array', items: {$ref: '#/components/schemas/ExtraCurrency'}},
+            fwd_fee: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            ihr_fee: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            destination: {$ref: '#/components/schemas/AccountAddress'},
+            source: {$ref: '#/components/schemas/AccountAddress'},
+            import_fee: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            created_at: {type: 'integer', format: 'int64'},
+            op_code: {type: 'string', 'x-js-format': 'bigint'},
+            init: {$ref: '#/components/schemas/StateInit'},
+            hash: {type: 'string'},
+            raw_body: {type: 'string', format: 'cell'},
+            decoded_op_name: {type: 'string'},
             decoded_body: {}
         }
     },
@@ -3834,31 +3836,31 @@ const components = {
         type: 'object',
         required: ['skipped'],
         properties: {
-            skipped: { type: 'boolean' },
-            skip_reason: { $ref: '#/components/schemas/ComputeSkipReason' },
-            success: { type: 'boolean' },
-            gas_fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            gas_used: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            vm_steps: { type: 'integer', format: 'int32' },
-            exit_code: { type: 'integer', format: 'int32' },
-            exit_code_description: { type: 'string' }
+            skipped: {type: 'boolean'},
+            skip_reason: {$ref: '#/components/schemas/ComputeSkipReason'},
+            success: {type: 'boolean'},
+            gas_fees: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            gas_used: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            vm_steps: {type: 'integer', format: 'int32'},
+            exit_code: {type: 'integer', format: 'int32'},
+            exit_code_description: {type: 'string'}
         }
     },
     '#/components/schemas/StoragePhase': {
         type: 'object',
         required: ['fees_collected', 'status_change'],
         properties: {
-            fees_collected: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            fees_due: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            status_change: { $ref: '#/components/schemas/AccStatusChange' }
+            fees_collected: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            fees_due: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            status_change: {$ref: '#/components/schemas/AccStatusChange'}
         }
     },
     '#/components/schemas/CreditPhase': {
         type: 'object',
         required: ['fees_collected', 'credit'],
         properties: {
-            fees_collected: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            credit: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+            fees_collected: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            credit: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'}
         }
     },
     '#/components/schemas/ActionPhase': {
@@ -3872,13 +3874,13 @@ const components = {
             'total_fees'
         ],
         properties: {
-            success: { type: 'boolean' },
-            result_code: { type: 'integer', format: 'int32' },
-            total_actions: { type: 'integer', format: 'int32' },
-            skipped_actions: { type: 'integer', format: 'int32' },
-            fwd_fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            total_fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            result_code_description: { type: 'string' }
+            success: {type: 'boolean'},
+            result_code: {type: 'integer', format: 'int32'},
+            total_actions: {type: 'integer', format: 'int32'},
+            skipped_actions: {type: 'integer', format: 'int32'},
+            fwd_fees: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            total_fees: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            result_code_description: {type: 'string'}
         }
     },
     '#/components/schemas/Transaction': {
@@ -3903,38 +3905,38 @@ const components = {
             'raw'
         ],
         properties: {
-            hash: { type: 'string' },
-            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            account: { $ref: '#/components/schemas/AccountAddress' },
-            success: { type: 'boolean' },
-            utime: { type: 'integer', format: 'int64' },
-            orig_status: { $ref: '#/components/schemas/AccountStatus' },
-            end_status: { $ref: '#/components/schemas/AccountStatus' },
-            total_fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            end_balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            transaction_type: { $ref: '#/components/schemas/TransactionType' },
-            state_update_old: { type: 'string' },
-            state_update_new: { type: 'string' },
-            in_msg: { $ref: '#/components/schemas/Message' },
-            out_msgs: { type: 'array', items: { $ref: '#/components/schemas/Message' } },
-            block: { type: 'string' },
-            prev_trans_hash: { type: 'string' },
-            prev_trans_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            compute_phase: { $ref: '#/components/schemas/ComputePhase' },
-            storage_phase: { $ref: '#/components/schemas/StoragePhase' },
-            credit_phase: { $ref: '#/components/schemas/CreditPhase' },
-            action_phase: { $ref: '#/components/schemas/ActionPhase' },
-            bounce_phase: { $ref: '#/components/schemas/BouncePhaseType' },
-            aborted: { type: 'boolean' },
-            destroyed: { type: 'boolean' },
-            raw: { type: 'string', format: 'cell' }
+            hash: {type: 'string'},
+            lt: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            account: {$ref: '#/components/schemas/AccountAddress'},
+            success: {type: 'boolean'},
+            utime: {type: 'integer', format: 'int64'},
+            orig_status: {$ref: '#/components/schemas/AccountStatus'},
+            end_status: {$ref: '#/components/schemas/AccountStatus'},
+            total_fees: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            end_balance: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            transaction_type: {$ref: '#/components/schemas/TransactionType'},
+            state_update_old: {type: 'string'},
+            state_update_new: {type: 'string'},
+            in_msg: {$ref: '#/components/schemas/Message'},
+            out_msgs: {type: 'array', items: {$ref: '#/components/schemas/Message'}},
+            block: {type: 'string'},
+            prev_trans_hash: {type: 'string'},
+            prev_trans_lt: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            compute_phase: {$ref: '#/components/schemas/ComputePhase'},
+            storage_phase: {$ref: '#/components/schemas/StoragePhase'},
+            credit_phase: {$ref: '#/components/schemas/CreditPhase'},
+            action_phase: {$ref: '#/components/schemas/ActionPhase'},
+            bounce_phase: {$ref: '#/components/schemas/BouncePhaseType'},
+            aborted: {type: 'boolean'},
+            destroyed: {type: 'boolean'},
+            raw: {type: 'string', format: 'cell'}
         }
     },
     '#/components/schemas/Transactions': {
         type: 'object',
         required: ['transactions'],
         properties: {
-            transactions: { type: 'array', items: { $ref: '#/components/schemas/Transaction' } }
+            transactions: {type: 'array', items: {$ref: '#/components/schemas/Transaction'}}
         }
     },
     '#/components/schemas/ConfigProposalSetup': {
@@ -3950,14 +3952,14 @@ const components = {
             'cell_price'
         ],
         properties: {
-            min_tot_rounds: { type: 'integer' },
-            max_tot_rounds: { type: 'integer' },
-            min_wins: { type: 'integer' },
-            max_losses: { type: 'integer' },
-            min_store_sec: { type: 'integer', format: 'int64' },
-            max_store_sec: { type: 'integer', format: 'int64' },
-            bit_price: { type: 'integer', format: 'int64' },
-            cell_price: { type: 'integer', format: 'int64' }
+            min_tot_rounds: {type: 'integer'},
+            max_tot_rounds: {type: 'integer'},
+            min_wins: {type: 'integer'},
+            max_losses: {type: 'integer'},
+            min_store_sec: {type: 'integer', format: 'int64'},
+            max_store_sec: {type: 'integer', format: 'int64'},
+            bit_price: {type: 'integer', format: 'int64'},
+            cell_price: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/GasLimitPrices': {
@@ -3971,33 +3973,33 @@ const components = {
             'delete_due_limit'
         ],
         properties: {
-            special_gas_limit: { type: 'integer', format: 'int64' },
-            flat_gas_limit: { type: 'integer', format: 'int64' },
-            flat_gas_price: { type: 'integer', format: 'int64' },
-            gas_price: { type: 'integer', format: 'int64' },
-            gas_limit: { type: 'integer', format: 'int64' },
-            gas_credit: { type: 'integer', format: 'int64' },
-            block_gas_limit: { type: 'integer', format: 'int64' },
-            freeze_due_limit: { type: 'integer', format: 'int64' },
-            delete_due_limit: { type: 'integer', format: 'int64' }
+            special_gas_limit: {type: 'integer', format: 'int64'},
+            flat_gas_limit: {type: 'integer', format: 'int64'},
+            flat_gas_price: {type: 'integer', format: 'int64'},
+            gas_price: {type: 'integer', format: 'int64'},
+            gas_limit: {type: 'integer', format: 'int64'},
+            gas_credit: {type: 'integer', format: 'int64'},
+            block_gas_limit: {type: 'integer', format: 'int64'},
+            freeze_due_limit: {type: 'integer', format: 'int64'},
+            delete_due_limit: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/BlockParamLimits': {
         type: 'object',
         required: ['underload', 'soft_limit', 'hard_limit'],
         properties: {
-            underload: { type: 'integer', format: 'int64' },
-            soft_limit: { type: 'integer', format: 'int64' },
-            hard_limit: { type: 'integer', format: 'int64' }
+            underload: {type: 'integer', format: 'int64'},
+            soft_limit: {type: 'integer', format: 'int64'},
+            hard_limit: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/BlockLimits': {
         type: 'object',
         required: ['bytes', 'gas', 'lt_delta'],
         properties: {
-            bytes: { $ref: '#/components/schemas/BlockParamLimits' },
-            gas: { $ref: '#/components/schemas/BlockParamLimits' },
-            lt_delta: { $ref: '#/components/schemas/BlockParamLimits' }
+            bytes: {$ref: '#/components/schemas/BlockParamLimits'},
+            gas: {$ref: '#/components/schemas/BlockParamLimits'},
+            lt_delta: {$ref: '#/components/schemas/BlockParamLimits'}
         }
     },
     '#/components/schemas/MsgForwardPrices': {
@@ -4011,12 +4013,12 @@ const components = {
             'next_frac'
         ],
         properties: {
-            lump_price: { type: 'integer', format: 'int64' },
-            bit_price: { type: 'integer', format: 'int64' },
-            cell_price: { type: 'integer', format: 'int64' },
-            ihr_price_factor: { type: 'integer', format: 'int64' },
-            first_frac: { type: 'integer', format: 'int64' },
-            next_frac: { type: 'integer', format: 'int64' }
+            lump_price: {type: 'integer', format: 'int64'},
+            bit_price: {type: 'integer', format: 'int64'},
+            cell_price: {type: 'integer', format: 'int64'},
+            ihr_price_factor: {type: 'integer', format: 'int64'},
+            first_frac: {type: 'integer', format: 'int64'},
+            next_frac: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/WorkchainDescr': {
@@ -4036,18 +4038,18 @@ const components = {
             'version'
         ],
         properties: {
-            workchain: { type: 'integer', format: 'int' },
-            enabled_since: { type: 'integer', format: 'int64' },
-            actual_min_split: { type: 'integer', format: 'int' },
-            min_split: { type: 'integer', format: 'int' },
-            max_split: { type: 'integer', format: 'int' },
-            basic: { type: 'integer' },
-            active: { type: 'boolean' },
-            accept_msgs: { type: 'boolean' },
-            flags: { type: 'integer', format: 'int' },
-            zerostate_root_hash: { type: 'string' },
-            zerostate_file_hash: { type: 'string' },
-            version: { type: 'integer', format: 'int64' }
+            workchain: {type: 'integer', format: 'int'},
+            enabled_since: {type: 'integer', format: 'int64'},
+            actual_min_split: {type: 'integer', format: 'int'},
+            min_split: {type: 'integer', format: 'int'},
+            max_split: {type: 'integer', format: 'int'},
+            basic: {type: 'integer'},
+            active: {type: 'boolean'},
+            accept_msgs: {type: 'boolean'},
+            flags: {type: 'integer', format: 'int'},
+            zerostate_root_hash: {type: 'string'},
+            zerostate_file_hash: {type: 'string'},
+            version: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/MisbehaviourPunishmentConfig': {
@@ -4066,17 +4068,17 @@ const components = {
             'medium_proportional_mult'
         ],
         properties: {
-            default_flat_fine: { type: 'integer', format: 'int64' },
-            default_proportional_fine: { type: 'integer', format: 'int64' },
-            severity_flat_mult: { type: 'integer' },
-            severity_proportional_mult: { type: 'integer' },
-            unpunishable_interval: { type: 'integer' },
-            long_interval: { type: 'integer' },
-            long_flat_mult: { type: 'integer' },
-            long_proportional_mult: { type: 'integer' },
-            medium_interval: { type: 'integer' },
-            medium_flat_mult: { type: 'integer' },
-            medium_proportional_mult: { type: 'integer' }
+            default_flat_fine: {type: 'integer', format: 'int64'},
+            default_proportional_fine: {type: 'integer', format: 'int64'},
+            severity_flat_mult: {type: 'integer'},
+            severity_proportional_mult: {type: 'integer'},
+            unpunishable_interval: {type: 'integer'},
+            long_interval: {type: 'integer'},
+            long_flat_mult: {type: 'integer'},
+            long_proportional_mult: {type: 'integer'},
+            medium_interval: {type: 'integer'},
+            medium_flat_mult: {type: 'integer'},
+            medium_proportional_mult: {type: 'integer'}
         }
     },
     '#/components/schemas/SizeLimitsConfig': {
@@ -4090,34 +4092,34 @@ const components = {
             'max_ext_msg_depth'
         ],
         properties: {
-            max_msg_bits: { type: 'integer', format: 'int64' },
-            max_msg_cells: { type: 'integer', format: 'int64' },
-            max_library_cells: { type: 'integer', format: 'int64' },
-            max_vm_data_depth: { type: 'integer', format: 'int' },
-            max_ext_msg_size: { type: 'integer', format: 'int64' },
-            max_ext_msg_depth: { type: 'integer', format: 'int' },
-            max_acc_state_cells: { type: 'integer', format: 'int64' },
-            max_acc_state_bits: { type: 'integer', format: 'int64' }
+            max_msg_bits: {type: 'integer', format: 'int64'},
+            max_msg_cells: {type: 'integer', format: 'int64'},
+            max_library_cells: {type: 'integer', format: 'int64'},
+            max_vm_data_depth: {type: 'integer', format: 'int'},
+            max_ext_msg_size: {type: 'integer', format: 'int64'},
+            max_ext_msg_depth: {type: 'integer', format: 'int'},
+            max_acc_state_cells: {type: 'integer', format: 'int64'},
+            max_acc_state_bits: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/ValidatorsSet': {
         type: 'object',
         required: ['utime_since', 'utime_until', 'total', 'main', 'list'],
         properties: {
-            utime_since: { type: 'integer' },
-            utime_until: { type: 'integer' },
-            total: { type: 'integer' },
-            main: { type: 'integer' },
-            total_weight: { type: 'string', 'x-js-format': 'bigint' },
+            utime_since: {type: 'integer'},
+            utime_until: {type: 'integer'},
+            total: {type: 'integer'},
+            main: {type: 'integer'},
+            total_weight: {type: 'string', 'x-js-format': 'bigint'},
             list: {
                 type: 'array',
                 items: {
                     type: 'object',
                     required: ['public_key', 'weight'],
                     properties: {
-                        public_key: { type: 'string' },
-                        weight: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-                        adnl_addr: { type: 'string' }
+                        public_key: {type: 'string'},
+                        weight: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+                        adnl_addr: {type: 'string'}
                     }
                 }
             }
@@ -4127,18 +4129,18 @@ const components = {
         type: 'object',
         required: ['address', 'secp_pubkey'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            secp_pubkey: { type: 'string' }
+            address: {type: 'string', format: 'address'},
+            secp_pubkey: {type: 'string'}
         }
     },
     '#/components/schemas/OracleBridgeParams': {
         type: 'object',
         required: ['bridge_addr', 'oracle_multisig_address', 'external_chain_address', 'oracles'],
         properties: {
-            bridge_addr: { type: 'string', format: 'address' },
-            oracle_multisig_address: { type: 'string', format: 'address' },
-            external_chain_address: { type: 'string' },
-            oracles: { type: 'array', items: { $ref: '#/components/schemas/Oracle' } }
+            bridge_addr: {type: 'string', format: 'address'},
+            oracle_multisig_address: {type: 'string', format: 'address'},
+            external_chain_address: {type: 'string'},
+            oracles: {type: 'array', items: {$ref: '#/components/schemas/Oracle'}}
         }
     },
     '#/components/schemas/JettonBridgePrices': {
@@ -4152,81 +4154,81 @@ const components = {
             'discover_gas_consumption'
         ],
         properties: {
-            bridge_burn_fee: { type: 'integer', format: 'int64' },
-            bridge_mint_fee: { type: 'integer', format: 'int64' },
-            wallet_min_tons_for_storage: { type: 'integer', format: 'int64' },
-            wallet_gas_consumption: { type: 'integer', format: 'int64' },
-            minter_min_tons_for_storage: { type: 'integer', format: 'int64' },
-            discover_gas_consumption: { type: 'integer', format: 'int64' }
+            bridge_burn_fee: {type: 'integer', format: 'int64'},
+            bridge_mint_fee: {type: 'integer', format: 'int64'},
+            wallet_min_tons_for_storage: {type: 'integer', format: 'int64'},
+            wallet_gas_consumption: {type: 'integer', format: 'int64'},
+            minter_min_tons_for_storage: {type: 'integer', format: 'int64'},
+            discover_gas_consumption: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/JettonBridgeParams': {
         type: 'object',
         required: ['bridge_address', 'oracles_address', 'state_flags', 'oracles'],
         properties: {
-            bridge_address: { type: 'string', format: 'address' },
-            oracles_address: { type: 'string', format: 'address' },
-            state_flags: { type: 'integer' },
-            burn_bridge_fee: { type: 'integer', format: 'int64' },
-            oracles: { type: 'array', items: { $ref: '#/components/schemas/Oracle' } },
-            external_chain_address: { type: 'string' },
-            prices: { $ref: '#/components/schemas/JettonBridgePrices' }
+            bridge_address: {type: 'string', format: 'address'},
+            oracles_address: {type: 'string', format: 'address'},
+            state_flags: {type: 'integer'},
+            burn_bridge_fee: {type: 'integer', format: 'int64'},
+            oracles: {type: 'array', items: {$ref: '#/components/schemas/Oracle'}},
+            external_chain_address: {type: 'string'},
+            prices: {$ref: '#/components/schemas/JettonBridgePrices'}
         }
     },
     '#/components/schemas/Validator': {
         type: 'object',
         required: ['address', 'adnl_address', 'stake', 'max_factor'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            adnl_address: { type: 'string' },
-            stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            max_factor: { type: 'integer', format: 'int64' }
+            address: {type: 'string', format: 'address'},
+            adnl_address: {type: 'string'},
+            stake: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            max_factor: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/Validators': {
         type: 'object',
         required: ['validators', 'elect_at', 'elect_close', 'min_stake', 'total_stake'],
         properties: {
-            elect_at: { type: 'integer', format: 'int64' },
-            elect_close: { type: 'integer', format: 'int64' },
-            min_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            total_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            validators: { type: 'array', items: { $ref: '#/components/schemas/Validator' } }
+            elect_at: {type: 'integer', format: 'int64'},
+            elect_close: {type: 'integer', format: 'int64'},
+            min_stake: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            total_stake: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            validators: {type: 'array', items: {$ref: '#/components/schemas/Validator'}}
         }
     },
     '#/components/schemas/AccountStorageInfo': {
         type: 'object',
         required: ['used_cells', 'used_bits', 'used_public_cells', 'last_paid', 'due_payment'],
         properties: {
-            used_cells: { type: 'integer', format: 'int64' },
-            used_bits: { type: 'integer', format: 'int64' },
-            used_public_cells: { type: 'integer', format: 'int64' },
-            last_paid: { type: 'integer', format: 'int64' },
-            due_payment: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+            used_cells: {type: 'integer', format: 'int64'},
+            used_bits: {type: 'integer', format: 'int64'},
+            used_public_cells: {type: 'integer', format: 'int64'},
+            last_paid: {type: 'integer', format: 'int64'},
+            due_payment: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'}
         }
     },
     '#/components/schemas/BlockchainRawAccount': {
         type: 'object',
         required: ['address', 'balance', 'status', 'last_transaction_lt', 'storage'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            extra_balance: { type: 'object', additionalProperties: { type: 'string' } },
-            code: { type: 'string', format: 'cell' },
-            data: { type: 'string', format: 'cell' },
-            last_transaction_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            last_transaction_hash: { type: 'string' },
-            frozen_hash: { type: 'string' },
-            status: { $ref: '#/components/schemas/AccountStatus' },
-            storage: { $ref: '#/components/schemas/AccountStorageInfo' },
+            address: {type: 'string', format: 'address'},
+            balance: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            extra_balance: {type: 'object', additionalProperties: {type: 'string'}},
+            code: {type: 'string', format: 'cell'},
+            data: {type: 'string', format: 'cell'},
+            last_transaction_lt: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            last_transaction_hash: {type: 'string'},
+            frozen_hash: {type: 'string'},
+            status: {$ref: '#/components/schemas/AccountStatus'},
+            storage: {$ref: '#/components/schemas/AccountStorageInfo'},
             libraries: {
                 type: 'array',
                 items: {
                     type: 'object',
                     required: ['public', 'root'],
                     properties: {
-                        public: { type: 'boolean' },
-                        root: { type: 'string', format: 'cell' }
+                        public: {type: 'boolean'},
+                        root: {type: 'string', format: 'cell'}
                     }
                 }
             }
@@ -4236,38 +4238,38 @@ const components = {
         type: 'object',
         required: ['address', 'balance', 'status', 'last_activity', 'get_methods', 'is_wallet'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            extra_balance: { type: 'array', items: { $ref: '#/components/schemas/ExtraCurrency' } },
-            currencies_balance: { type: 'object', additionalProperties: true },
-            last_activity: { type: 'integer', format: 'int64' },
-            status: { $ref: '#/components/schemas/AccountStatus' },
-            interfaces: { type: 'array', items: { type: 'string' } },
-            name: { type: 'string' },
-            is_scam: { type: 'boolean' },
-            icon: { type: 'string' },
-            memo_required: { type: 'boolean' },
-            get_methods: { type: 'array', items: { type: 'string' } },
-            is_suspended: { type: 'boolean' },
-            is_wallet: { type: 'boolean' }
+            address: {type: 'string', format: 'address'},
+            balance: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            extra_balance: {type: 'array', items: {$ref: '#/components/schemas/ExtraCurrency'}},
+            currencies_balance: {type: 'object', additionalProperties: true},
+            last_activity: {type: 'integer', format: 'int64'},
+            status: {$ref: '#/components/schemas/AccountStatus'},
+            interfaces: {type: 'array', items: {type: 'string'}},
+            name: {type: 'string'},
+            is_scam: {type: 'boolean'},
+            icon: {type: 'string'},
+            memo_required: {type: 'boolean'},
+            get_methods: {type: 'array', items: {type: 'string'}},
+            is_suspended: {type: 'boolean'},
+            is_wallet: {type: 'boolean'}
         }
     },
     '#/components/schemas/Accounts': {
         type: 'object',
         required: ['accounts'],
-        properties: { accounts: { type: 'array', items: { $ref: '#/components/schemas/Account' } } }
+        properties: {accounts: {type: 'array', items: {$ref: '#/components/schemas/Account'}}}
     },
     '#/components/schemas/GaslessConfig': {
         type: 'object',
         required: ['gas_jettons', 'relay_address'],
         properties: {
-            relay_address: { type: 'string', format: 'address' },
+            relay_address: {type: 'string', format: 'address'},
             gas_jettons: {
                 type: 'array',
                 items: {
                     type: 'object',
                     required: ['master_id'],
-                    properties: { master_id: { type: 'string', format: 'address' } }
+                    properties: {master_id: {type: 'string', format: 'address'}}
                 }
             }
         }
@@ -4276,30 +4278,30 @@ const components = {
         type: 'object',
         required: ['address', 'amount'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            amount: { type: 'string' },
-            payload: { type: 'string', format: 'cell' },
-            stateInit: { type: 'string', format: 'cell' }
+            address: {type: 'string', format: 'address'},
+            amount: {type: 'string'},
+            payload: {type: 'string', format: 'cell'},
+            stateInit: {type: 'string', format: 'cell'}
         }
     },
     '#/components/schemas/SignRawParams': {
         type: 'object',
         required: ['messages', 'relay_address', 'commission', 'from', 'valid_until'],
         properties: {
-            relay_address: { type: 'string', format: 'address' },
-            commission: { type: 'string', 'x-js-format': 'bigint' },
-            from: { type: 'string', format: 'address' },
-            valid_until: { type: 'integer', format: 'int64' },
-            messages: { type: 'array', items: { $ref: '#/components/schemas/SignRawMessage' } }
+            relay_address: {type: 'string', format: 'address'},
+            commission: {type: 'string', 'x-js-format': 'bigint'},
+            from: {type: 'string', format: 'address'},
+            valid_until: {type: 'integer', format: 'int64'},
+            messages: {type: 'array', items: {$ref: '#/components/schemas/SignRawMessage'}}
         }
     },
     '#/components/schemas/MethodExecutionResult': {
         type: 'object',
         required: ['success', 'exit_code', 'stack'],
         properties: {
-            success: { type: 'boolean' },
-            exit_code: { type: 'integer' },
-            stack: { type: 'array', items: { $ref: '#/components/schemas/TvmStackRecord' } },
+            success: {type: 'boolean'},
+            exit_code: {type: 'integer'},
+            stack: {type: 'array', items: {$ref: '#/components/schemas/TvmStackRecord'}},
             decoded: {}
         }
     },
@@ -4308,42 +4310,42 @@ const components = {
         format: 'tuple-item',
         required: ['type'],
         properties: {
-            type: { type: 'string', enum: ['cell', 'num', 'nan', 'null', 'tuple'] },
-            cell: { type: 'string', format: 'cell' },
-            slice: { type: 'string', format: 'cell' },
-            num: { type: 'string' },
-            tuple: { type: 'array', items: { $ref: '#/components/schemas/TvmStackRecord' } }
+            type: {type: 'string', enum: ['cell', 'num', 'nan', 'null', 'tuple']},
+            cell: {type: 'string', format: 'cell'},
+            slice: {type: 'string', format: 'cell'},
+            num: {type: 'string'},
+            tuple: {type: 'array', items: {$ref: '#/components/schemas/TvmStackRecord'}}
         }
     },
     '#/components/schemas/RawBlockchainConfig': {
         type: 'object',
         required: ['config'],
-        properties: { config: { type: 'object', additionalProperties: true } }
+        properties: {config: {type: 'object', additionalProperties: true}}
     },
     '#/components/schemas/BlockchainConfig': {
         type: 'object',
         required: ['raw', '0', '1', '2', '4', '44'],
         properties: {
-            '0': { type: 'string', format: 'address' },
-            '1': { type: 'string', format: 'address' },
-            '2': { type: 'string', format: 'address' },
-            '3': { type: 'string', format: 'address' },
-            '4': { type: 'string', format: 'address' },
+            '0': {type: 'string', format: 'address'},
+            '1': {type: 'string', format: 'address'},
+            '2': {type: 'string', format: 'address'},
+            '3': {type: 'string', format: 'address'},
+            '4': {type: 'string', format: 'address'},
             '5': {
                 type: 'object',
                 required: ['fee_burn_nom', 'fee_burn_denom'],
                 properties: {
-                    blackhole_addr: { type: 'string', format: 'address' },
-                    fee_burn_nom: { type: 'integer', format: 'int64' },
-                    fee_burn_denom: { type: 'integer', format: 'int64' }
+                    blackhole_addr: {type: 'string', format: 'address'},
+                    fee_burn_nom: {type: 'integer', format: 'int64'},
+                    fee_burn_denom: {type: 'integer', format: 'int64'}
                 }
             },
             '6': {
                 type: 'object',
                 required: ['mint_new_price', 'mint_add_price'],
                 properties: {
-                    mint_new_price: { type: 'integer', format: 'int64' },
-                    mint_add_price: { type: 'integer', format: 'int64' }
+                    mint_new_price: {type: 'integer', format: 'int64'},
+                    mint_add_price: {type: 'integer', format: 'int64'}
                 }
             },
             '7': {
@@ -4356,8 +4358,8 @@ const components = {
                             type: 'object',
                             required: ['currency_id', 'amount'],
                             properties: {
-                                currency_id: { type: 'integer', format: 'int64' },
-                                amount: { type: 'string' }
+                                currency_id: {type: 'integer', format: 'int64'},
+                                amount: {type: 'string'}
                             }
                         }
                     }
@@ -4367,30 +4369,30 @@ const components = {
                 type: 'object',
                 required: ['version', 'capabilities'],
                 properties: {
-                    version: { type: 'integer', format: 'int64' },
-                    capabilities: { type: 'integer', format: 'int64' }
+                    version: {type: 'integer', format: 'int64'},
+                    capabilities: {type: 'integer', format: 'int64'}
                 }
             },
             '9': {
                 type: 'object',
                 required: ['mandatory_params'],
                 properties: {
-                    mandatory_params: { type: 'array', items: { type: 'integer', format: 'int32' } }
+                    mandatory_params: {type: 'array', items: {type: 'integer', format: 'int32'}}
                 }
             },
             '10': {
                 type: 'object',
                 required: ['critical_params'],
                 properties: {
-                    critical_params: { type: 'array', items: { type: 'integer', format: 'int32' } }
+                    critical_params: {type: 'array', items: {type: 'integer', format: 'int32'}}
                 }
             },
             '11': {
                 type: 'object',
                 required: ['normal_params', 'critical_params'],
                 properties: {
-                    normal_params: { $ref: '#/components/schemas/ConfigProposalSetup' },
-                    critical_params: { $ref: '#/components/schemas/ConfigProposalSetup' }
+                    normal_params: {$ref: '#/components/schemas/ConfigProposalSetup'},
+                    critical_params: {$ref: '#/components/schemas/ConfigProposalSetup'}
                 }
             },
             '12': {
@@ -4399,7 +4401,7 @@ const components = {
                 properties: {
                     workchains: {
                         type: 'array',
-                        items: { $ref: '#/components/schemas/WorkchainDescr' }
+                        items: {$ref: '#/components/schemas/WorkchainDescr'}
                     }
                 }
             },
@@ -4407,17 +4409,17 @@ const components = {
                 type: 'object',
                 required: ['deposit', 'bit_price', 'cell_price'],
                 properties: {
-                    deposit: { type: 'integer', format: 'int64' },
-                    bit_price: { type: 'integer', format: 'int64' },
-                    cell_price: { type: 'integer', format: 'int64' }
+                    deposit: {type: 'integer', format: 'int64'},
+                    bit_price: {type: 'integer', format: 'int64'},
+                    cell_price: {type: 'integer', format: 'int64'}
                 }
             },
             '14': {
                 type: 'object',
                 required: ['masterchain_block_fee', 'basechain_block_fee'],
                 properties: {
-                    masterchain_block_fee: { type: 'integer', format: 'int64' },
-                    basechain_block_fee: { type: 'integer', format: 'int64' }
+                    masterchain_block_fee: {type: 'integer', format: 'int64'},
+                    basechain_block_fee: {type: 'integer', format: 'int64'}
                 }
             },
             '15': {
@@ -4429,29 +4431,29 @@ const components = {
                     'stake_held_for'
                 ],
                 properties: {
-                    validators_elected_for: { type: 'integer', format: 'int64' },
-                    elections_start_before: { type: 'integer', format: 'int64' },
-                    elections_end_before: { type: 'integer', format: 'int64' },
-                    stake_held_for: { type: 'integer', format: 'int64' }
+                    validators_elected_for: {type: 'integer', format: 'int64'},
+                    elections_start_before: {type: 'integer', format: 'int64'},
+                    elections_end_before: {type: 'integer', format: 'int64'},
+                    stake_held_for: {type: 'integer', format: 'int64'}
                 }
             },
             '16': {
                 type: 'object',
                 required: ['max_validators', 'max_main_validators', 'min_validators'],
                 properties: {
-                    max_validators: { type: 'integer' },
-                    max_main_validators: { type: 'integer' },
-                    min_validators: { type: 'integer' }
+                    max_validators: {type: 'integer'},
+                    max_main_validators: {type: 'integer'},
+                    min_validators: {type: 'integer'}
                 }
             },
             '17': {
                 type: 'object',
                 required: ['min_stake', 'max_stake', 'min_total_stake', 'max_stake_factor'],
                 properties: {
-                    min_stake: { type: 'string' },
-                    max_stake: { type: 'string' },
-                    min_total_stake: { type: 'string' },
-                    max_stake_factor: { type: 'integer', format: 'int64' }
+                    min_stake: {type: 'string'},
+                    max_stake: {type: 'string'},
+                    min_total_stake: {type: 'string'},
+                    max_stake_factor: {type: 'integer', format: 'int64'}
                 }
             },
             '18': {
@@ -4470,11 +4472,11 @@ const components = {
                                 'mc_cell_price_ps'
                             ],
                             properties: {
-                                utime_since: { type: 'integer', format: 'int64' },
-                                bit_price_ps: { type: 'integer', format: 'int64' },
-                                cell_price_ps: { type: 'integer', format: 'int64' },
-                                mc_bit_price_ps: { type: 'integer', format: 'int64' },
-                                mc_cell_price_ps: { type: 'integer', format: 'int64' }
+                                utime_since: {type: 'integer', format: 'int64'},
+                                bit_price_ps: {type: 'integer', format: 'int64'},
+                                cell_price_ps: {type: 'integer', format: 'int64'},
+                                mc_bit_price_ps: {type: 'integer', format: 'int64'},
+                                mc_cell_price_ps: {type: 'integer', format: 'int64'}
                             }
                         }
                     }
@@ -4483,35 +4485,35 @@ const components = {
             '20': {
                 type: 'object',
                 required: ['gas_limits_prices'],
-                properties: { gas_limits_prices: { $ref: '#/components/schemas/GasLimitPrices' } }
+                properties: {gas_limits_prices: {$ref: '#/components/schemas/GasLimitPrices'}}
             },
             '21': {
                 type: 'object',
                 required: ['gas_limits_prices'],
-                properties: { gas_limits_prices: { $ref: '#/components/schemas/GasLimitPrices' } }
+                properties: {gas_limits_prices: {$ref: '#/components/schemas/GasLimitPrices'}}
             },
             '22': {
                 type: 'object',
                 required: ['block_limits'],
-                properties: { block_limits: { $ref: '#/components/schemas/BlockLimits' } }
+                properties: {block_limits: {$ref: '#/components/schemas/BlockLimits'}}
             },
             '23': {
                 type: 'object',
                 required: ['block_limits'],
-                properties: { block_limits: { $ref: '#/components/schemas/BlockLimits' } }
+                properties: {block_limits: {$ref: '#/components/schemas/BlockLimits'}}
             },
             '24': {
                 type: 'object',
                 required: ['msg_forward_prices'],
                 properties: {
-                    msg_forward_prices: { $ref: '#/components/schemas/MsgForwardPrices' }
+                    msg_forward_prices: {$ref: '#/components/schemas/MsgForwardPrices'}
                 }
             },
             '25': {
                 type: 'object',
                 required: ['msg_forward_prices'],
                 properties: {
-                    msg_forward_prices: { $ref: '#/components/schemas/MsgForwardPrices' }
+                    msg_forward_prices: {$ref: '#/components/schemas/MsgForwardPrices'}
                 }
             },
             '28': {
@@ -4523,12 +4525,12 @@ const components = {
                     'shard_validators_num'
                 ],
                 properties: {
-                    mc_catchain_lifetime: { type: 'integer', format: 'int64' },
-                    shard_catchain_lifetime: { type: 'integer', format: 'int64' },
-                    shard_validators_lifetime: { type: 'integer', format: 'int64' },
-                    shard_validators_num: { type: 'integer', format: 'int64' },
-                    flags: { type: 'integer', format: 'int' },
-                    shuffle_mc_validators: { type: 'boolean' }
+                    mc_catchain_lifetime: {type: 'integer', format: 'int64'},
+                    shard_catchain_lifetime: {type: 'integer', format: 'int64'},
+                    shard_validators_lifetime: {type: 'integer', format: 'int64'},
+                    shard_validators_num: {type: 'integer', format: 'int64'},
+                    flags: {type: 'integer', format: 'int'},
+                    shuffle_mc_validators: {type: 'boolean'}
                 }
             },
             '29': {
@@ -4544,18 +4546,18 @@ const components = {
                     'max_collated_bytes'
                 ],
                 properties: {
-                    flags: { type: 'integer', format: 'int' },
-                    new_catchain_ids: { type: 'boolean' },
-                    round_candidates: { type: 'integer', format: 'int64' },
-                    next_candidate_delay_ms: { type: 'integer', format: 'int64' },
-                    consensus_timeout_ms: { type: 'integer', format: 'int64' },
-                    fast_attempts: { type: 'integer', format: 'int64' },
-                    attempt_duration: { type: 'integer', format: 'int64' },
-                    catchain_max_deps: { type: 'integer', format: 'int64' },
-                    max_block_bytes: { type: 'integer', format: 'int64' },
-                    max_collated_bytes: { type: 'integer', format: 'int64' },
-                    proto_version: { type: 'integer', format: 'int64' },
-                    catchain_max_blocks_coeff: { type: 'integer', format: 'int64' }
+                    flags: {type: 'integer', format: 'int'},
+                    new_catchain_ids: {type: 'boolean'},
+                    round_candidates: {type: 'integer', format: 'int64'},
+                    next_candidate_delay_ms: {type: 'integer', format: 'int64'},
+                    consensus_timeout_ms: {type: 'integer', format: 'int64'},
+                    fast_attempts: {type: 'integer', format: 'int64'},
+                    attempt_duration: {type: 'integer', format: 'int64'},
+                    catchain_max_deps: {type: 'integer', format: 'int64'},
+                    max_block_bytes: {type: 'integer', format: 'int64'},
+                    max_collated_bytes: {type: 'integer', format: 'int64'},
+                    proto_version: {type: 'integer', format: 'int64'},
+                    catchain_max_blocks_coeff: {type: 'integer', format: 'int64'}
                 }
             },
             '31': {
@@ -4564,16 +4566,16 @@ const components = {
                 properties: {
                     fundamental_smc_addr: {
                         type: 'array',
-                        items: { type: 'string', format: 'address' }
+                        items: {type: 'string', format: 'address'}
                     }
                 }
             },
-            '32': { $ref: '#/components/schemas/ValidatorsSet' },
-            '33': { $ref: '#/components/schemas/ValidatorsSet' },
-            '34': { $ref: '#/components/schemas/ValidatorsSet' },
-            '35': { $ref: '#/components/schemas/ValidatorsSet' },
-            '36': { $ref: '#/components/schemas/ValidatorsSet' },
-            '37': { $ref: '#/components/schemas/ValidatorsSet' },
+            '32': {$ref: '#/components/schemas/ValidatorsSet'},
+            '33': {$ref: '#/components/schemas/ValidatorsSet'},
+            '34': {$ref: '#/components/schemas/ValidatorsSet'},
+            '35': {$ref: '#/components/schemas/ValidatorsSet'},
+            '36': {$ref: '#/components/schemas/ValidatorsSet'},
+            '37': {$ref: '#/components/schemas/ValidatorsSet'},
             '40': {
                 type: 'object',
                 required: ['misbehaviour_punishment_config'],
@@ -4587,15 +4589,15 @@ const components = {
                 type: 'object',
                 required: ['size_limits_config'],
                 properties: {
-                    size_limits_config: { $ref: '#/components/schemas/SizeLimitsConfig' }
+                    size_limits_config: {$ref: '#/components/schemas/SizeLimitsConfig'}
                 }
             },
             '44': {
                 type: 'object',
                 required: ['accounts', 'suspended_until'],
                 properties: {
-                    accounts: { type: 'array', items: { type: 'string', format: 'address' } },
-                    suspended_until: { type: 'integer' }
+                    accounts: {type: 'array', items: {type: 'string', format: 'address'}},
+                    suspended_until: {type: 'integer'}
                 }
             },
             '45': {
@@ -4608,8 +4610,8 @@ const components = {
                             type: 'object',
                             required: ['code_hash', 'gas_usage'],
                             properties: {
-                                code_hash: { type: 'string', format: 'address' },
-                                gas_usage: { type: 'integer', format: 'int64' }
+                                code_hash: {type: 'string', format: 'address'},
+                                gas_usage: {type: 'integer', format: 'int64'}
                             }
                         }
                     }
@@ -4619,67 +4621,67 @@ const components = {
                 type: 'object',
                 required: ['oracle_bridge_params'],
                 properties: {
-                    oracle_bridge_params: { $ref: '#/components/schemas/OracleBridgeParams' }
+                    oracle_bridge_params: {$ref: '#/components/schemas/OracleBridgeParams'}
                 }
             },
             '72': {
                 type: 'object',
                 required: ['oracle_bridge_params'],
                 properties: {
-                    oracle_bridge_params: { $ref: '#/components/schemas/OracleBridgeParams' }
+                    oracle_bridge_params: {$ref: '#/components/schemas/OracleBridgeParams'}
                 }
             },
             '73': {
                 type: 'object',
                 required: ['oracle_bridge_params'],
                 properties: {
-                    oracle_bridge_params: { $ref: '#/components/schemas/OracleBridgeParams' }
+                    oracle_bridge_params: {$ref: '#/components/schemas/OracleBridgeParams'}
                 }
             },
             '79': {
                 type: 'object',
                 required: ['jetton_bridge_params'],
                 properties: {
-                    jetton_bridge_params: { $ref: '#/components/schemas/JettonBridgeParams' }
+                    jetton_bridge_params: {$ref: '#/components/schemas/JettonBridgeParams'}
                 }
             },
             '81': {
                 type: 'object',
                 required: ['jetton_bridge_params'],
                 properties: {
-                    jetton_bridge_params: { $ref: '#/components/schemas/JettonBridgeParams' }
+                    jetton_bridge_params: {$ref: '#/components/schemas/JettonBridgeParams'}
                 }
             },
             '82': {
                 type: 'object',
                 required: ['jetton_bridge_params'],
                 properties: {
-                    jetton_bridge_params: { $ref: '#/components/schemas/JettonBridgeParams' }
+                    jetton_bridge_params: {$ref: '#/components/schemas/JettonBridgeParams'}
                 }
             },
-            raw: { type: 'string', format: 'cell' }
+            raw: {type: 'string', format: 'cell'}
         }
     },
     '#/components/schemas/DomainNames': {
         type: 'object',
         required: ['domains'],
-        properties: { domains: { type: 'array', items: { type: 'string' } } }
+        properties: {domains: {type: 'array', items: {type: 'string'}}}
     },
     '#/components/schemas/DomainBid': {
         type: 'object',
         required: ['success', 'value', 'txTime', 'bidder', 'txHash'],
         properties: {
-            success: { type: 'boolean', default: false },
-            value: { type: 'integer', format: 'int64' },
-            txTime: { type: 'integer', format: 'int64' },
-            txHash: { type: 'string' },
-            bidder: { $ref: '#/components/schemas/AccountAddress' }
+            success: {type: 'boolean', default: false},
+            value: {type: 'integer', format: 'int64'},
+            txTime: {type: 'integer', format: 'int64'},
+            txHash: {type: 'string'},
+            bidder: {$ref: '#/components/schemas/AccountAddress'}
         }
     },
     '#/components/schemas/DomainBids': {
         type: 'object',
         required: ['data'],
-        properties: { data: { type: 'array', items: { $ref: '#/components/schemas/DomainBid' } } }
+        properties: {data: {type: 'array', items: {$ref: '#/components/schemas/DomainBid'}}}
     },
     '#/components/schemas/JettonVerificationType': {
         type: 'string',
@@ -4689,31 +4691,31 @@ const components = {
         type: 'object',
         required: ['address', 'name', 'symbol', 'decimals', 'verification', 'image', 'score'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            name: { type: 'string' },
-            symbol: { type: 'string' },
-            decimals: { type: 'integer' },
-            image: { type: 'string' },
-            verification: { $ref: '#/components/schemas/JettonVerificationType' },
-            custom_payload_api_uri: { type: 'string' },
-            score: { type: 'integer', format: 'int32' }
+            address: {type: 'string', format: 'address'},
+            name: {type: 'string'},
+            symbol: {type: 'string'},
+            decimals: {type: 'integer'},
+            image: {type: 'string'},
+            verification: {$ref: '#/components/schemas/JettonVerificationType'},
+            custom_payload_api_uri: {type: 'string'},
+            score: {type: 'integer', format: 'int32'}
         }
     },
     '#/components/schemas/JettonBalance': {
         type: 'object',
         required: ['balance', 'wallet_address', 'jetton'],
         properties: {
-            balance: { type: 'string', 'x-js-format': 'bigint' },
-            price: { $ref: '#/components/schemas/TokenRates' },
-            wallet_address: { $ref: '#/components/schemas/AccountAddress' },
-            jetton: { $ref: '#/components/schemas/JettonPreview' },
-            extensions: { type: 'array', items: { type: 'string' } },
+            balance: {type: 'string', 'x-js-format': 'bigint'},
+            price: {$ref: '#/components/schemas/TokenRates'},
+            wallet_address: {$ref: '#/components/schemas/AccountAddress'},
+            jetton: {$ref: '#/components/schemas/JettonPreview'},
+            extensions: {type: 'array', items: {type: 'string'}},
             lock: {
                 type: 'object',
                 required: ['amount', 'till'],
                 properties: {
-                    amount: { type: 'string', 'x-js-format': 'bigint' },
-                    till: { type: 'integer', format: 'int64' }
+                    amount: {type: 'string', 'x-js-format': 'bigint'},
+                    till: {type: 'integer', format: 'int64'}
                 }
             }
         }
@@ -4722,25 +4724,25 @@ const components = {
         type: 'object',
         required: ['balances'],
         properties: {
-            balances: { type: 'array', items: { $ref: '#/components/schemas/JettonBalance' } }
+            balances: {type: 'array', items: {$ref: '#/components/schemas/JettonBalance'}}
         }
     },
     '#/components/schemas/Price': {
         type: 'object',
         required: ['value', 'token_name'],
         properties: {
-            value: { type: 'string', 'x-js-format': 'bigint' },
-            token_name: { type: 'string' }
+            value: {type: 'string', 'x-js-format': 'bigint'},
+            token_name: {type: 'string'}
         }
     },
     '#/components/schemas/ImagePreview': {
         type: 'object',
         required: ['resolution', 'url'],
-        properties: { resolution: { type: 'string' }, url: { type: 'string' } }
+        properties: {resolution: {type: 'string'}, url: {type: 'string'}}
     },
     '#/components/schemas/NftApprovedBy': {
         type: 'array',
-        items: { type: 'string', enum: ['getgems', 'tonkeeper'] }
+        items: {type: 'string', enum: ['getgems', 'tonkeeper']}
     },
     '#/components/schemas/TrustType': {
         type: 'string',
@@ -4750,66 +4752,66 @@ const components = {
         type: 'object',
         required: ['address', 'market', 'price'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            market: { $ref: '#/components/schemas/AccountAddress' },
-            owner: { $ref: '#/components/schemas/AccountAddress' },
-            price: { $ref: '#/components/schemas/Price' }
+            address: {type: 'string', format: 'address'},
+            market: {$ref: '#/components/schemas/AccountAddress'},
+            owner: {$ref: '#/components/schemas/AccountAddress'},
+            price: {$ref: '#/components/schemas/Price'}
         }
     },
     '#/components/schemas/NftItem': {
         type: 'object',
         required: ['address', 'index', 'verified', 'metadata', 'approved_by', 'trust'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            index: { type: 'integer', format: 'int64' },
-            owner: { $ref: '#/components/schemas/AccountAddress' },
+            address: {type: 'string', format: 'address'},
+            index: {type: 'integer', format: 'int64'},
+            owner: {$ref: '#/components/schemas/AccountAddress'},
             collection: {
                 type: 'object',
                 required: ['address', 'name', 'description'],
                 properties: {
-                    address: { type: 'string', format: 'address' },
-                    name: { type: 'string' },
-                    description: { type: 'string' }
+                    address: {type: 'string', format: 'address'},
+                    name: {type: 'string'},
+                    description: {type: 'string'}
                 }
             },
-            verified: { type: 'boolean' },
-            metadata: { type: 'object', additionalProperties: true },
-            sale: { $ref: '#/components/schemas/Sale' },
-            previews: { type: 'array', items: { $ref: '#/components/schemas/ImagePreview' } },
-            dns: { type: 'string' },
+            verified: {type: 'boolean'},
+            metadata: {type: 'object', additionalProperties: true},
+            sale: {$ref: '#/components/schemas/Sale'},
+            previews: {type: 'array', items: {$ref: '#/components/schemas/ImagePreview'}},
+            dns: {type: 'string'},
             approved_by: {
                 deprecated: true,
                 description: 'please use trust field',
                 $ref: '#/components/schemas/NftApprovedBy'
             },
-            include_cnft: { type: 'boolean' },
-            trust: { $ref: '#/components/schemas/TrustType' }
+            include_cnft: {type: 'boolean'},
+            trust: {$ref: '#/components/schemas/TrustType'}
         }
     },
     '#/components/schemas/NftItems': {
         type: 'object',
         required: ['nft_items'],
         properties: {
-            nft_items: { type: 'array', items: { $ref: '#/components/schemas/NftItem' } }
+            nft_items: {type: 'array', items: {$ref: '#/components/schemas/NftItem'}}
         }
     },
     '#/components/schemas/Multisigs': {
         type: 'object',
         required: ['multisigs'],
         properties: {
-            multisigs: { type: 'array', items: { $ref: '#/components/schemas/Multisig' } }
+            multisigs: {type: 'array', items: {$ref: '#/components/schemas/Multisig'}}
         }
     },
     '#/components/schemas/Multisig': {
         type: 'object',
         required: ['address', 'seqno', 'threshold', 'signers', 'proposers', 'orders'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            seqno: { type: 'integer', format: 'int64' },
-            threshold: { type: 'integer', format: 'int32' },
-            signers: { type: 'array', items: { type: 'string', format: 'address' } },
-            proposers: { type: 'array', items: { type: 'string', format: 'address' } },
-            orders: { type: 'array', items: { $ref: '#/components/schemas/MultisigOrder' } }
+            address: {type: 'string', format: 'address'},
+            seqno: {type: 'integer', format: 'int64'},
+            threshold: {type: 'integer', format: 'int32'},
+            signers: {type: 'array', items: {type: 'string', format: 'address'}},
+            proposers: {type: 'array', items: {type: 'string', format: 'address'}},
+            orders: {type: 'array', items: {$ref: '#/components/schemas/MultisigOrder'}}
         }
     },
     '#/components/schemas/MultisigOrder': {
@@ -4827,42 +4829,42 @@ const components = {
             'signed_by'
         ],
         properties: {
-            address: { type: 'string', format: 'address' },
-            order_seqno: { type: 'integer', format: 'int64' },
-            threshold: { type: 'integer', format: 'int32' },
-            sent_for_execution: { type: 'boolean' },
-            signers: { type: 'array', items: { type: 'string', format: 'address' } },
-            approvals_num: { type: 'integer', format: 'int32' },
-            expiration_date: { type: 'integer', format: 'int64' },
-            risk: { $ref: '#/components/schemas/Risk' },
-            creation_date: { type: 'integer', format: 'int64' },
-            signed_by: { type: 'array', items: { type: 'string', format: 'address' } }
+            address: {type: 'string', format: 'address'},
+            order_seqno: {type: 'integer', format: 'int64'},
+            threshold: {type: 'integer', format: 'int32'},
+            sent_for_execution: {type: 'boolean'},
+            signers: {type: 'array', items: {type: 'string', format: 'address'}},
+            approvals_num: {type: 'integer', format: 'int32'},
+            expiration_date: {type: 'integer', format: 'int64'},
+            risk: {$ref: '#/components/schemas/Risk'},
+            creation_date: {type: 'integer', format: 'int64'},
+            signed_by: {type: 'array', items: {type: 'string', format: 'address'}}
         }
     },
     '#/components/schemas/Refund': {
         type: 'object',
         required: ['type', 'origin'],
         properties: {
-            type: { type: 'string', enum: ['DNS.ton', 'DNS.tg', 'GetGems'] },
-            origin: { type: 'string' }
+            type: {type: 'string', enum: ['DNS.ton', 'DNS.tg', 'GetGems']},
+            origin: {type: 'string'}
         }
     },
     '#/components/schemas/ValueFlow': {
         type: 'object',
         required: ['account', 'ton', 'fees'],
         properties: {
-            account: { $ref: '#/components/schemas/AccountAddress' },
-            ton: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            account: {$ref: '#/components/schemas/AccountAddress'},
+            ton: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            fees: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
             jettons: {
                 type: 'array',
                 items: {
                     type: 'object',
                     required: ['account', 'qty', 'quantity', 'jetton'],
                     properties: {
-                        account: { $ref: '#/components/schemas/AccountAddress' },
-                        jetton: { $ref: '#/components/schemas/JettonPreview' },
-                        qty: { type: 'string', 'x-js-format': 'bigint' },
+                        account: {$ref: '#/components/schemas/AccountAddress'},
+                        jetton: {$ref: '#/components/schemas/JettonPreview'},
+                        qty: {type: 'string', 'x-js-format': 'bigint'},
                         quantity: {
                             type: 'integer',
                             deprecated: true,
@@ -4905,287 +4907,287 @@ const components = {
                     'Unknown'
                 ]
             },
-            status: { type: 'string', enum: ['ok', 'failed'] },
-            TonTransfer: { $ref: '#/components/schemas/TonTransferAction' },
-            ExtraCurrencyTransfer: { $ref: '#/components/schemas/ExtraCurrencyTransferAction' },
-            ContractDeploy: { $ref: '#/components/schemas/ContractDeployAction' },
-            JettonTransfer: { $ref: '#/components/schemas/JettonTransferAction' },
-            JettonBurn: { $ref: '#/components/schemas/JettonBurnAction' },
-            JettonMint: { $ref: '#/components/schemas/JettonMintAction' },
-            NftItemTransfer: { $ref: '#/components/schemas/NftItemTransferAction' },
-            Subscribe: { $ref: '#/components/schemas/SubscriptionAction' },
-            UnSubscribe: { $ref: '#/components/schemas/UnSubscriptionAction' },
-            AuctionBid: { $ref: '#/components/schemas/AuctionBidAction' },
-            NftPurchase: { $ref: '#/components/schemas/NftPurchaseAction' },
-            DepositStake: { $ref: '#/components/schemas/DepositStakeAction' },
-            WithdrawStake: { $ref: '#/components/schemas/WithdrawStakeAction' },
-            WithdrawStakeRequest: { $ref: '#/components/schemas/WithdrawStakeRequestAction' },
-            ElectionsDepositStake: { $ref: '#/components/schemas/ElectionsDepositStakeAction' },
-            ElectionsRecoverStake: { $ref: '#/components/schemas/ElectionsRecoverStakeAction' },
-            JettonSwap: { $ref: '#/components/schemas/JettonSwapAction' },
-            SmartContractExec: { $ref: '#/components/schemas/SmartContractAction' },
-            DomainRenew: { $ref: '#/components/schemas/DomainRenewAction' },
-            InscriptionTransfer: { $ref: '#/components/schemas/InscriptionTransferAction' },
-            InscriptionMint: { $ref: '#/components/schemas/InscriptionMintAction' },
-            simple_preview: { $ref: '#/components/schemas/ActionSimplePreview' },
-            base_transactions: { type: 'array', items: { type: 'string' } }
+            status: {type: 'string', enum: ['ok', 'failed']},
+            TonTransfer: {$ref: '#/components/schemas/TonTransferAction'},
+            ExtraCurrencyTransfer: {$ref: '#/components/schemas/ExtraCurrencyTransferAction'},
+            ContractDeploy: {$ref: '#/components/schemas/ContractDeployAction'},
+            JettonTransfer: {$ref: '#/components/schemas/JettonTransferAction'},
+            JettonBurn: {$ref: '#/components/schemas/JettonBurnAction'},
+            JettonMint: {$ref: '#/components/schemas/JettonMintAction'},
+            NftItemTransfer: {$ref: '#/components/schemas/NftItemTransferAction'},
+            Subscribe: {$ref: '#/components/schemas/SubscriptionAction'},
+            UnSubscribe: {$ref: '#/components/schemas/UnSubscriptionAction'},
+            AuctionBid: {$ref: '#/components/schemas/AuctionBidAction'},
+            NftPurchase: {$ref: '#/components/schemas/NftPurchaseAction'},
+            DepositStake: {$ref: '#/components/schemas/DepositStakeAction'},
+            WithdrawStake: {$ref: '#/components/schemas/WithdrawStakeAction'},
+            WithdrawStakeRequest: {$ref: '#/components/schemas/WithdrawStakeRequestAction'},
+            ElectionsDepositStake: {$ref: '#/components/schemas/ElectionsDepositStakeAction'},
+            ElectionsRecoverStake: {$ref: '#/components/schemas/ElectionsRecoverStakeAction'},
+            JettonSwap: {$ref: '#/components/schemas/JettonSwapAction'},
+            SmartContractExec: {$ref: '#/components/schemas/SmartContractAction'},
+            DomainRenew: {$ref: '#/components/schemas/DomainRenewAction'},
+            InscriptionTransfer: {$ref: '#/components/schemas/InscriptionTransferAction'},
+            InscriptionMint: {$ref: '#/components/schemas/InscriptionMintAction'},
+            simple_preview: {$ref: '#/components/schemas/ActionSimplePreview'},
+            base_transactions: {type: 'array', items: {type: 'string'}}
         }
     },
     '#/components/schemas/TonTransferAction': {
         type: 'object',
         required: ['sender', 'recipient', 'amount'],
         properties: {
-            sender: { $ref: '#/components/schemas/AccountAddress' },
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            comment: { type: 'string' },
-            encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
-            refund: { $ref: '#/components/schemas/Refund' }
+            sender: {$ref: '#/components/schemas/AccountAddress'},
+            recipient: {$ref: '#/components/schemas/AccountAddress'},
+            amount: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            comment: {type: 'string'},
+            encrypted_comment: {$ref: '#/components/schemas/EncryptedComment'},
+            refund: {$ref: '#/components/schemas/Refund'}
         }
     },
     '#/components/schemas/ExtraCurrencies': {
         type: 'object',
         required: ['extra_currencies'],
         properties: {
-            extra_currencies: { type: 'array', items: { $ref: '#/components/schemas/EcPreview' } }
+            extra_currencies: {type: 'array', items: {$ref: '#/components/schemas/EcPreview'}}
         }
     },
     '#/components/schemas/EcPreview': {
         type: 'object',
         required: ['id', 'symbol', 'decimals', 'image'],
         properties: {
-            id: { type: 'integer', format: 'int32' },
-            symbol: { type: 'string' },
-            decimals: { type: 'integer' },
-            image: { type: 'string' }
+            id: {type: 'integer', format: 'int32'},
+            symbol: {type: 'string'},
+            decimals: {type: 'integer'},
+            image: {type: 'string'}
         }
     },
     '#/components/schemas/ExtraCurrencyTransferAction': {
         type: 'object',
         required: ['sender', 'recipient', 'amount', 'currency'],
         properties: {
-            sender: { $ref: '#/components/schemas/AccountAddress' },
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            comment: { type: 'string' },
-            encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
-            currency: { $ref: '#/components/schemas/EcPreview' }
+            sender: {$ref: '#/components/schemas/AccountAddress'},
+            recipient: {$ref: '#/components/schemas/AccountAddress'},
+            amount: {type: 'string', 'x-js-format': 'bigint'},
+            comment: {type: 'string'},
+            encrypted_comment: {$ref: '#/components/schemas/EncryptedComment'},
+            currency: {$ref: '#/components/schemas/EcPreview'}
         }
     },
     '#/components/schemas/SmartContractAction': {
         type: 'object',
         required: ['executor', 'contract', 'ton_attached', 'operation'],
         properties: {
-            executor: { $ref: '#/components/schemas/AccountAddress' },
-            contract: { $ref: '#/components/schemas/AccountAddress' },
-            ton_attached: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            operation: { type: 'string' },
-            payload: { type: 'string' },
-            refund: { $ref: '#/components/schemas/Refund' }
+            executor: {$ref: '#/components/schemas/AccountAddress'},
+            contract: {$ref: '#/components/schemas/AccountAddress'},
+            ton_attached: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            operation: {type: 'string'},
+            payload: {type: 'string'},
+            refund: {$ref: '#/components/schemas/Refund'}
         }
     },
     '#/components/schemas/DomainRenewAction': {
         type: 'object',
         required: ['domain', 'contract_address', 'renewer'],
         properties: {
-            domain: { type: 'string' },
-            contract_address: { type: 'string', format: 'address' },
-            renewer: { $ref: '#/components/schemas/AccountAddress' }
+            domain: {type: 'string'},
+            contract_address: {type: 'string', format: 'address'},
+            renewer: {$ref: '#/components/schemas/AccountAddress'}
         }
     },
     '#/components/schemas/InscriptionMintAction': {
         type: 'object',
         required: ['type', 'ticker', 'recipient', 'amount', 'decimals'],
         properties: {
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            type: { type: 'string', enum: ['ton20', 'gram20'] },
-            ticker: { type: 'string' },
-            decimals: { type: 'integer' }
+            recipient: {$ref: '#/components/schemas/AccountAddress'},
+            amount: {type: 'string', 'x-js-format': 'bigint'},
+            type: {type: 'string', enum: ['ton20', 'gram20']},
+            ticker: {type: 'string'},
+            decimals: {type: 'integer'}
         }
     },
     '#/components/schemas/InscriptionTransferAction': {
         type: 'object',
         required: ['sender', 'recipient', 'amount', 'type', 'ticker', 'decimals'],
         properties: {
-            sender: { $ref: '#/components/schemas/AccountAddress' },
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            comment: { type: 'string' },
-            type: { type: 'string', enum: ['ton20', 'gram20'] },
-            ticker: { type: 'string' },
-            decimals: { type: 'integer' }
+            sender: {$ref: '#/components/schemas/AccountAddress'},
+            recipient: {$ref: '#/components/schemas/AccountAddress'},
+            amount: {type: 'string', 'x-js-format': 'bigint'},
+            comment: {type: 'string'},
+            type: {type: 'string', enum: ['ton20', 'gram20']},
+            ticker: {type: 'string'},
+            decimals: {type: 'integer'}
         }
     },
     '#/components/schemas/NftItemTransferAction': {
         type: 'object',
         required: ['nft'],
         properties: {
-            sender: { $ref: '#/components/schemas/AccountAddress' },
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            nft: { type: 'string' },
-            comment: { type: 'string' },
-            encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
-            payload: { type: 'string' },
-            refund: { $ref: '#/components/schemas/Refund' }
+            sender: {$ref: '#/components/schemas/AccountAddress'},
+            recipient: {$ref: '#/components/schemas/AccountAddress'},
+            nft: {type: 'string'},
+            comment: {type: 'string'},
+            encrypted_comment: {$ref: '#/components/schemas/EncryptedComment'},
+            payload: {type: 'string'},
+            refund: {$ref: '#/components/schemas/Refund'}
         }
     },
     '#/components/schemas/JettonTransferAction': {
         type: 'object',
         required: ['amount', 'jetton', 'senders_wallet', 'recipients_wallet'],
         properties: {
-            sender: { $ref: '#/components/schemas/AccountAddress' },
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            senders_wallet: { type: 'string', format: 'address' },
-            recipients_wallet: { type: 'string', format: 'address' },
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            comment: { type: 'string' },
-            encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
-            refund: { $ref: '#/components/schemas/Refund' },
-            jetton: { $ref: '#/components/schemas/JettonPreview' }
+            sender: {$ref: '#/components/schemas/AccountAddress'},
+            recipient: {$ref: '#/components/schemas/AccountAddress'},
+            senders_wallet: {type: 'string', format: 'address'},
+            recipients_wallet: {type: 'string', format: 'address'},
+            amount: {type: 'string', 'x-js-format': 'bigint'},
+            comment: {type: 'string'},
+            encrypted_comment: {$ref: '#/components/schemas/EncryptedComment'},
+            refund: {$ref: '#/components/schemas/Refund'},
+            jetton: {$ref: '#/components/schemas/JettonPreview'}
         }
     },
     '#/components/schemas/JettonBurnAction': {
         type: 'object',
         required: ['amount', 'jetton', 'sender', 'senders_wallet'],
         properties: {
-            sender: { $ref: '#/components/schemas/AccountAddress' },
-            senders_wallet: { type: 'string', format: 'address' },
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            jetton: { $ref: '#/components/schemas/JettonPreview' }
+            sender: {$ref: '#/components/schemas/AccountAddress'},
+            senders_wallet: {type: 'string', format: 'address'},
+            amount: {type: 'string', 'x-js-format': 'bigint'},
+            jetton: {$ref: '#/components/schemas/JettonPreview'}
         }
     },
     '#/components/schemas/JettonMintAction': {
         type: 'object',
         required: ['amount', 'jetton', 'recipient', 'recipients_wallet'],
         properties: {
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            recipients_wallet: { type: 'string', format: 'address' },
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            jetton: { $ref: '#/components/schemas/JettonPreview' }
+            recipient: {$ref: '#/components/schemas/AccountAddress'},
+            recipients_wallet: {type: 'string', format: 'address'},
+            amount: {type: 'string', 'x-js-format': 'bigint'},
+            jetton: {$ref: '#/components/schemas/JettonPreview'}
         }
     },
     '#/components/schemas/ContractDeployAction': {
         type: 'object',
         required: ['address', 'interfaces'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            interfaces: { type: 'array', items: { type: 'string' } }
+            address: {type: 'string', format: 'address'},
+            interfaces: {type: 'array', items: {type: 'string'}}
         }
     },
     '#/components/schemas/SubscriptionAction': {
         type: 'object',
         required: ['subscriber', 'subscription', 'beneficiary', 'amount', 'initial'],
         properties: {
-            subscriber: { $ref: '#/components/schemas/AccountAddress' },
-            subscription: { type: 'string', format: 'address' },
-            beneficiary: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            initial: { type: 'boolean' }
+            subscriber: {$ref: '#/components/schemas/AccountAddress'},
+            subscription: {type: 'string', format: 'address'},
+            beneficiary: {$ref: '#/components/schemas/AccountAddress'},
+            amount: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            initial: {type: 'boolean'}
         }
     },
     '#/components/schemas/UnSubscriptionAction': {
         type: 'object',
         required: ['subscriber', 'subscription', 'beneficiary'],
         properties: {
-            subscriber: { $ref: '#/components/schemas/AccountAddress' },
-            subscription: { type: 'string', format: 'address' },
-            beneficiary: { $ref: '#/components/schemas/AccountAddress' }
+            subscriber: {$ref: '#/components/schemas/AccountAddress'},
+            subscription: {type: 'string', format: 'address'},
+            beneficiary: {$ref: '#/components/schemas/AccountAddress'}
         }
     },
     '#/components/schemas/AuctionBidAction': {
         type: 'object',
         required: ['amount', 'bidder', 'auction', 'auction_type'],
         properties: {
-            auction_type: { type: 'string', enum: ['DNS.ton', 'DNS.tg', 'NUMBER.tg', 'getgems'] },
-            amount: { $ref: '#/components/schemas/Price' },
-            nft: { $ref: '#/components/schemas/NftItem' },
-            bidder: { $ref: '#/components/schemas/AccountAddress' },
-            auction: { $ref: '#/components/schemas/AccountAddress' }
+            auction_type: {type: 'string', enum: ['DNS.ton', 'DNS.tg', 'NUMBER.tg', 'getgems']},
+            amount: {$ref: '#/components/schemas/Price'},
+            nft: {$ref: '#/components/schemas/NftItem'},
+            bidder: {$ref: '#/components/schemas/AccountAddress'},
+            auction: {$ref: '#/components/schemas/AccountAddress'}
         }
     },
     '#/components/schemas/DepositStakeAction': {
         type: 'object',
         required: ['amount', 'staker', 'pool', 'implementation'],
         properties: {
-            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            staker: { $ref: '#/components/schemas/AccountAddress' },
-            pool: { $ref: '#/components/schemas/AccountAddress' },
-            implementation: { $ref: '#/components/schemas/PoolImplementationType' }
+            amount: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            staker: {$ref: '#/components/schemas/AccountAddress'},
+            pool: {$ref: '#/components/schemas/AccountAddress'},
+            implementation: {$ref: '#/components/schemas/PoolImplementationType'}
         }
     },
     '#/components/schemas/WithdrawStakeAction': {
         type: 'object',
         required: ['amount', 'staker', 'pool', 'implementation'],
         properties: {
-            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            staker: { $ref: '#/components/schemas/AccountAddress' },
-            pool: { $ref: '#/components/schemas/AccountAddress' },
-            implementation: { $ref: '#/components/schemas/PoolImplementationType' }
+            amount: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            staker: {$ref: '#/components/schemas/AccountAddress'},
+            pool: {$ref: '#/components/schemas/AccountAddress'},
+            implementation: {$ref: '#/components/schemas/PoolImplementationType'}
         }
     },
     '#/components/schemas/WithdrawStakeRequestAction': {
         type: 'object',
         required: ['staker', 'pool', 'implementation'],
         properties: {
-            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            staker: { $ref: '#/components/schemas/AccountAddress' },
-            pool: { $ref: '#/components/schemas/AccountAddress' },
-            implementation: { $ref: '#/components/schemas/PoolImplementationType' }
+            amount: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            staker: {$ref: '#/components/schemas/AccountAddress'},
+            pool: {$ref: '#/components/schemas/AccountAddress'},
+            implementation: {$ref: '#/components/schemas/PoolImplementationType'}
         }
     },
     '#/components/schemas/ElectionsRecoverStakeAction': {
         type: 'object',
         required: ['amount', 'staker'],
         properties: {
-            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            staker: { $ref: '#/components/schemas/AccountAddress' }
+            amount: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            staker: {$ref: '#/components/schemas/AccountAddress'}
         }
     },
     '#/components/schemas/ElectionsDepositStakeAction': {
         type: 'object',
         required: ['amount', 'staker'],
         properties: {
-            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            staker: { $ref: '#/components/schemas/AccountAddress' }
+            amount: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            staker: {$ref: '#/components/schemas/AccountAddress'}
         }
     },
     '#/components/schemas/JettonSwapAction': {
         type: 'object',
         required: ['dex', 'amount_in', 'amount_out', 'user_wallet', 'router'],
         properties: {
-            dex: { type: 'string', enum: ['stonfi', 'dedust', 'megatonfi'] },
-            amount_in: { type: 'string', 'x-js-format': 'bigint' },
-            amount_out: { type: 'string', 'x-js-format': 'bigint' },
-            ton_in: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            ton_out: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            user_wallet: { $ref: '#/components/schemas/AccountAddress' },
-            router: { $ref: '#/components/schemas/AccountAddress' },
-            jetton_master_in: { $ref: '#/components/schemas/JettonPreview' },
-            jetton_master_out: { $ref: '#/components/schemas/JettonPreview' }
+            dex: {type: 'string', enum: ['stonfi', 'dedust', 'megatonfi']},
+            amount_in: {type: 'string', 'x-js-format': 'bigint'},
+            amount_out: {type: 'string', 'x-js-format': 'bigint'},
+            ton_in: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            ton_out: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            user_wallet: {$ref: '#/components/schemas/AccountAddress'},
+            router: {$ref: '#/components/schemas/AccountAddress'},
+            jetton_master_in: {$ref: '#/components/schemas/JettonPreview'},
+            jetton_master_out: {$ref: '#/components/schemas/JettonPreview'}
         }
     },
     '#/components/schemas/NftPurchaseAction': {
         type: 'object',
         required: ['amount', 'seller', 'buyer', 'auction_type', 'nft'],
         properties: {
-            auction_type: { type: 'string', enum: ['DNS.ton', 'DNS.tg', 'NUMBER.tg', 'getgems'] },
-            amount: { $ref: '#/components/schemas/Price' },
-            nft: { $ref: '#/components/schemas/NftItem' },
-            seller: { $ref: '#/components/schemas/AccountAddress' },
-            buyer: { $ref: '#/components/schemas/AccountAddress' }
+            auction_type: {type: 'string', enum: ['DNS.ton', 'DNS.tg', 'NUMBER.tg', 'getgems']},
+            amount: {$ref: '#/components/schemas/Price'},
+            nft: {$ref: '#/components/schemas/NftItem'},
+            seller: {$ref: '#/components/schemas/AccountAddress'},
+            buyer: {$ref: '#/components/schemas/AccountAddress'}
         }
     },
     '#/components/schemas/ActionSimplePreview': {
         type: 'object',
         required: ['name', 'description', 'accounts'],
         properties: {
-            name: { type: 'string' },
-            description: { type: 'string' },
-            action_image: { type: 'string' },
-            value: { type: 'string' },
-            value_image: { type: 'string' },
-            accounts: { type: 'array', items: { $ref: '#/components/schemas/AccountAddress' } }
+            name: {type: 'string'},
+            description: {type: 'string'},
+            action_image: {type: 'string'},
+            value: {type: 'string'},
+            value_image: {type: 'string'},
+            accounts: {type: 'array', items: {$ref: '#/components/schemas/AccountAddress'}}
         }
     },
     '#/components/schemas/AccountEvent': {
@@ -5201,38 +5203,38 @@ const components = {
             'extra'
         ],
         properties: {
-            event_id: { type: 'string' },
-            account: { $ref: '#/components/schemas/AccountAddress' },
-            timestamp: { type: 'integer', format: 'int64' },
-            actions: { type: 'array', items: { $ref: '#/components/schemas/Action' } },
-            is_scam: { type: 'boolean' },
-            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            in_progress: { type: 'boolean' },
-            extra: { type: 'integer', format: 'int64' }
+            event_id: {type: 'string'},
+            account: {$ref: '#/components/schemas/AccountAddress'},
+            timestamp: {type: 'integer', format: 'int64'},
+            actions: {type: 'array', items: {$ref: '#/components/schemas/Action'}},
+            is_scam: {type: 'boolean'},
+            lt: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            in_progress: {type: 'boolean'},
+            extra: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/AccountEvents': {
         type: 'object',
         required: ['events', 'next_from'],
         properties: {
-            events: { type: 'array', items: { $ref: '#/components/schemas/AccountEvent' } },
-            next_from: { type: 'integer', format: 'int64' }
+            events: {type: 'array', items: {$ref: '#/components/schemas/AccountEvent'}},
+            next_from: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/TraceID': {
         type: 'object',
         required: ['id', 'utime'],
-        properties: { id: { type: 'string' }, utime: { type: 'integer', format: 'int64' } }
+        properties: {id: {type: 'string'}, utime: {type: 'integer', format: 'int64'}}
     },
     '#/components/schemas/TraceIDs': {
         type: 'object',
         required: ['traces'],
-        properties: { traces: { type: 'array', items: { $ref: '#/components/schemas/TraceID' } } }
+        properties: {traces: {type: 'array', items: {$ref: '#/components/schemas/TraceID'}}}
     },
     '#/components/schemas/ApyHistory': {
         type: 'object',
         required: ['apy', 'time'],
-        properties: { apy: { type: 'number' }, time: { type: 'integer' } }
+        properties: {apy: {type: 'number'}, time: {type: 'integer'}}
     },
     '#/components/schemas/Subscription': {
         type: 'object',
@@ -5250,43 +5252,43 @@ const components = {
             'failed_attempts'
         ],
         properties: {
-            address: { type: 'string', format: 'address' },
-            wallet_address: { type: 'string', format: 'address' },
-            beneficiary_address: { type: 'string', format: 'address' },
-            amount: { type: 'integer', format: 'int64' },
-            period: { type: 'integer', format: 'int64' },
-            start_time: { type: 'integer', format: 'int64' },
-            timeout: { type: 'integer', format: 'int64' },
-            last_payment_time: { type: 'integer', format: 'int64' },
-            last_request_time: { type: 'integer', format: 'int64' },
-            subscription_id: { type: 'integer', format: 'int64' },
-            failed_attempts: { type: 'integer', format: 'int32' }
+            address: {type: 'string', format: 'address'},
+            wallet_address: {type: 'string', format: 'address'},
+            beneficiary_address: {type: 'string', format: 'address'},
+            amount: {type: 'integer', format: 'int64'},
+            period: {type: 'integer', format: 'int64'},
+            start_time: {type: 'integer', format: 'int64'},
+            timeout: {type: 'integer', format: 'int64'},
+            last_payment_time: {type: 'integer', format: 'int64'},
+            last_request_time: {type: 'integer', format: 'int64'},
+            subscription_id: {type: 'integer', format: 'int64'},
+            failed_attempts: {type: 'integer', format: 'int32'}
         }
     },
     '#/components/schemas/Subscriptions': {
         type: 'object',
         required: ['subscriptions'],
         properties: {
-            subscriptions: { type: 'array', items: { $ref: '#/components/schemas/Subscription' } }
+            subscriptions: {type: 'array', items: {$ref: '#/components/schemas/Subscription'}}
         }
     },
     '#/components/schemas/Auction': {
         type: 'object',
         required: ['domain', 'owner', 'price', 'bids', 'date'],
         properties: {
-            domain: { type: 'string' },
-            owner: { type: 'string', format: 'address' },
-            price: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            bids: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            date: { type: 'integer', format: 'int64' }
+            domain: {type: 'string'},
+            owner: {type: 'string', format: 'address'},
+            price: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            bids: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            date: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/Auctions': {
         type: 'object',
         required: ['data', 'total'],
         properties: {
-            data: { type: 'array', items: { $ref: '#/components/schemas/Auction' } },
-            total: { type: 'integer', format: 'int64' }
+            data: {type: 'array', items: {$ref: '#/components/schemas/Auction'}},
+            total: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/WalletDNS': {
@@ -5300,44 +5302,44 @@ const components = {
             'account'
         ],
         properties: {
-            address: { type: 'string', format: 'address' },
-            account: { $ref: '#/components/schemas/AccountAddress' },
-            is_wallet: { type: 'boolean' },
-            has_method_pubkey: { type: 'boolean' },
-            has_method_seqno: { type: 'boolean' },
-            names: { type: 'array', items: { type: 'string' } }
+            address: {type: 'string', format: 'address'},
+            account: {$ref: '#/components/schemas/AccountAddress'},
+            is_wallet: {type: 'boolean'},
+            has_method_pubkey: {type: 'boolean'},
+            has_method_seqno: {type: 'boolean'},
+            names: {type: 'array', items: {type: 'string'}}
         }
     },
     '#/components/schemas/DomainInfo': {
         type: 'object',
         required: ['name'],
         properties: {
-            name: { type: 'string' },
-            expiring_at: { type: 'integer', format: 'int64' },
-            item: { $ref: '#/components/schemas/NftItem' }
+            name: {type: 'string'},
+            expiring_at: {type: 'integer', format: 'int64'},
+            item: {$ref: '#/components/schemas/NftItem'}
         }
     },
     '#/components/schemas/DnsRecord': {
         type: 'object',
         required: ['sites'],
         properties: {
-            wallet: { $ref: '#/components/schemas/WalletDNS' },
-            next_resolver: { type: 'string', format: 'address' },
-            sites: { type: 'array', items: { type: 'string' } },
-            storage: { type: 'string' }
+            wallet: {$ref: '#/components/schemas/WalletDNS'},
+            next_resolver: {type: 'string', format: 'address'},
+            sites: {type: 'array', items: {type: 'string'}},
+            storage: {type: 'string'}
         }
     },
     '#/components/schemas/NftCollection': {
         type: 'object',
         required: ['address', 'next_item_index', 'raw_collection_content', 'approved_by'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            next_item_index: { type: 'integer', format: 'int64' },
-            owner: { $ref: '#/components/schemas/AccountAddress' },
-            raw_collection_content: { type: 'string', format: 'cell' },
-            metadata: { type: 'object', additionalProperties: true },
-            previews: { type: 'array', items: { $ref: '#/components/schemas/ImagePreview' } },
-            approved_by: { $ref: '#/components/schemas/NftApprovedBy' }
+            address: {type: 'string', format: 'address'},
+            next_item_index: {type: 'integer', format: 'int64'},
+            owner: {$ref: '#/components/schemas/AccountAddress'},
+            raw_collection_content: {type: 'string', format: 'cell'},
+            metadata: {type: 'object', additionalProperties: true},
+            previews: {type: 'array', items: {$ref: '#/components/schemas/ImagePreview'}},
+            approved_by: {$ref: '#/components/schemas/NftApprovedBy'}
         }
     },
     '#/components/schemas/NftCollections': {
@@ -5346,7 +5348,7 @@ const components = {
         properties: {
             nft_collections: {
                 type: 'array',
-                items: { $ref: '#/components/schemas/NftCollection' }
+                items: {$ref: '#/components/schemas/NftCollection'}
             }
         }
     },
@@ -5354,46 +5356,46 @@ const components = {
         type: 'object',
         required: ['transaction', 'interfaces'],
         properties: {
-            transaction: { $ref: '#/components/schemas/Transaction' },
-            interfaces: { type: 'array', items: { type: 'string' } },
-            children: { type: 'array', items: { $ref: '#/components/schemas/Trace' } },
-            emulated: { type: 'boolean' }
+            transaction: {$ref: '#/components/schemas/Transaction'},
+            interfaces: {type: 'array', items: {type: 'string'}},
+            children: {type: 'array', items: {$ref: '#/components/schemas/Trace'}},
+            emulated: {type: 'boolean'}
         }
     },
     '#/components/schemas/MessageConsequences': {
         type: 'object',
         required: ['trace', 'risk', 'event'],
         properties: {
-            trace: { $ref: '#/components/schemas/Trace' },
-            risk: { $ref: '#/components/schemas/Risk' },
-            event: { $ref: '#/components/schemas/AccountEvent' }
+            trace: {$ref: '#/components/schemas/Trace'},
+            risk: {$ref: '#/components/schemas/Risk'},
+            event: {$ref: '#/components/schemas/AccountEvent'}
         }
     },
     '#/components/schemas/Risk': {
         type: 'object',
         required: ['transfer_all_remaining_balance', 'ton', 'jettons', 'nfts'],
         properties: {
-            transfer_all_remaining_balance: { type: 'boolean' },
-            ton: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            jettons: { type: 'array', items: { $ref: '#/components/schemas/JettonQuantity' } },
-            nfts: { type: 'array', items: { $ref: '#/components/schemas/NftItem' } }
+            transfer_all_remaining_balance: {type: 'boolean'},
+            ton: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            jettons: {type: 'array', items: {$ref: '#/components/schemas/JettonQuantity'}},
+            nfts: {type: 'array', items: {$ref: '#/components/schemas/NftItem'}}
         }
     },
     '#/components/schemas/JettonQuantity': {
         type: 'object',
         required: ['quantity', 'wallet_address', 'jetton'],
         properties: {
-            quantity: { type: 'string', 'x-js-format': 'bigint' },
-            wallet_address: { $ref: '#/components/schemas/AccountAddress' },
-            jetton: { $ref: '#/components/schemas/JettonPreview' }
+            quantity: {type: 'string', 'x-js-format': 'bigint'},
+            wallet_address: {$ref: '#/components/schemas/AccountAddress'},
+            jetton: {$ref: '#/components/schemas/JettonPreview'}
         }
     },
     '#/components/schemas/DecodedMessage': {
         type: 'object',
         required: ['destination', 'destination_wallet_version'],
         properties: {
-            destination: { $ref: '#/components/schemas/AccountAddress' },
-            destination_wallet_version: { type: 'string' },
+            destination: {$ref: '#/components/schemas/AccountAddress'},
+            destination_wallet_version: {type: 'string'},
             ext_in_msg_decoded: {
                 type: 'object',
                 properties: {
@@ -5401,12 +5403,12 @@ const components = {
                         type: 'object',
                         required: ['subwallet_id', 'valid_until', 'seqno', 'op', 'raw_messages'],
                         properties: {
-                            subwallet_id: { type: 'integer', format: 'int64' },
-                            valid_until: { type: 'integer', format: 'int64' },
-                            seqno: { type: 'integer', format: 'int64' },
+                            subwallet_id: {type: 'integer', format: 'int64'},
+                            valid_until: {type: 'integer', format: 'int64'},
+                            seqno: {type: 'integer', format: 'int64'},
                             raw_messages: {
                                 type: 'array',
-                                items: { $ref: '#/components/schemas/DecodedRawMessage' }
+                                items: {$ref: '#/components/schemas/DecodedRawMessage'}
                             }
                         }
                     },
@@ -5414,13 +5416,13 @@ const components = {
                         type: 'object',
                         required: ['subwallet_id', 'valid_until', 'seqno', 'op', 'raw_messages'],
                         properties: {
-                            subwallet_id: { type: 'integer', format: 'int64' },
-                            valid_until: { type: 'integer', format: 'int64' },
-                            seqno: { type: 'integer', format: 'int64' },
-                            op: { type: 'integer', format: 'int32' },
+                            subwallet_id: {type: 'integer', format: 'int64'},
+                            valid_until: {type: 'integer', format: 'int64'},
+                            seqno: {type: 'integer', format: 'int64'},
+                            op: {type: 'integer', format: 'int32'},
                             raw_messages: {
                                 type: 'array',
-                                items: { $ref: '#/components/schemas/DecodedRawMessage' }
+                                items: {$ref: '#/components/schemas/DecodedRawMessage'}
                             }
                         }
                     },
@@ -5428,10 +5430,10 @@ const components = {
                         type: 'object',
                         required: ['raw_messages', 'valid_until'],
                         properties: {
-                            valid_until: { type: 'integer', format: 'int64' },
+                            valid_until: {type: 'integer', format: 'int64'},
                             raw_messages: {
                                 type: 'array',
-                                items: { $ref: '#/components/schemas/DecodedRawMessage' }
+                                items: {$ref: '#/components/schemas/DecodedRawMessage'}
                             }
                         }
                     },
@@ -5439,11 +5441,11 @@ const components = {
                         type: 'object',
                         required: ['subwallet_id', 'bounded_query_id', 'raw_messages'],
                         properties: {
-                            subwallet_id: { type: 'integer', format: 'int64' },
-                            bounded_query_id: { type: 'string' },
+                            subwallet_id: {type: 'integer', format: 'int64'},
+                            bounded_query_id: {type: 'string'},
                             raw_messages: {
                                 type: 'array',
-                                items: { $ref: '#/components/schemas/DecodedRawMessage' }
+                                items: {$ref: '#/components/schemas/DecodedRawMessage'}
                             }
                         }
                     }
@@ -5459,13 +5461,13 @@ const components = {
                 type: 'object',
                 required: ['boc'],
                 properties: {
-                    boc: { type: 'string', format: 'cell' },
-                    decoded_op_name: { type: 'string' },
-                    op_code: { type: 'string', 'x-js-format': 'bigint' },
+                    boc: {type: 'string', format: 'cell'},
+                    decoded_op_name: {type: 'string'},
+                    op_code: {type: 'string', 'x-js-format': 'bigint'},
                     decoded_body: {}
                 }
             },
-            mode: { type: 'integer' }
+            mode: {type: 'integer'}
         }
     },
     '#/components/schemas/Event': {
@@ -5480,29 +5482,29 @@ const components = {
             'in_progress'
         ],
         properties: {
-            event_id: { type: 'string' },
-            timestamp: { type: 'integer', format: 'int64' },
-            actions: { type: 'array', items: { $ref: '#/components/schemas/Action' } },
-            value_flow: { type: 'array', items: { $ref: '#/components/schemas/ValueFlow' } },
-            is_scam: { type: 'boolean' },
-            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            in_progress: { type: 'boolean' }
+            event_id: {type: 'string'},
+            timestamp: {type: 'integer', format: 'int64'},
+            actions: {type: 'array', items: {$ref: '#/components/schemas/Action'}},
+            value_flow: {type: 'array', items: {$ref: '#/components/schemas/ValueFlow'}},
+            is_scam: {type: 'boolean'},
+            lt: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            in_progress: {type: 'boolean'}
         }
     },
     '#/components/schemas/JettonMetadata': {
         type: 'object',
         required: ['address', 'name', 'symbol', 'decimals'],
         properties: {
-            address: { type: 'string', format: 'address' },
-            name: { type: 'string' },
-            symbol: { type: 'string' },
-            decimals: { type: 'string' },
-            image: { type: 'string' },
-            description: { type: 'string' },
-            social: { type: 'array', items: { type: 'string' } },
-            websites: { type: 'array', items: { type: 'string' } },
-            catalogs: { type: 'array', items: { type: 'string' } },
-            custom_payload_api_uri: { type: 'string' }
+            address: {type: 'string', format: 'address'},
+            name: {type: 'string'},
+            symbol: {type: 'string'},
+            decimals: {type: 'string'},
+            image: {type: 'string'},
+            description: {type: 'string'},
+            social: {type: 'array', items: {type: 'string'}},
+            websites: {type: 'array', items: {type: 'string'}},
+            catalogs: {type: 'array', items: {type: 'string'}},
+            custom_payload_api_uri: {type: 'string'}
         }
     },
     '#/components/schemas/InscriptionBalances': {
@@ -5511,7 +5513,7 @@ const components = {
         properties: {
             inscriptions: {
                 type: 'array',
-                items: { $ref: '#/components/schemas/InscriptionBalance' }
+                items: {$ref: '#/components/schemas/InscriptionBalance'}
             }
         }
     },
@@ -5519,17 +5521,17 @@ const components = {
         type: 'object',
         required: ['type', 'ticker', 'balance', 'decimals'],
         properties: {
-            type: { type: 'string', enum: ['ton20', 'gram20'] },
-            ticker: { type: 'string' },
-            balance: { type: 'string', 'x-js-format': 'bigint' },
-            decimals: { type: 'integer' }
+            type: {type: 'string', enum: ['ton20', 'gram20']},
+            ticker: {type: 'string'},
+            balance: {type: 'string', 'x-js-format': 'bigint'},
+            decimals: {type: 'integer'}
         }
     },
     '#/components/schemas/Jettons': {
         type: 'object',
         required: ['jettons'],
         properties: {
-            jettons: { type: 'array', items: { $ref: '#/components/schemas/JettonInfo' } }
+            jettons: {type: 'array', items: {$ref: '#/components/schemas/JettonInfo'}}
         }
     },
     '#/components/schemas/JettonInfo': {
@@ -5543,13 +5545,13 @@ const components = {
             'preview'
         ],
         properties: {
-            mintable: { type: 'boolean' },
-            total_supply: { type: 'string', 'x-js-format': 'bigint' },
-            admin: { $ref: '#/components/schemas/AccountAddress' },
-            metadata: { $ref: '#/components/schemas/JettonMetadata' },
-            preview: { type: 'string' },
-            verification: { $ref: '#/components/schemas/JettonVerificationType' },
-            holders_count: { type: 'integer', format: 'int32' }
+            mintable: {type: 'boolean'},
+            total_supply: {type: 'string', 'x-js-format': 'bigint'},
+            admin: {$ref: '#/components/schemas/AccountAddress'},
+            metadata: {$ref: '#/components/schemas/JettonMetadata'},
+            preview: {type: 'string'},
+            verification: {$ref: '#/components/schemas/JettonVerificationType'},
+            holders_count: {type: 'integer', format: 'int32'}
         }
     },
     '#/components/schemas/JettonHolders': {
@@ -5562,36 +5564,36 @@ const components = {
                     type: 'object',
                     required: ['address', 'owner', 'balance'],
                     properties: {
-                        address: { type: 'string', format: 'address' },
-                        owner: { $ref: '#/components/schemas/AccountAddress' },
-                        balance: { type: 'string', 'x-js-format': 'bigint' }
+                        address: {type: 'string', format: 'address'},
+                        owner: {$ref: '#/components/schemas/AccountAddress'},
+                        balance: {type: 'string', 'x-js-format': 'bigint'}
                     }
                 }
             },
-            total: { type: 'integer', format: 'int64' }
+            total: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/JettonTransferPayload': {
         type: 'object',
         required: ['payload'],
-        properties: { custom_payload: { type: 'string' }, state_init: { type: 'string' } }
+        properties: {custom_payload: {type: 'string'}, state_init: {type: 'string'}}
     },
     '#/components/schemas/AccountStaking': {
         type: 'object',
         required: ['pools'],
         properties: {
-            pools: { type: 'array', items: { $ref: '#/components/schemas/AccountStakingInfo' } }
+            pools: {type: 'array', items: {$ref: '#/components/schemas/AccountStakingInfo'}}
         }
     },
     '#/components/schemas/AccountStakingInfo': {
         type: 'object',
         required: ['pool', 'amount', 'pending_deposit', 'pending_withdraw', 'ready_withdraw'],
         properties: {
-            pool: { type: 'string' },
-            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            pending_deposit: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            pending_withdraw: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            ready_withdraw: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+            pool: {type: 'string'},
+            amount: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            pending_deposit: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            pending_withdraw: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            ready_withdraw: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'}
         }
     },
     '#/components/schemas/PoolInfo': {
@@ -5612,31 +5614,31 @@ const components = {
             'validator_stake'
         ],
         properties: {
-            address: { type: 'string', format: 'address' },
-            name: { type: 'string' },
-            total_amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            implementation: { $ref: '#/components/schemas/PoolImplementationType' },
-            apy: { type: 'number' },
-            min_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            cycle_start: { type: 'integer', format: 'int64' },
-            cycle_end: { type: 'integer', format: 'int64' },
-            verified: { type: 'boolean' },
-            current_nominators: { type: 'integer' },
-            max_nominators: { type: 'integer' },
-            liquid_jetton_master: { type: 'string', format: 'address' },
-            nominators_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            validator_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            cycle_length: { type: 'integer', format: 'int64' }
+            address: {type: 'string', format: 'address'},
+            name: {type: 'string'},
+            total_amount: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            implementation: {$ref: '#/components/schemas/PoolImplementationType'},
+            apy: {type: 'number'},
+            min_stake: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            cycle_start: {type: 'integer', format: 'int64'},
+            cycle_end: {type: 'integer', format: 'int64'},
+            verified: {type: 'boolean'},
+            current_nominators: {type: 'integer'},
+            max_nominators: {type: 'integer'},
+            liquid_jetton_master: {type: 'string', format: 'address'},
+            nominators_stake: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            validator_stake: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            cycle_length: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/PoolImplementation': {
         type: 'object',
         required: ['name', 'description', 'url', 'socials'],
         properties: {
-            name: { type: 'string' },
-            description: { type: 'string' },
-            url: { type: 'string' },
-            socials: { type: 'array', items: { type: 'string' } }
+            name: {type: 'string'},
+            description: {type: 'string'},
+            url: {type: 'string'},
+            socials: {type: 'array', items: {type: 'string'}}
         }
     },
     '#/components/schemas/StorageProvider': {
@@ -5650,12 +5652,12 @@ const components = {
             'maximal_file_size'
         ],
         properties: {
-            address: { type: 'string', format: 'address' },
-            accept_new_contracts: { type: 'boolean' },
-            rate_per_mb_day: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            max_span: { type: 'integer', format: 'int64' },
-            minimal_file_size: { type: 'integer', format: 'int64' },
-            maximal_file_size: { type: 'integer', format: 'int64' }
+            address: {type: 'string', format: 'address'},
+            accept_new_contracts: {type: 'boolean'},
+            rate_per_mb_day: {type: 'integer', format: 'int64', 'x-js-format': 'bigint'},
+            max_span: {type: 'integer', format: 'int64'},
+            minimal_file_size: {type: 'integer', format: 'int64'},
+            maximal_file_size: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/FoundAccounts': {
@@ -5668,10 +5670,10 @@ const components = {
                     type: 'object',
                     required: ['address', 'name', 'preview', 'trust'],
                     properties: {
-                        address: { type: 'string', format: 'address' },
-                        name: { type: 'string' },
-                        preview: { type: 'string' },
-                        trust: { $ref: '#/components/schemas/TrustType' }
+                        address: {type: 'string', format: 'address'},
+                        name: {type: 'string'},
+                        preview: {type: 'string'},
+                        trust: {$ref: '#/components/schemas/TrustType'}
                     }
                 }
             }
@@ -5687,9 +5689,9 @@ const components = {
                     type: 'object',
                     required: ['expiring_at', 'name'],
                     properties: {
-                        expiring_at: { type: 'integer', format: 'int64' },
-                        name: { type: 'string' },
-                        dns_item: { $ref: '#/components/schemas/NftItem' }
+                        expiring_at: {type: 'integer', format: 'int64'},
+                        name: {type: 'string'},
+                        dns_item: {$ref: '#/components/schemas/NftItem'}
                     }
                 }
             }
@@ -5698,8 +5700,8 @@ const components = {
     '#/components/schemas/ChartPoints': {
         type: 'array',
         prefixItems: [
-            { type: 'integer', format: 'int64', description: 'Unix timestamp of the data point' },
-            { type: 'number', description: 'Decimal price of the token in the requested currency' }
+            {type: 'integer', format: 'int64', description: 'Unix timestamp of the data point'},
+            {type: 'number', description: 'Decimal price of the token in the requested currency'}
         ],
         additionalItems: false,
         items: false
@@ -5708,49 +5710,49 @@ const components = {
         type: 'object',
         required: ['public_key', 'address'],
         properties: {
-            public_key: { type: 'string' },
-            address: { type: 'string', format: 'address' }
+            public_key: {type: 'string'},
+            address: {type: 'string', format: 'address'}
         }
     },
     '#/components/schemas/Seqno': {
         type: 'object',
         required: ['seqno'],
-        properties: { seqno: { type: 'integer', format: 'int32' } }
+        properties: {seqno: {type: 'integer', format: 'int32'}}
     },
     '#/components/schemas/BlockRaw': {
         type: 'object',
         required: ['workchain', 'shard', 'seqno', 'root_hash', 'file_hash'],
         properties: {
-            workchain: { type: 'integer', format: 'int32' },
-            shard: { type: 'string' },
-            seqno: { type: 'integer', format: 'int32' },
-            root_hash: { type: 'string' },
-            file_hash: { type: 'string' }
+            workchain: {type: 'integer', format: 'int32'},
+            shard: {type: 'string'},
+            seqno: {type: 'integer', format: 'int32'},
+            root_hash: {type: 'string'},
+            file_hash: {type: 'string'}
         }
     },
     '#/components/schemas/InitStateRaw': {
         type: 'object',
         required: ['workchain', 'root_hash', 'file_hash'],
         properties: {
-            workchain: { type: 'integer', format: 'int32' },
-            root_hash: { type: 'string' },
-            file_hash: { type: 'string' }
+            workchain: {type: 'integer', format: 'int32'},
+            root_hash: {type: 'string'},
+            file_hash: {type: 'string'}
         }
     },
     '#/components/schemas/EncryptedComment': {
         type: 'object',
         required: ['encryption_type', 'cipher_text'],
-        properties: { encryption_type: { type: 'string' }, cipher_text: { type: 'string' } }
+        properties: {encryption_type: {type: 'string'}, cipher_text: {type: 'string'}}
     },
     '#/components/schemas/BlockchainAccountInspect': {
         type: 'object',
         required: ['code', 'code_hash', 'methods', 'compiler'],
         properties: {
-            code: { type: 'string', format: 'cell' },
-            code_hash: { type: 'string' },
-            methods: { type: 'array', items: { $ref: '#/components/schemas/Method' } },
-            compiler: { type: 'string', enum: ['func', 'fift', 'tact'] },
-            source: { $ref: '#/components/schemas/Source' }
+            code: {type: 'string', format: 'cell'},
+            code_hash: {type: 'string'},
+            methods: {type: 'array', items: {$ref: '#/components/schemas/Method'}},
+            compiler: {type: 'string', enum: ['func', 'fift', 'tact']},
+            source: {$ref: '#/components/schemas/Source'}
         }
     },
     '#/components/schemas/PoolImplementationType': {
@@ -5760,49 +5762,49 @@ const components = {
     '#/components/schemas/TokenRates': {
         type: 'object',
         properties: {
-            prices: { type: 'object', additionalProperties: { type: 'number' } },
-            diff_24h: { type: 'object', additionalProperties: { type: 'string' } },
-            diff_7d: { type: 'object', additionalProperties: { type: 'string' } },
-            diff_30d: { type: 'object', additionalProperties: { type: 'string' } }
+            prices: {type: 'object', additionalProperties: {type: 'number'}},
+            diff_24h: {type: 'object', additionalProperties: {type: 'string'}},
+            diff_7d: {type: 'object', additionalProperties: {type: 'string'}},
+            diff_30d: {type: 'object', additionalProperties: {type: 'string'}}
         }
     },
     '#/components/schemas/MarketTonRates': {
         type: 'object',
         required: ['market', 'usd_price', 'last_date_update'],
         properties: {
-            market: { type: 'string' },
-            usd_price: { type: 'number' },
-            last_date_update: { type: 'integer', format: 'int64' }
+            market: {type: 'string'},
+            usd_price: {type: 'number'},
+            last_date_update: {type: 'integer', format: 'int64'}
         }
     },
     '#/components/schemas/ExtraCurrency': {
         type: 'object',
         required: ['amount', 'preview'],
         properties: {
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            preview: { $ref: '#/components/schemas/EcPreview' }
+            amount: {type: 'string', 'x-js-format': 'bigint'},
+            preview: {$ref: '#/components/schemas/EcPreview'}
         }
     },
     '#/components/schemas/SourceFile': {
         type: 'object',
         required: ['name', 'content', 'is_entrypoint', 'is_std_lib', 'include_in_command'],
         properties: {
-            name: { type: 'string' },
-            content: { type: 'string' },
-            is_entrypoint: { type: 'boolean' },
-            is_std_lib: { type: 'boolean' },
-            include_in_command: { type: 'boolean' }
+            name: {type: 'string'},
+            content: {type: 'string'},
+            is_entrypoint: {type: 'boolean'},
+            is_std_lib: {type: 'boolean'},
+            include_in_command: {type: 'boolean'}
         }
     },
     '#/components/schemas/Source': {
         type: 'object',
         required: ['files'],
-        properties: { files: { type: 'array', items: { $ref: '#/components/schemas/SourceFile' } } }
+        properties: {files: {type: 'array', items: {$ref: '#/components/schemas/SourceFile'}}}
     },
     '#/components/schemas/Method': {
         type: 'object',
         required: ['id', 'method'],
-        properties: { id: { type: 'integer', format: 'int64' }, method: { type: 'string' } }
+        properties: {id: {type: 'integer', format: 'int64'}, method: {type: 'string'}}
     }
 };
 type ComponentRef = keyof typeof components;
@@ -6006,7 +6008,6 @@ function prepareRequestData(data: any, orSchema?: any): any {
     return data;
 }
 
-import {StateInit as TonCoreStateInit} from '@ton/core'
 /**
  * @title REST api to TON blockchain explorer
  * @version 2.0.0
@@ -6017,95 +6018,6 @@ import {StateInit as TonCoreStateInit} from '@ton/core'
  */
 export class TonApiClient {
     http: HttpClient;
-
-    constructor(apiConfig: ApiConfig = {}) {
-        this.http = new HttpClient(apiConfig);
-    }
-
-    provider(address: Address, init?: TonCoreStateInit | null) {
-        //return createProvider(this, address, {init ?? null});
-        return createProvider(this, address, {});
-    }
-
-    open<T extends Contract>(src: T) {
-        return openContract<T>(src, (args) => createProvider(this, args.address, args.init));
-    }
-
-
-    async getContractState(address: Address){
-        return await this.accounts.getAccount(address);
-    }
-
-    async getBalance(address: Address): Promise<bigint>{
-        return (await this.getContractState(address)).balance;
-    }
-
-    async getTransaction(address: Address, lt: string, hash: string): Promise<TonCoreTransaction | null>{
-        let ret = await this.blockchain.getBlockchainTransaction(hash);
-        if(ret){
-            return loadTransaction(ret.raw.asSlice())
-        }
-        return null;
-    }
-
-    async getTransactions(address: Address, opts: {
-        limit: number;
-        lt?: string;
-        hash?: string;
-        to_lt?: string;
-        inclusive?: boolean;
-        archival?: boolean;
-    }):Promise<TonCoreTransaction[] | null>{
-        let tonApiOpts:{
-            /**
-             * omit this parameter to get last transactions
-             * @format bigint
-             * @example 39787624000003
-             */
-            after_lt?: bigint;
-            /**
-             * omit this parameter to get last transactions
-             * @format bigint
-             * @example 39787624000003
-             */
-            before_lt?: bigint;
-            /**
-             * @format int32
-             * @min 1
-             * @max 1000
-             * @default 100
-             * @example 100
-             */
-            limit?: number;
-            /**
-             * used to sort the result-set in ascending or descending order by lt.
-             * @default "desc"
-             */
-            sort_order?: 'desc' | 'asc';
-        } = {
-            limit:opts.limit,
-            before_lt:opts.lt ? BigInt(opts.lt):BigInt(0),
-            after_lt:opts.to_lt ? BigInt(opts.to_lt):BigInt(0),
-            sort_order:'desc'
-        }
-        logger.info("tonApi getTransactions","address",address,"tonApiOpts",tonApiOpts);
-        let res = await this.blockchain.getBlockchainAccountTransactions(address,tonApiOpts)
-        if(res){
-            let retTrans:TonCoreTransaction[] = [];
-            for(let tran of res.transactions){
-                let myTran = loadTransaction(tran.raw.asSlice());
-                retTrans.push(myTran);
-            }
-            return retTrans;
-        }else{
-            return null;
-        }
-    }
-
-    async isContractDeployed(addr:Address){
-        return (await this.accounts.getAccount(addr)).status == 'active';
-    };
-
     utilities = {
         /**
          * @description Get the openapi.json file
@@ -6157,7 +6069,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<StatusData>(req, { $ref: '#/components/schemas/ServiceStatus' });
+            return prepareResponse<StatusData>(req, {$ref: '#/components/schemas/ServiceStatus'});
         },
 
         /**
@@ -6180,19 +6092,19 @@ export class TonApiClient {
                 type: 'object',
                 required: ['raw_form', 'bounceable', 'non_bounceable', 'given_type', 'test_only'],
                 properties: {
-                    raw_form: { type: 'string', format: 'address' },
+                    raw_form: {type: 'string', format: 'address'},
                     bounceable: {
                         required: ['b64', 'b64url'],
                         type: 'object',
-                        properties: { b64: { type: 'string' }, b64url: { type: 'string' } }
+                        properties: {b64: {type: 'string'}, b64url: {type: 'string'}}
                     },
                     non_bounceable: {
                         required: ['b64', 'b64url'],
                         type: 'object',
-                        properties: { b64: { type: 'string' }, b64url: { type: 'string' } }
+                        properties: {b64: {type: 'string'}, b64url: {type: 'string'}}
                     },
-                    given_type: { type: 'string' },
-                    test_only: { type: 'boolean' }
+                    given_type: {type: 'string'},
+                    test_only: {type: 'boolean'}
                 }
             });
         }
@@ -6594,13 +6506,13 @@ export class TonApiClient {
                 body: prepareRequestData(data, {
                     type: 'object',
                     properties: {
-                        boc: { type: 'string', format: 'cell' },
+                        boc: {type: 'string', format: 'cell'},
                         batch: {
                             type: 'array',
                             maxItems: 5,
-                            items: { type: 'string', format: 'cell' }
+                            items: {type: 'string', format: 'cell'}
                         },
-                        meta: { type: 'object', additionalProperties: { type: 'string' } }
+                        meta: {type: 'object', additionalProperties: {type: 'string'}}
                     }
                 }),
                 ...params
@@ -6686,7 +6598,7 @@ export class TonApiClient {
                 ...requestParams
             });
 
-            return prepareResponse<StatusData>(req, { $ref: '#/components/schemas/ServiceStatus' });
+            return prepareResponse<StatusData>(req, {$ref: '#/components/schemas/ServiceStatus'});
         }
     };
     accounts = {
@@ -6715,14 +6627,14 @@ export class TonApiClient {
                     type: 'object',
                     required: ['accountIds'],
                     properties: {
-                        accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                        accountIds: {type: 'array', items: {type: 'string', format: 'address'}}
                     }
                 }),
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<GetAccountsData>(req, { $ref: '#/components/schemas/Accounts' });
+            return prepareResponse<GetAccountsData>(req, {$ref: '#/components/schemas/Accounts'});
         },
 
         /**
@@ -6741,7 +6653,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<GetAccountData>(req, { $ref: '#/components/schemas/Account' });
+            return prepareResponse<GetAccountData>(req, {$ref: '#/components/schemas/Account'});
         },
 
         /**
@@ -7255,7 +7167,7 @@ export class TonApiClient {
             return prepareResponse<GetAccountPublicKeyData>(req, {
                 type: 'object',
                 required: ['public_key'],
-                properties: { public_key: { type: 'string' } }
+                properties: {public_key: {type: 'string'}}
             });
         },
 
@@ -7317,7 +7229,7 @@ export class TonApiClient {
             return prepareResponse<GetAccountDiffData>(req, {
                 type: 'object',
                 required: ['balance_change'],
-                properties: { balance_change: { type: 'integer', format: 'int64' } }
+                properties: {balance_change: {type: 'integer', format: 'int64'}}
             });
         },
 
@@ -7394,19 +7306,19 @@ export class TonApiClient {
                 type: 'object',
                 required: ['raw_form', 'bounceable', 'non_bounceable', 'given_type', 'test_only'],
                 properties: {
-                    raw_form: { type: 'string', format: 'address' },
+                    raw_form: {type: 'string', format: 'address'},
                     bounceable: {
                         required: ['b64', 'b64url'],
                         type: 'object',
-                        properties: { b64: { type: 'string' }, b64url: { type: 'string' } }
+                        properties: {b64: {type: 'string'}, b64url: {type: 'string'}}
                     },
                     non_bounceable: {
                         required: ['b64', 'b64url'],
                         type: 'object',
-                        properties: { b64: { type: 'string' }, b64url: { type: 'string' } }
+                        properties: {b64: {type: 'string'}, b64url: {type: 'string'}}
                     },
-                    given_type: { type: 'string' },
-                    test_only: { type: 'boolean' }
+                    given_type: {type: 'string'},
+                    test_only: {type: 'boolean'}
                 }
             });
         }
@@ -7544,7 +7456,7 @@ export class TonApiClient {
                     type: 'object',
                     required: ['accountIds'],
                     properties: {
-                        accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                        accountIds: {type: 'array', items: {type: 'string', format: 'address'}}
                     }
                 }),
                 format: 'json',
@@ -7614,7 +7526,7 @@ export class TonApiClient {
                     type: 'object',
                     required: ['accountIds'],
                     properties: {
-                        accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                        accountIds: {type: 'array', items: {type: 'string', format: 'address'}}
                     }
                 }),
                 format: 'json',
@@ -7734,7 +7646,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<DnsResolveData>(req, { $ref: '#/components/schemas/DnsRecord' });
+            return prepareResponse<DnsResolveData>(req, {$ref: '#/components/schemas/DnsRecord'});
         },
 
         /**
@@ -7803,7 +7715,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<GetTraceData>(req, { $ref: '#/components/schemas/Trace' });
+            return prepareResponse<GetTraceData>(req, {$ref: '#/components/schemas/Trace'});
         }
     };
     events = {
@@ -7822,7 +7734,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<GetEventData>(req, { $ref: '#/components/schemas/Event' });
+            return prepareResponse<GetEventData>(req, {$ref: '#/components/schemas/Event'});
         }
     };
     inscriptions = {
@@ -7983,7 +7895,7 @@ export class TonApiClient {
             return prepareResponse<GetInscriptionOpTemplateData>(req, {
                 type: 'object',
                 required: ['comment', 'destination'],
-                properties: { comment: { type: 'string' }, destination: { type: 'string' } }
+                properties: {comment: {type: 'string'}, destination: {type: 'string'}}
             });
         }
     };
@@ -8023,7 +7935,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<GetJettonsData>(req, { $ref: '#/components/schemas/Jettons' });
+            return prepareResponse<GetJettonsData>(req, {$ref: '#/components/schemas/Jettons'});
         },
 
         /**
@@ -8067,7 +7979,7 @@ export class TonApiClient {
                     type: 'object',
                     required: ['accountIds'],
                     properties: {
-                        accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                        accountIds: {type: 'array', items: {type: 'string', format: 'address'}}
                     }
                 }),
                 format: 'json',
@@ -8226,8 +8138,8 @@ export class TonApiClient {
                 type: 'object',
                 required: ['implementation', 'pool'],
                 properties: {
-                    implementation: { $ref: '#/components/schemas/PoolImplementation' },
-                    pool: { $ref: '#/components/schemas/PoolInfo' }
+                    implementation: {$ref: '#/components/schemas/PoolImplementation'},
+                    pool: {$ref: '#/components/schemas/PoolInfo'}
                 }
             });
         },
@@ -8252,7 +8164,7 @@ export class TonApiClient {
                 type: 'object',
                 required: ['apy'],
                 properties: {
-                    apy: { type: 'array', items: { $ref: '#/components/schemas/ApyHistory' } }
+                    apy: {type: 'array', items: {$ref: '#/components/schemas/ApyHistory'}}
                 }
             });
         },
@@ -8295,10 +8207,10 @@ export class TonApiClient {
                 type: 'object',
                 required: ['pools', 'implementations'],
                 properties: {
-                    pools: { type: 'array', items: { $ref: '#/components/schemas/PoolInfo' } },
+                    pools: {type: 'array', items: {$ref: '#/components/schemas/PoolInfo'}},
                     implementations: {
                         type: 'object',
-                        additionalProperties: { $ref: '#/components/schemas/PoolImplementation' }
+                        additionalProperties: {$ref: '#/components/schemas/PoolImplementation'}
                     }
                 }
             });
@@ -8326,7 +8238,7 @@ export class TonApiClient {
                 properties: {
                     providers: {
                         type: 'array',
-                        items: { $ref: '#/components/schemas/StorageProvider' }
+                        items: {$ref: '#/components/schemas/StorageProvider'}
                     }
                 }
             });
@@ -8372,7 +8284,7 @@ export class TonApiClient {
                 properties: {
                     rates: {
                         type: 'object',
-                        additionalProperties: { $ref: '#/components/schemas/TokenRates' }
+                        additionalProperties: {$ref: '#/components/schemas/TokenRates'}
                     }
                 }
             });
@@ -8431,7 +8343,7 @@ export class TonApiClient {
                 type: 'object',
                 required: ['points'],
                 properties: {
-                    points: { type: 'array', items: { $ref: '#/components/schemas/ChartPoints' } }
+                    points: {type: 'array', items: {$ref: '#/components/schemas/ChartPoints'}}
                 }
             });
         },
@@ -8457,7 +8369,7 @@ export class TonApiClient {
                 properties: {
                     markets: {
                         type: 'array',
-                        items: { $ref: '#/components/schemas/MarketTonRates' }
+                        items: {$ref: '#/components/schemas/MarketTonRates'}
                     }
                 }
             });
@@ -8482,7 +8394,7 @@ export class TonApiClient {
             return prepareResponse<GetTonConnectPayloadData>(req, {
                 type: 'object',
                 required: ['payload'],
-                properties: { payload: { type: 'string' } }
+                properties: {payload: {type: 'string'}}
             });
         },
 
@@ -8506,7 +8418,7 @@ export class TonApiClient {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['stateInit'],
-                    properties: { stateInit: { type: 'string', format: 'cell-base64' } }
+                    properties: {stateInit: {type: 'string', format: 'cell-base64'}}
                 }),
                 format: 'json',
                 ...params
@@ -8559,23 +8471,23 @@ export class TonApiClient {
                     type: 'object',
                     required: ['address', 'proof'],
                     properties: {
-                        address: { type: 'string', format: 'address' },
+                        address: {type: 'string', format: 'address'},
                         proof: {
                             type: 'object',
                             required: ['timestamp', 'domain', 'signature', 'payload'],
                             properties: {
-                                timestamp: { type: 'integer', format: 'int64' },
+                                timestamp: {type: 'integer', format: 'int64'},
                                 domain: {
                                     type: 'object',
                                     required: ['value'],
                                     properties: {
-                                        lengthBytes: { type: 'integer', format: 'int32' },
-                                        value: { type: 'string' }
+                                        lengthBytes: {type: 'integer', format: 'int32'},
+                                        value: {type: 'string'}
                                     }
                                 },
-                                signature: { type: 'string' },
-                                payload: { type: 'string' },
-                                stateInit: { type: 'string', format: 'cell-base64' }
+                                signature: {type: 'string'},
+                                payload: {type: 'string'},
+                                stateInit: {type: 'string', format: 'cell-base64'}
                             }
                         }
                     }
@@ -8587,7 +8499,7 @@ export class TonApiClient {
             return prepareResponse<TonConnectProofData>(req, {
                 type: 'object',
                 required: ['token'],
-                properties: { token: { type: 'string' } }
+                properties: {token: {type: 'string'}}
             });
         },
 
@@ -8681,14 +8593,14 @@ export class TonApiClient {
                     type: 'object',
                     required: ['messages', 'walletAddress', 'walletPublicKey'],
                     properties: {
-                        walletAddress: { type: 'string', format: 'address' },
-                        walletPublicKey: { type: 'string' },
+                        walletAddress: {type: 'string', format: 'address'},
+                        walletPublicKey: {type: 'string'},
                         messages: {
                             type: 'array',
                             items: {
                                 type: 'object',
                                 required: ['boc'],
-                                properties: { boc: { type: 'string', format: 'cell' } }
+                                properties: {boc: {type: 'string', format: 'cell'}}
                             }
                         }
                     }
@@ -8725,8 +8637,8 @@ export class TonApiClient {
                     type: 'object',
                     required: ['boc', 'walletPublicKey'],
                     properties: {
-                        walletPublicKey: { type: 'string' },
-                        boc: { type: 'string', format: 'cell' }
+                        walletPublicKey: {type: 'string'},
+                        boc: {type: 'string', format: 'cell'}
                     }
                 }),
                 ...params
@@ -8755,9 +8667,9 @@ export class TonApiClient {
                 type: 'object',
                 required: ['last', 'state_root_hash', 'init'],
                 properties: {
-                    last: { $ref: '#/components/schemas/BlockRaw' },
-                    state_root_hash: { type: 'string' },
-                    init: { $ref: '#/components/schemas/InitStateRaw' }
+                    last: {$ref: '#/components/schemas/BlockRaw'},
+                    state_root_hash: {type: 'string'},
+                    init: {$ref: '#/components/schemas/InitStateRaw'}
                 }
             });
         },
@@ -8801,14 +8713,14 @@ export class TonApiClient {
                     'init'
                 ],
                 properties: {
-                    mode: { type: 'integer', format: 'int32' },
-                    version: { type: 'integer', format: 'int32' },
-                    capabilities: { type: 'integer', format: 'int64' },
-                    last: { $ref: '#/components/schemas/BlockRaw' },
-                    last_utime: { type: 'integer', format: 'int32' },
-                    now: { type: 'integer', format: 'int32' },
-                    state_root_hash: { type: 'string' },
-                    init: { $ref: '#/components/schemas/InitStateRaw' }
+                    mode: {type: 'integer', format: 'int32'},
+                    version: {type: 'integer', format: 'int32'},
+                    capabilities: {type: 'integer', format: 'int64'},
+                    last: {$ref: '#/components/schemas/BlockRaw'},
+                    last_utime: {type: 'integer', format: 'int32'},
+                    now: {type: 'integer', format: 'int32'},
+                    state_root_hash: {type: 'string'},
+                    init: {$ref: '#/components/schemas/InitStateRaw'}
                 }
             });
         },
@@ -8831,7 +8743,7 @@ export class TonApiClient {
             return prepareResponse<GetRawTimeData>(req, {
                 type: 'object',
                 required: ['time'],
-                properties: { time: { type: 'integer', format: 'int32' } }
+                properties: {time: {type: 'integer', format: 'int32'}}
             });
         },
 
@@ -8854,8 +8766,8 @@ export class TonApiClient {
                 type: 'object',
                 required: ['id', 'data'],
                 properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    data: { type: 'string' }
+                    id: {$ref: '#/components/schemas/BlockRaw'},
+                    data: {type: 'string'}
                 }
             });
         },
@@ -8879,10 +8791,10 @@ export class TonApiClient {
                 type: 'object',
                 required: ['id', 'root_hash', 'file_hash', 'data'],
                 properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    root_hash: { type: 'string' },
-                    file_hash: { type: 'string' },
-                    data: { type: 'string' }
+                    id: {$ref: '#/components/schemas/BlockRaw'},
+                    root_hash: {type: 'string'},
+                    file_hash: {type: 'string'},
+                    data: {type: 'string'}
                 }
             });
         },
@@ -8918,9 +8830,9 @@ export class TonApiClient {
                 type: 'object',
                 required: ['id', 'mode', 'header_proof'],
                 properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    mode: { type: 'integer', format: 'int32' },
-                    header_proof: { type: 'string' }
+                    id: {$ref: '#/components/schemas/BlockRaw'},
+                    mode: {type: 'integer', format: 'int32'},
+                    header_proof: {type: 'string'}
                 }
             });
         },
@@ -8945,7 +8857,7 @@ export class TonApiClient {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['body'],
-                    properties: { body: { type: 'string', format: 'cell-base64' } }
+                    properties: {body: {type: 'string', format: 'cell-base64'}}
                 }),
                 format: 'json',
                 ...params
@@ -8954,7 +8866,7 @@ export class TonApiClient {
             return prepareResponse<SendRawMessageData>(req, {
                 type: 'object',
                 required: ['code'],
-                properties: { code: { type: 'integer', format: 'int32' } }
+                properties: {code: {type: 'integer', format: 'int32'}}
             });
         },
 
@@ -8989,11 +8901,11 @@ export class TonApiClient {
                 type: 'object',
                 required: ['id', 'shardblk', 'shard_proof', 'proof', 'state'],
                 properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    shardblk: { $ref: '#/components/schemas/BlockRaw' },
-                    shard_proof: { type: 'string' },
-                    proof: { type: 'string' },
-                    state: { type: 'string' }
+                    id: {$ref: '#/components/schemas/BlockRaw'},
+                    shardblk: {$ref: '#/components/schemas/BlockRaw'},
+                    shard_proof: {type: 'string'},
+                    proof: {type: 'string'},
+                    state: {type: 'string'}
                 }
             });
         },
@@ -9040,10 +8952,10 @@ export class TonApiClient {
                 type: 'object',
                 required: ['id', 'shardblk', 'shard_proof', 'shard_descr'],
                 properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    shardblk: { $ref: '#/components/schemas/BlockRaw' },
-                    shard_proof: { type: 'string' },
-                    shard_descr: { type: 'string' }
+                    id: {$ref: '#/components/schemas/BlockRaw'},
+                    shardblk: {$ref: '#/components/schemas/BlockRaw'},
+                    shard_proof: {type: 'string'},
+                    shard_descr: {type: 'string'}
                 }
             });
         },
@@ -9067,9 +8979,9 @@ export class TonApiClient {
                 type: 'object',
                 required: ['id', 'proof', 'data'],
                 properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    proof: { type: 'string' },
-                    data: { type: 'string' }
+                    id: {$ref: '#/components/schemas/BlockRaw'},
+                    proof: {type: 'string'},
+                    data: {type: 'string'}
                 }
             });
         },
@@ -9117,8 +9029,8 @@ export class TonApiClient {
                 type: 'object',
                 required: ['ids', 'transactions'],
                 properties: {
-                    ids: { type: 'array', items: { $ref: '#/components/schemas/BlockRaw' } },
-                    transactions: { type: 'string' }
+                    ids: {type: 'array', items: {$ref: '#/components/schemas/BlockRaw'}},
+                    transactions: {type: 'string'}
                 }
             });
         },
@@ -9176,23 +9088,23 @@ export class TonApiClient {
                 type: 'object',
                 required: ['id', 'req_count', 'incomplete', 'ids', 'proof'],
                 properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    req_count: { type: 'integer', format: 'int32' },
-                    incomplete: { type: 'boolean' },
+                    id: {$ref: '#/components/schemas/BlockRaw'},
+                    req_count: {type: 'integer', format: 'int32'},
+                    incomplete: {type: 'boolean'},
                     ids: {
                         type: 'array',
                         items: {
                             type: 'object',
                             required: ['mode'],
                             properties: {
-                                mode: { type: 'integer', format: 'int32' },
-                                account: { type: 'string' },
-                                lt: { type: 'integer', format: 'bigint', 'x-js-format': 'bigint' },
-                                hash: { type: 'string' }
+                                mode: {type: 'integer', format: 'int32'},
+                                account: {type: 'string'},
+                                lt: {type: 'integer', format: 'bigint', 'x-js-format': 'bigint'},
+                                hash: {type: 'string'}
                             }
                         }
                     },
-                    proof: { type: 'string' }
+                    proof: {type: 'string'}
                 }
             });
         },
@@ -9237,9 +9149,9 @@ export class TonApiClient {
                 type: 'object',
                 required: ['complete', 'from', 'to', 'steps'],
                 properties: {
-                    complete: { type: 'boolean' },
-                    from: { $ref: '#/components/schemas/BlockRaw' },
-                    to: { $ref: '#/components/schemas/BlockRaw' },
+                    complete: {type: 'boolean'},
+                    from: {$ref: '#/components/schemas/BlockRaw'},
+                    to: {$ref: '#/components/schemas/BlockRaw'},
                     steps: {
                         type: 'array',
                         items: {
@@ -9260,12 +9172,12 @@ export class TonApiClient {
                                         'state_proof'
                                     ],
                                     properties: {
-                                        to_key_block: { type: 'boolean' },
-                                        from: { $ref: '#/components/schemas/BlockRaw' },
-                                        to: { $ref: '#/components/schemas/BlockRaw' },
-                                        dest_proof: { type: 'string' },
-                                        proof: { type: 'string' },
-                                        state_proof: { type: 'string' }
+                                        to_key_block: {type: 'boolean'},
+                                        from: {$ref: '#/components/schemas/BlockRaw'},
+                                        to: {$ref: '#/components/schemas/BlockRaw'},
+                                        dest_proof: {type: 'string'},
+                                        proof: {type: 'string'},
+                                        state_proof: {type: 'string'}
                                     }
                                 },
                                 lite_server_block_link_forward: {
@@ -9279,11 +9191,11 @@ export class TonApiClient {
                                         'signatures'
                                     ],
                                     properties: {
-                                        to_key_block: { type: 'boolean' },
-                                        from: { $ref: '#/components/schemas/BlockRaw' },
-                                        to: { $ref: '#/components/schemas/BlockRaw' },
-                                        dest_proof: { type: 'string' },
-                                        config_proof: { type: 'string' },
+                                        to_key_block: {type: 'boolean'},
+                                        from: {$ref: '#/components/schemas/BlockRaw'},
+                                        to: {$ref: '#/components/schemas/BlockRaw'},
+                                        dest_proof: {type: 'string'},
+                                        config_proof: {type: 'string'},
                                         signatures: {
                                             type: 'object',
                                             required: [
@@ -9306,8 +9218,8 @@ export class TonApiClient {
                                                         type: 'object',
                                                         required: ['node_id_short', 'signature'],
                                                         properties: {
-                                                            node_id_short: { type: 'string' },
-                                                            signature: { type: 'string' }
+                                                            node_id_short: {type: 'string'},
+                                                            signature: {type: 'string'}
                                                         }
                                                     }
                                                 }
@@ -9353,10 +9265,10 @@ export class TonApiClient {
                 type: 'object',
                 required: ['mode', 'id', 'state_proof', 'config_proof'],
                 properties: {
-                    mode: { type: 'integer', format: 'int32' },
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    state_proof: { type: 'string' },
-                    config_proof: { type: 'string' }
+                    mode: {type: 'integer', format: 'int32'},
+                    id: {$ref: '#/components/schemas/BlockRaw'},
+                    state_proof: {type: 'string'},
+                    config_proof: {type: 'string'}
                 }
             });
         },
@@ -9380,15 +9292,15 @@ export class TonApiClient {
                 type: 'object',
                 required: ['masterchain_id', 'links'],
                 properties: {
-                    masterchain_id: { $ref: '#/components/schemas/BlockRaw' },
+                    masterchain_id: {$ref: '#/components/schemas/BlockRaw'},
                     links: {
                         type: 'array',
                         items: {
                             type: 'object',
                             required: ['id', 'proof'],
                             properties: {
-                                id: { $ref: '#/components/schemas/BlockRaw' },
-                                proof: { type: 'string' }
+                                id: {$ref: '#/components/schemas/BlockRaw'},
+                                proof: {type: 'string'}
                             }
                         }
                     }
@@ -9415,15 +9327,15 @@ export class TonApiClient {
                 type: 'object',
                 required: ['ext_msg_queue_size_limit', 'shards'],
                 properties: {
-                    ext_msg_queue_size_limit: { type: 'integer', format: 'uint32' },
+                    ext_msg_queue_size_limit: {type: 'integer', format: 'uint32'},
                     shards: {
                         type: 'array',
                         items: {
                             type: 'object',
                             required: ['id', 'size'],
                             properties: {
-                                id: { $ref: '#/components/schemas/BlockRaw' },
-                                size: { type: 'integer', format: 'uint32' }
+                                id: {$ref: '#/components/schemas/BlockRaw'},
+                                size: {type: 'integer', format: 'uint32'}
                             }
                         }
                     }
@@ -9474,7 +9386,7 @@ export class TonApiClient {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['boc'],
-                    properties: { boc: { type: 'string', format: 'cell' } }
+                    properties: {boc: {type: 'string', format: 'cell'}}
                 }),
                 format: 'json',
                 ...params
@@ -9509,7 +9421,7 @@ export class TonApiClient {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['boc'],
-                    properties: { boc: { type: 'string', format: 'cell' } }
+                    properties: {boc: {type: 'string', format: 'cell'}}
                 }),
                 format: 'json',
                 ...params
@@ -9544,7 +9456,7 @@ export class TonApiClient {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['boc'],
-                    properties: { boc: { type: 'string', format: 'cell' } }
+                    properties: {boc: {type: 'string', format: 'cell'}}
                 }),
                 format: 'json',
                 ...params
@@ -9589,14 +9501,14 @@ export class TonApiClient {
                     type: 'object',
                     required: ['boc'],
                     properties: {
-                        boc: { type: 'string', format: 'cell' },
+                        boc: {type: 'string', format: 'cell'},
                         params: {
                             type: 'array',
                             items: {
                                 type: 'object',
                                 required: ['address'],
                                 properties: {
-                                    address: { type: 'string', format: 'address' },
+                                    address: {type: 'string', format: 'address'},
                                     balance: {
                                         type: 'integer',
                                         format: 'bigint',
@@ -9642,7 +9554,7 @@ export class TonApiClient {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['boc'],
-                    properties: { boc: { type: 'string', format: 'cell' } }
+                    properties: {boc: {type: 'string', format: 'cell'}}
                 }),
                 format: 'json',
                 ...params
@@ -9652,6 +9564,93 @@ export class TonApiClient {
                 $ref: '#/components/schemas/AccountEvent'
             });
         }
+    };
+
+    constructor(apiConfig: ApiConfig = {}) {
+        this.http = new HttpClient(apiConfig);
+    }
+
+    provider(address: Address, init?: TonCoreStateInit | null) {
+        return createProvider(this, address, init ?? null);
+        //return createProvider(this, address, {});
+    }
+
+    open<T extends Contract>(src: T) {
+        return openContract<T>(src, (args) => createProvider(this, args.address, args.init));
+    }
+
+    async getContractState(address: Address) {
+        return await this.accounts.getAccount(address);
+    }
+
+    async getBalance(address: Address): Promise<bigint> {
+        return (await this.getContractState(address)).balance;
+    }
+
+    async getTransaction(address: Address, lt: string, hash: string): Promise<TonCoreTransaction | null> {
+        let ret = await this.blockchain.getBlockchainTransaction(hash);
+        if (ret) {
+            return loadTransaction(ret.raw.asSlice())
+        }
+        return null;
+    }
+
+    async getTransactions(address: Address, opts: {
+        limit: number;
+        lt?: string;
+        hash?: string;
+        to_lt?: string;
+        inclusive?: boolean;
+        archival?: boolean;
+    }): Promise<TonCoreTransaction[] | null> {
+        let tonApiOpts: {
+            /**
+             * omit this parameter to get last transactions
+             * @format bigint
+             * @example 39787624000003
+             */
+            after_lt?: bigint;
+            /**
+             * omit this parameter to get last transactions
+             * @format bigint
+             * @example 39787624000003
+             */
+            before_lt?: bigint;
+            /**
+             * @format int32
+             * @min 1
+             * @max 1000
+             * @default 100
+             * @example 100
+             */
+            limit?: number;
+            /**
+             * used to sort the result-set in ascending or descending order by lt.
+             * @default "desc"
+             */
+            sort_order?: 'desc' | 'asc';
+        } = {
+            limit: opts.limit,
+            before_lt: opts.lt ? BigInt(opts.lt) : BigInt(0),
+            after_lt: opts.to_lt ? BigInt(opts.to_lt) : BigInt(0),
+            sort_order: 'desc'
+        }
+        logger.info("tonApi getTransactions", "address", address, "tonApiOpts", tonApiOpts);
+        let res = await this.blockchain.getBlockchainAccountTransactions(address, tonApiOpts)
+        if (res) {
+            let retTrans: TonCoreTransaction[] = [];
+            for (let tran of res.transactions) {
+                let myTran = loadTransaction(tran.raw.asSlice());
+                retTrans.push(myTran);
+            }
+            return retTrans;
+        } else {
+            return null;
+        }
+    }
+
+    async isContractDeployed(addr: Address) {
+        return (await this.accounts.getAccount(addr)).status == 'active';
     };
 }
 
@@ -9735,7 +9734,7 @@ function createProvider(
             const result = await tonapi.blockchain.execGetMethodForBlockchainAccount(
                 address,
                 name,
-                { args: args.map(TupleItemToTonapiString) }
+                {args: args.map(TupleItemToTonapiString)}
             );
 
             return {
@@ -9752,12 +9751,12 @@ function createProvider(
             // Send with state init
             const ext = external({
                 to: address,
-                init: neededInit ? { code: neededInit.code, data: neededInit.data } : null,
+                init: neededInit ? {code: neededInit.code, data: neededInit.data} : null,
                 body: message
             });
             const boc = beginCell().store(storeMessage(ext)).endCell();
 
-            await tonapi.blockchain.sendBlockchainMessage({ boc });
+            await tonapi.blockchain.sendBlockchainMessage({boc});
         },
         async internal(via, message) {
             // Resolve init
@@ -9821,7 +9820,7 @@ function createProvider(
             //     .then(({ transactions }) =>
             //         transactions.map(transaction => loadTransaction(transaction.raw.asSlice()))
             //     );
-            return (await tonapi.getTransactions(address,{lt:lt.toString(10),hash:hash.toString('base64'),limit}));
+            return (await tonapi.getTransactions(address, {lt: lt.toString(10), hash: hash.toString('base64'), limit}));
         }
     };
 }
@@ -9845,5 +9844,6 @@ function TupleItemToTonapiString(item: TupleItem): string {
             throw new Error(`Unknown type ${(item as { type: string }).type}`);
     }
 }
+
 type LoclaBlockchainRawAccount = Partial<Pick<BlockchainRawAccount, 'lastTransactionLt'>> &
     Omit<BlockchainRawAccount, 'lastTransactionLt'>;
