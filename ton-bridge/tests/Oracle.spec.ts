@@ -1,14 +1,18 @@
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import {Address, Cell, toNano,TupleItemInt} from '@ton/core';
+import {Blockchain, SandboxContract, TreasuryContract} from '@ton/sandbox';
+import {Cell, toNano} from '@ton/core';
 import '@ton/test-utils';
-import { compile } from '@ton/blueprint';
-import { Bridge } from '../wrappers/Bridge';
+import {compile} from '@ton/blueprint';
+import {Bridge} from '../wrappers/Bridge';
 
 
 function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
 describe('Oracle', () => {
+    let startTime = Math.floor(Date.now() / 1000);
+    let endTime = startTime + 1000;
+
     let code: Cell;
 
     beforeAll(async () => {
@@ -19,13 +23,13 @@ describe('Oracle', () => {
     let deployer: SandboxContract<TreasuryContract>;
     let smgFeeProxy: SandboxContract<TreasuryContract>;
     let oracleAdmin: SandboxContract<TreasuryContract>;
-    let operator:  SandboxContract<TreasuryContract>;
+    let operator: SandboxContract<TreasuryContract>;
     let bridge: SandboxContract<Bridge>;
     let admin1: SandboxContract<TreasuryContract>;
     let admin2: SandboxContract<TreasuryContract>;
 
-    let smgID1: string = "0x000000000000000000000000000000000000000000000041726965735f303438";
-    let smgID2: string = "0x000000000000000000000000000000000000000000000041726965735f303437";
+    let smgID1: string = "0x000000000000000000000000000000000000000000000041726965735f303439";
+    let smgID2: string = "0x000000000000000000000000000000000000000000000041726965735f303440";
 
     beforeEach(async () => {
         blockchain = await Blockchain.create();
@@ -38,26 +42,26 @@ describe('Oracle', () => {
         let c = Bridge.createFromConfig(
             {
                 owner: deployer.address,
-                halt:0,
-                init:0,
-                smgFeeProxy:smgFeeProxy.address,
-                oracleAdmin:oracleAdmin.address,
-                operator:operator.address,
+                halt: 0,
+                init: 0,
+                smgFeeProxy: smgFeeProxy.address,
+                oracleAdmin: oracleAdmin.address,
+                operator: operator.address,
             },
             code
         )
         bridge = blockchain.openContract(c);
 
-        const deployResult = await bridge.sendDeploy(deployer.getSender(),toNano('1000'));
+        const deployResult = await bridge.sendDeploy(deployer.getSender(), toNano('1000'));
 
         //console.log("deployResult==>",deployResult.transactions);
 
-        console.log("deployer==>",deployer);
-        console.log("deployer.address==>",deployer.address);
-        console.log("deployer.address(bigInt)==>",BigInt("0x"+deployer.address.hash.toString('hex')));
-        console.log("bridge.address==>",bridge.address);
-        console.log("admin1.address(bigInt)==>",BigInt("0x"+admin1.address.hash.toString('hex')));
-        console.log("admin2.address(bigInt)==>",BigInt("0x"+admin2.address.hash.toString('hex')));
+        console.log("deployer==>", deployer);
+        console.log("deployer.address==>", deployer.address);
+        console.log("deployer.address(bigInt)==>", BigInt("0x" + deployer.address.hash.toString('hex')));
+        console.log("bridge.address==>", bridge.address);
+        console.log("admin1.address(bigInt)==>", BigInt("0x" + admin1.address.hash.toString('hex')));
+        console.log("admin2.address(bigInt)==>", BigInt("0x" + admin2.address.hash.toString('hex')));
 
 
         expect(deployResult.transactions).toHaveTransaction({
@@ -70,43 +74,44 @@ describe('Oracle', () => {
 
     it('initial: getFirstStoremanGroupID', async () => {
         const first_smg_id = await bridge.getFirstStoremanGroupID();
-        console.log("first_smg_id:",first_smg_id);
+        console.log("first_smg_id:", first_smg_id);
         expect(first_smg_id).toEqual(0n)
     });
     it('add first smg', async () => {
-        let txRet = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
-            id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
-            startTime: 3, endTime: 4,
+        let txRet = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(), {
+            id: BigInt(smgID1), gpkX: 2n, gpkY: 3n,
+            startTime, endTime,
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
         expect(txRet.transactions).toHaveTransaction({
             from: oracleAdmin.address,
             to: bridge.address,
             success: true,
         });
+
         const first_smg_id = await bridge.getFirstStoremanGroupID();
-        console.log("first_smg_id:",first_smg_id);
+        console.log("first_smg_id:", first_smg_id);
         expect(first_smg_id).toEqual(BigInt(smgID1));
 
         const next_smg_id = await bridge.getNextStoremanGroupID(first_smg_id);
-        console.log("next_smg_id:",next_smg_id);
+        console.log("next_smg_id:", next_smg_id);
         expect(next_smg_id).toEqual(0n);
     });
     it('add first smg commit, without sleep, should fail', async () => {
-        await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
-            id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
-            startTime: 3, endTime: 4,
+        await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(), {
+            id: BigInt(smgID1), gpkX: 2n, gpkY: 3n,
+            startTime, endTime,
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
 
         //commit
-        let txRet = await bridge.sendSetStoremanGroupConfigCommit(oracleAdmin.getSender(),{
-            id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
-            startTime: 3, endTime: 4,
+        let txRet = await bridge.sendSetStoremanGroupConfigCommit(oracleAdmin.getSender(), {
+            id: BigInt(smgID1), gpkX: 2n, gpkY: 3n,
+            startTime, endTime,
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
         expect(txRet.transactions).toHaveTransaction({
             from: oracleAdmin.address,
@@ -114,30 +119,30 @@ describe('Oracle', () => {
             success: false,
         });
         let first_smg_id = await bridge.getFirstStoremanGroupID();
-        console.log("first_smg_id:",first_smg_id);
+        console.log("first_smg_id:", first_smg_id);
         expect(first_smg_id).toEqual(BigInt(smgID1));
 
         let get_first_smg_id_Commited = await bridge.getFirstStoremanGroupIDCommited();
-        console.log("get_first_smg_id_Commited:",get_first_smg_id_Commited);
+        console.log("get_first_smg_id_Commited:", get_first_smg_id_Commited);
         expect(get_first_smg_id_Commited).toEqual(BigInt("0x0"));
 
     });
 
     it('add first smg commit, with sleep, should success', async () => {
-        await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
-            id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
-            startTime: 3, endTime: 4,
+        await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(), {
+            id: BigInt(smgID1), gpkX: 2n, gpkY: 3n,
+            startTime, endTime,
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
 
         await sleep(1000)
         //commit
-        let txRet = await bridge.sendSetStoremanGroupConfigCommit(oracleAdmin.getSender(),{
-            id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
-            startTime: 3, endTime: 4,
+        let txRet = await bridge.sendSetStoremanGroupConfigCommit(oracleAdmin.getSender(), {
+            id: BigInt(smgID1), gpkX: 2n, gpkY: 3n,
+            startTime, endTime,
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
         expect(txRet.transactions).toHaveTransaction({
             from: oracleAdmin.address,
@@ -145,32 +150,32 @@ describe('Oracle', () => {
             success: true,
         });
         const first_smg_id = await bridge.getFirstStoremanGroupID();
-        console.log("first_smg_id:",first_smg_id);
+        console.log("first_smg_id:", first_smg_id);
         expect(first_smg_id).toEqual(BigInt(smgID1));
 
         let get_first_smg_id_Commited = await bridge.getFirstStoremanGroupIDCommited();
-        console.log("get_first_smg_id_Commited:",get_first_smg_id_Commited);
+        console.log("get_first_smg_id_Commited:", get_first_smg_id_Commited);
         expect(get_first_smg_id_Commited).toEqual(BigInt(smgID1));
 
         let smg = await bridge.getStoremanGroupConfig(first_smg_id)
-        console.log("smg:",smg)
+        console.log("smg:", smg)
         let smgc = await bridge.getStoremanGroupConfigCommited(first_smg_id)
-        console.log("smgc:",smgc)
+        console.log("smgc:", smgc)
     });
 
 
     it('add second smg', async () => {
-        let txRet = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
-            id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
-            startTime: 3, endTime: 4,
+        let txRet = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(), {
+            id: BigInt(smgID1), gpkX: 2n, gpkY: 3n,
+            startTime, endTime,
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
-        let txRet2 = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
-            id: BigInt(smgID2), gpkX: 2n, gpkY:3n, 
-            startTime: 3, endTime: 4,
+        let txRet2 = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(), {
+            id: BigInt(smgID2), gpkX: 2n, gpkY: 3n,
+            startTime, endTime,
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
         expect(txRet.transactions).toHaveTransaction({
             from: oracleAdmin.address,
@@ -178,12 +183,12 @@ describe('Oracle', () => {
             success: true,
         });
         const first_smg_id = await bridge.getFirstStoremanGroupID();
-        console.log("first_smg_id:",first_smg_id);
-        expect(first_smg_id).toEqual(BigInt(smgID2));
+        console.log("first_smg_id:", first_smg_id);
+        expect(first_smg_id).toEqual(BigInt(smgID1));
 
         const next_smg_id = await bridge.getNextStoremanGroupID(first_smg_id);
-        console.log("next_smg_id:",next_smg_id);
-        expect(next_smg_id).toEqual(BigInt(smgID1));
+        console.log("next_smg_id:", next_smg_id);
+        expect(next_smg_id).toEqual(BigInt(smgID2));
 
         let smg = await bridge.getStoremanGroupConfig(next_smg_id)
         console.log("smg:", smg)
@@ -191,11 +196,11 @@ describe('Oracle', () => {
     });
 
     it('add second smg commited, remove', async () => {
-        let txRet = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
-            id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
-            startTime: 3, endTime: 4,
+        let txRet = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(), {
+            id: BigInt(smgID1), gpkX: 2n, gpkY: 3n,
+            startTime, endTime,
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
         expect(txRet.transactions).toHaveTransaction({
             from: oracleAdmin.address,
@@ -203,11 +208,11 @@ describe('Oracle', () => {
             success: true,
         });
 
-        let txRet2 = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(),{
-            id: BigInt(smgID2), gpkX: 2n, gpkY:3n, 
-            startTime: 3, endTime: 4,
+        let txRet2 = await bridge.sendSetStoremanGroupConfig(oracleAdmin.getSender(), {
+            id: BigInt(smgID2), gpkX: 2n, gpkY: 3n,
+            startTime, endTime,
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
         expect(txRet2.transactions).toHaveTransaction({
             from: oracleAdmin.address,
@@ -215,19 +220,19 @@ describe('Oracle', () => {
             success: true,
         });
         let first_smg_id = await bridge.getFirstStoremanGroupID();
-        console.log("first_smg_id:",first_smg_id);
-        expect(first_smg_id).toEqual(BigInt(smgID2));
+        console.log("first_smg_id:", first_smg_id);
+        expect(first_smg_id).toEqual(BigInt(smgID1));
 
         let next_smg_id = await bridge.getNextStoremanGroupID(first_smg_id);
-        console.log("next_smg_id:",next_smg_id);
-        expect(next_smg_id).toEqual(BigInt(smgID1));
+        console.log("next_smg_id:", next_smg_id);
+        expect(next_smg_id).toEqual(BigInt(smgID2));
 
         await sleep(2000)
-        let txRet3 = await bridge.sendSetStoremanGroupConfigCommit(oracleAdmin.getSender(),{
-            id: BigInt(smgID1), gpkX: 2n, gpkY:3n, 
-            startTime: 3, endTime: 4,
+        let txRet3 = await bridge.sendSetStoremanGroupConfigCommit(oracleAdmin.getSender(), {
+            id: BigInt(smgID1), gpkX: 2n, gpkY: 3n,
+            startTime, endTime,
             value: toNano('0.1'),
-            queryID:1,
+            queryID: 1,
         })
         expect(txRet3.transactions).toHaveTransaction({
             from: oracleAdmin.address,
@@ -236,18 +241,18 @@ describe('Oracle', () => {
         });
         // only commit smg1, do not commit smg2
         let first_smg_idCommited = await bridge.getFirstStoremanGroupIDCommited();
-        console.log("first_smg_idCommited:",first_smg_idCommited);
+        console.log("first_smg_idCommited:", first_smg_idCommited);
         expect(first_smg_idCommited).toEqual(BigInt(smgID1));
 
         let next_smg_idCommited = await bridge.getNextStoremanGroupIDCommited(first_smg_idCommited);
-        console.log("next_smg_idCommited:",next_smg_idCommited);
+        console.log("next_smg_idCommited:", next_smg_idCommited);
         expect(next_smg_idCommited).toEqual(BigInt(0));
 
         // remove
-        let txRet4 = await bridge.sendRemoveStoremanGroup(oracleAdmin.getSender(),{
-            id: BigInt(smgID2), 
+        let txRet4 = await bridge.sendRemoveStoremanGroup(oracleAdmin.getSender(), {
+            id: BigInt(smgID2),
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
         expect(txRet4.transactions).toHaveTransaction({
             from: oracleAdmin.address,
@@ -255,15 +260,15 @@ describe('Oracle', () => {
             success: true,
         });
         first_smg_id = await bridge.getFirstStoremanGroupID();
-        console.log("first_smg_id:",first_smg_id);
+        console.log("first_smg_id:", first_smg_id);
         expect(first_smg_id).toEqual(BigInt(smgID1));
         first_smg_idCommited = await bridge.getFirstStoremanGroupIDCommited();
-        console.log("first_smg_idCommited:",first_smg_idCommited);
+        console.log("first_smg_idCommited:", first_smg_idCommited);
         expect(first_smg_idCommited).toEqual(BigInt(smgID1));
-        txRet4 = await bridge.sendRemoveStoremanGroup(oracleAdmin.getSender(),{
-            id: BigInt(smgID1), 
+        txRet4 = await bridge.sendRemoveStoremanGroup(oracleAdmin.getSender(), {
+            id: BigInt(smgID1),
             value: toNano('0.01'),
-            queryID:1,
+            queryID: 1,
         })
         expect(txRet4.transactions).toHaveTransaction({
             from: oracleAdmin.address,
@@ -271,10 +276,10 @@ describe('Oracle', () => {
             success: true,
         });
         first_smg_id = await bridge.getFirstStoremanGroupID();
-        console.log("first_smg_id:",first_smg_id);
+        console.log("first_smg_id:", first_smg_id);
         expect(first_smg_id).toEqual(BigInt(0));
         first_smg_idCommited = await bridge.getFirstStoremanGroupIDCommited();
-        console.log("first_smg_idCommited:",first_smg_idCommited);
+        console.log("first_smg_idCommited:", first_smg_idCommited);
         expect(first_smg_idCommited).toEqual(BigInt(0));
     });
     it('should addAdmin success', async () => {
@@ -282,11 +287,11 @@ describe('Oracle', () => {
         console.log("firstAdmin 00:", firstAdmin);
         expect(firstAdmin).toBe('')
 
-        let queryID=1;
-        let ret = await bridge.sendAddAdmin(deployer.getSender(),{
+        let queryID = 1;
+        let ret = await bridge.sendAddAdmin(deployer.getSender(), {
             value: toNano('1'),
             queryID,
-            adminAddr:admin1.address,
+            adminAddr: admin1.address,
         });
         expect(ret.transactions).toHaveTransaction({
             from: deployer.address,
@@ -298,11 +303,11 @@ describe('Oracle', () => {
         console.log("firstAdmin:", firstAdmin1);
         expect(firstAdmin1).toEqual(admin1.address.toString())
 
-        queryID=2;
-        ret = await bridge.sendAddAdmin(deployer.getSender(),{
+        queryID = 2;
+        ret = await bridge.sendAddAdmin(deployer.getSender(), {
             value: toNano('1'),
             queryID,
-            adminAddr:admin2.address,
+            adminAddr: admin2.address,
         });
         expect(ret.transactions).toHaveTransaction({
             from: deployer.address,
@@ -318,11 +323,11 @@ describe('Oracle', () => {
         expect(nextAdmin).toEqual(admin1.address.toString())
 
         // remove
-        queryID=3;
-        ret = await bridge.sendRemoveAdmin(deployer.getSender(),{
+        queryID = 3;
+        ret = await bridge.sendRemoveAdmin(deployer.getSender(), {
             value: toNano('1'),
             queryID,
-            adminAddr:admin2.address,
+            adminAddr: admin2.address,
         });
         expect(ret.transactions).toHaveTransaction({
             from: deployer.address,
@@ -335,11 +340,11 @@ describe('Oracle', () => {
         expect(firstAdmin1).toEqual(admin1.address.toString())
 
         // remove
-        queryID=4;
-        ret = await bridge.sendRemoveAdmin(deployer.getSender(),{
+        queryID = 4;
+        ret = await bridge.sendRemoveAdmin(deployer.getSender(), {
             value: toNano('1'),
             queryID,
-            adminAddr:admin1.address,
+            adminAddr: admin1.address,
         });
         expect(ret.transactions).toHaveTransaction({
             from: deployer.address,

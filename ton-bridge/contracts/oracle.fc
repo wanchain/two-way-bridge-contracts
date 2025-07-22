@@ -208,7 +208,7 @@ builder store_smg(builder b, int gpkX, int gpkY, int startTime, int endTime, int
         smgConfig~udict_set_builder(SMGID_DICTIONARY_KEY_LEN, id, store_smg(begin_cell(), gpkX, gpkY, startTime, endTime, timestamp));
         (cell newSmgConfig, cell newSmgTxUniqueId) = clean_expired_smgs(smgConfig, smgTxUniqueId, 0);
         return oracle_generate_data(oracleAdmin, newSmgConfig, smgConfigCommit, newSmgTxUniqueId);
-        ;;return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
+        ;; return oracle_generate_data(oracleAdmin, smgConfig, smgConfigCommit, smgTxUniqueId);
     }  ;; there  is no elseif 
     if (op == OP_ORACLE_CommitSMG) {
         int id = in_msg_body~load_uint(256);
