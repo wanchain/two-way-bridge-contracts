@@ -162,7 +162,7 @@ export class GroupApprove implements Contract {
             fromAccount:string,
             toChainID:number,
             toAccount:string,
-            jettonAdminAddr:string
+            walletCodeBase64?: string,
         }
     ) {
         await provider.internal(sender, {

@@ -377,6 +377,10 @@ export const codeTable = {
             let jettonAdminAddr = Address.parseFriendly(opts.jettonAdminAddr)
             let jettonAdminAddrBuffer = jettonAdminAddr.address.hash
             logger.info(formatUtil.format("fromBuffer,toBuffer:", fromBuffer.toString('hex'), toBuffer.toString('hex')));
+            let walletCodeCell = Cell.EMPTY;
+            if (!!opts.walletCodeBase64) {
+                walletCodeCell = Cell.fromBase64(opts.walletCodeBase64);
+            }
 
             let msg = beginCell()
                 .storeUint(opcodes.OP_TOKENPAIR_Upsert, 32)
@@ -385,9 +389,9 @@ export const codeTable = {
                 .storeUint(opts.toChainID, 32)
                 .storeUint(fromBuffer.length, 8)
                 .storeUint(toBuffer.length, 8)
-                .storeBuffer(jettonAdminAddrBuffer)
                 .storeRef(beginCell().storeBuffer(fromBuffer).endCell())
                 .storeRef(beginCell().storeBuffer(toBuffer).endCell())
+                .storeMaybeRef(walletCodeCell)
                 .endCell()
             return beginCell()
                 .storeUint(opcodes.OP_GROUPAPPROVE_Proposol, 32) // op (op #1 = increment)

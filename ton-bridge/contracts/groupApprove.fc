@@ -162,7 +162,8 @@
             if (op2 == OP_TOKENPAIR_Upsert) {
                 cell fromb = msg_slice~load_ref();
                 cell tob = msg_slice~load_ref();
-                msg = msg.store_ref(fromb).store_ref(tob);
+                cell code = msg_slice~load_ref();
+                msg = msg.store_ref(fromb).store_ref(tob).store_ref(code);
             }
 
             send_raw_message(msg.end_cell(), 16 + CARRY_REMAINING_GAS);
