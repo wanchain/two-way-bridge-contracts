@@ -116,4 +116,32 @@ describe('decode', () => {
         let decode = codeTable[opCode]["deCode"](bodyCell);
         console.log(decode);
     })
+
+    it('decode bigData', async () => {
+        let bodyCelStr = "b5ee9c720101010100160000281234567800000028d23d6cf40000000000000096";
+        let bodyCell = Cell.fromBoc(Buffer.from(bodyCelStr, 'hex'))[0];
+        let ds = bodyCell.beginParse();
+        let op = ds.loadUint(32);
+        let start = ds.loadUint(64);
+        let count = ds.loadUint(64);
+        console.log("op", op, "start", start, "count", count);
+    })
+
+    it('decode sendTransfer bounce', async () => {
+        let bodyCelStr = "b5ee9c720101010100220000400f8a7ea5000000005d74a1b6badb53acfa41aee120000008017806a2c8505125";
+        let bodyCell = Cell.fromBoc(Buffer.from(bodyCelStr, 'hex'))[0];
+
+        let ds = bodyCell.beginParse();
+        let op = ds.loadUint(32);
+        let queryId = ds.loadUint(64);
+        let amount = ds.loadCoins();
+        //let toAddress = ds.loadAddress();
+        // let fromAddress = ds.loadAddress();
+        // let cellCustom = ds.loadMaybeRef();
+        // let fwdCoin = ds.loadCoins();
+        // let fwdLoad = ds.loadMaybeRef();
+        // ds.endParse();
+        //console.log("op", op.toString(16), "queryId", queryId.toString(16), "amount", amount.toString(16), "toAddress", toAddress);
+        console.log("op", op.toString(16), "queryId", queryId.toString(16), "amount", amount.toString(16), "toAddress");
+    })
 });

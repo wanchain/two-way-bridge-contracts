@@ -46,7 +46,7 @@
 
 }
 
-() send_token(int queryId, int amount, slice toAddress, slice jwBridgeAddr, int fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
+() send_token(int queryId, int amount, slice toAddress, slice jwBridgeAddr, int fwdTonAmount, int totalTonAmount, slice senderAddr, int uniqueId) impure {
     {--
     1. bridge send inter_transfer to JW_bridge address
     2. toAddress is not jetton wallet address
@@ -59,7 +59,7 @@
         .store_slice(toAddress)
     ;;.store_slice(my_address())
         .store_slice(senderAddr)
-        .store_maybe_ref(begin_cell().end_cell())   ;; customPayload
+        .store_maybe_ref(begin_cell().store_uint(uniqueId, 256).end_cell())   ;; customPayload
         .store_coins(fwdTonAmount)            ;; forward_amount, 4 bit if zero
         .store_maybe_ref(begin_cell().end_cell())   ;; forwardPayload
         .end_cell();
@@ -116,10 +116,10 @@
 }
 
 
-() smgRelease_jetton(int queryId, int releaseValue, int fee, slice userAccount, slice proxyAddress, slice jwBridgeAddr, fwdTonAmount, int totalTonAmount, slice senderAddr) impure {
-    send_token(queryId, releaseValue, userAccount, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
+() smgRelease_jetton(int queryId, int releaseValue, int fee, slice userAccount, slice proxyAddress, slice jwBridgeAddr, fwdTonAmount, int totalTonAmount, slice senderAddr, int uniqueId) impure {
+    send_token(queryId, releaseValue, userAccount, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr, uniqueId);
     if (fee > 0) {
-        send_token(queryId, fee, proxyAddress, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr);
+        send_token(queryId, fee, proxyAddress, jwBridgeAddr, fwdTonAmount, totalTonAmount, senderAddr, uniqueId);
     }
     return ();
 }
@@ -334,7 +334,7 @@
                 throw_unless(error::cross_ton_not_enough, msgValue > 2 * totalTonAmount);
                 refundValue = msgValue - 2 * totalTonAmount;
             }
-            smgRelease_jetton(queryId, releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr, fwTonAmount, totalTonAmount, senderAddr);
+            smgRelease_jetton(queryId, releaseValue, fee, userAccount, smgFeeProxy, jwBridgeAddr, fwTonAmount, totalTonAmount, senderAddr, uniqId);
         }
         return (originAddress, refundValue, new_oracle, revertToken);
     }

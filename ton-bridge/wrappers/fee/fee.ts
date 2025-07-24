@@ -23,3 +23,22 @@ export const TON_FEE = {
     TOTAL_TON_AMOUNT_TRANSFER_JETTON: toNano('0.2'),   // for smgRelease , send token
 }
 
+export function storageFeeCalculator(bitSize: number, cellSize: number, lastSecondPaid: number, lastPaid: number) {
+    let duration = lastPaid - lastSecondPaid;
+    let size = bitSize;
+
+    const bit_price_ps = 1
+    const cell_price_ps = 500
+
+    const pricePerSec = size * bit_price_ps +
+        +cellSize * cell_price_ps
+
+    let fee = Math.ceil(pricePerSec * duration / 2 ** 16) * 10 ** -9
+    let mb = (size / 1024 / 1024 / 8).toFixed(5)
+    let days = Math.floor(duration / (3600 * 24))
+
+    let str = `Storage Fee: ${fee} TON (${mb} MB for ${days} days)`
+    console.log(str);
+    return (fee * 10 ** 9);
+}
+
