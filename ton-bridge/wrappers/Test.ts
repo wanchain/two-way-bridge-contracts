@@ -56,7 +56,7 @@ export class Test implements Contract {
             body: beginCell()
                 .storeUint(0x12345678, 32)
                 .storeUint( Date.now()*1000, 64)
-                .storeUint(100, 64)
+                .storeUint(1, 64)
                 .endCell(),
         });
     }

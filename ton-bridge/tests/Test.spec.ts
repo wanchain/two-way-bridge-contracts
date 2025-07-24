@@ -65,9 +65,9 @@ describe('Test', () => {
 
     });
 
-    it('test sendto throw', async () => {
+    it('test sendto cell count', async () => {
         let user1 = await blockchain.treasury('user1');
-        let count = 100
+        let count = 1
         while(count-- > 0) {
             let txRet = await test.sendTransDic(deployer.getSender(), {})
             console.log("txRet:",count, txRet.transactions[1].totalFees)
@@ -78,21 +78,26 @@ describe('Test', () => {
             });
         }
     });  
-    // it('test sendto throw', async () => {
-    //     let user1 = await blockchain.treasury('user1');
-
-
-    //     let txRet = await test.sendTransThrow(deployer.getSender(), {
-    //         address: fakeThrow.address
-    //     })
-    //     expect(txRet.transactions).toHaveTransaction({
-    //         from: deployer.address,
-    //         to: test.address,
-    //         success: true,
-    //     });
-
-
-    // });     
+    it('test sendto throw', async () => {
+        let txRet = await test.sendTransThrow(deployer.getSender(), {
+            address: fakeThrow.address
+        })
+        expect(txRet.transactions).toHaveTransaction({   // deployer ->test
+            from: deployer.address,
+            to: test.address,
+            success: true,
+        });
+        expect(txRet.transactions).toHaveTransaction({  // test to throw
+            from: test.address,
+            to: fakeThrow.address,
+            success: false,
+        });
+        expect(txRet.transactions).toHaveTransaction({  // bounced
+            from: fakeThrow.address,
+            to: test.address,
+            success: true,
+        });
+    });     
     
      
 });
