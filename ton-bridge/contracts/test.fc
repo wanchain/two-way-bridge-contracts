@@ -44,6 +44,13 @@
     int flags = cs~load_uint(4);
     if (flags & 1) {
         ;; ignore all bounced messages
+        in_msg_body~skip_bounce_flag();
+        int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+        int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+        ~strdump("bbbbbbbb bounced");
+        ~dump(op);
+        ~dump(query_id);
+
         return ();
     }
 
@@ -73,7 +80,17 @@
         refund_executed(sender_address);
     }
     if (op == 0x12345611) {
-        ~strdump("xxxxx");
+        var taddr = in_msg_body~load_msg_addr();
+        var msg = begin_cell()
+            .store_msg_flag(0x18)
+            .store_slice(taddr)
+            .store_coins(0)
+            .store_msgbody_prefix_slice()
+            .store_uint(op, 32)
+            .store_uint(query_id, 64) ;; used as query id
+            .store_slice(taddr)
+            .end_cell();
+        send_raw_message(msg, 64);
     }
 
     return ();
