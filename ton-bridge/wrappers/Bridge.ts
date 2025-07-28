@@ -293,7 +293,7 @@ export class Bridge implements Contract {
         let body = codeTable[opcodes.OP_CROSS_SmgRelease].enCode(opts);
         await provider.internal(via, {
             value: opts.value,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
             body: body
         });
     }
