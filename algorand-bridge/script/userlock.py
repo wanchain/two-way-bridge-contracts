@@ -126,8 +126,20 @@ def setOracle(app_client) -> None:
     GPK = bytes.fromhex('dacc38e9bc3a8ccf2a0642a1481ab3ba4480d9a804927c84c621ac394d556b01351f98176e1614272a242f6ca31d21b8baead46be6b0c0f354a4fbfb477f6809')
     startTime = timestamp-1000000
     endTime = timestamp+1000000
- 
     status = 5
+    app_client.call(
+        bridge.setStoremanGroupPreConfig,
+        id=smgID,
+        status=status,
+        startTime=startTime,
+        endTime=endTime,
+        gpk=GPK,
+        boxes=[
+            (app_client.app_id, smgID),
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.get_sender())),
+        ],
+    )
+    time.sleep(6)
     tx = app_client.call(
         bridge.setStoremanGroupConfig,
         id=smgID,

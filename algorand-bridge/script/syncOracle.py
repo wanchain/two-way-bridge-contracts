@@ -11,7 +11,7 @@ from algosdk.atomic_transaction_composer import (
     TransactionWithSigner,
 )
 import beaker
-
+import time
 import bridge
 from utils import *
 
@@ -30,7 +30,19 @@ def setOracle(app_client) -> None:
     timestamp = block_info['block']['ts']
     startTime = timestamp-10000000
     endTime = timestamp+10000000
- 
+    app_client.call(
+        bridge.setStoremanGroupPreConfig,
+        id=smgID,
+        status=5,
+        startTime=startTime,
+        endTime=endTime,
+        gpk=GPK,
+        boxes=[
+            (app_client.app_id, smgID),
+            (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.get_sender())),
+        ],
+    )
+    time.sleep(6)
     tx = app_client.call(
         bridge.setStoremanGroupConfig,
         id=smgID,

@@ -13,6 +13,7 @@ class StoremanGroupConfig(abi.NamedTuple):
     startTime: abi.Field[abi.Uint64]
     endTime: abi.Field[abi.Uint64]
     status: abi.Field[abi.Uint8]
+    timestamp: abi.Field[abi.Uint64]
     
 class UserLockLogger(abi.NamedTuple):
     name:         abi.Field[abi.String]
@@ -59,6 +60,8 @@ class CrossTokenInfo(abi.NamedTuple):
 
 TransactionHash = abi.StaticBytes[Literal[32]]
 CurrentChainID = Int(2147483931)
+SchedualDelay = Int(86400)
+# SchedualDelay = Int(5) # for UT
 
 class BridgeState:
     # Care should be taken to ensure if multiple BoxMapping types are used, there is no overlap with keys. 
@@ -94,6 +97,7 @@ class BridgeState:
         TealType.uint64,
         descr="halted flag",
     )
+    mapStoremanGroupPreConfig = BoxMapping(abi.StaticBytes[Literal[32]], StoremanGroupConfig)
     mapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], StoremanGroupConfig)
 
 
@@ -583,6 +587,21 @@ def delete() -> Expr:
 
 # oracle methods
 @app.external(authorize=Authorize.only(app.state.oracleAdmin.get()))
+def setStoremanGroupPreConfig(
+    id: abi.StaticBytes[Literal[32]],
+    status: abi.Uint8,
+    gpk: abi.StaticBytes[Literal[64]],
+    startTime: abi.Uint64,
+    endTime: abi.Uint64,
+) -> Expr:
+    timestamp = abi.make(abi.Uint64)
+    return Seq(
+        timestamp.set(Global.latest_timestamp()),
+        (info := StoremanGroupConfig()).set(gpk, startTime, endTime, status, timestamp),
+        app.state.mapStoremanGroupPreConfig[id].set(info),
+    )
+
+@app.external(authorize=Authorize.only(app.state.oracleAdmin.get()))
 def setStoremanGroupConfig(
     id: abi.StaticBytes[Literal[32]],
     status: abi.Uint8,
@@ -590,9 +609,33 @@ def setStoremanGroupConfig(
     startTime: abi.Uint64,
     endTime: abi.Uint64,
 ) -> Expr:
+    timestamp = abi.make(abi.Uint64)
     return Seq(
-        (info := StoremanGroupConfig()).set(gpk, startTime, endTime, status),
-        app.state.mapStoremanGroupConfig[id].set(info),
+        timestamp.set(Global.latest_timestamp()),
+        (preInfo := StoremanGroupConfig()).decode(
+            app.state.mapStoremanGroupPreConfig[id].get()
+        ),
+        (preGpk := abi.StaticBytes(abi.StaticBytesTypeSpec(64))).set(preInfo.gpk),
+        (preStartTime := abi.Uint64()).set(preInfo.startTime),
+        (preEndTime := abi.Uint64()).set(preInfo.endTime),
+        (preStatus := abi.Uint8()).set(preInfo.status),
+        (preTimestamp := abi.Uint64()).set(preInfo.timestamp),
+        If(preTimestamp.get() == Int(0))
+        .Then(
+            Reject()
+        ),
+        If(timestamp.get() < preTimestamp.get()+SchedualDelay)
+        .Then(
+            Reject()
+        ),
+        If(And(preGpk.get()==gpk.get(),preStartTime.get()==startTime.get(),preEndTime.get()==endTime.get(),preStatus.get()==status.get()))
+        .Then(
+            (info := StoremanGroupConfig()).set(gpk, startTime, endTime, status, timestamp),
+            app.state.mapStoremanGroupConfig[id].set(info),
+        )
+        .Else(
+            Reject()
+        ),
     )
 
 @app.external(authorize=Authorize.only(app.state.oracleAdmin.get()))
@@ -607,7 +650,8 @@ def setStoremanGroupStatus(
         (gpk := abi.StaticBytes(abi.StaticBytesTypeSpec(64))).set(info.gpk),
         (startTime := abi.Uint64()).set(info.startTime),
         (endTime := abi.Uint64()).set(info.endTime),
-        (infoNew := StoremanGroupConfig()).set(gpk, startTime, endTime, status),
+        (timestamp := abi.Uint64()).set(info.timestamp),
+        (infoNew := StoremanGroupConfig()).set(gpk, startTime, endTime, status, timestamp),
         app.state.mapStoremanGroupConfig[id].set(infoNew)
     )
 

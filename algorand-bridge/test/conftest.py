@@ -16,6 +16,7 @@ import bridge
 import groupApprove
 
 import pytest
+import time
 from utils import *
 
 
@@ -170,6 +171,19 @@ def setStoreman(app_client_admin) -> None:
     startTime = timestamp-1000000
     endTime = timestamp+1000000
     status = 5
+    app_client_admin.call(
+        bridge.setStoremanGroupPreConfig,
+        id=smgID,
+        status=status,
+        startTime=startTime,
+        endTime=endTime,
+        gpk=GPK,
+        boxes=[
+            (app_client_admin.app_id, smgID),
+            (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.get_sender())),
+        ],
+    )
+    time.sleep(6)
     tx = app_client_admin.call(
         bridge.setStoremanGroupConfig,
         id=smgID,

@@ -7,6 +7,7 @@ use venv to make a virtual environments and install dependencies
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+export PYTHONPATH=.
 ```
 
 ## use beaker to develop and test contracts
@@ -48,4 +49,17 @@ Then transfer the owner of Bridge to the new groupApprove.
 1. user invoke the interface 'userLock' and lock the coin/token in this contract.
 2. storeman invoke  the interface 'smgRelease' to transfer the coin/token from this contract to user address.
 
-
+## how to setup unit test environment
+1. install algokit
+```
+pipx install algokit
+```
+2. start algokit
+```
+algokit localnet start
+```
+3. run testcase
+```
+pytest test
+```
+Note: To change 'SchedualDelay' before UT.
