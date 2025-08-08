@@ -27,6 +27,9 @@ def getPrefixAddrKey(prefix, addr):
     length_to_encode = len(value).to_bytes(2, byteorder="big")
     return length_to_encode + value
 
+def getPreSmgKey(smgID):
+    return bytes("pre_", 'utf8')+smgID
+
 def print_boxes(app_client: beaker.client.ApplicationClient) -> None:
     boxes = app_client.get_box_names()
     print(f"{len(boxes)} boxes found")

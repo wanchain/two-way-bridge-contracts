@@ -1,5 +1,6 @@
 from pyteal import *
 from beaker import *
+from typing import Literal
 
 @ABIReturnSubroutine
 def getFromToChainID(
@@ -60,6 +61,13 @@ def getAgentFeeKey(
       output.set(Concat(Bytes("mapAgentFee"), Itob(id.get())))
     )        
 
+@ABIReturnSubroutine
+def getPreSmgKey(
+    id: abi.StaticBytes[Literal[32]],
+    *,
+    output: abi.StaticBytes[Literal[36]],
+    ) -> Expr:
+        return output.set(Concat(Bytes("pre_"), id.get()))
 
 @Subroutine(TealType.none)
 def do_axfer(rx: Expr, aid: Expr, amt: Expr) -> Expr:

@@ -135,7 +135,7 @@ def setOracle(app_client) -> None:
         endTime=endTime,
         gpk=GPK,
         boxes=[
-            (app_client.app_id, smgID),
+            (app_client.app_id, getPreSmgKey(smgID)),
             (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.get_sender())),
         ],
     )
@@ -149,6 +149,7 @@ def setOracle(app_client) -> None:
         gpk=GPK,
         boxes=[
             (app_client.app_id, smgID),
+            (app_client.app_id, getPreSmgKey(smgID)),
             (app_client.app_id, getPrefixAddrKey("mapAdmin", app_client.get_sender())),
         ],
     )

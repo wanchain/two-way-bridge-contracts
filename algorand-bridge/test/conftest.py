@@ -179,7 +179,7 @@ def setStoreman(app_client_admin) -> None:
         endTime=endTime,
         gpk=GPK,
         boxes=[
-            (app_client_admin.app_id, smgID),
+            (app_client_admin.app_id, getPreSmgKey(smgID)),
             (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.get_sender())),
         ],
     )
@@ -193,6 +193,7 @@ def setStoreman(app_client_admin) -> None:
         gpk=GPK,
         boxes=[
             (app_client_admin.app_id, smgID),
+            (app_client_admin.app_id, getPreSmgKey(smgID)),
             (app_client_admin.app_id, getPrefixAddrKey("mapAdmin", app_client_admin.get_sender())),
         ],
     )

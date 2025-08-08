@@ -97,7 +97,7 @@ class BridgeState:
         TealType.uint64,
         descr="halted flag",
     )
-    mapStoremanGroupPreConfig = BoxMapping(abi.StaticBytes[Literal[32]], StoremanGroupConfig)
+    mapStoremanGroupPreConfig = BoxMapping(abi.StaticBytes[Literal[36]], StoremanGroupConfig)
     mapStoremanGroupConfig = BoxMapping(abi.StaticBytes[Literal[32]], StoremanGroupConfig)
 
 
@@ -595,10 +595,12 @@ def setStoremanGroupPreConfig(
     endTime: abi.Uint64,
 ) -> Expr:
     timestamp = abi.make(abi.Uint64)
+    preKey = abi.make(abi.StaticBytes[Literal[36]])
     return Seq(
         timestamp.set(Global.latest_timestamp()),
+        getPreSmgKey(id).store_into(preKey),
         (info := StoremanGroupConfig()).set(gpk, startTime, endTime, status, timestamp),
-        app.state.mapStoremanGroupPreConfig[id].set(info),
+        app.state.mapStoremanGroupPreConfig[preKey].set(info),
     )
 
 @app.external(authorize=Authorize.only(app.state.oracleAdmin.get()))
@@ -610,10 +612,12 @@ def setStoremanGroupConfig(
     endTime: abi.Uint64,
 ) -> Expr:
     timestamp = abi.make(abi.Uint64)
+    preKey = abi.make(abi.StaticBytes[Literal[36]])
     return Seq(
         timestamp.set(Global.latest_timestamp()),
+        getPreSmgKey(id).store_into(preKey),
         (preInfo := StoremanGroupConfig()).decode(
-            app.state.mapStoremanGroupPreConfig[id].get()
+            app.state.mapStoremanGroupPreConfig[preKey].get()
         ),
         (preGpk := abi.StaticBytes(abi.StaticBytesTypeSpec(64))).set(preInfo.gpk),
         (preStartTime := abi.Uint64()).set(preInfo.startTime),
