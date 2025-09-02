@@ -593,6 +593,19 @@ const config = {
         messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
       }
     },
+    sonicMainnet: {
+      url: "https://rpc.soniclabs.com/",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147493655,
+      cctpV2: {
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0x14CA89ac9Cd73B01Bf71a3aF3f8cf8fd224d6A1d",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
+    },
     worldChainSepoliaTestnet: {
       url: "https://worldchain-sepolia.g.alchemy.com/public",
       // url: "https://worldchain-sepolia.drpc.org",
@@ -611,6 +624,7 @@ const config = {
     },
     worldChainMainnet: {
       url: "https://worldchain-mainnet.g.alchemy.com/public",
+      // url: "https://worldchain-mainnet.gateway.tenderly.co",
       accounts: [process.env.PK],
       chainId: 480,
       bip44ChainId: 1073741857,
@@ -619,6 +633,36 @@ const config = {
         delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
         feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
         feeReadSC: "0x0000000000000000000000000000000000000000",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      }
+    },
+    uniChainSepoliaTestnet: {
+      url: "https://sepolia.unichain.org",
+      accounts: [process.env.PK],
+      chainId: 1301,
+      gasPrice: 300,
+      bip44ChainId: 1073741858,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x5292B2936daD44EdFbFB2929f9f246304167843b",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
+    },
+    uniChainMainnet: {
+      url: "https://mainnet.unichain.org",
+      accounts: [process.env.PK],
+      chainId: 130,
+      // gasPrice: 300,
+      bip44ChainId: 1073741858,
+      cctpV2: {
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0x9C11539603661b6c90E65E96Aa8aC4B8E4b914c8",
         tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
         messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
       }
@@ -666,13 +710,15 @@ const config = {
       amoy: "Placeholder",
       lineaSepoliaTestnet: "Placeholder",
       sonicTestnet: "Placeholder",
+      sonicMainnet: "Placeholder",
       worldChainSepoliaTestnet: "Placeholder",
       worldChainMainnet: "Placeholder",
+      uniChainSepoliaTestnet: "Placeholder",
+      uniChainMainnet: "Placeholder",
     },
     customChains: [
       {
         network: "sepolia",
-        chainid: 11155111,
         chainId: 11155111,
         urls: {
             apiURL: "https://api.etherscan.io/v2/api?chainid=11155111",
@@ -681,7 +727,6 @@ const config = {
       },
       {
         network: "fuji",
-        chainid: 43113,
         chainId: 43113,
         urls: {
             // apiURL: "https://api.etherscan.io/v2/api?chainid=43113",
@@ -828,6 +873,14 @@ const config = {
         }
       },
       {
+        network: "sonicMainnet",
+        chainId: 146,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=146",
+          browserURL: "https://sonicscan.org/"
+        }
+      },
+      {
         network: "worldChainSepoliaTestnet",
         chainId: 4801,
         urls: {
@@ -850,7 +903,31 @@ const config = {
           apiURL: "https://api.ftmscan.com/api",
           browserURL: "https://ftmscan.com",
         }
-      }
+      },
+      {
+        network: "uniChainSepoliaTestnet",
+        chainId: 1301,
+        // urls: {
+        //   apiURL: "https://api.etherscan.io/v2/api?chainid=1301",
+        //   browserURL: "https://sepolia.uniscan.xyz/"
+        // }
+        urls: {
+          apiURL: "https://unichain-sepolia.blockscout.com/api",
+          browserURL: "https://unichain-sepolia.blockscout.com"
+        }
+      },
+      {
+        network: "uniChainMainnet",
+        chainId: 130,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=130",
+          browserURL: "https://uniscan.xyz/"
+        }
+        // urls: {
+        //   apiURL: "https://unichain.blockscout.com//api",
+        //   browserURL: "https://unichain.blockscout.com/"
+        // }
+      },
     ],
   },
 };
