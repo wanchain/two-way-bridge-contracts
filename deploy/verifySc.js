@@ -5,6 +5,7 @@ const fs = require('fs');
 
 
 const verify = async (hre, artifact, address, pathName, constructorArgs) => {
+  try {
     const verificationId = await hre.run("verify:verify", {
       address: address,
       contract: pathName,
@@ -12,6 +13,43 @@ const verify = async (hre, artifact, address, pathName, constructorArgs) => {
       bytecode: artifact.bytecode,
     });
     console.log(`${pathName} verified! VerificationId: ${verificationId}`)
+  } catch (error) {
+    if (error.message.includes("Contract source code already verified")) {
+      console.log(`${pathName} already verified!`);
+      return;
+    } else if (error.message.includes("Reason: Already Verified")) {
+      console.log(`${pathName} already verified!`);
+      return;
+    } else if (error.message.includes("Reason: Contract source code already verified")) {
+      console.log(`${pathName} already verified!`);
+      return;
+    } else if (error.message.includes("Reason: Contract source code not verified")) {
+      console.log(`${pathName} not verified!`);
+      return;
+    } else if (error.message.includes("Reason: Contract source code not found")) {
+      console.log(`${pathName} not verified! Contract source code not found.`);
+      return;
+    } else if (error.message.includes("Reason: Contract source code not provided")) {
+      console.log(`${pathName} not verified! Contract source code not provided.`);
+      return;
+    } else if (error.message.includes("Reason: Contract source code not available")) {
+      console.log(`${pathName} not verified! Contract source code not available.`);
+      return;
+    } else if (error.message.includes("Reason: Contract source code not found in the provided sources")) {
+      console.log(`${pathName} not verified! Contract source code not found in the provided sources.`);
+      return;
+    } else {
+      console.log(`${pathName} verify failed!`, error);
+      return;
+    }
+  }
+    // const verificationId = await hre.run("verify:verify", {
+    //   address: address,
+    //   contract: pathName,
+    //   constructorArguments: constructorArgs || [],
+    //   bytecode: artifact.bytecode,
+    // });
+    // console.log(`${pathName} verified! VerificationId: ${verificationId}`)
 }
 
 async function main() {
@@ -24,6 +62,9 @@ async function main() {
     let SignatureVerifier = await hre.ethers.getContractFactory("SignatureVerifier");
     let Bn128SchnorrVerifier = await hre.ethers.getContractFactory("Bn128SchnorrVerifier");
     
+
+    let NFTLibV1 = await hre.ethers.getContractFactory("NFTLibV1");
+    let RapidityLibV4 = await hre.ethers.getContractFactory("RapidityLibV4");
 
     let CrossDelegateV4 = await hre.ethers.getContractFactory("CrossDelegateV4", {
         libraries: {
@@ -48,12 +89,15 @@ async function main() {
         await verify(hre, Bn128SchnorrVerifier, scAddr.bn128SchnorrVerifier);
     }
     
+    await verify(hre, NFTLibV1, scAddr.NFTLibV1);
+    await verify(hre, RapidityLibV4, scAddr.RapidityLibV4);
     await verify(hre, CrossDelegateV4, scAddr.crossDelegate);
     await verify(hre, OracleDelegate, scAddr.oracleDelegate);
     await verify(hre, Multicall2, scAddr.multicall2);
     await verify(hre, TokenManagerProxy, scAddr.tokenManagerProxy);
     await verify(hre, CrossProxy, scAddr.crossProxy);
     await verify(hre, OracleProxy, scAddr.oracleProxy);
+
     await verify(hre, GroupApprove, scAddr.groupApprove, "contracts/GroupApprove/GroupApprove.sol:GroupApprove", [deployer, scAddr.signatureVerifier, scAddr.oracleProxy, scAddr.crossProxy]);
 
 }
