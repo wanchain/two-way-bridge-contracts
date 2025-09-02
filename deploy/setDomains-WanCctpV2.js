@@ -3,11 +3,11 @@ const path = require("path");
 
 
 const CCTP_DOMAIN = {
-  ethereum: 0, avalanche: 1, optimism: 2, arbitrum: 3, base: 6, polygon: 7, worldChain: 14
+  ethereum: 0, avalanche: 1, optimism: 2, arbitrum: 3, base: 6, polygon: 7, worldChain: 14, unichain: 10, sonic: 13
   // ,solana: 5,  linea: 11, sonic: 13, codex: 12, 
 };
 const CCTP_BIP44 = {
-  ethereum: 2147483708, avalanche: 2147492648, optimism: 2147484262, arbitrum: 1073741826, base: 1073741841, polygon: 2147484614, worldChain: 1073741857
+  ethereum: 2147483708, avalanche: 2147492648, optimism: 2147484262, arbitrum: 1073741826, base: 1073741841, polygon: 2147484614, worldChain: 1073741857, unichain: 1073741858, sonic: 2147493655
   // ,solana: 2147484149,  linea: 1073741842, sonic: 2147493655, codex: 12, 
 };
 const BIP44_DOMAIN_SET_PARAMS = Object.values(Object.keys(CCTP_BIP44).reduce((reduced, chain) => {
