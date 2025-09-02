@@ -18,6 +18,7 @@ const CROSS_ADMIN = '0xa35B3C55626188015aC79F396D0B593947231976';
 const TOKEN_MANAGER_OPERATOR = '0xa35B3C55626188015aC79F396D0B593947231976';
 const SMG_FEE_PROXY = "0x82bf94d159b15a587c45c9d70e0fab7fd87889eb";
 const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
+const CROSS_OPERATOR = '0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD';
 
 const proposers = ["0x390CC3173EE7F425Fe7659df215B13959FD468E1"];
 const executors = ["0x0000000000000000000000000000000000000000"];
@@ -36,6 +37,7 @@ const cancellers = [
 // const TOKEN_MANAGER_OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
 // const SMG_FEE_PROXY = "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9";
 // const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
+// const CROSS_OPERATOR = '0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9';
 
 // const proposers = ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"];
 // const executors = ["0x0000000000000000000000000000000000000000"];
@@ -61,6 +63,7 @@ if(!BIP44_CHAIN_ID) {
 }
 async function main() {
   let deployer = (await hre.ethers.getSigner()).address;
+  console.log("deployer:", deployer);
 
   let Multicall2 = await hre.ethers.getContractFactory("Multicall2");
   let multicall2 = await Multicall2.deploy();
@@ -230,6 +233,9 @@ async function main() {
 
   console.log('cross add admin...')
   tx = await cross.setAdmin(deployer);
+  await tx.wait();
+  console.log('cross config operator...');
+  tx = await cross.configOperator(CROSS_OPERATOR, true);
   await tx.wait();
   console.log('cross set chainID...')
   tx = await cross.setChainID(BIP44_CHAIN_ID);
