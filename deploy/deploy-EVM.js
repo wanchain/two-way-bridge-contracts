@@ -7,16 +7,22 @@
 const hre = require("hardhat");
 const fs = require('fs');
 const { sleep } = require("@nomiclabs/hardhat-ethers");
+const confirmByKeypress = require("./confirmByKeypress");
 
 
 const waitForReceipt = true;
+if (!process.env.HARDWARE_WALLET_ADDRESS) {
+  throw "⛔️ HARDWARE_WALLET_ADDRESS not detected! Add it to the .env file!";
+}
+const HARDWARE_WALLET_ADDRESS = process.env.HARDWARE_WALLET_ADDRESS;
+
 if (!process.env.PK)
   throw "⛔️ Private key not detected! Add it to the .env file!";
 // mainnet
 const ORACLE_ADMIN = '0x390CC3173EE7F425Fe7659df215B13959FD468E1';
 const CROSS_ADMIN = '0xa35B3C55626188015aC79F396D0B593947231976';
 const TOKEN_MANAGER_OPERATOR = '0xa35B3C55626188015aC79F396D0B593947231976';
-const SMG_FEE_PROXY = "0x82bf94d159b15a587c45c9d70e0fab7fd87889eb";
+const SMG_FEE_PROXY = "0x34d7Ece3a2846DC90a763F42f46898f94BfCbabd";
 const QUOTA_PROXY = '0x0000000000000000000000000000000000000000';
 const CROSS_OPERATOR = '0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD';
 
@@ -62,8 +68,17 @@ if(!BIP44_CHAIN_ID) {
   process.exit()
 }
 async function main() {
+  console.log('Please Verify the hardware wallet address. This address will be the owner of the critical contract.');
+  console.log('❓ Current hardware wallet address is:', HARDWARE_WALLET_ADDRESS);
+  await confirmByKeypress.confirm();
+
   let deployer = (await hre.ethers.getSigner()).address;
   console.log("deployer:", deployer);
+
+  if (HARDWARE_WALLET_ADDRESS.toLowerCase() == deployer.toLowerCase()) {
+    console.warn("❓ Deployer address is same as HARDWARE_WALLET_ADDRESS, please confirm if continue or not!");
+    await confirmByKeypress.confirm();
+  }
 
   let Multicall2 = await hre.ethers.getContractFactory("Multicall2");
   let multicall2 = await Multicall2.deploy();
@@ -174,9 +189,15 @@ async function main() {
   // config
 
   console.log('config...');
+  console.log('signatureVerifier old owner:', await signatureVerifier.owner());
+  tx = await signatureVerifier.transferOwner(HARDWARE_WALLET_ADDRESS);
+  await tx.wait()
+  console.log('signatureVerifier new owner:', await signatureVerifier.owner());
+
   tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
   await tx.wait();
   console.log('tokenManagerProxy upgradeTo finished.');
+
   tx = await crossProxy.upgradeTo(crossDelegate.address);
   await tx.wait();
   console.log('crossProxy upgradeTo finished.');
@@ -216,6 +237,11 @@ async function main() {
   tx = await oracle.setAdmin(timelockController.address);
   await tx.wait();
   console.log('oracle set admin finished.')
+  console.log('oracle old owner:', await oracle.owner());
+  tx = await oracle.transferOwner(HARDWARE_WALLET_ADDRESS);
+  await tx.wait()
+  console.log('oracle new owner:', await oracle.owner());
+
   console.log('tokenManager add admin...')
   tx = await tokenManager.addAdmin(crossProxy.address);
   await tx.wait();
@@ -225,6 +251,10 @@ async function main() {
   tx = await tokenManager.setOperator(TOKEN_MANAGER_OPERATOR);
   await tx.wait();
   console.log('tokenManager set operator finished.')
+  console.log('tokenManagerProxy old owner:', await tokenManager.owner());
+  tx = await tokenManager.transferOwner(HARDWARE_WALLET_ADDRESS);
+  await tx.wait()
+  console.log('tokenManagerProxy new owner:', await tokenManager.owner());
 
   console.log('cross set partner...');
   tx = await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
@@ -248,6 +278,11 @@ async function main() {
     await tx.wait();
     console.log('set hash type:', hre.network.config.hashType)
   }
+  console.log('cross old owner:', await cross.owner());
+  tx = await cross.transferOwner(HARDWARE_WALLET_ADDRESS);
+  await tx.wait()
+  console.log('cross new owner:', await cross.owner());
+
   console.log('config finished.');
 
 
