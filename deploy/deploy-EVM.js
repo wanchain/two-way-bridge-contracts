@@ -287,7 +287,7 @@ async function main() {
 
 
   let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
-  let groupApprove = await GroupApprove.deploy(deployer, signatureVerifier.address, oracleProxy.address, crossProxy.address);
+  let groupApprove = await GroupApprove.deploy(HARDWARE_WALLET_ADDRESS, signatureVerifier.address, oracleProxy.address, crossProxy.address);
   if (waitForReceipt) {
     await groupApprove.deployed();
   }
