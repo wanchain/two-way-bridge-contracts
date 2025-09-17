@@ -43,21 +43,23 @@ If you do not start the zkSync local environment, the tests will fail with error
 - [Discord](https://discord.gg/nMaPGrDDwk)
 
 ### EVM deploy
-1. export PK='......your account PK .....'   
-2. npx hardhat --config hardhat.config.ts   run deploy/deploy-EVM.js --network wanTestnet
+1. export PK='......your account PK .....'
+2. export HARDWARE_WALLET_ADDRESS='......your hardware address .....'
+3. npx hardhat --config hardhat.config.ts   run deploy/deploy-EVM.js --network wanTestnet
 
 ### Zksync deploy
-1. export PK='......your account PK .....'  
-2. rm -rf artifacts-zk
-3. npx hardhat --config hardhat.config.ts compile --network zkSyncTestnet
-4. un-commit the libraries deploy code in deploy.ts file
-5. npx hardhat --config hardhat.config.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
-6. after deploy the library, commit the libraries deploy code in deploy.ts file.
-7. fill the library address in hardhat.config.ts file.
-8. rm -rf artifacts-zk
-9. npx hardhat --config hardhat.config.ts compile --network zkSyncTestnet
-10. must recompile it, otherwise it will not work
-11. npx hardhat --config hardhat.config.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
+1. export PK='......your account PK .....'
+2. export HARDWARE_WALLET_ADDRESS='......your hardware address .....'
+3. rm -rf artifacts-zk
+4. npx hardhat --config hardhat.config.ts compile --network zkSyncTestnet
+5. un-commit the libraries deploy code in deploy.ts file
+6. npx hardhat --config hardhat.config.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
+7. after deploy the library, commit the libraries deploy code in deploy.ts file.
+8. fill the library address in hardhat.config.ts file.
+9. rm -rf artifacts-zk
+10. npx hardhat --config hardhat.config.ts compile --network zkSyncTestnet
+11. must recompile it, otherwise it will not work
+12. npx hardhat --config hardhat.config.ts deploy-zksync --script deploy/deploy.ts --network zkSyncTestnet
 
 ### transfer owner
 
