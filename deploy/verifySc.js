@@ -2,6 +2,13 @@
 const hre = require("hardhat");
 const fs = require('fs');
 
+// mainnet
+const proposers = ["0x05CAF88FF0b089a9F31eA7275BCAA90F8Ad90fB9"];
+const executors = ["0x0000000000000000000000000000000000000000"];
+
+// testnet
+// const proposers = ["0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9"];
+// const executors = ["0x0000000000000000000000000000000000000000"];
 
 
 const verify = async (hre, artifact, address, pathName, constructorArgs) => {
@@ -79,11 +86,12 @@ async function main() {
     let CrossProxy = await hre.ethers.getContractFactory("CrossProxy");
     let OracleProxy = await hre.ethers.getContractFactory("OracleProxy");
     let GroupApprove = await hre.ethers.getContractFactory("GroupApprove");
+    let TimelockController = await hre.ethers.getContractFactory("TimelockController");
 
     await verify(hre, TokenManagerDelegateV2, scAddr.tokenManagerDelegate);
     await verify(hre, SignatureVerifier, scAddr.signatureVerifier);
-    if(scAddr.ecSchnorrVerifier) {
-        await verify(hre, EcSchnorrVerifier, scAddr.ecSchnorrVerifier);
+    if(scAddr.EcSchnorrVerifier) {
+        await verify(hre, EcSchnorrVerifier, scAddr.EcSchnorrVerifier);
     }
     if(scAddr.bn128SchnorrVerifier) {
         await verify(hre, Bn128SchnorrVerifier, scAddr.bn128SchnorrVerifier);
@@ -99,6 +107,7 @@ async function main() {
     await verify(hre, OracleProxy, scAddr.oracleProxy);
 
     await verify(hre, GroupApprove, scAddr.groupApprove, "contracts/GroupApprove/GroupApprove.sol:GroupApprove", [deployer, scAddr.signatureVerifier, scAddr.oracleProxy, scAddr.crossProxy]);
+    await verify(hre, TimelockController, scAddr.timelock, "contracts/components/TimelockController.sol:TimelockController", [86400, proposers, executors, deployer]);
 
 }
 

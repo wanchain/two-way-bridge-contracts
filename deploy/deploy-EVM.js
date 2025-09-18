@@ -75,10 +75,13 @@ async function main() {
   let deployer = (await hre.ethers.getSigner()).address;
   console.log("deployer:", deployer);
 
+  let ifDeployerSameWithHardwareAddr = false;
   if (HARDWARE_WALLET_ADDRESS.toLowerCase() == deployer.toLowerCase()) {
     console.warn("❓ Deployer address is same as HARDWARE_WALLET_ADDRESS, please confirm if continue or not!");
+    ifDeployerSameWithHardwareAddr = true;
     await confirmByKeypress.confirm();
   }
+  console.log("Deploying contracts with the account:", deployer, "\n", "Hardware wallet address:", HARDWARE_WALLET_ADDRESS);
 
   let Multicall2 = await hre.ethers.getContractFactory("Multicall2");
   let multicall2 = await Multicall2.deploy();
@@ -189,10 +192,12 @@ async function main() {
   // config
 
   console.log('config...');
-  console.log('signatureVerifier old owner:', await signatureVerifier.owner());
-  tx = await signatureVerifier.transferOwner(HARDWARE_WALLET_ADDRESS);
-  await tx.wait()
-  console.log('signatureVerifier new owner:', await signatureVerifier.owner());
+  if (!ifDeployerSameWithHardwareAddr) {
+    console.log('signatureVerifier old owner:', await signatureVerifier.owner());
+    tx = await signatureVerifier.transferOwner(HARDWARE_WALLET_ADDRESS);
+    await tx.wait()
+    console.log('signatureVerifier new owner:', await signatureVerifier.owner());
+  }
 
   tx = await tokenManagerProxy.upgradeTo(tokenManagerDelegate.address);
   await tx.wait();
@@ -237,10 +242,12 @@ async function main() {
   tx = await oracle.setAdmin(timelockController.address);
   await tx.wait();
   console.log('oracle set admin finished.')
-  console.log('oracle old owner:', await oracle.owner());
-  tx = await oracle.transferOwner(HARDWARE_WALLET_ADDRESS);
-  await tx.wait()
-  console.log('oracle new owner:', await oracle.owner());
+  if (!ifDeployerSameWithHardwareAddr) {
+    console.log('oracle old owner:', await oracle.owner());
+    tx = await oracle.transferOwner(HARDWARE_WALLET_ADDRESS);
+    await tx.wait()
+    console.log('oracle new owner:', await oracle.owner());
+  }
 
   console.log('tokenManager add admin...')
   tx = await tokenManager.addAdmin(crossProxy.address);
@@ -251,10 +258,12 @@ async function main() {
   tx = await tokenManager.setOperator(TOKEN_MANAGER_OPERATOR);
   await tx.wait();
   console.log('tokenManager set operator finished.')
-  console.log('tokenManagerProxy old owner:', await tokenManager.owner());
-  tx = await tokenManager.transferOwner(HARDWARE_WALLET_ADDRESS);
-  await tx.wait()
-  console.log('tokenManagerProxy new owner:', await tokenManager.owner());
+  if (!ifDeployerSameWithHardwareAddr) {
+    console.log('tokenManagerProxy old owner:', await tokenManager.owner());
+    tx = await tokenManager.transferOwner(HARDWARE_WALLET_ADDRESS);
+    await tx.wait()
+    console.log('tokenManagerProxy new owner:', await tokenManager.owner());
+  }
 
   console.log('cross set partner...');
   tx = await cross.setPartners(tokenManagerProxy.address, oracleProxy.address, SMG_FEE_PROXY, QUOTA_PROXY, signatureVerifier.address);
@@ -278,10 +287,12 @@ async function main() {
     await tx.wait();
     console.log('set hash type:', hre.network.config.hashType)
   }
-  console.log('cross old owner:', await cross.owner());
-  tx = await cross.transferOwner(HARDWARE_WALLET_ADDRESS);
-  await tx.wait()
-  console.log('cross new owner:', await cross.owner());
+  if (!ifDeployerSameWithHardwareAddr) {
+    console.log('cross old owner:', await cross.owner());
+    tx = await cross.transferOwner(HARDWARE_WALLET_ADDRESS);
+    await tx.wait()
+    console.log('cross new owner:', await cross.owner());
+  }
 
   console.log('config finished.');
 

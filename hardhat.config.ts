@@ -471,8 +471,8 @@ const config = {
       url: "https://goerli.gateway.metisdevops.link",
       accounts: [process.env.PK],
     },
-    okbTestnet: {
-      url: "https://x1testrpc.okx.com/",
+    xLayerTestnet: {
+      url: "https://testrpc.xlayer.tech/terigon",
       bip44ChainId: 1073741835,
       signCurveId: 0, // ecdsa
       hashType: 1, // keccak256
@@ -623,8 +623,8 @@ const config = {
       }
     },
     worldChainMainnet: {
-      url: "https://worldchain-mainnet.g.alchemy.com/public",
-      // url: "https://worldchain-mainnet.gateway.tenderly.co",
+      // url: "https://worldchain-mainnet.g.alchemy.com/public",
+      url: "https://worldchain-mainnet.gateway.tenderly.co",
       accounts: [process.env.PK],
       chainId: 480,
       bip44ChainId: 1073741857,
@@ -666,6 +666,27 @@ const config = {
         tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
         messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
       }
+    },
+    seiTestnet: {
+      url: "https://evm-rpc-testnet.sei-apis.com/",
+      accounts: [process.env.PK],
+      chainId: 1328,
+      // gasPrice: 300,
+      bip44ChainId: 2166483766,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x08bad1A48b0B08Bf769f83ba30c1DaD0F8Bb8b6B",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
+    },
+    "0GTestnet": {
+      url: "https://evmrpc-testnet.0g.ai/",
+      accounts: [process.env.PK],
+      chainId: 16601,
+      bip44ChainId: 1073741859,
     },
     bitrockTestnet: {
       url: "https://testnet.bit-rock.io",
@@ -715,6 +736,10 @@ const config = {
       worldChainMainnet: "Placeholder",
       uniChainSepoliaTestnet: "Placeholder",
       uniChainMainnet: "Placeholder",
+      seiTestnet: "Placeholder",
+      xLayerTestnet: "Placeholder",
+      edexaMainnet: "Placeholder",
+      shidoMainnet: "Placeholder",
     },
     customChains: [
       {
@@ -742,6 +767,14 @@ const config = {
             apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/XLAYER",
             browserURL: "https://www.oklink.com/xlayer"
         }
+      },
+      {
+          network: "xLayerTestnet",
+          chainId: 1952, //196 for mainnet
+          urls: {
+            apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/XLAYER_TESTNET",
+            browserURL: "https://www.oklink.com/xlayer-test",
+          }
       },
       {
         network: 'avalanche',
@@ -927,6 +960,42 @@ const config = {
         //   apiURL: "https://unichain.blockscout.com//api",
         //   browserURL: "https://unichain.blockscout.com/"
         // }
+      },
+      {
+        network: "seiTestnet",
+        chainId: 1328,
+        // urls: {
+        //   apiURL: "https://api.etherscan.io/v2/api?chainid=1328",
+        //   browserURL: "https://testnet.seiscan.io/"
+        // }
+        urls: {
+          apiURL: "https://seitrace.com/atlantic-2/api", //atlantic-2 for testnet, mainnet is https://seitrace.com/pacific-1/api
+          browserURL: "https://testnet.seitrace.com/"
+        }
+      },
+      {
+        network: "0GTestnet",
+        chainId: 16601,
+        urls: {
+          apiURL: "https://chainscan-galileo.0g.ai/api",  // Chainscan verification API
+          browserURL: "https://chainscan-galileo.0g.ai",  // Explorer base URL
+        },
+      },
+      {
+        network: "shidoMainnet",
+        chainId: 9008,
+        urls: {
+          apiURL: "https://shidoscan.net/api",
+          browserURL: "https://shidoscan.net",
+        },
+      },
+      {
+        network: "edexaMainnet",
+        chainId: 5424,
+        urls: {
+          apiURL: "https://api.blockscout.edexa.network/api",
+          browserURL: "https://explorer.edexa.network",
+        },
       },
     ],
   },
