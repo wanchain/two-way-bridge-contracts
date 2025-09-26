@@ -309,6 +309,15 @@ const config = {
     xdcTestnet: {
       url: 'https://rpc.apothem.network',
       accounts: [process.env.PK],
+      bip44ChainId: 2147484198,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x18eDFE1e49CA89157384832482c66E95Ea9B0Fca",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
     },
     energiTestnet: {
       url: 'https://nodeapi.test.energi.network',
@@ -740,6 +749,7 @@ const config = {
       xLayerTestnet: "Placeholder",
       edexaMainnet: "Placeholder",
       shidoMainnet: "Placeholder",
+      xdcTestnet: "Placeholder",
     },
     customChains: [
       {
@@ -996,6 +1006,18 @@ const config = {
           apiURL: "https://api.blockscout.edexa.network/api",
           browserURL: "https://explorer.edexa.network",
         },
+      },
+      {
+        network: "xdcTestnet",
+        chainId: 51,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=51",
+          browserURL: "https://testnet.xdcscan.com/"
+        }
+        // urls: {
+        //   apiURL: "https://unichain.blockscout.com//api",
+        //   browserURL: "https://unichain.blockscout.com/"
+        // }
       },
     ],
   },
