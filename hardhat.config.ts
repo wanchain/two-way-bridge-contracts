@@ -319,6 +319,19 @@ const config = {
         messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
       }
     },
+    xdcMainnet: {
+      url: 'https://rpc.xinfin.network',
+      accounts: [process.env.PK],
+      bip44ChainId: 2147484198,
+      cctpV2: {
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0xf7ba155556e2cd4dfe3fe26e506a14d2f4b97613",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
+    },
     energiTestnet: {
       url: 'https://nodeapi.test.energi.network',
       accounts: [process.env.PK],
@@ -616,9 +629,9 @@ const config = {
       },
     },
     worldChainSepoliaTestnet: {
-      url: "https://worldchain-sepolia.g.alchemy.com/public",
+      // url: "https://worldchain-sepolia.g.alchemy.com/public",
       // url: "https://worldchain-sepolia.drpc.org",
-      // url: "https://4801.rpc.thirdweb.com",
+      url: "https://4801.rpc.thirdweb.com",
       accounts: [process.env.PK],
       chainId: 4801,
       bip44ChainId: 1073741857,
@@ -691,11 +704,33 @@ const config = {
         messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
       }
     },
+    seiMainnet: {
+      url: "https://evm-rpc.sei-apis.com/",
+      accounts: [process.env.PK],
+      chainId: 1329,
+      // gasPrice: 300,
+      bip44ChainId: 2166483766,
+      cctpV2: {
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0x14CA89ac9Cd73B01Bf71a3aF3f8cf8fd224d6A1d",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      }
+    },
     "0GTestnet": {
       url: "https://evmrpc-testnet.0g.ai/",
       accounts: [process.env.PK],
       chainId: 16601,
       bip44ChainId: 1073741859,
+    },
+    "0GMainnet": {
+      url: "https://evmrpc.0g.ai",
+      accounts: [process.env.PK],
+      chainId: 16661,
+      bip44ChainId: 1073741859,
+      gasPrice: 2e9,
     },
     bitrockTestnet: {
       url: "https://testnet.bit-rock.io",
@@ -746,10 +781,13 @@ const config = {
       uniChainSepoliaTestnet: "Placeholder",
       uniChainMainnet: "Placeholder",
       seiTestnet: "Placeholder",
+      seiMainnet: "Placeholder", // for seitrace
       xLayerTestnet: "Placeholder",
       edexaMainnet: "Placeholder",
       shidoMainnet: "Placeholder",
       xdcTestnet: "Placeholder",
+      xdcMainnet: "Placeholder",
+      "0GMainnet": "Placeholder",
     },
     customChains: [
       {
@@ -974,21 +1012,47 @@ const config = {
       {
         network: "seiTestnet",
         chainId: 1328,
-        // urls: {
-        //   apiURL: "https://api.etherscan.io/v2/api?chainid=1328",
-        //   browserURL: "https://testnet.seiscan.io/"
-        // }
         urls: {
-          apiURL: "https://seitrace.com/atlantic-2/api", //atlantic-2 for testnet, mainnet is https://seitrace.com/pacific-1/api
-          browserURL: "https://testnet.seitrace.com/"
+          apiURL: "https://api.etherscan.io/v2/api?chainid=1328",
+          browserURL: "https://testnet.seiscan.io/"
         }
+        // urls: {
+        //   apiURL: "https://seitrace.com/atlantic-2/api", //atlantic-2 for testnet, mainnet is https://seitrace.com/pacific-1/api
+        //   browserURL: "https://testnet.seitrace.com/"
+        // }
+      },
+      {
+        network: "seiMainnet",
+        chainId: 1329,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=1329",
+          browserURL: "https://seiscan.io/"
+        }
+        // urls: {
+        //   apiURL: "https://seitrace.com/pacific-1/api", //pacific-1 for mainnet, testnet is https://seitrace.com/atlantic-2/api
+        //   browserURL: "https://seitrace.com/"
+        // }
+        // urls: {
+        //   apiURL: "https://api.seistream.app/api/", // seistream.app API endpoint
+        //   // apiURL: "https://api.seistream.app/contracts/", // seistream.app API endpoint - invalid ?
+        //   // apiURL: "https://api.seistream.app/contracts/evm", // seistream.app API endpoint -  invalid ?
+        //   browserURL: "https://seistream.app", // seistream.app browser URL
+        // },
       },
       {
         network: "0GTestnet",
         chainId: 16601,
         urls: {
-          apiURL: "https://chainscan-galileo.0g.ai/api",  // Chainscan verification API
+          apiURL: "https://chainscan-galileo.0g.ai/open/api",  // Chainscan verification API
           browserURL: "https://chainscan-galileo.0g.ai",  // Explorer base URL
+        },
+      },
+      {
+        network: "0GMainnet",
+        chainId: 16661,
+        urls: {
+          apiURL: "https://chainscan.0g.ai/open/api",  // Chainscan verification API
+          browserURL: "https://chainscan.0g.ai/",  // Explorer base URL
         },
       },
       {
@@ -1014,10 +1078,14 @@ const config = {
           apiURL: "https://api.etherscan.io/v2/api?chainid=51",
           browserURL: "https://testnet.xdcscan.com/"
         }
-        // urls: {
-        //   apiURL: "https://unichain.blockscout.com//api",
-        //   browserURL: "https://unichain.blockscout.com/"
-        // }
+      },
+      {
+        network: "xdcMainnet",
+        chainId: 50,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=50",
+          browserURL: "https://xdcscan.com/"
+        }
       },
     ],
   },
