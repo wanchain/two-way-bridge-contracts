@@ -722,8 +722,10 @@ const config = {
     "0GTestnet": {
       url: "https://evmrpc-testnet.0g.ai/",
       accounts: [process.env.PK],
-      chainId: 16601,
+      chainId: 16602,
       bip44ChainId: 1073741859,
+      gasPrice: 4e9,
+      timeout: 120000,
     },
     "0GMainnet": {
       url: "https://evmrpc.0g.ai",
@@ -787,6 +789,7 @@ const config = {
       shidoMainnet: "Placeholder",
       xdcTestnet: "Placeholder",
       xdcMainnet: "Placeholder",
+      "0GTestnet": "Placeholder",
       "0GMainnet": "Placeholder",
     },
     customChains: [
@@ -1041,7 +1044,7 @@ const config = {
       },
       {
         network: "0GTestnet",
-        chainId: 16601,
+        chainId: 16602,
         urls: {
           apiURL: "https://chainscan-galileo.0g.ai/open/api",  // Chainscan verification API
           browserURL: "https://chainscan-galileo.0g.ai",  // Explorer base URL
