@@ -257,6 +257,44 @@ p2pPort=37718
 #threshold=17
 #totalnodes=21
 
+# Define backup directory
+BACKUP_DIR="${keystore}_back"
+
+# Create keystore_back directory if it doesn't exist
+if [ ! -d "$BACKUP_DIR" ]; then
+    echo "Creating backup directory: $BACKUP_DIR"
+    mkdir -p "$BACKUP_DIR"
+fi
+
+# Find files older than 60 days with specific filename pattern
+# Filename: 0x followed by 128 hex characters (130 chars total)
+echo "Searching for files in $keystore older than 60 days with 128-character hex names..."
+
+# Use find to locate files
+# -mtime +60: Files modified more than 60 days ago
+# -type f: Regular files only
+# -name: Regex to match 0x followed by 128 hex chars
+found_files=0
+while IFS= read -r file; do
+    if [ -f "$file" ]; then
+        # Extract filename from path
+        filename=$(basename "$file")
+        # Verify exact length (130 chars: 0x + 128 hex)
+        if [ ${#filename} -eq 130 ]; then
+            echo "Moving file: $file to $BACKUP_DIR"
+            mv "$file" "$BACKUP_DIR/"
+            ((found_files++))
+        fi
+    fi
+done < <(sudo find "$keystore" -type f -mtime +60 | grep -E '/0x[0-9a-fA-F]{128}$')
+
+# Summary
+if [ $found_files -eq 0 ]; then
+    echo "No files in $keystore found matching the criteria (older than 60 days, 128-char hex name)."
+else
+    echo "Moved $found_files file(s) to $BACKUP_DIR"
+fi
+
 if [ "$isTestnet" == true ]; then
 	# stormanAgent docker image
 	# image='wanchain/openstoremanagent:latest'
