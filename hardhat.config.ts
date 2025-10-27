@@ -734,6 +734,12 @@ const config = {
       bip44ChainId: 1073741859,
       gasPrice: 2e9,
     },
+    "plasmaTestnet": {
+      url: "https://testnet-rpc.plasma.to",
+      accounts: [process.env.PK],
+      chainId: 9746,
+      bip44ChainId: 1073741861,
+    },
     bitrockTestnet: {
       url: "https://testnet.bit-rock.io",
       accounts: [process.env.PK],
@@ -783,7 +789,7 @@ const config = {
       uniChainSepoliaTestnet: "Placeholder",
       uniChainMainnet: "Placeholder",
       seiTestnet: "Placeholder",
-      seiMainnet: "Placeholder", // for seitrace
+      seiMainnet: "Placeholder",
       xLayerTestnet: "Placeholder",
       edexaMainnet: "Placeholder",
       shidoMainnet: "Placeholder",
@@ -791,6 +797,7 @@ const config = {
       xdcMainnet: "Placeholder",
       "0GTestnet": "Placeholder",
       "0GMainnet": "Placeholder",
+      "plasmaTestnet": "Placeholder",
     },
     customChains: [
       {
@@ -1088,6 +1095,15 @@ const config = {
         urls: {
           apiURL: "https://api.etherscan.io/v2/api?chainid=50",
           browserURL: "https://xdcscan.com/"
+        }
+      },
+      {
+        network: "plasmaTestnet",
+        chainId: 9746,
+        urls: {
+          apiURL: "https://api.routescan.io/v2/network/testnet/evm/9746_5/etherscan/api",
+          // apiURL: "https://testnet.plasmascan.to/api",
+          browserURL: "https://testnet.plasmascan.to/"
         }
       },
     ],
