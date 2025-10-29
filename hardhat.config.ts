@@ -753,6 +753,13 @@ const config = {
       chainId: 9746,
       bip44ChainId: 1073741861,
     },
+    "celoTestnet": {
+      url: "https://forno.celo-sepolia.celo-testnet.org/",
+      accounts: [process.env.PK],
+      chainId: 11142220,
+      bip44ChainId: 2147536400,
+      gasPrice: 25.001e9,
+    },
     bitrockTestnet: {
       url: "https://testnet.bit-rock.io",
       accounts: [process.env.PK],
@@ -802,12 +809,8 @@ const config = {
       worldChainMainnet: "Placeholder",
       uniChainSepoliaTestnet: "Placeholder",
       uniChainMainnet: "Placeholder",
-      // uniChainMainnet: "37a69ff3-d3e3-4b73-9340-1d17583ddc56", // blockscount
-      // seiTestnet: "Placeholder",
       seiTestnet: "Placeholder",
-      // seiMainnet: "", // for seistream
-      seiMainnet: "Placeholder", // for seitrace
-      // seiMainnet: "Placeholder", // for seiscan
+      seiMainnet: "Placeholder",
       xLayerTestnet: "Placeholder",
       edexaMainnet: "Placeholder",
       shidoMainnet: "Placeholder",
@@ -816,6 +819,7 @@ const config = {
       "0GTestnet": "Placeholder",
       "0GMainnet": "Placeholder",
       "plasmaTestnet": "Placeholder",
+      "celoTestnet": "Placeholder",
     },
     customChains: [
       {
@@ -1130,6 +1134,14 @@ const config = {
           apiURL: "https://api.routescan.io/v2/network/testnet/evm/9746_5/etherscan/api",
           // apiURL: "https://testnet.plasmascan.to/api",
           browserURL: "https://testnet.plasmascan.to/"
+        }
+      },
+      {
+        network: "celoTestnet",
+        chainId: 11142220,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=11142220",
+          browserURL: "https://sepolia.celoscan.io/"
         }
       },
     ],
