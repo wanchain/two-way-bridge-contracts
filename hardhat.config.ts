@@ -602,7 +602,7 @@ const config = {
       accounts: [process.env.PK],
       bip44ChainId: 1073741842,
     },
-    sonicTestnet: {
+    sonicBlazeTestnet: {
       url: "https://rpc.blaze.soniclabs.com/",
       accounts: [process.env.PK],
       bip44ChainId: 2147493655,
@@ -611,6 +611,19 @@ const config = {
         delegateAdmin: "",
         feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
         feeReadSC: "0x05211bBC9E0C1ED3bE0252021Cf558718ab65189",
+        tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+        messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+      }
+    },
+    sonicTestnet: {
+      url: "https://rpc.testnet.soniclabs.com/",
+      accounts: [process.env.PK],
+      bip44ChainId: 2147493655,
+      cctpV2: {
+        proxyAdmin: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        delegateAdmin: "",
+        feeToAddress: "0xF6eB3CB4b187d3201AfBF96A38e62367325b29F9",
+        feeReadSC: "0x08bad1A48b0B08Bf769f83ba30c1DaD0F8Bb8b6B",
         tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
         messageTransmitter: "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
       }
@@ -782,14 +795,19 @@ const config = {
       baseSepolia: "Placeholder",
       amoy: "Placeholder",
       lineaSepoliaTestnet: "Placeholder",
+      sonicBlazeTestnet: "Placeholder",
       sonicTestnet: "Placeholder",
       sonicMainnet: "Placeholder",
       worldChainSepoliaTestnet: "Placeholder",
       worldChainMainnet: "Placeholder",
       uniChainSepoliaTestnet: "Placeholder",
       uniChainMainnet: "Placeholder",
+      // uniChainMainnet: "37a69ff3-d3e3-4b73-9340-1d17583ddc56", // blockscount
+      // seiTestnet: "Placeholder",
       seiTestnet: "Placeholder",
-      seiMainnet: "Placeholder",
+      // seiMainnet: "", // for seistream
+      seiMainnet: "Placeholder", // for seitrace
+      // seiMainnet: "Placeholder", // for seiscan
       xLayerTestnet: "Placeholder",
       edexaMainnet: "Placeholder",
       shidoMainnet: "Placeholder",
@@ -956,10 +974,18 @@ const config = {
         }
       },
       {
-        network: "sonicTestnet",
+        network: "sonicBlazeTestnet",
         chainId: 57054,
         urls: {
           apiURL: "https://api.etherscan.io/v2/api?chainid=57054",
+          browserURL: "https://testnet.sonicscan.org/"
+        }
+      },
+      {
+        network: "sonicTestnet",
+        chainId: 14601,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=14601",
           browserURL: "https://testnet.sonicscan.org/"
         }
       },
