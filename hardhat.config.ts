@@ -601,6 +601,14 @@ const config = {
       url: "https://1rpc.io/linea",
       accounts: [process.env.PK],
       bip44ChainId: 1073741842,
+      cctpV2: {
+        proxyAdmin: "0xa35B3C55626188015aC79F396D0B593947231976",
+        delegateAdmin: "0xdD7bBc538dCdED78C9B5Bf108e95A0baa7d593cD",
+        feeToAddress: "0x7Ded6550B8EBEFA202B648a086732b3724064318",
+        feeReadSC: "0xFFB876Bd5Bee99e992cAc826A04396002f5f4a65",
+        tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+        messageTransmitter: "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+      },
     },
     sonicBlazeTestnet: {
       url: "https://rpc.blaze.soniclabs.com/",
@@ -1142,6 +1150,8 @@ const config = {
         urls: {
           apiURL: "https://api.etherscan.io/v2/api?chainid=11142220",
           browserURL: "https://sepolia.celoscan.io/"
+          // apiURL: "https://celo-sepolia.blockscout.com/api",
+          // browserURL: "https://celo-sepolia.blockscout.com/"
         }
       },
     ],
