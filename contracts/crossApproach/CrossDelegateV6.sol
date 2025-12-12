@@ -159,14 +159,14 @@ contract CrossDelegateV6 is CrossDelegateV5 {
      * @dev Fetches the tokenPairID and minAmount at the specified index.
      * Ensures the index is within bounds to prevent out-of-range errors.
      * @param index The index in the storage array/map.
-     * @return tokenpairID The token pair ID at the given index.
+     * @return tokenPairID The token pair ID at the given index.
      * @return minAmount The minimum cross-chain amount for that token pair.
      * @custom:requires Index must be less than the total length (reverts otherwise).
      */
-    function getMinTokenPairCrossChainAmountByIndex(uint256 index) public view virtual returns (uint256 tokenpairID, uint256 minAmount) {
+    function getMinTokenPairCrossChainAmountByIndex(uint256 index) public view virtual returns (uint256 tokenPairID, uint256 minAmount) {
         uint256 length = getMinTokenPairCrossChainAmountLength();
         require(index < length, "Index out of bounds");
-        (tokenpairID, minAmount) = minTokenPairCrossChainAmount.at(index);
+        (tokenPairID, minAmount) = minTokenPairCrossChainAmount.at(index);
     }
 
     /**
