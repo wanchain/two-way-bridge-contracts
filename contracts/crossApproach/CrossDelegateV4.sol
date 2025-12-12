@@ -152,8 +152,9 @@ contract CrossDelegateV4 is CrossStorageV4 {
      * - Token pair must exist
      */
     function userLock(bytes32 smgID, uint tokenPairID, uint value, bytes calldata userAccount)
-    external
+    public
     payable
+    virtual
     notHalted
     nonReentrant
     onlyReadySmg(smgID)
@@ -189,8 +190,9 @@ contract CrossDelegateV4 is CrossStorageV4 {
      * - Token pair must exist
      */
     function userBurn(bytes32 smgID, uint tokenPairID, uint value, uint fee, address tokenAccount, bytes calldata userAccount)
-    external
+    public
     payable
+    virtual
     notHalted
     nonReentrant
     onlyReadySmg(smgID)
