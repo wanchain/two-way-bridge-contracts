@@ -46,9 +46,11 @@ contract CrossDelegateV6 is CrossDelegateV5 {
     }
 
     /**
-     * @notice UintToUintMap for token pair minimum cross chain asset value
-     * @dev Tracks the number of NFTs registered for cross-chain operations from each collection
-     */
+    * @dev Uses an EnumerableMap to store token pair IDs (uint256) mapped to their minimum cross-chain amounts (uint256).
+    * This structure allows for efficient iteration over pairs (via .length() and .at(index)) and safe lookups (via .tryGet(key)).
+    * Internal visibility ensures it's only accessible within the contract or derived contracts.
+    * Emits events on set() operations if configured in the library.
+    */
     EnumerableMap.UintToUintMap internal minTokenPairCrossChainAmount; // key: tokenPairID, value: min amount
 
     /** MODIFIERS **/
