@@ -58,7 +58,7 @@ contract CrossDelegateV6 is CrossDelegateV5 {
      */
     modifier checkCrossChainAmount(uint256 tokenPairID, uint256 crossChainAmount) {
         uint256 minAmount = getMinTokenPairCrossChainAmount(tokenPairID);
-        require(crossChainAmount >= minAmount, "CrossDelegateV6: Insufficient cross-chain asset balance");
+        require(crossChainAmount >= minAmount, "CrossDelegateV6: Amount below minimum");
         _;
     }
 
@@ -117,9 +117,6 @@ contract CrossDelegateV6 is CrossDelegateV5 {
     public
     payable
     override
-    notHalted
-    nonReentrant
-    onlyReadySmg(smgID)
     checkCrossChainAmount(tokenPairID, value)
     {
         super.userBurn(smgID, tokenPairID, value, fee, tokenAccount, userAccount);
