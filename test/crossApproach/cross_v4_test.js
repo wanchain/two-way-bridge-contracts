@@ -1,4 +1,4 @@
-const CrossDelegate = artifacts.require("CrossDelegateV4");
+const CrossDelegate = artifacts.require("CrossDelegateV6");
 const CrossProxy = artifacts.require("CrossProxy");
 const EcSchnorrVerifier = artifacts.require("EcSchnorrVerifier");
 const FakeToken = artifacts.require('FakeToken');

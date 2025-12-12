@@ -372,6 +372,58 @@ exports.testCases = () => {
       }
     }); 
 
+    it("setMinTokenPairCrossChainAmount  -> Success", async () => {
+      const { CrossDelegate } = getContractArtifacts();
+      const wanchain = chainTypes.WAN;
+      const zero = web3.utils.toBN(0);
+      const one = web3.utils.toBN(1);
+      const tokenPairID = web3.utils.toBN(1);
+      const minAmount = web3.utils.toBN(100);
+
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      let length, minTokenPairCrossChainAmount;
+      length = await wanCross.getMinTokenPairCrossChainAmountLength();
+      assert.equal(length.eq(zero), true, "check empty length of minimum token pair cross-chain asset amount failed");
+      minTokenPairCrossChainAmount = await wanCross.getMinTokenPairCrossChainAmount(tokenPairID);
+      assert.equal(minTokenPairCrossChainAmount.eq(zero), true, "check default minimum cross-chain asset amount failed");
+
+      let owner = await wanCross.owner();
+      await wanCross.setMinTokenPairCrossChainAmount([[tokenPairID, minAmount]], {from: owner});
+
+      length = await wanCross.getMinTokenPairCrossChainAmountLength();
+      assert.equal(length.eq(one), true, "check 1 MinTokenPairCrossChainAmountLength failed");
+
+      let {tokenPairID: currTokenPairID, minAmount: currMinAmout} = await wanCross.getMinTokenPairCrossChainAmountByIndex(0);
+      assert.equal(currTokenPairID.eq(tokenPairID), true, "check token pair id by index failed");
+      assert.equal(currMinAmout.eq(minAmount), true, "check minimum cross-chain asset amount by index failed");
+
+      minTokenPairCrossChainAmount = await wanCross.getMinTokenPairCrossChainAmount(tokenPairID);
+      assert.equal(minTokenPairCrossChainAmount.eq(minAmount), true, "check minTokenPairCrossChainAmount by token pair ID failed");
+
+      await wanCross.setMinTokenPairCrossChainAmount([[tokenPairID, 0]], {from: owner});
+      length = await wanCross.getMinTokenPairCrossChainAmountLength();
+      assert.equal(length.eq(zero), true, "check empty length of minimum token pair cross-chain asset amount while set 0 amount failed");
+    });
+
+    it("setMinTokenPairCrossChainAmount  -> Not operator", async () => {
+      const { CrossDelegate } = getContractArtifacts();
+      const wanchain = chainTypes.WAN;
+
+      let wanCross = await CrossDelegate.at(
+        global.chains[wanchain].scAddr.CrossProxy
+      );
+
+      try {
+        await wanCross.setMinTokenPairCrossChainAmount([[1, 1000]], {from: global.aliceAccount.WAN});
+        assert.fail(ERROR_INFO);
+      } catch (err) {
+        assert.include(err.toString(), "not operator");
+      }
+    });
+
     it("setChainID  -> Success", async () => {
       const { CrossDelegate, RapidityLib, NFTLib } = getContractArtifacts();
 
@@ -1028,7 +1080,7 @@ exports.testCases = () => {
 function getContractArtifacts() {
   const CrossProxy = artifacts.require("CrossProxy.sol");
   const FakeCrossDelegate = artifacts.require("FakeCrossDelegate.sol");
-  const CrossDelegate = artifacts.require("CrossDelegateV4.sol");
+  const CrossDelegate = artifacts.require("CrossDelegateV6.sol");
   const RapidityLib = artifacts.require('RapidityLibV4');
   const NFTLib = artifacts.require('NFTLibV1');
   

@@ -205,7 +205,7 @@ async function deployCrossContracts(owner, options) {
 
     const RapidityLib               = artifacts.require('RapidityLibV4');
     const NFTLib                    = artifacts.require('NFTLibV1');
-    const CrossDelegate             = artifacts.require('CrossDelegateV4.sol');
+    const CrossDelegate             = artifacts.require('CrossDelegateV6.sol');
     const CrossProxy                = artifacts.require('CrossProxy.sol');
 
     const TestStoremanAdmin         = artifacts.require('TestStoremanAdmin.sol');

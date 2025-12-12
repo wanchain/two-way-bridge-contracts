@@ -1,4 +1,4 @@
-const CrossDelegate = artifacts.require("CrossDelegateV4");
+const CrossDelegate = artifacts.require("CrossDelegateV6");
 const TokenManagerDelegate = artifacts.require("TokenManagerDelegateV2");
 
 const {
@@ -164,12 +164,11 @@ exports.testCases = () => {
         from: senderAccount,
         value: moreServiceFee,
       });
-      if (!receipt.logs.length) {
-        receipt.logs = await getTxParsedLogs(
-          global.knownEvents[currentChainType].NFTLib,
-          receipt.tx
-        );
-      }
+
+      receipt.logs = await getTxParsedLogs(
+        global.knownEvents[currentChainType].NFTLib,
+        receipt.tx
+      );
 
       const eventUserLockNFT = assert.getWeb3Log(receipt, {
         event: "UserLockNFT",
