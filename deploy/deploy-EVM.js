@@ -118,19 +118,19 @@ async function main() {
   }
   console.log("RapidityLibV4 deployed to:", rapidityLib.address);
   
-  let CrossDelegateV4 = await hre.ethers.getContractFactory("CrossDelegateV4", {
+  let CrossDelegateV6 = await hre.ethers.getContractFactory("CrossDelegateV6", {
     libraries: {
       NFTLibV1: nftLib.address,
       RapidityLibV4: rapidityLib.address,
     }
   });
 
-  let crossDelegate = await CrossDelegateV4.deploy();
+  let crossDelegate = await CrossDelegateV6.deploy();
   if (waitForReceipt) {
     await crossDelegate.deployed();
   }
 
-  console.log("CrossDelegateV4 deployed to:", crossDelegate.address);
+  console.log("CrossDelegateV6 deployed to:", crossDelegate.address);
 
   let CrossProxy = await hre.ethers.getContractFactory("CrossProxy");
   let crossProxy = await CrossProxy.deploy();
@@ -211,7 +211,7 @@ async function main() {
   console.log('oracleProxy upgradeTo finished.');
   console.log('deploy finished start to config...');
   let tokenManager = await hre.ethers.getContractAt("TokenManagerDelegateV2", tokenManagerProxy.address);
-  let cross = await hre.ethers.getContractAt("CrossDelegateV4", crossProxy.address);
+  let cross = await hre.ethers.getContractAt("CrossDelegateV6", crossProxy.address);
   let oracle = await hre.ethers.getContractAt("OracleDelegate", oracleProxy.address);
 
   // deploy time lock------------------------------
